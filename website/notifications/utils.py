@@ -176,7 +176,7 @@ def get_configured_projects(user):
     """Filter all user subscriptions for ones that are on parent projects
      and return the node objects.
 
-    :param user: modular odm User object
+    :param user: OSFUser object
     :return: list of node objects for projects with no parent
     """
     configured_projects = set()
@@ -226,8 +226,8 @@ def get_all_user_subscriptions(user, extra=None):
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """ Get all Subscription objects for a node that the user is subscribed to
 
-    :param user: modular odm User object
-    :param node: modular odm Node object
+    :param user: OSFUser object
+    :param node: Node object
     :param user_subscriptions: all Subscription objects that the user is subscribed to
     :return: list of Subscription objects for a node that the user is subscribed to
     """
@@ -238,7 +238,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page
-    :param user: modular odm User object
+    :param user: OSFUser object
     :param nodes: list of parent project node objects
     :return: treebeard-formatted data
     """
@@ -324,9 +324,9 @@ all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
 
 def serialize_event(user, subscription=None, node=None, event_description=None):
     """
-    :param user: modular odm User object
-    :param subscription: modular odm Subscription object, use if parsing particular subscription
-    :param node: modular odm Node object, use if node is known
+    :param user: OSFUser object
+    :param subscription: Subscription object, use if parsing particular subscription
+    :param node: Node object, use if node is known
     :param event_description: use if specific subscription is known
     :return: treebeard-formatted subscription event
     """
@@ -366,7 +366,7 @@ def get_parent_notification_type(node, event, user):
     type on the parent project for the same event.
     :param obj node: event owner (Node or User object)
     :param str event: notification event (e.g. 'comment_replies')
-    :param obj user: modular odm User object
+    :param obj user: OSFUser object
     :return: str notification type (e.g. 'email_transactional')
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
@@ -393,8 +393,8 @@ def get_global_notification_type(global_subscription, user):
     """
     Given a global subscription (e.g. NotificationSubscription object with event_type
     'global_file_updated'), find the user's notification type.
-    :param obj global_subscription: modular odm NotificationSubscription object
-    :param obj user: modular odm User object
+    :param obj global_subscription: NotificationSubscription object
+    :param obj user: OSFUser object
     :return: str notification type (e.g. 'email_transactional')
     """
     for notification_type in constants.NOTIFICATION_TYPES:

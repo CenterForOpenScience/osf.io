@@ -53,6 +53,7 @@
 
         </script>
     </head>
+<div class="row">
     <div class="col-md-9">
         <form action="" method="post">
             {% csrf_token %}
@@ -90,6 +91,7 @@
             </div>
             {% endif %}
             <input class="form-button" type="submit" value="Save" />
+            <a id="discard" class="btn btn-danger form-button">Discard</a>
         </form>
     </div>
     <div class="col-md-3">
@@ -108,3 +110,4 @@
             </form>
         </div>
     </div>
+</div>

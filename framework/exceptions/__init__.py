@@ -3,6 +3,8 @@
 import copy
 import httplib as http
 from flask import request
+from website import language
+
 
 class FrameworkError(Exception):
     """Base class from which framework-related errors inherit."""
@@ -14,7 +16,7 @@ class HTTPError(FrameworkError):
         http.BAD_REQUEST: {
             'message_short': 'Bad request',
             'message_long': ('If this should not have occurred and the issue persists, '
-            'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+                             + language.SUPPORT_LINK),
         },
         http.UNAUTHORIZED: {
             'message_short': 'Unauthorized',
@@ -23,26 +25,26 @@ class HTTPError(FrameworkError):
         http.FORBIDDEN: {
             'message_short': 'Forbidden',
             'message_long': ('You do not have permission to perform this action. '
-                'If this should not have occurred and the issue persists, '
-                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+                             'If this should not have occurred and the issue persists, '
+                             + language.SUPPORT_LINK),
         },
         http.NOT_FOUND: {
             'message_short': 'Page not found',
             'message_long': ('The requested resource could not be found. If this '
-                'should not have occurred and the issue persists, please report it '
-                'to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+                             'should not have occurred and the issue persists, '
+                             + language.SUPPORT_LINK),
         },
         http.GONE: {
             'message_short': 'Resource deleted',
             'message_long': ('User has deleted this content. If this should '
-                'not have occurred and the issue persists, please report it to '
-                '<a href="mailto:support@osf.io">support@osf.io</a>.'),
+                             'not have occurred and the issue persists, '
+                             + language.SUPPORT_LINK),
         },
         http.SERVICE_UNAVAILABLE: {
             'message_short': 'Service is currently unavailable',
-            'message_long': ('The requested service is unavailable. If this should '
-                'not have occurred and the issue persists, please report it to '
-                '<a href="mailto:support@osf.io">support@osf.io</a>.'),
+            'message_long': ('The requested service is unavailable. If this '
+                             'should not have occurred and the issue persists, '
+                             + language.SUPPORT_LINK),
         },
         451: {
             'message_short': 'Content removed',
@@ -86,7 +88,7 @@ class HTTPError(FrameworkError):
             data['message_short'] = 'Unable to resolve'
             data['message_long'] = (
                 'OSF was unable to resolve your request. If this issue persists, please report it to '
-                '<a href="mailto:support@osf.io">support@osf.io</a>.'
+                + language.SUPPORT_LINK
             )
         data.update(self.data)
         data['code'] = self.code

@@ -117,7 +117,7 @@ def send_comment_added_notification(comment, auth, new_mentions=None):
     target = comment.target
 
     context = dict(
-        gravatar_url=auth.user.profile_image_url(),
+        profile_image_url=auth.user.profile_image_url(),
         content=render_email_markdown(comment.content),
         page_type=comment.get_comment_page_type(),
         page_title=comment.get_comment_page_title(),
@@ -153,7 +153,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
     target = comment.target
 
     context = dict(
-        gravatar_url=auth.user.profile_image_url(),
+        profile_image_url=auth.user.profile_image_url(),
         content=render_email_markdown(comment.content),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',

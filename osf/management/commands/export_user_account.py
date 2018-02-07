@@ -30,8 +30,8 @@ TMP_PATH = tempfile.mkdtemp()
 
 PREPRINT_EXPORT_FIELDS = [
     'is_published',
-    'date_created',
-    'date_modified',
+    'created',
+    'modified',
     'date_published'
 ]
 
@@ -42,8 +42,8 @@ NODE_EXPORT_FIELDS = [
     'is_public',
     'description',
     'forked_date',
-    'date_created',
-    'date_modified'
+    'created',
+    'modified'
 ]
 
 REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [

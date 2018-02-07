@@ -4,7 +4,8 @@
 
         <div class="form-group">
             <label>Full name (e.g. Rosalind Elsie Franklin)</label>
-            <input class="form-control" data-bind="value: full" />
+            ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+            <input class="form-control" data-bind="value: full" maxlength="186"/>
             <div data-bind="visible: showMessages, css:'text-danger'">
                 <p data-bind="validationMessage: full"></p>
             </div>
@@ -18,27 +19,27 @@
         </span>
 
         <div style="margin-bottom: 10px;">
-            <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
+            <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: autoFill">Auto-fill</a>
         </div>
 
         <div class="form-group">
             <label>Given name (e.g. Rosalind)</label>
-            <input class="form-control" data-bind="value: given" />
+            <input class="form-control" data-bind="value: given" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Middle name(s) (e.g. Elsie)</label>
-            <input class="form-control" data-bind="value: middle" />
+            <input class="form-control" data-bind="value: middle" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Family name (e.g. Franklin)</label>
-            <input class="form-control" data-bind="value: family" />
+            <input class="form-control" data-bind="value: family" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Suffix</label>
-            <input class="form-control" data-bind="value: suffix" />
+            <input class="form-control" data-bind="value: suffix" maxlength="255"/>
         </div>
 
         <hr />

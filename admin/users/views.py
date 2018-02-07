@@ -36,9 +36,9 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
-from website.settings import DOMAIN, SUPPORT_EMAIL
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
 
 class UserDeleteView(PermissionRequiredMixin, DeleteView):
@@ -68,6 +68,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
+                user.requested_deactivation = False
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
@@ -285,6 +286,33 @@ class UserFormView(PermissionRequiredMixin, FormView):
     def success_url(self):
         return self.redirect_url
 
+class UserMergeAccounts(PermissionRequiredMixin, FormView):
+    template_name = 'users/merge_accounts_modal.html'
+    permission_required = 'osf.view_osfuser'
+    object_type = 'osfuser'
+    raise_exception = True
+    form_class = MergeUserForm
+
+    def get_context_data(self, **kwargs):
+        return {'guid': self.get_object()._id}
+
+    def get_object(self, queryset=None):
+        return OSFUser.load(self.kwargs.get('guid'))
+
+    def form_valid(self, form):
+        user = self.get_object()
+        guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
+
+        user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged)
+        user.merge_user(user_to_be_merged)
+
+        return redirect(reverse_user(user._id))
+
+    def form_invalid(self, form):
+        raise Http404(
+            '{} not found.'.format(
+                form.cleaned_data.get('user_guid_to_be_merged', 'guid')
+            ))
 
 class UserSearchList(PermissionRequiredMixin, ListView):
     template_name = 'users/list.html'
@@ -371,7 +399,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, date_created__gt=query_date)
+        return Node.objects.filter(creator=user, created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -553,7 +581,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
             message='Follow this link to reset your password: {}'.format(
                 reset_abs_url.url
             ),
-            from_email=SUPPORT_EMAIL,
+            from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )
         update_admin_log(

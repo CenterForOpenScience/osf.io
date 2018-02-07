@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return MetaSchema.find()[0]
+    return MetaSchema.objects.first()
 
 try:
     test_app = init_app(routes=True, set_backends=False)
@@ -68,6 +68,8 @@ SILENT_LOGGERS = [
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -288,14 +290,10 @@ class ApiAddonTestCase(ApiTestCase):
 
     def tearDown(self):
         super(ApiAddonTestCase, self).tearDown()
-        self.user.remove()
-        self.node.remove()
-        if self.node_settings:
-            self.node_settings.remove()
-        if self.user_settings:
-            self.user_settings.remove()
+        self.user.delete()
+        self.node.delete()
         if self.account:
-            self.account.remove()
+            self.account.delete()
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')

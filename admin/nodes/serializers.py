@@ -6,9 +6,11 @@ from admin.users.serializers import serialize_simple_node
 
 
 def serialize_node(node):
-    embargo = node.embargo
-    if embargo is not None:
+    embargo = None
+    embargo_formatted = None
+    if node.embargo is not None:
         embargo = node.embargo.end_date
+        embargo_formatted = embargo.strftime('%m/%d/%Y')
 
     return {
         'id': node._id,
@@ -17,9 +19,10 @@ def serialize_node(node):
         'parent': node.parent_id,
         'root': node.root._id,
         'is_registration': node.is_registration,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'withdrawn': node.is_retracted,
         'embargo': embargo,
+        'embargo_formatted': embargo_formatted,
         'contributors': [serialize_simple_user_and_node_permissions(node, user) for user in node.contributors],
         'children': map(serialize_simple_node, node.nodes),
         'deleted': node.is_deleted,
@@ -33,6 +36,9 @@ def serialize_node(node):
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': node.registered_from._id if node.registered_from else None
     }
+
+def serialize_log(log):
+    return log, list(log.params.iteritems())
 
 
 def serialize_simple_user_and_node_permissions(node, user):

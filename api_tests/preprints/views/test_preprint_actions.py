@@ -1,18 +1,17 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
-    PreprintFactory,
     AuthUserFactory,
 )
-from reviews.permissions import GroupHelper
 from website.util import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
-from api_tests.reviews.mixins.comment_settings import ActionCommentSettingsMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
+from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
-class TestPreprintActionFilters(ActionFilterMixin):
+class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
     def preprint(self, all_actions):
@@ -22,9 +21,17 @@ class TestPreprintActionFilters(ActionFilterMixin):
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(GroupHelper(preprint.provider).get_group('moderator'))
+            user.groups.add(
+                GroupHelper(
+                    preprint.provider
+                ).get_group('moderator'))
         else:
-            preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
+            preprint.node.add_contributor(
+                user,
+                permissions=[
+                    osf_permissions.READ,
+                    osf_permissions.WRITE,
+                    osf_permissions.ADMIN])
         return user
 
     @pytest.fixture()
@@ -33,7 +40,7 @@ class TestPreprintActionFilters(ActionFilterMixin):
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)
+        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)
 
     def test_unauthorized_user(self, app, url):
         res = app.get(url, expect_errors=True)
@@ -44,7 +51,7 @@ class TestPreprintActionFilters(ActionFilterMixin):
         assert res.status_code == 403
 
 
-class TestActionSettings(ActionCommentSettingsMixin):
+class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)
+        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)

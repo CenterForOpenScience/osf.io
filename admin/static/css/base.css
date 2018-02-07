@@ -24,3 +24,9 @@ form p label {
     position:relative;
     margin-left: 30px;
 }
+
+.padded {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+

@@ -106,7 +106,6 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res_date_created, expected_date_created)
         assert_equal(res_data, expected_data)
 
-
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
         result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
@@ -393,7 +392,7 @@ class TestUpdateMetadataHook(HookTestCase):
         )
 
     def test_callback(self):
-        self.version.date_modified = None
+        self.version.external_modified = None
         self.version.save()
         self.send_metadata_hook()
         self.version.reload()
@@ -404,7 +403,7 @@ class TestUpdateMetadataHook(HookTestCase):
 
         #Test attributes are populated
         assert_equal(self.version.size, 123)
-        assert_true(isinstance(self.version.date_modified, datetime.datetime))
+        assert_true(isinstance(self.version.external_modified, datetime.datetime))
 
     def test_archived(self):
         self.send_metadata_hook({

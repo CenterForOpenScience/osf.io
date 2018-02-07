@@ -10,10 +10,10 @@ var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
-var storageAddons = require('json!storageAddons.json');
+var storageAddons = require('json-loader!storageAddons.json');
 var CommentModel = require('js/comment');
 
-var History = require('exports?History!history');
+var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
 
 // Sanity
@@ -136,8 +136,8 @@ var FileViewPage = {
                     '. It needs to be checked in before any changes can be made.'
                 ])));
             }
-        } else if (self.file.provider === 'bitbucket') {
-            self.canEdit = function() { return false; };  // Bitbucket is read-only
+        } else if (self.file.provider === 'bitbucket' || self.file.provider === 'gitlab' || self.file.provider === 'onedrive') {
+            self.canEdit = function() { return false; };  // Bitbucket, OneDrive, and GitLab are read-only
         } else {
             self.canEdit = function() {
                 return self.context.currentUser.canEdit;
@@ -168,7 +168,7 @@ var FileViewPage = {
                     {sha: $osf.urlParams().branch}
                 );
             }
-            else if (self.file.provider === 'bitbucket') {
+            else if (self.file.provider === 'bitbucket' || self.file.provider === 'gitlab') {
                 self.file.urls.revisions = waterbutler.buildRevisionsUrl(
                     self.file.path, self.file.provider, self.node.id,
                     {branch: $osf.urlParams().branch}
@@ -501,7 +501,7 @@ var FileViewPage = {
         var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) && (ctrl.file.provider !== 'bitbucket') && (ctrl.file.provider !== 'gitlab') && (ctrl.file.provider !== 'onedrive') ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [

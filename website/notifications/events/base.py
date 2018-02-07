@@ -26,7 +26,7 @@ class Event(object):
     """
     def __init__(self, user, node, action):
         self.user = user
-        self.gravatar_url = user.profile_image_url()
+        self.profile_image_url = user.profile_image_url()
         self.node = node
         self.action = action
         self.timestamp = timezone.now()
@@ -39,7 +39,7 @@ class Event(object):
             node=self.node,
             timestamp=self.timestamp,
             message=self.html_message,
-            gravatar_url=self.gravatar_url,
+            profile_image_url=self.profile_image_url,
             url=self.url
         )
 

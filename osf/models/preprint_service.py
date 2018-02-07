@@ -10,23 +10,20 @@ from django.contrib.contenttypes.fields import GenericRelation
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
+from osf.models.mixins import ReviewableMixin
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.workflows import DefaultStates
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings, mails
 
-from reviews.models.mixins import ReviewableMixin
-from reviews.workflow import States
-
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -43,6 +40,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
+    preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -51,7 +49,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
 
     @property
     def verified_publishable(self):
@@ -185,7 +183,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.reviews_state = States.ACCEPTED.value
+            self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
             self.node.add_log(
@@ -205,7 +203,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
 
             self._send_preprint_confirmation(auth)
 
@@ -233,6 +231,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     def set_identifier_values(self, doi, ark, save=False):
         self.set_identifier_value('doi', doi)
         self.set_identifier_value('ark', ark)
+        self.preprint_doi_created = timezone.now()
 
         if save:
             self.save()

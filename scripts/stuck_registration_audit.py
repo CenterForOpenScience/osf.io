@@ -109,7 +109,7 @@ def main():
 
         mails.send_mail(
             mail=mails.ARCHIVE_REGISTRATION_STUCK_DESK,
-            to_addr=settings.SUPPORT_EMAIL,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
             broken_registrations=broken_registrations,
             attachment_name=filename,
             attachment_content=output.getvalue(),

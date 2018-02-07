@@ -177,6 +177,33 @@ class HideIfWithdrawal(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfNotNodePointerLog(ConditionalField):
+    """
+    This field will not be shown if the log is not a pointer log for a node
+    """
+    def should_hide(self, instance):
+        pointer_param = instance.params.get('pointer', False)
+        if pointer_param:
+            node = AbstractNode.load(pointer_param['id'])
+            if node:
+                return node.type != 'osf.node'
+        return True
+
+
+class HideIfNotRegistrationPointerLog(ConditionalField):
+    """
+    This field will not be shown if the log is not a pointer log for a registration
+    """
+
+    def should_hide(self, instance):
+        pointer_param = instance.params.get('pointer', False)
+        if pointer_param:
+            node = AbstractNode.load(pointer_param['id'])
+            if node:
+                return node.type != 'osf.registration'
+        return True
+
+
 class HideIfProviderCommentsAnonymous(ConditionalField):
     """
     If the action's provider has anonymous comments and the user does not have `view_actions`
@@ -255,7 +282,7 @@ def _url_val(val, obj, serializer, request, **kwargs):
         return url
 
 
-class DateByVersion(ser.DateTimeField):
+class VersionedDateTimeField(ser.DateTimeField):
     """
     Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
     """
@@ -267,7 +294,7 @@ class DateByVersion(ser.DateTimeField):
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
-        return super(DateByVersion, self).to_representation(value)
+        return super(VersionedDateTimeField, self).to_representation(value)
 
 
 class IDField(ser.CharField):
@@ -860,6 +887,9 @@ class LinksField(ser.Field):
         # not just the field attribute.
         return obj
 
+    def extend_absolute_info_url(self, obj):
+        return extend_querystring_if_key_exists(obj.get_absolute_info_url(), self.context['request'], 'view_only')
+
     def extend_absolute_url(self, obj):
         return extend_querystring_if_key_exists(obj.get_absolute_url(), self.context['request'], 'view_only')
 
@@ -874,6 +904,13 @@ class LinksField(ser.Field):
                 ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
+
+        if 'info' in ret:
+            if hasattr(obj, 'get_absolute_info_url'):
+                ret['info'] = self.extend_absolute_info_url(obj)
+            else:
+                ret['info'] = extend_querystring_if_key_exists(ret['info'], self.context['request'], 'view_only')
+
         return ret
 
 
@@ -977,6 +1014,12 @@ class WaterbutlerLink(Link):
             raise SkipField
         if self.must_be_file is True and obj.path.endswith('/'):
             raise SkipField
+
+        if 'view_only' not in self.kwargs:
+            view_only = request.query_params.get('view_only', False)
+            if view_only:
+                self.kwargs['view_only'] = view_only
+
         url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField

@@ -36,9 +36,11 @@ class FileMixin(object):
 
     def get_file(self, check_permissions=True):
         try:
-            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request)
-        except (NotFound, Gone):
+            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request, display_name='file')
+        except NotFound:
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
+            if obj.is_deleted:
+                raise Gone(detail='The requested file is no longer available.')
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
@@ -326,9 +328,14 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_name = 'file-detail'
 
     def get_serializer_class(self):
-        if isinstance(self.get_node(), QuickFilesNode):
-            return QuickFilesDetailSerializer
-        return FileDetailSerializer
+        try:
+            node = self.get_node()
+        except (NotFound, Gone):
+            return FileDetailSerializer
+        else:
+            if isinstance(node, QuickFilesNode):
+                return QuickFilesDetailSerializer
+            return FileDetailSerializer
 
     def get_node(self):
         return self.get_file().node

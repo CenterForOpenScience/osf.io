@@ -73,7 +73,7 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
+def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, celery=True,
             username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
@@ -118,7 +118,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
     logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
-        if settings.USE_CELERY:
+        if settings.USE_CELERY and celery:
             logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
@@ -149,6 +149,17 @@ EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
     'external_confirm_create',
     subject='Open Science Framework Account Verification'
 )
+
+FORK_COMPLETED = Mail(
+    'fork_completed',
+    subject='Your fork has completed'
+)
+
+FORK_FAILED = Mail(
+    'fork_failed',
+    subject='Your fork has failed'
+)
+
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
     'external_confirm_link',
     subject='Open Science Framework Account Verification'
@@ -370,6 +381,11 @@ PREREG_CHALLENGE_REJECTED = Mail(
 PREREG_CHALLENGE_ACCEPTED = Mail(
     'prereg_challenge_accepted',
     subject='Your research plan has been registered and accepted for the Preregistration Challenge'
+)
+
+PREREG_CSV = Mail(
+    'prereg_csv',
+    subject='[auto] Updated Prereg CSV'
 )
 
 EMPTY = Mail('empty', subject='${subject}')

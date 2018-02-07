@@ -144,7 +144,7 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=['read', 'write', 'admin'],
             save=True)
-        res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
+        res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
     def test_sees_correct_title_home_page(self):
@@ -808,14 +808,14 @@ class TestExplorePublicActivity(OsfTestCase):
 
         # New and Noteworthy
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()), res)
+        assert_in(str(self.project.created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
 
         # Popular Projects and Registrations
         assert_in(str(self.popular_project.title), res)
-        assert_in(str(self.popular_project.date_created.date()), res)
+        assert_in(str(self.popular_project.created.date()), res)
         assert_in(str(self.popular_registration.title), res)
         assert_in(str(self.popular_registration.registered_date.date()), res)
 

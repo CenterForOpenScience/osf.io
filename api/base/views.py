@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
@@ -145,7 +145,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         else:
             embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
-        fields_check = self.serializer_class._declared_fields.copy()
+        fields_check = self.get_serializer_class()._declared_fields.copy()
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
@@ -589,7 +589,7 @@ def root(request, format=None, **kwargs):
     ###Attribute Validation
 
     Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
-    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
+    entity.  If you attempt to set an attribute that does not permit updates (such as a `created` timestamp), the
     API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
     succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
     failed without the attribute update, the API will still report a failure.
@@ -739,7 +739,9 @@ def root(request, format=None, **kwargs):
         dropbox      Dropbox
         figshare     figshare
         github       GitHub
+        gitlab       GitLab
         googledrive  Google Drive
+        onedrive     Microsoft OneDrive
         osfstorage   OSF Storage
         s3           Amazon S3
 
@@ -806,7 +808,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -835,7 +837,7 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -846,7 +848,7 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
         return sorted([
             node_link for node_link in query
             if node_link.child.can_view(auth) and not node_link.child.is_retracted
-        ], key=lambda node_link: node_link.child.date_modified, reverse=True)
+        ], key=lambda node_link: node_link.child.modified, reverse=True)
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -866,7 +868,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_category = None
     view_name = None
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     # TODO: This class no longer exists
     # model_class = Pointer
@@ -874,7 +876,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')
+        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
 
 class WaterButlerMixin(object):

@@ -141,6 +141,21 @@ services:
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
       - mfr_requirements_local_bin_vol:/usr/local/bin
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  unoconv:
+    image: centerforopenscience/unoconv
+    command: 
+      - /bin/bash
+      - -c
+      - /opt/libreoffice4.4/program/python -u /usr/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
+        chmod -R 777 /tmp/mfrlocalcache
+    restart: unless-stopped
+    ports:
+      - 2002:2002
+    volumes:
+      - wb_tmp_vol:/tmp
     stdin_open: true
 
   ###############
@@ -162,7 +177,7 @@ services:
       - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command: invoke server
     restart: unless-stopped
     ports:
@@ -193,6 +208,16 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
+  # wb_flower:
+  #   image: quay.io/centerforopenscience/waterbutler:develop
+  #   # Install flower here, instead of in WB repo, due to tornado version conflict
+  #   command: [/bin/bash, -c, "pip install flower && celery flower -A waterbutler.tasks.app.app --port=5556 --broker=amqp://guest:guest@192.168.168.167:5672//"]
+  #   depends_on:
+  #     - rabbitmq
+  #   # Use non-default port to avoid conflict with OSF flower
+  #   ports:
+  #     - 5556:5556
+
   ##################################
   # Central Authentication Service #
   ##################################
@@ -212,13 +237,13 @@ services:
   #############
 
   preprints:
-    image: quay.io/centerforopenscience/ember-preprints:develop-development-local
+    image: quay.io/centerforopenscience/osf-preprints:develop-local
     command:
       - /bin/bash
       - -c 
-      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+      - yarn --frozen-lockfile &&
        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
-       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953
+       yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
     restart: unless-stopped
     depends_on:
       - api
@@ -226,11 +251,11 @@ services:
     environment:
       - BACKEND=local
     expose:
-      - 4200
-      - 41953
+      - 4201
+      - 41954
     ports:
-      - 4200:4200
-      - 41953:41953
+      - 4201:4201
+      - 41954:41954
     volumes:
       - preprints_dist_vol:/code/dist
     stdin_open: true
@@ -240,13 +265,13 @@ services:
   ##############
 
   registries:
-    image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
+    image: quay.io/centerforopenscience/osf-registries:develop-local
     command: 
       - /bin/bash
       - -c
-      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+      - yarn --frozen-lockfile &&
        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
-       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4300
+       yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
       - api
@@ -254,24 +279,26 @@ services:
     environment:
       - BACKEND=local
     expose:
-      - 4300
+      - 4202
+      - 41955
     ports:
-      - 4300:4300
+      - 4202:4202
+      - 41955:41955
     volumes:
       - registries_dist_vol:/code/dist
     stdin_open: true
 
-  ##############
+  ###########
   # Reviews #
-  ##############
+  ###########
 
   reviews:
-    image: quay.io/centerforopenscience/osf-reviews:develop
+    image: quay.io/centerforopenscience/osf-reviews:develop-local
     command:
       - /bin/bash
       - -c 
-      - yarn --pure-lockfile --no-progress --no-emoji &&
-        ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4400
+      - yarn --frozen-lockfile &&
+        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
     restart: unless-stopped
     depends_on:
       - api
@@ -279,11 +306,11 @@ services:
     environment:
       - BACKEND=local
     expose:
-      - 4400
-      - 41954
+      - 4203
+      - 41956
     ports:
-      - 4400:4400
-      - 41954:41954
+      - 4203:4203
+      - 41956:41956
     volumes:
       - reviews_dist_vol:/code/dist
     stdin_open: true
@@ -343,9 +370,6 @@ services:
       - web
     env_file:
       - .docker-compose.sharejs.env
-    volumes:
-      - ./addons/wiki/package.json:/code/package.json
-      - ./addons/wiki/shareServer.js:/code/shareServer.js
     stdin_open: true
 
 #  beat:

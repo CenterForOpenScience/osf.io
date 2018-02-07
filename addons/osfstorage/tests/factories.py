@@ -25,7 +25,7 @@ class FileVersionFactory(DjangoModelFactory):
         model = models.FileVersion
 
     creator = SubFactory(AuthUserFactory)
-    date_modified = timezone.now()
+    modified = timezone.now()
     location = generic_location
     identifier = 0
 

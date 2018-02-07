@@ -56,9 +56,9 @@ def prepare_contributors(admins):
 
 def upload_attachment(user, node, attachment):
     attachment.seek(0)
-    name = '/' + (attachment.filename or settings.MISSING_FILE_NAME)
+    name = (attachment.filename or settings.MISSING_FILE_NAME)
     content = attachment.read()
-    upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user, _internal=True)
+    upload_url = util.waterbutler_api_url_for(node._id, 'osfstorage', name=name, cookie=user.get_or_create_cookie(), _internal=True)
 
     requests.put(
         upload_url,

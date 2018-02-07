@@ -3,6 +3,7 @@ from django.conf.urls import url
 from api.registrations import views
 from website import settings
 
+app_name = 'osf'
 
 urlpatterns = [
     # Examples:

@@ -1,12 +1,14 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Exists
+from django.utils import timezone
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -34,7 +36,7 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
-from api.base.utils import default_node_list_queryset, default_node_permission_queryset
+from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
@@ -103,6 +105,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
+from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 
@@ -172,7 +175,7 @@ class DraftMixin(object):
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    Paginated list of nodes ordered by their `modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.  Registrations and withdrawn
     registrations cannot be accessed through this endpoint (see registration endpoints instead).
 
@@ -272,12 +275,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        user = self.request.user
-        return default_node_list_queryset() & default_node_permission_queryset(user)
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -297,7 +299,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            return self.get_queryset_from_request().distinct('id', 'date_modified')
+            return self.get_queryset_from_request()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -902,7 +904,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
-    ordering = ('-datetime_updated',)
+    ordering = ('-modified',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -910,7 +912,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         return DraftRegistration.objects.filter(
             Q(registered_node=None) |
             Q(registered_node__is_deleted=True),
-            branched_from=node
+            branched_from=node,
+            deleted__isnull=True
         )
 
     # overrides ListBulkCreateJSONAPIView
@@ -1016,7 +1019,8 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         return self.get_draft()
 
     def perform_destroy(self, draft):
-        DraftRegistration.remove_one(draft)
+        draft.deleted = timezone.now()
+        draft.save(update_fields=['deleted'])
 
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
@@ -1030,7 +1034,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     <!--- Copied from RegistrationList -->
 
     A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403. Each resource contains the full representation
     of the registration, meaning additional requests to an individual registrations's detail view are not necessary.
@@ -1127,7 +1131,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
@@ -1237,10 +1241,10 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     view_category = 'nodes'
     view_name = 'node-children'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
-        return default_node_list_queryset()
+        return default_node_list_queryset(model_cls=Node)
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
@@ -1248,7 +1252,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         auth = get_user_auth(self.request)
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-date_modified')
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
@@ -1522,7 +1526,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
     change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
-    for which you are a contributor.  Private components that you do not have access to will not be forked.
+    for which you are a contributor.  Private components that you do not have access to will not be forked. You will receive an email
+    when your fork completes.
 
     ##Node Fork Attributes
 
@@ -1536,7 +1541,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         description                 string             description of the node
         category                    string             node category, must be one of the allowed values
         date_created                iso8601 timestamp  timestamp that the node was created
-        date_modified               iso8601 timestamp  timestamp when the node was last updated
+        modified               iso8601 timestamp  timestamp when the node was last updated
         tags                        array of strings   list of tags that describe the node
         registration                boolean            has this project been registered? (always False)
         collection                  boolean            is this node a collection (always False)
@@ -1580,8 +1585,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `date_created`,
-    `date_modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `created`,
+    `modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
     substring matching.  Others are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.
     Note that quoting `true` or `false` in the query will cause the match to fail regardless. `tags` is an array of simple strings.
 
@@ -1605,7 +1610,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.order_by('-forked_date')
+        all_forks = self.get_node().forks.exclude(type='osf.registration').order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -1613,7 +1618,15 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        serializer.save(node=self.get_node())
+        user = get_user_auth(self.request).user
+        node = self.get_node()
+        try:
+            fork = serializer.save(node=node)
+        except Exception as exc:
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html', can_change_preferences=False)
+            raise exc
+        else:
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -1706,8 +1719,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                                              for Google Drive, "box" for Box.com.
         last_touched      iso8601 timestamp  last time the metadata for the file was retrieved. only
                                              applies to non-OSF storage providers.
-        date_modified     iso8601 timestamp  timestamp of when this file was last updated*
-        date_created      iso8601 timestamp  timestamp of when this file was created*
+        modified     iso8601 timestamp  timestamp of when this file was last updated*
+        created      iso8601 timestamp  timestamp of when this file was created*
         extra             object             may contain additional data beyond what's described here,
                                              depending on the provider
           hashes          object
@@ -1715,7 +1728,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             sha256        string             SHA-256 hash of file, null for folders
           downloads       integer            number of times the file has been downloaded (for osfstorage files)
 
-    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
+    * A note on timestamps: for files stored in osfstorage, `created` refers to the time the file was
     first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
     Other providers may or may not provide this information, but if they do it will correspond to the provider's
     semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
@@ -1932,7 +1945,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        return files_list.children.prefetch_related('node__guids', 'versions', 'tags', 'guids')
+        sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
+        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -2520,7 +2534,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
-    Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
+    Paginated list of comments ordered by their `created.` Each resource contains the full representation of the
     comment, meaning additional requests to an individual comment's detail view are not necessary.
 
     Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
@@ -2538,9 +2552,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         name           type               description
         =================================================================================
         content        string             content of the comment
-        date_created   iso8601 timestamp  timestamp that the comment was created
-        date_modified  iso8601 timestamp  timestamp when the comment was last updated
-        modified       boolean            has this comment been edited?
+        created        iso8601 timestamp  timestamp that the comment was created
+        modified       iso8601 timestamp  timestamp when the comment was last updated
+        edited         boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
         is_abuse       boolean            has this comment been reported by the current user?
         has_children   boolean            does this comment have replies?
@@ -2592,9 +2606,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
 
-    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
+    + `filter[created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
 
-    Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
+    Comments can also be filtered based on their `created` and `modified` fields. Possible comparison
     operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
     (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
 
@@ -2620,7 +2634,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     view_category = 'nodes'
     view_name = 'node-comments'
 
-    ordering = ('-date_created', )  # default ordering
+    ordering = ('-created', )  # default ordering
 
     def get_default_queryset(self):
         return Comment.objects.filter(node=self.get_node(), root_target__isnull=False)
@@ -2966,8 +2980,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        created   iso8601 timestamp  timestamp that the node was created
+        modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this is a registration?
         collection     boolean            is this node a collection of other nodes?
@@ -3086,7 +3100,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
@@ -3101,8 +3115,8 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             bode category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        created                         iso8601 timestamp  timestamp that the node was created
+        modified                        iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
         current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
@@ -3175,7 +3189,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         =================================================================================
         name            string                  name of the view only link
         anonymous       boolean                 whether the view only link has anonymized contributors
-        date_created    iso8601 timestamp       timestamp when the view only link was created
+        created         iso8601 timestamp       timestamp when the view only link was created
         key             string                  the view only link key
 
 
@@ -3208,7 +3222,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    View only links may be filtered by their `name`, `anonymous`, and `date_created` attributes.
+    View only links may be filtered by their `name`, `anonymous`, and `created` attributes.
 
     #This Request/Response
     """
@@ -3226,7 +3240,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
 
     def get_default_queryset(self):
         return self.get_node().private_links.filter(is_deleted=False)
@@ -3250,7 +3264,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         =================================================================================
         name            string                  name of the view only link
         anonymous       boolean                 whether the view only link has anonymized contributors
-        date_created    iso8601 timestamp       timestamp when the view only link was created
+        created         iso8601 timestamp       timestamp when the view only link was created
         key             string                  the view only key
 
 
@@ -3384,7 +3398,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
     ##Note
     **This API endpoint is under active development, and is subject to change in the future.**
 
-    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    Paginated list of preprints ordered by their `created`.  Each resource contains a representation of the
     preprint.
 
     ##Preprint Attributes
@@ -3393,8 +3407,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
 
         name                            type                                description
         ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
+        created                         iso8601 timestamp                   timestamp that the preprint was created
+        modified                        iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
         is_published                    boolean                             whether or not this preprint is published
@@ -3443,7 +3457,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
     view_category = 'nodes'
     view_name = 'node-preprints'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
@@ -3454,4 +3468,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return self.preprints_queryset(node.preprints.all(), auth_user)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_modified')
+        return self.get_queryset_from_request()

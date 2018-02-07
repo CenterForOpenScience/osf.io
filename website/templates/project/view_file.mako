@@ -15,7 +15,7 @@
   <div class="col-sm-5">
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
-      ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+      <span id="fileTitleEditable">${file_name | h}</span>
       <a id='versionLink' class='scripted'>(Version: ${ version_id | h})</a>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
@@ -218,7 +218,7 @@
             userId: ${ user['id'] | sjson, n },
             userName: ${ user['fullname'] | sjson, n },
             userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
-            userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
+            userProfileImage: ${ urls['profile_image'].replace('&amp;', '&') | sjson, n }
         },
         node: {
           urls: {

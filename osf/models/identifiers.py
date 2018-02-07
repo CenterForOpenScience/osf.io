@@ -9,7 +9,7 @@ class Identifier(ObjectIDMixin, BaseModel):
 
     # object to which the identifier points
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     referent = GenericForeignKey()
     # category: e.g. 'ark', 'doi'
     category = models.CharField(max_length=10)  # longest was 3, 8/19/2016

@@ -638,6 +638,16 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
+    def test_search_profile(self):
+        orcid = '123456'
+        user = factories.UserFactory()
+        user.social['orcid'] = orcid
+        user.save()
+        contribs = search.search_contributor(orcid)
+        assert_equal(len(contribs['users']), 1)
+        assert_equal(len(contribs['users'][0]['social']), 1)
+        assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
+
 
 class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
@@ -824,29 +834,29 @@ class TestSearchMigration(OsfTestCase):
             is_public=True
         )
 
-    def test_first_migration_no_delete(self):
-        migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_no_remove(self):
+        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_no_delete(self):
+    def test_multiple_migrations_no_remove(self):
         for n in xrange(1, 21):
-            migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_first_migration_with_delete(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_with_remove(self):
+        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_with_delete(self):
+    def test_multiple_migrations_with_remove(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))

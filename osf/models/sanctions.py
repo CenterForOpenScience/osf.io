@@ -388,7 +388,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -570,7 +570,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
@@ -706,7 +706,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.registrations.first()
@@ -861,13 +861,13 @@ class DraftRegistrationApproval(Sanction):
             )
 
     def approve(self, user):
-        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if not user.has_perm('osf.administer_prereg'):
             raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if not user.has_perm('osf.administer_prereg'):
             raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.REJECTED
         self._on_reject(user)
@@ -923,8 +923,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True)
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.embargoed_registration

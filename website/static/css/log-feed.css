@@ -15,6 +15,9 @@
 
 .db-log-avatar {
     display: inline-block;
+}
+
+.db-log-avatar-project-overview {
     position: absolute;
 }
 

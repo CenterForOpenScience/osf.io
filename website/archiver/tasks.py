@@ -175,7 +175,7 @@ def make_waterbutler_payload(dst_id, rename):
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_addon')
-def archive_addon(addon_short_name, job_pk, stat_result):
+def archive_addon(addon_short_name, job_pk):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
 
@@ -238,13 +238,12 @@ def archive_node(stat_results, job_pk):
             job.status = ARCHIVER_SUCCESS
             job.save()
         for result in stat_result.targets:
-            if not result.num_files:
-                job.update_target(result.target_name, ARCHIVER_SUCCESS)
+            if not result['num_files']:
+                job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
                 archive_addon.delay(
-                    addon_short_name=result.target_name,
-                    job_pk=job_pk,
-                    stat_result=result,
+                    addon_short_name=result['target_name'],
+                    job_pk=job_pk
                 )
         project_signals.archive_callback.send(dst)
 
@@ -264,13 +263,13 @@ def archive(job_pk):
     logger.info('Received archive task for Node: {0} into Node: {1}'.format(src._id, dst._id))
     return celery.chain(
         [
-            celery.group(
+            celery.group([
                 stat_addon.si(
                     addon_short_name=target.name,
                     job_pk=job_pk,
                 )
                 for target in job.target_addons.all()
-            ),
+            ]),
             archive_node.s(
                 job_pk=job_pk
             )

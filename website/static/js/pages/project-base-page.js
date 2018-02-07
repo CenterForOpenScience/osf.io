@@ -8,6 +8,7 @@ var AccountClaimer = require('js/accountClaimer');
 // pages
 require('js/project');
 require('js/licensePicker');
+require('css/pages/project-page.css');
 
 var node = window.contextVars.node;
 var OFFSET = 49;

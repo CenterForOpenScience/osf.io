@@ -104,9 +104,14 @@ var KeenTracker = (function() {
         }
         client.recordEvent(collection, eventData, function (err) {
             if (err) {
-                Raven.captureMessage('Error sending Keen data to ' + collection + ': <' + err + '>', {
-                    extra: {payload: eventData}
-                });
+                // If google analytics is inaccessible keen will throw errors
+                var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
+                var uselessError = 'An error occurred!' === err;
+                if(!adBlockError || !uselessError) {
+                    Raven.captureMessage('Error sending Keen data to ' + collection + ': <' + err + '>', {
+                        extra: {payload: eventData}
+                    });
+                }
             }
         });
     }
@@ -117,9 +122,14 @@ var KeenTracker = (function() {
         }
         client.recordEvents(events, function (err, res) {
             if (err) {
-                Raven.captureMessage('Error sending Keen data for multiple events: <' + err + '>', {
-                    extra: {payload: events}
-                });
+                // If google analytics is inaccessible keen will throw errors
+                var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
+                var uselessError = 'An error occurred!' === err;
+                if(!adBlockError || !uselessError) {
+                    Raven.captureMessage('Error sending Keen data for multiple events: <' + err + '>', {
+                        extra: {payload: events}
+                    });
+                }
             } else {
                 for (var collection in res) {
                     var results = res[collection];

@@ -37,10 +37,12 @@ def main(dry_run=True):
             .format(registration_approval._id, pending_registration._id)
         )
         if not dry_run:
-            if pending_registration.is_deleted or pending_registration.archiving:
+            if pending_registration.is_deleted:
                 # Clean up any registration failures during archiving
                 registration_approval.forcibly_reject()
                 registration_approval.save()
+                continue
+            if pending_registration.archiving:
                 continue
 
             with transaction.atomic():

@@ -207,10 +207,10 @@
                        click: $root.collapsed() ? toggleExpand : null">
             <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
                 <span class="fa fa-bars sortable-bars"></span>
-                <img class="m-l-xs" data-bind="attr: {src: contributor.gravatar_url}" />
+                <img class="m-l-xs" data-bind="attr: {src: contributor.profile_image_url}" />
             <!-- /ko -->
             <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
-                <img data-bind="attr: {src: contributor.gravatar_url}" />
+                <img data-bind="attr: {src: contributor.profile_image_url}" />
             <!-- /ko -->
             <span data-bind="attr: {class: contributor.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">
@@ -259,7 +259,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input
                     type="checkbox" class="biblio visible-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
+                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
             </div>
         </td>
@@ -269,6 +269,11 @@
                         <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
                            data-bind="click: remove"
                            data-toggle="modal">Remove</button>
+                <!-- /ko -->
+                <!-- ko if: (canAddAdminContrib) -->
+                        <button class="btn btn-success btn-sm m-l-md"
+                           data-bind="click: addParentAdmin"
+                        ><i class="fa fa-plus"></i> Add</button>
                 <!-- /ko -->
             </div>
         </td>

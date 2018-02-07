@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser
 )
@@ -20,7 +20,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
@@ -44,12 +44,12 @@ class UserSerializer(JSONAPISerializer):
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
-    date_registered = HideIfDisabled(DateByVersion(read_only=True))
+    date_registered = HideIfDisabled(VersionedDateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
@@ -74,10 +74,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    registrations = DevOnly(HideIfDisabled(RelationshipField(
+    registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
-    )))
+    ))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
@@ -86,8 +86,8 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
-    actions = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-action-list',
+    preprints = HideIfDisabled(RelationshipField(
+        related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 

@@ -7,8 +7,9 @@ python:
 
 sudo: false
 
-addons:
-  chrome: stable
+# TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+# addons:
+#   chrome: stable
 
 cache:
   yarn: true
@@ -23,17 +24,19 @@ env:
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - LIBXML2_DEB="libxml2-dbg_2.9.1+dfsg1-3ubuntu4.9_amd64.deb"
     - POSTGRES_DEB="postgresql-9.6_9.6.3-1.pgdg12.4+1_amd64.deb"
-    - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
+    - ELASTICSEARCH_ARCHIVE="elasticsearch-2.4.5.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
+    # Workaround for travis bug: see https://github.com/travis-ci/travis-ci/issues/7940#issuecomment-311411559
+    - BOTO_CONFIG=/dev/null
   matrix:
-    - TEST_BUILD="osf"
+    - TEST_BUILD="addons"
     - TEST_BUILD="else"
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
-    - TEST_BUILD="api3"
+    - TEST_BUILD="api3_and_osf"
     # - TEST_BUILD="varnish"
 
 before_install:
@@ -117,10 +120,6 @@ before_install:
     #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
     #   fi
 install:
-    - nvm install 8.6.0
-    - nvm use 8.6.0
-    - curl -o- -L https://yarnpkg.com/install.sh | bash
-    - export PATH=$HOME/.yarn/bin:$PATH
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
@@ -130,6 +129,12 @@ install:
     - travis_retry pip install invoke==0.13.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
+
+    - nvm install 8.6.0
+    - nvm use 8.6.0
+    - curl -o- -L https://yarnpkg.com/install.sh | bash
+    - export PATH=$HOME/.yarn/bin:$PATH
+
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)

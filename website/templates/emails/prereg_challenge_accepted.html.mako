@@ -36,3 +36,6 @@ Thank you for entering the Preregistration Challenge. Feel free to submit anothe
 Sincerely,
 <br />
 The team at the Center for Open Science
+
+<p>Center for Open Science<br>210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903</p>
+<a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>

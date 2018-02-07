@@ -17,7 +17,7 @@ from website.project.signals import comment_added, mention_added, contributor_ad
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf.models import Comment, NodeLog, Guid, BaseFileNode
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from .factories import (
     CommentFactory,
     ProjectFactory,
@@ -391,7 +391,7 @@ class FileCommentMoveRenameTestMixin(object):
 
     @pytest.fixture()
     def project(self, user):
-        p =  ProjectFactory(creator=user)
+        p = ProjectFactory(creator=user)
         p_settings = p.get_or_add_addon(self.provider, Auth(user))
         p_settings.folder = '/Folder1'
         p_settings.save()
@@ -824,7 +824,7 @@ class FileCommentMoveRenameTestMixin(object):
 
     @pytest.mark.parametrize(
         ['destination_provider', 'destination_path'],
-        [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'),]
+        [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'), ]
     )
     def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:

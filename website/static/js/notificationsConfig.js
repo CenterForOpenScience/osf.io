@@ -59,7 +59,7 @@ var ViewModel = function(list) {
         request.fail(function (xhr) {
             if (xhr.responseJSON.error_type !== 'not_subscribed') {
                 var message = 'Could not update email preferences at this time. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+                    'please report it to ' + $osf.osfSupportLink() + '.';
                 self.changeMessage(message, 'text-danger', 5000);
             }
         });

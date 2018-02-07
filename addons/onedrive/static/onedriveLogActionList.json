@@ -1,0 +1,10 @@
+{
+  "onedrive_file_added" : "${user} added file ${path} to Microsoft OneDrive in ${node}",
+  "onedrive_file_removed" : "${user} removed ${path_type} ${path} from Microsoft OneDrive in ${node}",
+  "onedrive_file_updated" : "${user} updated file ${path} in Microsoft OneDrive in ${node}",
+  "onedrive_folder_created" : "${user} created folder ${path} in Microsoft OneDrive in ${node}",
+  "onedrive_folder_selected" : "${user} linked Microsoft OneDrive folder ${onedrive_folder} to ${node}",
+  "onedrive_node_authorized" : "${user} authorized the Microsoft OneDrive addon for ${node}",
+  "onedrive_node_deauthorized" : "${user} deauthorized the Microsoft OneDrive addon for ${node}",
+  "onedrive_node_deauthorized_no_user" : "Microsoft OneDrive addon for ${node} deauthorized"
+}

@@ -23,6 +23,8 @@
     <link href="{% static 'vendor/bower_components/admin-lte/dist/css/skins/skin-blue.min.css' %}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
 
+    <link href="{% static 'vendor/bower_components/jquery-ui/themes/redmond/jquery-ui.css' %}" rel="stylesheet" type="text/css" />
+
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -173,6 +175,9 @@
           {% endif %}
           {% if perms.osf.view_subject%}
             <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
+          {% endif %}
+          {% if perms.osf.change_maintenancestate %}
+            <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>

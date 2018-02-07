@@ -35,9 +35,7 @@ $(document).ready(function(){
             return [
                 m(DonateBanner.background, m('.container',
                     [
-                        m('.row', [
-                            m(columnSizeClass,  m.component(DonateBanner.Banner, {}))
-                        ])
+                        m(columnSizeClass, m.component(DonateBanner.Banner, {}))
                     ]
                 )),
                 m('.prereg-banner', m('.container',

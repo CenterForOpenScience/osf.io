@@ -66,10 +66,16 @@
 
                 <div class="modal-footer">
 
+                    <div data-bind="visible: authorizing" class="ball-pulse ball-scale-blue text-center">
+                      <div></div>
+                      <div></div>
+                      <div></div>
+                    </div>
+
                     <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
 
                     <!-- Save Button -->
-                    <button data-bind="click: sendAuth" class="btn btn-success">Save</button>
+                    <button data-bind="click: sendAuth, css: {'disabled': authorizing}" class="btn btn-success">Save</button>
 
                 </div><!-- end modal-footer -->
 

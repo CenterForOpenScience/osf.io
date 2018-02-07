@@ -45,13 +45,13 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
     # Node#_initiate_embargo tests
     def test__initiate_embargo_saves_embargo(self):
-        initial_count = Embargo.find().count()
+        initial_count = Embargo.objects.all().count()
         self.registration._initiate_embargo(
             self.user,
             self.valid_embargo_end_date,
             for_existing_registration=True
         )
-        assert_equal(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.objects.all().count(), initial_count + 1)
 
     def test_state_can_be_set_to_complete(self):
         embargo = EmbargoFactory()
@@ -103,13 +103,13 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_not_in(child_non_admin._id, embargo.approval_state)
 
     def test__initiate_embargo_with_save_does_save_embargo(self):
-        initial_count = Embargo.find().count()
+        initial_count = Embargo.objects.all().count()
         self.registration._initiate_embargo(
             self.user,
             self.valid_embargo_end_date,
             for_existing_registration=True,
         )
-        assert_equal(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.objects.all().count(), initial_count + 1)
 
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
@@ -831,7 +831,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().order_by('-registered_date').first()
+        registration = Registration.objects.all().order_by('-registered_date').first()
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
@@ -919,7 +919,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().order_by('-registered_date').first()
+        registration = Registration.objects.order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)

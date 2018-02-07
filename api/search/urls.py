@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from api.search import views
 
+app_name = 'osf'
+
 urlpatterns = [
     url(r'^$', views.Search.as_view(), name=views.Search.view_name),
     url(r'^components/$', views.SearchComponents.as_view(), name=views.SearchComponents.view_name),

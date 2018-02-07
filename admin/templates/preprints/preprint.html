@@ -30,8 +30,7 @@
                         </div>
                     {% else %}
                         <span class="col-md-2">
-                        <form method="post">
-                              action="{% url 'nodes:restore' guid=node.id %}">
+                        <form method="post" action="{% url 'nodes:restore' guid=serialized_preprint.node.id %}">
                             {% csrf_token %}
                             <input class="btn btn-success" type="submit"
                                    value="Restore Preprint Node" />

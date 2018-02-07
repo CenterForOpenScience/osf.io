@@ -30,13 +30,14 @@ def send_users_email(send_type):
         notification_ids = [message['_id'] for message in info]
         sorted_messages = group_by_node(info)
         if sorted_messages:
-            mails.send_mail(
-                to_addr=user.username,
-                mimetype='html',
-                mail=mails.DIGEST,
-                name=user.fullname,
-                message=sorted_messages,
-            )
+            if not user.is_disabled:
+                mails.send_mail(
+                    to_addr=user.username,
+                    mimetype='html',
+                    mail=mails.DIGEST,
+                    name=user.fullname,
+                    message=sorted_messages,
+                )
             remove_notifications(email_notification_ids=notification_ids)
 
 

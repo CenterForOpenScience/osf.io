@@ -98,10 +98,12 @@ class CoreScopes(object):
 
     SEARCH = 'search_read'
 
-    ACTIONS_READ = 'review_logs_read'
-    ACTIONS_WRITE = 'review_logs_write'
+    ACTIONS_READ = 'actions_read'
+    ACTIONS_WRITE = 'actions_write'
 
     PROVIDERS_WRITE = 'providers_write'
+
+    WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
 
@@ -204,7 +206,7 @@ class ComposedScopes(object):
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
-                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, CoreScopes.WAFFLE_READ, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
@@ -221,13 +223,13 @@ public_scopes = {
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
                                 description='Read your profile data',
                                 is_public=True),
+    'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
+                                        description='Read your primary email address.',
+                                        is_public=True),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
-                                          description='Read your primary email address.',
-                                          is_public=True),
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),

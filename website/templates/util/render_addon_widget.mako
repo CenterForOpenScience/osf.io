@@ -139,7 +139,7 @@
                 <div class='addon-config-error p-sm'>
                     ${addon_data['full_name']} add-on is not configured properly.
                     % if user['is_contributor']:
-                        Configure this add-on on the <a href="${node['url']}settings/">settings</a> page.
+                        Configure this add-on on the <a href="${node['url']}addons/">add-ons</a> page.
                     % endif
                 </div>
 

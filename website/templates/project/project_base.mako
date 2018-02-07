@@ -1,16 +1,106 @@
 <%inherit file="../base.mako"/>
 
-<%def name="og_description()">
-
+<%def name="description_meta()">
     %if node['description']:
-        ${sanitize.strip_html(node['description']) + ' | '}
+        ${sanitize.strip_html(node['description']) + ' '}
     %endif
     Hosted on the Open Science Framework
-
-
 </%def>
 
-## To change the postion of alert on project pages, override alert()
+<%def name="title_meta()">
+    %if node['title']:
+        ${node['title']}
+    %endif
+</%def>
+
+<%def name="datemodified_meta()">
+    %if node['date_modified']:
+        ${node['date_modified'].split('T')[0]}
+    %endif
+</%def>
+
+<%def name="datecreated_meta()">
+    %if node['date_created']:
+        ${node['date_created'].split('T')[0]}
+    %endif
+</%def>
+
+<%def name="identifier_meta()">
+    <%
+        identifiers = {}
+        if node['identifiers']:
+            identifiers = {
+              'doi' : node['identifiers']['doi'],
+              'ark' : node['identifiers']['ark']
+            }
+        return identifiers
+    %>
+</%def>
+
+<%def name="license_meta()">
+    %if node['license']:
+        ${sanitize.strip_html(node['license']['name'])}
+    %endif
+</%def>
+
+<%def name="keywords_meta()">
+    %if node['tags']:
+        <%
+            return [tag for tag in node['tags']] + [node['category']]
+        %>
+    %endif
+</%def>
+
+<%def name="authors_meta()">
+    %if node['contributors'] and not node['anonymous']:
+        <%
+            return [contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="institutions_meta()">
+    %if node['institutions']:
+        <%
+            return [ins['name'] for ins in node['institutions'] if isinstance(ins, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="relations_meta()">
+    <%
+        relations = []
+        relations.extend([
+            node['registered_from_url'],
+            node['forked_from_display_absolute_url'],
+            node['preprint_url'] or '',
+            parent_node['absolute_url'] if parent_node['exists'] else ''
+        ])
+        return relations
+    %>
+</%def>
+
+<%def name="category_meta()">
+    %if node['category']:
+        ${node['category']}
+    %endif
+</%def>
+
+<%def name="url_meta()">
+    %if node['absolute_url']:
+        ${node['absolute_url']}
+    %endif
+</%def>
+
+<%def name="image_meta()">
+    <%
+        from website import settings
+        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/sharing.png'
+    %>
+</%def>
+
+
+## To change the position of alert on project pages, override alert()
 <%def name="alert()"> </%def>
 
 <%def name="content()">
@@ -46,6 +136,7 @@
        parent_exists = parent_node['exists']
        parent_title = ''
        parent_registration_url = ''
+       parent_url = ''
        root_id = node['root_id']
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
@@ -53,6 +144,7 @@
        if parent_node['can_view'] or parent_node['is_contributor']:
            parent_title = parent_node['title']
            parent_registration_url = parent_node['registrations_url']
+           parent_url = parent_node['absolute_url']
     %>
 
     // Mako variables accessible globally
@@ -69,7 +161,7 @@
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},
             canEdit: ${ user['can_edit'] | sjson, n},
-            gravatarUrl: ${user_gravatar | sjson, n}
+            profileImageUrl: ${user_profile_image | sjson, n}
         },
         node: {
             ## TODO: Abstract me
@@ -90,9 +182,10 @@
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
+            parentUrl: ${ parent_url | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
-            childExists: ${ node['children'] | sjson, n},
+            childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n }

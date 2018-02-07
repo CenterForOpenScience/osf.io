@@ -32,12 +32,6 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
-CELERY_IMPORTS = [
-    'osf.management.commands.migratedata',
-    'osf.management.commands.migraterelations',
-    'osf.management.commands.verify',
-]
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -84,15 +78,16 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'waffle',
 
     # OSF
     'osf',
-    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -103,8 +98,10 @@ INSTALLED_APPS = (
     'addons.figshare',
     'addons.forward',
     'addons.github',
+    'addons.gitlab',
     'addons.googledrive',
     'addons.mendeley',
+    'addons.onedrive',
     'addons.owncloud',
     'addons.s3',
     'addons.twofactor',
@@ -155,7 +152,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -195,7 +192,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
@@ -209,7 +205,7 @@ MIDDLEWARE_CLASSES = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [
@@ -256,8 +252,8 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'mendeley', 'zotero', 'forward']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
@@ -270,3 +266,6 @@ SELECT_FOR_UPDATE_ENABLED = True
 
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

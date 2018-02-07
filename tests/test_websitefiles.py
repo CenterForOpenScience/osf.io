@@ -417,8 +417,8 @@ class TestFileNodeObj(FilesTestCase):
         round1 = build_tree(parent=branch, atleastone=True)
         round2 = build_tree(parent=parent, atleastone=True)
 
-        stay_deleted = [branch.to_storage()] + [child.to_storage() for child in round1]
-        get_restored = [parent.to_storage()] + [child.to_storage() for child in round2]
+        stay_deleted = [branch.to_storage(include_auto_now=False)] + [child.to_storage(include_auto_now=False) for child in round1]
+        get_restored = [parent.to_storage(include_auto_now=False)] + [child.to_storage(include_auto_now=False) for child in round2]
 
         branch.delete()
 
@@ -440,7 +440,7 @@ class TestFileNodeObj(FilesTestCase):
 
         for data in get_restored:
             assert_is(models.TrashedFileNode.load(data['_id']), None)
-            assert TestFileNode.load(data['_id']).to_storage() == data
+            assert TestFileNode.load(data['_id']).to_storage(include_auto_now=False) == data
 
     def test_metadata_url(self):
         pass

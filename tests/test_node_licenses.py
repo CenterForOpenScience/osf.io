@@ -85,12 +85,12 @@ class TestNodeLicenses(OsfTestCase):
         assert_equal(ensure_licenses(), (0, 16))
 
     def test_ensure_licenses_no_licenses(self):
-        before_count = NodeLicense.find().count()
-        NodeLicense.remove()
-        assert_false(NodeLicense.find().count())
+        before_count = NodeLicense.objects.all().count()
+        NodeLicense.objects.all().delete()
+        assert_false(NodeLicense.objects.all().count())
 
         ensure_licenses()
-        assert_equal(before_count, NodeLicense.find().count())
+        assert_equal(before_count, NodeLicense.objects.all().count())
 
     def test_ensure_licenses_some_missing(self):
         NodeLicense.objects.get(license_id='LGPL3').delete()

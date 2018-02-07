@@ -309,8 +309,8 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
         assert_true(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, 'Fake Key')
-        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
-        res = self.app.get(url, auth=self.user.auth).json
+
+        res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
 
         assert_true(res['complete'])
         assert_equal(res['list_id'], 'Fake Key')
@@ -321,8 +321,8 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         self.node_settings.save()
         assert_false(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, None)
-        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
-        res = self.app.get(url, auth=self.user.auth).json
+
+        res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
 
         assert_false(res['complete'])
         assert_is_none(res['list_id'])

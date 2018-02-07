@@ -14,7 +14,7 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory, RegistrationFactory
 )
 from addons.wiki.tests.factories import NodeWikiFactory
 
@@ -25,7 +25,7 @@ from addons.wiki.exceptions import InvalidVersionError
 from addons.wiki.models import NodeWikiPage, render_content
 from addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version, serialize_wiki_settings,
+    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget
 )
 from framework.auth import Auth
 from addons.wiki.utils import to_mongo_key
@@ -170,13 +170,13 @@ class TestWikiViews(OsfTestCase):
         # note: forward slashes not allowed in page_name
         page_name = fake.catch_phrase().replace('/', ' ')
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
@@ -190,13 +190,13 @@ class TestWikiViews(OsfTestCase):
         page_name = fake.catch_phrase().replace('/', ' ')
         page_content = fake.bs()
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
@@ -394,50 +394,45 @@ class TestWikiViews(OsfTestCase):
         assert_in('Home', page_name_elem.text)
 
     def test_wiki_widget_no_content(self):
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_is_none(res.json['wiki_content'])
+        res = serialize_wiki_widget(self.project)
+        assert_is_none(res['wiki_content'])
 
     def test_wiki_widget_short_content_no_cutoff(self):
         short_content = 'a' * 150
         self.project.update_node_wiki('home', short_content, Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in(short_content, res.json['wiki_content'])
-        assert_not_in('...', res.json['wiki_content'])
-        assert_false(res.json['more'])
+        res = serialize_wiki_widget(self.project)
+        assert_in(short_content, res['wiki_content'])
+        assert_not_in('...', res['wiki_content'])
+        assert_false(res['more'])
 
     def test_wiki_widget_long_content_cutoff(self):
         long_content = 'a' * 600
         self.project.update_node_wiki('home', long_content, Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_less(len(res.json['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res.json['wiki_content'])
-        assert_true(res.json['more'])
+        res = serialize_wiki_widget(self.project)
+        assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
+        assert_in('...', res['wiki_content'])
+        assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
         project = ProjectFactory(is_public=True, creator=self.user)
         short_content = 'a' * 150
         project.update_node_wiki('home', short_content, Auth(self.user))
         project.update_node_wiki('andanotherone', short_content, Auth(self.user))
-        url = project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['more'])
+        res = serialize_wiki_widget(project)
+        assert_true(res['more'])
 
     @mock.patch('addons.wiki.models.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_widget_rendered_before_update(self, mock_rendered_before_update):
         # New pages use js renderer
         mock_rendered_before_update.return_value = False
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_false(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_false(res['rendered_before_update'])
 
         # Old pages use a different version of js render
         mock_rendered_before_update.return_value = True
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_true(res['rendered_before_update'])
 
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
@@ -459,6 +454,15 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_not_in('data-osf-panel="Edit"', res.text)
+
+    def test_wiki_widget_not_show_in_registration_for_contributor(self):
+        registration = RegistrationFactory(project=self.project)
+        res = self.app.get(
+            registration.web_url_for('view_project'),
+            auth=self.user.auth
+        )
+        assert_equal(res.status_code, 200)
+        assert_not_in('Add important information, links, or images here to describe your project.', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -721,8 +725,10 @@ class TestWikiLinks(OsfTestCase):
         content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
         node = ProjectFactory()
         wiki = NodeWikiFactory(content=content, node=node)
-        expected = render_content(content, node)
-        assert_equal(expected, wiki.html(node))
+        assert_equal(
+            '<p><span></span>&lt;iframe src="<a href="http://httpbin.org/" rel="nofollow">http://httpbin.org/</a>"&gt;&lt;/iframe&gt;</p>',
+            wiki.html(node)
+        )
 
 
 class TestWikiUuid(OsfTestCase):
@@ -1231,6 +1237,7 @@ class TestPublicWiki(OsfTestCase):
                 'id': node._id,
                 'title': node.title,
                 'url': node.url,
+                'is_public': True
             },
             'children': [
                 {
@@ -1243,16 +1250,28 @@ class TestPublicWiki(OsfTestCase):
             'kind': 'folder',
             'nodeType': 'component',
             'category': 'hypothesis',
-            'permissions': {'view': True}
+            'permissions': {'view': True,
+                            'admin': True}
         }]
 
         assert_equal(data, expected)
 
-    def test_serialize_wiki_settings_no_wiki(self):
+    def test_serialize_wiki_settings_disabled_wiki(self):
         node = NodeFactory(parent=self.project, creator=self.user)
         node.delete_addon('wiki', self.consolidate_auth)
         data = serialize_wiki_settings(self.user, [node])
-        expected = []
+        expected = [{'node':
+                        {'url': node.url,
+                         'is_public': False,
+                         'id': node._id,
+                         'title': node.title},
+                    'category': 'hypothesis',
+                    'kind': 'folder',
+                    'nodeType': 'component',
+                    'children': [],
+                    'permissions': {'admin': True,
+                                    'view': True}
+                    }]
 
         assert_equal(data, expected)
 

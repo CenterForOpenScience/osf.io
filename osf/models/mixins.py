@@ -1,11 +1,20 @@
 import pytz
+
 from django.apps import apps
-from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+from django.db import models, transaction
+from include import IncludeQuerySet
+
+from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
+from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
+from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.machines import ReviewsMachine
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -51,7 +60,8 @@ class Versioned(models.Model):
 
 
 class Loggable(models.Model):
-    # TODO: This should be in the NodeLog model
+
+    last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
@@ -73,9 +83,9 @@ class Loggable(models.Model):
         log.save()
 
         if self.logs.count() == 1:
-            self.date_modified = log.date.replace(tzinfo=pytz.utc)
+            self.last_logged = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.date_modified = self.logs.first().date
+            self.last_logged = self.logs.first().date
 
         if save:
             self.save()
@@ -91,6 +101,13 @@ class Loggable(models.Model):
 class Taggable(models.Model):
 
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
+
+    def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
+        old_tags = set(self.tags.values_list('name', flat=True))
+        for tag in (set(new_tags) - old_tags):
+            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
+        for tag in (old_tags - set(new_tags)):
+            self.remove_tag(tag, auth, save=save)
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
@@ -110,6 +127,9 @@ class Taggable(models.Model):
                 self.save()
             self.on_tag_added(tag_instance)
         return tag_instance
+
+    def remove_tag(self, *args, **kwargs):
+        raise NotImplementedError('Removing tags requires that remove_tag is implemented')
 
     def add_system_tag(self, tag, save=True):
         if isinstance(tag, Tag) and not tag.system:
@@ -456,3 +476,116 @@ class CommentableMixin(object):
         """Return extra data to pass as `params` to `Node.add_log` when a new comment is
         created, edited, deleted or restored."""
         return {}
+
+
+class MachineableMixin(models.Model):
+    class Meta:
+        abstract = True
+
+    # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
+    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
+
+    date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    @property
+    def MachineClass(self):
+        raise NotImplementedError()
+
+    def run_submit(self, user):
+        """Run the 'submit' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+        """
+        return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
+
+    def run_accept(self, user, comment):
+        """Run the 'accept' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment)
+
+    def run_reject(self, user, comment):
+        """Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self.__run_transition(DefaultTriggers.REJECT.value, user=user, comment=comment)
+
+    def run_edit_comment(self, user, comment):
+        """Run the 'edit_comment' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: New comment text.
+        """
+        return self.__run_transition(DefaultTriggers.EDIT_COMMENT.value, user=user, comment=comment)
+
+    def __run_transition(self, trigger, **kwargs):
+        machine = self.MachineClass(self, 'machine_state')
+        trigger_fn = getattr(machine, trigger)
+        with transaction.atomic():
+            result = trigger_fn(**kwargs)
+            action = machine.action
+            if not result or action is None:
+                valid_triggers = machine.get_triggers(self.machine_state)
+                raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
+            return action
+
+
+class ReviewableMixin(MachineableMixin):
+    """Something that may be included in a reviewed collection and is subject to a reviews workflow.
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = ReviewsMachine
+
+    @property
+    def in_public_reviews_state(self):
+        public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
+        if not public_states:
+            return False
+        return self.machine_state in public_states
+
+
+class ReviewProviderMixin(models.Model):
+    """A reviewed/moderated collection of objects.
+    """
+
+    REVIEWABLE_RELATION_NAME = None
+
+    class Meta:
+        abstract = True
+
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
+    reviews_comments_private = models.NullBooleanField()
+    reviews_comments_anonymous = models.NullBooleanField()
+
+    @property
+    def is_reviewed(self):
+        return self.reviews_workflow is not None
+
+    def get_reviewable_state_counts(self):
+        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
+        qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
+        if isinstance(qs, IncludeQuerySet):
+            qs = qs.include(None)
+        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in DefaultStates}
+        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        return counts
+
+    def add_admin(self, user):
+        from api.preprint_providers.permissions import GroupHelper
+        return GroupHelper(self).get_group('admin').user_set.add(user)
+
+    def add_moderator(self, user):
+        from api.preprint_providers.permissions import GroupHelper
+        return GroupHelper(self).get_group('moderator').user_set.add(user)

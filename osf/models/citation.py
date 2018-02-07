@@ -23,6 +23,7 @@ class CitationStyle(BaseModel):
 
     short_title = models.CharField(max_length=2048, null=True, blank=True)
     summary = models.CharField(max_length=4200, null=True, blank=True)  # longest value was 3,812 8/23/2016
+    has_bibliography = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['_id']
@@ -33,4 +34,5 @@ class CitationStyle(BaseModel):
             'title': self.title,
             'short_title': self.short_title,
             'summary': self.summary,
+            'has_bibliography': self.has_bibliography
         }

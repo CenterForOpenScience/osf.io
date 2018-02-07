@@ -259,15 +259,15 @@ class AddonFileMoved(ComplexFileEvent):
             if moved[notification]:
                 emails.store_emails(moved[notification], notification, 'file_updated', self.user, self.node,
                                     self.timestamp, message=self.html_message,
-                                    gravatar_url=self.gravatar_url, url=self.url)
+                                    profile_image_url=self.profile_image_url, url=self.url)
             if warn[notification]:
                 emails.store_emails(warn[notification], notification, 'file_updated', self.user, self.node,
-                                    self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
+                                    self.timestamp, message=warn_message, profile_image_url=self.profile_image_url,
                                     url=self.url)
             if rm_users[notification]:
                 emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
                                     self.timestamp, message=remove_message,
-                                    gravatar_url=self.gravatar_url, url=self.source_url)
+                                    profile_image_url=self.profile_image_url, url=self.source_url)
 
 
 @register(NodeLog.FILE_COPIED)
@@ -299,8 +299,8 @@ class AddonFileCopied(ComplexFileEvent):
             if moved[notification] or warn[notification]:
                 users = list(set(moved[notification]).union(set(warn[notification])))
                 emails.store_emails(users, notification, 'file_updated', self.user, self.node, self.timestamp,
-                                    message=self.html_message, gravatar_url=self.gravatar_url, url=self.url)
+                                    message=self.html_message, profile_image_url=self.profile_image_url, url=self.url)
             if rm_users[notification]:
                 emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
                                     self.timestamp, message=remove_message,
-                                    gravatar_url=self.gravatar_url, url=self.source_url)
+                                    profile_image_url=self.profile_image_url, url=self.source_url)

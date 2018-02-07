@@ -14,7 +14,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
                                   AnonymizedRegexField,
-                                  DateByVersion)
+                                  VersionedDateTimeField)
 
 
 class CommentReport(object):
@@ -43,9 +43,9 @@ class CommentSerializer(JSONAPISerializer):
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
-    modified = ser.BooleanField(read_only=True, default=False)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+    modified = ser.BooleanField(source='edited', read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
     is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
     is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')

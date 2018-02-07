@@ -28,21 +28,27 @@ def add_file_logger(logger, script_name, suffix=None):
 
 
 class Progress(object):
-    def __init__(self, bar_len=50):
+    def __init__(self, bar_len=50, precision=1):
         self.bar_len = bar_len
+        self.precision = precision
+        self.bar_format = '{}[{}] {:0.' + str(self.precision) + 'f}% ... {}\r'
 
     def start(self, total, prefix):
         self.total = total
         self.count = 0
         self.prefix = prefix
+        self.last_percents = None
 
     def increment(self, inc=1):
-        self.count += inc
+        self.count = self.count + inc
+        percents = round(100.0 * self.count / float(self.total), self.precision)
+        if self.last_percents == percents:
+            return
+        self.last_percents = percents
         filled_len = int(round(self.bar_len * self.count / float(self.total)))
-        percents = round(100.0 * self.count / float(self.total), 1)
         bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
         sys.stdout.flush()
-        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
+        sys.stdout.write(self.bar_format.format(self.prefix, bar, percents, str(self.total)))
 
     def stop(self):
         # To preserve line, there is probably a better way to do this

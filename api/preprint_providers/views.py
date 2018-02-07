@@ -1,29 +1,25 @@
-from guardian.shortcuts import get_objects_for_user
 
+from django.db.models import Q
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
-
-from django.db.models import Q
-
-from framework.auth.oauth_scopes import CoreScopes
-
-from osf.models import AbstractNode, Subject, PreprintProvider
-
-from reviews import permissions as reviews_permissions
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.pagination import MaxSizePagination
+from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
+from api.taxonomies.utils import optimize_subject_query
 from api.preprint_providers.serializers import PreprintProviderSerializer
+from api.preprint_providers.permissions import CanSetUpProvider, PERMISSIONS
 from api.preprints.serializers import PreprintSerializer
-
 from api.preprints.permissions import PreprintPublishedOrAdmin
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models import AbstractNode, Subject, PreprintProvider
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
@@ -100,8 +96,8 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
                 raise NotAuthenticated()
             value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
-            if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
-                valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
+            if any(p not in PERMISSIONS for p in permissions):
+                valid_permissions = ', '.join(PERMISSIONS.keys())
                 raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
@@ -180,7 +176,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.CanSetUpProvider,
+        CanSetUpProvider,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -249,7 +245,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         PreprintPublishedOrAdmin,
     )
 
-    ordering = ('-date_created')
+    ordering = ('-created')
 
     serializer_class = PreprintSerializer
     model_class = AbstractNode
@@ -270,7 +266,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
     # overrides APIView
     def get_renderer_context(self):
@@ -301,6 +297,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+    pagination_class = IncreasedPageSizePagination
 
     ordering = ('-id',)
 
@@ -323,14 +320,14 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
             if parent == 'null':
                 return provider.top_level_subjects
             if provider.subjects.exists():
-                return provider.subjects.filter(parent___id=parent)
+                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
             else:
                 # TODO: Delet this when all PreprintProviders have a mapping
                 #  Calculate this here to only have to do it once.
                 allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in Subject.objects.filter(parent___id=parent) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
-        return provider.all_subjects
+                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+        return optimize_subject_query(provider.all_subjects)
 
 
 class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
@@ -349,7 +346,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
+        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
 
 
 class PreprintProviderLicenseList(LicenseList):

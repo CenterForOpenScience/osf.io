@@ -2,11 +2,10 @@ from guardian.shortcuts import get_perms
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
-from reviews.workflow import Workflows
-
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
+from api.preprint_providers.workflows import Workflows
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -37,6 +36,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
+    facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -57,7 +57,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     highlighted_taxonomies = RelationshipField(
         related_view='preprint_providers:highlighted-taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'}
+        related_view_kwargs={'provider_id': '<_id>'},
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
     )
 
     licenses_acceptable = RelationshipField(
@@ -107,6 +108,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'preprint_providers'
+
+    def get_has_highlighted_subjects(self, obj):
+        return obj.has_highlighted_subjects
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

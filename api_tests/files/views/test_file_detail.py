@@ -10,7 +10,7 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session
+from osf.models import NodeLog, Session, QuickFilesNode
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
@@ -22,13 +22,15 @@ from website import settings as website_settings
 from website.project.signals import contributor_removed
 
 
-# stolen from^W^Winspired by DRF rest_framework.fields.DateTimeField.to_representation
+# stolen from^W^Winspired by DRF
+# rest_framework.fields.DateTimeField.to_representation
 def _dt_to_iso8601(value):
     iso8601 = value.isoformat()
     if iso8601.endswith('+00:00'):
         iso8601 = iso8601[:-6] + 'Z'  # microsecond precision
 
     return iso8601
+
 
 @pytest.fixture()
 def user():
@@ -60,11 +62,32 @@ class TestFileView:
         res = app.get(file_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
+    def test_deleted_file_return_410(self, app, node, user):
+        deleted_file = api_utils.create_test_file(node, user, create_guid=True)
+        url_with_guid = '/{}files/{}/'.format(
+            API_BASE, deleted_file.get_guid()._id
+        )
+        url_with_id = '/{}files/{}/'.format(API_BASE, deleted_file._id)
+
+        res = app.get(url_with_guid, auth=user.auth)
+        assert res.status_code == 200
+
+        res = app.get(url_with_id, auth=user.auth)
+        assert res.status_code == 200
+
+        deleted_file.delete(user=user, save=True)
+
+        res = app.get(url_with_guid, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+        res = app.get(url_with_id, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
     def test_file_guid_guid_status(self, app, user, file, file_url):
         # test_unvisited_file_has_no_guid
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['guid'] == None
+        assert res.json['data']['attributes']['guid'] is None
 
         # test_visited_file_has_guid
         guid = file.get_guid(create=True)
@@ -74,7 +97,8 @@ class TestFileView:
         assert res.json['data']['attributes']['guid'] == guid._id
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
-    def test_file_guid_not_created_with_basic_auth(self, mock_allow, app, user, file_url):
+    def test_file_guid_not_created_with_basic_auth(
+            self, mock_allow, app, user, file_url):
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
         guid = res.json['data']['attributes'].get('guid', None)
         assert res.status_code == 200
@@ -82,10 +106,13 @@ class TestFileView:
         assert guid is None
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
-    def test_file_guid_created_with_cookie(self, mock_allow, app, user, file_url, file):
+    def test_file_guid_created_with_cookie(
+            self, mock_allow, app, user, file_url, file):
         session = Session(data={'auth_user_id': user._id})
         session.save()
-        cookie = itsdangerous.Signer(website_settings.SECRET_KEY).sign(session._id)
+        cookie = itsdangerous.Signer(
+            website_settings.SECRET_KEY
+        ).sign(session._id)
         app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
 
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
@@ -104,23 +131,28 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
-        assert res.json.keys() == ['data']
+        assert res.json.keys() == ['meta', 'data']
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file.path
         assert attributes['kind'] == file.kind
         assert attributes['name'] == file.name
         assert attributes['materialized_path'] == file.materialized_path
-        assert attributes['last_touched'] == None
+        assert attributes['last_touched'] is None
         assert attributes['provider'] == file.provider
         assert attributes['size'] == file.versions.first().size
         assert attributes['current_version'] == len(file.history)
-        assert attributes['date_modified'] == _dt_to_iso8601(file.versions.first().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['date_created'] == _dt_to_iso8601(file.versions.last().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['extra']['hashes']['md5'] == None
-        assert attributes['extra']['hashes']['sha256'] == None
+        assert attributes['date_modified'] == _dt_to_iso8601(
+            file.versions.first().created.replace(tzinfo=pytz.utc)
+        )
+        assert attributes['date_created'] == _dt_to_iso8601(
+            file.versions.last().created.replace(tzinfo=pytz.utc)
+        )
+        assert attributes['extra']['hashes']['md5'] is None
+        assert attributes['extra']['hashes']['sha256'] is None
         assert attributes['tags'] == []
 
-    def test_file_has_rel_link_to_owning_project(self, app, user, file_url, node):
+    def test_file_has_rel_link_to_owning_project(
+            self, app, user, file_url, node):
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
         assert 'node' in res.json['data']['relationships'].keys()
@@ -137,16 +169,25 @@ class TestFileView:
         assert app.get(url, auth=user.auth).status_code == 200
         assert res.json['data']['type'] == 'files'
 
-    def test_file_has_correct_unread_comments_count(self, app, user, file, node):
+    def test_file_has_correct_unread_comments_count(
+            self, app, user, file, node):
         contributor = AuthUserFactory()
         node.add_contributor(contributor, auth=Auth(user), save=True)
-        comment = CommentFactory(node=node, target=file.get_guid(create=True), user=contributor, page='files')
-        res = app.get('/{}files/{}/?related_counts=True'.format(API_BASE, file._id), auth=user.auth)
+        CommentFactory(
+            node=node,
+            target=file.get_guid(create=True),
+            user=contributor, page='files'
+        )
+        res = app.get(
+            '/{}files/{}/?related_counts=True'.format(API_BASE, file._id),
+            auth=user.auth
+        )
         assert res.status_code == 200
         unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         assert unread_comments == 1
 
-    def test_only_project_contrib_can_comment_on_closed_project(self, app, user, node, file_url):
+    def test_only_project_contrib_can_comment_on_closed_project(
+            self, app, user, node, file_url):
         node.comment_level = 'private'
         node.is_public = True
         node.save()
@@ -162,11 +203,13 @@ class TestFileView:
         assert res.status_code == 200
         assert can_comment is False
 
-    def test_logged_or_not_user_comment_status_on_open_project(self, app, node, file_url):
+    def test_logged_or_not_user_comment_status_on_open_project(
+            self, app, node, file_url):
         node.is_public = True
         node.save()
 
-        # test_any_loggedin_user_can_comment_on_open_project(self, app, node, file_url):
+        # test_any_loggedin_user_can_comment_on_open_project(self, app, node,
+        # file_url):
         non_contributor = AuthUserFactory()
         res = app.get(file_url, auth=non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
@@ -180,37 +223,46 @@ class TestFileView:
         assert can_comment is False
 
     def test_checkout(self, app, user, file, file_url, node):
-        assert file.checkout == None
+        assert file.checkout is None
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth)
         file.reload()
         file.save()
         node.reload()
         assert res.status_code == 200
         assert file.checkout == user
 
-        res = app.get(
-            file_url,
-            auth=user.auth
-        )
+        res = app.get(file_url, auth=user.auth)
         assert node.logs.count() == 2
         assert node.logs.latest().action == NodeLog.CHECKED_OUT
         assert node.logs.latest().user == user
         assert user._id == res.json['data']['relationships']['checkout']['links']['related']['meta']['id']
 
-        assert '/{}users/{}/'.format(API_BASE, user._id) in res.json['data']['relationships']['checkout']['links']['related']['href']
+        assert '/{}users/{}/'.format(
+            API_BASE, user._id
+        ) in res.json['data']['relationships']['checkout']['links']['related']['href']
 
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=user.auth
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None
+                    }
+                }
+            }, auth=user.auth)
 
         file.reload()
-        assert file.checkout == None
+        assert file.checkout is None
         assert res.status_code == 200
 
     def test_checkout_file_error(self, app, user, file_url, file):
@@ -232,18 +284,28 @@ class TestFileView:
 
         # test_checkout_file_incorrect_type
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'Wrong type.', 'attributes': {'checkout': user._id}}},
-            auth=user.auth, expect_errors=True
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'Wrong type.',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
         # test_checkout_file_incorrect_id
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': '12345', 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth, expect_errors=True
-        )
+            file_url, {
+                'data': {
+                    'id': '12345',
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
         # test_checkout_file_no_attributes
@@ -256,27 +318,35 @@ class TestFileView:
 
     def test_must_set_self(self, app, user, file, file_url):
         user_unauthorized = UserFactory()
-        assert file.checkout == None
+        assert file.checkout is None
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user_unauthorized._id}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user_unauthorized._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         assert res.status_code == 400
-        assert file.checkout == None
+        assert file.checkout is None
 
     def test_must_be_self(self, app, file, file_url):
         user = AuthUserFactory()
         file.checkout = user
         file.save()
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         assert res.status_code == 403
         assert file.checkout == user
@@ -287,25 +357,33 @@ class TestFileView:
         file.checkout = user_unauthorized
         file.save()
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         node.reload()
         assert res.status_code == 200
-        assert file.checkout == None
+        assert file.checkout is None
         assert node.logs.latest().action == NodeLog.CHECKED_IN
         assert node.logs.latest().user == user
 
     def test_admin_can_checkout(self, app, user, file_url, file, node):
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         node.reload()
         assert res.status_code == 200
@@ -313,54 +391,69 @@ class TestFileView:
         assert node.logs.latest().action == NodeLog.CHECKED_OUT
         assert node.logs.latest().user == user
 
-    def test_cannot_checkin_when_already_checked_in(self, app, user, node, file, file_url):
+    def test_cannot_checkin_when_already_checked_in(
+            self, app, user, node, file, file_url):
         count = node.logs.count()
         assert not file.is_checked_out
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         node.reload()
         assert res.status_code == 200
         assert node.logs.count() == count
-        assert file.checkout == None
+        assert file.checkout is None
 
-    def test_cannot_checkout_when_checked_out(self, app, user, node, file, file_url):
+    def test_cannot_checkout_when_checked_out(
+            self, app, user, node, file, file_url):
         user_unauthorized = UserFactory()
         node.add_contributor(user_unauthorized)
         file.checkout = user_unauthorized
         file.save()
         count = node.logs.count()
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         file.reload()
         node.reload()
         assert res.status_code == 200
         assert file.checkout == user_unauthorized
         assert node.logs.count() == count
 
-    def test_noncontrib_and_read_contrib_cannot_checkout(self, app, file, node, file_url):
+    def test_noncontrib_and_read_contrib_cannot_checkout(
+            self, app, file, node, file_url):
         # test_noncontrib_cannot_checkout
         non_contrib = AuthUserFactory()
-        assert file.checkout == None
+        assert file.checkout is None
         assert not node.has_permission(non_contrib, 'read')
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': non_contrib._id}}},
-            auth=non_contrib.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': non_contrib._id
+                    }
+                }
+            }, auth=non_contrib.auth, expect_errors=True, )
         file.reload()
         node.reload()
         assert res.status_code == 403
-        assert file.checkout == None
+        assert file.checkout is None
         assert node.logs.latest().action != NodeLog.CHECKED_OUT
 
         # test_read_contrib_cannot_checkout
@@ -369,14 +462,18 @@ class TestFileView:
         node.save()
         assert not node.can_edit(user=read_contrib)
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=read_contrib.auth,
-            expect_errors=True
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None
+                    }
+                }
+            }, auth=read_contrib.auth, expect_errors=True)
         file.reload()
         assert res.status_code == 403
-        assert file.checkout == None
+        assert file.checkout is None
         assert node.logs.latest().action != NodeLog.CHECKED_OUT
 
     def test_write_contrib_can_checkin(self, app, node, file, file_url):
@@ -387,13 +484,18 @@ class TestFileView:
         file.checkout = write_contrib
         file.save()
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=write_contrib.auth,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None
+                    }
+                }
+            }, auth=write_contrib.auth, )
         file.reload()
         assert res.status_code == 200
-        assert file.checkout == None
+        assert file.checkout is None
 
     def test_removed_contrib_files_checked_in(self, app, node, file):
         write_contrib = AuthUserFactory()
@@ -413,11 +515,15 @@ class TestFileView:
         file.recast(GithubFileNode._typedmodels_type)
         file.save()
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth,
-            expect_errors=True,
-        )
+            file_url, {
+                'data': {
+                    'id': file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True, )
         assert res.status_code == 403
 
     def test_get_file_guids_misc(self, app, user, file, node):
@@ -426,7 +532,7 @@ class TestFileView:
         url = '/{}files/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json.keys() == ['data']
+        assert res.json.keys() == ['meta', 'data']
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404
@@ -439,7 +545,8 @@ class TestFileView:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_current_version_is_equal_to_length_of_history(self, app, user, file_url, file):
+    def test_current_version_is_equal_to_length_of_history(
+            self, app, user, file_url, file):
         res = app.get(file_url, auth=user.auth)
         assert res.json['data']['attributes']['current_version'] == 1
         for version in range(2, 4):
@@ -448,20 +555,35 @@ class TestFileView:
                 'service': 'cloud',
                 osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
             }, {'size': 1337,
-                'contentType': 'img/png'
-            }).save()
+                'contentType': 'img/png'}).save()
             res = app.get(file_url, auth=user.auth)
             assert res.json['data']['attributes']['current_version'] == version
 
     # Regression test for OSF-7758
-    def test_folder_files_relationships_contains_guid_not_id(self, app, user, node):
-        folder = node.get_addon('osfstorage').get_root().append_folder('I\'d be a teacher!!')
+    def test_folder_files_relationships_contains_guid_not_id(
+            self, app, user, node):
+        folder = node.get_addon('osfstorage').get_root(
+        ).append_folder('I\'d be a teacher!!')
         folder.save()
         folder_url = '/{}files/{}/'.format(API_BASE, folder._id)
         res = app.get(folder_url, auth=user.auth)
-        split_href = res.json['data']['relationships']['files']['links']['related']['href'].split('/')
+        split_href = res.json['data']['relationships']['files']['links']['related']['href'].split(
+            '/')
         assert node._id in split_href
         assert node.id not in split_href
+
+    def test_embed_user_on_quickfiles_detail(self, app, user):
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+        osfstorage = quickfiles.get_addon('osfstorage')
+        root = osfstorage.get_root()
+        test_file = root.append_file('speedyfile.txt')
+
+        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
+        res = app.get(url, auth=user.auth)
+
+        assert res.json['data'].get('embeds', None)
+        assert res.json['data']['embeds'].get('user')
+        assert res.json['data']['embeds']['user']['data']['id'] == user._id
 
 
 @pytest.mark.django_db
@@ -523,20 +645,17 @@ class TestFileVersionView:
         # test_read_only
         assert app.put(
             '/{}files/{}/versions/1/'.format(API_BASE, file._id),
-            expect_errors=True,
-            auth=user.auth,
+            expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.post(
             '/{}files/{}/versions/1/'.format(API_BASE, file._id),
-            expect_errors=True,
-            auth=user.auth,
+            expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.delete(
             '/{}files/{}/versions/1/'.format(API_BASE, file._id),
-            expect_errors=True,
-            auth=user.auth,
+            expect_errors=True, auth=user.auth,
         ).status_code == 405
 
 

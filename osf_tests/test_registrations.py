@@ -6,7 +6,6 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
 from addons.wiki.models import NodeWikiPage
-from osf.modm_compat import Q
 
 from website import settings
 from website.util.permissions import READ, WRITE, ADMIN
@@ -228,7 +227,8 @@ class TestRegisterNode:
         assert registration.is_registration
 
     def test_registered_date(self, registration):
-        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=3000)
+        # allowance increased in OSF-9050, if this fails sporadically again then registrations may need to be optimized or this test reworked
+        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=10000)
 
     def test_registered_addons(self, registration):
         assert (
@@ -304,7 +304,7 @@ class TestRegisterNodeContributors:
     @pytest.fixture()
     def project_two(self, user, auth):
         return factories.ProjectFactory(creator=user)
-    
+
     @pytest.fixture()
     def component(self, user, auth, project_two):
         return factories.NodeFactory(
@@ -350,22 +350,22 @@ class TestNodeSanctionStates:
 
     def test_sanction_embargo_termination_first(self):
         embargo_termination_approval = factories.EmbargoTerminationApprovalFactory()
-        registration = Registration.find_one(Q('embargo_termination_approval', 'eq', embargo_termination_approval))
+        registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         assert registration.sanction == embargo_termination_approval
 
     def test_sanction_retraction(self):
         retraction = factories.RetractionFactory()
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert registration.sanction == retraction
 
     def test_sanction_embargo(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert registration.sanction == embargo
 
     def test_sanction_registration_approval(self):
         registration_approval = factories.RegistrationApprovalFactory()
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration.sanction == registration_approval
 
     def test_sanction_searches_parents(self):
@@ -380,7 +380,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_registration(self):
         registration_approval = factories.RegistrationApprovalFactory()
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration_approval.is_pending_approval
         assert registration.is_pending_registration
 
@@ -395,7 +395,7 @@ class TestNodeSanctionStates:
 
     def test_is_registration_approved(self):
         registration_approval = factories.RegistrationApprovalFactory(state=Sanction.APPROVED, approve=True)
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration.is_registration_approved
 
     def test_is_registration_approved_searches_parents(self):
@@ -411,7 +411,7 @@ class TestNodeSanctionStates:
 
     def test_is_retracted(self):
         retraction = factories.RetractionFactory(state=Sanction.APPROVED, approve=True)
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert registration.is_retracted
 
     @mock.patch('website.project.tasks.send_share_node_data')
@@ -427,7 +427,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_retraction(self):
         retraction = factories.RetractionFactory()
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert retraction.is_pending_approval is True
         assert registration.is_pending_retraction is True
 
@@ -443,7 +443,7 @@ class TestNodeSanctionStates:
 
     def test_embargo_end_date(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert registration.embargo_end_date == embargo.embargo_end_date
 
     def test_embargo_end_date_searches_parents(self):
@@ -457,7 +457,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_embargo(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert embargo.is_pending_approval
         assert registration.is_pending_embargo
 
@@ -472,7 +472,7 @@ class TestNodeSanctionStates:
 
     def test_is_embargoed(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         registration.embargo.state = Sanction.APPROVED
         registration.embargo.save()
         assert registration.is_embargoed
@@ -506,9 +506,7 @@ class TestDraftRegistrations:
         assert draft.initiator == node.creator
 
         # Pick an arbitrary v2 schema
-        schema = MetaSchema.find(
-            Q('schema_version', 'eq', 2)
-        )[0]
+        schema = MetaSchema.objects.filter(schema_version=2).first()
         data = {'some': 'data'}
         draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert draft.registration_schema == schema

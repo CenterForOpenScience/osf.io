@@ -47,6 +47,18 @@ def create_fake_conference_nodes(n, endpoint):
         nodes.append(node)
     return nodes
 
+def create_fake_conference_nodes_bad_data(n, bad_n, endpoint):
+    nodes = []
+    for i in range(n):
+        node = ProjectFactory(is_public=True)
+        node.add_tag(endpoint, Auth(node.creator))
+        # inject bad data
+        if i < bad_n:
+            # Delete only contributor
+            node.contributor_set.filter(user=node.contributors.first()).delete()
+        node.save()
+        nodes.append(node)
+    return nodes
 
 class TestConferenceUtils(OsfTestCase):
 
@@ -176,27 +188,27 @@ class TestProvisionNode(ContextTestCase):
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
 
-    @mock.patch('website.util.waterbutler_url_for')
+    @mock.patch('website.util.waterbutler_api_url_for')
     @mock.patch('website.conferences.utils.requests.put')
     def test_upload(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
-        self.attachment.filename = 'hammer-to-fall'
+        file_name = 'hammer-to-fall'
+        self.attachment.filename = file_name
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + self.attachment.filename,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name=file_name
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
         )
 
-    @mock.patch('website.util.waterbutler_url_for')
+    @mock.patch('website.util.waterbutler_api_url_for')
     @mock.patch('website.conferences.utils.requests.put')
     def test_upload_no_file_name(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
@@ -204,12 +216,11 @@ class TestProvisionNode(ContextTestCase):
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + settings.MISSING_FILE_NAME,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -360,7 +371,7 @@ class TestMessage(ContextTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
-        conf.__class__.remove_one(conf)
+        conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
         recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
@@ -409,7 +420,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        AbstractNode.remove()
+        AbstractNode.objects.all().delete()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
@@ -449,6 +460,26 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), n_conference_nodes)
 
+    # Regression for OSF-8864 to confirm bad project data does not make whole conference break
+    def test_conference_bad_data(self):
+        conference = ConferenceFactory()
+
+        # Create conference nodes
+        n_conference_nodes = 3
+        n_conference_nodes_bad = 1
+        create_fake_conference_nodes_bad_data(
+            n_conference_nodes,
+            n_conference_nodes_bad,
+            conference.endpoint,
+        )
+        # Create a non-conference node
+        ProjectFactory()
+
+        url = api_url_for('conference_data', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), n_conference_nodes - n_conference_nodes_bad)
+
     def test_conference_data_url_upper(self):
         conference = ConferenceFactory()
 
@@ -487,6 +518,12 @@ class TestConferenceEmailViews(OsfTestCase):
         conference = ConferenceFactory()
 
         url = web_url_for('conference_results', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+    def test_confererence_results_endpoint_is_case_insensitive(self):
+        ConferenceFactory(endpoint='StudySwap')
+        url = web_url_for('conference_results', meeting='studyswap')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 

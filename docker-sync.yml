@@ -24,16 +24,16 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
 #    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
-#  preprints-sync:
-#    src: '../ember-preprints'
+#  emberosf-sync:
+#    src: '../ember-osf/'
 #    sync_strategy: 'native_osx'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-#  emberosf-sync:
-#    src: '../ember-osf/'
+#  preprints-sync:
+#    src: '../ember-osf-preprints'
 #    sync_strategy: 'native_osx'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -50,11 +50,19 @@ syncs:
 
 #  reviews-sync:
 #    src: '../ember-osf-reviews'
-#    sync_strategy: 'unison'
+#    sync_strategy: 'native_osx'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+
+#  sharejs-sync:
+#    src: '../sharejs'
+#    sync_strategy: 'native_osx'
+#    sync_args: [ '-prefer newer' ]
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'node_modules']
+#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/node_modules']
 
   osf-sync:
     src: './'

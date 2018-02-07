@@ -7,9 +7,11 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestExceptionFormatting:
@@ -42,17 +44,22 @@ class TestExceptionFormatting:
     def private_url(self, private_project):
         return '/{}nodes/{}/'.format(API_BASE, private_project._id)
 
-    def test_exception_formatting(self, app, user, non_contrib, public_project, private_project, private_url, project_no_title):
+    def test_exception_formatting(
+            self, app, user, non_contrib, public_project,
+            private_project, private_url, project_no_title):
 
         error_required_field = 'This field is required.'
         error_blank_field = 'This field may not be blank.'
 
     #   test_creates_project_with_no_title_formatting
         url = '/{}nodes/'.format(API_BASE)
-        res = app.post_json_api(url, project_no_title, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, project_no_title,
+            auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
-        assert res.json['errors'][0]['source'] == {'pointer': '/data/attributes/title'}
+        assert res.json['errors'][0]['source'] == {
+            'pointer': '/data/attributes/title'}
         assert res.json['errors'][0]['detail'] == error_required_field
 
     #   test_node_does_not_exist_formatting
@@ -66,16 +73,28 @@ class TestExceptionFormatting:
         res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
-        assert errors[0] == {'detail': exceptions.PermissionDenied.default_detail}
+        assert errors[0] == {
+            'detail': exceptions.PermissionDenied.default_detail}
 
     #   test_not_authorized_formatting
         res = app.get(private_url, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
-        assert errors[0] == {'detail': exceptions.NotAuthenticated.default_detail}
+        assert errors[0] == {
+            'detail': exceptions.NotAuthenticated.default_detail}
 
     #   test_update_project_with_no_title_or_category_formatting
-        res = app.put_json_api(private_url, {'data': {'type': 'nodes', 'id': private_project._id, 'attributes': {'description': 'New description'}}}, auth=user.auth, expect_errors=True)
+        res = app.put_json_api(
+            private_url,
+            {
+                'data': {
+                    'type': 'nodes',
+                    'id': private_project._id,
+                    'attributes': {
+                        'description': 'New description'}
+                }
+            },
+            auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
         assert len(errors) == 2

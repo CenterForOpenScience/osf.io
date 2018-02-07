@@ -2,26 +2,28 @@
 from __future__ import unicode_literals
 
 from django.shortcuts import get_object_or_404
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions
+from rest_framework.exceptions import NotFound
 
-from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Action
-from reviews import permissions as reviews_permissions
-
-from api.actions.serializers import ActionSerializer
+from api.actions.permissions import ReviewActionPermission
+from api.actions.serializers import ReviewActionSerializer
 from api.base.exceptions import Conflict
+from api.base.filters import ListFilterMixin
+from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import absolute_reverse
-from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
+from api.base.utils import absolute_reverse
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models import PreprintProvider, ReviewAction
 
 
-def get_actions_queryset():
-    return Action.objects.include(
+def get_review_actions_queryset():
+    return ReviewAction.objects.include(
         'creator',
         'creator__guids',
         'target',
@@ -33,7 +35,7 @@ def get_actions_queryset():
 class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """Action Detail
 
-    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
+    Actions represent state changes and/or comments on any actionable object (e.g. preprints, noderequests)
 
     ##Action Attributes
 
@@ -63,29 +65,30 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ReviewActionPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    serializer_class = ActionSerializer
+    serializer_class = ReviewActionSerializer
     view_category = 'actions'
     view_name = 'action-detail'
 
     def get_object(self):
-        action = get_object_or_404(get_actions_queryset(), _id=self.kwargs['action_id'])
+        action = None
+        if ReviewAction.objects.filter(_id=self.kwargs['action_id']).exists():
+            action = get_object_or_404(get_review_actions_queryset(), _id=self.kwargs['action_id'])
+        if not action:
+            raise NotFound('Unable to find specified Action')
         self.check_object_permissions(self.request, action)
         return action
 
 
-class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
-    """Create Actions *Write-only*
+class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    """List of review actions viewable by this user
 
-    Use this endpoint to create a new Action and thereby trigger a state change on a preprint.
-
-    GETting from this endpoint will always return an empty list.
-    Use `/user/me/actions/` or `/preprints/<guid>/actions/` to read lists of actions.
+    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
 
     ##Action Attributes
 
@@ -119,49 +122,24 @@ class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
     Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
-
-    ###Creating New Actions
-
-    Create a new Action by POSTing to `/actions/`, including the target preprint and the action trigger.
-
-    Valid triggers are: `submit`, `accept`, `reject`, and `edit_comment`
-
-        Method:        POST
-        URL:           /actions/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "attributes": {
-                                "trigger": {trigger},           # required
-                                "comment": {comment},
-                            },
-                            "relationships": {
-                                "target": {                     # required
-                                    "data": {
-                                        "type": "preprints",
-                                        "id": {preprint_id}
-                                    }
-                                },
-                            }
-                        }
-                    }
-        Success:       201 CREATED + action representation
     """
+    # Permissions handled in get_default_django_query
     permission_classes = (
-        permissions.IsAuthenticatedOrReadOnly,
+        permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ReviewActionPermission,
     )
 
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    serializer_class = ReviewActionSerializer
+    model_class = ReviewAction
 
-    serializer_class = ActionSerializer
-
+    ordering = ('-created',)
     view_category = 'actions'
-    view_name = 'create-action'
+    view_name = 'review-action-list'
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -179,6 +157,11 @@ class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
 
         serializer.save(user=self.request.user)
 
-    # overrides ListCreateAPIView
+    # overrides ListFilterMixin
+    def get_default_queryset(self):
+        provider_queryset = get_objects_for_user(self.request.user, 'view_actions', PreprintProvider)
+        return get_review_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
+
+    # overrides ListAPIView
     def get_queryset(self):
-        return Action.objects.none()
+        return self.get_queryset_from_request()

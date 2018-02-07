@@ -5,12 +5,12 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Action, PreprintService
+from osf.models import ReviewAction, PreprintService
 from osf.utils.requests import check_select_for_update
-from reviews import permissions as reviews_permissions
 
-from api.actions.serializers import ActionSerializer
-from api.actions.views import get_actions_queryset
+from api.actions.permissions import ReviewActionPermission
+from api.actions.serializers import ReviewActionSerializer
+from api.actions.views import get_review_actions_queryset
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -18,7 +18,7 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
 from api.preprints.serializers import (
@@ -61,7 +61,7 @@ class PreprintMixin(NodeMixin):
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
-    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    Paginated list of preprints ordered by their `created`.  Each resource contains a representation of the
     preprint.
 
     ##Preprint Attributes
@@ -78,6 +78,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
+        preprint_doi_created            iso8601 timestamp                   timestamp that the preprint doi was created
 
     ##Relationships
 
@@ -162,8 +163,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
 
     serializer_class = PreprintSerializer
 
-    ordering = ('-date_created')
-    ordering_fields = ('date_created', 'date_last_transitioned')
+    ordering = ('-created')
+    ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
 
@@ -182,7 +183,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
@@ -201,6 +202,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
+        preprint_doi_created            iso8601 timestamp                   timestamp that the preprint doi was created
 
     ##Relationships
 
@@ -269,7 +271,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     def perform_destroy(self, instance):
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
-        PreprintService.remove_one(instance)
+        PreprintService.delete(instance)
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
@@ -407,7 +409,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         return super(PreprintContributorsList, self).create(request, *args, **kwargs)
 
 
-class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
+class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -448,22 +450,39 @@ class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin,
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ReviewActionPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    serializer_class = ActionSerializer
-    model_class = Action
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    serializer_class = ReviewActionSerializer
+    model_class = ReviewAction
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
     view_category = 'preprints'
-    view_name = 'preprint-action-list'
+    view_name = 'preprint-review-action-list'
+
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
+
+        if not target.provider.is_reviewed:
+            raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
+                target.provider.name,
+                absolute_reverse('preprint_providers:preprint_provider-detail', kwargs={
+                    'provider_id': target.provider._id,
+                    'version': self.request.parser_context['kwargs']['version']
+                })
+            ))
+
+        serializer.save(user=self.request.user)
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return get_actions_queryset().filter(target_id=self.get_preprint().id)
+        return get_review_actions_queryset().filter(target_id=self.get_preprint().id)
 
     # overrides ListAPIView
     def get_queryset(self):

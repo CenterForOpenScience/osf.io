@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
-from website.settings import (
-    DEFAULT_QUEUE, LOW_QUEUE, MED_QUEUE, HIGH_QUEUE,
-    LOW_PRI_MODULES, MED_PRI_MODULES, HIGH_PRI_MODULES
-)
+from website.settings import CeleryConfig
 
 def match_by_module(task_path):
     task_parts = task_path.split('.')
     for i in range(2, len(task_parts) + 1):
         task_subpath = '.'.join(task_parts[:i])
-        if task_subpath in LOW_PRI_MODULES:
-            return LOW_QUEUE
-        if task_subpath in MED_PRI_MODULES:
-            return MED_QUEUE
-        if task_subpath in HIGH_PRI_MODULES:
-            return HIGH_QUEUE
-    return DEFAULT_QUEUE
+        if task_subpath in CeleryConfig.low_pri_modules:
+            return CeleryConfig.task_low_queue
+        if task_subpath in CeleryConfig.med_pri_modules:
+            return CeleryConfig.task_med_queue
+        if task_subpath in CeleryConfig.high_pri_modules:
+            return CeleryConfig.task_low_queue
+    return CeleryConfig.task_default_queue
 
 
 class CeleryRouter(object):

@@ -26,10 +26,9 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
-from osf.modm_compat import Q
 
 from .utils import capture_signals
 from .factories import (
@@ -444,11 +443,10 @@ class TestOSFUser:
         )
 
     def test_profile_image_url(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_MEDIUM
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True,
+                                         size=settings.PROFILE_IMAGE_MEDIUM)
         assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
 
     def test_set_unusable_username_for_unsaved_user(self):
@@ -470,10 +468,9 @@ class TestOSFUser:
         assert user.has_usable_username() is False
 
     def test_profile_image_url_has_no_default_size(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True)
         assert user.profile_image_url() == expected
         size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None
@@ -627,12 +624,12 @@ class TestCookieMethods:
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
         assert(
-            Session.find(Q('data.auth_user_id', 'eq', user._id)).count() == 0
+            Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 
         cookie = user.get_or_create_cookie(super_secret_key)
 
-        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+        session = Session.objects.filter(data__auth_user_id=user._id).first()
 
         assert session._id == signer.unsign(cookie)
         assert session.data['auth_user_id'] == user._id
@@ -653,7 +650,7 @@ class TestCookieMethods:
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
+        session = Session.objects.get(data__auth_user_id=user._id)
         del session.data['auth_user_id']
         session.save()
         assert OSFUser.from_cookie(cookie) is None
@@ -1116,6 +1113,17 @@ class TestMergingUsers:
         merge_dupe()
         assert dashnode not in master.contributed
 
+    # Note the files are merged, but the actual node stays with the dupe user
+    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
+        merge_dupe()
+        master.refresh_from_db()
+        dupe.refresh_from_db()
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
         assert dupe.is_merged
@@ -1231,6 +1239,10 @@ class TestMergingUsers:
 
         assert project.get_permissions(master) == ['read', 'write', 'admin']
 
+    def test_merge_user_into_self_fails(self, master):
+        with pytest.raises(ValueError):
+            master.merge_user(master)
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
@@ -1276,8 +1288,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1300,12 +1312,6 @@ class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
         self.user = AuthUserFactory()
-
-    def tearDown(self):
-        AbstractNode.remove()
-        OSFUser.remove()
-        Session.remove()
-        super(TestUser, self).tearDown()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
     def test_add_unconfirmed_email_when_email_verifications_is_empty(self):
@@ -1375,10 +1381,10 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == "Can't remove primary email"
+        assert e.value.message == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
-        email = "test@mail.com"
+        email = 'test@mail.com'
         token1 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -1395,7 +1401,7 @@ class TestUser(OsfTestCase):
             self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
-        projects_contributed_to = AbstractNode.find(Q('contributors', 'eq', self.user))
+        projects_contributed_to = self.user.nodes.all()
         assert list(self.user.contributed.all()) == list(projects_contributed_to)
 
     def test_contributor_to_property(self):
@@ -1438,8 +1444,8 @@ class TestUser(OsfTestCase):
     def test_created_property(self):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
-        projects_created_by_user = AbstractNode.find(Q('creator', 'eq', self.user))
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py
@@ -1629,13 +1635,12 @@ class TestUserMerging(OsfTestCase):
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
 
-
         assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert Session.find(Q('data.auth_user_id', 'eq', other_user._id)).count() == 0
+        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
@@ -1686,7 +1691,7 @@ class TestUserMerging(OsfTestCase):
         assert creating_user.external_identity == {}
         assert verified_user.external_identity == {}
         assert no_id_user.external_identity == {}
-        assert no_provider_user.external_identity== {}
+        assert no_provider_user.external_identity == {}
 
         no_provider_user.merge_user(linking_user)
         assert linking_user.external_identity == {}
@@ -1740,7 +1745,7 @@ class TestUserValidation(OsfTestCase):
             data = json.load(url_test_data)
 
         fails_at_end = False
-        for should_pass in data["testsPositive"]:
+        for should_pass in data['testsPositive']:
             try:
                 self.user.social = {'profileWebsites': [should_pass]}
                 self.user.save()
@@ -1749,7 +1754,7 @@ class TestUserValidation(OsfTestCase):
                 fails_at_end = True
                 print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
 
-        for should_fail in data["testsNegative"]:
+        for should_fail in data['testsNegative']:
             self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with pytest.raises(ValidationError):

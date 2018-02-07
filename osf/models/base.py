@@ -2,7 +2,6 @@ import logging
 import random
 
 import bson
-import modularodm.exceptions
 from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
@@ -12,10 +11,11 @@ from django.db import models
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django_extensions.db.models import TimeStampedModel
 from include import IncludeQuerySet
+
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
-from osf.modm_compat import to_django_query
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -43,11 +43,7 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class BaseModel(models.Model):
-    """Base model that acts makes subclasses mostly compatible with the
-    modular-odm ``StoredObject`` interface.
-    """
-
+class BaseModel(TimeStampedModel):
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()
@@ -58,8 +54,8 @@ class BaseModel(models.Model):
     def __unicode__(self):
         return '{}'.format(self.id)
 
-    def to_storage(self):
-        local_django_fields = set([x.name for x in self._meta.concrete_fields])
+    def to_storage(self, include_auto_now=True):
+        local_django_fields = set([x.name for x in self._meta.concrete_fields if include_auto_now or not getattr(x, 'auto_now', False)])
         return {name: self.serializable_value(name) for name in local_django_fields}
 
     @classmethod
@@ -84,33 +80,6 @@ class BaseModel(models.Model):
         except cls.DoesNotExist:
             return None
 
-    @classmethod
-    def find_one(cls, query, select_for_update=False):
-        try:
-            if select_for_update:
-                return cls.objects.filter(to_django_query(query, model_cls=cls)).select_for_update().get()
-            return cls.objects.get(to_django_query(query, model_cls=cls))
-        except cls.DoesNotExist:
-            raise modularodm.exceptions.NoResultsFound()
-        except cls.MultipleObjectsReturned as e:
-            raise modularodm.exceptions.MultipleResultsFound(*e.args)
-
-    @classmethod
-    def find(cls, query=None):
-        if not query:
-            return cls.objects.all()
-        else:
-            return cls.objects.filter(to_django_query(query, model_cls=cls))
-
-    @classmethod
-    def remove(cls, query=None):
-        return cls.find(query).delete()
-
-    @classmethod
-    def remove_one(cls, obj):
-        if obj.pk:
-            return obj.delete()
-
     @property
     def _primary_name(self):
         return '_id'
@@ -125,7 +94,7 @@ class BaseModel(models.Model):
     def refresh_from_db(self):
         super(BaseModel, self).refresh_from_db()
         # Django's refresh_from_db does not uncache GFKs
-        for field in self._meta.virtual_fields:
+        for field in self._meta.private_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
                 del self.__dict__[field.cache_attr]
 
@@ -167,7 +136,7 @@ class Guid(BaseModel):
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
                            unique=True)
     referent = GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 

@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
 from django.contrib.postgres import fields
+from django.contrib.auth.models import Group
+from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from dirtyfields import DirtyFieldsMixin
 
+from api.preprint_providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
+from osf.models.mixins import ReviewProviderMixin
 from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
-
-from reviews import permissions as reviews_permissions
-from reviews.models import ReviewProviderMixin
-
 from website import settings
 from website.util import api_v2_url
 
 
-class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
+class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
@@ -47,6 +48,7 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     share_title = models.TextField(default='', blank=True)
     allow_submissions = models.BooleanField(default=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
+    facebook_app_id = models.BigIntegerField(blank=True, null=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -58,10 +60,11 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
+    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
+                                        null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
-        permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (
+        permissions = tuple(PERMISSIONS.items()) + (
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
@@ -70,8 +73,12 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         return '{} with id {}'.format(self.name, self.id)
 
     @property
+    def has_highlighted_subjects(self):
+        return self.subjects.filter(highlighted=True).exists()
+
+    @property
     def highlighted_subjects(self):
-        if self.subjects.filter(highlighted=True).exists():
+        if self.has_highlighted_subjects:
             return self.subjects.filter(highlighted=True).order_by('text')[:10]
         else:
             return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
@@ -79,11 +86,11 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     @property
     def top_level_subjects(self):
         if self.subjects.exists():
-            return self.subjects.filter(parent__isnull=True)
+            return optimize_subject_query(self.subjects.filter(parent__isnull=True))
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
-                return Subject.objects.filter(parent__isnull=True, provider___id='osf')
+                return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
 
@@ -107,6 +114,18 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         path = '/preprint_providers/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def save(self, *args, **kwargs):
+        dirty_fields = self.get_dirty_fields()
+        old_id = dirty_fields.get('_id', None)
+        if old_id:
+            for permission_type in GROUPS.keys():
+                Group.objects.filter(
+                    name=GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
+                ).update(
+                    name=GROUP_FORMAT.format(provider_id=self._id, group=permission_type)
+                )
+
+        return super(PreprintProvider, self).save(*args, **kwargs)
 
 def rules_to_subjects(rules):
     if not rules:
@@ -128,4 +147,4 @@ def rules_to_subjects(rules):
 @receiver(post_save, sender=PreprintProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
-        reviews_permissions.GroupHelper(instance).update_provider_auth_groups()
+        GroupHelper(instance).update_provider_auth_groups()

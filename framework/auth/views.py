@@ -8,10 +8,6 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
-
 from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
@@ -32,6 +28,7 @@ from website import settings, mails, language
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
+from osf.exceptions import ValidationValueError
 from osf.models.preprint_provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 
@@ -221,7 +218,8 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # GET `/register` or '/login` with `campaign=institution`
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
-                next_url = web_url_for('dashboard', _absolute=True)
+                if next_url is None:
+                    next_url = web_url_for('dashboard', _absolute=True)
                 data['status_code'] = http.FOUND
                 if auth.logged_in:
                     data['next_url'] = next_url
@@ -456,8 +454,8 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = OSFUser.find_one(Q('emails__address', 'eq', unconfirmed_email))
-    except NoResultsFound:
+        user_merge = OSFUser.objects.get(emails__address=unconfirmed_email)
+    except OSFUser.DoesNotExist:
         user_merge = False
     if user_merge:
         remove_sessions_for_user(user_merge)
@@ -724,8 +722,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     try:
-        merge_target = OSFUser.find_one(Q('emails__address', 'eq', email))
-    except NoResultsFound:
+        merge_target = OSFUser.objects.get(emails__address=email)
+    except OSFUser.DoesNotExist:
         merge_target = None
 
     campaign = campaigns.campaign_for_user(user)
@@ -764,7 +762,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
-        branded_preprints_provider=branded_preprints_provider
+        branded_preprints_provider=branded_preprints_provider,
+        osf_support_email=settings.OSF_SUPPORT_EMAIL
     )
 
 

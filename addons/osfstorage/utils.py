@@ -55,7 +55,7 @@ def serialize_revision(node, record, version, index, anon=False):
     return {
         'user': user,
         'index': index + 1,
-        'date': version.date_created.isoformat(),
+        'date': version.created.isoformat(),
         'downloads': version._download_count if hasattr(version, '_download_count') else record.get_download_count(version=index),
         'md5': version.metadata.get('md5'),
         'sha256': version.metadata.get('sha256'),
@@ -86,7 +86,7 @@ def get_filename(version_idx, file_version, file_record):
     name, ext = os.path.splitext(file_record.name)
     return u'{name}-{date}{ext}'.format(
         name=name,
-        date=file_version.date_created.isoformat(),
+        date=file_version.created.isoformat(),
         ext=ext,
     )
 

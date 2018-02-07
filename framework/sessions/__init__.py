@@ -163,7 +163,7 @@ def before_request():
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
+        if not util_time.throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
             # Update date last login when making non-api requests
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')

@@ -15,6 +15,12 @@ logger = logging.getLogger(__name__)
 BEPRESS_PROVIDER = None
 
 def validate_input(custom_provider, data, copy=False, add_missing=False):
+
+    # This function may be run outside of this command (e.g. in the admin app) so we
+    # need to make sure that BEPRESS_PROVIDER is set
+    global BEPRESS_PROVIDER
+    BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
@@ -50,7 +56,9 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
     if not add_missing:
-        assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(missing_subjects.all())
+        assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
+    assert custom_provider.share_title not in [None, '', 'bepress'], 'share title not set; please set the share title on this provider before creating a custom taxonomy.'
+
     logger.info('Successfully validated mapping completeness')
     return list(missing_subjects) if add_missing else None
 
@@ -151,6 +159,11 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
 def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=False, add_missing=False):
+    # This function may be run outside of this command (e.g. in the admin app) so we
+    # need to make sure that BEPRESS_PROVIDER is set
+    global BEPRESS_PROVIDER
+    if not BEPRESS_PROVIDER:
+        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'

@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from admin.preprints import views
 
+app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.PreprintFormView.as_view(), name='search'),

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import functools
 import time
 
 import datetime
@@ -14,8 +13,8 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
+from waffle.models import Flag, Sample, Switch
 
-from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -27,7 +26,7 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.modm_compat import Q
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
@@ -178,7 +177,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
+    created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
@@ -247,9 +246,7 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            models.NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -543,7 +540,7 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value ={
+    ezid_return_value = {
         'response': {
             'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
                 doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
@@ -586,7 +583,7 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
-        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
@@ -732,15 +729,15 @@ class ExternalAccountFactory(DjangoModelFactory):
 
 
 class MockOAuth2Provider(models.ExternalProvider):
-    name = "Mock OAuth 2.0 Provider"
-    short_name = "mock2"
+    name = 'Mock OAuth 2.0 Provider'
+    short_name = 'mock2'
 
-    client_id = "mock2_client_id"
-    client_secret = "mock2_client_secret"
+    client_id = 'mock2_client_id'
+    client_secret = 'mock2_client_secret'
 
-    auth_url_base = "https://mock2.com/auth"
-    callback_url = "https://mock2.com/callback"
-    auto_refresh_url = "https://mock2.com/callback"
+    auth_url_base = 'https://mock2.com/auth'
+    callback_url = 'https://mock2.com/callback'
+    auto_refresh_url = 'https://mock2.com/callback'
     refresh_time = 300
     expiry_time = 9001
 
@@ -817,16 +814,43 @@ class ArchiveJobFactory(DjangoModelFactory):
         model = models.ArchiveJob
 
 
-class ActionFactory(DjangoModelFactory):
+class ReviewActionFactory(DjangoModelFactory):
     class Meta:
-        model = models.Action
+        model = models.ReviewAction
 
-    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    trigger = FuzzyChoice(choices=DefaultTriggers.values())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=workflow.States.values())
-    to_state = FuzzyChoice(choices=workflow.States.values())
+    from_state = FuzzyChoice(choices=DefaultStates.values())
+    to_state = FuzzyChoice(choices=DefaultStates.values())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)
 
     is_deleted = False
+
+
+class FlagFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    everyone = True
+    note = 'This is a waffle test flag'
+
+    class Meta:
+        model = Flag
+
+
+class SampleFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    percent = 100
+    note = 'This is a waffle test sample'
+
+    class Meta:
+        model = Sample
+
+
+class SwitchFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    active = True
+    note = 'This is a waffle test switch'
+
+    class Meta:
+        model = Switch

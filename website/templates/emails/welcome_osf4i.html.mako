@@ -31,7 +31,7 @@ Every project and file on the OSF has a permanent unique identifier, and every r
 You can monitor traffic to your public projects and downloads of your public files.<br>
 <br>
 <h4>Connect services that you use</h4>
-GitHub, Dropbox, Google Drive, Box.com, Dataverse, figshare, Amazon S3, Mendeley, Zotero.  Do you use any of these? Link the services that you use to your OSF projects so that all parts of your project are in one place.<br>
+GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bitbucket, GitLab, OneDrive, Mendeley, Zotero.  Do you use any of these? Link the services that you use to your OSF projects so that all parts of your project are in one place.<br>
 <br>
 <h4>Collaborate</h4>
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again.<br>

@@ -59,7 +59,7 @@ class CollectionMixin(object):
 class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
-    Paginated list of Project Organizer Collections ordered by their `date_modified`.
+    Paginated list of Project Organizer Collections ordered by their `modified`.
     Each resource contains the full representation of the project organizer collection, meaning additional
     requests to an individual Organizer Collection's detail view are not necessary.
 
@@ -130,7 +130,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
@@ -340,7 +340,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
@@ -365,7 +365,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
@@ -423,7 +423,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
@@ -504,7 +504,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = NodeRelation
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')

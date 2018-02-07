@@ -5,14 +5,13 @@ import datetime as dt
 import logging
 
 from django.utils import timezone
-from django.db.models import Q as DQ
+from django.db.models import Q
 from django.db.models import Subquery
+from django.core.validators import URLValidator
 from flask import request
 from framework.sessions import session
-from modularodm import Q
 
-from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
-from modularodm.validators import URLValidator
+from osf.exceptions import ValidationValueError, ValidationError
 from osf.utils.requests import check_select_for_update
 from website import security, settings
 
@@ -116,7 +115,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
     if email:
         email = email.strip().lower()
-        qs = qs.filter(DQ(DQ(username=email) | DQ(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
+        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
 
     if password:
         password = password.strip()
@@ -163,17 +162,15 @@ class Auth(object):
     def private_link(self):
         if not self.private_key:
             return None
+        # Avoid circular import
+        from osf.models import PrivateLink
         try:
-            # Avoid circular import
-            from osf.models import PrivateLink
-            private_link = PrivateLink.find_one(
-                Q('key', 'eq', self.private_key)
-            )
+            private_link = PrivateLink.objects.get(key=self.private_key)
 
             if private_link.is_deleted:
                 return None
 
-        except QueryException:
+        except PrivateLink.DoesNotExist:
             return None
 
         return private_link
