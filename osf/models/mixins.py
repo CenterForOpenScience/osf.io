@@ -83,11 +83,26 @@ class Loggable(models.Model):
             log.date = log_date
         log.save()
 
-        if self.logs.count() == 1:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                SELECT COUNT(*) AS "__count"
+                FROM osf_nodelog
+                WHERE osf_nodelog.node_id = %s
+            ''', [self.id])
+            log_count = int(cursor.fetchone()[0])
+        if log_count == 1:
             self.last_logged = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.last_logged = self.logs.first().date
-
+            with connection.cursor() as cursor:
+                cursor.execute('''
+                    SELECT osf_nodelog.date
+                    FROM osf_nodelog
+                    WHERE osf_nodelog.node_id = %s
+                    ORDER BY osf_nodelog.date DESC
+                    LIMIT 1
+                ''', [self.id])
+                self.last_logged = cursor.fetchone()[0]
         if save:
             self.save()
         if user and not self.is_collection:
