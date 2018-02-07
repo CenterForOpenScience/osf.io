@@ -30,6 +30,7 @@ from website.util import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -302,6 +303,15 @@ def resolve_guid(guid, suffix=None):
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
+
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+            if referent.is_deleted:
+                raise HTTPError(http.GONE)
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+            return send_from_directory(ember_osf_web_dir, 'index.html')
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)

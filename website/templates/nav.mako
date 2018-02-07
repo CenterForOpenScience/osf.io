@@ -38,6 +38,7 @@
         <ul class="nav navbar-nav">
             % if service_name == 'HOME':
                 % if user_name:
+                    <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}quickfiles/">My Quick Files</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
                 % endif
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>

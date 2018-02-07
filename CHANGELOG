@@ -2,6 +2,18 @@
 Changelog
 *********
 
+0.133.0 (2018-02-07)
+====================
+
+- Routing and UI changes for Quick Files.
+
+0.132.0 (2018-02-06)
+====================
+
+- Rename Moderation groups when PreprintProvider _id's change.
+- Add facebook_app_id to PreprintProvider.
+- Remove bower from docker-compose.override.yml for registries.
+
 0.131.0 (2018-02-01)
 ====================
 
