@@ -277,8 +277,8 @@ FROM osf_abstractnode AS N
             ) REGISTRATION_APPROVAL ON TRUE
   LEFT JOIN LATERAL (
             SELECT
-              CASE WHEN ((osf_preprintprovider.domain_redirect_enabled AND osf_preprintprovider.domain IS NOT NULL) OR
-                         osf_preprintprovider._id = 'osf')
+              CASE WHEN ((osf_abstractprovider.domain_redirect_enabled AND osf_abstractprovider.domain IS NOT NULL) OR
+                         osf_abstractprovider._id = 'osf')
                 THEN
                   '/' || (SELECT G._id
                           FROM osf_guid G
@@ -287,7 +287,7 @@ FROM osf_abstractnode AS N
                           ORDER BY created ASC, id ASC
                           LIMIT 1) || '/'
               ELSE
-                '/preprints/' || osf_preprintprovider._id || '/' || (SELECT G._id
+                '/preprints/' || osf_abstractprovider._id || '/' || (SELECT G._id
                                                                      FROM osf_guid G
                                                                      WHERE (G.object_id = P.id)
                                                                            AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
@@ -295,7 +295,7 @@ FROM osf_abstractnode AS N
                                                                      LIMIT 1) || '/'
               END AS URL
             FROM osf_preprintservice P
-              INNER JOIN osf_preprintprovider ON P.provider_id = osf_preprintprovider.id
+              INNER JOIN osf_abstractprovider ON P.provider_id = osf_abstractprovider.id
             WHERE P.node_id = N.id
               AND P.machine_state != 'initial'  -- is_preprint
               AND N.preprint_file_id IS NOT NULL
