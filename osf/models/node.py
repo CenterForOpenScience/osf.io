@@ -327,16 +327,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def parent_node(self):
-        # TODO: Use .filter when chaining is fixed in django-include
         try:
-            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
-        except StopIteration:
-            node_rel = None
-        if node_rel:
-            parent = node_rel.parent
-            if parent:
-                return parent
-        return None
+            return AbstractNode.objects.raw(
+                '''
+                SELECT *
+                FROM osf_abstractnode
+                WHERE osf_abstractnode.id = (
+                  SELECT osf_noderelation.parent_id
+                  FROM osf_noderelation
+                  WHERE (osf_noderelation.child_id = %s
+                       AND osf_noderelation.is_node_link = FALSE))
+                ''', [self.id]
+            )[0]
+        except IndexError:
+            return None
 
     @property
     def nodes(self):
