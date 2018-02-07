@@ -274,7 +274,7 @@
         </div>
         <div class="modal-body">
             <p>
-                Draging an image into the Wiki editor uploads that image to a project and displays it as part of the
+                Dragging an image into the Wiki editor uploads that image to a project and displays it as part of the
                 markdown. If you can want to add an image to the wiki, but don't have permission to add files to the
                 project you can still link files from an external source or ask a project adminstrator for permission
                 to write to that project.
