@@ -396,7 +396,7 @@ class FileVersionSerializer(JSONAPISerializer):
 def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     url = furl.furl(settings.DOMAIN).set(
-        path=(obj.node._id, 'download', guid._id if guid else obj._id,),
+        path=('download', guid._id if guid else obj._id,),
     )
 
     if version:

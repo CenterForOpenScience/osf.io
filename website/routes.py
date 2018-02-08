@@ -1181,7 +1181,7 @@ def make_url_map(app):
             OsfWebRenderer('project/view_file.mako', trust=False)
         ),
         Rule(
-            '/<pid>/download/<fid_or_guid>/',
+            '/download/<fid_or_guid>/',
             'get',
             addon_views.persistent_file_download,
             json_renderer,

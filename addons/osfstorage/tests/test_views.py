@@ -1049,24 +1049,24 @@ class TestFileViews(StorageTestCase):
         file = create_test_file(node=self.node, user=self.user)
         folder = self.node_settings.get_root().append_folder('Folder')
 
-        base_url = '/{}/download/{}/'
+        base_url = '/download/{}/'
 
         # Test download works with path
-        url = base_url.format(file.node._id, file._id)
+        url = base_url.format(file._id)
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 302
 
         # Test download works with guid
-        url = base_url.format(file.node._id, file.get_guid()._id)
+        url = base_url.format(file.get_guid()._id)
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 302
 
         # Test nonexistant file 404's
-        url = base_url.format(file.node._id, 'FakeGuid')
+        url = base_url.format('FakeGuid')
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 404
 
         # Test folder 400's
-        url = base_url.format(folder.node._id, folder._id)
+        url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
