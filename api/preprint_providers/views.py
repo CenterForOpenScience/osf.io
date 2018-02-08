@@ -1,9 +1,10 @@
 
-from django.db.models import Q
+from django.db.models import Case, CharField, Q, Value, When
 from guardian.shortcuts import get_objects_for_user
+from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
@@ -14,12 +15,12 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
-from api.preprint_providers.serializers import PreprintProviderSerializer
-from api.preprint_providers.permissions import CanSetUpProvider, PERMISSIONS
+from api.preprint_providers.serializers import PreprintProviderSerializer, ModeratorSerializer
+from api.preprint_providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
 from api.preprints.serializers import PreprintSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, Subject, PreprintProvider
+from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
@@ -362,3 +363,77 @@ class PreprintProviderLicenseList(LicenseList):
         if not provider.default_license:
             return provider.licenses_acceptable.get_queryset()
         return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
+
+class ModeratorMixin(object):
+    model_class = OSFUser
+
+    def get_provider(self):
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
+    def get_serializer_context(self, *args, **kwargs):
+        ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
+        ctx.update({'provider': self.get_provider()})
+        return ctx
+
+
+class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+        CanAddModerator,
+    )
+    view_category = 'moderators'
+    view_name = 'provider-moderator-list'
+
+    required_read_scopes = [CoreScopes.MODERATORS_READ]
+    required_write_scopes = [CoreScopes.MODERATORS_WRITE]
+
+    serializer_class = ModeratorSerializer
+
+    def get_default_queryset(self):
+        provider = self.get_provider()
+        group_helper = GroupHelper(provider)
+        admin_group = group_helper.get_group('admin')
+        mod_group = group_helper.get_group('moderator')
+        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
+            When(groups=admin_group, then=Value('admin')),
+            default=Value('moderator'),
+            output_field=CharField()
+        ))
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+        CanUpdateModerator,
+        CanDeleteModerator,
+    )
+    view_category = 'moderators'
+    view_name = 'provider-moderator-detail'
+
+    required_read_scopes = [CoreScopes.MODERATORS_READ]
+    required_write_scopes = [CoreScopes.MODERATORS_WRITE]
+
+    serializer_class = ModeratorSerializer
+
+    def get_object(self):
+        provider = self.get_provider()
+        user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
+        try:
+            perm_group = user.groups.filter(name__contains=GROUP_FORMAT.format(provider_id=provider._id, group='')).order_by('name').first().name.split('_')[-1]
+        except AttributeError:
+            # Group doesn't exist -- users not moderator
+            raise NotFound
+        setattr(user, 'permission_group', perm_group)
+        return user
+
+    def perform_destroy(self, instance):
+        try:
+            self.get_provider().remove_from_group(instance, instance.permission_group)
+        except ValueError as e:
+            raise ValidationError(e.message)
