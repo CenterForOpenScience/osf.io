@@ -1530,12 +1530,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
-
-        # After set permissions callback
         if check_addons:
             for addon in self.get_addons():
                 message = addon.after_set_privacy(self, permissions)
