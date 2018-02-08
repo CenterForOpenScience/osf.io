@@ -582,10 +582,18 @@ class ReviewProviderMixin(models.Model):
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
-    def add_admin(self, user):
+    def add_to_group(self, user, group):
         from api.preprint_providers.permissions import GroupHelper
-        return GroupHelper(self).get_group('admin').user_set.add(user)
+        # TODO: Add default notification subscription
+        return GroupHelper(self).get_group(group).user_set.add(user)
 
-    def add_moderator(self, user):
+    def remove_from_group(self, user, group, unsubscribe=True):
         from api.preprint_providers.permissions import GroupHelper
-        return GroupHelper(self).get_group('moderator').user_set.add(user)
+        _group = GroupHelper(self).get_group(group)
+        if group == 'admin':
+            if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
+                raise ValueError('Cannot remove last admin.')
+        if unsubscribe:
+            # TODO: remove notification subscription
+            pass
+        return _group.user_set.remove(user)
