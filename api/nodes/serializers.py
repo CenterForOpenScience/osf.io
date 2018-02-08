@@ -216,6 +216,11 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    implicit_contributors = RelationshipField(
+        related_view='nodes:node-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'}
+    )
+
     files = RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<_id>'}
