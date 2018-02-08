@@ -4556,27 +4556,27 @@ class TestIndexView(OsfTestCase):
         self.user.affiliated_institutions.add(self.inst_two)
 
         # tests 5 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(5):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_one)
 
         # tests 4 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
+        for i in range(4):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_two)
 
         # tests 5 affiliated, registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(5):
             registration = RegistrationFactory(creator=self.user, is_public=True)
             registration.affiliated_institutions.add(self.inst_three)
 
         # tests 5 affiliated, non-registered public components
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(5):
             node = NodeFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_four)
 
         # tests 5 affiliated, non-registered, private projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(5):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
 

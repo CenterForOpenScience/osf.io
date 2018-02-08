@@ -149,6 +149,26 @@ class TestUserNodes:
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
 
+        url = "/{}users/{}/nodes/?sort=-title".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+
+        assert public_project_user_one._id == ids[0]
+        assert private_project_user_one._id == ids[1]
+
+        url = "/{}users/{}/nodes/?sort=title".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+
+        assert public_project_user_one._id == ids[1]
+        assert private_project_user_one._id == ids[0]
+
 
 @pytest.mark.django_db
 class TestUserNodesPreprintsFiltering:
