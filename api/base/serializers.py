@@ -1252,7 +1252,10 @@ class JSONAPISerializer(BaseAPISerializer):
             else:
                 try:
                     if hasattr(attribute, 'all'):
-                        representation = field.to_representation(attribute.all())
+                        if field.field_name == 'tags':
+                            representation = attribute.values_list('name', flat=True)
+                        else:
+                            representation = field.to_representation(attribute.all())
                     else:
                         representation = field.to_representation(attribute)
                 except SkipField:
