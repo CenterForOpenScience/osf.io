@@ -818,7 +818,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if hasattr(self.contributor_set.all(), '_result_cache'):
+        if getattr(self.contributor_set.all(), '_result_cache', None):
             for contrib in self.contributor_set.all():
                 if contrib.user_id == user.id:
                     return get_contributor_permissions(contrib)
