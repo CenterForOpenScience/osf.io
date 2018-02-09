@@ -543,7 +543,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .order_by('-modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
 
