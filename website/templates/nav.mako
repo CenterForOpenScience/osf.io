@@ -5,12 +5,6 @@
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
     <div class="container">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
         <div class="service-name">
             <a href="${service_url}">
@@ -29,6 +23,12 @@
                 <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
             </ul>
         </div>
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
         <ul class="nav navbar-nav"></ul>
@@ -48,7 +48,7 @@
             </li>
             <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
             % if user_name and display_name:
-            <li class="dropdown">
+            <li class="dropdown secondary-nav-dropdown">
                 <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
                     <div class="osf-profile-image">
                         <img src="${user_profile_image}" alt="User profile image">
