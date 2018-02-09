@@ -49,6 +49,16 @@ class EvernoteUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer
 
+    def revoke_remote_oauth_access(self, external_account):
+
+        client = utils.get_evernote_client(token=external_account.oauth_key)
+        userStore = client.get_user_store()
+
+        try:
+            userStore.revokeLongSession(external_account.oauth_key)
+        except:
+            pass
+
 class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer

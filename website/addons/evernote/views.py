@@ -127,6 +127,8 @@ evernote_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
+# TO DO:  is evernotes_notes extraneous?
+
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')
 def evernote_notes(node_addon, **kwargs):

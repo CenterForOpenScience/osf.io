@@ -25,27 +25,27 @@ mock_client = MockEvernote()
 
 class TestAuthViews(EvernoteAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseMixin):
 
-    # TO DO
+    # Need to do more? 
+    # https://github.com/CenterForOpenScience/osf.io/blob/develop-backup/website/addons/owncloud/tests/test_views.py#L20
     def test_oauth_start(self):
         pass
 
-    # def setUp(self):
-    #     self.mock_refresh = mock.patch("website.addons.evernote.model.Evernote.refresh_oauth_key")
-    #     self.mock_refresh.return_value = True
-    #     self.mock_refresh.start()
-    #     super(TestAuthViews, self).setUp()
+    def setUp(self):
+        self.mock_refresh = mock.patch("website.addons.evernote.model.Evernote.refresh_oauth_key")
+        self.mock_refresh.return_value = True
+        self.mock_refresh.start()
+        super(TestAuthViews, self).setUp()
 
-    # def tearDown(self):
-    #     self.mock_refresh.stop()
-    #     super(TestAuthViews, self).tearDown()
+    def tearDown(self):
+        self.mock_refresh.stop()
+        super(TestAuthViews, self).tearDown()
 
-    # @mock.patch(
-    #     'website.addons.evernote.model.EvernoteUserSettings.revoke_remote_oauth_access',
-    #     mock.PropertyMock()
-    # )
-    # def test_delete_external_account(self):
-    #     super(TestAuthViews, self).test_delete_external_account()
-
+    @mock.patch(
+        'website.addons.box.model.BoxUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_delete_external_account(self):
+        super(TestAuthViews, self).test_delete_external_account()
 
 class TestConfigViews(EvernoteAddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMixin):
 
@@ -74,30 +74,40 @@ class TestConfigViews(EvernoteAddonTestCase, testing.views.OAuthAddonConfigViews
         super(TestConfigViews, self).test_import_auth()
 
 class TestFilebrowserViews(EvernoteAddonTestCase):
-    pass
 
-    # def setUp(self):
-    #     super(TestFilebrowserViews, self).setUp()
-    #     self.user.add_addon('evernote')
-    #     self.node_settings.external_account = self.user_settings.external_accounts[0]
-    #     self.node_settings.save()
-    #     self.patcher_refresh = mock.patch('website.addons.evernote.model.Evernote.refresh_oauth_key')
-    #     self.patcher_refresh.return_value = True
-    #     self.patcher_refresh.start()
+    def setUp(self):
+        super(TestFilebrowserViews, self).setUp()
+        self.user.add_addon('evernote')
+        self.node_settings.external_account = self.user_settings.external_accounts[0]
+        self.node_settings.save()
+        self.patcher_refresh = mock.patch('website.addons.evernote.model.Evernote.refresh_oauth_key')
+        self.patcher_refresh.return_value = True
+        self.patcher_refresh.start()
 
-    # def tearDown(self):
-    #     self.patcher_refresh.stop()
+    def tearDown(self):
+        self.patcher_refresh.stop()
 
-    # def test_evernote_list_folders(self):
-    #     with patch_client('website.addons.evernote.model.EvernoteClient'):
-    #         url = self.project.api_url_for('evernote_folder_list', folder_id='foo')
-    #         res = self.app.get(url, auth=self.user.auth)
-    #         contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-    #         expected = [each for each in contents if each['type']=='folder']
-    #         assert_equal(len(res.json), len(expected))
-    #         first = res.json[0]
-    #         assert_in('kind', first)
-    #         assert_equal(first['name'], contents[0]['name'])
+    def test_evernote_list_folders(self):
+        with patch_client('website.addons.evernote.model.Evernote'):
+            url = self.project.api_url_for('evernote_folder_list', folder_id='foo')
+            print('TestFilebrowserViews.test_evernote_list_folders-->url: ', url)
+
+            print('TestFilebrowserViews.test_evernote_list_folders-->app: ', self.app)
+
+            res = self.app.get(url, auth=self.user.auth)
+            print('TestFilebrowserViews.test_evernote_list_folders-->res.json: ', res.json)
+
+            contents = mock_client.get_folder('', list=True)
+            print('TestFilebrowserViews.test_evernote_list_folders-->contents: ', contents)
+
+            assert_equal( res.json[0]['name'], contents['name'])
+
+            #contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            #expected = [each for each in contents if each['type']=='folder']
+            #assert_equal(len(res.json), len(expected))
+            #first = res.json[0]
+            #assert_in('kind', first)
+            #assert_equal(first['name'], contents[0]['name'])
 
     # @mock.patch('website.addons.evernote.model.EvernoteNodeSettings.folder_id')
     # def test_evernote_list_folders_if_folder_is_none(self, mock_folder):
