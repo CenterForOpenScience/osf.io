@@ -1076,6 +1076,32 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.update_search()
             return True
 
+    def remove_tags(self, tags, auth, save=True):
+        """
+        Unlike remove_tag, this optimization method assumes that the provided
+        tags are already present on the node.
+        """
+        if not tags:
+            raise InvalidTagError
+
+        for tag in tags:
+            tag_obj = Tag.objects.get(name=tag)
+            self.tags.remove(tag_obj)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        self.update_search()
+        return True
+
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
         return user is not None and Contributor.objects.filter(user=user, node=self).exists()

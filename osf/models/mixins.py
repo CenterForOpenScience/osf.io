@@ -105,10 +105,29 @@ class Taggable(models.Model):
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
         old_tags = set(self.tags.values_list('name', flat=True))
-        for tag in (set(new_tags) - old_tags):
-            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
-        for tag in (old_tags - set(new_tags)):
-            self.remove_tag(tag, auth, save=save)
+        to_add = (set(new_tags) - old_tags)
+        to_remove = (old_tags - set(new_tags))
+        if to_add:
+            self.add_tags(to_add, auth=auth, save=save, log=log, system=system)
+        if to_remove:
+            self.remove_tags(to_remove, auth=auth, save=save)
+
+    def add_tags(self, tags, auth=None, save=True, log=True, system=False):
+        """
+        Optimization method for use with update_tags. Unlike add_tag, already assumes tag is
+        not on the object.
+        """
+        if not system and not auth:
+            raise ValueError('Must provide auth if adding a non-system tag')
+        for tag in tags:
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
+            self.tags.add(tag_instance)
+            # TODO: Logging belongs in on_tag_added hook
+            if log:
+                self.add_tag_log(tag_instance, auth)
+            self.on_tag_added(tag_instance)
+        if save:
+            self.save()
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
