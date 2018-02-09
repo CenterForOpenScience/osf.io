@@ -47,7 +47,9 @@
                 </div>
                 <div id="grid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
@@ -261,7 +263,9 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="spinner-loading-wrapper">
-                <div class="logo-spin logo-xl"></div>
+                <div class="ball-scale ball-scale-blue">
+                    <div></div>
+                </div>
                  <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
             </div>
         </div>
