@@ -45,7 +45,7 @@ def preprint_csl(preprint, node):
     if article_doi:
         csl['DOI'] = article_doi
     else:
-        if preprint_doi:
+        if preprint_doi and preprint.is_published and preprint.preprint_doi_created:
             csl['DOI'] = preprint_doi
 
     return csl
