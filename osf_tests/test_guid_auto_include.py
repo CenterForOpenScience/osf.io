@@ -3,8 +3,7 @@ from django.utils import timezone
 import pytest
 from django_bulk_update.helper import bulk_update
 
-from osf.models import OSFUser
-from django.db.models import Max, DateTimeField
+from django.db.models import DateTimeField
 
 from osf_tests.factories import UserFactory, PreprintFactory, NodeFactory
 
@@ -25,8 +24,7 @@ class TestGuidAutoInclude:
     @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
     def test_all(self, Factory, django_assert_num_queries):
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             UserFactory()
         with django_assert_num_queries(1):
             wut = Factory._meta.model.objects.all()
@@ -37,8 +35,7 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_filter(self, Factory, django_assert_num_queries):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
         with django_assert_num_queries(1):
@@ -51,8 +48,7 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_filter_order_by(self, Factory, django_assert_num_queries):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
         with django_assert_num_queries(1):
@@ -65,10 +61,8 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_values(self, Factory, django_assert_num_queries):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
-        new_ids = [o.id for o in objects]
         with django_assert_num_queries(1):
             wut = Factory._meta.model.objects.values('id')
             for x in wut:
@@ -78,10 +72,8 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_exclude(self, Factory, django_assert_num_queries):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
-        new_ids = [o.id for o in objects]
         try:
             dtfield = [x.name for x in objects[0]._meta.get_fields() if isinstance(x, DateTimeField)][0]
         except IndexError:
@@ -95,8 +87,7 @@ class TestGuidAutoInclude:
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_update_objects(self, Factory):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
         try:
@@ -106,15 +97,14 @@ class TestGuidAutoInclude:
         qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
         assert len(qs) > 0, 'No results returned'
         try:
-            count = qs.update(**{dtfield: timezone.now()})
+            qs.update(**{dtfield: timezone.now()})
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_update_on_objects_filtered_by_guids(self, Factory):
         objects = []
-        ids = range(0, 5)
-        for id in ids:
+        for _ in range(0, 5):
             objects.append(Factory())
         new__ids = [o._id for o in objects]
         try:
@@ -124,7 +114,7 @@ class TestGuidAutoInclude:
         qs = objects[0]._meta.model.objects.filter(guids___id__in=new__ids)
         assert len(qs) > 0, 'No results returned'
         try:
-            count = qs.update(**{dtfield: timezone.now()})
+            qs.update(**{dtfield: timezone.now()})
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
@@ -136,7 +126,7 @@ class TestGuidAutoInclude:
             pytest.skip('Thing must have contributors')
         try:
             with django_assert_num_queries(1):
-                wut = [x._id for x in thing_with_contributors.contributors.all()]
+                [x._id for x in thing_with_contributors.contributors.all()]
         except Exception as ex:
             pytest.fail('Related manager failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
@@ -144,8 +134,7 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_count_objects(self, Factory, django_assert_num_queries):
         objects = []
-        things = range(0, 5)
-        for thing in things:
+        for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
         with django_assert_num_queries(1):
@@ -162,7 +151,7 @@ class TestGuidAutoInclude:
         if Factory == PreprintFactory:
             # Don't try to save preprints on build when neither the subject nor provider have been saved
             kwargs['finish'] = False
-        for _ in range(0,5):
+        for _ in range(0, 5):
             objects.append(Factory.build(**kwargs))
         with django_assert_num_queries(1):
             things = Model.objects.bulk_create(objects)

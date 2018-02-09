@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
-require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 /**
  * Binding handler that instantiates an ACE editor.
  * The value accessor must be a ko.observable.

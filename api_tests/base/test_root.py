@@ -16,6 +16,7 @@ from framework.auth.cas import CasResponse
 from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session
 
+
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()
@@ -36,7 +37,10 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
+        assert_equal(
+            res.json['meta']['current_user']['data']['attributes']['given_name'],
+            self.user.given_name
+        )
 
     def test_returns_302_redirect_for_base_url(self):
         res = self.app.get('/')
@@ -59,7 +63,11 @@ class TestWelcomeToApi(ApiTestCase):
         assert_not_in('admin', res.json['meta'].keys())
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
-    @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE
+    # TODO: Remove when available outside of DEV_MODE
+    @unittest.skipIf(
+        not settings.DEV_MODE,
+        'DEV_MODE disabled, osf.admin unavailable'
+    )
     def test_admin_scoped_token_has_admin(self, mock_auth):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
@@ -76,7 +84,12 @@ class TestWelcomeToApi(ApiTestCase):
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
-        res = self.app.get(self.url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = self.app.get(
+            self.url,
+            headers={
+                'Authorization': 'Bearer {}'.format(token.token_id)
+            }
+        )
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['admin'], True)
@@ -98,7 +111,12 @@ class TestWelcomeToApi(ApiTestCase):
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
-        res = self.app.get(self.url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = self.app.get(
+            self.url,
+            headers={
+                'Authorization': 'Bearer {}'.format(token.token_id)
+            }
+        )
 
         assert_equal(res.status_code, 200)
         assert_not_in('admin', res.json['meta'].keys())

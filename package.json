@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.129.0",
+  "version": "0.133.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -21,7 +21,7 @@
     "exports-loader": "0.6.3",
     "file-loader": "^0.8.1",
     "font-awesome": "^4.4.0",
-    "font-awesome-webpack": "0.0.4",
+    "font-awesome-webpack": "0.0.5-beta.2",
     "gsap": "1.18.0",
     "highlight.js": "~8.4.0",
     "historyjs": "^1.8.0-b2",
@@ -63,7 +63,7 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "0.5.7",
     "uuid": "^2.0.1",
-    "webpack": "1.15.0",
+    "webpack": "3.8.1",
     "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
