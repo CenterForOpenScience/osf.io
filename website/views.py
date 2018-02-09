@@ -24,7 +24,7 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
 from website.util import permissions
 
@@ -299,7 +299,7 @@ def resolve_guid(guid, suffix=None):
                 return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
             if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
@@ -308,7 +308,7 @@ def resolve_guid(guid, suffix=None):
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True)
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
