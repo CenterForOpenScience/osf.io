@@ -51,6 +51,5 @@ urlpatterns = [
 
 
 urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
-urlpatterns += [url(r'^silk/', include('silk.urls', namespace='silk'))]
 
 handler404 = views.error_404
