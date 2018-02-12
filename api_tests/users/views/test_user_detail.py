@@ -6,15 +6,15 @@ import urlparse
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 
+from osf.utils.sanitize import strip_html
 from osf.models import QuickFilesNode
-from website import util as website_utils
 from api.base.settings.defaults import API_BASE
+from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     ProjectFactory,
 )
-from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 
@@ -97,7 +97,7 @@ class TestUserDetail:
         quickfiles = QuickFilesNode.objects.get(creator=user_one)
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = website_utils.waterbutler_api_url_for(
+        waterbutler_upload = waterbutler_api_url_for(
             quickfiles._id, 'osfstorage')
 
         assert upload_url == waterbutler_upload

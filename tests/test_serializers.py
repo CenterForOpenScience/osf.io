@@ -13,6 +13,7 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NodeRelation
+from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
@@ -20,7 +21,6 @@ from website.project.views.node import _view_project, _serialize_node_search, _g
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
-from website.util import permissions
 
 pytestmark = pytest.mark.django_db
 

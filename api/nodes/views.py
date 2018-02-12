@@ -104,10 +104,10 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.utils.permissions import ADMIN, PERMISSIONS
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN, PERMISSIONS
 
 
 class NodeMixin(object):

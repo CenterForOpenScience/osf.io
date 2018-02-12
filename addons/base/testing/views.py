@@ -9,7 +9,8 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa (PEP8 asserts)
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from addons.base.testing.base import OAuthAddonTestCaseMixin
-from website.util import api_url_for, permissions, web_url_for
+from osf.utils import permissions
+from website.util import api_url_for, web_url_for
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):

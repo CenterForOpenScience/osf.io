@@ -12,7 +12,7 @@ from api.base.serializers import (
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
