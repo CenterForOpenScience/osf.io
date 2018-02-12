@@ -160,3 +160,36 @@ WikiSettingsViewModel.enabled.subscribe(function(newValue) {
 if ($('#selectWikiForm').length) {
     $osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
 }
+
+var RequestAccessSettingsViewModel = {
+    enabled: ko.observable(ctx.node.requestProjectAccessEnabled), // <- this would get set in the mako template, as usual
+    requestAccessMessage: ko.observable('')
+};
+
+RequestAccessSettingsViewModel.enabled.subscribe(function(newValue) {
+    var self = this;
+    $osf.postJSON(ctx.node.urls.api + 'settings/requests/', {accessRequestsEnabled: newValue}
+    ).done(function(response) {
+        if (newValue) {
+            self.requestAccessMessage('Request Access Enabled');
+        }
+        else {
+            self.requestAccessMessage('Request Access Disabled');
+        }
+        //Give user time to see message before reload.
+        setTimeout(function(){window.location.reload();}, 1500);
+    }).fail(function(xhr, status, error) {
+        $osf.growl('Error', 'Unable to update access request.');
+        Raven.captureMessage('Unable to update access request.', {
+            extra: {
+                url: ctx.node.urls.api + 'settings/requests/', status: status, error: error
+            }
+        });
+        setTimeout(function(){window.location.reload();}, 1500);
+    });
+    return true;
+}, RequestAccessSettingsViewModel);
+
+if ($('#enableRequestAccessForm').length) {
+    $osf.applyBindings(RequestAccessSettingsViewModel, '#enableRequestAccessForm');
+}
