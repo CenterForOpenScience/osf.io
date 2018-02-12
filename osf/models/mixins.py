@@ -1,6 +1,7 @@
 import pytz
 
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db import models, transaction
 from include import IncludeQuerySet
@@ -197,8 +198,12 @@ class AddonModelMixin(models.Model):
             return None
         if not settings_model:
             return None
-        if settings_model.objects.filter(owner=self, deleted=False).exists() and not deleted:
-            return settings_model.objects.get(owner=self)
+        try:
+            settings_obj = settings_model.objects.get(owner=self)
+            if not settings_obj.deleted or deleted:
+                return settings_obj
+        except ObjectDoesNotExist:
+            pass
         return None
 
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
