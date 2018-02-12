@@ -81,11 +81,10 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else '_id'
         resource_object_list = model_cls.objects.filter(Q(**{'{}__in'.format(column_name): requested_ids}))
 
-        for resource in resource_object_list:
-            if getattr(resource, 'is_deleted', None):
-                raise Gone
+        if resource_object_list.filter(is_deleted=True).exists():
+            raise Gone
 
-        if len(resource_object_list) != len(request_data):
+        if resource_object_list.count() != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         if column_name == 'guids___id':
