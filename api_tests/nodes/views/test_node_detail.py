@@ -245,10 +245,10 @@ class TestNodeDetail:
 
     def test_node_list_embed_identifier_link(self, app, user, project_public, url_public):
         url = url_public + '?embed=identifiers'
-        res = app.get(url, auth=user.auth)
+        res = app.get(url)
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
-        assert '/v2/nodes/{}/identifiers'.format(project_public._id) in link
+        assert '{}identifiers/'.format(url_public) == link
 
 
 @pytest.mark.django_db
