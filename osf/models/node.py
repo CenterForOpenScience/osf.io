@@ -329,7 +329,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def parent_node(self):
         # TODO: Use .filter when chaining is fixed in django-include
         try:
-            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
+            node_rel = next(parent for parent in self._parents.filter(is_node_link=False))
         except StopIteration:
             node_rel = None
         if node_rel:
@@ -2623,7 +2623,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True):
+        if Node.objects.get_children(self, active=True).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback

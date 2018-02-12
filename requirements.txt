@@ -88,6 +88,7 @@ django-typed-models==0.7.0
 git+https://github.com/cos-forks/django-dirtyfields@develop
 git+https://github.com/cos-forks/django-extensions@master
 django-include==0.2.4
+django-silk==2.0.0
 psycopg2==2.7.3
 ujson==1.35
 sqlparse==0.2.4

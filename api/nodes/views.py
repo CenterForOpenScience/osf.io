@@ -324,6 +324,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
         """User must have admin permissions to delete nodes."""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info('---------------------')
+        logger.info(resource_list)
+        logger.info('---------------------')
         if is_truthy(self.request.query_params.get('skip_uneditable', False)):
             return any([node.has_permission(user, ADMIN) for node in resource_list])
         return all([node.has_permission(user, ADMIN) for node in resource_list])
@@ -349,6 +354,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info('---------------------')
+        logger.info(instance)
+        logger.info('---------------------')
         auth = get_user_auth(self.request)
         try:
             instance.remove_node(auth=auth)

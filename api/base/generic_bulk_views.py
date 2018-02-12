@@ -8,6 +8,7 @@ from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
 from osf.models.base import GuidMixin
+from silk.profiling.profiler import silk_profile
 
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
@@ -71,6 +72,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
     Custom BulkDestroyAPIView that handles validation and permissions for
     bulk delete
     """
+    @silk_profile(name='get_requested_resources')
     def get_requested_resources(self, request, request_data):
         """
         Retrieves resources in request body
@@ -101,6 +103,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         return True
 
+    @silk_profile(name='bulk_destroy_skip_uneditable')
     def bulk_destroy_skip_uneditable(self, resource_list, user, object_type):
         """
         Override on view if allowing bulk delete request to skip resources for which the user does not have permission
@@ -109,6 +112,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         return None
 
+    @silk_profile(name='bulk_destroy')
     # Overrides BulkDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
