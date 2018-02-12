@@ -177,6 +177,10 @@ var ProjectViewModel = function(data, options) {
         return !!(self.doi() && self.ark());
     });
 
+    self.hasArk = ko.pureComputed(function() {
+        return !!(self.ark());
+    });
+
     self.canCreateIdentifiers = ko.pureComputed(function() {
         return !self.hasIdentifiers() &&
             self.nodeIsPublic &&
