@@ -826,6 +826,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
