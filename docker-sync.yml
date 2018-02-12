@@ -32,13 +32,13 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-#  ember_osf_web-sync:
-#    src: '../ember-osf-web'
-#    sync_strategy: 'native_osx'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+  ember_osf_web-sync:
+    src: '../ember-osf-web'
+    sync_strategy: 'unison'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
 #  preprints-sync:
 #    src: '../ember-osf-preprints'
@@ -74,7 +74,7 @@ syncs:
 
   osf-sync:
     src: './'
-    sync_strategy: 'native_osx'
+    sync_strategy: 'unison'
     sync_excludes_type: 'Name'
     sync_prefer: 'default'
     sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', 'etree.py', '.git', '.idea', 'bower_components', 'node_modules', '.docker-sync']

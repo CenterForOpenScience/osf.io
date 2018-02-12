@@ -106,8 +106,7 @@ class TestNodeRegistrationSerializer:
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'registration_schema',
-            'implicit_contributors'
+            'registration_schema'
         ]
 
         # Attributes
