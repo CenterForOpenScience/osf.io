@@ -302,10 +302,13 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             self.user,
             self.folder.json['id'],
             self.folder.name,
-            Auth(self.user)
+            Auth(self.user),
+            self.library.json['id'],
+            self.library.name
         )
         assert_true(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, 'Fake Key')
+        assert_equal(self.node_settings.library_id, 'Fake Key')
         url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth).json
 

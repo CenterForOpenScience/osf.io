@@ -3,7 +3,7 @@
 import pytest
 
 from addons.base.tests.serializers import CitationAddonSerializerTestSuiteMixin
-from addons.base.tests.utils import MockFolder
+from addons.base.tests.utils import MockFolder, MockLibrary
 from addons.zotero.tests.factories import ZoteroAccountFactory
 from addons.zotero.serializer import ZoteroSerializer
 
@@ -18,3 +18,4 @@ class TestZoteroSerializer(CitationAddonSerializerTestSuiteMixin, OsfTestCase):
     Serializer = ZoteroSerializer
     ExternalAccountFactory = ZoteroAccountFactory
     folder = MockFolder()
+    library = MockLibrary()

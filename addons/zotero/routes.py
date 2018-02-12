@@ -61,7 +61,15 @@ api_routes = {
             zotero_views.citation_list(),
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/zotero/groups/',
+                '/project/<pid>/node/<nid>/zotero/groups/',
+            ],
+            'get',
+            zotero_views.library_list(),
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1',
 
