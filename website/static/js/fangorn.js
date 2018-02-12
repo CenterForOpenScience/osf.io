@@ -1187,16 +1187,26 @@ function _removeEvent (event, items, col) {
 
     function doDelete() {
         var folder = items[0];
+        var deleteMessage;
         if (folder.data.permissions.edit) {
-                var mithrilContent = m('div', [
+            if(folder.data.materialized === '/Wiki images/'){
+                deleteMessage = m('p.text-danger',
+                    'This folder and ALL its contents will be deleted. ',
+                    m('b', 'This folder is linked to your wiki(s), if deleted any embedded images' +
+                        ' contained in this folder will break. '),
+                        'This action is irreversible.'
+                );
+            } else {
+                deleteMessage = m('p.text-danger',
+                    'This folder and ALL its contents will be deleted. This action is irreversible.');
+            }
 
-                        m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
-                    ]);
-                var mithrilButtons = m('div', [
-                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
-                    ]);
-                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
+            var mithrilContent = m('div', [deleteMessage]);
+            var mithrilButtons = m('div', [
+                m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
@@ -1204,10 +1214,16 @@ function _removeEvent (event, items, col) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
-        var detail = 'This action is irreversible.';
+        var detail;
+        if(items[0].data.materialized.substring(0, 13) === '/Wiki images/') {
+            detail = m('b', 'This file may be linked to your wiki(s) if deleted ' +
+                    'any embedded images linked to this file will break. ');
+        } else {
+            detail = '';
+        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p', detail)
+                m('p.text-danger', detail, 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -1242,6 +1258,10 @@ function _removeEvent (event, items, col) {
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
+            }
+            if(item.data.materialized.substring(0, 13) === '/Wiki images/'){
+                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to your wiki(s) if deleted ' +
+                    'any embedded images linked to this file will break. '));
             }
         });
         // If all items can be deleted

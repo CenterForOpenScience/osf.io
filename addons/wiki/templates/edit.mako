@@ -187,6 +187,11 @@
                                 <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
+                              <div id="ace-loading-ball" class="ball-scale ball-scale-blue absolute-center-loading-ball">
+                                  <div></div>
+                                  <div></div>
+                                  <div></div>
+                              </div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>

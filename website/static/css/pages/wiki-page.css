@@ -328,3 +328,15 @@ select.form-control {
 .wiki-toolbar-icon:hover {
   background: rgba(51, 122, 183, 0.15);
 }
+
+.absolute-center-loading-ball{
+    display: none;
+    position: absolute;
+    -webkit-transform:translateY(-50%);
+    -webkit-transform:translateX(-50%);
+    transform:translateY(-50%);
+    transform:translateX(-50%);
+    left: 50%;
+    top:50%;
+    z-index: 1;
+}

@@ -8,19 +8,39 @@ var getExtension = function(filename) {
 };
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 
+var editor = ace.edit('editor');
+
+editor.enable = function () {
+    $('#ace-loading-ball').css('display', 'none');
+    editor.container.style.pointerEvents = "initial";
+    editor.container.style.opacity = 1;
+    editor.renderer.setStyle("disabled", false);
+};
+
+editor.disable = function () {
+    $('#ace-loading-ball').css('display', 'block');
+    editor.container.style.pointerEvents = "none";
+    editor.container.style.opacity = 0.1;
+    editor.renderer.setStyle("disabled", true);
+};
+
 var localFileHandler = function(files, cm, init, fixupInputArea) {
     var multiple = files.length > 1;
     var urls = [];
     var num = cm.addLinkDef(init) + 1;
     var promises = [];
+    var editor = ace.edit('editor');
+    editor.disable();
     checkFolder().fail(function() {
         notUploaded(multiple);
+        editor.enable();
     }).done(function(path) {
         if (!!path) {
             $.each(files, function (i, file) {
                 var ext = getExtension(file.name);
                 if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
                     $osf.growl('Error', 'File type not supported (' +  file.name + ')', 'danger');
+                    editor.enable();
                 }
                 else {
                     var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + encodeURI(file.name) + '&type=file';
@@ -35,7 +55,9 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                         }).done(function (response) {
                             urls.splice(i, 0, response.data.links.download + '?mode=render');
                         }).fail(function (response) {
-                            notUploaded(response, false);
+                            notUploaded(response, false, cm, init, fixupInputArea, waterbutlerURL, file);
+                        }).always(function () {
+                            editor.enable();
                         })
                     );
                 }
@@ -229,14 +251,32 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
 
 var imageFolder = 'Wiki images';
 
-var notUploaded = function(response, multiple) {
+var notUploaded = function(response, multiple, cm, init, fixupInputArea, url, file) {
     var files = multiple ? 'File(s)' : 'File';
     if(response.status === 403){
         $osf.growl('Error', files + ' not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
     } else if(response.status === 409){
-        $osf.growl('Warning', files + ' this file has already been uploaded to this project.' +
-            ' Use this file\'s share link to embed it in this wiki.', 'danger');
+        // If you drag something with the same name redraw the link, but tell the user what to do in
+        // case they want to update the image with the same name.
+        $.ajax({
+            url: url,
+            beforeSend: $osf.setXHRAuthorization,
+            success: function (response) {
+                response.data.forEach(function (item) {
+                    if (item.attributes.name === file.name) {
+                        cm.doLinkOrImage(init,
+                            fixupInputArea,
+                            true,
+                            ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + item.attributes.path + '?mode=render',
+                            multiple,
+                            cm.addLinkDef(init) + 1);
+                    }
+                });
+            }
+        });
+        $osf.growl('Warning','A file with this name has already been uploaded to this project.' +
+        ' If you wish to update this file do so on this projects file page.', 'danger');
     } else {
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
