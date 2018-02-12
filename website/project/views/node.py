@@ -393,6 +393,11 @@ def configure_comments(node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     node.save()
 
+@must_have_permission(ADMIN)
+def configure_requests(node, **kwargs):
+    node.access_requests_enabled = request.json.get('accessRequestsEnabled')
+    node.save()
+
 
 ##############################################################################
 # View Project
@@ -756,7 +761,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
             'exists': parent is not None,
