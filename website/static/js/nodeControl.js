@@ -174,7 +174,7 @@ var ProjectViewModel = function(data, options) {
     };
 
     self.hasIdentifiers = ko.pureComputed(function() {
-        return !!(self.doi() && self.ark());
+        return !!(self.doi());
     });
 
     self.hasArk = ko.pureComputed(function() {
