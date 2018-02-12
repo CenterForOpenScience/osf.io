@@ -165,7 +165,7 @@ services:
   ###############
 
   wb_requirements:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command:
       - /bin/bash
       - -c
@@ -194,7 +194,7 @@ services:
     stdin_open: true
 
   wb_worker:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command: invoke celery
     restart: unless-stopped
     depends_on:
@@ -211,7 +211,7 @@ services:
     stdin_open: true
 
   # wb_flower:
-  #   image: quay.io/centerforopenscience/waterbutler:develop
+  #   image: quay.io/centerforopenscience/wb:develop
   #   # Install flower here, instead of in WB repo, due to tornado version conflict
   #   command: [/bin/bash, -c, "pip install flower && celery flower -A waterbutler.tasks.app.app --port=5556 --broker=amqp://guest:guest@192.168.168.167:5672//"]
   #   depends_on:
