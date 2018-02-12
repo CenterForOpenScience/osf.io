@@ -50,4 +50,6 @@ METASCHEMA_ORDERING = (
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
     'Election Research Preacceptance Competition',
+    # 'RIDIE Registration - Study Initiation',
+    # 'RIDIE Registration - Study Complete',
 )

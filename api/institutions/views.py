@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin

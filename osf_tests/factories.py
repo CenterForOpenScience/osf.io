@@ -17,7 +17,7 @@ from waffle.models import Flag, Sample, Switch
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util import permissions
+from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN

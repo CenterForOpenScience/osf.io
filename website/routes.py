@@ -23,13 +23,13 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf.models import Institution
+from osf.utils import sanitize
 from website import util
 from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
 from website.util import paths
-from website.util import sanitize
 from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -47,6 +47,7 @@ from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 
@@ -301,6 +302,16 @@ def make_url_map(app):
                     endpoint_suffix='__' + prefix
                 ),
             ], prefix='/' + prefix)
+
+        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            process_rules(app, [
+                Rule(
+                    ember_osf_web_views.routes,
+                    'get',
+                    ember_osf_web_views.use_ember_app,
+                    notemplate
+                )
+            ])
 
     ### Base ###
 
@@ -822,8 +833,7 @@ def make_url_map(app):
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
-        ),
-
+        )
     ])
 
     # API
