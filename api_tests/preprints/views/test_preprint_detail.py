@@ -132,7 +132,7 @@ class TestPreprintDetail:
         res = app.get(embed_url)
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
-        assert '{}identifiers/'.format(url) == link
+        assert '{}identifiers/'.format(url) in link
 
 
 @pytest.mark.django_db
