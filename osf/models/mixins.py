@@ -1,7 +1,6 @@
 import pytz
 
 from django.apps import apps
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db import models, transaction
 from include import IncludeQuerySet
