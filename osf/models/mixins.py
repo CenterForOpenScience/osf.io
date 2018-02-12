@@ -198,7 +198,7 @@ class AddonModelMixin(models.Model):
             return None
         if not settings_model:
             return None
-        if settings_model.objects.filter(owner=self, deleted=False).exists():
+        if settings_model.objects.filter(owner=self, deleted=False).exists() and not deleted:
             return settings_model.objects.get(owner=self)
         return None
 
