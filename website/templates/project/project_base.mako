@@ -1,14 +1,18 @@
 <%inherit file="../base.mako"/>
 
 <%def name="resource()"><%
-        if node.get('is_registration', False):
-           return 'registration'
-        elif node.get('is_preprint', False):
-           return 'preprint'
-        elif parent_exists:
-            return 'component'
+        if context.get('file_id'):
+            prefix = 'file for a '
         else:
-            return 'project'
+            prefix = ''
+        if node.get('is_registration', False):
+           return prefix + 'registration'
+        elif node.get('is_preprint', False):
+           return prefix + 'preprint'
+        elif parent_node['exists']:
+            return prefix + 'component'
+        else:
+            return prefix + 'project'
     %>
 </%def>
 
