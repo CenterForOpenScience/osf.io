@@ -3,8 +3,6 @@ import pytest
 from datetime import timedelta
 from django.utils import timezone
 
-from api.base.settings.defaults import API_BASE
-
 from osf_tests.factories import ScheduledBannerFactory
 
 @pytest.mark.django_db
