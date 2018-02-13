@@ -7,12 +7,12 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
 from osf.models.nodelog import NodeLog
+from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
 from website.mails import mails
 from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN
-from website.util import permissions
 
 
 class BaseMachine(Machine):

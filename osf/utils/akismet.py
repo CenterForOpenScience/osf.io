@@ -1,4 +1,5 @@
-import requests
+# Aliasing requests to avoid conflicts with requests.py
+import requests as requests_
 
 
 class AkismetClientError(Exception):
@@ -30,7 +31,7 @@ class AkismetClient(object):
         if self._apikey_is_valid is not None:
             return self._apikey_is_valid
         else:
-            res = requests.post(
+            res = requests_.post(
                 '{}{}/1.1/verify-key'.format(self.API_PROTOCOL, self.API_HOST),
                 data={
                     'key': self.apikey,
@@ -67,14 +68,14 @@ class AkismetClient(object):
         data['user_agent'] = user_agent
 
         try:
-            res = requests.post(
+            res = requests_.post(
                 '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
                 data=data,
                 headers=self._default_headers,
                 timeout=5
             )
             res.raise_for_status()
-        except requests.exceptions.RequestException as e:
+        except requests_.exceptions.RequestException as e:
             raise AkismetClientError(reason=e.args[0])
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
@@ -90,12 +91,12 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        res = requests.post(
+        res = requests_.post(
             '{}{}.{}/1.1/submit-spam'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
             headers=self._default_headers
         )
-        if res.status_code != requests.codes.ok:
+        if res.status_code != requests_.codes.ok:
             raise AkismetClientError(reason=res.text)
 
     def submit_ham(self, user_ip, user_agent, **kwargs):
@@ -110,10 +111,10 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        res = requests.post(
+        res = requests_.post(
             '{}{}.{}/1.1/submit-ham'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
             headers=self._default_headers
         )
-        if res.status_code != requests.codes.ok:
+        if res.status_code != requests_.codes.ok:
             raise AkismetClientError(reason=res.text)
