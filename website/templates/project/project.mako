@@ -1,8 +1,8 @@
-<%inherit file="project/project_base.mako"/>
-<%namespace name="render_nodes" file="util/render_nodes.mako" />
-<%namespace name="contributor_list" file="util/contributor_list.mako" />
-<%namespace name="render_addon_widget" file="util/render_addon_widget.mako" />
-<%include file="project/nodes_privacy.mako"/>
+<%inherit file="project_base.mako"/>
+<%namespace name="render_nodes" file="../util/render_nodes.mako" />
+<%namespace name="contributor_list" file="../util/contributor_list.mako" />
+<%namespace name="render_addon_widget" file="../util/render_addon_widget.mako" />
+<%include file="nodes_privacy.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
@@ -267,10 +267,10 @@
 
 <%def name="title()">${node['title']}</%def>
 
-<%include file="project/modal_add_pointer.mako"/>
+<%include file="modal_add_pointer.mako"/>
 
 % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
-    <%include file="include/comment_pane_template.mako"/>
+    <%include file="../include/comment_pane_template.mako"/>
 % endif
 
 % if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
