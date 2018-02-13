@@ -71,3 +71,29 @@
 % endif
 
 <div id="grid" style="width: 100%;"></div>
+
+% if page.has_other_pages():
+    <div class="pull-right">
+        <ul class="pagination">
+            % if page.has_previous():
+                <li><a href=${"?page=" + str(page.previous_page_number())}>&laquo;</a></li>
+            % else:
+                <li class="disabled"><span>&laquo;</span></li>
+            % endif
+            % for i in pagination:
+                % if page.number == i:
+                    <li class="active"><span>${ i } <span class="sr-only">(current)</span></span></li>
+                % elif i == '...':
+                    <li> <span>${i} <span> </li>
+                % else:
+                    <li><a href=${"?page=" + str(i)}>${ i }</a></li>
+                % endif
+            % endfor
+            % if page.has_next():
+                <li><a href=${"?page=" + str(page.next_page_number())}>&raquo;</a></li>
+            % else:
+                <li class="disabled"><span>&raquo;</span></li>
+            % endif
+        </ul>
+    </div>
+% endif

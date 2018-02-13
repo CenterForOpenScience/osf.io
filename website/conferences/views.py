@@ -2,9 +2,11 @@
 
 import httplib
 import logging
+from flask import request
 
 from django.db import transaction
 from django_bulk_update.helper import bulk_update
+from django.core.paginator import Paginator, EmptyPage
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
@@ -181,21 +183,26 @@ def _render_conference_node(node, idx, conf):
     }
 
 
-def conference_data(meeting):
+def conference_data(meeting, meetings_page=1):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+    paginator = Paginator(nodes, 50)
+    try:
+        selected_nodes = paginator.page(meetings_page)
+    except EmptyPage:
+        selected_nodes = paginator.page(paginator.num_pages)
     ret = []
-    for idx, each in enumerate(nodes):
+    for idx, each in enumerate(selected_nodes.object_list):
         # To handle OSF-8864 where projects with no users caused meetings to be unable to resolve
         try:
             ret.append(_render_conference_node(each, idx, conf))
         except IndexError:
             sentry.log_exception()
-    return ret
+    return ret, selected_nodes
 
 
 def redirect_to_meetings(**kwargs):
@@ -221,8 +228,54 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
+def get_meetings_page():
+    """
+    Returns requested page number, fetched from query param.
+    If none, returns 1 by default.
+    """
+    if request.args.get('page', None):
+        try:
+            return int(request.args.get('page'))
+        except ValueError:
+            return 1
+    return 1
 
-def conference_results(meeting):
+def create_pagination_array(current_page, total_pages):
+    """
+    Returns an array of page numbers for pagination in UI. Creates similar UI
+    to ember addon https://github.com/mharris717/ember-cli-pagination
+
+    For example: [1, 2, '...', 23, 24, 25, 26], where current page is 25.
+    Or, [1, 2, '...', 6, 7, 8, 9, 10, '...', 25, 26], where current page is 8.
+    : param integer current_page: current page of results being displayed
+    : param integer total_pages: total number of pages available
+    """
+    if total_pages <= 4:
+        return range(1, total_pages + 1)
+
+    # Pagination available will always include the first two and last two pages
+    start = [1, 2]
+    end = [total_pages - 1, total_pages]
+
+    # Middle range of pagination available will take the form:
+    # [current - 2, current - 1, current, current + 1, current + 2]
+    middle = []
+    for page_num in range(current_page - 2, current_page + 3):
+        if page_num > 2 and page_num < total_pages - 1:
+            middle.append(page_num)
+
+    # If there is a gap between the start range and the middle range, add a '...'
+    if not middle or middle[0] != 3:
+        middle.insert(0, '...')
+
+    # If gap between middle and end ranges, add a '...'
+    if not middle or (middle[-1] != '...' and middle[-1] != (total_pages - 2)):
+        middle.append('...')
+
+    # Now flatten the start, middle, and end lists into one! This is your pagination.
+    return [item for sublist in [start, middle, end] for item in sublist]
+
+def conference_results(meeting, **kwargs):
     """Return the data for the grid view for a conference.
 
     :param str meeting: Endpoint name for a conference.
@@ -232,7 +285,7 @@ def conference_results(meeting):
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
-    data = conference_data(meeting)
+    data, current_page = conference_data(meeting, meetings_page=get_meetings_page())
 
     return {
         'data': data,
@@ -240,6 +293,8 @@ def conference_results(meeting):
         'meeting': serialize_conference(conf),
         # Needed in order to use base.mako namespace
         'settings': settings,
+        'pagination': create_pagination_array(current_page.number, current_page.paginator.num_pages),
+        'page': current_page
     }
 
 def conference_submissions(**kwargs):
