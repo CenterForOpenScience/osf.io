@@ -247,7 +247,6 @@ class TestNodeDetail:
         url = url_public + '?embed=identifiers'
         res = app.get(url)
         assert res.status_code == 200
-
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url_public) in link
 
