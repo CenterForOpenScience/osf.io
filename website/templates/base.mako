@@ -191,8 +191,9 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
-            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension2', '${self.resource()}');
+            ga('set', 'dimension3', '${self.public()}');
             ga('send', 'pageview');
             </script>
 
@@ -260,6 +261,16 @@
 
 <%def name="title()">
     ### The page title ###
+</%def>
+
+<%def name="resource()"><%
+    return None
+%> ### What resource is displayed on page ###
+</%def>
+
+<%def name="public()"><%
+    return None
+%> ### What the public/private status of the resource displayed on page ###
 </%def>
 
 <%def name="container_class()">
