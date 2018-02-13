@@ -24,11 +24,14 @@ SILENT_LOGGERS = [
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
+
 @pytest.fixture()
 def app():
     return JSONAPITestApp()
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
+
+
 @pytest.fixture(autouse=True, scope='session')
 def app_init():
     init_app(routes=False, set_backends=False)

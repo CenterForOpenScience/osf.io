@@ -5,6 +5,7 @@ from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
+from website import util as website_utils
 
 
 @pytest.fixture()
@@ -31,7 +32,7 @@ class TestUserQuickFiles:
 
     @pytest.fixture()
     def url(self, user):
-        return "/{}users/{}/quickfiles/".format(API_BASE, user._id)
+        return '/{}users/{}/quickfiles/'.format(API_BASE, user._id)
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -76,24 +77,56 @@ class TestUserQuickFiles:
         root_two.append_file('Sister.txt')
         root_two.append_file('Abigail.txt')
 
-        url = "/{}users/me/quickfiles/".format(API_BASE)
+        url = '/{}users/me/quickfiles/'.format(API_BASE)
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
 
         ids_returned = [each['id'] for each in node_json]
-        ids_from_files = OsfStorageFile.objects.filter(node__creator=user).values_list('_id', flat=True)
-        user_two_file_ids = OsfStorageFile.objects.filter(node__creator=user_two).values_list('_id', flat=True)
+        ids_from_files = OsfStorageFile.objects.filter(
+            node__creator=user).values_list(
+            '_id', flat=True)
+        user_two_file_ids = OsfStorageFile.objects.filter(
+            node__creator=user_two).values_list('_id', flat=True)
 
         assert sorted(ids_returned) == sorted(ids_from_files)
         for ident in user_two_file_ids:
             assert ident not in ids_returned
 
     def test_get_files_detail_has_user_relationship(self, app, user):
-        file_id = OsfStorageFile.objects.filter(node__creator=user).values_list('_id', flat=True).first()
-        url = "/{}files/{}/".format(API_BASE, file_id)
+        file_id = OsfStorageFile.objects.filter(
+            node__creator=user).values_list(
+            '_id', flat=True).first()
+        url = '/{}files/{}/'.format(API_BASE, file_id)
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data']
 
         assert 'user' in file_detail_json['relationships']
         assert 'node' not in file_detail_json['relationships']
-        assert file_detail_json['relationships']['user']['links']['related']['href'].split('/')[-2] == user._id
+        assert file_detail_json['relationships']['user']['links']['related']['href'].split(
+            '/')[-2] == user._id
+
+    def test_get_files_has_links(self, app, user, url):
+        res = app.get(url, auth=user.auth)
+        file_detail_json = res.json['data'][0]
+        quickfiles_node = quickfiles(user)
+        waterbutler_url = website_utils.waterbutler_api_url_for(
+            quickfiles_node._id,
+            'osfstorage',
+            file_detail_json['attributes']['path']
+        )
+
+        assert 'delete' in file_detail_json['links']
+        assert file_detail_json['links']['delete'] == waterbutler_url
+
+        assert 'download' in file_detail_json['links']
+        assert file_detail_json['links']['download'] == waterbutler_url
+
+        assert 'info' in file_detail_json['links']
+
+        assert 'move' in file_detail_json['links']
+        assert file_detail_json['links']['move'] == waterbutler_url
+
+        assert 'self' in file_detail_json['links']
+
+        assert 'upload' in file_detail_json['links']
+        assert file_detail_json['links']['upload'] == waterbutler_url
