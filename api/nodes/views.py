@@ -1952,9 +1952,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
-
-    def get_queryset_from_request(self):
         path = self.kwargs[self.path_lookup_url_kwarg]
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
@@ -1969,7 +1966,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             else:
                 raise NotFound
         else:
-            return super(NodeFilesList, self).get_queryset_from_request()
+            return super(NodeFilesList, self).get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
