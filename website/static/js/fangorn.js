@@ -1813,6 +1813,11 @@ function _renameEvent () {
     if  (val === item.name) {
         return;
     }
+    if(item.data.materialized === '/Wiki images/'){
+        $osf.growl('Error', 'You cannot rename your Wiki images folder.');
+        return;
+    }
+
     checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }

@@ -340,3 +340,7 @@ select.form-control {
     top:50%;
     z-index: 1;
 }
+.absolute-center-loading-ball > div {
+    width: 30px !important;
+    height: 30px !important;
+}
