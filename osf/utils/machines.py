@@ -1,4 +1,3 @@
-
 from django.utils import timezone
 from transitions import Machine
 
@@ -6,12 +5,14 @@ from api.preprint_providers.workflows import Workflows
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
-from osf.models.action import ReviewAction
+from osf.models.action import ReviewAction, NodeRequestAction
 from osf.models.nodelog import NodeLog
-from osf.utils.workflows import DefaultStates, DEFAULT_TRANSITIONS
+from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
+from website.mails import mails
 from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN
+from website.util import permissions
 
 
 class BaseMachine(Machine):
@@ -142,4 +143,69 @@ class ReviewsMachine(BaseMachine):
             'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
             'provider_contact_email': self.machineable.provider.email_contact or 'contact@osf.io',
             'provider_support_email': self.machineable.provider.email_support or 'support@osf.io',
+        }
+
+class RequestMachine(BaseMachine):
+    ActionClass = NodeRequestAction
+
+    def save_changes(self, ev):
+        """ Handles contributorship changes and state transitions
+        """
+        if ev.event.name == DefaultTriggers.ACCEPT.value:
+            self.machineable.target.add_contributor(
+                self.machineable.creator,
+                auth=Auth(ev.kwargs['user']),
+                permissions=permissions.READ,
+                send_email='{}_request'.format(self.machineable.request_type))
+        elif ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+            self.machineable.comment = self.action.comment
+        self.machineable.save()
+
+    def resubmission_allowed(self, ev):
+        # TODO: [PRODUCT-395]
+        return False
+
+    def notify_submit(self, ev):
+        """ Notify admins that someone is requesting access
+        """
+        context = self.get_context()
+        context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
+        context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
+        for admin in self.machineable.target.admin_contributors:
+            mails.send_mail(
+                admin.username,
+                mails.ACCESS_REQUEST_SUBMITTED,
+                admin=admin,
+                **context
+            )
+
+    def notify_resubmit(self, ev):
+        """ Notify admins that someone is requesting access again
+        """
+        # TODO: [PRODUCT-395]
+        raise NotImplementedError()
+
+    def notify_accept_reject(self, ev):
+        """ Notify requester that admins have approved/denied
+        """
+        if ev.event.name == DefaultTriggers.REJECT.value:
+            context = self.get_context()
+            mails.send_mail(
+                self.machineable.creator.username,
+                mails.ACCESS_REQUEST_DENIED,
+                **context
+            )
+        else:
+            # add_contributor sends approval notification email
+            pass
+
+    def notify_edit_comment(self, ev):
+        """ Not presently required to notify for this event
+        """
+        pass
+
+    def get_context(self):
+        return {
+            'node': self.machineable.target,
+            'requester': self.machineable.creator
         }

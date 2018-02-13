@@ -302,6 +302,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
+    access_requests_enabled = models.BooleanField(default=True, db_index=True)
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -1691,6 +1692,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.clone_logs(registered)
 
         registered.is_public = False
+        registered.access_requests_enabled = False
         # Copy unclaimed records to unregistered users for parent
         registered.copy_unclaimed_records()
 
