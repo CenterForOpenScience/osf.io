@@ -39,8 +39,8 @@ class TestDismissedAlertList:
                 'attributes': {
                     'location': alert_location
                 }
-             }
-         }
+            }
+        }
 
         # test_user_dismiss_alert
         res = app.post_json_api(url_alerts_list, params, auth=user_one.auth)

@@ -17,7 +17,7 @@ class TestDismissedAlertDetail:
         alert_location = 'jc3vf/settings/'
         url_alerts_detail = '/{}alerts/{}/'.format(API_BASE, alert_id)
 
-        alert = DismissedAlertFactory(
+        DismissedAlertFactory(
             user=user,
             location=alert_location,
             _id=alert_id)
