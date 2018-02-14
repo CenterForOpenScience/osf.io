@@ -1966,7 +1966,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             else:
                 raise NotFound
         else:
-            return super(NodeFilesList, self).get_queryset_from_request().distinct()
+            return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
