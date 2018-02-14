@@ -942,6 +942,7 @@ def serialize_child_tree(child_list, user, nested):
                 'is_public': child.is_public,
                 'contributors': contributors,
                 'is_admin': child.has_admin_perm,
+                'is_preprint': child.is_preprint,
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
@@ -1005,7 +1006,8 @@ def node_child_tree(user, node):
             'title': node.title,
             'is_public': node.is_public,
             'contributors': contributors,
-            'is_admin': is_admin
+            'is_admin': is_admin,
+            'is_preprint': node.is_preprint,
         },
         'user_id': user._id,
         'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

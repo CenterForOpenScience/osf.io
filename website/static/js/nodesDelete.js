@@ -74,7 +74,18 @@ QuickDeleteViewModel.prototype.confirmChanges = function () {
         // Redirect to either the parent project or the dashboard
         window.location.href = response.url;
     });
-    request.fail($osf.handleJSONError);
+    request.fail( function (xhr, status, error) {
+        var errorMessage = 'Unable to delete ' + self.nodeType;
+        if (xhr.responseJSON && xhr.responseJSON.errors) {
+            errorMessage = xhr.responseJSON.errors[0].detail;
+        }
+        $osf.growl('Problem deleting ' + self.nodeType, errorMessage);
+        Raven.captureMessage('Could not delete ' + self.nodeType, {
+            extra: {
+                url: self.nodeApiUrl, status: status, error: error
+            }
+        });
+    });
 };
 
 /**
@@ -95,6 +106,14 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.nodesChanged = ko.observableArray([]);
     //state of current nodes
     self.nodesState = ko.observableArray();
+    self.hasPreprints = ko.observable(false);
+    self.preprintMessage = ko.computed(function() {
+        return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>. ' +
+        (self.hasPreprints() ? ('This '+ self.nodeType + ' also has child components that contain <strong>preprints</strong>. ') : '') +
+        'Deleting this ' + self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong> in its child components.' +
+        ' This action is irreversible.';
+    });
+
     self.nodesState.subscribe(function (newValue) {
         var nodesDeleted = 0;
         for (var key in newValue) {
@@ -120,7 +139,7 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.pageTitle = ko.computed(function () {
         return {
             select: 'Delete ' + self.nodeType,
-            confirm: 'Delete ' + self.nodeType === 'project' ? 'project and ' : '' + 'components'
+            confirm: 'Delete ' + (self.nodeType === 'project' ? 'project and ' : '') + 'components'
         }[self.page()];
     });
 
@@ -135,7 +154,7 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
         }
 
         return {
-            select: message + (self.isPreprint ? self.preprintMessage : ''),
+            select: message + ((self.isPreprint || self.hasPreprints()) ? self.preprintMessage() : ''),
             confirm: confirm_message
         }[self.page()];
     });
@@ -156,7 +175,7 @@ NodesDeleteViewModel.prototype.fetchNodeTree = function () {
         type: 'GET',
         dataType: 'json'
     }).done(function (response) {
-        self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
+        getNodesOriginal.call(self, response[0]);
         var size = 0;
         $.each(Object.keys(self.nodesOriginal), function (_, key) {
             if (self.nodesOriginal.hasOwnProperty(key)) {
@@ -219,19 +238,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function () {
     });
 
     $osf.block('Deleting ' + self.nodeType);
-    batchNodesDelete(nodesChanged.reverse(), self.nodeType).then(function () {
-        self.page(self.WARNING);
-    }).fail(function (xhr) {
-        $osf.unblock();
-        var errorMessage = 'Unable to delete ' + self.nodeType;
-        if (xhr.responseJSON && xhr.responseJSON.errors) {
-            errorMessage = xhr.responseJSON.errors[0].detail;
-        }
-        $osf.growl('Problem deleting ' + self.nodeType, errorMessage);
-        Raven.captureMessage('Could not batch delete project and its components.');
-        self.clear();
-        $('#nodesDelete').modal('hide');
-    }).always(function () {
+    batchNodesDelete.call(self, nodesChanged.reverse()).always(function () {
         $osf.unblock();
     });
 };
@@ -265,25 +272,31 @@ function _flattenNodeTree(nodeTree) {
  * take treebeard tree structure of nodes and get a dictionary of parent node and all its
  * children
  */
-function getNodesOriginal(nodeTree, nodesOriginal) {
+function getNodesOriginal(nodeTree) {
+    var self =this;
     var flatNodes = _flattenNodeTree(nodeTree);
     $.each(flatNodes, function (_, nodeMeta) {
-        nodesOriginal[nodeMeta.node.id] = {
+        self.nodesOriginal[nodeMeta.node.id] = {
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
-            changed: false
+            changed: false,
+            isPreprint: nodeMeta.node.is_preprint,
         };
+
+        !self.hasPreprints() &&
+          (nodeMeta.node.is_preprint && nodeMeta.node.id !== nodeTree.node.id) &&
+            self.hasPreprints(true);
     });
-    nodesOriginal[nodeTree.node.id].isRoot = true;
-    return nodesOriginal;
+    self.nodesOriginal[nodeTree.node.id].isRoot = true;
 }
 
 /**
  * Deletes all nodes in changed state
  * uses API v2 bulk requests
  */
-function batchNodesDelete(nodes, nodeType) {
+function batchNodesDelete(nodes) {
+    var self = this;
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
     var size = BULK_DELETE_LIMIT;
     var batches = [];
@@ -312,15 +325,25 @@ function batchNodesDelete(nodes, nodeType) {
           });
     });
 
-    return $.when(requests).done(function (_) {
+    return $.when.apply($, requests).then(function (_) {
             bootbox.alert({
-                message: 'Your ' + nodeType + ' has been successfully deleted.',
+                message: 'Your ' + self.nodeType + ' has been successfully deleted.',
                 callback: function (confirmed) {
-                    window.location = nodeType === 'project' ?
+                    window.location = self.nodeType === 'project' ?
                       '/dashboard/' :
                       window.contextVars.node.parentUrl || window.contextVars.node.urls.web;
                 }
             });
+        }, function (xhr) {
+            $osf.unblock();
+            var errorMessage = 'Unable to delete ' + self.nodeType;
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMessage = xhr.responseJSON.errors[0].detail;
+            }
+            $osf.growl('Problem deleting ' + self.nodeType, errorMessage);
+            Raven.captureMessage('Could not batch delete project and its components.');
+            self.clear();
+            $('#nodesDelete').modal('hide');
         });
 }
 
