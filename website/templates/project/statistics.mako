@@ -1,8 +1,40 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Analytics</%def>
+<%namespace name="render_nodes" file="util/render_nodes.mako" />
 
 <div class="page-header visible-xs">
     <h2 class="text-300">Analytics</h2>
+</div>
+
+<div class="row equal-heighted-row">
+    <div class="col-sm-4 col-xs-12 panel panel-default">
+        <div class="panel-body">
+            <div class="text-center">
+                <h3>Forks</h3>
+                <h2>${node['fork_count']}</h2>
+                <a href='${node['url']}forks'><h4 >View all forks</h4></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4 col-xs-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="text-center">
+                    <h3>Links to Project</h3>
+                    <h2>${node['linked_nodes_count']}</h2>
+                    <a data-toggle="modal" data-target="#showLinks"><h4 >View all links</h4></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4 col-xs-12 panel panel-default">
+        <div class="panel-body">
+            <div class="text-center">
+                <h3>Template Copies</h3>
+                <h2>${node['templated_count']}</h2>
+            </div>
+        </div>
+    </div>
 </div>
 
 % if not node['is_public']:
@@ -68,7 +100,11 @@
                 </div>
                 <div id="visits" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,7 +116,11 @@
             </div>
             <div id="serverTimeVisits" class="panel-body">
               <div class="text-center">
-                <div class="logo-spin logo-lg"></div>
+                  <div class="ball-pulse ball-scale-blue text-center">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
               </div>
             </div>
           </div>
@@ -95,7 +135,11 @@
                 </div>
                 <div id="topReferrers" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,7 +151,12 @@
                 </div>
                 <div id="popularPages" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -115,7 +164,7 @@
     </div>
     % else:
     <div class="alert alert-danger" role="alert">
-      Analytics unavailable. Please contact <a href="mailto:support@osfio">support@osf.io</a> if the problem persists.
+      Analytics unavailable. Please contact <a href="mailto:${osf_support_email}">${osf_support_email}</a> if the problem persists.
     </div>
     % endif
 %endif

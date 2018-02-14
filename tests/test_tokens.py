@@ -2,9 +2,8 @@ import jwt
 import httplib as http
 
 import mock
+from django.db.models import Q
 from nose.tools import *  # noqa
-
-from modularodm import Q
 
 from tests.base import OsfTestCase
 from osf_tests import factories
@@ -83,7 +82,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         if not self.kind:
             return
         self.sanction = self.Factory()
-        self.reg = AbstractNode.find_one(Q(self.Model.SHORT_NAME, 'eq', self.sanction))
+        self.reg = AbstractNode.objects.get(Q(**{self.Model.SHORT_NAME: self.sanction}))
         self.user = self.reg.creator
 
     def test_sanction_handler(self):
@@ -101,7 +100,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
             return
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        self.Model.remove_one(self.sanction)
+        self.Model.delete(self.sanction)
         with mock_auth(self.user):
             try:
                 handler.to_response()

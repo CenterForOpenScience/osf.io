@@ -7,7 +7,6 @@ require('css/add-contributors.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 
@@ -110,10 +109,6 @@ AddContributorViewModel = oop.extend(Paginator, {
 
         self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length && !self.parentImport();
-        });
-
-        self.parentPagination = ko.pureComputed(function () {
-            return self.doneSearching() && self.parentImport();
         });
 
         self.noResults = ko.pureComputed(function () {
@@ -276,6 +271,12 @@ AddContributorViewModel = oop.extend(Paginator, {
                 var contributors = result.contributors.map(function (user) {
                     var added = (self.contributors().indexOf(user.id) !== -1);
                     var updatedUser = $.extend({}, user, {added: added});
+
+                    var user_permission = self.permissionList.find(function (permission) {
+                        return permission.value === user.permission;
+                    });
+                    updatedUser.permission = ko.observable(user_permission);
+
                     return updatedUser;
                 });
                 var pageToShow = [];
@@ -290,10 +291,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     }
                 }
                 self.doneSearching(true);
-                self.results(pageToShow);
-                self.currentPage(self.pageToGet());
-                self.numberOfPages(Math.ceil(contributors.length/5));
-                self.addNewPaginators(true);
+                self.selection(contributors);
             }
         );
     },
@@ -321,7 +319,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         if (!self.inviteName().trim().length) {
             return 'Full Name is required.';
         }
-        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail())) {
+        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail().replace(/^\s+|\s+$/g, ''))) {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
@@ -343,9 +341,10 @@ AddContributorViewModel = oop.extend(Paginator, {
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
+            self.canSubmit(true);
             return false;
         }
-        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
+        return self.postInviteRequest(self.inviteName(), self.inviteEmail().replace(/^\s+|\s+$/g, ''));
     },
     add: function (data) {
         var self = this;
@@ -353,6 +352,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
+        self.query('');
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
@@ -375,6 +375,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                 self.add(result);
             }
         });
+        self.query('');
     },
     removeAll: function () {
         var self = this;

@@ -1,13 +1,11 @@
 """Tests related to embargoes of registrations"""
 import datetime
-from datetime import timedelta
 import httplib as http
 import json
 
 import pytz
+from django.core.exceptions import ValidationError
 from django.utils import timezone
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 
 import mock
 from nose.tools import *  # noqa
@@ -15,11 +13,12 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory, 
+    EmbargoTerminationApprovalFactory
 )
 from tests import utils
 
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.auth import Auth
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
@@ -46,13 +45,13 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
     # Node#_initiate_embargo tests
     def test__initiate_embargo_saves_embargo(self):
-        initial_count = Embargo.find().count()
+        initial_count = Embargo.objects.all().count()
         self.registration._initiate_embargo(
             self.user,
             self.valid_embargo_end_date,
             for_existing_registration=True
         )
-        assert_equal(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.objects.all().count(), initial_count + 1)
 
     def test_state_can_be_set_to_complete(self):
         embargo = EmbargoFactory()
@@ -104,13 +103,13 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_not_in(child_non_admin._id, embargo.approval_state)
 
     def test__initiate_embargo_with_save_does_save_embargo(self):
-        initial_count = Embargo.find().count()
+        initial_count = Embargo.objects.all().count()
         self.registration._initiate_embargo(
             self.user,
             self.valid_embargo_end_date,
             for_existing_registration=True,
         )
-        assert_equal(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.objects.all().count(), initial_count + 1)
 
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
@@ -120,22 +119,22 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(PermissionsError):
             self.registration.embargo_registration(self.user, self.valid_embargo_end_date)
 
-    def test_embargo_end_date_in_past_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_in_past_raises_ValueError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 datetime.datetime(1999, 1, 1, tzinfo=pytz.utc)
             )
 
-    def test_embargo_end_date_today_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_today_raises_ValueError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 timezone.now()
             )
 
-    def test_embargo_end_date_in_far_future_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_in_far_future_raises_ValidationError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 datetime.datetime(2099, 1, 1, tzinfo=pytz.utc)
@@ -417,6 +416,21 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             with assert_raises(NodeStateError):
                 self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 0)
+
+    # Regression for OSF-8840
+    def test_public_embargo_cannot_be_deleted_with_initial_token(self):
+        embargo_termination_approval = EmbargoTerminationApprovalFactory()
+        registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
+        user = registration.contributors.first()
+
+        registration.terminate_embargo(Auth(user))  
+
+        rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
+        with assert_raises(HTTPError) as e:
+            registration.embargo.disapprove_embargo(user, rejection_token)
+
+        registration.refresh_from_db()
+        assert registration.is_deleted is False
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
@@ -817,7 +831,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().order_by('-registered_date').first()
+        registration = Registration.objects.all().order_by('-registered_date').first()
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
@@ -854,9 +868,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = AbstractNode.find(
-            Q('registered_from', 'eq', self.project)
-        ).order_by('-registered_date')[0]
+        registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -907,7 +919,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().order_by('-registered_date').first()
+        registration = Registration.objects.order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)
@@ -947,9 +959,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = AbstractNode.find(
-            Q('registered_from', 'eq', self.project)
-        ).order_by('-registered_date')[0]
+        registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -1097,46 +1107,3 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(http.UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
-
-class TestEmbargoUnauthView(OsfTestCase):
-
-    def setUp(self):
-        super(TestEmbargoUnauthView, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
-
-        self.project = ProjectFactory(creator=self.user)
-        self.registration_embargo = RegistrationFactory(creator=self.user, project=self.project)
-
-        self.registration_embargo.embargo_registration(
-            self.user,
-            timezone.now() + timedelta(days=10)
-        )
-        self.registration_embargo.save()
-
-    def test_pending_embargo_non_contrib_returns_forbidden(self):
-        res = self.app.get(
-            self.registration_embargo.web_url_for('view_project'),
-            auth=self.non_contrib.auth,
-            expect_errors=True
-        )
-
-        assert_true(self.registration_embargo.is_pending_embargo)
-        assert_equal(res.status_code, 403)
-        assert_in('Forbidden', res.body)
-
-    def test_embargo_non_contrib_returns_resource_under_embargo(self):
-        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
-        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
-        self.registration_embargo.save()
-
-        res = self.app.get(
-            self.registration_embargo.web_url_for('view_project'),
-            auth=self.non_contrib.auth,
-            expect_errors=True
-        )
-
-        assert_false(self.registration_embargo.is_pending_embargo)
-        assert_equal(res.status_code, 403)
-        assert_in('Resource under embargo', res.body)

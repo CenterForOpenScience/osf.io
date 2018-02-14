@@ -1,9 +1,7 @@
 from django.apps import apps
-from modularodm import Q
-from modularodm import exceptions as modm_exceptions
+from django.core.exceptions import ValidationError
 
 from framework import exceptions as framework_exceptions
-
 from website import exceptions as web_exceptions
 from website.util import permissions
 
@@ -32,10 +30,8 @@ def set_license(node, license_detail, auth, node_type='node'):
         raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
 
     try:
-        node_license = NodeLicense.find_one(
-            Q('license_id', 'eq', license_id)
-        )
-    except modm_exceptions.NoResultsFound:
+        node_license = NodeLicense.objects.get(license_id=license_id)
+    except NodeLicense.DoesNotExist:
         raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
 
     if node_type == 'preprint':
@@ -44,7 +40,7 @@ def set_license(node, license_detail, auth, node_type='node'):
 
     for required_property in node_license.properties:
         if not license_detail.get(required_property):
-            raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
+            raise ValidationError('{} must be specified for this license'.format(required_property))
 
     if license_record is None:
         license_record = NodeLicenseRecord(node_license=node_license)

@@ -1,11 +1,11 @@
 import mock
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from nose.tools import * # noqa
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 
 from scripts.triggered_mails import main, find_inactive_users_with_no_inactivity_email_sent_or_queued
 from website import mails

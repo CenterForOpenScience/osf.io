@@ -2,8 +2,6 @@
 
 import importlib
 
-from modularodm import storage
-
 import framework
 from framework.flask import app, add_handlers
 from framework.mongo import database
@@ -73,13 +71,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         logger.error(error)
 
     app.debug = settings.DEBUG_MODE
-    if set_backends:
-        logger.debug('Setting storage backends')
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
     if routes:
         try:
             make_url_map(app)

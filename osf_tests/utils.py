@@ -3,7 +3,6 @@ import datetime as dt
 import functools
 import mock
 
-from modularodm.storage import EphemeralStorage
 from framework.auth import Auth
 from django.utils import timezone
 
@@ -15,11 +14,6 @@ from website.archiver import listeners as archiver_listeners
 from osf.models import Sanction
 
 from .factories import get_default_metaschema
-
-
-def set_up_ephemeral_storage(schemas):
-    for schema in schemas:
-        schema.set_storage(EphemeralStorage(collection_name=schema._name))
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

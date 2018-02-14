@@ -4,7 +4,6 @@
 import os
 import csv
 import copy
-import time
 import pytz
 import logging
 import argparse

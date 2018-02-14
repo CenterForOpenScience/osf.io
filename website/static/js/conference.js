@@ -1,4 +1,3 @@
-var $ = require('jquery');
 var m = require('mithril');
 var osfHelpers = require('js/osfHelpers');
 var Treebeard = require('treebeard');

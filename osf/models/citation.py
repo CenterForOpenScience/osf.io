@@ -1,19 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
-
-
-class AlternativeCitation(ObjectIDMixin, BaseModel):
-    name = models.CharField(max_length=256)
-    text = models.CharField(max_length=2048)
-
-    def to_json(self):
-        return {
-            'id': self._id,
-            'name': self.name,
-            'text': self.text
-        }
 
 
 class CitationStyle(BaseModel):
@@ -35,6 +23,7 @@ class CitationStyle(BaseModel):
 
     short_title = models.CharField(max_length=2048, null=True, blank=True)
     summary = models.CharField(max_length=4200, null=True, blank=True)  # longest value was 3,812 8/23/2016
+    has_bibliography = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['_id']
@@ -45,4 +34,5 @@ class CitationStyle(BaseModel):
             'title': self.title,
             'short_title': self.short_title,
             'summary': self.summary,
+            'has_bibliography': self.has_bibliography
         }

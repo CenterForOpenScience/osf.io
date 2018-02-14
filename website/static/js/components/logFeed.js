@@ -1,14 +1,12 @@
 'use strict';
 
 require('css/log-feed.css');
-var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var oop = require('js/oop');
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
-var Paginator = require('js/paginator');
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
@@ -20,7 +18,7 @@ var _buildLogUrl = function(node, page, limitLogs) {
     var logPage = page || 1;
     var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
     var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
-    var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE};
+    var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE};
     var viewOnly = $osf.urlParams().view_only;
     if (viewOnly) {
         query.view_only = viewOnly;
@@ -59,7 +57,6 @@ var LogFeed = {
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
-                m.redraw();
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
@@ -88,6 +85,7 @@ var LogFeed = {
     view : function (ctrl) {
 
         var i;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         ctrl.paginators([]);
         if (ctrl.totalPages() > 1 && !ctrl.limitLogs) {
             // previous page
@@ -202,7 +200,7 @@ var LogFeed = {
             // Error message if the log request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve logs at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
             // Show OSF spinner while there is a pending log request
@@ -220,7 +218,7 @@ var LogFeed = {
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
-                    m('', [m('.db-log-avatar.m-r-xs', image), m.component(LogText.LogText, item)]),
+                    m('', [m('.db-log-avatar.db-log-avatar-project-overview.m-r-xs', image), m('span.p-l-sm.p-r-sm', ''), m.component(LogText.LogText, item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',

@@ -293,7 +293,7 @@ a {
     text-align: center;
 }
 
-.osf-gravatar>img {
+.osf-profile-image>img {
     border: 1px solid #CDCDCD;
     border-radius: 13px;
     margin-right: 5px;
@@ -422,6 +422,11 @@ a {
     word-break: break-all;
 
 }
+
+.keep-all {
+    word-break: keep-all;
+}
+
 select {
     word-wrap: normal;
 }
@@ -628,13 +633,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 12px;
-    padding-bottom: 11px;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
@@ -698,6 +696,12 @@ div.ball-scale-blue>div {
     overflow: scroll;
 }
 
+/* Add Links Modal
+----------------------- */
+.node-dates {
+    white-space: pre;
+}
+
 /* Password strength check component colors for darker backgrounds  */
 .pv-darkbg .text-danger {
     color: #f97773;
@@ -718,23 +722,130 @@ div.ball-scale-blue>div {
     margin-bottom: 0;
 }
 
-/* To be added to osf-style: project overview -> componentQuickActions menu */
-#componentQuickActions ul.dropdown-menu > li > a:hover,
-#componentQuickActions ul.dropdown-menu > li > a:focus {
+/* To be added to osf-style: generic dropdown-menu */
+.generic-dropdown ul.dropdown-menu > li > a {
+    color: #000;
+}
+
+.generic-dropdown ul.dropdown-menu > li > a:hover,
+.generic-dropdown ul.dropdown-menu > li > a:focus {
     background-image: none;
     background-color: #D9D9D9;
 }
 
-#componentQuickActions button {
-  padding: 4px 12px;
-  line-height: 0;
+.generic-dropdown button {
+    padding: 4px 12px;
+    line-height: 0;
 }
 
-#componentQuickActions ul {
+.generic-dropdown ul {
     background-color: #EFEFEF;
     min-width: 180px;
 }
 
-#componentQuickActions a {
+.generic-dropdown a {
     color: #333;
+}
+
+/* Table
+-----------------------*/
+table.add-links tr {
+    padding: 5px;
+  }
+
+table.add-links td {
+    padding: 10px;
+}
+
+table.add-links {
+    width: 100%;
+    margin:0;
+    padding:0;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.fa-fix-width {
+    width: 20px;
+}
+
+.fa-button {
+    padding: 5px;
+    margin-right: 5px;
+}
+
+@media screen and (max-width: 600px) {
+    table.add-links  {
+        border: 0;
+    }
+
+    table.add-links  tr {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 2px solid #ddd;
+    }
+
+    table.add-links  td {
+        display: block;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px dotted #ccc;
+    }
+
+    table.add-links  td:first-child {
+        border-top: 0;
+        text-align: left;
+    }
+
+    table.add-links  td:last-child {
+        border-bottom: 0;
+    }
+
+    table.add-links  td:before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+    }
+}
+
+.generic-dropdown .fa {
+    padding-right: 7px;
+    width: 20px;
+}
+
+.generic-dropdown i.fa.fa-sort {
+    padding-left: 20px;
+}
+
+.category-list button {
+    padding: 5px 6px;
+}
+
+.category-list ul.dropdown-menu > li > a {
+    line-height: 1.65;
+    padding-left: 8px;
+}
+
+/* Remove gutters between bootstrap cols */
+.row.no-gutters {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.row.no-gutters > [class^="col-"],
+.row.no-gutters > [class*=" col-"] {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+/* counter */
+.counter-comment {
+    margin-top: -20px;
+    margin-right: 5px;
+}
+
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
 }

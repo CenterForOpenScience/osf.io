@@ -5,10 +5,9 @@
 'use strict';
 // CSS used on every page
 require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
-require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
@@ -119,10 +118,10 @@ function confirmEmails(emailsToAdd) {
         }
 
         var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         bootbox.dialog({
             title: title,

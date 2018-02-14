@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
 

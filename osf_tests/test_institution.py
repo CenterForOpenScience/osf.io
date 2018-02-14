@@ -1,7 +1,5 @@
 from osf.models import Institution
 
-from modularodm import Q
-
 from .factories import InstitutionFactory
 import pytest
 
@@ -17,14 +15,14 @@ def test_factory():
 @pytest.mark.django_db
 def test_querying_on_domains():
     inst = InstitutionFactory(domains=['foo.test'])
-    result = Institution.find(Q('domains', 'eq', 'foo.test'))
+    result = Institution.objects.filter(domains__contains=['foo.test'])
     assert inst in result
 
 
 @pytest.mark.django_db
 def test_institution_banner_path_none():
     inst = InstitutionFactory(banner_name='kittens.png')
-    assert not inst.banner_path is None
+    assert inst.banner_path is not None
     inst.banner_name = None
     assert inst.banner_path is None
 
@@ -32,7 +30,7 @@ def test_institution_banner_path_none():
 @pytest.mark.django_db
 def test_institution_logo_path_none():
     inst = InstitutionFactory(logo_name='kittens.png')
-    assert not inst.logo_path is None
+    assert inst.logo_path is not None
     inst.logo_name = None
     assert inst.logo_path is None
 

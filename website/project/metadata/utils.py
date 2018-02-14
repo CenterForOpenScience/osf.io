@@ -1,6 +1,5 @@
 from framework import utils
 
-from website.settings import PREREG_ADMIN_TAG
 from website.util import permissions as osf_permissions
 
 def serialize_initiator(initiator):
@@ -255,7 +254,7 @@ def is_prereg_admin(user):
     Returns true if user has reviewer permissions
     """
     if user is not None:
-        return PREREG_ADMIN_TAG in getattr(user, 'system_tags', [])
+        return user.has_perm('osf.administer_prereg')
     return False
 
 def is_prereg_admin_not_project_admin(request, draft):

@@ -7,7 +7,6 @@ from flask import request
 from api.caching.tasks import ban_url
 from osf.models import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from modularodm import Q
 from website import settings
 from addons.base.signals import file_updated
 from osf.models import BaseFileNode, TrashedFileNode
@@ -43,7 +42,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
     for guid in file_guids:
         obj = Guid.load(guid)
-        if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
+        if source_node != destination_node and Comment.objects.filter(root_target___id=guid).count() != 0:
             update_comment_node(guid, source_node, destination_node)
 
         if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
@@ -118,7 +117,7 @@ def send_comment_added_notification(comment, auth, new_mentions=None):
     target = comment.target
 
     context = dict(
-        gravatar_url=auth.user.profile_image_url(),
+        profile_image_url=auth.user.profile_image_url(),
         content=render_email_markdown(comment.content),
         page_type=comment.get_comment_page_type(),
         page_title=comment.get_comment_page_title(),
@@ -154,7 +153,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
     target = comment.target
 
     context = dict(
-        gravatar_url=auth.user.profile_image_url(),
+        profile_image_url=auth.user.profile_image_url(),
         content=render_email_markdown(comment.content),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',

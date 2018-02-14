@@ -99,7 +99,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert pub_year.text == str(preprint.date_published.year)
 
         dates = root.find('{%s}dates' % metadata.NAMESPACE).getchildren()[0]
-        assert dates.text == preprint.date_modified.isoformat()
+        assert dates.text == preprint.modified.isoformat()
         assert dates.attrib['dateType'] == 'Updated'
 
         alternate_identifier = root.find('{%s}alternateIdentifiers' % metadata.NAMESPACE).getchildren()[0]

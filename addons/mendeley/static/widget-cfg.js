@@ -2,7 +2,6 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('js/osfHelpers');
 var citations = require('js/citations');
 var CitationGrid = require('js/citationGrid');
 

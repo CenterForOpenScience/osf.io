@@ -5,7 +5,6 @@
 // needs Markdown.Converter.js at the moment
 
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
 var Cookie = require('js-cookie');
 

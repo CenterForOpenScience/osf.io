@@ -33,32 +33,39 @@ var oldMarkdownList = function(md) {
 
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
-    highlight: highlighter
+    highlight: highlighter,
+    linkify: true
 })
     .use(require('markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .disable('strikethrough');
 
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
-var markdownQuick = new MarkdownIt(('commonmark'), { })
+var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .disable('link')
     .disable('image')
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .disable('strikethrough');
 
 // Markdown renderer for older wikis rendered before switch date
-var markdownOld = new MarkdownIt(('commonmark'), { })
+var markdownOld = new MarkdownIt('commonmark', { linkify: true})
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .use(oldMarkdownList)
     .disable('strikethrough');

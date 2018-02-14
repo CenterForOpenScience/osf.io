@@ -52,25 +52,26 @@ def notify(event, user, node, timestamp, **context):
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
+    recipient_ids = context.get('new_mentions', [])
+    recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
+    sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
+    return sent_users
+
+def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
     event_type = utils.find_subscription_type(event)
     sent_users = []
-    new_mentions = context.get('new_mentions', [])
-    for m in new_mentions:
-        mentioned_user = OSFUser.load(m)
-        subscriptions = get_user_subscriptions(mentioned_user, event_type)
+
+    for recipient in recipients:
+        subscriptions = get_user_subscriptions(recipient, event_type)
         for notification_type in subscriptions:
-            if (
-                notification_type != 'none' and
-                subscriptions[notification_type] and
-                m in subscriptions[notification_type]
-            ):
-                store_emails([m], notification_type, 'mentions', user, node,
-                                 timestamp, **context)
-                sent_users.extend([m])
+            if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
+                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template, **context)
+                sent_users.append(recipient._id)
+
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -87,7 +88,9 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     if notification_type == 'none':
         return
 
-    template = event + '.html.mako'
+    # If `template` is not specified, default to using a template with name `event`
+    template = '{template}.html.mako'.format(template=template or event)
+
     # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
@@ -96,7 +99,10 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         if recipient_id == user._id:
             continue
         recipient = OSFUser.load(recipient_id)
+        if recipient.is_disabled:
+            continue
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
+        context['recipient'] = recipient
         message = mails.render_message(template, **context)
 
         digest = NotificationDigest(
@@ -148,13 +154,15 @@ def check_node(node, event):
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
             if users:
-                for user in users.all():
+                for user in users.exclude(date_disabled__isnull=False):
                     if node.has_permission(user, 'read'):
                         node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
 def get_user_subscriptions(user, event):
+    if user.is_disabled:
+        return {}
     user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
     if user_subscription:
         return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
@@ -183,6 +191,17 @@ def get_settings_url(uid, user):
     assert node, 'get_settings_url recieved an invalid Node id'
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
+def fix_locale(locale):
+    """Atempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
+
+    This is NOT guaranteed to return a valid locale identifier.
+    """
+    try:
+        language, territory = locale.split('_', 1)
+    except ValueError:
+        return locale
+    else:
+        return '_'.join([language, territory.upper()])
 
 def localize_timestamp(timestamp, user):
     try:
@@ -193,7 +212,18 @@ def localize_timestamp(timestamp, user):
     try:
         user_locale = Locale(user.locale)
     except core.UnknownLocaleError:
-        user_locale = 'en'
+        user_locale = Locale('en')
+
+    # Do our best to find a valid locale
+    try:
+        user_locale.date_formats
+    except IOError:  # An IOError will be raised if locale's casing is incorrect, e.g. de_de vs. de_DE
+        # Attempt to fix the locale, e.g. de_de -> de_DE
+        try:
+            user_locale = Locale(fix_locale(user.locale))
+            user_locale.date_formats
+        except (core.UnknownLocaleError, IOError):
+            user_locale = Locale('en')
 
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)

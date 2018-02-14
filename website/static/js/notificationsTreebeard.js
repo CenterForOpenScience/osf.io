@@ -89,7 +89,7 @@ function ProjectNotifications(data) {
         divID: 'grid',
         filesData: data,
         naturalScrollLimit : 0,
-        onload : function () {
+        ondataload: function () {
             var tb = this;
             expandOnLoad.call(tb);
         },

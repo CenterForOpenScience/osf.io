@@ -18,7 +18,7 @@ describe('donateBanner', () => {
                     endDate: new Date('August 16, 2017')
                 }, {
                     startDate: new Date('August 23, 2017'),
-                    endtDate: new Date('August 30, 2017')
+                    endDate: new Date('August 30, 2017')
                 },
             ];
 

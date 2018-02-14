@@ -1,15 +1,18 @@
 # Ported from tests.test_mails
 import datetime as dt
 
+
 import pytest
 import mock
 from django.utils import timezone
+from framework.auth.core import Auth
+from website.prereg.utils import get_prereg_schema
 
-from .factories import UserFactory, NodeFactory
+from .factories import UserFactory, NodeFactory, DraftRegistrationFactory
 
 from osf.models.queued_mail import (
     queue_mail, WELCOME_OSF4M,
-    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT
+    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT, PREREG_REMINDER
 )
 
 @pytest.fixture()
@@ -19,13 +22,17 @@ def user():
 @pytest.mark.django_db
 class TestQueuedMail:
 
+    @pytest.fixture()
+    def prereg(self, user):
+        return DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
+
     def queue_mail(self, mail, user, send_at=None, **kwargs):
         mail = queue_mail(
-            to_addr=user.username if user else self.user.username,
+            to_addr=user.username if user else user.username,
             send_at=send_at or timezone.now(),
             user=user,
             mail=mail,
-            fullname=user.fullname if user else self.user.username,
+            fullname=user.fullname if user else user.username,
             **kwargs
         )
         return mail
@@ -149,3 +156,28 @@ class TestQueuedMail:
             mail=NO_ADDON,
         )
         assert mail.send_mail() is False
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend(self, mock_mail, user, prereg):
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        assert mail.send_mail()
+
+        # test don't send if already sent
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        assert not mail.send_mail()
+
+    @mock.patch('website.archiver.tasks.archive')
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_submitted(self, mock_mail, mock_archive, user, prereg):
+        prereg.register(Auth(user))
+        prereg.save()
+
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        assert not mail.send_mail()
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_deleted_draft(self, mock_mail, user, prereg):
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        prereg.deleted = timezone.now()
+        prereg.save()
+        assert not mail.send_mail()

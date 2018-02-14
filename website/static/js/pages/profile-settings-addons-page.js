@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-var Raven = require('raven-js');
 require('js/osfToggleHeight');
 
 var $osf = require('js/osfHelpers');
@@ -60,7 +59,7 @@ $('#selectAddonsForm').on('submit', function() {
             window.location.reload();
         });
         request.fail(function() {
-            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact ' + $osf.osfSupportLink();
             bootbox.alert({
                 title: 'Request failed',
                 message: msg,

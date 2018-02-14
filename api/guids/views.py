@@ -52,6 +52,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(
             Guid,
             self.kwargs['guids'],
+            self.request,
             display_name='guid'
         )
 

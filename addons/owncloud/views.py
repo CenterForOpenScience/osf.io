@@ -78,6 +78,9 @@ def owncloud_add_user_account(auth, **kwargs):
             provider=provider.short_name,
             provider_id='{}:{}'.format(host.url, username).lower()
         )
+        if provider.account.oauth_key != password:
+            provider.account.oauth_key = password
+            provider.account.save()
 
     user = auth.user
     if not user.external_accounts.filter(id=provider.account.id).exists():

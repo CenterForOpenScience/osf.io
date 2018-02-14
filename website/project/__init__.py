@@ -2,10 +2,9 @@
 import uuid
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
 from website.util.sanitize import strip_html
 
@@ -50,13 +49,13 @@ def new_bookmark_collection(user):
 
     """
     Collection = apps.get_model('osf.Collection')
-    existing_bookmark_collection = Collection.find(
-        Q('is_bookmark_collection', 'eq', True) &
-        Q('creator', 'eq', user) &
-        Q('is_deleted', 'eq', False)
-    )
+    existing_bookmark_collections = Collection.objects.filter(
+        is_bookmark_collection=True,
+        creator=user,
+        is_deleted=False
+    ).exists()
 
-    if existing_bookmark_collection.count() > 0:
+    if existing_bookmark_collections:
         raise NodeStateError('Users may only have one bookmark collection')
 
     collection = Collection(
@@ -85,7 +84,7 @@ def new_private_link(name, user, nodes, anonymous):
     if name:
         name = strip_html(name)
         if name is None or not name.strip():
-            raise ValidationValueError('Invalid link name.')
+            raise ValidationError('Invalid link name.')
     else:
         name = 'Shared project link'
 

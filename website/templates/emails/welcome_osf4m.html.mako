@@ -23,8 +23,9 @@
         Best wishes,
         <br>
         COS Support Team
+
         <br><br>
-        P.S. Got questions? <a href="mailto:support@osf.io">Just send us an email!</a>
+        P.S. Got questions? <a href="mailto:${osf_support_email}">Just send us an email!</a>
     </div>
 </%def>
 <%def name="footer()">

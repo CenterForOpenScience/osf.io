@@ -1,26 +1,22 @@
 import sys
 import logging
-from website.app import init_app
+from website.app import setup_django
+setup_django()
 from scripts import utils as script_utils
-from framework.transactions.context import TokuTransaction
-from website.models import Node
-from framework.mongo.utils import paginated
-
-from framework.mongo import database
-
+from osf.models import AbstractNode
+from framework.database import paginated
 
 logger = logging.getLogger(__name__)
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
     count = 0
-    for node in paginated(Node, increment=1000):
-        if not node.root or node.root._id != node._root._id:
+    for node in paginated(AbstractNode, increment=1000):
+        true_root = node.get_root()
+        if not node.root or node.root.id != true_root.id:
             count += 1
-            logger.info('Setting root for node {} to {}'.format(node._id, node._root._id))
-            node.root = node._root._id
+            logger.info('Setting root for node {} to {}'.format(node._id, true_root._id))
             if not dry:
-                node.save()
+                AbstractNode.objects.filter(id=node.id).update(root=true_root)
     logger.info('Finished migrating {} nodes'.format(count))
 
 if __name__ == '__main__':

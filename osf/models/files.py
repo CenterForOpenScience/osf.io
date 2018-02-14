@@ -5,11 +5,10 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Manager
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
@@ -19,7 +18,6 @@ from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
@@ -38,7 +36,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager):
+class BaseFileNodeManager(TypedModelManager, IncludeManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -83,7 +81,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
-    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True, on_delete=models.CASCADE)
     # The last time the touch method was called on this FileNode
     last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
@@ -93,9 +91,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
-    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
-    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
+    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
@@ -105,7 +103,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
@@ -166,6 +164,12 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """The comment page type associated with StoredFileNodes."""
         return 'files'
 
+    @property
+    def current_version_number(self):
+        if self.history:
+            return len(self.history)
+        return 1
+
     @classmethod
     def create(cls, **kwargs):
         kwargs.update(provider=cls._provider)
@@ -185,9 +189,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             # it's a folder
-            folder_children = cls.find(Q('provider', 'eq', provider) &
-                                       Q('node', 'eq', node) &
-                                       Q('_materialized_path', 'startswith', materialized_path))
+            folder_children = cls.objects.filter(provider=provider, node=node, _materialized_path__startswith=materialized_path)
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -196,9 +198,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         else:
             # it's a file
             try:
-                file_obj = cls.find_one(
-                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
-            except NoResultsFound:
+                file_obj = cls.objects.get(
+                    node=node, _materialized_path=materialized_path
+                )
+            except cls.DoesNotExist:
                 return guids
             guid = file_obj.get_guid()
             if guid:
@@ -206,8 +209,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return guids
 
-    def to_storage(self):
-        storage = super(BaseFileNode, self).to_storage()
+    def to_storage(self, **kwargs):
+        storage = super(BaseFileNode, self).to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
             for key in tuple(storage.keys()):
                 if 'deleted' in key:
@@ -220,7 +223,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param user: The user with checked out files
         :return: A queryset of all FileNodes checked out by user
         """
-        return cls.find(Q('checkout', 'eq', user))
+        return cls.objects.filter(checkout=user)
 
     @classmethod
     def resolve_class(cls, provider, type_integer):
@@ -345,6 +348,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def get_absolute_info_url(self):
+        return self.absolute_api_v2_url
+
     def _repoint_guids(self, updated):
         logger.warn('BaseFileNode._repoint_guids is deprecated.')
 
@@ -416,7 +422,7 @@ class File(models.Model):
     def kind(self):
         return 'file'
 
-    def update(self, revision, data, user=None):
+    def update(self, revision, data, user=None, save=True):
         """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata recieved from waterbutler
@@ -442,7 +448,8 @@ class File(models.Model):
             version.save()
             self.versions.add(version)
         for entry in self.history:
-            if data['modified'] is not None and data['modified'] < entry['modified']:
+            # Some entry might have an undefined modified field
+            if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
                 sentry.log_message('update() receives metatdata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
@@ -452,7 +459,8 @@ class File(models.Model):
         # Finally update last touched
         self.last_touched = timezone.now()
 
-        self.save()
+        if save:
+            self.save()
         return version
 
     def serialize(self):
@@ -475,8 +483,8 @@ class File(models.Model):
             'checkout': self.checkout._id if self.checkout else None,
             'version': newest_version.identifier if newest_version else None,
             'contentType': newest_version.content_type if newest_version else None,
-            'modified': newest_version.date_modified.isoformat() if newest_version.date_modified else None,
-            'created': self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
+            'modified': newest_version.external_modified.isoformat() if newest_version.external_modified else None,
+            'created': self.versions.all().first().external_modified.isoformat() if self.versions.all().first().external_modified else None,
         })
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
@@ -530,10 +538,7 @@ class Folder(models.Model):
         return child
 
     def find_child_by_name(self, name, kind=2):
-        return self.resolve_class(self.provider, kind).find_one(
-            Q('name', 'eq', name) &
-            Q('parent', 'eq', self)
-        )
+        return self.resolve_class(self.provider, kind).objects.get(name=name, parent=self)
 
     def serialize(self):
         return self._serialize()
@@ -568,7 +573,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save()
+            self.save(update_modified=False)
 
         return self
 
@@ -614,21 +619,22 @@ class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
     """
+    # Note on fields:
+    # `created`: Date version record was created. This is the date displayed to the user.
+    # `modified`: Date this object was last modified. Distinct from the date the file associated
+    #       with this object was last modified
+    # `external_modified`: Date file modified on third-party backend. Not displayed to user, since
+    #       this date may be earlier than the date of upload if the file already
+    #       exists on the backend
 
-    creator = models.ForeignKey('OSFUser', null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
-
-    # Date version record was created. This is the date displayed to the user.
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
-    # Date file modified on third-party backend. Not displayed to user, since
-    # this date may be earlier than the date of upload if the file already
-    # exists on the backend
-    date_modified = NonNaiveDateTimeField(null=True, blank=True)
+    external_modified = NonNaiveDateTimeField(null=True, blank=True)
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
@@ -653,7 +659,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
+            self.external_modified = parse_date(self.metadata['modified'], ignoretz=False)
 
         if save:
             self.save()
@@ -671,15 +677,15 @@ class FileVersion(ObjectIDMixin, BaseModel):
             # Shouldn't ever happen, but we already have an archive
             return True  # We've found ourself
 
-        other = self.__class__.find(
-            Q('_id', 'ne', self._id) &
-            Q('metadata.sha256', 'eq', self.metadata['sha256']) &
-            Q('metadata.archive', 'ne', None) &
-            Q('metadata.vault', 'ne', None)
-        ).first()
-        if not other:
+        other = self.__class__.objects.filter(
+            metadata__sha256=self.metadata['sha256']
+        ).exclude(
+            _id=self._id, metadata__archive__is_null=True, metadata__vault__is_null=True
+        )
+        if not other.exists():
             return False
         try:
+            other = other.first()
             self.metadata['vault'] = other.metadata['vault']
             self.metadata['archive'] = other.metadata['archive']
         except KeyError:
@@ -689,4 +695,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        ordering = ('date_created',)
+        ordering = ('-created',)

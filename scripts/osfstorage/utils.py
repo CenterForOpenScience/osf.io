@@ -5,13 +5,9 @@ import os
 import glob
 import subprocess
 
+import boto3
 
-def ensure_osf_files(settings):
-    """Ensure `osffiles` is enabled for access to legacy models.
-    """
-    settings.COPY_GIT_REPOS = True
-    if 'osffiles' not in settings.ADDONS_REQUESTED:
-        settings.ADDONS_REQUESTED.append('osffiles')
+from scripts.osfstorage import settings as storage_settings
 
 
 def create_parity_files(file_path, redundancy=5):
@@ -44,3 +40,21 @@ def create_parity_files(file_path, redundancy=5):
             for fpath in
             glob.glob(os.path.join(path, '{0}*.par2'.format(name)))
         ]
+
+
+def get_glacier_client():
+    return boto3.client(
+        'glacier',
+        aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
+        aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
+        region_name=storage_settings.AWS_REGION
+    )
+
+
+def get_glacier_resource():
+    return boto3.resource(
+        'glacier',
+        aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
+        aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
+        region_name=storage_settings.AWS_REGION
+    )

@@ -5,6 +5,7 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from django.core.urlresolvers import reverse
 
 from geoip import geolite2
 
@@ -15,15 +16,11 @@ from framework.routing import Rule
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
-from framework.auth import get_display_name
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
-
-from modularodm import Q
-from modularodm.exceptions import QueryException, NoResultsFound
 
 from osf.models import Institution
 from website import util
@@ -39,7 +36,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
@@ -47,9 +44,12 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.registries import views as registries_views
+from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
+from website.identifiers import views as identifier_views
 
 
 def get_globals():
@@ -61,9 +61,9 @@ def get_globals():
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
+            inst_id = Institution.objects.get(domains__icontains=[request.host])._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
-        except NoResultsFound:
+        except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
@@ -75,12 +75,12 @@ def get_globals():
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
-        'user_gravatar': get_gravatar(user=user, size=25) if user else '',
+        'user_profile_image': get_profile_image_url(user=user, size=25) if user else '',
         'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'display_name': get_display_name(user.fullname) if user else '',
+        'display_name': user.fullname if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
             'country': getattr(location, 'country', None),
@@ -122,18 +122,18 @@ def get_globals():
         },
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
-        'custom_citations': settings.CUSTOM_CITATIONS
+        'custom_citations': settings.CUSTOM_CITATIONS,
+        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
 
 def is_private_link_anonymous_view():
+    # Avoid circular import
+    from osf.models import PrivateLink
     try:
-        # Avoid circular import
-        from osf.models import PrivateLink
-        return PrivateLink.find_one(
-            Q('key', 'eq', request.args.get('view_only'))
-        ).anonymous
-    except QueryException:
+        return PrivateLink.objects.filter(key=request.args.get('view_only')).values_list('anonymous', flat=True).get()
+    except PrivateLink.DoesNotExist:
         return False
 
 
@@ -145,6 +145,7 @@ class OsfWebRenderer(WebRenderer):
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
+
 
 #: Use if a view only redirects or raises error
 notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
@@ -301,6 +302,16 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
+        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            process_rules(app, [
+                Rule(
+                    ember_osf_web_views.routes,
+                    'get',
+                    ember_osf_web_views.use_ember_app,
+                    notemplate
+                )
+            ])
+
     ### Base ###
 
     process_rules(app, [
@@ -423,6 +434,13 @@ def make_url_map(app):
             'get',
             registries_views.registries_landing_page,
             OsfWebRenderer('public/pages/registries_landing.mako', trust=False),
+        ),
+
+        Rule(
+            '/reviews/',
+            'get',
+            reviews_views.reviews_landing_page,
+            OsfWebRenderer('public/pages/reviews_landing.mako', trust=False),
         ),
 
         Rule(
@@ -738,6 +756,15 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/addons/',
+                '/project/<pid>/node/<nid>/addons/',
+            ],
+            'get',
+            project_views.node.node_addons,
+            OsfWebRenderer('project/addons.mako', trust=False)
+        ),
+        Rule(
             '/settings/account/',
             'get',
             profile_views.user_account,
@@ -805,15 +832,7 @@ def make_url_map(app):
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
-        ),
-
-        # TODO: Uncomment once outstanding issues with this feature are addressed
-        # Rule(
-        #     '/@<twitter_handle>/',
-        #     'get',
-        #     profile_views.redirect_to_twitter,
-        #     OsfWebRenderer('error.mako', render_mako_string, trust=False)
-        # ),
+        )
     ])
 
     # API
@@ -840,6 +859,12 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+        Rule(
+            '/profile/cancel_request_deactivation/',
+            'post',
+            profile_views.cancel_request_deactivation,
             json_renderer,
         ),
 
@@ -955,6 +980,7 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/share/search/', 'get', website_views.legacy_share_v1_search, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -1234,6 +1260,14 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
+        Rule(
+            [
+                '/quickfiles/<fid>/'
+            ],
+            'get',
+            addon_views.addon_view_or_download_quickfile,
+            json_renderer
+        )
     ])
 
     # API
@@ -1470,7 +1504,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
             'post',
-            project_views.register.node_identifiers_post,
+            identifier_views.node_identifiers_post,
             json_renderer,
         ),
 

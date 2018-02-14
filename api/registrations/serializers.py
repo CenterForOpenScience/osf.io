@@ -1,10 +1,10 @@
 import pytz
 import json
 
-from modularodm.exceptions import ValidationValueError
-
+from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -17,7 +17,9 @@ from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
-                                  JSONAPIListField, ShowIfVersion, DateByVersion,)
+                                  JSONAPIListField, ShowIfVersion, VersionedDateTimeField,)
+from framework.auth.core import Auth
+from osf.exceptions import ValidationValueError
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -27,11 +29,11 @@ class BaseRegistrationSerializer(NodeSerializer):
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
-    date_modified = DateByVersion(read_only=True)
+    date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
+    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -50,8 +52,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
                                  help_text='The registration has been withdrawn.')
 
-    date_registered = DateByVersion(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = DateByVersion(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
+    date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+    date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
@@ -236,7 +238,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
-            except ValidationValueError as err:
+            except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
             try:
@@ -275,16 +277,26 @@ class BaseRegistrationSerializer(NodeSerializer):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
     def update(self, registration, validated_data):
-        is_public = validated_data.get('is_public', False)
-        if is_public:
+        auth = Auth(self.context['request'].user)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = validated_data.pop('tags', [])
             try:
-                registration.update(validated_data)
-            except NodeUpdateError as err:
-                raise exceptions.ValidationError(err.reason)
+                registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise exceptions.ValidationError(err.message)
-        else:
-            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+                raise Conflict(err.message)
+
+        is_public = validated_data.get('is_public', None)
+        if is_public is not None:
+            if is_public:
+                try:
+                    registration.update(validated_data, auth=auth)
+                except NodeUpdateError as err:
+                    raise exceptions.ValidationError(err.reason)
+                except NodeStateError as err:
+                    raise exceptions.ValidationError(err.message)
+            else:
+                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
 
     class Meta:
@@ -297,7 +309,7 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     """
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
-    lift_embargo = DateByVersion(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):

@@ -23,8 +23,8 @@ class TestIncludeQuerySet:
     @pytest.mark.django_assert_num_queries
     def test_include_guids(self, create_n_nodes, django_assert_num_queries):
         create_n_nodes(3)
-        # Sanity check with no .include
-        with django_assert_num_queries(4):
+        # Confirm guids included automagically
+        with django_assert_num_queries(1):
             for node in Node.objects.all():
                 assert node._id is not None
         with django_assert_num_queries(1):

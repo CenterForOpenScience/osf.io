@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from . import views
 
+app_name = 'admin'
+
 urlpatterns = [
     url(r'^$', views.SpamList.as_view(), name='spam'),
     url(

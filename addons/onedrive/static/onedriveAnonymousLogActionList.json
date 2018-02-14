@@ -1,0 +1,10 @@
+{
+    "onedrive_file_added" : "A user added a file to Microsoft OneDrive in a project",
+    "onedrive_file_removed" : "A user removed a file from Microsoft OneDrive in a project",
+    "onedrive_file_updated" : "A user updated a file in Microsoft OneDrive in a project",
+    "onedrive_folder_created" : "A user created a folder in Microsoft OneDrive in a project",
+    "onedrive_folder_selected" : "A user linked a Microsoft OneDrive folder to a project",
+    "onedrive_node_authorized" : "A user authorized the Microsoft OneDrive addon for a project",
+    "onedrive_node_deauthorized" : "A user deauthorized the Microsoft OneDrive addon for a project",
+    "onedrive_node_deauthorized_no_user" : "Microsoft OneDrive addon for a project deauthorized"
+}

@@ -4,14 +4,12 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
-from modularodm import Q
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, BaseFileNode)
-from osf.utils.auth import Auth
+from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
+from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
@@ -64,7 +62,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @classmethod
     def get(cls, _id, node):
-        return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
+        return cls.objects.get(_id=_id, node=node)
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -104,10 +102,7 @@ class OsfStorageFileNode(BaseFileNode):
             for item in children:
                 guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
-            try:
-                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
-            except IndexError:
-                guid = None
+            guid = file_obj.get_guid()
             if guid:
                 guids.append(guid._id)
 
@@ -127,6 +122,11 @@ class OsfStorageFileNode(BaseFileNode):
     @property
     def is_checked_out(self):
         return self.checkout is not None
+
+    # overrides BaseFileNode
+    @property
+    def current_version_number(self):
+        return self.versions.count() or 1
 
     def _check_delete_allowed(self):
         if self.is_preprint_primary:
@@ -218,10 +218,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        metadata = []
-        for meta in self.versions.values_list('metadata', flat=True):
-            metadata.append(meta)
-        return metadata
+        return list(self.versions.values_list('metadata', flat=True))
 
     @history.setter
     def history(self, value):
@@ -233,13 +230,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        earliest_version = self.versions.order_by('date_created').first()
+        earliest_version = self.versions.order_by('created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
-            'modified': version.date_created.isoformat() if version else None,
-            'created': earliest_version.date_created.isoformat() if version else None,
+            'modified': version.created.isoformat() if version else None,
+            'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
 
@@ -264,12 +261,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def get_version(self, version=None, required=False):
         if version is None:
             if self.versions.exists():
-                return self.versions.last()
+                return self.versions.first()
             return None
 
         try:
-            return self.versions.all()[int(version) - 1]
-        except (IndexError, ValueError):
+            return self.versions.get(identifier=version)
+        except FileVersion.DoesNotExist:
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None
@@ -390,12 +387,12 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
@@ -453,24 +450,23 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         return settings.WATERBUTLER_CREDENTIALS
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for(
-            'addon_view_or_download_file',
-            path=metadata['path'],
-            provider='osfstorage'
-        )
+        params = {
+            'node': self.owner._id,
+            'project': self.owner.parent_id,
+
+            'path': metadata['materialized'],
+        }
+
+        if (metadata['kind'] != 'folder'):
+            url = self.owner.web_url_for(
+                'addon_view_or_download_file',
+                path=metadata['path'],
+                provider='osfstorage'
+            )
+            params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
             'osf_storage_{0}'.format(action),
             auth=auth,
-            params={
-                'node': self.owner._id,
-                'project': self.owner.parent_id,
-
-                'path': metadata['materialized'],
-
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
-            },
+            params=params
         )

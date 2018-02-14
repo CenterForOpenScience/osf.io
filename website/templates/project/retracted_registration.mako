@@ -1,4 +1,4 @@
-<%namespace name="contributor_list" file="util/contributor_list.mako" />
+<%namespace name="contributor_list" file="../util/contributor_list.mako" />
 <div id="projectScope">
     <header class="subhead" id="overview">
 

@@ -1,3 +1,4 @@
+# TODO: Consider rewriting as management command
 import logging
 import sys
 import time
@@ -52,5 +53,5 @@ def main():
     setup_django()
     migrate(dry=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

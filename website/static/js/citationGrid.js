@@ -6,11 +6,10 @@ var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
-var $osf = require('js/osfHelpers');
 
-var apaStyle = require('raw!styles/apa.csl');
+var apaStyle = require('raw-loader!styles/apa.csl');
 
-var errorPage = require('raw!citations_load_error.html');
+var errorPage = require('raw-loader!citations_load_error.html');
 
 require('css/fangorn.css');
 

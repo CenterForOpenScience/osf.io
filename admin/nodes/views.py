@@ -1,12 +1,16 @@
 from __future__ import unicode_literals
 
+import pytz
+from datetime import datetime
+
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
-from django.views.generic import ListView, DeleteView
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.views.generic import ListView, DeleteView, View
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from modularodm import Q
+from django.http import HttpResponse
+from django.db.models import Q
 
 from website import search
 from osf.models import NodeLog
@@ -14,6 +18,7 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
+from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -26,7 +31,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
+from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
 from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
 
@@ -117,7 +122,7 @@ class NodeDeleteBase(DeleteView):
         return super(NodeDeleteBase, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
 
 class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
@@ -203,6 +208,38 @@ class NodeView(PermissionRequiredMixin, GuidView):
         return serialize_node(node)
 
 
+class AdminNodeLogView(PermissionRequiredMixin, ListView):
+    """ Allow admins to see logs"""
+
+    template_name = 'nodes/node_logs.html'
+    context_object_name = 'node'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+
+    def get_queryset(self):
+        node = self.get_object()
+        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
+
+    def get_context_data(self, **kwargs):
+        query_set = self.get_queryset()
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'logs': map(serialize_log, query_set),
+            'page': page,
+        }
+
+
 class RegistrationListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of registrations
 
@@ -211,7 +248,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
@@ -230,21 +267,50 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         }
 
 
+class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
+    """ Allow authorized admin user to update the embargo of a registration
+    """
+    permission_required = ('osf.change_node')
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        validation_only = (request.POST.get('validation_only', False) == 'True')
+        end_date = request.POST.get('date')
+        user = request.user
+        registration = self.get_object()
+
+        try:
+            end_date = pytz.utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
+        except ValueError:
+            return HttpResponse('Please enter a valid date.', status=400)
+
+        try:
+            if validation_only:
+                validate_embargo_date(registration, user, end_date)
+            else:
+                change_embargo_date(registration, user, end_date)
+        except ValidationError as e:
+            return HttpResponse(e, status=409)
+        except PermissionDenied as e:
+            return HttpResponse(e, status=403)
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
+
 class NodeSpamList(PermissionRequiredMixin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('spam_status', 'eq', self.SPAM_STATE)
-        )
-        return Node.find(query).order_by(self.ordering)
+        return Node.objects.filter(spam_status=self.SPAM_STATE).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

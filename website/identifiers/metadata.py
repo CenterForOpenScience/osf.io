@@ -65,7 +65,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         title=node.title,
         creators=creators,
         publisher='Open Science Framework',
-        publication_year=getattr(node.registered_date or node.date_created, 'year'),
+        publication_year=getattr(node.registered_date or node.created, 'year'),
         pretty_print=pretty_print
     )
 
@@ -118,7 +118,7 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         E.titles(E.title(remove_control_characters(preprint.node.title))),
         E.publisher(preprint.provider.name),
         E.publicationYear(str(getattr(preprint.date_published, 'year'))),
-        E.dates(E.date(preprint.date_modified.isoformat(), dateType='Updated')),
+        E.dates(E.date(preprint.modified.isoformat(), dateType='Updated')),
         E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
         E.descriptions(E.description(remove_control_characters(preprint.node.description), descriptionType='Abstract')),
     )

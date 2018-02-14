@@ -12,9 +12,19 @@
     {% if perms.osf.view_prereg %}
     <div>
         {# Add types here #}
-        <a href="{% url 'pre_reg:download' %}" class="btn btn-primary">
-            Download all
-        </a>
+        <span>
+            <a href="{% url 'pre_reg:checkout_checkup' %}"
+                data-toggle="modal" data-target="#confirmCheckoutCheckup"
+                class="btn btn-default">
+            Checkout Checkup
+            </a>
+        </span>
+        <div class="modal" id="confirmCheckoutCheckup">
+            <div class="modal-dialog">
+                <div class="modal-content"></div>
+                {# Data from above link #}
+            </div>
+        </div>
     </div>
     {%  endif %}
     {% include "util/pagination.html" with items=page status=status pagin=p order=order %}

@@ -4,7 +4,6 @@
 'use strict';
 
 var $ = require('jquery');
-var ko = require('knockout');
 
 require('Caret.js');
 require('At.js');

@@ -5,7 +5,6 @@ import httplib as http
 import logging
 
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
@@ -17,7 +16,6 @@ from requests_oauthlib import OAuth1Session, OAuth2Session
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
 from osf.models import base
-from osf.modm_compat import Q
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
@@ -184,6 +182,7 @@ class ExternalProvider(object):
 
             url = oauth.authorization_url(self.auth_url_base)
 
+        session.save()
         return url
 
     @abc.abstractproperty
@@ -274,21 +273,11 @@ class ExternalProvider(object):
         return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
-        try:
-            # create a new ``ExternalAccount`` ...
-            self.account = ExternalAccount(
-                provider=self.short_name,
-                provider_id=info['provider_id'],
-                provider_name=self.name,
-            )
-            self.account.save()
-        except ValidationError:
-            # ... or get the old one
-            self.account = ExternalAccount.find_one(
-                Q('provider', 'eq', self.short_name) &
-                Q('provider_id', 'eq', info['provider_id'])
-            )
-            assert self.account is not None
+
+        self.account, created = ExternalAccount.objects.get_or_create(
+            provider=self.short_name,
+            provider_id=info['provider_id'],
+        )
 
         # ensure that provider_name is correct
         self.account.provider_name = self.name
@@ -313,6 +302,10 @@ class ExternalProvider(object):
         if not user.external_accounts.filter(id=self.account.id).exists():
             user.external_accounts.add(self.account)
             user.save()
+
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
 
         return True
 
@@ -371,7 +364,7 @@ class ExternalProvider(object):
         """
         pass
 
-    def refresh_oauth_key(self, force=False, extra={}, resp_auth_token_key='access_token',
+    def refresh_oauth_key(self, force=False, extra=None, resp_auth_token_key='access_token',
                           resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
@@ -388,6 +381,7 @@ class ExternalProvider(object):
         datetime-formatted oauth_key expiry key, given a successful refresh response from
         `auto_refresh_url`. A default using 'expires_at' as a key is provided.
         """
+        extra = extra or {}
         # Ensure this is an authenticated Provider that uses token refreshing
         if not (self.account and self.auto_refresh_url):
             return False

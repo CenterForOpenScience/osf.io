@@ -1,6 +1,5 @@
 var m = require('mithril');
 var $ = require('jquery');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it?  See [#OSF-6100]
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
@@ -228,7 +227,7 @@ var FileRevisionsTable = {
         }
 
         revision.osfViewUrl = '?' + $.param(options);
-        revision.osfDownloadUrl = 'download?' + $.param(options);
+        revision.osfDownloadUrl = !index ? 'download' : 'download?' + $.param(options);
 
         return revision;
     }

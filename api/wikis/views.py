@@ -63,7 +63,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         name                        string             name of the wiki pag
         path                        string             the path of the wiki page
         materialized_path           string             the path of the wiki page
-        date_modified               iso8601 timestamp  timestamp when the wiki was last updated
+        date_modified                    iso8601 timestamp  timestamp when the wiki was last updated
         content_type                string             MIME-type
         current_user_can_comment    boolean            Whether the current user is allowed to post comments
         extra                       object

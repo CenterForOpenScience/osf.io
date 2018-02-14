@@ -6,7 +6,9 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
     is_anonymized,
-    DateByVersion,
+    VersionedDateTimeField,
+    HideIfNotNodePointerLog,
+    HideIfNotRegistrationPointerLog,
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
@@ -56,6 +58,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     github_repo = ser.CharField(read_only=True, source='github.repo')
     bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
     bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
+    gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
+    gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -70,7 +74,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
-    pointer = ser.DictField(read_only=True)
+    pointer = ser.SerializerMethodField(read_only=True)
     preprint = ser.CharField(read_only=True)
     preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
@@ -110,6 +114,17 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if project_id:
             node = AbstractNode.objects.filter(guids___id=project_id).values('title').get()
             return {'id': project_id, 'title': node['title']}
+        return None
+
+    def get_pointer(self, obj):
+        user = self.context['request'].user
+        pointer = obj.get('pointer', None)
+        if pointer:
+            pointer_node = AbstractNode.objects.get(guids___id=pointer['id'])
+            if not pointer_node.is_deleted:
+                if pointer_node.is_public or (user.is_authenticated and pointer_node.has_permission(user, osf_permissions.READ)):
+                    pointer['title'] = pointer_node.title
+                    return pointer
         return None
 
     def get_contributors(self, obj):
@@ -165,9 +180,9 @@ class NodeLogSerializer(JSONAPISerializer):
     ]
 
     id = ser.CharField(read_only=True, source='_id')
-    date = DateByVersion(read_only=True)
+    date = VersionedDateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
-    params = NodeLogParamsSerializer(read_only=True)
+    params = ser.SerializerMethodField(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
@@ -189,10 +204,20 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     # This would be a node_link, except that data isn't stored in the node log params
-    linked_node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<params.pointer.id>'}
+    linked_node = HideIfNotNodePointerLog(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
     )
+
+    linked_registration = HideIfNotRegistrationPointerLog(
+        RelationshipField(
+            related_view='registrations:registration-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
+    )
+
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'}
@@ -200,3 +225,8 @@ class NodeLogSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
+
+    def get_params(self, obj):
+        if obj.action == 'osf_storage_folder_created' and obj.params.get('urls'):
+            obj.params.pop('urls')
+        return NodeLogParamsSerializer(obj.params, context=self.context, read_only=True).data

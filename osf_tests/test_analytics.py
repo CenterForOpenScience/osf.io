@@ -23,6 +23,8 @@ pytestmark = pytest.mark.django_db
 
 class TestAnalytics(OsfTestCase):
 
+
+
     def test_get_total_activity_count(self):
         user = UserFactory()
         date = timezone.now()

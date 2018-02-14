@@ -14,17 +14,17 @@ import jwe
 import jwt
 from django.db import transaction
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from addons.base.models import BaseStorageAddon
+from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFileNode
+
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import json_renderer
+from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
@@ -34,7 +34,7 @@ from addons.base import signals as file_signals
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from website.project.utils import serialize_node
@@ -194,24 +194,21 @@ def check_access(node, auth, action, cas_resp):
                 return True
             parent = parent.parent_node
 
-    # Users with the PREREG_ADMIN_TAG should be allowed to download files
+    # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
         allowed_nodes = [node] + node.parents
-        prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'in', [n for n in allowed_nodes]) &
-            Q('registration_schema', 'eq', prereg_schema)
+        prereg_draft_registration = DraftRegistration.objects.filter(
+            branched_from__in=allowed_nodes,
+            registration_schema=prereg_schema
         )
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
-                    settings.PREREG_ADMIN_TAG in auth.user.system_tags:
+                    auth.user.has_perm('osf.administer_prereg'):
             return True
-    except NoResultsFound:
+    except MetaSchema.DoesNotExist:
         pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -252,7 +249,8 @@ def get_auth(auth, **kwargs):
             options={'require_exp': True},
             algorithm=settings.WATERBUTLER_JWT_ALGORITHM
         )['data']
-    except (jwt.InvalidTokenError, KeyError):
+    except (jwt.InvalidTokenError, KeyError) as err:
+        sentry.log_message(str(err))
         raise HTTPError(httplib.FORBIDDEN)
 
     if not auth.user:
@@ -315,6 +313,9 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
+            # Don't log download actions
+            if payload['action'] in ('download_file', 'download_zip'):
+                return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
@@ -410,6 +411,7 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
                 )
 
             if payload.get('errors'):
@@ -450,23 +452,23 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
         if path.endswith('/'):
-            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find(
-                Q('provider', 'eq', provider) &
-                Q('node', 'eq', node) &
-                Q('_materialized_path', 'startswith', materialized_path)
+            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
+                provider=provider,
+                node=node,
+                _materialized_path__startswith=materialized_path
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
                     item.delete(user=user)
                 elif item.kind == 'folder':
-                    BaseFileNode.remove_one(item)
+                    BaseFileNode.delete(item)
         else:
             try:
-                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).find_one(
-                    Q('node', 'eq', node) &
-                    Q('_materialized_path', 'eq', materialized_path)
+                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
+                    node=node,
+                    _materialized_path=materialized_path
                 )
-            except NoResultsFound:
+            except BaseFileNode.DoesNotExist:
                 file_node = None
 
             if file_node and not TrashedFileNode.load(file_node._id):
@@ -499,7 +501,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 
         try:
             path = node_settings.get_root().find_child_by_name(path)._id
-        except NoResultsFound:
+        except OsfStorageFileNode.DoesNotExist:
             raise HTTPError(
                 404, data=dict(
                     message_short='File not found',
@@ -554,7 +556,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
     format_params = dict(
         file_name=markupsafe.escape(file_name),
-        deleted_by=markupsafe.escape(deleted_by),
+        deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full)
     )
@@ -569,7 +571,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
             'render': None,
             'sharejs': None,
             'mfr': settings.MFR_SERVER_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
@@ -592,7 +594,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     return ret, httplib.GONE
 
 
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
@@ -640,7 +642,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             cookie=request.cookies.get(settings.COOKIE_NAME)
         )
     )
-
     if version is None:
         # File is either deleted or unable to be found in the provider location
         # Rollback the insertion of the file_node
@@ -693,6 +694,15 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
 
+def addon_view_or_download_quickfile(**kwargs):
+    fid = kwargs.get('fid', 'NOT_AN_FID')
+    file_ = OsfStorageFile.load(fid)
+    if not file_:
+        raise HTTPError(httplib.NOT_FOUND, data={
+            'message_short': 'File Not Found',
+            'message_long': 'The requested file could not be found.'
+        })
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
@@ -722,6 +732,7 @@ def addon_view_file(auth, node, file_node, version):
             'direct': None,
             'mode': 'render',
             'action': 'download',
+            'public_file': node.is_public,
         })
     )
 
@@ -735,7 +746,7 @@ def addon_view_file(auth, node, file_node, version):
             'render': render_url.url,
             'mfr': settings.MFR_SERVER_URL,
             'sharejs': wiki_settings.SHAREJS_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
             'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
         },

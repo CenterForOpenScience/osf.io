@@ -7,6 +7,9 @@ import markdown
 import pytz
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
+from bleach import Cleaner
+from functools import partial
+from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
@@ -48,8 +51,8 @@ def validate_page_name(value):
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
 
-def render_content(content, node):
-    html_output = markdown.markdown(
+def build_html_output(content, node):
+    return markdown.markdown(
         content,
         extensions=[
             wikilinks.WikiLinkExtension(
@@ -66,9 +69,11 @@ def render_content(content, node):
         ]
     )
 
+def render_content(content, node):
+    html_output = build_html_output(content, node)
+
     # linkify gets called after santize, because we're adding rel="nofollow"
     #   to <a> elements - but don't want to allow them for other elements.
-
     sanitized_content = sanitize(html_output, **settings.WIKI_WHITELIST)
     return sanitized_content
 
@@ -82,8 +87,8 @@ class NodeWikiPage(GuidMixin, BaseModel):
     version = models.IntegerField(default=1)
     date = NonNaiveDateTimeField(auto_now_add=True)
     content = models.TextField(default='', blank=True)
-    user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
-    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def is_current(self):
@@ -139,17 +144,19 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     def html(self, node):
         """The cleaned HTML of the page"""
-        sanitized_content = render_content(self.content, node=node)
+        html_output = build_html_output(self.content, node=node)
         try:
-            from bleach import linkify
-
-            return linkify(
-                sanitized_content,
-                [nofollow, ],
+            cleaner = Cleaner(
+                tags=settings.WIKI_WHITELIST['tags'],
+                attributes=settings.WIKI_WHITELIST['attributes'],
+                styles=settings.WIKI_WHITELIST['styles'],
+                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
             )
+
+            return cleaner.clean(html_output)
         except TypeError:
             logger.warning('Returning unlinkified content.')
-            return sanitized_content
+            return render_content(self.content, node=node)
 
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""

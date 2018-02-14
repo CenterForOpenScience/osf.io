@@ -17,7 +17,6 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
-from osf.models.tag import Tag
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
@@ -37,9 +36,9 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
-from website.settings import DOMAIN, SUPPORT_EMAIL
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
 
 class UserDeleteView(PermissionRequiredMixin, DeleteView):
@@ -59,32 +58,23 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
             if user.date_disabled is None or kwargs.get('is_spam'):
                 user.disable_account()
                 user.is_registered = False
-                if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
-                    if 'spam_flagged' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_flagged', system=True)
-                        # TODO: removing system tags this way does not currently work -- https://openscience.atlassian.net/browse/OSF-7760
-                        user.tags.remove(t)
-                    if 'ham_confirmed' in user.system_tags:
-                        t = Tag.all_tags.get(name='ham_confirmed', system=True)
-                        user.tags.remove(t)
+                if 'spam_flagged' in user.system_tags:
+                    user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+                if 'ham_confirmed' in user.system_tags:
+                    user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
 
                 if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
                     user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
+                user.requested_deactivation = False
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
-                if 'spam_flagged' in user.system_tags or 'spam_confirmed' in user.system_tags:
-                    if 'spam_flagged' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_flagged', system=True)
-                        user.tags.remove(t)
-                    if 'spam_confirmed' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_confirmed', system=True)
-                        user.tags.remove(t)
-                    if 'ham_confirmed' not in user.system_tags:
-                        user.add_system_tag('ham_confirmed')
+                user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
+                if 'ham_confirmed' not in user.system_tags:
+                    user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -296,6 +286,33 @@ class UserFormView(PermissionRequiredMixin, FormView):
     def success_url(self):
         return self.redirect_url
 
+class UserMergeAccounts(PermissionRequiredMixin, FormView):
+    template_name = 'users/merge_accounts_modal.html'
+    permission_required = 'osf.view_osfuser'
+    object_type = 'osfuser'
+    raise_exception = True
+    form_class = MergeUserForm
+
+    def get_context_data(self, **kwargs):
+        return {'guid': self.get_object()._id}
+
+    def get_object(self, queryset=None):
+        return OSFUser.load(self.kwargs.get('guid'))
+
+    def form_valid(self, form):
+        user = self.get_object()
+        guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
+
+        user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged)
+        user.merge_user(user_to_be_merged)
+
+        return redirect(reverse_user(user._id))
+
+    def form_invalid(self, form):
+        raise Http404(
+            '{} not found.'.format(
+                form.cleaned_data.get('user_guid_to_be_merged', 'guid')
+            ))
 
 class UserSearchList(PermissionRequiredMixin, ListView):
     template_name = 'users/list.html'
@@ -382,7 +399,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, date_created__gt=query_date)
+        return Node.objects.filter(creator=user, created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -424,7 +441,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             else:
                 user = user_by_email
 
-            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
             last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''
@@ -564,7 +581,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
             message='Follow this link to reset your password: {}'.format(
                 reset_abs_url.url
             ),
-            from_email=SUPPORT_EMAIL,
+            from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )
         update_admin_log(

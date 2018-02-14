@@ -8,7 +8,6 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var linkifyHtml = require('linkifyjs/html');
-var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
@@ -64,7 +63,8 @@ var getContributorList = function(url, contributors, ret) {
 };
 
 // Maximum length for comments, in characters
-var MAXLENGTH = 500;
+var MAXLENGTH = 1000;
+var WARNLENGTH = 5;
 
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
@@ -189,22 +189,42 @@ var BaseComment = function() {
 
     self.underMaxLength = ko.observable(true);
 
+    self.currentCount = ko.observable(0);
+
+    self.counter = ko.pureComputed(function(){
+        return self.currentCount() + '/' + MAXLENGTH;
+    });
+
+    self.counterColor = ko.pureComputed(function(){
+        return self.currentCount() >  MAXLENGTH - WARNLENGTH ? 'alert-danger' : 'label-default';
+    });
+
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
+
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
+
     self.validateReply = ko.pureComputed(function() {
         return self.replyNotEmpty() && self.underMaxLength();
     });
 
 };
 
-BaseComment.prototype.handleEditableUpdate = function(element, underMaxLength, charLimit) {
+BaseComment.prototype.handleEditableUpdate = function(element) {
     var self = this;
-    self.underMaxLength(underMaxLength);
-    self.errorMessage(underMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
+    var $element = $(element);
+    var charLimit = $element.attr('maxlength');
+    var inputTextLength = $element[0].innerText.length || 0;
+    var showLength = inputTextLength === 1 ? 1 : inputTextLength - 1;
+    // + 1 to account for the <br> that is added to the end of the contenteditable content
+    // <br> is necessary for the return key to function properly
+    var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
+    self.currentCount(showLength);
+    self.underMaxLength(underOrEqualMaxLength);
+    self.errorMessage(underOrEqualMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -414,7 +434,7 @@ var CommentModel = function(data, $parent, $root) {
             'id': userData.id,
             'urls': {'profile': userData.links.html},
             'fullname': userData.attributes.full_name,
-            'gravatarUrl': userData.links.profile_image
+            'profileImageUrl': userData.links.profile_image
         };
     } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
         var errors = data.embeds.user.errors;
@@ -424,7 +444,7 @@ var CommentModel = function(data, $parent, $root) {
                     'id': null,
                     'urls': {'profile': ''},
                     'fullname': errors[e].meta.full_name,
-                    'gravatarUrl': ''
+                    'profileImageUrl': ''
                 };
                 break;
             }

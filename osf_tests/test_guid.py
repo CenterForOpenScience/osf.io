@@ -4,7 +4,6 @@ import urllib
 from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
-from osf.modm_compat import Q
 from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
     RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from tests.base import OsfTestCase
@@ -50,12 +49,6 @@ class TestReferent:
         obj = Factory()
         guid = Guid.objects.get(_id=obj._id)
         assert guid.referent == obj
-
-    def test_querying_on_referent(self):
-        user = UserFactory()
-
-        guids = Guid.find(Q('referent', 'eq', user))
-        assert user._id in guids.values_list('_id', flat=True)
 
     @pytest.mark.parametrize('Factory',
     [

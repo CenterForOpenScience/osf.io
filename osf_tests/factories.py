@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import functools
+import time
 
 import datetime
 import mock
@@ -13,22 +13,26 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
-from modularodm.exceptions import NoResultsFound
+from waffle.models import Flag, Sample, Switch
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
+from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.modm_compat import Q
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
+
+# If tests are run on really old processors without high precision this might fail. Unlikely to occur.
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -42,7 +46,7 @@ class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
     is_registered = True
@@ -116,7 +120,7 @@ class AuthFactory(factory.base.Factory):
     user = factory.SubFactory(UserFactory)
 
 class UnregUserFactory(DjangoModelFactory):
-    email = factory.Faker('email')
+    email = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
@@ -146,7 +150,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
     """
     class Meta:
         model = models.OSFUser
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     password = 'lolomglgt'
 
@@ -173,7 +177,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
+    created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
@@ -242,9 +246,7 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            models.NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -253,6 +255,7 @@ class NodeLogFactory(DjangoModelFactory):
     class Meta:
         model = models.NodeLog
     action = 'file_added'
+    params = {'path': '/'}
     user = SubFactory(UserFactory)
 
 class PrivateLinkFactory(DjangoModelFactory):
@@ -335,15 +338,11 @@ class RegistrationFactory(BaseNodeFactory):
             add_approval_step(reg)
         if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
-                reg.archive_job.status = ARCHIVER_SUCCESS
-                reg.archive_job.save()
+                archive_job = reg.archive_job
+                archive_job.status = ARCHIVER_SUCCESS
+                archive_job.done = True
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.save()
-        # models.ArchiveJob(
-        #     src_node=project,
-        #     dst_node=reg,
-        #     initiator=user,
-        # )
         if is_public:
             reg.is_public = True
         reg.save()
@@ -541,7 +540,7 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value ={
+    ezid_return_value = {
         'response': {
             'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
                 doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
@@ -583,6 +582,8 @@ class PreprintFactory(DjangoModelFactory):
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
+
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
@@ -665,22 +666,6 @@ class ApiOAuth2ApplicationFactory(DjangoModelFactory):
     callback_url = 'http://example.uk'
 
 
-class AlternativeCitationFactory(DjangoModelFactory):
-    class Meta:
-        model = models.AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
-
-
 class ForkFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
@@ -733,15 +718,15 @@ class ExternalAccountFactory(DjangoModelFactory):
 
 
 class MockOAuth2Provider(models.ExternalProvider):
-    name = "Mock OAuth 2.0 Provider"
-    short_name = "mock2"
+    name = 'Mock OAuth 2.0 Provider'
+    short_name = 'mock2'
 
-    client_id = "mock2_client_id"
-    client_secret = "mock2_client_secret"
+    client_id = 'mock2_client_id'
+    client_secret = 'mock2_client_secret'
 
-    auth_url_base = "https://mock2.com/auth"
-    callback_url = "https://mock2.com/callback"
-    auto_refresh_url = "https://mock2.com/callback"
+    auth_url_base = 'https://mock2.com/auth'
+    callback_url = 'https://mock2.com/callback'
+    auto_refresh_url = 'https://mock2.com/callback'
     refresh_time = 300
     expiry_time = 9001
 
@@ -816,3 +801,45 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ReviewActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ReviewAction
+
+    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=DefaultStates.values())
+    to_state = FuzzyChoice(choices=DefaultStates.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False
+
+
+class FlagFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    everyone = True
+    note = 'This is a waffle test flag'
+
+    class Meta:
+        model = Flag
+
+
+class SampleFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    percent = 100
+    note = 'This is a waffle test sample'
+
+    class Meta:
+        model = Sample
+
+
+class SwitchFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    active = True
+    note = 'This is a waffle test switch'
+
+    class Meta:
+        model = Switch

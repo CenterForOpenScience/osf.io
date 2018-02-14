@@ -102,6 +102,10 @@ def s3_add_user_account(auth, **kwargs):
             provider=SHORT_NAME,
             provider_id=user_info.id
         )
+        if account.oauth_key != access_key or account.oauth_secret != secret_key:
+            account.oauth_key = access_key
+            account.oauth_secret = secret_key
+            account.save()
     assert account is not None
 
     if not auth.user.external_accounts.filter(id=account.id).exists():

@@ -4,11 +4,11 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
+import urllib
 import urlparse
 import httplib as http
 
 from flask import Flask
-from modularodm import Q
 from werkzeug.wrappers import BaseResponse
 
 from framework import auth
@@ -109,11 +109,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
-        session = Session.find(
-            Q('data.auth_user_id', 'eq', user._id)
-        ).order_by(
-            '-date_modified'
-        ).first()
+        session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
@@ -148,7 +144,10 @@ class TestAuthUtils(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302, 'redirect to CAS login')
         assert_in('/login?service=', resp.location)
-        assert_in('username={}'.format(user.username), resp.location)
+
+        # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
+        username_quoted = urllib.quote(urllib.quote(user.username, safe='@'), safe='@')
+        assert_in('username={}'.format(username_quoted), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')

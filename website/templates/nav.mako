@@ -38,35 +38,39 @@
         <ul class="nav navbar-nav">
             % if service_name == 'HOME':
                 % if user_name:
+                    <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}quickfiles/">My Quick Files</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
                 % endif
-                    <li><a data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
+                    <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
             % endif
             <li class="dropdown">
-            <a data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
+            <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
             </li>
-            <li class="navbar-donate-button"><a data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
+            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
             % if user_name and display_name:
             <li class="dropdown">
-            <button class="dropdown-toggle nav-user-dropdown btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
-                <span class="osf-gravatar">
-                    <img src="${user_gravatar}" alt="User gravatar">
-                </span> ${display_name}
-                <span class="caret"></span>
-            </button>
+                <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
+                    <div class="osf-profile-image">
+                        <img src="${user_profile_image}" alt="User profile image">
+                    </div>
+                    <div class="nav-profile-name">
+                            ${display_name}
+                    </div>
+                    <div class="caret"></div>
+                </a>
 
-            <ul class="dropdown-menu auth-dropdown" role="menu">
-                <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
-            </ul>
+                <ul class="dropdown-menu auth-dropdown" role="menu">
+                    <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
+                </ul>
             </li>
             % elif allow_login:
                 %if institution:
                     <li class="dropdown sign-in">
                     <div class="btn-group">
-                        <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">
+                        <a href="${domain}login/?campaign=institution&next=${redirect_url}">
                             <button type="button" class="btn btn-info btn-top-login">
                             Sign in <span class="hidden-xs"><i class="fa fa-arrow-right"></i></span>
                             </button>
@@ -87,5 +91,26 @@
     </div>
 </div>
 </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                ## Maintenance alert
+                % if maintenance:
+                    <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span></button>
+                    <strong>Notice:</strong>
+                    % if maintenance['message']:
+                        ${maintenance['message']}
+                    % else:
+                        The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                        Thank you for your patience.
+                    % endif
+                </div>
+                % endif
+                ## End Maintenance alert
+            </div>
+        </div>
+    </div>
 </div>
 </%def>

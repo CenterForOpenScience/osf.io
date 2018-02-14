@@ -14,8 +14,6 @@ from flask import request, url_for
 
 from website import settings as website_settings
 from api.base import settings as api_settings
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 logger = logging.getLogger(__name__)
 
@@ -143,42 +141,6 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-def waterbutler_url_for(route, provider, path, node, user=None, _internal=False, **kwargs):
-    """DEPRECATED Use waterbutler_api_url_for
-    Reverse URL lookup for WaterButler routes
-    :param str route: The action to preform, upload, download, delete...
-    :param str provider: The name of the requested provider
-    :param str path: The path of the requested file or folder
-    :param Node node: The node being accessed
-    :param User user: The user whos cookie will be used or None
-    :param dict kwargs: Addition query parameters to be appended
-    """
-    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
-    url.path.segments.append(waterbutler_action_map[route])
-
-    url.args.update({
-        'path': path,
-        'nid': node._id,
-        'provider': provider,
-    })
-
-    if user:
-        url.args['cookie'] = user.get_or_create_cookie()
-    elif website_settings.COOKIE_NAME in request.cookies:
-        url.args['cookie'] = request.cookies[website_settings.COOKIE_NAME]
-
-    view_only = False
-    if 'view_only' in kwargs:
-        view_only = kwargs.get('view_only')
-    else:
-        view_only = request.args.get('view_only')
-
-    url.args['view_only'] = view_only
-
-    url.args.update(kwargs)
-    return url.url
-
-
 def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
     assert path.startswith('/'), 'Path must always start with /'
     url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
@@ -209,16 +171,12 @@ def disconnected_from_listeners(signal):
 
 def check_private_key_for_anonymized_link(private_key):
     from osf.models import PrivateLink
+    try:
+        link = PrivateLink.objects.get(key=private_key)
+    except PrivateLink.DoesNotExist:
+        return False
+    return link.anonymous
 
-    is_anonymous = False
-    if private_key is not None:
-        try:
-            link = PrivateLink.find_one(Q('key', 'eq', private_key))
-        except NoResultsFound:
-            link = None
-        if link is not None:
-            is_anonymous = link.anonymous
-    return is_anonymous
 
 def get_headers_from_request(req):
     """ Get and normalize DRF and Flask request headers

@@ -8,7 +8,6 @@ import logging
 import django
 from django.utils import timezone
 from django.db import transaction
-from modularodm import Q
 django.setup()
 
 from framework.celery_tasks import app as celery_app
@@ -25,12 +24,18 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_embargoes = Embargo.find(Q('state', 'eq', Embargo.UNAPPROVED))
+    pending_embargoes = Embargo.objects.filter(state=Embargo.UNAPPROVED)
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
+            try:
+                parent_registration = Registration.objects.get(embargo=embargo)
+            except Registration.DoesNotExist:
+                logger.error(
+                    'Embargo {} is not attached to a registration'.format(embargo._id)
+                )
+                continue
             logger.warn(
                 'Embargo {0} approved. Activating embargo for registration {1}'
                 .format(embargo._id, parent_registration._id)
@@ -61,12 +66,12 @@ def main(dry_run=True):
                             'registration {}. Continuing...'.format(parent_registration))
                         logger.exception(err)
 
-    active_embargoes = Embargo.find(Q('state', 'eq', Embargo.APPROVED))
+    active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now():
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.objects.get(embargo=embargo)
             logger.warn(
                 'Embargo {0} complete. Making registration {1} public'
                 .format(embargo._id, parent_registration._id)
@@ -114,3 +119,6 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
+
+if __name__ == "__main__":
+    main(False)

@@ -12,11 +12,9 @@ var m = require('mithril');
 
 
 var FolderPicker = require('js/folderpicker');
-var Clipboard = require('clipboard');
 var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
-
 
 /**
  * @class FolderPickerViewModel
@@ -78,8 +76,8 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders = ko.observable(false);
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
-
         var addonSafeName = $osf.htmlEscape(self.addonName);
+
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
@@ -95,13 +93,11 @@ var FolderPickerViewModel = oop.defclass({
             cantRetrieveSettings: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
-                    'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    'the page. If the problem persists, email ' + $osf.osfSupportLink() + '.';
             }),
             updateAccountsError: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' account list at ' +
-                    'this time. Please refresh the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    'this time. Please refresh the page. If the problem persists, email ' + $osf.osfSupportLink() + '.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
                 return 'Disconnected ' + addonSafeName + '.';

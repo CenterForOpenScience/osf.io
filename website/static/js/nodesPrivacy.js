@@ -4,13 +4,11 @@
 'use strict';
 
 var $ = require('jquery');
-var $3 = window.$3;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
 var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
 var MESSAGES = {
@@ -69,19 +67,18 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  * patches all the nodes in a changed state
  * uses API v2 bulk requests
  */
-function patchNodesPrivacy(nodes) {
-    var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
+function patchNodesPrivacy(nodes, type) {
+    var nodesV2Url = window.contextVars.apiV2Prefix + type + '/';
     var nodesPatch = $.map(nodes, function (node) {
         return {
-            'type': 'nodes',
+            'type': type,
             'id': node.id,
             'attributes': {
                 'public': node.public
             }
         };
     });
-    //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
-    return $3.ajax({
+    return $.ajax({
         url: nodesV2Url,
         type: 'PATCH',
         dataType: 'json',
@@ -112,6 +109,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
     self.isPreprint = node.is_preprint;
+    self.dataType = node.is_registration ? 'registrations' : 'nodes';
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
@@ -241,7 +239,7 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
     //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
     if (nodesChanged.length <= 100) {
         $osf.block('Updating Privacy');
-        patchNodesPrivacy(nodesChanged).then(function () {
+        patchNodesPrivacy(nodesChanged, self.dataType).then(function () {
             self.onSetPrivacy(nodesChanged);
 
             self.nodesChangedPublic([]);
@@ -312,7 +310,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
 	return null;
     }).filter(Boolean);
     $osf.block('Submitting request to end embargo early ...');
-    patchNodesPrivacy(nodesChanged).then(function (res) {
+    patchNodesPrivacy(nodesChanged, self.dataType).then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);

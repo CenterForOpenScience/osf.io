@@ -2,9 +2,6 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from osf.models import Institution
 
 def serialize_institution(inst):
@@ -20,7 +17,7 @@ def serialize_institution(inst):
 
 def view_institution(inst_id, **kwargs):
     try:
-        inst = Institution.find_one(Q('_id', 'eq', inst_id) & Q('is_deleted', 'ne', True))
-    except NoResultsFound:
+        inst = Institution.objects.get(_id=inst_id, is_deleted=False)
+    except Institution.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     return serialize_institution(inst)

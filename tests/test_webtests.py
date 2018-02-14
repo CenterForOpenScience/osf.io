@@ -17,9 +17,20 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
-from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, NodeFactory,
-                             RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
-                             PrivateLinkFactory, PreprintFactory, PreprintProviderFactory, SubjectFactory)
+from osf_tests.factories import (
+    fake_email,
+    AuthUserFactory,
+    NodeFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    PrivateLinkFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    SubjectFactory,
+    UserFactory,
+    UnconfirmedUserFactory,
+    UnregUserFactory,
+)
 from addons.wiki.tests.factories import NodeWikiFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
@@ -133,7 +144,7 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=['read', 'write', 'admin'],
             save=True)
-        res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
+        res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
     def test_sees_correct_title_home_page(self):
@@ -540,9 +551,9 @@ class TestClaiming(OsfTestCase):
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
     def test_correct_name_shows_in_contributor_list(self):
-        name1, email = fake.name(), fake.email()
+        name1, email = fake.name(), fake_email()
         UnregUserFactory(fullname=name1, email=email)
-        name2, email = fake.name(), fake.email()
+        name2, email = fake.name(), fake_email()
         # Added with different name
         self.project.add_unregistered_contributor(fullname=name2,
             email=email, auth=Auth(self.referrer))
@@ -554,7 +565,7 @@ class TestClaiming(OsfTestCase):
         assert_not_in(name1, res)
 
     def test_user_can_set_password_on_claim_page(self):
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
@@ -574,7 +585,7 @@ class TestClaiming(OsfTestCase):
         assert_true(new_user.check_password('killerqueen'))
 
     def test_sees_is_redirected_if_user_already_logged_in(self):
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
@@ -588,7 +599,7 @@ class TestClaiming(OsfTestCase):
         assert_equal(res.status_code, 302)
 
     def test_unregistered_users_names_are_project_specific(self):
-        name1, name2, email = fake.name(), fake.name(), fake.email()
+        name1, name2, email = fake.name(), fake.name(), fake_email()
         project2 = ProjectFactory(creator=self.referrer)
         # different projects use different names for the same unreg contributor
         self.project.add_unregistered_contributor(
@@ -614,7 +625,7 @@ class TestClaiming(OsfTestCase):
     @unittest.skip("as long as E-mails cannot be changed")
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
@@ -716,7 +727,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         super(TestClaimingAsARegisteredUser, self).setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         self.user = self.project.add_unregistered_contributor(
             fullname=name,
             email=email,
@@ -797,14 +808,14 @@ class TestExplorePublicActivity(OsfTestCase):
 
         # New and Noteworthy
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()), res)
+        assert_in(str(self.project.created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
 
         # Popular Projects and Registrations
         assert_in(str(self.popular_project.title), res)
-        assert_in(str(self.popular_project.date_created.date()), res)
+        assert_in(str(self.popular_project.created.date()), res)
         assert_in(str(self.popular_registration.title), res)
         assert_in(str(self.popular_registration.registered_date.date()), res)
 
@@ -944,6 +955,32 @@ class TestForgotPassword(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.forms['forgotPasswordForm']
         form['forgot_password-email'] = 'fake' + self.user.username
+        res = form.submit()
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+
+    # test that non-existing user cannot receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+        self.user.disable_account()
+        self.user.save()
+
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
         res = form.submit()
 
         # check mail was not sent

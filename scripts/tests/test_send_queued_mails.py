@@ -1,27 +1,27 @@
 import mock  # noqa
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from nose.tools import *
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
+from osf.models.queued_mail import QueuedMail, queue_mail, NO_ADDON, NO_LOGIN_TYPE
 
 from scripts.send_queued_mails import main, pop_and_verify_mails_for_each_user, find_queued_mails_ready_to_be_sent
-from website import mails, settings
+from website import settings
 
 class TestSendQueuedMails(OsfTestCase):
 
     def setUp(self):
         super(TestSendQueuedMails, self).setUp()
-        mails.QueuedMail.remove()
         self.user = UserFactory()
         self.user.date_last_login = timezone.now()
         self.user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         self.user.save()
 
-    def queue_mail(self, mail_type=mails.NO_ADDON, user=None, send_at=None):
-        return mails.queue_mail(
+    def queue_mail(self, mail_type=NO_ADDON, user=None, send_at=None):
+        return queue_mail(
             to_addr=user.username if user else self.user.username,
             mail=mail_type,
             send_at=send_at or timezone.now(),
@@ -29,13 +29,13 @@ class TestSendQueuedMails(OsfTestCase):
             fullname=user.fullname if user else self.user.fullname,
         )
 
-    @mock.patch('website.mails.queued_mails.send_mail')
+    @mock.patch('osf.models.queued_mail.send_mail')
     def test_queue_addon_mail(self, mock_send):
         self.queue_mail()
         main(dry_run=False)
         assert_true(mock_send.called)
 
-    @mock.patch('website.mails.queued_mails.send_mail')
+    @mock.patch('osf.models.queued_mail.send_mail')
     def test_no_two_emails_to_same_person(self, mock_send):
         user = UserFactory()
         user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
@@ -49,9 +49,13 @@ class TestSendQueuedMails(OsfTestCase):
         user_with_email_sent = UserFactory()
         user_with_multiple_emails = UserFactory()
         user_with_no_emails_sent = UserFactory()
-        mail_sent = mails.QueuedMail(user=user_with_email_sent,
-                                     sent_at=timezone.now() - timedelta(days=1),
-                                     to_addr=user_with_email_sent.username)
+        time = timezone.now() - timedelta(days=1)
+        mail_sent = QueuedMail(
+            user=user_with_email_sent,
+            send_at=time,
+            to_addr=user_with_email_sent.username,
+            email_type=NO_LOGIN_TYPE
+        )
         mail_sent.save()
         mail1 = self.queue_mail(user=user_with_email_sent)
         mail2 = self.queue_mail(user=user_with_multiple_emails)
@@ -74,4 +78,4 @@ class TestSendQueuedMails(OsfTestCase):
         mail2 = self.queue_mail(send_at=timezone.now()+timedelta(days=1))
         mail3 = self.queue_mail(send_at=timezone.now())
         mails = find_queued_mails_ready_to_be_sent()
-        assert_equal(len(mails), 2)
+        assert_equal(mails.count(), 2)

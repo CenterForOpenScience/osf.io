@@ -5,6 +5,8 @@ import urllib
 import urlparse
 import uuid
 from copy import deepcopy
+from os.path import splitext
+
 from flask import Request as FlaskRequest
 from framework import analytics
 
@@ -22,7 +24,6 @@ from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 
-from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -32,28 +33,29 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from modularodm.exceptions import NoResultsFound
-from osf.exceptions import reraise_django_validation_errors
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.contributor import RecentlyAddedContributor
+from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
+MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
+
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -84,9 +86,7 @@ class OSFUserManager(BaseUserManager):
     _queryset_class = GuidMixinQuerySet
 
     def all(self):
-        qs = super(OSFUserManager, self).all()
-        qs.annotate_query_with_guids()
-        return qs
+        return self.get_queryset().all()
 
     def eager(self, *fields):
         fk_fields = set(self.model.get_fk_field_names()) & set(fields)
@@ -102,7 +102,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class Email(BaseModel, TimeStampedModel):
+class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
 
@@ -177,7 +177,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   the result of a bug, as they were all created over a small time span.
     is_claimed = models.BooleanField(default=False, db_index=True)
 
-    # a list of strings - for internal use
+    # for internal use
     tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
@@ -471,7 +471,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     def csl_name(self, node_id=None):
-        if self.is_registered:
+        # disabled users are set to is_registered = False but have a fullname
+        if self.is_registered or self.is_disabled:
             name = self.fullname
         else:
             name = self.get_unclaimed_record(node_id)['name']
@@ -497,11 +498,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def contributor_to(self):
-        return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 
     @property
     def visible_contributor_to(self):
-        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -564,6 +565,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         :param user: A User object to be merged.
         """
+
+        # Attempt to prevent self merges which end up removing self as a contributor from all projects
+        if self == user:
+            raise ValueError('Cannot merge a user into itself')
+
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
@@ -658,7 +664,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # - projects where the user was a contributor
         for node in user.contributed:
             # Skip bookmark collection node
-            if node.is_bookmark_collection:
+            if node.is_bookmark_collection or node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -678,14 +684,51 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             node.save()
 
+        from osf.models import QuickFilesNode
+        from osf.models import BaseFileNode
+
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.nodes_created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
-        from osf.models import BaseFileNode
         for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
+
+        # - move files in the merged user's quickfiles node, checking for name conflicts
+        from addons.osfstorage.models import OsfStorageFileNode
+        primary_quickfiles = QuickFilesNode.objects.get(creator=self)
+        merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
+
+        files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
+        for merging_user_file in files_in_merging_user_quickfiles:
+            if OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name).exists():
+                digit = 1
+                split_filename = splitext(merging_user_file.name)
+                name_without_extension = split_filename[0]
+                extension = split_filename[1]
+                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                if found_digit_in_parens:
+                    found_digit = int(found_digit_in_parens[0])
+                    digit = found_digit + 1
+                    name_without_extension = name_without_extension.replace('({})'.format(found_digit), '').strip()
+                new_name_format = '{} ({}){}'
+                new_name = new_name_format.format(name_without_extension, digit, extension)
+
+                # check if new name conflicts, update til it does not (try up to 1000 times)
+                rename_count = 0
+                while OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=new_name).exists():
+                    digit += 1
+                    new_name = new_name_format.format(name_without_extension, digit, extension)
+                    rename_count += 1
+                    if rename_count >= MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS:
+                        raise MaxRetriesError('Maximum number of rename attempts has been reached')
+
+                merging_user_file.name = new_name
+                merging_user_file.save()
+
+            merging_user_file.node = primary_quickfiles
+            merging_user_file.save()
 
         # finalize the merge
 
@@ -763,6 +806,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if 'fullname' in dirty_fields:
+            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
+
+            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
+            if quickfiles:
+                quickfiles.title = get_quickfiles_project_title(self)
+                quickfiles.save()
         return ret
 
     # Legacy methods
@@ -872,10 +922,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for token in email_verifications:
             if self.email_verifications[token].get('confirmed', False):
                 try:
-                    user_merge = OSFUser.find_one(
-                        Q('emails__address', 'eq', self.email_verifications[token]['email'].lower())
-                    )
-                except NoResultsFound:
+                    user_merge = OSFUser.objects.get(emails__address__iexact=self.email_verifications[token]['email'])
+                except OSFUser.DoesNotExist:
                     user_merge = False
 
                 unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
@@ -966,11 +1014,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_identity and self.emails.filter(address=email).exists():
-            raise ValueError('Email already confirmed to this user.')
-
         with reraise_django_validation_errors():
             validate_email(email)
+
+        if not external_identity and self.emails.filter(address=email).exists():
+            raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -1088,8 +1136,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.find_one(Q('emails__address', 'eq', email))
-        except NoResultsFound:
+            if check_select_for_update():
+                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+            else:
+                user_to_merge = OSFUser.objects.get(emails__address=email)
+        except OSFUser.DoesNotExist:
             user_to_merge = None
 
         if user_to_merge and merge:
@@ -1103,9 +1154,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.find_one(Q('username', 'eq', email) &
-                                              Q('_id', 'ne', self._id))
-        except NoResultsFound:
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+        except OSFUser.DoesNotExist:
             unregistered_user = None
 
         if unregistered_user:
@@ -1152,7 +1202,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         registration or claiming.
 
         """
-        for node in self.contributed:
+        for node in self.contributor_to:
             node.update_search()
 
     def update_date_last_login(self):
@@ -1261,11 +1311,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
     def _projects_in_common_query(self, other_user):
+        sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user=other_user)
         return (self.nodes
                  .filter(is_deleted=False)
                  .exclude(type='osf.collection')
-                 .filter(_contributors=other_user)
-                 .distinct())
+                 .annotate(contrib=models.Exists(sqs))
+                 .filter(contrib=True))
 
     def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
@@ -1379,10 +1430,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or settings.SECRET_KEY
-        user_session = Session.find(
-            Q('data.auth_user_id', 'eq', self._id)
+        user_session = Session.objects.filter(
+            data__auth_user_id=self._id
         ).order_by(
-            '-date_modified'
+            '-modified'
         ).first()
 
         if not user_session:
@@ -1434,3 +1485,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+@receiver(post_save, sender=OSFUser)
+def create_quickfiles_project(sender, instance, created, **kwargs):
+    from osf.models.quickfiles import QuickFilesNode
+
+    if created:
+        QuickFilesNode.objects.create_for_user(instance)

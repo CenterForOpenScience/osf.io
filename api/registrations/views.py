@@ -1,17 +1,19 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
-from modularodm import Q
 
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Registration
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base import generic_bulk_views as bulk_views
+from api.base.filters import ListFilterMixin
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.pagination import NodeContributorPagination
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
@@ -36,10 +38,9 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, ODMFilterMixin, NodeRegistrationsList,
+    NodeMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
+    NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
     NodeLinkedRegistrationsList,
 )
@@ -62,6 +63,7 @@ class RegistrationMixin(NodeMixin):
         node = get_object_or_error(
             AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='node'
 
         )
@@ -75,12 +77,12 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403.
 
@@ -151,21 +153,22 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
+    model_class = Registration
+
+    # overrides BulkUpdateJSONAPIView
+    def get_serializer_class(self):
+        """
+        Use RegistrationDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH'):
+            return RegistrationDetailSerializer
+        else:
+            return RegistrationSerializer
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf.registration')
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous:
-            permission_query = (permission_query | Q('contributors', 'eq', user))
-
-        query = base_query & permission_query
-        return AbstractNode.find(query)
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -176,16 +179,29 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
                     return True
         return False
 
-    # overrides ListAPIView
+    # overrides ListAPIView, ListBulkCreateJSONAPIView
     def get_queryset(self):
+        # For bulk requests, queryset is formed from request body.
+        if is_bulk_request(self.request):
+            auth = get_user_auth(self.request)
+            registrations = Registration.objects.filter(guids___id__in=[registration['id'] for registration in self.request.data])
+
+            # If skip_uneditable=True in query_params, skip nodes for which the user
+            # does not have EDIT permissions.
+            if is_truthy(self.request.query_params.get('skip_uneditable', False)):
+                has_permission = registrations.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
+                return Registration.objects.filter(guids___id__in=has_permission)
+
+            for registration in registrations:
+                if not registration.can_edit(auth):
+                    raise PermissionDenied
+            return registrations
         blacklisted = self.is_blacklisted()
-        nodes = self.get_queryset_from_request().distinct()
+        registrations = self.get_queryset_from_request()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
-            non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
-            non_withdrawn_nodes = AbstractNode.find(Q('_id', 'in', non_withdrawn_list))
-            return non_withdrawn_nodes
-        return nodes
+            return registrations.exclude(retraction__isnull=False)
+        return registrations
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
@@ -195,7 +211,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
@@ -380,6 +396,8 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
     """
     view_category = 'registrations'
     view_name = 'registration-contributors'
+
+    pagination_class = NodeContributorPagination
     serializer_class = RegistrationContributorsSerializer
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -394,7 +412,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all()
+        return node.contributor_set.all().include('user__guids')
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
@@ -453,7 +471,7 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
         base_permissions.TokenHasScope,
     )
 
-class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, RegistrationMixin):
+class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
     """Children of the current registration.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -493,7 +511,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `modified`,
     `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
     is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
     or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
@@ -516,35 +534,15 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf.registration')
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous:
-            permission_query = (permission_query | Q('contributors', 'eq', user))
-
-        query = base_query & permission_query
-        return query
+    def get_default_queryset(self):
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
 
     def get_queryset(self):
-        node = self.get_node()
-        req_query = self.get_query_from_request()
-
-        node_pks = node.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-
-        query = (
-            Q('pk', 'in', node_pks) &
-            req_query
-        )
-        nodes = AbstractNode.find(query).order_by('-date_modified')
-        auth = get_user_auth(self.request)
-        pks = [each.pk for each in nodes if each.can_view(auth)]
-        return AbstractNode.objects.filter(pk__in=pks).order_by('-date_modified')
+        registration = self.get_node()
+        registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
+        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
@@ -654,7 +652,7 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     <!--- Copied Query Params from NodeList -->
 
     Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `date_created`,
-    `date_modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
+    `modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
     substring matching.  Others are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.
     Note that quoting `true` or `false` in the query will cause the match to fail regardless. `tags` is an array of simple strings.
 
@@ -846,18 +844,6 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     serializer_class = RegistrationFileSerializer
 
 
-class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
-    """List of Alternative Citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citations'
-
-
-class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
-    """Detail of a citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citation-detail'
-
-
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
     """List of the Institutions for a registration."""
     view_category = 'registrations'
@@ -963,7 +949,7 @@ class RegistrationLinkedRegistrationsList(NodeLinkedRegistrationsList, Registrat
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 

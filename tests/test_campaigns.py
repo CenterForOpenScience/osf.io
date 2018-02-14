@@ -4,8 +4,6 @@ import httplib as http
 from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm.exceptions import KeyExistsException
-
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
 from osf_tests import factories
@@ -27,10 +25,7 @@ def set_preprint_providers():
         provider = factories.PreprintProviderFactory()
         provider._id = key
         provider.name = value
-        try:
-            provider.save()
-        except KeyExistsException:
-            continue
+        provider.save()
 
 
 # tests for campaign initialization and update

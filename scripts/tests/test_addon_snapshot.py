@@ -3,17 +3,14 @@ from nose.tools import *  # noqa
 from framework.auth.core import Auth
 
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, BookmarkCollectionFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 from scripts.analytics.addon_snapshot import AddonSnapshot
 
-from website.models import Node
-from framework.auth.core import User
+from osf.models import OSFUser
 from website.settings import ADDONS_AVAILABLE
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.github.model import GitHubNodeSettings, GitHubUserSettings
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
 
 
 class TestAddonCount(OsfTestCase):
@@ -29,7 +26,7 @@ class TestAddonCount(OsfTestCase):
         self.user_settings = self.user.get_or_add_addon('github')
 
         self.user_settings.save()
-        self.user.external_accounts.append(self.external_account)
+        self.user.external_accounts.add(self.external_account)
         self.user.save()
         self.node.add_addon('github', Auth(self.user))
         self.node_addon = self.node.get_addon('github')
@@ -43,11 +40,6 @@ class TestAddonCount(OsfTestCase):
             node=self.node,
             external_account=self.external_account,
         )
-    def tearDown(self):
-        GitHubNodeSettings.remove()
-        GitHubUserSettings.remove()
-        GoogleDriveNodeSettings.remove()
-        GoogleDriveUserSettings.remove()
 
     def test_run_for_all_addon(self):
         results = AddonSnapshot().get_events()
@@ -70,7 +62,7 @@ class TestAddonCount(OsfTestCase):
     def test_one_user_with_multiple_githubs(self):
         oauth_settings2 = GitHubAccountFactory(display_name='hmoco2')
         oauth_settings2.save()
-        self.user.external_accounts.append(oauth_settings2)
+        self.user.external_accounts.add(oauth_settings2)
         self.user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
@@ -86,7 +78,7 @@ class TestAddonCount(OsfTestCase):
         self.user.add_addon('googledrive')
         oauth_settings = GoogleDriveAccountFactory()
         oauth_settings.save()
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
@@ -99,7 +91,7 @@ class TestAddonCount(OsfTestCase):
         user.add_addon('github')
         oauth_settings2 = GitHubAccountFactory(display_name='hmoco2')
         oauth_settings2.save()
-        user.external_accounts.append(oauth_settings2)
+        user.external_accounts.add(oauth_settings2)
         user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
@@ -110,7 +102,7 @@ class TestAddonCount(OsfTestCase):
     def test_many_users_each_with_the_same_github_enabled(self):
         user = AuthUserFactory()
         user.add_addon('github')
-        user.external_accounts.append(self.external_account)
+        user.external_accounts.add(self.external_account)
         user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
@@ -119,7 +111,7 @@ class TestAddonCount(OsfTestCase):
     def test_github_enabled_not_linked_or_authorized(self):
         user = AuthUserFactory()
         user.add_addon('github')
-        user.external_accounts.append(self.external_account)
+        user.external_accounts.add(self.external_account)
         user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
@@ -138,7 +130,7 @@ class TestAddonCount(OsfTestCase):
         user_addon = self.user.get_addon('googledrive')
         oauth_settings = GoogleDriveAccountFactory()
         oauth_settings.save()
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         self.node.add_addon('googledrive', Auth(self.user))
         node_addon = self.node.get_addon('googledrive')
@@ -201,7 +193,7 @@ class TestAddonCount(OsfTestCase):
         assert_equal(github_res['nodes']['disconnected'], 1)
 
     def test_all_users_have_wiki_osfstorage_enabled(self):
-        all_user_count = User.find().count()
+        all_user_count = OSFUser.objects.all().count()
         results = AddonSnapshot().get_events()
         osfstorage_res = [res for res in results if res['provider']['name'] == 'osfstorage'][0]
         wiki_res = [res for res in results if res['provider']['name'] == 'osfstorage'][0]
@@ -225,10 +217,3 @@ class TestAddonCount(OsfTestCase):
         results = AddonSnapshot().get_events()
         storage_res = [res for res in results if res['provider']['name'] == 'github'][0]
         assert_equal(storage_res['nodes']['connected'], 0)
-
-    def test_bookmark_collection_not_counted(self):
-        all_node_count = Node.find().count()
-
-        results = AddonSnapshot().get_events()
-        storage_res = [res for res in results if res['provider']['name'] == 'osfstorage'][0]
-        assert_equal(storage_res['nodes']['connected'], all_node_count - 1)

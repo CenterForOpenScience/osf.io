@@ -1,3 +1,5 @@
+import re
+
 from django.apps import apps
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework import generics, permissions as drf_permissions
@@ -99,3 +101,25 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def param_queryset(self, query_params, default_queryset):
+        """filters default queryset based on query parameters"""
+        filters = self.parse_query_params(query_params)
+        queryset = set(default_queryset)
+
+        if filters:
+            for key, field_names in filters.iteritems():
+                match = self.QUERY_PATTERN.match(key)
+                fields = match.groupdict()['fields']
+                statement = len(re.findall(self.FILTER_FIELDS, fields)) > 1  # This indicates an OR statement
+                sub_query = set() if statement else set(default_queryset)
+                for field_name, data in field_names.iteritems():
+                    operations = data if isinstance(data, list) else [data]
+                    for operation in operations:
+                        if statement:
+                            sub_query = sub_query.union(set(self.get_filtered_queryset(field_name, operation, list(default_queryset))))
+                        else:
+                            sub_query = sub_query.intersection(set(self.get_filtered_queryset(field_name, operation, list(default_queryset))))
+
+                queryset = sub_query.intersection(queryset)
+        return list(queryset)

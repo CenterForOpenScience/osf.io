@@ -91,13 +91,13 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': version.date_created.isoformat(),
+            u'created': version.created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
-            u'modified': version.date_created.isoformat(),
+            u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
@@ -112,7 +112,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': version.date_created.isoformat(),
+            u'created': version.created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
@@ -120,7 +120,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': 1234L,
             # modified date is the creation date of latest version
             # see https://github.com/CenterForOpenScience/osf.io/pull/7155
-            u'modified': version.date_created.isoformat(),
+            u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
@@ -205,14 +205,14 @@ class TestOsfstorageFileNode(StorageTestCase):
             kid = parent.append_file(str(x))
             kid.save()
             kids.append(kid)
-        count = OsfStorageFileNode.find().count()
-        tcount = models.TrashedFileNode.find().count()
+        count = OsfStorageFileNode.objects.count()
+        tcount = models.TrashedFileNode.objects.count()
 
         parent.delete()
 
         assert_is(OsfStorageFileNode.load(parent._id), None)
-        assert_equals(count - 11, OsfStorageFileNode.find().count())
-        assert_equals(tcount + 11, models.TrashedFileNode.find().count())
+        assert_equals(count - 11, OsfStorageFileNode.objects.count())
+        assert_equals(tcount + 11, models.TrashedFileNode.objects.count())
 
         for kid in kids:
             assert_is(
@@ -234,7 +234,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type']]
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
         for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
@@ -564,7 +564,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         version = factories.FileVersionFactory(
             size=1024,
             content_type='application/json',
-            date_modified=timezone.now(),
+            modified=timezone.now(),
         )
         retrieved = models.FileVersion.load(version._id)
         assert_true(retrieved.creator)
@@ -573,7 +573,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
         assert_equal(retrieved.identifier, u"0")
         assert_true(retrieved.content_type)
-        assert_true(retrieved.date_modified)
+        assert_true(retrieved.modified)
 
     def test_is_duplicate_true(self):
         version1 = factories.FileVersionFactory()
@@ -677,7 +677,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_equal(version2.archive, 'erchiv')
 
     def test_no_matching_archive(self):
-        models.FileVersion.remove()
+        models.FileVersion.objects.all().delete()
         assert_is(False, factories.FileVersionFactory(
             location={
                 'service': 'cloud',

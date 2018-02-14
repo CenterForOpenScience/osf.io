@@ -1,7 +1,3 @@
-/**
- *
- */
-
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
 
@@ -9,10 +5,6 @@ var webpackCommon = require('./webpack.common.config.js');
 var webpackTestConfig = {
     devtool: 'inline-source-map',
     plugins: [
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-        ),
-
         // Make sure that CommonJS is always used
         new webpack.DefinePlugin({
             'define.amd': false
@@ -25,22 +17,26 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: webpackCommon.resolve,
+    resolve: Object.assign({}, webpackCommon.resolve, {
+        descriptionFiles: ['package.json', 'bower.json'],
+    }),
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
-        loaders: webpackCommon.module.loaders.concat([
+        rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
+    },
+    node: {
+       fs: 'empty'
     }
 };
-
 module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [
         // Mimics loading jquery and jquery-ui with script tags
         'website/static/vendor/bower_components/jquery/dist/jquery.js',
-        'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
+        'website/static/vendor/bower_components/jquery-ui/jquery-ui.js',
         'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
         // Only need to target one file, which will load all files in tests/ that
         // match *.test.js, including addons tests

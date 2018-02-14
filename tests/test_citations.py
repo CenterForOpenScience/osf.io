@@ -4,7 +4,15 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
-from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory, NodeFactory, fake, UnregUserFactory
+from osf_tests.factories import (
+    fake,
+    fake_email,
+    AuthUserFactory,
+    NodeFactory,
+    ProjectFactory,
+    UnregUserFactory,
+    UserFactory,
+)
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
 from osf.models import OSFUser
@@ -31,8 +39,7 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        OSFUser.remove()
-        OSFUser.remove()
+        OSFUser.objects.all().delete()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
@@ -99,7 +106,7 @@ class CitationsUserTestCase(OsfTestCase):
     def test_registered_user_csl(self):
         # Tests the csl name for a registered user
         user = OSFUser.create_confirmed(
-            username=fake.email(), password='foobar', fullname=fake.name()
+            username=fake_email(), password='foobar', fullname=fake.name()
         )
         if user.is_registered:
             assert bool(
@@ -117,7 +124,7 @@ class CitationsUserTestCase(OsfTestCase):
         user = UnregUserFactory()
         user.add_unclaimed_record(node=project,
             given_name=user.fullname, referrer=referrer,
-            email=fake.email())
+            email=fake_email())
         user.save()
         name = user.unclaimed_records[project._primary_key]['name'].split(' ')
         family_name = name[-1]
@@ -127,6 +134,21 @@ class CitationsUserTestCase(OsfTestCase):
             {
                 'given': given_name,
                 'family': family_name,
+            }
+        )
+
+    def test_disabled_user_csl(self):
+        # Tests the csl name for a disabled user
+        user = UserFactory()
+        project = NodeFactory(creator=user)
+        user.disable_account()
+        user.is_registered = False
+        user.save()
+        assert bool(
+            user.csl_name() ==
+            {
+                'given': user.csl_given_name,
+                'family': user.family_name,
             }
         )
 

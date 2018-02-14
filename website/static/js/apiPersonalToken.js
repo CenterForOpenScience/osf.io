@@ -7,8 +7,7 @@
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var historyjs = require('exports?History!history');
-var moment = require('moment');
+var historyjs = require('exports-loader?History!history');
 
 var ko = require('knockout');
 require('knockout.validation');
@@ -19,7 +18,6 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
-var makeClient = require('js/clipboard');
 
 
 /*

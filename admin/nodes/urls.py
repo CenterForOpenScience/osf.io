@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from admin.nodes import views
 
+app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.NodeFormView.as_view(),
@@ -13,8 +14,12 @@ urlpatterns = [
         name='known-ham'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.NodeView.as_view(),
         name='node'),
+    url(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(),
+        name='node-logs'),
     url(r'^registration_list/$', views.RegistrationListView.as_view(),
         name='registrations'),
+    url(r'^(?P<guid>[a-z0-9]+)/update_embargo/$',
+        views.RegistrationUpdateEmbargoView.as_view(), name='update_embargo'),
     url(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(),
         name='remove'),
     url(r'^(?P<guid>[a-z0-9]+)/restore/$', views.NodeDeleteView.as_view(),

@@ -442,7 +442,7 @@ class SearchRegistrations(BaseSearchView):
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403.
 

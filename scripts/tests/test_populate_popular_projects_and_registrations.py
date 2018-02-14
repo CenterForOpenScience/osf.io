@@ -3,9 +3,8 @@ from nose.tools import *  # noqa
 import mock
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, RegistrationFactory
+from osf_tests.factories import ProjectFactory, RegistrationFactory
 
-from website.project.model import Node
 from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS, NEW_AND_NOTEWORTHY_LINKS_NODE
 
 from scripts import populate_popular_projects_and_registrations as script
@@ -23,7 +22,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def tearDown(self):
         super(TestPopulateNewAndNoteworthy, self).tearDown()
-        Node.remove()
 
     @mock.patch('website.project.utils.get_keen_activity')
     def test_populate_popular_nodes_and_registrations(self, mock_client):
@@ -95,11 +93,5 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         assert_equal(len(self.popular_links_node.nodes), 2)
         assert_equal(len(self.popular_links_registrations.nodes), 2)
 
-        assert_items_equal(
-            popular_nodes,
-            [pointer.node for pointer in self.popular_links_node.nodes]
-        )
-        assert_items_equal(
-            popular_registrations,
-            [pointer.node for pointer in self.popular_links_registrations.nodes]
-        )
+        assert_items_equal(popular_nodes, self.popular_links_node.nodes)
+        assert_items_equal(popular_registrations, self.popular_links_registrations.nodes)

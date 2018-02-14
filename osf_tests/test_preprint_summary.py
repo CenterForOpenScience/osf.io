@@ -2,7 +2,6 @@ import datetime
 
 from osf_tests.factories import PreprintFactory, PreprintProviderFactory
 from osf.models import PreprintService
-from nose.tools import *  # PEP8 asserts
 import mock
 import pytest
 import pytz
@@ -19,30 +18,43 @@ def preprint_provider():
 def preprint(preprint_provider):
     return PreprintFactory._build(PreprintService, provider=preprint_provider)
 
+
+@pytest.fixture()
+def right_before_my_birthday():
+    return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=23, minute=59, second=59, tzinfo=pytz.utc),
+            'preprint_date_created': datetime.datetime(year=1991, month=9, day=25, hour=22, minute=59, second=59, tzinfo=pytz.utc)
+            }
+
+@pytest.fixture()
+def my_birthday_at_midnight():
+    return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=0, tzinfo=pytz.utc),
+            'preprint_date_created': datetime.datetime(year=1991, month=9, day=24, hour=23, tzinfo=pytz.utc)
+            }
+
 pytestmark = pytest.mark.django_db
 
+
+@pytest.mark.parametrize('date', [right_before_my_birthday(), my_birthday_at_midnight()])
 class TestPreprintCount:
 
-    def test_get_preprint_count(self, preprint_provider, preprint):
+    def test_get_preprint_count(self, preprint, date):
 
         requests.post = mock.MagicMock()
         resp = requests.Response()
         resp._content = '{"hits" : {"total" : 1}}'
         requests.post.return_value = resp
 
-        field = PreprintService._meta.get_field('date_created')
+        field = PreprintService._meta.get_field('created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
-        date = datetime.datetime.utcnow() - datetime.timedelta(1)
-        preprint.date_created = date - datetime.timedelta(0.1)
+        preprint.created = date['preprint_date_created']
         preprint.save()
 
         field.auto_now_add = True
-        results = PreprintSummary().get_events(date.date())
+        results = PreprintSummary().get_events(date['run_date'].date())
 
-        assert_equal(len(results), 1)
+        assert len(results) == 1
 
         data = results[0]
-        assert_equal(data['provider']['name'], 'Test 1')
-        assert_equal(data['provider']['total'], 1)
-
+        assert data['provider']['name'] == 'Test 1'
+        assert data['provider']['total'] == 1

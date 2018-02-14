@@ -192,6 +192,14 @@ var _githubItemButtons = {
                         className: 'text-info'
                     }, branchArray)
                 );
+            } else {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
+                );
             }
             if (tb.options.placement !== 'fileview') {
                 // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -230,7 +238,7 @@ var _githubItemButtons = {
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
-                        }, 'Download'),
+                        }, 'Download as zip'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
                                 window.open(item.data.urls.repo, '_blank');
@@ -300,6 +308,9 @@ var _githubItemButtons = {
 
 function changeBranch(item, ref){
     item.data.branch = ref;
+    var index = item.data.urls.repo.lastIndexOf('/tree/');
+    var branch_url = item.data.urls.repo.substring(0, index + 1);
+    item.data.urls.repo = branch_url + 'tree/' + ref;
     this.updateFolder(null, item);
 }
 

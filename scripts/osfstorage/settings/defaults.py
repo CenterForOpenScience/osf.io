@@ -7,9 +7,12 @@ REGION = 'changeme'
 PRIMARY_CONTAINER_NAME = 'primary_container'
 PARITY_CONTAINER_NAME = 'parity_container'
 
-GLACIER_VAULT = 'glacier_vault'
+# https://boto3.readthedocs.io/en/latest/reference/services/glacier.html#vault
+GLACIER_VAULT_ACCOUNT_ID = '-'
+GLACIER_VAULT_NAME = 'glacier_vault'
+
+AWS_REGION = 'us-east-1'
 AWS_ACCESS_KEY = 'changeme'
 AWS_SECRET_KEY = 'changeme'
-AWS_SNS_ARN = 'sns_notification_id'
 
 AUDIT_TEMP_PATH = '/opt/data/files_audit'

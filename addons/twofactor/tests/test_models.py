@@ -65,7 +65,7 @@ class TestUserSettingsModel(unittest.TestCase):
 
     def tearDown(self):
         super(TestUserSettingsModel, self).tearDown()
-        self.user.__class__.remove_one(self.user)
+        self.user.__class__.delete(self.user)
 
     def test_b32(self):
         assert_equal(self.user_settings.totp_secret_b32, self.TOTP_SECRET_B32)

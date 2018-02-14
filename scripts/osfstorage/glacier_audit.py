@@ -7,10 +7,9 @@ Should be run after `glacier_inventory.py`.
 """
 
 import gc
+import json
 import logging
 
-from modularodm import Q
-from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
 
@@ -21,6 +20,7 @@ from osf.models import FileVersion
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
+from scripts.osfstorage import utils as storage_utils
 
 
 logger = logging.getLogger(__name__)
@@ -48,29 +48,9 @@ class BadArchiveId(AuditError):
     pass
 
 
-def get_vault():
-    layer2 = Layer2(
-        aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
-        aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
-    )
-    return layer2.get_vault(storage_settings.GLACIER_VAULT)
-
-
-def get_job(vault, job_id=None):
-    if job_id:
-        return vault.get_job(job_id)
-    jobs = vault.list_jobs(completed=True)
-    if not jobs:
-        raise RuntimeError('No completed jobs found')
-    return sorted(jobs, key=lambda job: job.creation_date)[-1]
-
-
 def get_targets(date):
-    return FileVersion.find(
-        Q('date_created', 'lt', date - DELTA_DATE) &
-        Q('status', 'ne', 'cached') &
-        Q('metadata.archive', 'exists', True) &
-        Q('location', 'ne', None)
+    return FileVersion.objects.filter(
+        created__lt=date - DELTA_DATE, metadata__has_key='archive', location__isnull=False
     ).iterator()
 
 
@@ -97,15 +77,33 @@ def check_glacier_version(version, inventory):
 
 
 def main(job_id=None):
-    vault = get_vault()
-    job = get_job(vault, job_id=job_id)
-    output = job.get_output()
-    date = parse_date(job.creation_date)
+    glacier = storage_utils.get_glacier_resource()
+
+    if job_id:
+        job = glacier.Job(
+            storage_settings.GLACIER_VAULT_ACCOUNT_ID,
+            storage_settings.GLACIER_VAULT_NAME,
+            job_id,
+        )
+    else:
+        vault = storage_utils.get_glacier_resource().Vault(
+            storage_settings.GLACIER_VAULT_ACCOUNT_ID,
+            storage_settings.GLACIER_VAULT_NAME
+        )
+        jobs = vault.completed_jobs.all()
+        if not jobs:
+            raise RuntimeError('No completed jobs found')
+        job = sorted(jobs, key=lambda job: job.creation_date)[-1]
+
+    response = job.get_output()
+    output = json.loads(response['body'].read().decode('utf-8'))
+    creation_date = parse_date(job.creation_date)
     inventory = {
         each['ArchiveId']: each
         for each in output['ArchiveList']
     }
-    for idx, version in enumerate(get_targets(date)):
+
+    for idx, version in enumerate(get_targets(creation_date)):
         try:
             check_glacier_version(version, inventory)
         except AuditError as error:

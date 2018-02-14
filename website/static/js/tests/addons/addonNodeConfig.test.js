@@ -5,11 +5,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var $ = require('jquery');
-var $osf = require('js/osfHelpers');
-var Clipboard = require('clipboard');
 var AddonNodeConfigVM = require('js/addonNodeConfig')._AddonNodeConfigViewModel;
-var testUtils = require('./folderPickerTestUtils.js');
 
 var makeEmailList = function(n) {
     var ret = [];

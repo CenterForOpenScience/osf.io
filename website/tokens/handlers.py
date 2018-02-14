@@ -2,7 +2,6 @@ import httplib as http
 
 from flask import redirect, request
 import markupsafe
-from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
@@ -46,7 +45,6 @@ def retraction_handler(action, registration, registered_from):
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     from osf.models import (
-        AbstractNode,
         Embargo,
         EmbargoTerminationApproval,
         RegistrationApproval,
@@ -85,7 +83,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
 
     do_action = getattr(sanction, action, None)
     if do_action:
-        registration = AbstractNode.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
+        registration = sanction.registrations.get()
         registered_from = registration.registered_from
         try:
             do_action(auth.user, encoded_token)

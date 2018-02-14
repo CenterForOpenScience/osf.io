@@ -108,7 +108,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     provider_name = 'zotero'
     oauth_provider = Zotero
     serializer = ZoteroSerializer
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     list_id = models.TextField(blank=True, null=True)
     _api = None

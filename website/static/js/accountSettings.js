@@ -106,8 +106,7 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
-                'if the problem persists.', 'danger');
+                'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
             }
 
             Raven.captureMessage('Error fetching user profile', {
@@ -312,7 +311,7 @@ var ExternalIdentityViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Revocation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                'Revocation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error revoking connected identity', {
@@ -347,16 +346,42 @@ var ExternalIdentityViewModel = oop.defclass({
 
 var DeactivateAccountViewModel = oop.defclass({
     constructor: function () {
-        this.success = ko.observable(false);
+        this.requestPending = ko.observable(window.contextVars.requestedDeactivation);
     },
     urls: {
-        'update': '/api/v1/profile/deactivate/'
+        'update': '/api/v1/profile/deactivate/',
+        'cancelDeactivate': '/api/v1/profile/cancel_request_deactivation/'
     },
     _requestDeactivation: function() {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
-            this.success(true);
+            this.requestPending(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Deactivation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                    'danger'
+                );
+            }
+            Raven.captureMessage('Error requesting account deactivation', {
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
+            });
+        }.bind(this));
+        return request;
+    },
+    _cancelRequestDeactivation: function() {
+        var request = $osf.postJSON(this.urls.cancelDeactivate, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF account is no longer up for review.', 'success');
+            this.requestPending(false);
         }.bind(this));
         request.fail(function(xhr, status, error) {
             if (xhr.responseJSON.error_type === 'throttle_error') {
@@ -369,7 +394,7 @@ var DeactivateAccountViewModel = oop.defclass({
             }
             Raven.captureMessage('Error requesting account deactivation', {
                 extra: {
-                    url: this.urls.update,
+                    url: this.urls.rescind_deactivate,
                     status: status,
                     error: error
                 }
@@ -395,6 +420,24 @@ var DeactivateAccountViewModel = oop.defclass({
                 }
             }
         });
+    },
+    cancel: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Cancel deactivation request?',
+            message: 'Are you sure you want to rescind your account deactivation request? This will preserve your account status.',
+            callback: function (confirmed) {
+                if (confirmed) {
+                    return self._cancelRequestDeactivation();
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Cancel Deactivation Request',
+                    className: 'btn-success'
+                }
+            }
+        });
     }
 });
 
@@ -416,7 +459,7 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'Export request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                     'danger'
                 );
             }

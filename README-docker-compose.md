@@ -43,6 +43,10 @@
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
 
+    - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
+      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
+      `sudo sysctl -p`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
       https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
@@ -88,16 +92,13 @@
 
 ## Docker Sync
 
-Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
+Ubuntu: Skip install of docker-sync. instead...
         `cp docker-compose.linux.yml docker-compose.override.yml`
         Ignore future steps that start, stop, or wait for docker-sync
 
-1. Install Docker Sync 0.3.5
-  - Mac: `$ gem install docker-sync -v 0.3.5`
+1. Install Docker Sync
+  - Mac: `$ gem install docker-sync`
   - [Instructions](http://docker-sync.io)
-
-1. Install fswatch and unison
-  - Mac: `$ brew install fswatch unison`
 
 1. Running Docker Sync
 
@@ -105,7 +106,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 
     **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
 
-  - `$ docker-sync start --daemon`
+  - `$ docker-sync start`
 
 1. OPTIONAL: If you have problems trying installing macfsevents
   - `$ sudo pip install macfsevents`
@@ -123,7 +124,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
+  - `$ docker-compose up -d elasticsearch postgres mongo rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
@@ -213,7 +214,7 @@ The OSF is supported by several services which function independently from the m
       wb-sync:
         src: '../waterbutler'
         dest: '/code'
-        sync_strategy: 'unison'
+        sync_strategy: 'native_osx'
         sync_excludes_type: 'Name'
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
@@ -295,6 +296,9 @@ $ docker-compose run --service-ports web
 - Test a Specific Method
   - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
 
+- Test with Specific Parameters (1 cpu, capture stdout)
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'`
+
 ## Managing Container State
 
 Restart a container:
@@ -368,4 +372,38 @@ $ docker-compose pull
 $ docker-compose up requirements mfr_requirements wb_requirements
 # Run db migrations
 $ docker-compose run --rm web python manage.py migrate
+```
+
+## Miscellaneous
+
+### Runtime Privilege
+
+When running privileged commands such as `strace` inside a docker container, you may encounter the following error.
+
+```bash
+strace: test_ptrace_setoptions_followfork: PTRACE_TRACEME doesn't work: Operation not permitted
+```
+
+The issue is that docker containers run in unprivileged mode by default.
+
+For `docker run`, you can use `--privilege=true` to give the container extended privileges. You can also add or drop capabilities by using `cap-add` and `cap-drop`. Since Docker 1.12, there is no need to add `--security-opt seccomp=unconfined` because the seccomp profile will adjust to selected capabilities. ([Reference](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities))
+
+When using `docker-compose`, set `privileged: true` for individual containers in the `docker-compose.yml`. ([Reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir)) Here is an example for WaterButler:
+
+```yml
+wb:
+  image: quay.io/centerforopenscience/waterbutler:develop
+  command: invoke server
+  privileged: true
+  restart: unless-stopped
+  ports:
+    - 7777:7777
+  env_file:
+    - .docker-compose.wb.env
+  volumes:
+    - wb_requirements_vol:/usr/local/lib/python3.5
+    - wb_requirements_local_bin_vol:/usr/local/bin
+    - osfstoragecache_vol:/code/website/osfstoragecache
+    - wb_tmp_vol:/tmp
+  stdin_open: true
 ```

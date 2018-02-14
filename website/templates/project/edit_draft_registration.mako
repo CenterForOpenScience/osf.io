@@ -59,8 +59,7 @@
                   <!-- /ko -->
                 </div>
                 <div class="row">
-                  <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
-                  </button>
+                  <button data-bind="click: saveForLater" type="button" class="btn btn-default">Save draft</button>
                   <!-- ko if: onLastPage -->
                   <a data-bind="css: {disabled: !canSubmit()},
                                 click: $root.toPreview"

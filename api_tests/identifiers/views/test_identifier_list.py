@@ -12,13 +12,16 @@ from osf_tests.factories import (
 )
 from tests.utils import assert_items_equal
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def all_identifiers():
     return Identifier.objects.all()
+
 
 @pytest.mark.django_db
 class TestRegistrationIdentifierList:
@@ -41,7 +44,8 @@ class TestRegistrationIdentifierList:
 
     @pytest.fixture()
     def url_registration_identifiers(self, registration):
-        return '/{}registrations/{}/identifiers/'.format(API_BASE, registration._id)
+        return '/{}registrations/{}/identifiers/'.format(
+            API_BASE, registration._id)
 
     @pytest.fixture()
     def res_registration_identifiers(self, app, url_registration_identifiers):
@@ -51,12 +55,15 @@ class TestRegistrationIdentifierList:
     def data_registration_identifiers(self, res_registration_identifiers):
         return res_registration_identifiers.json['data']
 
-
     def test_identifier_list_success(self, res_registration_identifiers):
         assert res_registration_identifiers.status_code == 200
         assert res_registration_identifiers.content_type == 'application/vnd.api+json'
 
-    def test_identifier_list_returns_correct_number_and_referent(self, registration, identifier_registration, data_registration_identifiers, res_registration_identifiers, all_identifiers):
+    def test_identifier_list_returns_correct_number_and_referent(
+            self, registration, identifier_registration,
+            data_registration_identifiers, res_registration_identifiers,
+            all_identifiers
+    ):
         # test_identifier_list_returns_correct_number
         total = res_registration_identifiers.json['links']['meta']['total']
         assert total == all_identifiers.count()
@@ -67,29 +74,41 @@ class TestRegistrationIdentifierList:
                 item['relationships']['referent']['links']['related']['href']
             ).path for item in data_registration_identifiers
         ]
-        assert '/{}registrations/{}/'.format(API_BASE, registration._id) in paths
+        assert '/{}registrations/{}/'.format(API_BASE,
+                                             registration._id) in paths
 
-    def test_identifier_list_returns_correct_categories_and_values(self, all_identifiers, data_registration_identifiers):
+    def test_identifier_list_returns_correct_categories_and_values(
+            self, all_identifiers, data_registration_identifiers):
         # test_identifier_list_returns_correct_categories
         categories = [identifier.category for identifier in all_identifiers]
-        categories_in_response = [identifier['attributes']['category'] for identifier in data_registration_identifiers]
+        categories_in_response = [identifier['attributes']['category']
+                                  for identifier in data_registration_identifiers]
         assert_items_equal(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
-        values_in_response = [identifier['attributes']['value'] for identifier in data_registration_identifiers]
+        values_in_response = [identifier['attributes']['value']
+                              for identifier in data_registration_identifiers]
         assert_items_equal(values_in_response, values)
 
-    def test_identifier_filter_by_category(self, app, registration, identifier_registration, url_registration_identifiers):
+    def test_identifier_filter_by_category(
+            self, app, registration, identifier_registration,
+            url_registration_identifiers
+    ):
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
         assert identifiers_for_registration.count() == 2
         assert_items_equal(
-            list(identifiers_for_registration.values_list('category', flat=True)),
-            ['carpid', 'nopeid']
+            list(
+                identifiers_for_registration.values_list(
+                    'category',
+                    flat=True
+                )
+            ), ['carpid', 'nopeid']
         )
 
-        filter_url = '{}?filter[category]=carpid'.format(url_registration_identifiers)
+        filter_url = '{}?filter[category]=carpid'.format(
+            url_registration_identifiers)
         new_res = app.get(filter_url)
 
         carpid_total = Identifier.objects.filter(category='carpid').count()
@@ -97,16 +116,22 @@ class TestRegistrationIdentifierList:
         total = new_res.json['links']['meta']['total']
         assert total == carpid_total
 
-    def test_node_identifier_not_returned_from_registration_endpoint(self, node, identifier_node, identifier_registration, res_registration_identifiers, data_registration_identifiers):
+    def test_node_identifier_not_returned_from_registration_endpoint(
+            self, identifier_node, identifier_registration,
+            res_registration_identifiers,
+            data_registration_identifiers
+    ):
         assert res_registration_identifiers.status_code == 200
         assert len(data_registration_identifiers) == 1
         assert identifier_registration._id == data_registration_identifiers[0]['id']
         assert identifier_node._id != data_registration_identifiers[0]['id']
 
-    def test_node_not_allowed_from_registrations_endpoint(self, app, node, identifier_node):
+    def test_node_not_allowed_from_registrations_endpoint(
+            self, app, node):
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestNodeIdentifierList:
@@ -143,12 +168,15 @@ class TestNodeIdentifierList:
         assert res_node_identifiers.status_code == 200
         assert res_node_identifiers.content_type == 'application/vnd.api+json'
 
-    def test_identifier_list_returns_correct_number_and_referent(self, node, identifier_node, res_node_identifiers, data_node_identifiers, all_identifiers):
+    def test_identifier_list_returns_correct_number_and_referent(
+            self, node, identifier_node, res_node_identifiers,
+            data_node_identifiers, all_identifiers
+    ):
         # test_identifier_list_returns_correct_number
         total = res_node_identifiers.json['links']['meta']['total']
         assert total == all_identifiers.count()
 
-        #test_identifier_list_returns_correct_referent
+        # test_identifier_list_returns_correct_referent
         paths = [
             urlparse(
                 item['relationships']['referent']['links']['related']['href']
@@ -156,18 +184,23 @@ class TestNodeIdentifierList:
         ]
         assert '/{}nodes/{}/'.format(API_BASE, node._id) in paths
 
-    def test_identifier_list_returns_correct_categories_and_values(self, all_identifiers, data_node_identifiers):
+    def test_identifier_list_returns_correct_categories_and_values(
+            self, all_identifiers, data_node_identifiers):
         # test_identifier_list_returns_correct_categories
         categories = [identifier.category for identifier in all_identifiers]
-        categories_in_response = [identifier['attributes']['category'] for identifier in data_node_identifiers]
+        categories_in_response = [
+            identifier['attributes']['category'] for identifier in data_node_identifiers]
         assert_items_equal(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
-        values_in_response = [identifier['attributes']['value'] for identifier in data_node_identifiers]
+        values_in_response = [
+            identifier['attributes']['value'] for identifier in data_node_identifiers
+        ]
         assert_items_equal(values_in_response, values)
 
-    def test_identifier_filter_by_category(self, app, node, identifier_node, url_node_identifiers):
+    def test_identifier_filter_by_category(
+            self, app, node, identifier_node, url_node_identifiers):
         IdentifierFactory(referent=node, category='nopeid')
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
@@ -185,13 +218,17 @@ class TestNodeIdentifierList:
         total = new_res.json['links']['meta']['total']
         assert total == carpid_total
 
-    def test_registration_identifier_not_returned_from_registration_endpoint(self, registration, identifier_node, identifier_registration, res_node_identifiers, data_node_identifiers):
+    def test_registration_identifier_not_returned_from_registration_endpoint(
+            self, identifier_node, identifier_registration,
+            res_node_identifiers, data_node_identifiers
+    ):
         assert res_node_identifiers.status_code == 200
         assert len(data_node_identifiers) == 1
         assert identifier_node._id == data_node_identifiers[0]['id']
         assert identifier_registration._id != data_node_identifiers[0]['id']
 
-    def test_registration_not_allowed_from_nodes_endpoint(self, app, registration, identifier_registration):
+    def test_registration_not_allowed_from_nodes_endpoint(
+            self, app, registration):
         url = '/{}nodes/{}/identifiers/'.format(API_BASE, registration._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
@@ -220,10 +257,18 @@ class TestPreprintIdentifierList:
         assert res_preprint_identifier.status_code == 200
         assert res_preprint_identifier.content_type == 'application/vnd.api+json'
 
-    def test_identifier_list_returns_correct_number_and_referent(self, preprint, res_preprint_identifier, data_preprint_identifier, all_identifiers):
+    def test_identifier_list_returns_correct_number_and_referent(
+            self, preprint, res_preprint_identifier,
+            data_preprint_identifier, user
+    ):
+        # add another preprint so there are more identifiers
+        PreprintFactory(creator=user)
+
         # test_identifier_list_returns_correct_number
         total = res_preprint_identifier.json['links']['meta']['total']
-        assert total == all_identifiers.count()
+        assert total == Identifier.objects.filter(
+            object_id=preprint.id
+        ).count()
 
         # test_identifier_list_returns_correct_referent
         paths = [
@@ -233,13 +278,16 @@ class TestPreprintIdentifierList:
         ]
         assert '/{}preprints/{}/'.format(API_BASE, preprint._id) in paths
 
-    def test_identifier_list_returns_correct_categories_and_values(self, all_identifiers, data_preprint_identifier):
+    def test_identifier_list_returns_correct_categories_and_values(
+            self, all_identifiers, data_preprint_identifier):
         # test_identifier_list_returns_correct_categories
         categories = all_identifiers.values_list('category', flat=True)
-        categories_in_response = [identifier['attributes']['category'] for identifier in data_preprint_identifier]
+        categories_in_response = [identifier['attributes']['category']
+                                  for identifier in data_preprint_identifier]
         assert_items_equal(categories_in_response, list(categories))
 
         # test_identifier_list_returns_correct_values
         values = all_identifiers.values_list('value', flat=True)
-        values_in_response = [identifier['attributes']['value'] for identifier in data_preprint_identifier]
+        values_in_response = [identifier['attributes']['value']
+                              for identifier in data_preprint_identifier]
         assert_items_equal(values_in_response, list(values))

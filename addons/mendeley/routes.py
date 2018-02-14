@@ -52,15 +52,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/mendeley/widget/',
-                '/project/<pid>/node/<nid>/mendeley/widget/',
-            ],
-            'get',
-            mendeley_views.widget(),
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/mendeley/citations/',
                 '/project/<pid>/node/<nid>/mendeley/citations/',
                 '/project/<pid>/mendeley/citations/<list_id>/',

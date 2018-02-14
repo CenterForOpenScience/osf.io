@@ -13,10 +13,9 @@ require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 require('../../vendor/ace-plugins/spellcheck_ace.js');
 
-var $osf = require('js/osfHelpers');
-
 var WikiMenu = require('../wikiMenu');
 var Comment = require('js/comment'); //jshint ignore:line
+var $osf = require('js/osfHelpers');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -104,7 +103,7 @@ $(document).ready(function () {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
         errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
-            'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.</p>');
+            'please report it to ' + $osf.osfSupportLink());
         Raven.captureMessage('Could not GET wiki menu pages', {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });

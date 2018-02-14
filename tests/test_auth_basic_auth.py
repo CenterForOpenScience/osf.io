@@ -93,7 +93,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         with connection.cursor() as cursor:
             cursor.execute("""
                 UPDATE osf_session
-                SET date_created = %s
+                SET created = %s
                 WHERE id = %s
             """, [(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)), self.session.id])
         cookie = self.user1.get_or_create_cookie()

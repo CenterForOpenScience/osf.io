@@ -52,15 +52,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/zotero/widget/',
-                '/project/<pid>/node/<nid>/zotero/widget/',
-            ],
-            'get',
-            zotero_views.widget(),
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/zotero/citations/',
                 '/project/<pid>/node/<nid>/zotero/citations/',
                 '/project/<pid>/zotero/citations/<list_id>/',

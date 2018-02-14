@@ -10,8 +10,8 @@
 
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
-            <div class="col-sm-5 col-md-7 cite-container">
+        <div class="row no-gutters">
+            <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -32,7 +32,8 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-7 col-md-5">
+            <div class="clearfix visible-md-block"></div>
+            <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -89,7 +90,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            View Forks(${ node['fork_count']})
+                                            View Forks (${ node['fork_count']})
                                         </span>
                                     </li>
                                     %endif
@@ -207,8 +208,8 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
-                    <span data-bind="css: icon"></span>
+                    Category: <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
@@ -272,14 +273,35 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint']:
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+            % if node['has_moderated_preprint']:
+                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
+                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
+                <% icon_tooltip = ''%>
+                % if node['preprint_state'] == 'pending':
+                    % if node['preprint_provider']['workflow'] == 'post-moderation':
+                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % else:
+                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % endif
+                % elif node['preprint_state'] == 'accepted':
+                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
+                % else:
+                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+                % endif
+                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
+            % else:
+                This project represents a ${node['preprint_word']}.
+            % endif
+            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
+            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
             % endif
         </div>
     </div>
@@ -299,7 +321,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
@@ -350,7 +372,7 @@
 
     </div>
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -371,40 +393,7 @@
                             <span data-bind="text: mla"></span>
                         <div class="f-w-xl m-t-md">Chicago</div>
                             <span data-bind="text: chicago"></span>
-                        <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
-                            <!-- ko if: view() === 'view' -->
-                                <div class="f-w-xl m-t-md"><span data-bind="text: name"></span>
-                                    % if 'admin' in user['permissions'] and not node['is_registration']:
-                                        <!-- ko ifnot: $parent.editing() -->
-                                            <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
-                                            <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
-                                        <!-- /ko -->
-                                    % endif
-                                </div>
-                                <span data-bind="text: text"></span>
-                            <!-- /ko -->
-                            <!-- ko if: view() === 'edit' -->
-                                <div class="f-w-xl m-t-md">Citation name</div>
-                                <input data-bind="if: name !== undefined, value: name" placeholder="Required" class="form-control"/>
-                                <div class="f-w-xl m-t-sm">Citation</div>
-                                <textarea data-bind="if: text !== undefined, value: text" placeholder="Required" class="form-control" rows="4"></textarea>
-                                <div data-bind="visible: showMessages, css: 'text-danger'">
-                                    <p class="m-t-sm" data-bind="validationMessage: name"></p>
-                                    <p class="m-t-sm" data-bind="validationMessage: text"></p>
-                                </div>
-                                <div class="m-t-md">
-                                    <button class="btn btn-default" data-bind="click: function() {cancel($parent)}">Cancel</button>
-                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
-                                </div>
-                            <!-- /ko -->
-                        </div>
                     </div>
-                    ## Disable custom citations for now
-                    ## % if 'admin' in user['permissions'] and not node['is_registration']:
-                    ##     <!-- ko ifnot: editing() -->
-                    ##     <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
-                    ##     <!-- /ko -->
-                    ## % endif
                 </div>
                 <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
@@ -464,7 +453,7 @@
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Link Projects</a>
+                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">Link Projects</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
@@ -508,6 +497,7 @@ ${parent.javascript_bottom()}
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
+            canEditTags: ${ user['can_edit_tags'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},

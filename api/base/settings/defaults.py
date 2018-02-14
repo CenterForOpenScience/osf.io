@@ -32,12 +32,6 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
-CELERY_IMPORTS = [
-    'osf.management.commands.migratedata',
-    'osf.management.commands.migraterelations',
-    'osf.management.commands.verify',
-]
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -50,6 +44,7 @@ SECRET_KEY = osf_settings.SECRET_KEY
 
 AUTHENTICATION_BACKENDS = (
     'api.base.authentication.backends.ODMBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -83,11 +78,13 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
-    'rest_framework_swagger',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
+    'guardian',
+    'waffle',
 
     # OSF
     'osf',
@@ -101,8 +98,10 @@ INSTALLED_APPS = (
     'addons.figshare',
     'addons.forward',
     'addons.github',
+    'addons.gitlab',
     'addons.googledrive',
     'addons.mendeley',
+    'addons.onedrive',
     'addons.owncloud',
     'addons.s3',
     'addons.twofactor',
@@ -129,9 +128,6 @@ MAX_PAGE_SIZE = 100
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
-    # Order is important here because of a bug in rest_framework_swagger. For now,
-    # rest_framework.renderers.JSONRenderer needs to be first, at least until
-    # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
         'api.base.renderers.JSONRendererWithESISupport',
@@ -156,7 +152,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -196,7 +192,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
@@ -210,7 +205,7 @@ MIDDLEWARE_CLASSES = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [
@@ -245,28 +240,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 API_BASE = 'v2/'
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (
-    ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
-    ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
-)
-
-# TODO: Revisit methods for excluding private routes from swagger docs
-SWAGGER_SETTINGS = {
-    'api_path': '/',
-    'info': {
-        'description':
-        """
-        Welcome to the fine documentation for the Open Science Framework's API!  Please click
-        on the <strong>GET /v2/</strong> link below to get started.
-
-        For the most recent docs, please check out our <a href="/v2/">Browsable API</a>.
-        """,
-        'title': 'OSF APIv2 Documentation',
-    },
-    'doc_expansion': 'list',
-    'exclude_namespaces': ['applications', 'tokens', 'test'],
-}
-
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
@@ -279,8 +252,8 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'mendeley', 'zotero', 'forward']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
@@ -288,3 +261,11 @@ OSF_SHELL_USER_IMPORTS = None
 
 # Settings for use in the admin
 OSF_URL = 'https://osf.io'
+
+SELECT_FOR_UPDATE_ENABLED = True
+
+# Disable anonymous user permissions in django-guardian
+ANONYMOUS_USER_NAME = None
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

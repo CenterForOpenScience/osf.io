@@ -197,7 +197,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 };
             }));
         }).fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
+            self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
                 extra: {
                     url: self.url,

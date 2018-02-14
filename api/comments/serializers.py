@@ -1,7 +1,6 @@
 import bleach
 
 from rest_framework import serializers as ser
-from modularodm import Q
 from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
@@ -15,7 +14,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
                                   AnonymizedRegexField,
-                                  DateByVersion)
+                                  VersionedDateTimeField)
 
 
 class CommentReport(object):
@@ -44,9 +43,9 @@ class CommentSerializer(JSONAPISerializer):
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
-    modified = ser.BooleanField(read_only=True, default=False)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+    modified = ser.BooleanField(source='edited', read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
     is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
     is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')
@@ -83,7 +82,7 @@ class CommentSerializer(JSONAPISerializer):
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
-        return Comment.find(Q('target', 'eq', Guid.load(obj._id))).count() > 0
+        return Comment.objects.filter(target___id=obj._id).exists()
 
     def get_absolute_url(self, obj):
         return absolute_reverse('comments:comment-detail', kwargs={

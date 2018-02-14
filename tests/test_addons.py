@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import os
 import datetime
 import httplib as http
 import time
+import functools
 
 import furl
 import itsdangerous
@@ -10,16 +12,17 @@ import jwe
 import jwt
 import mock
 from django.utils import timezone
+from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from modularodm import Q
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
+from website.util.paths import webpack_asset
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
@@ -29,8 +32,10 @@ from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
+from website.project.views.node import serialize_addons, collect_node_config_js
 from website.util import api_url_for, rubeus
-
+from dateutil.parser import parse as parse_date
+from framework import sentry
 
 class SetEnvironMiddleware(object):
 
@@ -158,6 +163,11 @@ class TestAddonLogs(OsfTestCase):
         self.node_addon.save()
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
+
+    def configure_osf_addon(self):
+        self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+        self.node_addon.save()
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
@@ -288,6 +298,45 @@ class TestAddonLogs(OsfTestCase):
             'github_addon_file_renamed',
         )
 
+    def test_action_downloads(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        download_actions=('download_file', 'download_zip')
+        for action in download_actions:
+            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
+            nlogs = self.node.logs.count()
+            res = self.app.put_json(
+                url,
+                payload,
+                headers={'Content-Type': 'application/json'},
+                expect_errors=False,
+            )
+            assert_equal(res.status_code, 200)
+
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs)
+
+    def test_add_file_osfstorage_log(self):
+        self.configure_osf_addon()
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        nlogs = self.node.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+        assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
+    def test_add_folder_osfstorage_log(self):
+        self.configure_osf_addon()
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        nlogs = self.node.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+        assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
 
 class TestCheckAuth(OsfTestCase):
 
@@ -363,12 +412,10 @@ class TestCheckPreregAuth(OsfTestCase):
         super(TestCheckPreregAuth, self).setUp()
 
         self.prereg_challenge_admin_user = AuthUserFactory()
-        self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
@@ -551,6 +598,20 @@ class TestAddonFileViews(OsfTestCase):
         self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
         self.user_addon.save()
 
+    def set_sentry(status):
+        def wrapper(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                enabled, sentry.enabled = sentry.enabled, status
+                func(*args, **kwargs)
+                sentry.enabled = enabled
+
+            return wrapped
+
+        return wrapper
+
+    with_sentry = set_sentry(True)
+
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
@@ -590,7 +651,7 @@ class TestAddonFileViews(OsfTestCase):
                 'render': '',
                 'sharejs': '',
                 'mfr': '',
-                'gravatar': '',
+                'profile_image': '',
                 'external': '',
                 'archived_from': '',
             },
@@ -901,6 +962,22 @@ class TestAddonFileViews(OsfTestCase):
         assert_equal(len(file_node.history), 2)
         assert_equal(file_node.history[1], file_data)
 
+    @with_sentry
+    @mock.patch('framework.sentry.sentry.captureMessage')
+    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': parse_date(
+                '2017-08-22T13:54:32.100900',
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )})
+        data = {
+            'name': 'a name',
+            'materialized': 'materialized',
+            'modified': '2016-08-22T13:54:32.100900'
+        }
+        file_node.update(revision=None, user=None, data=data)
+        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 
@@ -1042,3 +1119,69 @@ class TestLegacyViews(OsfTestCase):
             provider='mycooladdon',
         )
         assert_urls_equal(res.location, expected_url)
+
+class TestViewUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestViewUtils, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user)
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.configure_addon()
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+
+    def configure_addon(self):
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
+        self.oauth_settings.save()
+        self.user.external_accounts.add(self.oauth_settings)
+        self.user.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
+        self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
+
+    def test_serialize_addons(self):
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
+
+        enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
+        assert len(enabled_addons) == 2
+        assert enabled_addons[0]['short_name'] == 'github'
+        assert enabled_addons[1]['short_name'] == 'osfstorage'
+
+        default_addons = [addon for addon in addon_dicts if addon['default']]
+        assert len(default_addons) == 1
+        assert default_addons[0]['short_name'] == 'osfstorage'
+
+    def test_include_template_json(self):
+        """ Some addons (github, gitlab) need more specialized template infomation so we want to
+        ensure we get those extra variables that when the addon is enabled.
+        """
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
+
+        enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
+        assert len(enabled_addons) == 2
+        assert enabled_addons[1]['short_name'] == 'osfstorage'
+        assert enabled_addons[0]['short_name'] == 'github'
+        assert 'node_has_auth' in enabled_addons[0]
+        assert 'valid_credentials' in enabled_addons[0]
+
+    def test_collect_node_config_js(self):
+
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
+
+        asset_paths = collect_node_config_js(addon_dicts)
+
+        # Default addons should be in addon dicts, but they have no js assets because you can't
+        # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
+        default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
+        assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)

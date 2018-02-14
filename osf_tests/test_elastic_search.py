@@ -8,7 +8,6 @@ import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
-from modularodm import Q
 
 from framework.auth.core import Auth
 
@@ -17,7 +16,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag
+from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -234,9 +233,7 @@ class TestNodeSearch(OsfTestCase):
     @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
-        other_license = NodeLicense.find_one(
-            Q('name', 'eq', 'MIT License')
-        )
+        other_license = NodeLicense.objects.get(name='MIT License')
         new_license = factories.NodeLicenseRecordFactory(node_license=other_license)
         self.node.node_license = new_license
         self.node.save()
@@ -641,6 +638,16 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
+    def test_search_profile(self):
+        orcid = '123456'
+        user = factories.UserFactory()
+        user.social['orcid'] = orcid
+        user.save()
+        contribs = search.search_contributor(orcid)
+        assert_equal(len(contribs['users']), 1)
+        assert_equal(len(contribs['users'][0]['social']), 1)
+        assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
+
 
 class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
@@ -827,29 +834,29 @@ class TestSearchMigration(OsfTestCase):
             is_public=True
         )
 
-    def test_first_migration_no_delete(self):
-        migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_no_remove(self):
+        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_no_delete(self):
+    def test_multiple_migrations_no_remove(self):
         for n in xrange(1, 21):
-            migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_first_migration_with_delete(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_with_remove(self):
+        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_with_delete(self):
+    def test_multiple_migrations_with_remove(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
@@ -965,10 +972,32 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).path
+        path = OsfStorageFile.objects.get(node=file_.node).path
         deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']
         assert_not_equal(file_.path, '')
         assert_equal(file_.path, path)
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
+
+    def test_quickfiles_files_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+
+        quickfiles_root.append_file('GreenLight.mp3')
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 1)
+
+    def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+        quickfiles_root.append_file('GreenLight.mp3')
+
+        self.node.creator.disable_account()
+        self.node.creator.add_system_tag('spam_confirmed')
+        self.node.creator.save()
+
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 0)

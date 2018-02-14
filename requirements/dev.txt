@@ -18,6 +18,7 @@ HTTPretty==0.8.14
 # Syntax checking
 flake8==2.4.0
 flake8-quotes==0.3.0
+flake8-mutable==1.2.0
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
@@ -33,3 +34,6 @@ ipdb==0.10.1
 
 # PyDevD (Remote Debugging)
 pydevd==0.0.6
+
+# n+1 query detection
+nplusone==0.8.2

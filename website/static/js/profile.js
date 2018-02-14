@@ -9,7 +9,6 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
-var m = require('mithril');
 require('js/objectCreateShim');
 
 // Adapted from Django URLValidator
@@ -395,7 +394,6 @@ BaseViewModel.prototype.submit = function() {
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     var self = this;
     BaseViewModel.call(self, urls, modes, preventUnsaved);
-    fetchCallback = fetchCallback || noop;
     TrackedMixin.call(self);
 
     self.full = koHelpers.sanitizedObservable().extend({
@@ -407,6 +405,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
+
+    self.imputedGiven = ko.observable();
+    self.imputedMiddle = ko.observable();
+    self.imputedFamily = ko.observable();
+    self.imputedSuffix = ko.observable();
 
     self.trackedProperties = [
         self.full,
@@ -428,11 +431,14 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         return !! self.full();
     });
 
-    self.impute = function(callback) {
-        var cb = callback || noop;
-        if (! self.hasFirst()) {
-            return;
-        }
+    self.autoFill = function() {
+        self.given(self.imputedGiven());
+        self.middle(self.imputedMiddle());
+        self.family(self.imputedFamily());
+        self.suffix(self.imputedSuffix());
+    };
+
+    self.impute = function () {
         return $.ajax({
             type: 'GET',
             url: urls.impute,
@@ -440,8 +446,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
                 name: self.full()
             },
             dataType: 'json',
-            success: [self.unserialize.bind(self), cb],
-            error: self.handleError.bind(self, 'Could not fetch names')
+        }).done(function (response) {
+            self.imputedGiven(response.given);
+            self.imputedMiddle(response.middle);
+            self.imputedFamily(response.family);
+            self.imputedSuffix(response.suffix);
         });
     };
 
@@ -468,34 +477,48 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         return suffix;
     };
 
+    self.hasDetail = ko.computed(function() {
+        return !! (self.given() && self.family());
+    });
+
     self.citeApa = ko.computed(function() {
-        var cite = self.family();
-        var given = $.trim(self.given() + ' ' + self.middle());
+        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
+        var given = self.hasDetail() ? $.trim(self.given() + ' ' + self.middle()) : $.trim(self.imputedGiven() + ' ' + self.imputedMiddle());
 
         if (given) {
             cite = cite + ', ' + self.initials(given);
         }
-        if (self.suffix()) {
+        if (self.hasDetail() && self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
+        } else if (self.imputedSuffix()){
+            cite = cite + ', ' + suffix(self.imputedSuffix());
         }
         return cite;
     });
 
     self.citeMla = ko.computed(function() {
-        var cite = self.family();
-        if (self.given()) {
+        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
+        if (self.hasDetail()) {
             cite = cite + ', ' + self.given();
             if (self.middle()) {
                 cite = cite + ' ' + self.initials(self.middle());
             }
+        } else if (self.full()) {
+            cite = cite + ', ' + self.imputedGiven();
+            if (self.imputedMiddle()) {
+                cite = cite + ' ' + self.initials(self.imputedMiddle());
+            }
         }
-        if (self.suffix()) {
+        if (self.hasDetail() && self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
+        } else if (self.imputedSuffix()) {
+            cite = cite + ', ' + suffix(self.imputedSuffix());
         }
         return cite;
     });
 
-    self.fetch(fetchCallback);
+    self.fetch(self.impute);
+    self.full.subscribe(self.impute);
 };
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);

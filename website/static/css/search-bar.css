@@ -65,3 +65,9 @@
 #searchControls>.row {
     padding-top: 60px;
 }
+
+/*Moves maintenance alert under search bar*/
+#maintenance.alert {
+    position: relative;
+    top: 55px;
+}
