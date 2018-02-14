@@ -138,6 +138,22 @@
         ${buttonGroup()}
     </div>
 
+    % if 'admin' in user['permissions'] and access_requests:
+    <div id="manageAccessRequests">
+        <h3> Requests for access</h3>
+        <p class="m-b-xs">The following users have requested access to this project.</p>
+        <table  id="manageAccessRequestsTable"
+        class="table responsive-table responsive-table-xxs"
+        data-bind="template: {
+            name: 'accessRequestsTable',
+            options: {
+                containment: '#manageAccessRequests'
+            }
+            }">
+        </table>
+    </div>
+    % endif
+
     % if 'admin' in user['permissions']:
         <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
@@ -198,6 +214,42 @@
         }">
     </tbody>
     <!-- /ko -->
+</script>
+
+<script id="accessRequestsTable" type="text/html">
+    <thead>
+        <tr>
+            <th class="responsive-table-hide">Name</th>
+            <th></th>
+            <th class="access-permissions">
+                Permissions
+                <i class="fa fa-question-circle permission-info"
+                    data-toggle="popover"
+                    data-title="Permission Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="biblio-contrib">
+                Bibliographic Contributor
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Bibliographic Contributor Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="add"></th>
+            <th class="access-remove"></th>
+        </tr>
+    </thead>
+    <tbody data-bind="template: {
+        name: 'accessRequestRow',
+        foreach: $root.accessRequests,
+        as: 'accessRequest',
+    }">
 </script>
 
 <script id="contribRow" type="text/html">
@@ -266,15 +318,76 @@
         <td>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
-                        <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
+                        <span href="#removeContributor"
                            data-bind="click: remove"
-                           data-toggle="modal">Remove</button>
+                           data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
                            data-bind="click: addParentAdmin"
                         ><i class="fa fa-plus"></i> Add</button>
                 <!-- /ko -->
+            </div>
+        </td>
+    </tr>
+</script>
+
+<script id="accessRequestRow" type="text/html">
+    <tr>
+        <td>
+            <img data-bind="attr: {src: accessRequest.user.profile_image_url}" />
+            <span></span>
+            <div class="card-header">
+                <span data-bind="ifnot: profileUrl">
+                    <span class="name-search" data-bind="text: accessRequest.user.shortname"></span>
+                </span>
+                <span data-bind="if: profileUrl">
+                    <a class="name-search" data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
+                </span>
+                <span data-bind="text: permissionText()"></span>
+            </div>
+        </td>
+        <td class="table-only">
+            <span data-bind="ifnot: profileUrl">
+                <span class="name-search" data-bind="text: accessRequest.user.shortname"></span>
+            </span>
+            <span data-bind="if: profileUrl">
+                <a class="name-search" data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
+            </span>
+        </td>
+        <td class="permissions">
+            <div class="header"></div>
+            <div class="td-content">
+                <select class="form-control input-sm" data-bind="
+                    options: $parents[0].permissionList,
+                    value: permission,
+                    optionsText: optionsText.bind(permission)"
+                >
+                </select>
+                <span data-bind="text: permissionText()"></span>
+            </div>
+        </td>
+        <td>
+            <div class="header"></div>
+            <div class="td-content">
+                <input
+                    type="checkbox" class="biblio"
+                    data-bind="checked: visible"
+                />
+            </div>
+        </td>
+        <td>
+            <div class="header"></div>
+            <div class="td-content">
+                <button class="btn btn-success btn-sm m-l-md request-accept-button"
+                       data-bind="click: function() {respondToAccessRequest('accept')}"
+                ><i class="fa fa-plus"></i> Add</button>
+            </div>
+        </td>
+        <td>
+            <div class="header"></div>
+            <div class="td-content">
+                <span data-bind="click: function() {respondToAccessRequest('reject')}"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
             </div>
         </td>
     </tr>
@@ -301,6 +414,7 @@
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
+      window.contextVars.accessRequests = ${ access_requests | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {

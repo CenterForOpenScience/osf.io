@@ -23,17 +23,31 @@ var RequestAccessViewModel = oop.defclass({
     },
     requestProjectAccess: function() {
         var accessRequestUrl =  window.contextVars.apiV2Prefix + 'nodes/' + window.contextVars.nodeId + '/requests/';
-        console.log('gonna post to '+ accessRequestUrl);
-        var request = $osf.postJSON(accessRequestUrl, {
-            'data': {
-                'attributes': {
-                    'comment': 'ASDFG',
-                    'request_type': 'access'
-                },
-                'type': 'node-requests'
+        var requestUrl = $osf.apiV2Url('nodes/' +  window.contextVars.nodeId + '/requests/');
+        console.log('first one '+ accessRequestUrl);
+        console.log('second one '+ requestUrl);
+        var payload = {
+            data: {
+                type: 'node-requests',
+                attributes: {
+                    comment: '',
+                    request_type: 'access'
+                }
             }
-        });
-        var request = $.get('');
+        };
+        var request = $osf.ajaxJSON(
+            'POST',
+            requestUrl,
+            {
+                'is_cors': true,
+                'data': payload,
+                'fields': {
+                    xhrFields: {withCredentials: true}
+                }
+            }
+        );
+
+        // var request = $.get('');
         request.done(function() {
             this.AccessRequestSuccess(true);
             this.requestAccessButton('Access requested');

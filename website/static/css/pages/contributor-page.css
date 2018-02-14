@@ -65,8 +65,20 @@ th.biblio-contrib {
     width: 109px;
 }
 
+th.add {
+    width: 50px;
+}
+
 th.remove {
     width: 94px;
+}
+
+th.access-remove {
+    width: 15px;
+}
+
+th.access-permissions {
+    width: 200px;
 }
 
 .filters {
@@ -139,4 +151,16 @@ th.remove {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
+}
+
+.remove-or-reject {
+    padding-top: 4px;
+    color: lightgrey;
+    cursor: pointer;
+    float: right;
+    font-size: 1.5em;
+}
+
+.request-accept-button {
+    margin-right: 5px;
 }
