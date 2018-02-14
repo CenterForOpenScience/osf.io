@@ -41,7 +41,8 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     allow_submissions = models.BooleanField(default=True)
 
     def __unicode__(self):
-        return '{} with id {}'.format(self.name, self.id)
+        return ('(name={self.name!r}, default_license={self.default_license!r}, '
+                'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
     @property
     def all_subjects(self):
@@ -97,6 +98,14 @@ class PreprintProvider(AbstractProvider):
         )
 
     @property
+    def all_subjects(self):
+        if self.subjects.exists():
+            return self.subjects.all()
+        else:
+            # TODO: Delet this when all PreprintProviders have a mapping
+            return rules_to_subjects(self.subjects_acceptable)
+
+    @property
     def has_highlighted_subjects(self):
         return self.subjects.filter(highlighted=True).exists()
 
@@ -117,14 +126,6 @@ class PreprintProvider(AbstractProvider):
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
-
-    @property
-    def all_subjects(self):
-        if self.subjects.exists():
-            return self.subjects.all()
-        else:
-            # TODO: Delet this when all PreprintProviders have a mapping
-            return rules_to_subjects(self.subjects_acceptable)
 
     @property
     def landing_url(self):
