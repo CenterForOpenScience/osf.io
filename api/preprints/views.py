@@ -17,6 +17,8 @@ from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
+    PreprintDetailJSONAPIMultipleRelationshipsParser,
+    PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
@@ -185,6 +187,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
@@ -255,7 +258,10 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         ContributorOrPublic,
         PreprintPublishedOrAdmin,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (
+        PreprintDetailJSONAPIMultipleRelationshipsParser,
+        PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
