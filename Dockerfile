@@ -144,7 +144,7 @@ COPY ./website/__init__.py ./website/__init__.py
 COPY ./addons.json ./addons.json
 RUN mv ./website/settings/local-dist.py ./website/settings/local.py \
     && mv ./api/base/settings/local-dist.py ./api/base/settings/local.py \
-    && sed 's/DEBUG_MODE = True/DEBUG_MODE = False/' -i ./website/settings/local.py
+    && sed 's/DEBUG_MODE = True/DEBUG_MODE = False/' -i ./api/base/settings/local.py
 
 COPY ./webpack* ./
 COPY ./website/static/ ./website/static/
