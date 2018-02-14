@@ -19,6 +19,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 ALLOWED_HOSTS.append('localhost')
 
 DB_PORT = 54321
+DB_NAME = 'osf_test'
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -81,10 +82,6 @@ KEEN = {
         'read_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
     },
 }
-
-NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
-POPULAR_LINKS_NODE = 'hiyah'
-POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'

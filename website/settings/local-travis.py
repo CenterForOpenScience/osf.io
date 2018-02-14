@@ -4,17 +4,10 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
-import inspect
 import logging
 
-from api.base.settings import defaults
 import os
 
-DB_PORT = 54321
-
-DEV_MODE = True
-DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
-SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
@@ -32,32 +25,8 @@ EXTERNAL_EMBER_APPS = {
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
-TEST_DB_NAME = DB_NAME = 'osf_test'
-
-VARNISH_SERVERS = ['http://localhost:8080']
-
-# if ENABLE_VARNISH isn't set in python read it from the env var and set it
-locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')
-
-KEEN = {
-    'public': {
-        'project_id': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-        'master_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-        'write_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-        'read_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-    },
-    'private': {
-        'project_id': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-        'write_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-        'read_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
-    },
-}
-
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
 POPULAR_LINKS_NODE = 'hiyah'
 POPULAR_LINKS_REGISTRATIONS = 'woooo'
-
-EZID_USERNAME = 'testfortravisnotreal'
-EZID_PASSWORD = 'testfortravisnotreal'
 
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)

@@ -1,7 +1,10 @@
 from .defaults import *  # noqa
 
 
-DEBUG = DEBUG_MODE
+DEV_MODE = True
+DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
+SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
+
 VARNISH_SERVERS = ['http://127.0.0.1:8080']
 ENABLE_VARNISH = False
 ENABLE_ESI = False
@@ -10,7 +13,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Uncomment to get real tracebacks while testing
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
-if DEBUG:
+if DEBUG_MODE:
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {

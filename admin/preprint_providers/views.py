@@ -129,7 +129,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = urlparse.urljoin(api_settings.DOMAIN, api_settings.PREPRINTS_ASSETS)
+        kwargs['logohost'] = urlparse.urljoin(settings.DOMAIN, settings.PREPRINTS_ASSETS)
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)

@@ -4,12 +4,8 @@ Base settings file, common to all environments.
 These settings can be overridden in local.py.
 """
 
-import datetime
 import os
 import json
-import logging
-from datetime import timedelta
-from collections import OrderedDict
 
 from api.base import settings as api_settings
 

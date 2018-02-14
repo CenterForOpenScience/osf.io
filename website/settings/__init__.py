@@ -6,7 +6,6 @@
     >>> settings.MAIL_SERVER
     'smtp.sendgrid.net'
 '''
-import os
 from .defaults import *  # noqa
 
 try:

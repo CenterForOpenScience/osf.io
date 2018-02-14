@@ -20,8 +20,7 @@ except ImportError as error:
                   'copy local-dist.py to local.py?', ImportWarning)
 
 settings_to_check = ('WATERBUTLER_JWE_SECRET', 'WATERBUTLER_JWE_SALT', 'WATERBUTLER_JWT_SECRET', 'JWT_SECRET', 'JWE_SECRET',
-                     'DEFAULT_HMAC_SECRET', 'POPULAR_LINKS_NODE', 'NEW_AND_NOTEWORTHY_LINKS_NODE', 'SENSITIVE_DATA_SALT',
-                     'SENSITIVE_DATA_SECRET', 'BYPASS_THROTTLE_TOKEN')
+                     'DEFAULT_HMAC_SECRET', 'SENSITIVE_DATA_SALT', 'SENSITIVE_DATA_SECRET', 'BYPASS_THROTTLE_TOKEN')
 
 
 if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':

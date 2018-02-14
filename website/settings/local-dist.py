@@ -5,12 +5,6 @@ These settings override what's in website/settings/defaults.py
 NOTE: local.py will not be added to source control.
 '''
 
-from api.base.settings import defaults
-
-DEV_MODE = True
-DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
-SECURE_MODE = not DEBUG_MODE  # Disable osf cookie secure
-
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
