@@ -5,6 +5,7 @@ import logging
 from flask import request
 
 from django.db import transaction
+from django.db.models import Q, Exists, OuterRef
 from django_bulk_update.helper import bulk_update
 from django.core.paginator import Paginator, EmptyPage
 
@@ -14,7 +15,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
-from osf.models import AbstractNode, Node, Conference, Tag
+from osf.models import AbstractNode, Node, Conference, Tag, OSFUser
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -23,7 +24,7 @@ from website.mails import send_mail
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
-
+SUBMISSIONS_PER_PAGE = 50
 
 @no_auto_transaction
 def meeting_hook():
@@ -190,7 +191,13 @@ def conference_data(meeting, meetings_page=1):
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
-    paginator = Paginator(nodes, 50)
+    q = request.args.get('q', '')
+    if q:
+        nodes = nodes.filter(title__icontains=q)
+        #  u = OSFUser.objects.filter(contributor__visible=True, contributor__node=OuterRef('pk')).order_by('contributor___order').values_list('fullname', flat=True)
+        # AbstractNode.objects.annotate(first_visible_contrib=Subquery(u)).filter(first_visible_contrib__icontains='Dawn')
+
+    paginator = Paginator(nodes, SUBMISSIONS_PER_PAGE)
     try:
         selected_nodes = paginator.page(meetings_page)
     except EmptyPage:
@@ -294,7 +301,19 @@ def conference_results(meeting, **kwargs):
         # Needed in order to use base.mako namespace
         'settings': settings,
         'pagination': create_pagination_array(current_page.number, current_page.paginator.num_pages),
-        'page': current_page
+        'page': current_page,
+        'q': request.args.get('q', ''),
+        'query_params': build_conference_query_params()
+    }
+
+def build_conference_query_params():
+    q = request.args.get('q', '')
+    page = get_meetings_page()
+    sort = request.args.get('sort', '')
+    return {
+        'q_and_sort': '&q={}&sort={}'.format(q, sort),
+        'q_first': '?q={}&page={}&sort={}'.format(q, page, sort),
+        'sort_first': '?sort={}&page={}&q={}'.format(sort, page, q)
     }
 
 def conference_submissions(**kwargs):

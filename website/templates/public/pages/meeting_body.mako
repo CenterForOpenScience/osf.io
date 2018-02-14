@@ -70,13 +70,20 @@
     </div>
 % endif
 
-<div id="grid" style="width: 100%;"></div>
+<div class="tb-head">
+    <div class="tb-head-filter col-xs-12 col-sm-6 col-sm-offset-6">
+        <form id="meetingsFilter" method="GET">
+            <input id="filterAttachments" placeholder="Search" value="${ q }" name="q" type="text" style="width:100%;display:inline;" class="pull-right form-control">
+        </form>
+    </div>
+</div>
 
+<div id="grid" style="width: 100%;"></div>
 % if page.has_other_pages():
     <div class="pull-right">
         <ul class="pagination">
             % if page.has_previous():
-                <li><a href=${"?page=" + str(page.previous_page_number())}>&laquo;</a></li>
+                <li><a href=${"?page=" + str(page.previous_page_number()) + query_params['q_and_sort']}>&laquo;</a></li>
             % else:
                 <li class="disabled"><span>&laquo;</span></li>
             % endif
@@ -86,11 +93,11 @@
                 % elif i == '...':
                     <li> <span>${i} <span> </li>
                 % else:
-                    <li><a href=${"?page=" + str(i)}>${ i }</a></li>
+                    <li><a href=${"?page=" + str(i) + query_params['q_and_sort']}>${ i }</a></li>
                 % endif
             % endfor
             % if page.has_next():
-                <li><a href=${"?page=" + str(page.next_page_number())}>&raquo;</a></li>
+                <li><a href=${"?page=" + str(page.next_page_number()) + query_params['q_and_sort']}>&raquo;</a></li>
             % else:
                 <li class="disabled"><span>&raquo;</span></li>
             % endif

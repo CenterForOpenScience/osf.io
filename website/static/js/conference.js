@@ -99,8 +99,7 @@ function Meeting(data) {
             up : 'i.fa.fa-chevron-up',
             down : 'i.fa.fa-chevron-down'
         },
-        showFilter : true,     // Gives the option to filter by showing the filter box.
-        filterStyle : { 'float' : 'right', 'width' : '50%'},
+        showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
         hiddenFilterRows : ['tags']
