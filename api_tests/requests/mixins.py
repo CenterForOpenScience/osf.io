@@ -6,7 +6,7 @@ from osf_tests.factories import (
     ProjectFactory,
     NodeRequestFactory
 )
-from website.util import permissions
+from osf.utils import permissions
 
 @pytest.mark.django_db
 class NodeRequestTestMixin(object):

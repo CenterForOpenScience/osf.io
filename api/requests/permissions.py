@@ -8,7 +8,7 @@ from osf.models.action import NodeRequestAction
 from osf.models.mixins import RequestableMixin
 from osf.models.node import Node
 from osf.utils.workflows import DefaultTriggers
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeRequestPermission(drf_permissions.BasePermission):
