@@ -13,13 +13,12 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
-from api.base import settings as api_settings
+from api.base import settings as osf_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
-from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
@@ -354,9 +353,9 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
             raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
 
         debug_prepend = ''
-        if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
-            assert osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
-            debug_prepend = '{}_'.format(osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND)
+        if osf_settings.DEBUG_MODE or settings.SHARE_PREPRINT_PROVIDER_PREPEND:
+            assert settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
+            debug_prepend = '{}_'.format(settings.SHARE_PREPRINT_PROVIDER_PREPEND)
 
         return requests.post(
             '{}api/v2/sources/'.format(osf_settings.SHARE_URL),

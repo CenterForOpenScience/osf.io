@@ -252,3 +252,6 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# Leave as `None` for production, test/staging/local envs must set
+SHARE_PREPRINT_PROVIDER_PREPEND = None

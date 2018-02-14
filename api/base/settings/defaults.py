@@ -132,6 +132,7 @@ INSTALLED_APPS = (
 )
 
 SENTRY_DSN = None
+SENTRY_DSN_JS = None
 
 # local development using https
 if SECURE_MODE and DEBUG_MODE:

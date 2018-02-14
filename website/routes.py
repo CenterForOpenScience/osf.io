@@ -88,7 +88,7 @@ def get_globals():
             'country': getattr(location, 'country', None),
         },
         'use_cdn': website_settings.USE_CDN_FOR_CLIENT_LIBS,
-        'sentry_dsn_js': website_settings.SENTRY_DSN_JS if sentry.enabled else None,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
