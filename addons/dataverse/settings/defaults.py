@@ -3,4 +3,4 @@ DEFAULT_HOSTS = [
     'dataverse.lib.virginia.edu'        # University of Virginia server
 ]
 
-REQUEST_TIMEOUT = 15
+REQUEST_TIMEOUT = 60

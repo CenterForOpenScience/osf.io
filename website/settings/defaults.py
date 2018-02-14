@@ -83,6 +83,8 @@ PREPRINT_PROVIDER_DOMAINS = {
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 PROXY_EMBER_APPS = False
+# http://docs.python-requests.org/en/master/user/advanced/#timeouts
+EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
@@ -133,6 +135,8 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 
+# prereg email
+PREREG_EMAIL = 'prereg@cos.io'
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -339,6 +343,9 @@ EZID_USERNAME = None
 EZID_PASSWORD = None
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+# Leave as `None` for production, test/staging/local envs must set
+SHARE_PREPRINT_PROVIDER_PREPEND = None
 
 SHARE_REGISTRATION_URL = ''
 SHARE_URL = None

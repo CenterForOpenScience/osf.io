@@ -8,7 +8,9 @@ from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
-pytestmark = pytest.mark.skip('Unskip when throttling no longer fails on travis')
+pytestmark = pytest.mark.skip(
+    'Unskip when throttling no longer fails on travis'
+)
 
 
 class TestDefaultThrottleClasses(ApiTestCase):
@@ -78,7 +80,8 @@ class TestAddContributorEmailThrottle(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user)
 
         self.url = '/{}'.format(API_BASE)
-        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+        self.public_url = '/{}nodes/{}/contributors/'.format(
+            API_BASE, self.public_project._id)
 
         self.data_user_two = {
             'data': {
@@ -98,21 +101,26 @@ class TestAddContributorEmailThrottle(ApiTestCase):
         }
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
-    def test_add_contrib_throttle_rate_allow_request_not_called(self, mock_allow):
+    def test_add_contrib_throttle_rate_allow_request_not_called(
+            self, mock_allow):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         assert_equal(mock_allow.call_count, 0)
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
     def test_add_contrib_throttle_rate_allow_request_called(self, mock_allow):
-        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
+        res = self.app.post_json_api(
+            self.public_url,
+            self.data_user_two,
+            auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(mock_allow.call_count, 1)
 
     @mock.patch('api.base.throttling.NonCookieAuthThrottle.allow_request')
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
-    def test_add_contrib_throttle_rate_and_default_rates_called(self, mock_contrib_allow, mock_user_allow, mock_anon_allow):
+    def test_add_contrib_throttle_rate_and_default_rates_called(
+            self, mock_contrib_allow, mock_user_allow, mock_anon_allow):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(mock_anon_allow.call_count, 1)

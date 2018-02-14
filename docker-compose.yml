@@ -11,6 +11,8 @@ volumes:
     external: false
   rabbitmq_vol:
     external: false
+  ember_osf_web_dist_vol:
+    external: false
   preprints_dist_vol:
     external: false
   registries_dist_vol:
@@ -230,6 +232,34 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    stdin_open: true
+
+
+  #################
+  # Ember OSF Web #
+  #################
+
+  ember_osf_web:
+    image: quay.io/centerforopenscience/osf-web:develop-local
+    command: 
+      - /bin/bash
+      - -c
+      - yarn --frozen-lockfile &&
+        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4200
+      - 41953
+    ports:
+      - 4200:4200
+      - 41953:41953
+    volumes:
+      - ember_osf_web_dist_vol:/code/dist
     stdin_open: true
 
   #############
@@ -472,6 +502,7 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
