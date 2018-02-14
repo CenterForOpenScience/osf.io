@@ -2,7 +2,7 @@ from .defaults import *  # noqa
 
 
 DEV_MODE = True
-DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
+DEBUG_MODE = DEBUG = True  # Sets app to debug mode, turns off template caching, etc.
 SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 
 VARNISH_SERVERS = ['http://127.0.0.1:8080']

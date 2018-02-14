@@ -54,7 +54,7 @@ AUTHENTICATION_BACKENDS = (
 # May set these to True in local.py for development
 # SECURITY WARNING: don't run with debug turned on in production!
 DEV_MODE = False
-DEBUG_MODE = False
+DEBUG_MODE = DEBUG = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
