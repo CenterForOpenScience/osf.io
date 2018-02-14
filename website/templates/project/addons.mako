@@ -116,6 +116,24 @@
                         % if addon.get('node_settings_template'):
                             ${render_node_settings(addon)}
                         % endif
+                        % if addon['addon_short_name'] == 'github':
+                            <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
+                                <div class="alert alert-info">
+                                    <div>
+                                        <h4>Don’t see your Github Organization repositories?</h4>
+                                        <p>
+                                            You may need to reauthorize your Github access token.
+                                            Follow the steps in the <a href='http://help.osf.io/m/addons/l/837168-connect-to-a-github-organization' target='_black'>help guide</a> to resolve the issue. <br>
+                                            Contact support <a href="mailto:contact@osf.io">support@osf.io</a> if you have questions.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-danger" data-bind="click: $root.dismiss.bind($root, 'githubOrgs')" data-dismiss="alert" aria-label="Close">Dismiss</button>
+                                        <i>(Once dismissed, the alert will not be shown again)</i>
+                                    </div>
+                                </div>
+                            </div>
+                        % endif
                         % if not loop.last:
                             <hr />
                         % endif
@@ -159,4 +177,3 @@
     % endfor
 
 </%def>
-

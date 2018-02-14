@@ -1,11 +1,10 @@
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
 from website.util import api_v2_url
 
 from .base import BaseModel
 
 
-class DismissedAlert(BaseModel, TimeStampedModel):
+class DismissedAlert(BaseModel):
     """User dismissed alerts
     """
     primary_identifier_name = '_id'
