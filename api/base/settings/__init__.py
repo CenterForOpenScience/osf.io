@@ -19,6 +19,9 @@ except ImportError as error:
     warnings.warn('No api/base/settings/local.py settings file found. Did you remember to '
                   'copy local-dist.py to local.py?', ImportWarning)
 
+# apply environment variables
+globals().update(os.environ)
+
 settings_to_check = ('WATERBUTLER_JWE_SECRET', 'WATERBUTLER_JWE_SALT', 'WATERBUTLER_JWT_SECRET', 'JWT_SECRET', 'JWE_SECRET',
                      'DEFAULT_HMAC_SECRET', 'SENSITIVE_DATA_SALT', 'SENSITIVE_DATA_SECRET', 'BYPASS_THROTTLE_TOKEN')
 
