@@ -364,9 +364,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
         for node in resource_object_list:
             for addon in node.get_addons:
-                message = addon.after_delete(node, auth.user)
-                if message:
-                    status.push_status_message(message, kind='info', trust=False)
+                addon.after_delete(node, auth.user)
 
             if node.parent_node:
                 self.parent_node.add_log(
@@ -393,11 +391,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # # Overrides BulkDestroyJSONAPIView
     # def perform_destroy(self, instance):
-    #     import logging
-    #     logger = logging.getLogger(__name__)
-    #     logger.error('------------------------')
-    #     logger.error(instance)
-    #     logger.error('------------------------')
     #     auth = get_user_auth(self.request)
     #     try:
     #         instance.remove_node(auth=auth)
