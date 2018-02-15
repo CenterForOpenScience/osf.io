@@ -363,7 +363,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         date = timezone.now()
 
         for node in resource_object_list:
-            for addon in self.get_addons:
+            for addon in node.get_addons:
                 message = addon.after_delete(node, auth.user)
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
