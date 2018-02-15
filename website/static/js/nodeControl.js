@@ -173,7 +173,7 @@ var ProjectViewModel = function(data, options) {
         NodeActions.forkNode();
     };
 
-    self.hasIdentifiers = ko.pureComputed(function() {
+    self.hasDoi = ko.pureComputed(function() {
         return !!(self.doi());
     });
 
@@ -182,7 +182,7 @@ var ProjectViewModel = function(data, options) {
     });
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
-        return !self.hasIdentifiers() &&
+        return !self.hasDoi() &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
