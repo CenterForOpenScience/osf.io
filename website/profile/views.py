@@ -288,6 +288,7 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         if user.verification_key_v2:
             user.verification_key_v2['expires'] = timezone.now()
+
         user.save()
     except ChangePasswordError as error:
         for m in error.messages:
