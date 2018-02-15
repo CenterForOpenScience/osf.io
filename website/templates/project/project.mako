@@ -186,9 +186,9 @@
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
-                <span data-bind="if: hasIdentifiers()" class="scripted">
+                    <span data-bind="if: hasDoi()" class="scripted">
                   <p>
-                    Identifiers:
+                    <span data-bind="text:identifier"></span>:
                   DOI <span data-bind="text: doi"></span>
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
