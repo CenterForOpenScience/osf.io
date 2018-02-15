@@ -97,6 +97,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
+from framework import status
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
@@ -104,6 +105,7 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.models.nodelog import NodeLog
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
@@ -348,13 +350,60 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         return {'skipped': skipped, 'allowed': allowed}
 
     # Overrides BulkDestroyJSONAPIView
-    def perform_destroy(self, instance):
+    def perform_bulk_destroy(self, resource_object_list):
         auth = get_user_auth(self.request)
-        try:
-            instance.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        instance.save()
+        id_list = [x._id for x in resource_object_list if x.can_edit(auth=auth)]
+        if len(id_list) != len(resource_object_list):
+            raise PermissionDenied(
+                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+            )
+        if Node.objects.filter(_id__in=id_list).get_children(self, active=True).exists():
+            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
+
+        date = timezone.now()
+
+        for node in resource_object_list:
+            for addon in self.get_addons:
+                message = addon.after_delete(node, auth.user)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
+
+            if node.parent_node:
+                self.parent_node.add_log(
+                    NodeLog.NODE_REMOVED,
+                    params={
+                        'project': self._primary_key,
+                    },
+                    auth=auth,
+                    log_date=date,
+                    save=True,
+                )
+            else:
+                self.add_log(
+                    NodeLog.PROJECT_DELETED,
+                    params={
+                        'project': self._primary_key,
+                    },
+                    auth=auth,
+                    log_date=date,
+                    save=True,
+                )
+
+        Node.objects.filter(_id__in=id_list).update(is_deleted = True, deleted_date=date)
+
+    # # Overrides BulkDestroyJSONAPIView
+    # def perform_destroy(self, instance):
+    #     import logging
+    #     logger = logging.getLogger(__name__)
+    #     logger.error('------------------------')
+    #     logger.error(instance)
+    #     logger.error('------------------------')
+    #     auth = get_user_auth(self.request)
+    #     try:
+    #         instance.remove_node(auth=auth)
+    #     except NodeStateError as err:
+    #         raise ValidationError(err.message)
+    #     instance.save()
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
