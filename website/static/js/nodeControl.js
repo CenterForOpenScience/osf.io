@@ -182,7 +182,7 @@ var ProjectViewModel = function(data, options) {
     });
 
     self.identifier = ko.pureComputed(function(){
-        return self.ask()? 'Identifiers' : 'Identifier';
+        return self.ark() ? 'Identifiers' : 'Identifier';
     });
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
