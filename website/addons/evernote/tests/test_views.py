@@ -100,6 +100,7 @@ class TestFilebrowserViews(EvernoteAddonTestCase):
             contents = mock_client.get_folder('', list=True)
             print('TestFilebrowserViews.test_evernote_list_folders-->contents: ', contents)
 
+            # comparing EvernoteAddonTestCase with mock_client (MockEvernote)
             assert_equal( res.json[0]['name'], contents['name'])
 
             #contents = mock_client.get_folder('', list=True)['item_collection']['entries']

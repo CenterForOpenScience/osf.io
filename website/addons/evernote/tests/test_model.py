@@ -30,7 +30,6 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
     @mock.patch("website.addons.evernote.utils.get_evernote_client")
     @mock.patch("website.addons.evernote.utils.get_notebook")
     def test_set_folder(self, mock_notebook, mock_client):
-        # TO DO:  need to mock utils.get_evernote_client and utils.get_notebook
         mock_client.return_value = None
         mock_notebook.return_value = {'name':'Test Notebook'}
 
