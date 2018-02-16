@@ -1263,7 +1263,10 @@ function _removeEvent (event, items, col) {
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
-            if(!item.data.permissions.edit){
+            if(item.data.materialized.substring(0, 13) === wiki_images_folder_path) {
+                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to your wiki(s) if deleted ' +
+                    'any embedded images linked to this file will break. '));
+            } else if(!item.data.permissions.edit){
                 canDelete = false;
                 noDeleteList.push(item);
             } else {
@@ -1271,10 +1274,6 @@ function _removeEvent (event, items, col) {
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
-            }
-            if(item.data.materialized.substring(0, 13) === wiki_images_folder_path){
-                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to your wiki(s) if deleted ' +
-                    'any embedded images linked to this file will break. '));
             }
         });
         // If all items can be deleted
