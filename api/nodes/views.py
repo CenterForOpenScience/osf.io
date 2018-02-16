@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
 from addons.osfstorage.models import OsfStorageFolder
+from addons.base.models import BaseNodeSettings
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -20,7 +21,7 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterValue,
     RelationshipPostMakesNoChanges,
-    EndpointNotImplementedError,
+    EndpointNotImplementedError
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -97,7 +98,6 @@ from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from framework import status
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
@@ -106,6 +106,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from osf.models.nodelog import NodeLog
+from osf.models.mixins import AddonModelMixin
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
@@ -349,54 +350,69 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
         return {'skipped': skipped, 'allowed': allowed}
 
-    # Overrides BulkDestroyJSONAPIView
+    # Overrides BulkDestroyModelMixin
     def perform_bulk_destroy(self, resource_object_list):
+
         auth = get_user_auth(self.request)
-        id_list = [x._id for x in resource_object_list if x.can_edit(auth=auth)]
+        date = timezone.now()
+        id_list = [x.id for x in resource_object_list if x.can_edit(auth=auth)]
+
         if len(id_list) != len(resource_object_list):
             raise PermissionDenied(
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
-        if Node.objects.filter(_id__in=id_list).get_children(self, active=True).exists():
+
+        if NodeRelation.objects.filter(
+                child__in=resource_object_list, is_node_link=False
+        ).exclude(parent__in=resource_object_list).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
-        date = timezone.now()
+        for config in AbstractNode.ADDONS_AVAILABLE:
+            try:
+                settings_model = config.node_settings
+            except LookupError:
+                settings_model = None
+
+            if settings_model:
+                addon_list = settings_model.objects.filter(owner__in=resource_object_list)
+                for addon in addon_list:
+                    addon.after_delete(None, auth.user)
 
         for node in resource_object_list:
-            for addon in node.get_addons:
-                addon.after_delete(node, auth.user)
-
             if node.parent_node:
-                self.parent_node.add_log(
+                node.parent_node.add_log(
                     NodeLog.NODE_REMOVED,
                     params={
-                        'project': self._primary_key,
+                        'project': node._primary_key,
                     },
                     auth=auth,
                     log_date=date,
                     save=True,
                 )
             else:
-                self.add_log(
+                node.add_log(
                     NodeLog.PROJECT_DELETED,
                     params={
-                        'project': self._primary_key,
+                        'project': node._primary_key,
                     },
                     auth=auth,
                     log_date=date,
                     save=True,
                 )
 
-        Node.objects.filter(_id__in=id_list).update(is_deleted = True, deleted_date=date)
+        nodes = Node.objects.filter(id__in=id_list)
+        nodes.update(is_deleted=True, deleted_date=date)
+        if nodes.filter(is_public=True).exists():
+            Node.bulk_update_search(resource_object_list)
 
-    # # Overrides BulkDestroyJSONAPIView
-    # def perform_destroy(self, instance):
-    #     auth = get_user_auth(self.request)
-    #     try:
-    #         instance.remove_node(auth=auth)
-    #     except NodeStateError as err:
-    #         raise ValidationError(err.message)
-    #     instance.save()
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        try:
+            instance.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
+        instance.save()
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
