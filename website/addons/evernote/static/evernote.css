@@ -1,0 +1,51 @@
+.-confirm-selection {
+    padding-top: 10px;
+}
+.evernote-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.evernote-loading-text {
+    padding-top: 20px;
+}
+
+.evernote-test {
+  font-weight: bold;
+}
+
+#evernote-notedisplay {
+  border-color: #ccc;
+}
+
+#evernote-note-title {
+  font-weight: bold;
+}
+
+
+.btn-evernote {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-evernote:hover,
+.btn-evernote:focus,
+.btn-evernote:active,
+.btn-evernote.active,
+.open .dropdown-toggle.btn-evernote {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.evernote-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.evernote-folderpicker-even {
+    background-color: #fff;
+}
