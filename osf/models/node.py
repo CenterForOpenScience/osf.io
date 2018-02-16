@@ -328,9 +328,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def parent_node(self):
-        # TODO: Use .filter when chaining is fixed in django-include
         try:
-            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
+            node_rel = next(parent for parent in self._parents.filter(is_node_link=False))
         except StopIteration:
             node_rel = None
         if node_rel:
