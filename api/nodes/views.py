@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
 from addons.osfstorage.models import OsfStorageFolder
-from addons.base.models import BaseNodeSettings
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -21,7 +20,7 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterValue,
     RelationshipPostMakesNoChanges,
-    EndpointNotImplementedError
+    EndpointNotImplementedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -106,7 +105,6 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from osf.models.nodelog import NodeLog
-from osf.models.mixins import AddonModelMixin
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
