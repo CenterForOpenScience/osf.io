@@ -103,7 +103,10 @@ class TestFilebrowserViews(EvernoteAddonTestCase):
             # comparing EvernoteAddonTestCase with mock_client (MockEvernote)
             assert_equal( res.json[0]['name'], contents['name'])
 
+
+            # THE REST IS EXTRANEOUS, I THINK
             #contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+
             #expected = [each for each in contents if each['type']=='folder']
             #assert_equal(len(res.json), len(expected))
             #first = res.json[0]
