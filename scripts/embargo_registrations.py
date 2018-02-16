@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_embargoes = Embargo.objects.filter(state=Embargo.UNAPPROVED)
+    pending_embargoes = Embargo.objects.filter(state=Embargo.UNAPPROVED, is_deleted=False)
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
@@ -66,7 +66,7 @@ def main(dry_run=True):
                             'registration {}. Continuing...'.format(parent_registration))
                         logger.exception(err)
 
-    active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
+    active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED, is_deleted=False)
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now():
             if dry_run:
