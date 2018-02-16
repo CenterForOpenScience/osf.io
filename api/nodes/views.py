@@ -398,10 +398,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     save=True,
                 )
 
-        nodes = Node.objects.filter(id__in=id_list)
+        nodes = AbstractNode.objects.filter(id__in=id_list)
         nodes.update(is_deleted=True, deleted_date=date)
         if nodes.filter(is_public=True).exists():
-            Node.bulk_update_search(resource_object_list)
+            AbstractNode.bulk_update_search(resource_object_list)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
