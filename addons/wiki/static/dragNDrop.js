@@ -11,42 +11,42 @@ var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var editor = ace.edit('editor');
 
 
-var autoIncrementFileName = function (name, response) {
+var autoIncrementFileName = function(name, response) {
     var num = 1;
-    var new_name;
+    var newName;
     var ext = getExtension(name);
-    var base_name = name.replace('.' + ext, '')
+    var baseName = name.replace('.' + ext, '');
 
     rename:
     while (true) {
-        for(var i = 0; i < response.data.length; i++) {
-            new_name = base_name + '(' + num + ').' + ext;
-            if (response.data[i].attributes.name === new_name) {
+        for (var i = 0; i < response.data.length; i++) {
+            newName = baseName + '(' + num + ').' + ext;
+            if (response.data[i].attributes.name === newName) {
                 num += 1;
-                new_name = base_name + '(' + num + ').' + ext;
+                newName = baseName + '(' + num + ').' + ext;
                 continue rename;
             }
         }
         break;
     }
-    return new_name;
+    return newName;
 };
 
-editor.enable = function () {
+editor.enable = function() {
     $('#ace-loading-ball').css('display', 'none');
-    editor.container.style.pointerEvents = "initial";
+    editor.container.style.pointerEvents = 'initial';
     editor.container.style.opacity = 1;
-    editor.renderer.setStyle("disabled", false);
+    editor.renderer.setStyle('disabled', false);
 };
 
-editor.disable = function () {
+editor.disable = function() {
     $('#ace-loading-ball').css('display', 'block');
-    editor.container.style.pointerEvents = "none";
+    editor.container.style.pointerEvents = 'none';
     editor.container.style.opacity = 0.1;
-    editor.renderer.setStyle("disabled", true);
+    editor.renderer.setStyle('disabled', true);
 };
 
-var localFileHandler = function(files, cm, init, fixupInputArea, new_name) {
+var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
     var multiple = files.length > 1;
     var urls = [];
     var name;
@@ -60,14 +60,13 @@ var localFileHandler = function(files, cm, init, fixupInputArea, new_name) {
         editor.enable();
     }).done(function(path) {
         if (!!path) {
-            $.each(files, function (i, file) {
+            $.each(files, function(i, file) {
                 ext = getExtension(file.name);
-                name = new_name ? encodeURI(new_name) : encodeURI(file.name);
+                name = newName ? encodeURI(newName) : encodeURI(file.name);
                 if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
-                    $osf.growl('Error', 'File type not supported (' +  file.name + ')', 'danger');
+                    $osf.growl('Error', 'File type not supported (' + file.name + ')', 'danger');
                     editor.enable();
-                }
-                else {
+                } else {
                     var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + name + '&type=file';
                     promises.push(
                         $.ajax({
@@ -76,24 +75,23 @@ var localFileHandler = function(files, cm, init, fixupInputArea, new_name) {
                             processData: false,
                             contentType: false,
                             beforeSend: $osf.setXHRAuthorization,
-                            data: file
-                        }).done(function (response) {
+                            data: file,
+                        }).done(function(response) {
                             urls.splice(i, 0, response.data.links.download + '?mode=render');
                             editor.enable();
-                        }).fail(function (response) {
+                        }).fail(function(response) {
                             notUploaded(response, false, cm, init, fixupInputArea, path, file);
                         })
                     );
                 }
             });
-            $.when.apply(null, promises).done(function () {
-                $.each(urls, function (i, url) {
+            $.when.apply(null, promises).done(function() {
+                $.each(urls, function(i, url) {
                     cm.doLinkOrImage(init, null, true, url, multiple, num + i);
                 });
                 fixupInputArea();
             });
-        }
-        else {
+        } else {
             notUploaded(null, multiple);
         }
     });
@@ -102,21 +100,21 @@ var localFileHandler = function(files, cm, init, fixupInputArea, new_name) {
 var remoteFileHandler = function(html, url, cm, init, fixupInputArea) {
     var getSrc = /src="([^"]+)"/;
     var src = getSrc.exec(html);
-    //The best way to get the image is from the src attribute of image html if available
-    //If not we will move forward with the URL that is provided to use
+    // The best way to get the image is from the src attribute of image html if available
+    // If not we will move forward with the URL that is provided to use
     var imgURL = src ? src[1] : url;
 
-    //We currently do not support data:image URL's
+    // We currently do not support data:image URL's
     if (imgURL.substring(0, 10) === 'data:image') {
         $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
         fixupInputArea(init);
         return;
     }
-    //if we got the image url from src we can treat it as an image
+    // If we got the image url from src we can treat it as an image
     var isImg = src;
     if (!isImg) {
-        //Check our url to see if it ends in a valid image extension.
-        //If yes, we can treat it as an image.  Otherwise, it gets treated as a normal link
+        // Check our url to see if it ends in a valid image extension.
+        // If yes, we can treat it as an image.  Otherwise, it gets treated as a normal link
         var ext = getExtension(imgURL);
         isImg = !!ext ? validImgExtensions.indexOf(ext.toLowerCase()) > -1 : false;
     }
@@ -159,7 +157,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
     };
 
     editor.marker.redraw = function() {
-        this.session._signal("changeFrontMarker");
+        this.session._signal('changeFrontMarker');
     };
 
     /**
@@ -185,7 +183,6 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
           effect = event.dataTransfer.effectAllowed;
         } catch (_error) {}
         event.dataTransfer.dropEffect = 'move' === effect || 'linkMove' === effect ? 'move' : 'copy';
-
     }, false);
 
     /**
@@ -214,7 +211,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
          * init.after is everything after the drag and drop cursor
          */
         var init = state.getChunks();
-        init.before  = editor.session.getTextRange(new Range(0,0,editor.marker.cursor.row, editor.marker.cursor.column));
+        init.before = editor.session.getTextRange(new Range(0, 0, editor.marker.cursor.row, editor.marker.cursor.column));
         init.after = editor.session.getTextRange(new Range(editor.marker.cursor.row, editor.marker.cursor.column + offset, Number.MAX_VALUE, Number.MAX_VALUE));
 
         /**
@@ -226,7 +223,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
          *
          * init.after = everything after cursor.selection
          */
-        var fixupInputArea = function () {
+        var fixupInputArea = function() {
             state.setChunks(init);
             state.restore();
         };
@@ -244,13 +241,12 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
         var url = event.dataTransfer.getData('URL');
         if (!!html || !!url) {
             remoteFileHandler(html, url, cm, init, fixupInputArea);
-        }
-        /**
-         * If event.dataTransfer does not have html or url for the item(s), then try to upload it as a file
-         *
-         * localFileHandler() will deal with all of the error checking/handling for this
-         */
-        else {
+        } else {
+            /**
+             * If event.dataTransfer does not have html or url for the item(s), then try to upload it as a file
+             *
+             * localFileHandler() will deal with all of the error checking/handling for this
+             */
             var files = event.dataTransfer.files;
             localFileHandler(files, cm, init, fixupInputArea);
         }
@@ -277,20 +273,20 @@ var imageFolder = 'Wiki images';
 
 var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, file) {
     var files = multiple ? 'File(s)' : 'File';
-    if(response.status === 403){
+    if (response.status === 403) {
         $osf.growl('Error', files + ' not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
         editor.enable();
-    } else if(response.status === 409){
+    } else if (response.status === 409) {
         // If you drag something with the same name redraw the link, but tell the user what to do in
         // case they want to update the image with the same name.
         $.ajax({
-            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path ,
+            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path,
             beforeSend: $osf.setXHRAuthorization,
-            success: function (response) {
-                var new_name = autoIncrementFileName(file.name, response);
-                localFileHandler([file], cm, init, fixupInputArea, new_name);
-            }
+            success: function(response) {
+                var newName = autoIncrementFileName(file.name, response);
+                localFileHandler([file], cm, init, fixupInputArea, newName);
+            },
         });
     } else {
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
@@ -306,8 +302,8 @@ var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, f
 var createFolder = function() {
     return $.ajax({
         url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=' + imageFolder.replace(/\s+/g, '+') + '&kind=folder',
-        type:'PUT',
-        beforeSend: $osf.setXHRAuthorization
+        type: 'PUT',
+        beforeSend: $osf.setXHRAuthorization,
     });
 };
 
@@ -316,14 +312,14 @@ var createFolder = function() {
  *
  * If the folder doesn't exist, it attempts to create the folder
  *
- * @returns {*} The folder's path attribute if it exists/was created
+ * @return {*} The folder's path attribute if it exists/was created
  */
 var checkFolder = function() {
-    var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=' + imageFolder.replace(/\s+/g, '+').toLowerCase();
+    var folderUrl = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=' + imageFolder.replace(/\s+/g, '+').toLowerCase();
     return $.ajax({
-        url: folder_url,
+        url: folderUrl,
         type: 'GET',
-        beforeSend: $osf.setXHRAuthorization
+        beforeSend: $osf.setXHRAuthorization,
     }).then(function(data, responseText, response) {
         var json = response.responseJSON;
         var exists = false;
