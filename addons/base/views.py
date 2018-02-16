@@ -33,10 +33,11 @@ from addons.base import exceptions
 from addons.base import signals as file_signals
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
-                        NodeLog, DraftRegistration, MetaSchema)
+                        NodeLog, DraftRegistration, MetaSchema,
+                        Guid)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus
@@ -693,6 +694,38 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
+
+
+@collect_auth
+def persistent_file_download(auth, **kwargs):
+    id_or_guid = kwargs.get('fid_or_guid')
+    file = BaseFileNode.active.filter(_id=id_or_guid).first()
+    if not file:
+        guid = Guid.load(id_or_guid)
+        if guid:
+            file = guid.referent
+        else:
+            raise HTTPError(httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.'
+            })
+    if not file.is_file:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Downloading folders is not permitted.'
+        })
+
+    auth_redirect = check_contributor_auth(file.node, auth, True, True)
+    if auth_redirect:
+        return auth_redirect
+
+    query_params = request.args.to_dict()
+    query_params.setdefault('version', file.versions.first().identifier)
+
+    return redirect(
+        file.generate_waterbutler_url(**query_params),
+        code=httplib.FOUND
+    )
+
 
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
