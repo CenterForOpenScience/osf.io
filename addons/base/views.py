@@ -714,7 +714,9 @@ def persistent_file_download(auth, **kwargs):
             'message_long': 'Downloading folders is not permitted.'
         })
 
-    auth_redirect = check_contributor_auth(file.node, auth, True, True)
+    auth_redirect = check_contributor_auth(file.node, auth,
+                                           include_public=True,
+                                           include_view_only_anon=True)
     if auth_redirect:
         return auth_redirect
 
