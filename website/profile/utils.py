@@ -21,7 +21,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
     :param User user: A User object
     :param bool full: Include complete user properties
     """
-    from website.project.utils import PROJECT_QUERY
     contrib = None
     if isinstance(user, Contributor):
         contrib = user
@@ -92,7 +91,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'merged_by': merged_by,
         })
         if include_node_counts:
-            projects = user.nodes.filter(PROJECT_QUERY).get_roots()
+            projects = user.nodes.exclude(is_deleted=True).filter(type='osf.node').get_roots()
             ret.update({
                 'number_projects': projects.count(),
                 'number_public_projects': projects.filter(is_public=True).count(),

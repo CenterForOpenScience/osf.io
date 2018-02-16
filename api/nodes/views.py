@@ -3374,6 +3374,9 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
 
+    view_category = 'nodes'
+    view_name = 'identifier-list'
+
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_node(check_object_permissions=check_object_permissions)

@@ -40,7 +40,7 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
             except Subject.DoesNotExist:
                 raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
             assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
-        included_subjects.exclude(text__in=excludes)
+        included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
     for cust_name, map_dict in customs.iteritems():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
