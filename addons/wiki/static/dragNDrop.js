@@ -289,7 +289,6 @@ var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, f
             beforeSend: $osf.setXHRAuthorization,
             success: function (response) {
                 var new_name = autoIncrementFileName(file.name, response);
-                console.log(new_name);
                 localFileHandler([file], cm, init, fixupInputArea, new_name);
             }
         });
