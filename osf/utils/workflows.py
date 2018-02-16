@@ -62,3 +62,7 @@ DEFAULT_TRANSITIONS = [
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
 ]
+
+@unique
+class RequestTypes(ChoiceEnum):
+    ACCESS = 'access'

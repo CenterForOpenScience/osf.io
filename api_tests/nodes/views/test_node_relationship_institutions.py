@@ -6,7 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 @pytest.mark.django_db

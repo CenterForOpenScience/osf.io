@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
@@ -114,7 +114,11 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         institution = self.get_institution()
-        return institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
+        return (
+            institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
+            .select_related('node_license', 'preprint_file')
+            .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+        )
 
     # overrides RetrieveAPIView
     def get_queryset(self):

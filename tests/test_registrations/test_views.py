@@ -13,8 +13,9 @@ from nose.tools import *  # noqa PEP8 asserts
 from framework.exceptions import HTTPError
 
 from osf.models import MetaSchema, DraftRegistration
+from osf.utils import permissions
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
-from website.util import permissions, api_url_for
+from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (

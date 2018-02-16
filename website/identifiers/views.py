@@ -9,7 +9,7 @@ from website.project.decorators import (
     must_have_permission,
 )
 from website.identifiers.utils import get_or_create_identifiers
-from website.util.permissions import ADMIN
+from osf.utils.permissions import ADMIN
 
 
 @must_be_valid_project

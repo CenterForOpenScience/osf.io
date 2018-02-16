@@ -68,7 +68,7 @@ class UserMixin(object):
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[OSFUser]:
-                return self.request.parents[key]
+                return self.request.parents[OSFUser].get(key)
 
         current_user = self.request.user
 
@@ -271,7 +271,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .order_by('-modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
 

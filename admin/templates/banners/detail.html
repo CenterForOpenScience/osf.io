@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/banners.css" />
+{% endblock %}
+{% block title %}
+    <title>Banner</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                {%  if perms.osf.delete_scheduledbanner %}
+                    <a class="btn btn-danger" href={% url 'banners:delete' banner.id %}>Delete banner</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-md-lg-12 hidden-xs">
+                <div class="banner-background-color" style="background-color:{{banner.color}};">
+                    <img class="img-responsive banner-image" src="{{default_photo}}"/>
+                </div>
+            </div>
+            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                <div class="banner-background-color" style="background-color:{{banner.color}};">
+                    <img class="img-responsive banner-image" src="{{mobile_photo}}"/>
+                </div>
+            </div>
+            <div class="col-md-12 text-center">
+
+                <h2>{{ preprint_provider.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                {% if perms.osf.change_scheduledbanner %}
+                    <button id="show-modify-form" class="btn btn-link" type="button">
+                        Modify banner
+                    </button>
+                {% endif %}
+                {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li class="{{ message.tags }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row" id="table-view">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    {% for field, value in banner.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div id="form-view" class="row" style="display:none;">
+            <div class="col-md-9">
+                <form action= {% url 'banners:detail' banner.id %} method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ change_form.as_p }}
+                    <input class="btn btn-primary" type="submit" value="Submit" />
+
+                </form>
+            </div>
+        </div>
+
+    <input type="hidden" id="blackout-dates" value="{{ blackoutDates }}" readonly>
+
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'banners' %}
+{% endblock %}
