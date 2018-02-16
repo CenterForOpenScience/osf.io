@@ -150,6 +150,13 @@ class TestPreprintDetail:
             expected_doi)
         assert res.json['data']['attributes']['preprint_doi_created'] is not None
 
+    def test_preprint_embed_identifiers(self, app, user, preprint, url):
+        embed_url = url + '?embed=identifiers'
+        res = app.get(embed_url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url) in link
+
 
 @pytest.mark.django_db
 class TestPreprintDelete:
