@@ -24,6 +24,7 @@ from website.identifiers.utils import build_ezid_metadata
 from osf.models import Identifier, MetaSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
+from api.base import settings as osf_settings
 from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project import signals as project_signals
@@ -216,7 +217,7 @@ def project_before_register(auth, node, **kwargs):
 def osf_admin_change_status_identifier(node, status):
     if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
         doi, metadata = build_ezid_metadata(node)
-        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        client = EzidClient(osf_settings.EZID_USERNAME, osf_settings.EZID_PASSWORD)
         client.change_status_identifier(status, doi, metadata)
 
 

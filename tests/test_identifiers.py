@@ -208,8 +208,8 @@ class TestIdentifierViews(OsfTestCase):
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
     @responses.activate
-    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('api.base.settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('api.base.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
@@ -241,8 +241,8 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.status_code, 201)
 
     @responses.activate
-    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('api.base.settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('api.base.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):
         identifier = self.node._id
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)

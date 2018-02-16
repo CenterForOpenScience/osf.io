@@ -1,7 +1,7 @@
 from django.apps import apps
 
 from framework.celery_tasks import app as celery_app
-from website import settings
+from api.base import settings
 from website.identifiers.utils import get_ezid_client, build_ezid_metadata
 
 
