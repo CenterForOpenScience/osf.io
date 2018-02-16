@@ -94,6 +94,9 @@ from api.nodes.serializers import (
 )
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.requests.permissions import NodeRequestPermission
+from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
+from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
@@ -104,10 +107,10 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.utils.permissions import ADMIN, PERMISSIONS
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN, PERMISSIONS
 
 
 class NodeMixin(object):
@@ -2421,7 +2424,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
     * 'edit_title': A Node's title is changed
     * 'edit_description': A Node's description is changed
     * 'updated_fields': One or more of a Node's fields are changed
-    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
+    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI)
     ===
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node
@@ -3371,6 +3374,9 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
 
+    view_category = 'nodes'
+    view_name = 'identifier-list'
+
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_node(check_object_permissions=check_object_permissions)
@@ -3466,6 +3472,36 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
         return self.preprints_queryset(node.preprints.all(), auth_user)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeRequestMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        NodeRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.NODE_REQUESTS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    serializer_class = NodeRequestSerializer
+
+    view_category = 'node-requests'
+    view_name = 'node-request-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return NodeRequestCreateSerializer
+        else:
+            return NodeRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_node().requests.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()

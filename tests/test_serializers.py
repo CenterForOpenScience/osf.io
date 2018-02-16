@@ -13,6 +13,7 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NodeRelation
+from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
@@ -20,7 +21,6 @@ from website.project.views.node import _view_project, _serialize_node_search, _g
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
-from website.util import permissions
 
 pytestmark = pytest.mark.django_db
 
@@ -50,10 +50,11 @@ class TestUserSerializers(OsfTestCase):
 
     def test_serialize_user_full(self):
         user = UserFactory()
-        ProjectFactory(creator=user, is_public=False)
+        project = ProjectFactory(creator=user, is_public=False)
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
+        RegistrationFactory(project=project)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
         profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
                                                   user,

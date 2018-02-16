@@ -1,0 +1,85 @@
+{
+    "name": "Registered Report Protocol Preregistration",
+    "version": 2,
+    "config": {
+      "hasFiles": true
+    },
+    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal the offers the Registered Reports format. See https://cos.io/rr for more information. This form is not eligible for a Prereg Prize.",
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+          "qid": "q1",
+            "nav": "Title",
+            "type": "string",
+            "format": "text",
+            "title": "Title",
+            "description": "Provide the working title of your study.",
+            "required": true
+        }, {
+            "qid": "q2",
+            "nav": "Authors",
+            "title": "Authors",
+            "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
+            "type": "osf-author-import",
+            "format": "textarea",
+            "required": true
+        }]
+    }, {
+        "id": "page2",
+        "title": "Publication Information",
+        "questions": [{
+            "qid": "q3",
+            "title": "In order to complete this registration your study must be granted an \"in-principle acceptance\" from a journal that offers Registered Reports.",
+            "type": "multiselect",
+            "options": ["I confirm this study has been granted in-principle acceptance."],
+            "nav": "In-principle acceptance?",
+            "required": true
+        }, {
+            "qid": "q4",
+            "title": "Journal title",
+            "type": "string",
+            "format": "text",
+            "nav": "Journal title",
+            "required": true
+        }, {
+            "qid": "q5",
+            "title": "Date of in-principle acceptance",
+            "description": "Format: (YYYY-MM-DD)",
+            "type": "string",
+            "format": "text",
+            "nav": "Date of acceptance",
+            "required": true
+        }]
+    }, {
+        "id": "page3",
+        "title": "Manuscript",
+        "questions": [{
+            "qid": "q6",
+            "title": "Attach manuscript",
+            "nav": "Manuscript",
+            "type": "osf-upload",
+            "format": "osf-upload-open",
+            "description":"Please attach the manuscript that has been accepted for publication as a Registered Report.",
+            "required":true
+        }]
+    }, {
+        "id": "page4",
+        "title": "Other",
+        "questions": [{
+            "qid": "q7",
+            "title": "Attach any supporting documents",
+            "nav": "Supporting documents",
+            "type": "osf-upload",
+            "format": "osf-upload-open",
+            "description":"Please attach any other files that were included in your submission. These may include analysis scripts, questionnaires, or other digital materials."
+        }, {
+            "qid": "q8",
+            "title": "Other information",
+            "description":"Please include any other relevant information. This may include the date of acceptance, the anticipated date of study completion, or other important information not covered in the manuscript.",
+            "type": "string",
+            "format": "textarea",
+            "nav": "Other information"
+        }]
+    }]
+}

@@ -23,13 +23,13 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf.models import Institution
+from osf.utils import sanitize
 from website import util
 from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
 from website.util import paths
-from website.util import sanitize
 from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -101,6 +101,7 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
+        'api_v2_domain': settings.API_DOMAIN,
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
@@ -1179,6 +1180,12 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            '/download/<fid_or_guid>/',
+            'get',
+            addon_views.persistent_file_download,
+            json_renderer,
         ),
         Rule(
             [

@@ -141,7 +141,7 @@ class TestPreprintDetail:
             guid=preprint._id).replace(
             'doi:',
             '')
-        preprint.set_identifier_values(doi=expected_doi, ark='testark')
+        preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
@@ -149,6 +149,13 @@ class TestPreprintDetail:
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
             expected_doi)
         assert res.json['data']['attributes']['preprint_doi_created'] is not None
+
+    def test_preprint_embed_identifiers(self, app, user, preprint, url):
+        embed_url = url + '?embed=identifiers'
+        res = app.get(embed_url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url) in link
 
 
 @pytest.mark.django_db

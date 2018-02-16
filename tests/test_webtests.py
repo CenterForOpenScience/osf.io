@@ -6,7 +6,6 @@ import httplib as http
 import logging
 import unittest
 
-import httpretty
 import markupsafe
 import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
@@ -34,7 +33,7 @@ from osf_tests.factories import (
 from addons.wiki.tests.factories import NodeWikiFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
-from website.util import web_url_for, api_url_for, permissions
+from website.util import web_url_for, api_url_for
 
 from api_tests import utils as test_utils
 

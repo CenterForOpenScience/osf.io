@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 
 from website.exceptions import NodeStateError
 from osf.models import Collection, NodeRelation
-from website.util.permissions import ADMIN
+from osf.utils.permissions import ADMIN
 
 
 class CollectionMixin(object):
