@@ -55,7 +55,7 @@
                         <p> For emails about technical support:</p>
                         <p> <a href="mailto:${osf_support_email}" class="text-bigger">${osf_support_email}</a></p>
                         <p> For all other questions or comments: </p>
-                        <p><a href="mailto:contact@osf.io" class="text-bigger">contact@osf.io</a></p>
+                        <p><a href="mailto:${osf_contact_email}" class="text-bigger">${osf_contact_email}</a></p>
                     </div>
                 </div>
             </div>
