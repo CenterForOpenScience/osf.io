@@ -81,12 +81,12 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.identifier,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': '{} UTC'.format(version.date.replace(microsecond=0).isoformat().replace('T', ' ')),
+            'date': '{} UTC'.format(version.modified.replace(microsecond=0).isoformat().replace('T', ' ')),
         }
         for version in versions
     ]
 
-def _get_wiki_pages_current(node):
+def _get_wiki_pages_latest(node):
     return [
         {
             'name': page.wiki_page.page_name,
@@ -94,7 +94,7 @@ def _get_wiki_pages_current(node):
             'wiki_id': page.wiki_page._primary_key,
             'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node)
         }
-        for page in node.get_wiki_pages_current().order_by(F('name'))
+        for page in node.get_wiki_pages_latest().order_by(F('name'))
     ]
 
 def _get_wiki_api_urls(node, name, additional_urls=None):
@@ -264,7 +264,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'version_settings': version_settings,
-        'pages_current': _get_wiki_pages_current(node),
+        'pages_current': _get_wiki_pages_latest(node),
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
@@ -492,7 +492,7 @@ def format_home_wiki_page(node):
 def format_project_wiki_pages(node, auth):
     pages = []
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
-    project_wiki_pages = _get_wiki_pages_current(node)
+    project_wiki_pages = _get_wiki_pages_latest(node)
     home_wiki_page = format_home_wiki_page(node)
     pages.append(home_wiki_page)
     for wiki_page in project_wiki_pages:
@@ -540,7 +540,7 @@ def serialize_component_wiki(node, auth):
     if can_edit or home_has_content:
         children.append(component_home_wiki)
 
-    for page in _get_wiki_pages_current(node):
+    for page in _get_wiki_pages_latest(node):
         if page['name'] != 'home':
             has_content = bool(page['wiki_content'].get('wiki_content'))
             component_page = {

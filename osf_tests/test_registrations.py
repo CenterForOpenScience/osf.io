@@ -272,7 +272,7 @@ class TestRegisterNode:
         )
 
     def test_registration_of_project_with_no_wiki_pages(self, registration):
-        assert registration.get_wiki_pages_current().exists() is False
+        assert registration.get_wiki_pages_latest().exists() is False
         assert registration.wikis.all().exists() is False
         assert registration.wiki_private_uuids == {}
 

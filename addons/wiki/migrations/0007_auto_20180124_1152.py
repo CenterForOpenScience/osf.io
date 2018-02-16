@@ -21,7 +21,7 @@ def reverse_func(state, schema):
     WikiVersion = state.get_model('addons_wiki', 'wikiversion')
     WikiPage = state.get_model('addons_wiki', 'wiki_page')
     for node in AbstractNode.objects.exclude(wiki_pages_versions={}):
-        for wiki in node.wikis.filter(is_deleted=False):
+        for wiki in node.wikis.filter(deleted__isnull=True):
             old_wiki_page_ids = node.wiki_pages_versions[to_mongo_key(wiki.page_name)]
             old_wiki_pages = NodeWikiPage.objects.filter(node_id=node.id, page_name=wiki.page_name).order_by('version')
             for index, old_wiki_page_id in enumerate(old_wiki_page_ids):
@@ -79,7 +79,6 @@ def create_wiki_page(state, node, node_wiki, page_name):
         page_name=page_name,
         user=node_wiki.user,
         node=node,
-        date=node_wiki.date,
         created=node_wiki.created,
         modified=node_wiki.modified,
     )
@@ -89,7 +88,6 @@ def create_wiki_version(state, node_wiki, wiki_page):
     return WikiVersion(
         wiki_page=wiki_page,
         user=node_wiki.user,
-        date=node_wiki.date,
         created=node_wiki.created,
         modified=node_wiki.modified,
         content=node_wiki.content,
@@ -161,7 +159,7 @@ def create_wiki_versions(state, nodes):
 
 def migrate_node_wiki_pages(state, schema):
     """
-    TODO Before running, temporarily set date, modified, and created fields on the WikiPage and WikiVersion models to something like:
+    TODO Before running, temporarily set modified and created fields on the WikiPage and WikiVersion models to something like:
     NonNaiveDateTimeField(auto_now_add=False, auto_now=False)
 
     For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding

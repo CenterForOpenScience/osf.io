@@ -1,5 +1,6 @@
 import pytest
-
+import pytz
+import datetime
 from addons.wiki.exceptions import NameMaximumLengthError
 
 from addons.wiki.models import WikiPage
@@ -42,7 +43,7 @@ class TestWikiPageModel:
         page = WikiPage(page_name='foo', node=node)
         page.save()
         ver1 = page.create_version(user=user, content='draft1')
-        page.is_deleted = True
+        page.deleted = datetime.datetime(2017, 1, 1, 1, 00, tzinfo=pytz.utc)
         page.save()
         assert ver1.is_current is False
 

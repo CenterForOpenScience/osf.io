@@ -231,7 +231,7 @@ def serialize_wiki_widget(node):
     wiki_version = node.get_wiki_version('home')
 
     # Show "Read more" link if there are multiple pages or has > 400 characters
-    more = node.wikis.filter(is_deleted=False).count() >= 2
+    more = node.wikis.filter(deleted__isnull=True).count() >= 2
     MAX_DISPLAY_LENGTH = 400
     rendered_before_update = False
     if wiki_version and wiki_version.html(node):

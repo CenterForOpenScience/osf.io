@@ -1,6 +1,8 @@
 import mock
 import pytest
 import furl
+import pytz
+import datetime
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
@@ -265,7 +267,7 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_wiki_page._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        self.public_wiki_page.is_deleted = True
+        self.public_wiki_page.deleted = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         self.public_wiki_page.save()
 
         res = self.app.get(url, expect_errors=True)

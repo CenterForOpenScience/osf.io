@@ -248,7 +248,7 @@ class TestFilterNodeWikiList:
 
     @pytest.fixture()
     def date(self, wiki):
-        return wiki.date.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        return wiki.modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_filter_node_wiki_list(self, app, user, wiki, date, base_url):
 

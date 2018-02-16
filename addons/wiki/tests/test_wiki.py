@@ -5,9 +5,10 @@
 from copy import deepcopy
 import httplib as http
 import time
-
 import mock
 import pytest
+import pytz
+import datetime
 
 from nose.tools import *  # noqa
 
@@ -28,6 +29,7 @@ from addons.wiki.utils import (
     migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget
 )
 from framework.auth import Auth
+from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
 
 from .config import EXAMPLE_DOCS, EXAMPLE_OPS
@@ -505,18 +507,20 @@ class TestWikiDelete(OsfTestCase):
     def test_project_wiki_delete(self, mock_shrejs):
         page = self.elephant_wiki
         assert_equal(page.page_name.lower(), 'elephants')
-        assert_false(page.is_deleted)
+        assert_equal(page.deleted, None)
         url = self.project.api_url_for(
             'project_wiki_delete',
             wname='Elephants'
         )
-        self.app.delete(
-            url,
-            auth=self.auth
-        )
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.app.delete(
+                url,
+                auth=self.auth
+            )
         self.project.reload()
         page.reload()
-        assert_true(page.is_deleted)
+        assert_equal(page.deleted, mock_now)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete_w_valid_special_characters(self, mock_sharejs):
@@ -530,13 +534,15 @@ class TestWikiDelete(OsfTestCase):
             'project_wiki_delete',
             wname=SPECIAL_CHARACTERS_ALLOWED
         )
-        self.app.delete(
-            url,
-            auth=self.auth
-        )
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.app.delete(
+                url,
+                auth=self.auth
+            )
         self.project.reload()
         self.special_characters_wiki.reload()
-        assert_true(self.special_characters_wiki.is_deleted)
+        assert_equal(self.special_characters_wiki.deleted, mock_now)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_wiki_versions_do_not_reappear_after_delete(self, mock_sharejs):
@@ -544,15 +550,17 @@ class TestWikiDelete(OsfTestCase):
         self.project.update_node_wiki('Hippos', 'Hello hippos', self.consolidate_auth)
         # Edits it two times
         wiki_page = self.project.get_wiki_page('Hippos')
-        assert_false(wiki_page.is_deleted)
+        assert_equal(wiki_page.deleted, None)
         assert_equal(wiki_page.current_version_number, 1)
         self.project.update_node_wiki('Hippos', 'Hello hippopotamus', self.consolidate_auth)
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
         # Deletes the wiki page
-        self.project.delete_node_wiki('Hippos', self.consolidate_auth)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.project.delete_node_wiki('Hippos', self.consolidate_auth)
         wiki_page.reload()
-        assert_true(wiki_page.is_deleted)
+        assert_equal(wiki_page.deleted, mock_now)
         # Creates new wiki with same name as deleted wiki
         self.project.update_node_wiki('Hippos', 'Hello again hippos', self.consolidate_auth)
         wiki_page = self.project.get_wiki_page('Hippos')
@@ -1181,7 +1189,9 @@ class TestPublicWiki(OsfTestCase):
         parent = ProjectFactory()
         parent.delete_addon('wiki', self.consolidate_auth)
         node = NodeFactory(parent=parent, category='project')
-        node.delete_addon('wiki', self.consolidate_auth)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            node.delete_addon('wiki', self.consolidate_auth)
         sub_component = NodeFactory(parent=node)
         sub_component.is_deleted = True
         sub_component.save()

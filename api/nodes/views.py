@@ -2648,9 +2648,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
-            if comment.root_target.referent.is_deleted:
-                comment.root_target = None
-                comment.save()
+            if comment.root_target:
+                if hasattr(comment.root_target.referent, 'is_deleted') and comment.root_target.referent.is_deleted:
+                    comment.root_target = None
+                    comment.save()
+                # Temporary while there are both 'is_deleted' and 'deleted' attributes on referents
+                if comment.root_target and hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
+                    comment.root_target = None
+                    comment.save()
         return comments
 
     def get_serializer_class(self):
@@ -2876,10 +2881,10 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
     view_category = 'nodes'
     view_name = 'node-wikis'
 
-    ordering = ('-date', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
-        return self.get_node().wikis.filter(is_deleted=False)
+        return self.get_node().wikis.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

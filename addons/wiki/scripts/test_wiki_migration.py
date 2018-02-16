@@ -2,7 +2,7 @@
 """
 
 Test script to run before node wiki migration addons/wiki/migrations/0007_auto_20180124_1152.py
-
+DELETE BEFORE MERGE DELETE BEFORE MERGE
 To test:
 docker-compose run --rm web python -m addons/wiki/scripts/test_wiki_migration
 """
@@ -160,13 +160,13 @@ def check_wiki_pages_current_equals_page_name():
     print(discrepancies)
 
 def main():
-    # count_expected_wiki_pages()
-    # count_expected_wiki_versions()
-    # count_nodes_with_wikis()
-    # count_comments_to_be_repointed()
-    # check_that_last_wiki_version_is_also_current()
-    # check_that_last_wiki_version_is_also_current()
-    # check_which_node_wiki_pages_have_name_discrepancies()
+    count_expected_wiki_pages()
+    count_expected_wiki_versions()
+    count_nodes_with_wikis()
+    count_comments_to_be_repointed()
+    check_that_last_wiki_version_is_also_current()
+    check_that_last_wiki_version_is_also_current()
+    check_which_node_wiki_pages_have_name_discrepancies()
     check_wiki_pages_versions_equals_page_name()
     check_wiki_pages_current_equals_page_name()
     sys.exit(0)

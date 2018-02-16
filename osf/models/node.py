@@ -2356,12 +2356,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             saved_fields)
         content = []
         for field in spam_fields:
-            if field == 'wiki_pages_current':
+            if field == 'wiki_pages_latest':
                 newest_wiki_page = None
-                for wiki_page in self.get_wiki_pages_current():
+                for wiki_page in self.get_wiki_pages_latest():
                     if not newest_wiki_page:
                         newest_wiki_page = wiki_page
-                    elif wiki_page.date > newest_wiki_page.date:
+                    elif wiki_page.modified > newest_wiki_page.modified:
                         newest_wiki_page = wiki_page
                 if newest_wiki_page:
                     content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
@@ -2677,9 +2677,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Check if node meets requirements to make publicly editable."""
         return self.get_descendants_recursive()
 
-    def get_wiki_pages_current(self):
+    def get_wiki_pages_latest(self):
         WikiVersion = apps.get_model('addons_wiki.WikiVersion')
-        wiki_page_ids = self.wikis.filter(is_deleted=False).values_list('id', flat=True)
+        wiki_page_ids = self.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
         return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids)
 
     def get_wiki_page(self, name=None, id=None):
@@ -2687,7 +2687,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if name:
             try:
                 name = (name or '').strip()
-                return self.wikis.get(page_name__iexact=name, is_deleted=False)
+                return self.wikis.get(page_name__iexact=name, deleted__isnull=True)
             except WikiPage.DoesNotExist:
                 return None
         return WikiPage.load(id)
@@ -2699,13 +2699,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not wiki_page:
                 return None
 
-            if version and (isinstance(version, int) or version.isdigit()):
-                version = int(version)
-            elif version == 'previous':
+            if version == 'previous':
                 version = wiki_page.current_version_number - 1
             elif version == 'current' or version is None:
                 version = wiki_page.current_version_number
-            else:
+            elif not ((isinstance(version, int) or version.isdigit())):
                 return None
 
             try:
@@ -2752,7 +2750,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'version': new_version.identifier,
             },
             auth=auth,
-            log_date=new_version.date,
+            log_date=new_version.created,
             save=False,
         )
         self.save()
@@ -2783,7 +2781,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise PageCannotRenameError('Cannot rename wiki home page')
         if not page:
             raise PageNotFoundError('Wiki page not found')
-        if (existing_wiki_page and not existing_wiki_page.is_deleted and key != new_key) or new_key == 'home':
+        if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
                     new_name,
@@ -2817,8 +2815,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def delete_node_wiki(self, name, auth):
         page = self.get_wiki_page(name)
-        page_pk = page._primary_key
-        page.is_deleted = True
+        page.deleted = timezone.now()
         page.save()
 
         self.add_log(
@@ -2827,7 +2824,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': name,
-                'page_id': page_pk,
+                'page_id': page._primary_key,
             },
             auth=auth,
             save=False,

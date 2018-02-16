@@ -103,7 +103,7 @@ SELECT json_agg(
                                 LIMIT 1
                               ) WV ON TRUE
                             WHERE WP.node_id = N.id
-                                AND WP.is_deleted = FALSE)
+                                AND WP.deleted IS NULL)
                        ELSE
                          '{{}}'::JSON
                        END

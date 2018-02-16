@@ -33,7 +33,7 @@ class WikiMixin(object):
         if not wiki:
             raise NotFound
 
-        if wiki.is_deleted:
+        if wiki.deleted:
             raise Gone
 
         if check_permissions:
@@ -47,7 +47,7 @@ class WikiMixin(object):
         version = self.kwargs[version_lookup_url_kwarg]
         wiki_page = self.get_wiki(check_permissions=False)
         try:
-            wiki_version = wiki_page.get_version(version, required=True)
+            wiki_version = wiki_page.get_version(version)
             if check_permissions:
                 self.check_object_permissions(self.request, wiki_version)
             return wiki_version

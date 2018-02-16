@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Views tests for the wiki addon."""
 import pytest
+import mock
+import pytz
+import datetime
+from django.utils import timezone
 
 from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
      PageCannotRenameError, PageConflictError, PageNotFoundError)
@@ -260,7 +264,7 @@ class TestRenameNodeWiki(OsfTestCase):
         # create the old page and delete it
         self.project.update_node_wiki(old_name, old_content, self.auth)
         old_page = self.project.get_wiki_version(old_name)
-        assert self.project.get_wiki_page(old_name).is_deleted is False
+        assert self.project.get_wiki_page(old_name).deleted is None
         self.project.delete_node_wiki(old_name, self.auth)
         assert self.project.get_wiki_page(old_name) is None
         # create the new page and rename it
@@ -330,21 +334,24 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert self.wiki_page.current_version_number == 1
         # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.project.delete_node_wiki('home', self.auth)
         # Number of versions is still correct
         self.wiki_page.reload()
-        assert self.wiki_page.is_deleted is True
+        assert self.wiki_page.deleted == mock_now
         assert self.wiki_page.current_version_number == 1
         # get_wiki_page only returns non-deleted wikis
         assert self.project.get_wiki_page('home') is None
 
     def test_wiki_delete(self):
         page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.auth)
-
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.project.delete_node_wiki('home', self.auth)
         # page was deleted
         page.reload()
-        assert page.is_deleted is True
+        assert page.deleted == mock_now
         assert self.project.get_wiki_page('home') is None
 
         log = self.project.logs.latest()
@@ -352,7 +359,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         # deletion was logged
         assert log.action == 'wiki_deleted'
         # log date is not set to the page's creation date
-        assert log.date > page.date
+        assert log.date > page.modified
 
     def test_deleted_versions(self):
         # Update wiki a second time

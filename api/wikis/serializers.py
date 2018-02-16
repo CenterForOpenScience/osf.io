@@ -30,7 +30,7 @@ class WikiSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField()
     path = ser.SerializerMethodField()
     materialized_path = ser.SerializerMethodField(method_name='get_path')
-    date_modified = VersionedDateTimeField(source='date')
+    date_modified = VersionedDateTimeField(source='modified')
     content_type = ser.SerializerMethodField()
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     extra = ser.SerializerMethodField(help_text='Additional metadata about this wiki')
@@ -130,13 +130,6 @@ class RegistrationWikiDetailSerializer(RegistrationWikiSerializer):
 
 
 class WikiVersionSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'id',
-        'size',
-        'identifier',
-        'content_type',
-    ])
-
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.SerializerMethodField()
     content_type = ser.SerializerMethodField()
@@ -164,12 +157,12 @@ class WikiVersionSerializer(JSONAPISerializer):
             'version': self.context['request'].parser_context['kwargs']['version']
         })
 
+    def get_content_type(self, obj):
+        return 'text/markdown'
+
     def get_size(self, obj):
         # The size of this wiki at this version
         return sys.getsizeof(obj.content)
-
-    def get_content_type(self, obj):
-        return 'text/markdown'
 
     def get_wiki_content(self, obj):
         return absolute_reverse('wikis:wiki-version-content', kwargs={
