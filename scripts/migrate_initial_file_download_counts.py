@@ -6,9 +6,9 @@ from website.app import setup_django
 setup_django()
 from django.db import transaction
 
-from admin.metrics.views import FileDownloadCounts
 from framework.analytics import get_basic_counters
 from osf.models.files import File, TrashedFile
+from osf.models.analytics import FileDownloadCounts
 from website.app import init_app
 from scripts import utils as scripts_utils
 

@@ -3,8 +3,8 @@ django.setup()
 
 import datetime
 
-from admin.metrics.views import FileDownloadCounts
 from framework.celery_tasks import app as celery_app
+from osf.models.analytics import FileDownloadCounts
 from website import settings
 from website.app import init_app
 
