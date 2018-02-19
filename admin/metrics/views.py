@@ -37,7 +37,7 @@ class FileDownloadCounts(TemplateView):
     @classmethod
     def update(cls, number_downloads_total, number_downloads_unique, update_date):
         if update_date > update_date:
-            raise ValueError('The download counts has been recently updated on {}.'.format(self.update_date))
+            raise ValueError('The download counts has been recently updated on {}.'.format(cls.update_date))
         cls.number_downloads_total += number_downloads_total
         cls.number_downloads_unique += number_downloads_unique
         cls.update_date = update_date
