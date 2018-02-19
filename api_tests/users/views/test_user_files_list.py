@@ -5,6 +5,7 @@ from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
+from website import util as website_utils
 
 
 @pytest.fixture()
@@ -103,3 +104,29 @@ class TestUserQuickFiles:
         assert 'node' not in file_detail_json['relationships']
         assert file_detail_json['relationships']['user']['links']['related']['href'].split(
             '/')[-2] == user._id
+
+    def test_get_files_has_links(self, app, user, url):
+        res = app.get(url, auth=user.auth)
+        file_detail_json = res.json['data'][0]
+        quickfiles_node = quickfiles(user)
+        waterbutler_url = website_utils.waterbutler_api_url_for(
+            quickfiles_node._id,
+            'osfstorage',
+            file_detail_json['attributes']['path']
+        )
+
+        assert 'delete' in file_detail_json['links']
+        assert file_detail_json['links']['delete'] == waterbutler_url
+
+        assert 'download' in file_detail_json['links']
+        assert file_detail_json['links']['download'] == waterbutler_url
+
+        assert 'info' in file_detail_json['links']
+
+        assert 'move' in file_detail_json['links']
+        assert file_detail_json['links']['move'] == waterbutler_url
+
+        assert 'self' in file_detail_json['links']
+
+        assert 'upload' in file_detail_json['links']
+        assert file_detail_json['links']['upload'] == waterbutler_url

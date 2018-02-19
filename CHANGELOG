@@ -2,6 +2,18 @@
 Changelog
 *********
 
+0.133.0 (2018-02-07)
+====================
+
+- Routing and UI changes for Quick Files.
+
+0.132.0 (2018-02-06)
+====================
+
+- Rename Moderation groups when PreprintProvider _id's change.
+- Add facebook_app_id to PreprintProvider.
+- Remove bower from docker-compose.override.yml for registries.
+
 0.131.0 (2018-02-01)
 ====================
 
@@ -104,7 +116,7 @@ Changelog
 - Search in 'add link' should show all your projects by default
 - Incorrect grammar in My Projects slow load error text
 - Clear Deactivate Flag on User Accounts
-- Add new logo / branding to OSF for Meetings
+- Add new logo / branding to OSF Meetings
 - Add user's registrations and preprints relationships to user serializer
 - There should not be a link to Box.com in the Welcome to the OSF email
 - Users Should be Alerted of Maintenance on All Pages
@@ -1125,7 +1137,7 @@ Migrations
 - Search files by name and tags.
 - Add licenses to projects.
 - Multiple Google Drive accounts can be associated with a user account.
-- Redesign of OSF for Meetings landing page.
+- Redesign of OSF Meetings landing page.
 - APIv2: Comparison operators for filtering.
 
 Migrations
@@ -1198,7 +1210,7 @@ Migrations
 
 - Add project settings that allows a project's wiki to be editable by any OSF user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
-- Update UI for OSF for Meetings page.
+- Update UI for OSF Meetings page.
 - Various UI improvements.
 
 0.47.0 (2015-08-15)

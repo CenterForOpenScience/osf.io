@@ -50,10 +50,11 @@ class TestUserSerializers(OsfTestCase):
 
     def test_serialize_user_full(self):
         user = UserFactory()
-        ProjectFactory(creator=user, is_public=False)
+        project = ProjectFactory(creator=user, is_public=False)
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
+        RegistrationFactory(project=project)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
         profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
                                                   user,
