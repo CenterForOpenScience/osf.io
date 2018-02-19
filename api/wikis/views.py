@@ -158,46 +158,8 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 
 
 class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
-    """View for rendering all versions of a particular WikiPage
-
-    ###Permissions
-
-    Wiki versions on public nodes are given read-only access to everyone. Wiki versions on private nodes are only visible to
-    contributors and administrators on the parent node.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ##Attributes
-
-    OSF wiki version entities have the "wiki_versions" `type`.
-
-        name                        type                   description
-        ======================================================================================================
-        date_created                iso8601 timestamp      timestamp when the wiki version was created
-        content_type                string                 MIME-type
-        size                        integer                size of wiki in bytes
-
-    ##Relationships
-
-    ###User
-
-    The user who created the wiki version.
-
-    ###WikiPage
-
-    The wiki that this version belongs to
-
-    ##Links
-
-        self:  the canonical api endpoint of this wiki
-        download: the link to retrive the contents of the wiki version
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
-
+    """
+    View for rendering all versions of a particular WikiPage
     """
 
     permission_classes = (
@@ -218,46 +180,8 @@ class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
 
 
 class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
-    """Details about a specific wiki version. *Read-only*.
-
-    ###Permissions
-
-    Wiki versions on public nodes are given read-only access to everyone. Wiki versions on private nodes are only visible to
-    contributors and administrators on the parent node.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ##Attributes
-
-    OSF wiki version entities have the "wiki_versions" `type`.
-
-        name                        type                   description
-        ======================================================================================================
-        date_created                iso8601 timestamp      timestamp when the wiki version was created
-        content_type                string                 MIME-type
-        size                        integer                size of wiki in bytes
-
-    ##Relationships
-
-    ###User
-
-    The user who created the wiki version.
-
-    ###WikiPage
-
-    The wiki that this version belongs to
-
-    ##Links
-
-        self:  the canonical api endpoint of this wiki
-        download: the link to retrive the contents of the wiki version
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
-
+    """
+    Details about a specific wiki version. *Read-only*.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -280,7 +204,9 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 
 
 class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
-    """ View for rendering wiki content for a specific version."""
+    """
+    View for rendering wiki content for a specific version.
+    """
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
