@@ -238,7 +238,7 @@ class TestIdentifierViews(OsfTestCase):
             res.json['doi'],
             self.node.get_identifier_value('doi')
         )
-        assert_not_in(res.json.keys(), 'ark')
+        assert_not_in('ark', res.json.keys())
         assert_equal(res.status_code, 201)
 
     @responses.activate
