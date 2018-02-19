@@ -28,7 +28,7 @@ class FileDownloadCounts(TemplateView):
             raise ValueError('The imported total download counts is not correct.')
         if cls.number_downloads_unique > number_downloads_unique:
             raise ValueError('The imported unique download counts is not correct.')
-        if update_date > update_date:
+        if cls.update_date > update_date:
             raise ValueError('The update_date is not correct.')
         cls.number_downloads_total = number_downloads_total
         cls.number_downloads_unique = number_downloads_unique
@@ -36,7 +36,7 @@ class FileDownloadCounts(TemplateView):
 
     @classmethod
     def update(cls, number_downloads_total, number_downloads_unique, update_date):
-        if update_date > update_date:
+        if cls.update_date > update_date:
             raise ValueError('The download counts has been recently updated on {}.'.format(cls.update_date))
         cls.number_downloads_total += number_downloads_total
         cls.number_downloads_unique += number_downloads_unique
