@@ -593,7 +593,7 @@ class CeleryConfig:
             },
             'keen_download_number': {
                 'task': 'scripts.analytics.keen_download_number',
-                'schedule': crontab(minute=0, hour=7),
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
