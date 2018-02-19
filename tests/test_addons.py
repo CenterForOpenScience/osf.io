@@ -22,7 +22,6 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
-from website.util.paths import webpack_asset
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
@@ -297,6 +296,23 @@ class TestAddonLogs(OsfTestCase):
             self.node.logs.latest().action,
             'github_addon_file_renamed',
         )
+
+    def test_action_downloads(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        download_actions=('download_file', 'download_zip')
+        for action in download_actions:
+            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
+            nlogs = self.node.logs.count()
+            res = self.app.put_json(
+                url,
+                payload,
+                headers={'Content-Type': 'application/json'},
+                expect_errors=False,
+            )
+            assert_equal(res.status_code, 200)
+
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs)
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()

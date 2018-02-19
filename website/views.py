@@ -24,12 +24,13 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
-from website.util import permissions
+from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -114,10 +115,9 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'parent_title': parent_node.title if parent_node else None,
             'parent_is_public': parent_node.is_public if parent_node else False,
             'show_path': show_path,
-            # Read nlogs annotation if possible
-            'nlogs': node.nlogs if hasattr(node, 'nlogs') else node.logs.count(),
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
+            'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
         summary['can_view'] = False
@@ -299,10 +299,19 @@ def resolve_guid(guid, suffix=None):
                 return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
             if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
+
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+            if referent.is_deleted:
+                raise HTTPError(http.GONE)
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+            return send_from_directory(ember_osf_web_dir, 'index.html')
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)

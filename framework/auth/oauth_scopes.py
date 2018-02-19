@@ -98,7 +98,12 @@ class CoreScopes(object):
     ACTIONS_READ = 'actions_read'
     ACTIONS_WRITE = 'actions_write'
 
+    NODE_REQUESTS_READ = 'node_requests_read'
+    NODE_REQUESTS_WRITE = 'node_requests_write'
+
     PROVIDERS_WRITE = 'providers_write'
+
+    WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
 
@@ -201,7 +206,7 @@ class ComposedScopes(object):
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
-                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, CoreScopes.WAFFLE_READ, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node

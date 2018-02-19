@@ -9,11 +9,10 @@ from api.base.serializers import (
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser
 )
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from website import util as website_utils
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -21,7 +20,7 @@ class QuickFilesRelationshipField(RelationshipField):
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
         quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
-        upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
             'meta': {}
@@ -198,6 +197,7 @@ class UserQuickFilesSerializer(QuickFilesSerializer):
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
+        'move': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
     })
 

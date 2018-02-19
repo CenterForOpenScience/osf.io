@@ -10,10 +10,12 @@ from test_log_detail import LogsTestCase
 
 # TODO add tests for other log params
 
+
 @pytest.mark.django_db
 class TestLogContributors(LogsTestCase):
 
-    def test_contributor_added_log_has_contributor_info_in_params(self, app, node_private, contributor_log_private, url_logs, user_one):
+    def test_contributor_added_log_has_contributor_info_in_params(
+            self, app, node_private, contributor_log_private, url_logs, user_one):
         url = '{}{}/'.format(url_logs, contributor_log_private._id)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
@@ -29,9 +31,14 @@ class TestLogContributors(LogsTestCase):
         assert contributors['given_name'] == user_one.given_name
         assert contributors['unregistered_name'] is None
 
-    def test_unregistered_contributor_added_has_contributor_info_in_params(self, app, user_one):
+    def test_unregistered_contributor_added_has_contributor_info_in_params(
+            self, app, user_one):
         project = ProjectFactory(creator=user_one)
-        project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(user_one), save=True)
+        project.add_unregistered_contributor(
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(user_one), save=True
+        )
         relevant_log = project.logs.latest()
         url = '/{}logs/{}/'.format(API_BASE, relevant_log._id)
         res = app.get(url, auth=user_one.auth)
@@ -50,7 +57,8 @@ class TestLogContributors(LogsTestCase):
         assert contributors['given_name'] == 'Robert'
         assert contributors['unregistered_name'] == 'Robert Jackson'
 
-    def test_params_do_not_appear_on_private_project_with_anonymous_view_only_link(self, app, url_logs, node_private, contributor_log_private, user_one):
+    def test_params_do_not_appear_on_private_project_with_anonymous_view_only_link(
+            self, app, url_logs, node_private, contributor_log_private, user_one):
 
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(node_private)

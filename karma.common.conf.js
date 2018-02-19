@@ -1,7 +1,3 @@
-/**
- *
- */
-
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
 
@@ -9,10 +5,6 @@ var webpackCommon = require('./webpack.common.config.js');
 var webpackTestConfig = {
     devtool: 'inline-source-map',
     plugins: [
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-        ),
-
         // Make sure that CommonJS is always used
         new webpack.DefinePlugin({
             'define.amd': false
@@ -25,19 +17,20 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: webpackCommon.resolve,
+    resolve: Object.assign({}, webpackCommon.resolve, {
+        descriptionFiles: ['package.json', 'bower.json'],
+    }),
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
-        loaders: webpackCommon.module.loaders.concat([
+        rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
     },
-        node: {
+    node: {
        fs: 'empty'
     }
 };
-
 module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [

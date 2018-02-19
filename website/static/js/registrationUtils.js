@@ -12,7 +12,7 @@ var moment = require('moment');
 var lodashHas = require('lodash.has');
 var lodashSet = require('lodash.set');
 var lodashIncludes = require('lodash.includes');
-var History = require('exports?History!history');
+var History = require('exports-loader?History!history');
 
 require('js/koHelpers');
 
@@ -182,6 +182,8 @@ var Question = function(questionSchema, data) {
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
     self.options = questionSchema.options || [];
+    self.fileLimit = questionSchema.fileLimit;
+    self.fileDescription = questionSchema.fileDescription;
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 

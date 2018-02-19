@@ -44,7 +44,7 @@ def create_test_file(fake):
 
 
 def test_active_manager_does_not_return_trashed_file_nodes(project, create_test_file):
-    file = create_test_file(node=project)
+    create_test_file(node=project)
     deleted_file = create_test_file(node=project)
     deleted_file.delete(user=project.creator, save=True)
     # root folder + file + deleted_file = 3 BaseFileNodes

@@ -1,6 +1,4 @@
-from django.conf import settings as drf_settings
 from django.conf.urls import include, url
-from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
 from . import views
@@ -11,6 +9,14 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
+    url(r'^_/',
+        include(
+            [
+                url(r'^', include('waffle.urls')),
+                url(r'^banners/', include('api.banners.urls', namespace='banners')),
+            ],
+        )
+        ),
     url('^(?P<version>(v2))/',
         include(
             [
@@ -34,20 +40,19 @@ urlpatterns = [
                 url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                url(r'^requests/', include('api.requests.urls', namespace='requests')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
+                url(r'^_waffle/', include('api.waffle.urls', namespace='waffle')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
             ],
         )
         ),
     url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
-
-
-urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
 
 handler404 = views.error_404

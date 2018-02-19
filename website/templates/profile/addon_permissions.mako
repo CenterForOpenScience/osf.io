@@ -27,7 +27,7 @@
 
     <script>
         ## Globals are not available to included templates
-        <% from website.util.sanitize import safe_json as sjson %>
+        <% from osf.utils.sanitize import safe_json as sjson %>
         window.contextVars = $.extend(true, {}, window.contextVars, {
             addonsWithNodes: {
                 ${ addon_short_name | sjson, n }: {

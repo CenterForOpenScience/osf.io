@@ -5,7 +5,7 @@ from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
@@ -21,9 +21,17 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(GroupHelper(preprint.provider).get_group('moderator'))
+            user.groups.add(
+                GroupHelper(
+                    preprint.provider
+                ).get_group('moderator'))
         else:
-            preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
+            preprint.node.add_contributor(
+                user,
+                permissions=[
+                    osf_permissions.READ,
+                    osf_permissions.WRITE,
+                    osf_permissions.ADMIN])
         return user
 
     @pytest.fixture()

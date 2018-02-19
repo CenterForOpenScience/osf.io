@@ -326,7 +326,9 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
+    'api_tests/actions',
     'api_tests/nodes',
+    'api_tests/requests'
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
@@ -655,8 +657,7 @@ def hotfix(ctx, name, finish=False, push=False):
     if finish:
         ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
-        ctx.run('git push origin master', echo=True)
-        ctx.run('git push --tags', echo=True)
+        ctx.run('git push --tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
 
 

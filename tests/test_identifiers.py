@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import httpretty
+import mock
+import responses
 from nose.tools import *  # noqa
 
 from django.db import IntegrityError
@@ -203,27 +203,31 @@ class TestIdentifierViews(OsfTestCase):
 
     def setUp(self):
         super(TestIdentifierViews, self).setUp()
+
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
-    @httpretty.activate
+    @responses.activate
+    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url.path.segments.append(doi)
-        httpretty.register_uri(
-            httpretty.PUT,
-            url.url,
-            body=to_anvl({
-                'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
-                    doi=settings.DOI_NAMESPACE,
-                    ark=settings.ARK_NAMESPACE,
-                    ident=identifier,
-                ),
-            }),
-            status=201,
-            priority=1,
+        responses.add(
+            responses.Response(
+                responses.PUT,
+                url.url,
+                body=to_anvl({
+                    'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
+                        doi=settings.DOI_NAMESPACE,
+                        ark=settings.ARK_NAMESPACE,
+                        ident=identifier,
+                    ),
+                }),
+                status=201,
+            )
         )
         res = self.app.post(
             self.node.api_url_for('node_identifiers_post'),
@@ -234,28 +238,35 @@ class TestIdentifierViews(OsfTestCase):
             res.json['doi'],
             self.node.get_identifier_value('doi')
         )
-        assert_not_in(res.json.keys(), 'ark')
+        assert_not_in('ark', res.json.keys())
         assert_equal(res.status_code, 201)
 
-    @httpretty.activate
+    @responses.activate
+    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):
         identifier = self.node._id
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
         url.path.segments.append(doi)
-        httpretty.register_uri(
-            httpretty.PUT,
-            url.url,
-            body='identifier already exists',
-            status=400,
+        responses.add(
+            responses.Response(
+                responses.PUT,
+                url.url,
+                body='identifier already exists',
+                status=400,
+            )
         )
-        httpretty.register_uri(
-            httpretty.GET,
-            url.url,
-            body=to_anvl({
-                'success': doi,
-            }),
-            status=200,
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                url.url,
+                body=to_anvl({
+                    'success': doi,
+                }),
+                status=200,
+            )
         )
         res = self.app.post(
             self.node.api_url_for('node_identifiers_post'),
