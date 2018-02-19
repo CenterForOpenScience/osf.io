@@ -32,7 +32,7 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from addons.base.utils import maybe_show_lost_file_metadata
+from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
@@ -559,7 +559,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
     error_msg = ''.join([
         ERROR_MESSAGES[error_type].format(**format_params),
-        maybe_show_lost_file_metadata(auth, node, file_node, error_type)
+        format_last_known_metadata(auth, node, file_node, error_type)
     ])
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))

@@ -22,7 +22,7 @@ def get_addons_by_config_type(config_type, user):
     addons = [addon for addon in settings.ADDONS_AVAILABLE if config_type in addon.configs]
     return [serialize_addon_config(addon_config, user) for addon_config in sorted(addons, key=lambda cfg: cfg.full_name.lower())]
 
-def maybe_show_lost_file_metadata(auth, node, file, error_type):
+def format_last_known_metadata(auth, node, file, error_type):
     msg = """
     </div>"""  # None is default
     if error_type != 'FILE_SUSPENDED' and ((auth.user and node.is_contributor(auth.user)) or (auth.private_key and auth.private_key in node.private_link_keys_active)):
@@ -39,7 +39,7 @@ def maybe_show_lost_file_metadata(auth, node, file, error_type):
             """with a file size of {} bytes""".format(size) if size and (last_seen or path) else '',
             """last seen with a file size of {} bytes""".format(size) if size and not (last_seen or path) else '',
             """.</br></br>""" if last_seen or hashes or path or size else '',
-            """Hashes of last seen version:</br>{}""".format(
+            """Hashes of last seen version:</br><p>{}</p>""".format(
                 '</br>'.join(['{}: {}'.format(k, v) for k, v in hashes.items()])
             ) if hashes else '',  # TODO: Format better for UI
             msg
