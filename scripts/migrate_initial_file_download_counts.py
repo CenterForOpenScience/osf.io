@@ -3,6 +3,7 @@ import sys
 
 from website.app import setup_django
 setup_django()
+from django.db import transaction
 
 from framework.analytics import get_basic_counters
 from osf.models.files import File, TrashedFile
@@ -31,9 +32,18 @@ def get_number_downloads_unique_and_total(self):
     return number_downloads_unique, number_downloads_total
 
 
-if __name__ == '__main__':
+def main():
     dry = '--dry' in sys.argv
-    init_app(routes=False)
     if not dry:
+        # If we're not running in dry mode log everything to a file
         scripts_utils.add_file_logger(logger, __file__)
-    get_number_downloads_unique_and_total(dry=dry)
+    with transaction.atomic():
+        number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total()
+        logger.info('Download counts migrated. Total download number is {}. Unique download number is {}.'.format(
+            number_downloads_total, number_downloads_unique)
+        )
+
+
+if __name__ == '__main__':
+    init_app(routes=False)
+    main()

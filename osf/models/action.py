@@ -29,5 +29,6 @@ class BaseAction(ObjectIDMixin, BaseModel):
     def target(self):
         raise NotImplementedError()
 
+
 class ReviewAction(BaseAction):
     target = models.ForeignKey('PreprintService', related_name='actions', on_delete=models.CASCADE)
