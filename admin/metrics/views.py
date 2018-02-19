@@ -1,9 +1,8 @@
+import datetime
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base.settings import KEEN_CREDENTIALS
-from framework.analytics import get_basic_counters
-from osf.models.files import File, TrashedFile
 
 
 class MetricsView(PermissionRequiredMixin, TemplateView):
@@ -16,20 +15,29 @@ class MetricsView(PermissionRequiredMixin, TemplateView):
         kwargs.update(KEEN_CREDENTIALS.copy())
         return super(MetricsView, self).get_context_data(**kwargs)
 
-    def get_number_downloads_unique_and_total(self):
-        number_downloads_unique = 0
-        number_downloads_total = 0
 
-        for file_node in File.objects.all():
-            page = ':'.join(['download', file_node.node._id, file_node._id])
-            unique, total = get_basic_counters(page)
-            number_downloads_unique += unique or 0
-            number_downloads_total += total or 0
+class FileDownloadCounts(TemplateView):
+    template_name = 'metrics/osf_metrics.html'
+    number_downloads_total = 0
+    number_downloads_unique = 0
+    update_date = datetime.datetime(2018, 01, 01, 0, 0)
 
-        for file_node in TrashedFile.objects.all():
-            page = ':'.join(['download', file_node.node._id, file_node._id])
-            unique, total = get_basic_counters(page)
-            number_downloads_unique += unique or 0
-            number_downloads_total += total or 0
+    @classmethod
+    def set_download_counts(cls, number_downloads_total, number_downloads_unique, update_date):
+        if cls.number_downloads_total > number_downloads_total:
+            raise ValueError('The imported total download counts is not correct.')
+        if cls.number_downloads_unique > number_downloads_unique:
+            raise ValueError('The imported unique download counts is not correct.')
+        if update_date > update_date:
+            raise ValueError('The update_date is not correct.')
+        cls.number_downloads_total = number_downloads_total
+        cls.number_downloads_unique = number_downloads_unique
+        cls.update_date = update_date
 
-        return number_downloads_unique, number_downloads_total
+    @classmethod
+    def update(cls, number_downloads_total, number_downloads_unique, update_date):
+        if update_date > update_date:
+            raise ValueError('The download counts has been recently updated on {}.'.format(self.update_date))
+        cls.number_downloads_total = number_downloads_total
+        cls.number_downloads_unique = number_downloads_unique
+        cls.update_date = update_date
