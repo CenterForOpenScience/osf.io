@@ -20,7 +20,7 @@ class FileDownloadCounts(TemplateView):
     template_name = 'metrics/osf_metrics.html'
     number_downloads_total = 0
     number_downloads_unique = 0
-    update_date = datetime.datetime(2018, 01, 01, 0, 0)
+    update_date = datetime.datetime(2018, 1, 1, 0, 0)
 
     @classmethod
     def set_download_counts(cls, number_downloads_total, number_downloads_unique, update_date):
