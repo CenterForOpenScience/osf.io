@@ -48,7 +48,7 @@
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
-    "markdown-it-video": "git://github.com/Johnetordoff/markdown-it-mfr.git#7612a376768c6ed735eed65ff4b1135dcae76373",
+    "markdown-it-video": "~0.6.0",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",
     "moment": "^2.14.1",
