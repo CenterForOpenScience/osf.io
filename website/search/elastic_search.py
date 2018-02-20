@@ -512,8 +512,9 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
+    file_is_qa = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True)))
     file_node_is_qa = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa or file_is_qa:
         client().delete(
             index=index,
             doc_type='file',
