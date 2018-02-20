@@ -97,6 +97,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_contrib_count'}
     )
 
+    implicit_contributors = RelationshipField(
+        related_view='registrations:registration-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+        help_text='This feature is experimental and being tested. It may be deprecated.'
+    )
+
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-providers',
         related_view_kwargs={'node_id': '<_id>'}

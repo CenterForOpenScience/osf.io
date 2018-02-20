@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration
+from osf.models import AbstractNode, Registration, OSFUser
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
@@ -18,6 +18,7 @@ from api.comments.serializers import RegistrationCommentSerializer, CommentCreat
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
 from api.users.views import UserMixin
+from api.users.serializers import UserSerializer
 
 from api.nodes.permissions import (
     ReadOnlyIfRegistration,
@@ -470,6 +471,34 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
+
+
+class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = OSFUser
+
+    serializer_class = UserSerializer
+    view_category = 'registrations'
+    view_name = 'registration-implicit-contributors'
+    ordering = ('_order',)  # default ordering
+
+    def get_default_queryset(self):
+        node = self.get_node()
+
+        return node.parent_admin_contributors
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        return queryset
+
 
 class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
     """Children of the current registration.
