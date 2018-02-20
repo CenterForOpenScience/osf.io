@@ -6,7 +6,6 @@ from bulk_update.helper import bulk_update
 from django.db import migrations
 
 def reverse_func(state, schema):
-    print 'Starting reverse zotero library migration'
     modify_node_settings(state, None)
     modify_user_settings(state, False, None)
 
@@ -16,7 +15,6 @@ def modify_node_settings(state, library_name):
     """
     ZoteroNodeSettings = state.get_model('addons_zotero', 'NodeSettings')
     ZoteroNodeSettings.objects.all().update(library_id=library_name)
-    print 'NodeSettings Updated'
 
 def modify_user_settings(state, add, library_name):
     """
@@ -26,13 +24,9 @@ def modify_user_settings(state, add, library_name):
     :params add: True for adding library, False for removing it.
     """
     ZoteroUserSettings = state.get_model('addons_zotero', 'UserSettings')
-
-    user_settings_count = ZoteroUserSettings.objects.count()
-    current_count = 0
     user_settings_pending_save = []
 
     for user_setting in ZoteroUserSettings.objects.all():
-        current_count += 1
         for node, ext_accounts in user_setting.oauth_grants.iteritems():
             for ext_account in ext_accounts.keys():
                 if add:
@@ -40,10 +34,7 @@ def modify_user_settings(state, add, library_name):
                 else:
                     user_setting.oauth_grants[node][ext_account].pop('library', None)
         user_settings_pending_save.append(user_setting)
-        print 'UserSettings {}/{} updated'.format(current_count, user_settings_count)
-    print 'Bulk saving UserSettings...'
     bulk_update(user_settings_pending_save)
-    print 'Done'
 
 def migrate_zotero_libraries(state, schema):
     """
@@ -52,7 +43,6 @@ def migrate_zotero_libraries(state, schema):
     2) For all zotero usersettings, add 'personal' library value to the nodes that have been given permission
     to use zotero external accounts.
     """
-    print 'Starting zotero library migration'
     modify_node_settings(state, 'personal')
     modify_user_settings(state, True, 'personal')
 
