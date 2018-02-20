@@ -4,28 +4,33 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var bootbox = require('bootbox');
 var ko = require('knockout');
-var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
 
-var RequestAccessViewModel = oop.defclass({
-    init: function() {
-        $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.')
-    },
-    constructor: function () {
-        var self = this;
-        self.AccessRequestSuccess = ko.observable(false);
-        self.requestAccessButton = ko.observable('Request access');
-    },
-    urls: {
-        'update': window.contextVars.apiV2Prefix + 'nodes/' + window.contextVars.nodeId + '/requests/'
-    },
-    requestProjectAccess: function() {
-        var accessRequestUrl =  window.contextVars.apiV2Prefix + 'nodes/' + window.contextVars.nodeId + '/requests/';
-        var requestUrl = $osf.apiV2Url('nodes/' +  window.contextVars.nodeId + '/requests/');
-        console.log('first one '+ accessRequestUrl);
-        console.log('second one '+ requestUrl);
+var RequestAccessViewModel = function(currentUserRequestState) {
+    var self = this;
+
+    self.requestAccessButton = ko.observable('Request access');
+    self.accessRequestPendingOrDenied = ko.observable(false);
+    self.accessRequestTooltip = ko.observable('');
+    self.updateUrl = $osf.apiV2Url('nodes/' +  window.contextVars.nodeId + '/requests/');
+    self.requestState = ko.observable(currentUserRequestState);
+
+    self.checkRequestStatus = function() {
+        if (self.requestState() === 'rejected') {
+            this.accessRequestTooltip('Request declined');
+            this.accessRequestPendingOrDenied(true);
+            self.requestAccessButton = ko.observable('Access requested');
+        }
+
+        if (self.requestState() === 'pending') {
+            this.accessRequestPendingOrDenied(true);
+            self.requestAccessButton = ko.observable('Access requested');
+        }
+    };
+
+    self.requestProjectAccess = function() {
         var payload = {
             data: {
                 type: 'node-requests',
@@ -37,7 +42,7 @@ var RequestAccessViewModel = oop.defclass({
         };
         var request = $osf.ajaxJSON(
             'POST',
-            requestUrl,
+            self.updateUrl,
             {
                 'is_cors': true,
                 'data': payload,
@@ -47,11 +52,9 @@ var RequestAccessViewModel = oop.defclass({
             }
         );
 
-        // var request = $.get('');
         request.done(function() {
-            this.AccessRequestSuccess(true);
+            this.accessRequestPendingOrDenied(true);
             this.requestAccessButton('Access requested');
-            console.log('Access request successful!');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
@@ -67,9 +70,33 @@ var RequestAccessViewModel = oop.defclass({
             });
         }.bind(this));
         return request;
-    }
-});
+    };
 
-module.exports = {
-    RequestAccessViewModel: RequestAccessViewModel
+    self.init = function() {
+        self.checkRequestStatus();
+        self.supportMessage = 'If this should not have occured, please contact ' + $osf.osfSupportLink() + '.';
+    };
+
+    self.init();
+
 };
+
+function RequestAccessManager(selector, currentUserRequestState) {
+    var self = this;
+    self.selector = selector;
+    self.$element = $(selector);
+    self.currentUserRequestState = currentUserRequestState;
+    self.viewModel = new RequestAccessViewModel(currentUserRequestState);
+    $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.');
+
+    self.init();
+
+}
+
+RequestAccessManager.prototype.init = function() {
+    $osf.applyBindings(this.viewModel, this.$element[0]);
+    this.$element.show();
+};
+
+module.exports = RequestAccessManager;
+

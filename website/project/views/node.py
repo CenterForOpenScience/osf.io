@@ -417,8 +417,18 @@ def view_project(auth, node, **kwargs):
                         )
 
     # Return early if it's simply a request access page
-    if ret.get('show_request_access', False):
-        return ret
+    if not node.is_public and not node.is_contributor(auth.user):
+        access_request = node.requests.filter(creator=auth.user)
+        return {
+            'node': {
+                'id': node._primary_key,
+                'access_requests_enabled': True
+            },
+            'user': {
+                'has_read_permissions': False
+            },
+            'access_request_state': access_request.get().machine_state if access_request else None
+        }
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -659,20 +669,6 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
-
-    # If we've gotten to this point for a non-contributor, access requests are enabled
-    # We can return early (and set an extra flag) to prevent more queries
-    if not node.is_public and not node.is_contributor(auth.user):
-        return {
-            'show_request_access': True,
-            'node': {
-                'id': node._primary_key,
-                'access_requests_enabled': True
-            },
-            'user': {
-                'has_read_permissions': False
-            }
-        }
 
     try:
         contributor = node.contributor_set.get(user=user)
