@@ -187,11 +187,11 @@ class WikiPage(GuidMixin, BaseModel):
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
-    deleted = NonNaiveDateTimeField(blank=True, null=True)
+    deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
 
     def save(self, *args, **kwargs):
         rv = super(WikiPage, self).save(*args, **kwargs)
-        if self.node:
+        if self.node and self.node.is_public:
             self.node.update_search()
         return rv
 
