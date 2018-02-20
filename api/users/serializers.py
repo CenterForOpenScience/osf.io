@@ -198,6 +198,7 @@ class UserQuickFilesSerializer(QuickFilesSerializer):
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
+        'move': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
     })
 

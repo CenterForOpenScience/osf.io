@@ -10,7 +10,7 @@ from osf_tests.factories import (
 )
 from tests.utils import make_drf_request_with_version, mock_archive
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.search import search
+
 
 @pytest.mark.django_db
 class TestSearchSerializer:
@@ -26,23 +26,23 @@ class TestSearchSerializer:
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
 
-        #test_search_serializer_mixed_model_project
+        # test_search_serializer_mixed_model_project
         result = SearchSerializer(project, context=context).data
         assert result['data']['type'] == 'nodes'
 
-        #test_search_serializer_mixed_model_component
+        # test_search_serializer_mixed_model_component
         result = SearchSerializer(component, context=context).data
         assert result['data']['type'] == 'nodes'
 
-        #test_search_serializer_mixed_model_registration
+        # test_search_serializer_mixed_model_registration
         with mock_archive(project, autocomplete=True, autoapprove=True, schema=schema) as registration:
             result = SearchSerializer(registration, context=context).data
             assert result['data']['type'] == 'registrations'
 
-        #test_search_serializer_mixed_model_file
+        # test_search_serializer_mixed_model_file
         result = SearchSerializer(file_component, context=context).data
         assert result['data']['type'] == 'files'
 
-        #test_search_serializer_mixed_model_user
+        # test_search_serializer_mixed_model_user
         result = SearchSerializer(user, context=context).data
         assert result['data']['type'] == 'users'

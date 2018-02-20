@@ -2,11 +2,14 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
+var lodashGet = require('lodash.get');
 var ContribAdder = require('js/contribAdder');
 var ContribRemover = require('js/contribRemover');
+var osfLanguage = require('js/osfLanguage');
 
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
@@ -34,7 +37,7 @@ ko.bindingHandlers.filters = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options, contribShouter, changeShouter) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isParentAdmin, index, options, contribShouter, changeShouter) {
 
     var self = this;
     self.options = options;
@@ -88,7 +91,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.currentUserCanEdit = currentUserCanEdit;
-    self.isAdmin = isAdmin;
+    // User is an admin on the parent project
+    self.isParentAdmin = isParentAdmin;
 
     self.deleteStaged = ko.observable(false);
 
@@ -104,13 +108,39 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.canEdit = ko.computed(function() {
-        return self.currentUserCanEdit && !self.isAdmin;
+        return self.currentUserCanEdit && !self.isParentAdmin;
     });
 
     self.remove = function() {
         self.contributorToRemove({
             fullname: self.fullname,
             id:self.id});
+    };
+
+    self.addParentAdmin = function() {
+        // Immediately adds parent admin to the component with permissions=read and visible=True
+        $osf.block();
+        var url = '/api/v1/project/' + window.contextVars.node.id + '/contributors/';
+        var userData = self.serialize();
+        userData.permission = 'read'; // default permission read
+        userData.visible = true; // default visible is true
+        return $osf.postJSON(
+            url,
+            {users: [userData], node_ids: []}
+        ).done(function(response) {
+            window.location.reload();
+        }).fail(function(xhr, status, error){
+            $osf.unblock();
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add the contributor. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            $osf.growl('Could not add contributor', errorMessage);
+            Raven.captureMessage('Error adding contributors', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+        });
     };
 
     self.unremove = function() {
@@ -125,7 +155,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.profileUrl = ko.observable(contributor.url);
 
     self.canRemove = ko.computed(function(){
-        return (self.id === pageOwner.id) && !isRegistration;
+        return (self.id === pageOwner.id) && !isRegistration && !self.isParentAdmin;
+    });
+
+    self.canAddAdminContrib = ko.computed(function() {
+        return self.currentUserCanEdit && self.isParentAdmin;
     });
 
     self.isDirty = ko.pureComputed(function() {

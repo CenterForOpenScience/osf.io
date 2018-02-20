@@ -38,7 +38,7 @@
           <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts')}"> Back </a>
         </span>
 
-        <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
+        <span data-bind="if: (draft.metaSchema.name === 'Prereg Challenge' && !draft.isPendingApproval)">
           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview.bind(draft)">Register without review</button>
         </span>
 

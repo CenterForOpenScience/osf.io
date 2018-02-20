@@ -50,10 +50,11 @@ class TestUserSerializers(OsfTestCase):
 
     def test_serialize_user_full(self):
         user = UserFactory()
-        ProjectFactory(creator=user, is_public=False)
+        project = ProjectFactory(creator=user, is_public=False)
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
+        RegistrationFactory(project=project)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
         profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
                                                   user,
@@ -256,13 +257,6 @@ class TestViewProjectEmbeds(OsfTestCase):
         assert_equal(len(res['node']['forks']), 1)
 
         assert_equal(res['node']['forks'][0]['id'], fork._id)
-
-    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    @mock.patch('website.archiver.tasks.archive')
-    def test_view_project_embed_registrations_includes_contribution_count(self, mock_archive):
-        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
-        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
-        assert_is_not_none(data['node']['registrations'][0]['nlogs'])
 
     # Regression test
     def test_view_project_embed_registrations_sorted_by_registered_date_descending(self):

@@ -24,8 +24,7 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import proxy_url
-from framework.routing import json_renderer
+from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
@@ -314,6 +313,9 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
+            # Don't log download actions
+            if payload['action'] in ('download_file', 'download_zip'):
+                return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
@@ -692,7 +694,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
 
-
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
     file_ = OsfStorageFile.load(fid)
@@ -702,7 +703,6 @@ def addon_view_or_download_quickfile(**kwargs):
             'message_long': 'The requested file could not be found.'
         })
     return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
-
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue

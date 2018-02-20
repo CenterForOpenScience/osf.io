@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 # Control globals
 DELETE_COLLISIONS = False
 SKIP_COLLISIONS = False
+ALLOW_UNCONFIGURED = False
 
 # Logging globals
 CHECKED_OKAY = []
@@ -340,6 +341,10 @@ def archive(registration):
             if not hasattr(node_settings, '_get_file_tree'):
                 # Excludes invalid or None-type
                 continue
+            if not node_settings.configured:
+                if not ALLOW_UNCONFIGURED:
+                    raise Exception('{}: {} on {} is not configured. If this is permissible, re-run with `--allow-unconfigured`.'.format(reg._id, short_name, reg.registered_from._id))
+                continue
             if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
                 continue
             if short_name == 'osfstorage':
@@ -491,14 +496,22 @@ class Command(BaseCommand):
             dest='skip_collisions',
             help='Specifies that colliding archive filenodes should be skipped and the archive job target marked as successful in the event of a collision',
         )
+        parser.add_argument(
+            '--allow-unconfigured',
+            action='store_true',
+            dest='allow_unconfigured',
+            help='Specifies that addons with a False `configured` property are to be skipped, rather than raising an error',
+        )
         parser.add_argument('--addons', type=str, nargs='*', help='Addons other than OSFStorage to archive. Use caution')
         parser.add_argument('--guids', type=str, nargs='+', help='GUIDs of registrations to archive')
 
     def handle(self, *args, **options):
         global DELETE_COLLISIONS
         global SKIP_COLLISIONS
+        global ALLOW_UNCONFIGURED
         DELETE_COLLISIONS = options.get('delete_collisions')
         SKIP_COLLISIONS = options.get('skip_collisions')
+        ALLOW_UNCONFIGURED = options.get('allow_unconfigured')
         if DELETE_COLLISIONS and SKIP_COLLISIONS:
             raise Exception('Cannot specify both delete_collisions and skip_collisions')
 
