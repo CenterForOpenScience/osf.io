@@ -50,10 +50,28 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
+        # We add the access_requests_enabled field in two steps
+        #    1. Add the field
+        #    2. Adding a default value of True
+        # This prevents an expensive table rewrite from locking the node table.
         migrations.AddField(
             model_name='abstractnode',
             name='access_requests_enabled',
-            field=models.BooleanField(db_index=True, default=True),
+            field=models.NullBooleanField(db_index=True),
+        ),
+        # Adding a default does not require a table rewrite
+        migrations.RunSQL(
+            [
+                'ALTER TABLE "osf_abstractnode" ALTER COLUMN "access_requests_enabled" SET DEFAULT TRUE',
+                'ALTER TABLE "osf_abstractnode" ALTER COLUMN "access_requests_enabled" DROP DEFAULT;',
+            ],
+            state_operations=[
+                migrations.AlterField(
+                    model_name='abstractnode',
+                    name='access_requests_enabled',
+                    field=models.NullBooleanField(default=True, db_index=True),
+                )
+            ],
         ),
         migrations.AddField(
             model_name='noderequest',

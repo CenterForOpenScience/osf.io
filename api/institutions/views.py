@@ -46,21 +46,7 @@ class InstitutionMixin(object):
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """
-    Paginated list of verified Institutions affiliated with COS
-
-    ##Institution Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -87,33 +73,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    """ Details about a given institution.
-
-    ##Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-    ##Relationships
-
-    ###Nodes
-    List of nodes that have this institution as its primary institution.
-
-    ###Users
-    List of users that are affiliated with this institution.
-
-    ##Links
-
-        self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -134,10 +94,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
 
 class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixin, NodesFilterMixin):
-    """Nodes that have selected an institution as their primary institution.
-
-    ##Permissions
-    Only public nodes or ones in which current user is a contributor.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_node_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -157,7 +114,11 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         institution = self.get_institution()
-        return institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
+        return (
+            institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
+            .select_related('node_license', 'preprint_file')
+            .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+        )
 
     # overrides RetrieveAPIView
     def get_queryset(self):
@@ -167,7 +128,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
 
 
 class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """Users that have been authenticated with the institution.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -212,7 +173,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class InstitutionRegistrationList(InstitutionNodeList):
-    """Registrations have selected an institution as their primary institution.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_registration_list).
     """
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
