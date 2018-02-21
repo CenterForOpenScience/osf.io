@@ -117,20 +117,20 @@
                             ${render_node_settings(addon)}
                         % endif
                         % if addon['addon_short_name'] == 'zotero':
-                           <div id='zotero-group-library-alert' class="scripted dismissible-alerts">
-                               <div class="alert alert-info">
+                           <div id='zotero-group-library-alert' class='scripted dismissible-alerts'>
+                               <div class='alert alert-info'>
                                    <div>
                                        <h4>Don’t see your Zotero group libraries?</h4>
                                        <p>
                                            You may need to reauthorize your Zotero access token.
-                                           Follow the steps in the <a href='#' target='_black'>help guide</a> to resolve the issue.
+                                           Follow the steps in the <a href='http://help.osf.io/a/850167-reauthorize-zotero' target='_black'>help guide</a> to resolve the issue.
                                        </p>
                                        <p>
-                                           Contact <a href="mailto:support@osf.io">support@osf.io</a> if you have questions.
+                                           Contact <a href='mailto:support@osf.io'>support@osf.io</a> if you have questions.
                                        </p>
                                    </div>
                                    <div>
-                                       <button type="button" id="zoteroWarningCancel" class="btn btn-danger" data-dismiss="alert" aria-label="Close">Dismiss</button>
+                                       <button type='button' id='zoteroWarningCancel' class='btn btn-danger' data-dismiss='alert' aria-label='Close'>Dismiss</button>
                                    </div>
                                </div>
                            </div>
