@@ -16,7 +16,6 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UsageData',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('_id', models.CharField(db_index=True, max_length=5, unique=True)),
                 ('update_date', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
             ],
@@ -27,7 +26,6 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FileDownloadCounts',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('_id', models.CharField(db_index=True, max_length=5, unique=True)),
                 ('number_downloads_total', models.PositiveIntegerField(default=0)),
                 ('number_downloads_unique', models.PositiveIntegerField(default=0)),
@@ -36,5 +34,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
+            bases=('osf.usagedata', models.Model)
         ),
     ]
