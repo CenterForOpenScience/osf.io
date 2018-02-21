@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/citation/$', views.NodeCitationDetail.as_view(), name=views.NodeCitationDetail.view_name),
     url(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.NodeCitationStyleDetail.as_view(), name=views.NodeCitationStyleDetail.view_name),
     url(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),
+    url(r'^(?P<node_id>\w+)/implicit_contributors/$', views.NodeImplicitContributorsList.as_view(), name=views.NodeImplicitContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name=views.NodeContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.NodeContributorDetail.as_view(), name=views.NodeContributorDetail.view_name),
     url(r'^(?P<node_id>\w+)/draft_registrations/$', views.NodeDraftRegistrationsList.as_view(), name=views.NodeDraftRegistrationsList.view_name),

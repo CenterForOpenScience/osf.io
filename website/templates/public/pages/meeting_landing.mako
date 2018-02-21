@@ -45,7 +45,7 @@
                     </div>
                     <div class="collapse" id="osf-meeting-register">
                         <div class="m-lg osf-box-lt p-md text-left">
-                            <p>OSF for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
+                            <p>OSF Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
                                 <p class="text-center"><strong> Email us at <a href="mailto:contact@cos.io">contact@cos.io</a> </strong></p>
                              <p>We'll review and add your conference within one business day.</p>
                         </div>
@@ -68,7 +68,7 @@
 
                             <ul>
                                 <li>Find the email address for your conference by clicking on its name in the list below</li>
-                                <li>Send your materials to the OSF for Meetings email address for your conference</li>
+                                <li>Send your materials to the OSF Meetings email address for your conference</li>
                             </ul>
 
                             <p> We’ll create an OSF project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
@@ -147,7 +147,7 @@
         </div>
 
         <div class="row text-center m-b-md">
-            <h2> Who uses OSF for Meetings?</h2>
+            <h2> Who uses OSF Meetings?</h2>
         </div>
         <div class="row org-logo m-b-lg">
             <div class="col-sm-3 col-xs-6  text-center">
