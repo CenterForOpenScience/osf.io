@@ -370,10 +370,10 @@ class JSONAPIListField(ser.ListField):
 
 
 class ValuesListField(JSONAPIListField):
-        """
-        JSONAPIListField that uses a values_list with flat=True to return just
-        an array of the specified field (attr_name) for optimization purposes.
-        """
+    """
+    JSONAPIListField that uses a values_list with flat=True to return just
+    an array of the specified field (attr_name) for optimization purposes.
+    """
     def __init__(self, **kwargs):
         self.attr_name = kwargs.pop('attr_name')
         super(ValuesListField, self).__init__(**kwargs)

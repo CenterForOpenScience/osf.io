@@ -8,6 +8,7 @@ from osf.models import (
     Contributor,
     DraftRegistration,
     Institution,
+    Node,
     NodeRelation,
     OSFUser,
     PreprintService,
@@ -76,7 +77,7 @@ class AdminOrPublic(permissions.BasePermission):
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if obj.__class__.__name__ == 'Node':
+        if isinstance(obj, Node):
             node = obj
         else:
             context = request.parser_context['kwargs']
