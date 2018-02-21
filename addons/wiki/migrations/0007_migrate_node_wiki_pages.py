@@ -5,59 +5,36 @@ from __future__ import unicode_literals
 import logging
 import progressbar
 from django.db import migrations
+from django.db.models import Q
 from osf.utils.migrations import disable_auto_now_add_fields
 from django.contrib.contenttypes.models import ContentType
 from bulk_update.helper import bulk_update
-from addons.wiki.utils import to_mongo_key
 logger = logging.getLogger(__name__)
 
-def repoint_id(guid, old_wiki_page):
-    old_wiki_page._id = guid._id
-    old_wiki_page.save()
-    return
-
 def reverse_func(state, schema):
-    """
-    This will not restore all NodeWikiPages, where NodeWikiPage was later renamed.
-    """
-    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
-    AbstractNode = state.get_model('osf', 'abstractnode')
-    WikiVersion = state.get_model('addons_wiki', 'wikiversion')
-    WikiPage = state.get_model('addons_wiki', 'wiki_page')
-    for node in AbstractNode.objects.exclude(wiki_pages_versions={}):
-        for wiki in node.wikis.filter(deleted__isnull=True):
-            old_wiki_page_ids = node.wiki_pages_versions[to_mongo_key(wiki.page_name)]
-            old_wiki_pages = NodeWikiPage.objects.filter(node_id=node.id, page_name=wiki.page_name).order_by('version')
-            for index, old_wiki_page_id in enumerate(old_wiki_page_ids):
-                old_wiki_page = old_wiki_pages[index]
-                guid = migrate_guid_referent(old_wiki_page_id, old_wiki_page)
-                repoint_id(guid, old_wiki_page)
-            move_comment_target(wiki, old_wiki_page)
-            update_comments_viewed_timestamp(node, wiki, old_wiki_page)
-    WikiVersion.objects.all().delete()
-    WikiPage.objects.all().delete()
+    pass
 
-def get_guid(state, osf_model):
+def get_guid(state, osf_model, content_type_id):
     Guid = state.get_model('osf', 'guid')
-    return Guid.objects.get(object_id=osf_model.id, content_type_id=ContentType.objects.get_for_model(osf_model).id)
+    return Guid.objects.get(object_id=osf_model.id, content_type_id=content_type_id)
 
-def move_comment_target(state, current_target, desired_target):
+def move_comment_target(state, current_target, desired_target, current_content_type_id, desired_content_type_id):
     """Move the comment's target from the current target to the desired target"""
     Comment = state.get_model('osf', 'comment')
-    current_target_guid = get_guid(state, current_target)
-    desired_target_guid = get_guid(state, desired_target)
-    if Comment.objects.filter(root_target=current_target_guid).exists():
+    current_target_guid = get_guid(state, current_target, current_content_type_id)
+    desired_target_guid = get_guid(state, desired_target, desired_content_type_id)
+    if Comment.objects.filter(Q(root_target=current_target_guid) | Q(target=current_target_guid)).exists():
         Comment.objects.filter(root_target=current_target_guid).update(root_target=desired_target_guid)
         Comment.objects.filter(target=current_target_guid).update(target=desired_target_guid)
     return
 
-def update_comments_viewed_timestamp(state, node, current_wiki_object, desired_wiki_object):
+def update_comments_viewed_timestamp(state, node, current_wiki_object, desired_wiki_object, current_ctype_id, desired_ctype_id):
     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
     Contributor = state.get_model('osf', 'contributor')
     contributors_pending_save = []
-    current_wiki_id = get_guid(state, current_wiki_object)._id
-    desired_wiki_id = get_guid(state, desired_wiki_object)._id
-    for contrib in Contributor.objects.filter(node=node):
+    current_wiki_id = get_guid(state, current_wiki_object, current_ctype_id)._id
+    desired_wiki_id = get_guid(state, desired_wiki_object, desired_ctype_id)._id
+    for contrib in Contributor.objects.filter(node=node).select_related('user'):
         if contrib.user.comments_viewed_timestamp.get(current_wiki_id, None):
             timestamp = contrib.user.comments_viewed_timestamp[current_wiki_id]
             contrib.user.comments_viewed_timestamp[desired_wiki_id] = timestamp
@@ -66,14 +43,12 @@ def update_comments_viewed_timestamp(state, node, current_wiki_object, desired_w
     bulk_update(contributors_pending_save, batch_size=1000)
     return
 
-def migrate_guid_referent(state, guid_id, desired_referent):
+def migrate_guid_referent(guid, desired_referent, content_type_id):
     """
     Point the guid towards the desired_referent.
     Pointing the NodeWikiPage guid towards the WikiPage will still allow links to work.
     """
-    Guid = state.get_model('osf', 'guid')
-    guid = Guid.objects.get(_id=guid_id)
-    guid.content_type_id = ContentType.objects.get_for_model(desired_referent).id
+    guid.content_type_id = content_type_id
     guid.object_id = desired_referent.id
     return guid
 
@@ -81,7 +56,7 @@ def create_wiki_page(state, node, node_wiki, page_name):
     WikiPage = state.get_model('addons_wiki', 'wikipage')
     wp = WikiPage(
         page_name=page_name,
-        user=node_wiki.user,
+        user_id=node_wiki.user_id,
         node=node,
         created=node_wiki.created,
         modified=node_wiki.modified,
@@ -93,7 +68,7 @@ def create_wiki_version(state, node_wiki, wiki_page):
     WikiVersion = state.get_model('addons_wiki', 'wikiversion')
     wv = WikiVersion(
         wiki_page=wiki_page,
-        user=node_wiki.user,
+        user_id=node_wiki.user_id,
         created=node_wiki.created,
         modified=node_wiki.modified,
         content=node_wiki.content,
@@ -116,8 +91,11 @@ def create_guids(state):
     logger.info('WikiPage guids created.')
     return
 
-def create_wiki_pages(state, nodes):
+def get_pk_for_guid(state, _id):
     Guid = state.get_model('osf', 'guid')
+    return Guid.objects.filter(_id=_id).values_list('object_id', flat=True).get()
+
+def create_wiki_pages(state, nodes):
     WikiPage = state.get_model('addons_wiki', 'wikipage')
     NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
     WikiPage = state.get_model('addons_wiki', 'wikipage')
@@ -128,8 +106,9 @@ def create_wiki_pages(state, nodes):
         progress_bar.update(i + 1)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
-                node_wiki = NodeWikiPage.objects.get(id=Guid.objects.get(_id=version_list[0]).object_id)
-                latest_page_name = NodeWikiPage.objects.filter(id=Guid.objects.get(_id=version_list[-1]).object_id).values_list('page_name', flat=True).get()
+                node_wiki_page_id = get_pk_for_guid(state, _id=version_list[0])
+                node_wiki = NodeWikiPage.objects.filter(id=node_wiki_page_id).only('user_id', 'created', 'modified').get()
+                latest_page_name = NodeWikiPage.objects.filter(id=get_pk_for_guid(state, _id=version_list[-1])).values_list('page_name', flat=True).get()
                 wiki_pages.append(create_wiki_page(state, node, node_wiki, latest_page_name))
     progress_bar.finish()
     with disable_auto_now_add_fields(models=[WikiPage]):
@@ -138,10 +117,16 @@ def create_wiki_pages(state, nodes):
     create_guids(state)
     return
 
+def get_content_type_id(model):
+    return ContentType.objects.get_for_model(model).id
+
 def create_wiki_versions(state, nodes):
     NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
     WikiVersion = state.get_model('addons_wiki', 'wikiversion')
     Guid = state.get_model('osf', 'guid')
+    WikiPage = state.get_model('addons_wiki', 'wikipage')
+    wp_content_type_id = get_content_type_id(WikiPage)
+    nwp_content_type_id = get_content_type_id(NodeWikiPage)
     wiki_versions_pending = []
     guids_pending = []
 
@@ -151,16 +136,16 @@ def create_wiki_versions(state, nodes):
         progress_bar.update(i + 1)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
-                node_wiki = NodeWikiPage.objects.get(id=Guid.objects.get(_id=version_list[0]).object_id)
-                page_name = NodeWikiPage.objects.filter(id=Guid.objects.get(_id=version_list[-1]).object_id).values_list('page_name', flat=True).get()
-                wiki_page = node.wikis.get(page_name__iexact=page_name.strip())
+                node_wiki = NodeWikiPage.objects.get(id=get_pk_for_guid(state, _id=version_list[0]))
+                page_name = NodeWikiPage.objects.filter(id=get_pk_for_guid(state, _id=version_list[-1])).values_list('page_name', flat=True).get()
+                wiki_page = node.wikis.get(page_name=page_name)
                 for index, version in enumerate(version_list):
                     if index:
                         node_wiki = NodeWikiPage.objects.get(id=Guid.objects.get(_id=version).object_id)
                     wiki_versions_pending.append(create_wiki_version(state, node_wiki, wiki_page))
-                    guids_pending.append(migrate_guid_referent(state, Guid.objects.get(object_id=node_wiki.id, content_type=ContentType.objects.get_for_model(node_wiki).id)._id, wiki_page))
-                move_comment_target(state, node_wiki, wiki_page)
-                update_comments_viewed_timestamp(state, node, node_wiki, wiki_page)
+                    guids_pending.append(migrate_guid_referent(Guid.objects.get(object_id=node_wiki.id, content_type=nwp_content_type_id), wiki_page, wp_content_type_id))
+                move_comment_target(state, node_wiki, wiki_page, nwp_content_type_id, wp_content_type_id)
+                update_comments_viewed_timestamp(state, node, node_wiki, wiki_page, nwp_content_type_id, wp_content_type_id)
     progress_bar.finish()
     with disable_auto_now_add_fields(models=[WikiVersion]):
         WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
