@@ -144,6 +144,7 @@ class UserSerializer(JSONAPISerializer):
 
         return instance
 
+
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """
     Overrides UserSerializer to make id required.
@@ -185,6 +186,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
                 for account in obj.external_accounts.all()
             }
         return {}
+
 
 class UserDetailSerializer(UserSerializer):
     """
