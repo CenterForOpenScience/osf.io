@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from enum import unique
+
+from osf.utils.workflows import ChoiceEnum
+
+
 # Permissions
 READ = 'read'
 WRITE = 'write'
@@ -8,6 +13,13 @@ ADMIN = 'admin'
 PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = [READ, WRITE, ADMIN]
 DEFAULT_CONTRIBUTOR_PERMISSIONS = [READ, WRITE]
+
+
+@unique
+class PermissionChoices(ChoiceEnum):
+    READ = READ
+    WRITE = WRITE
+    ADMIN = ADMIN
 
 
 def expand_permissions(permission):

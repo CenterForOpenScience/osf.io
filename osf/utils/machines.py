@@ -152,10 +152,12 @@ class RequestMachine(BaseMachine):
         """ Handles contributorship changes and state transitions
         """
         if ev.event.name == DefaultTriggers.ACCEPT.value:
+            contributor_permissions = ev.kwargs.get('permissions', None)
             self.machineable.target.add_contributor(
                 self.machineable.creator,
                 auth=Auth(ev.kwargs['user']),
-                permissions=permissions.READ,
+                permissions=permissions.expand_permissions(contributor_permissions) if contributor_permissions else permissions.READ,
+                visible=ev.kwargs.get('visible', True),
                 send_email='{}_request'.format(self.machineable.request_type))
         elif ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
             self.machineable.comment = self.action.comment

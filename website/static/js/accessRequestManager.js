@@ -13,10 +13,7 @@ var $osf = require('./osfHelpers');
 require('js/filters');
 
 
-
-// TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
-// out the permissions-related functions and remove currentUserCanEdit.
-var AccessRequestModel = function(accessRequest, currentUserCanEdit, pageOwner, isRegistration, isParentAdmin, options) {
+var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isParentAdmin, options) {
     var self = this;
     self.options = options;
     $.extend(self, accessRequest);
@@ -27,25 +24,19 @@ var AccessRequestModel = function(accessRequest, currentUserCanEdit, pageOwner, 
 
     self.visible = ko.observable(true);
 
-    self.currentUserCanEdit = currentUserCanEdit;
-    // User is an admin on the parent project
-    self.isParentAdmin = isParentAdmin;
-
     self.pageOwner = pageOwner;
 
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));
     };
 
-    self.canEdit = ko.computed(function() {
-        return self.currentUserCanEdit && !self.isParentAdmin;
-    });
-
-    self.requestAccessPayload = function(trigger) {
+    self.requestAccessPayload = function(trigger, permissions, visible) {
         return {
             'data': {
                 'attributes': {
-                    'trigger': trigger
+                    'trigger': trigger,
+                    'permissions': permissions,
+                    'visible': visible
                 },
                 'relationships': {
                     'target': {
@@ -63,7 +54,7 @@ var AccessRequestModel = function(accessRequest, currentUserCanEdit, pageOwner, 
     self.respondToAccessRequest = function(trigger, data, event) {
         $osf.block();
         var requestUrl = $osf.apiV2Url('actions/requests/');
-        var payload = self.requestAccessPayload(trigger);
+        var payload = self.requestAccessPayload(trigger, self.permission(), self.visible());
         var request = $osf.ajaxJSON(
             'POST',
             requestUrl,
@@ -97,10 +88,6 @@ var AccessRequestModel = function(accessRequest, currentUserCanEdit, pageOwner, 
 
     self.profileUrl = ko.observable(accessRequest.user.url);
 
-    self.canReject = ko.computed(function(){
-        return (self.id === pageOwner.id) && !isRegistration && !self.isParentAdmin;
-    });
-
     self.optionsText = function(val) {
         return self.options.permissionMap[val];
     };
@@ -127,9 +114,6 @@ var AccessRequestsViewModel = function(accessRequests, user, isRegistration, tab
     self.accessRequests = ko.observableArray();
 
     self.user = ko.observable(user);
-    self.canEdit = ko.computed(function() {
-        return ($.inArray('admin', user.permissions) > -1) && !isRegistration;
-    });
 
     self.options = {
         permissionMap: self.permissionMap
@@ -137,7 +121,7 @@ var AccessRequestsViewModel = function(accessRequests, user, isRegistration, tab
 
     self.init = function() {
         self.accessRequests(self.original().map(function(item) {
-            return new AccessRequestModel(item, self.canEdit(), self.user(), isRegistration, false, self.options);
+            return new AccessRequestModel(item, self.user(), isRegistration, false, self.options);
         }));
     };
 
