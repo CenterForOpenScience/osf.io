@@ -26,10 +26,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FileDownloadCounts',
             fields=[
-                ('_id', models.CharField(db_index=True, max_length=5, unique=True)),
                 ('number_downloads_total', models.PositiveIntegerField(default=0)),
                 ('number_downloads_unique', models.PositiveIntegerField(default=0)),
-                ('update_date', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
             ],
             options={
                 'abstract': False,
