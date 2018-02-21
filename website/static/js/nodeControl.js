@@ -173,7 +173,7 @@ var ProjectViewModel = function(data, options) {
         NodeActions.forkNode();
     };
 
-    self.hasIdentifiers = ko.pureComputed(function() {
+    self.hasDoi = ko.pureComputed(function() {
         return !!(self.doi());
     });
 
@@ -181,8 +181,12 @@ var ProjectViewModel = function(data, options) {
         return !!(self.ark());
     });
 
+    self.identifier = ko.pureComputed(function(){
+        return self.hasArk() && self.hasDoi()? 'Identifiers' : 'Identifier';
+    });
+
     self.canCreateIdentifiers = ko.pureComputed(function() {
-        return !self.hasIdentifiers() &&
+        return !self.hasDoi() &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
@@ -198,7 +202,7 @@ var ProjectViewModel = function(data, options) {
     self.askCreateIdentifiers = function() {
         var self = this;
         bootbox.confirm({
-            title: 'Create identifiers',
+            title: 'Create DOI',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI for this ' +
                 $osf.htmlEscape(self.nodeType) + '? A DOI' +
@@ -232,7 +236,7 @@ var ProjectViewModel = function(data, options) {
                 'The DOI acquisition service may be down right now. ' +
                 'Please try again soon and/or contact ' + $osf.osfSupportLink();
             $osf.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
+            Raven.captureMessage('Could not create doi', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator
