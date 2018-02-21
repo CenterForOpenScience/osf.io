@@ -8,8 +8,6 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-var azureblobstorageSettings = require('json!./settings.json');
-
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 
 var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
