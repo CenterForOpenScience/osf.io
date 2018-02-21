@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('osf', '0083_add_osf_usagedata'),
-        ('osf', '0081_merge_20180221_1331'),
+        ('osf', '0081_merge_20180212_0949'),
     ]
 
     operations = [
