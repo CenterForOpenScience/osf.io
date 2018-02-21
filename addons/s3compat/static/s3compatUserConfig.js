@@ -14,7 +14,7 @@ var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('js/addonSettings');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var s3compatSettings = require('json!./settings.json');
+var s3compatSettings = require('json-loader!./settings.json');
 
 var ExternalAccount = addonSettings.ExternalAccount;
 

@@ -8,8 +8,6 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-var swiftSettings = require('json!./settings.json');
-
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 
 var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
