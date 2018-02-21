@@ -6,6 +6,7 @@ import math
 import os
 import requests
 import urllib
+import waffle
 
 from django.apps import apps
 from django.db.models import Count
@@ -142,6 +143,12 @@ def index():
 
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
+        if waffle.switch_is_active('ember_dashboard'):
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+            return send_from_directory(ember_osf_web_dir, 'index.html')
+
         all_institutions = (
             Institution.objects.filter(
                 is_deleted=False,
