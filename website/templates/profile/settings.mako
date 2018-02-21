@@ -1,5 +1,9 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
+<%def name="resource()"><%
+    return 'user'
+%>
+</%def>
 <%def name="content()">
 <% from website import settings %>
 <h2 class="page-header">Settings

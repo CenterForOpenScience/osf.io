@@ -1,6 +1,6 @@
 from framework import utils
 
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 def serialize_initiator(initiator):
     return {

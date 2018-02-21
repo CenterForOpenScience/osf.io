@@ -18,41 +18,7 @@ from osf.models import PrivateLink
 
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """Details about a specific view only link. *Read-only*.
-
-    ###Permissions
-
-    View only links are visible only to users that are administrators on all of the nodes which a view only link
-    pertains to.
-
-    ##Attributes
-
-    OSF view only links entities have the "view-only-links" `type`.
-
-        name                        type                    description
-        ======================================================================================================
-        name                        string                  name of the view only link
-        anonymous                   boolean                 whether the view only link has anonymized contributors
-        date_created                iso8601 timestamp       timestamp when the view only link was created
-        key                         string                  the view only key
-
-
-    ##Relationships
-
-    ###Creator
-
-    The user who created the view only link.
-
-    ###Nodes
-
-    The nodes which this view only link key gives read-only access to.
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_read).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -83,7 +49,8 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_node_list).
+        """
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly

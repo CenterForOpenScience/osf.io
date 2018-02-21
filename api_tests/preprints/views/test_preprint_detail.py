@@ -141,7 +141,7 @@ class TestPreprintDetail:
             guid=preprint._id).replace(
             'doi:',
             '')
-        preprint.set_identifier_values(doi=expected_doi, ark='testark')
+        preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
