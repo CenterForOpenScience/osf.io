@@ -67,7 +67,7 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, celery=True,
+def send_mail(to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
             username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
