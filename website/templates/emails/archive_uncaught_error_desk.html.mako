@@ -17,7 +17,6 @@
     <br />
     A report is included below:
     <ul>
-    <% import json %>
 
         % for error in results:
             <li>${error}</li>
