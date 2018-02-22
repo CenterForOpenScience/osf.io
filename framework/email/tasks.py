@@ -57,6 +57,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             password=password
         )
 
+
 def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
@@ -84,6 +85,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     )
     s.quit()
     return True
+
 
 def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:

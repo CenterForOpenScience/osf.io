@@ -34,7 +34,6 @@ _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
 )
 
-TXT_EXT = '.txt.mako'
 HTML_EXT = '.html.mako'
 
 
@@ -56,11 +55,6 @@ class Mail(object):
     def html(self, **context):
         """Render the HTML email message."""
         tpl_name = self.tpl_prefix + HTML_EXT
-        return render_message(tpl_name, **context)
-
-    def text(self, **context):
-        """Render the plaintext email message"""
-        tpl_name = self.tpl_prefix + TXT_EXT
         return render_message(tpl_name, **context)
 
     def subject(self, **context):
@@ -95,7 +89,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, cele
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
-    message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
+    message = mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')

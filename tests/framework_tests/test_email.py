@@ -42,7 +42,7 @@ class TestEmail(unittest.TestCase):
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype='txt',
+            mimetype='html',
             client=mock_client,
             categories=(category1, category2)
         )
@@ -71,7 +71,7 @@ class TestEmail(unittest.TestCase):
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype='txt',
+            mimetype='html',
             client=mock_client
         )
         assert_false(ret)

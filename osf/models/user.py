@@ -848,7 +848,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
+                mimetype='html',
                 user=self
             )
             remove_sessions_for_user(self)

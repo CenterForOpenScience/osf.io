@@ -186,7 +186,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(empty, ())
         assert_equal(kwargs, {
             'user': user,
-            'mimetype': 'plain',
+            'mimetype': 'html',
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
         })
