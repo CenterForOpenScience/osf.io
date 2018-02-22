@@ -8,24 +8,24 @@ var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
 
-var RequestAccessViewModel = function(currentUserRequestState) {
+var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
     var self = this;
 
     self.requestAccessButton = ko.observable('Request access');
     self.accessRequestPendingOrDenied = ko.observable(false);
     self.accessRequestTooltip = ko.observable('');
-    self.updateUrl = $osf.apiV2Url('nodes/' +  window.contextVars.nodeId + '/requests/');
+    self.updateUrl = $osf.apiV2Url('nodes/' +  nodeId + '/requests/');
     self.requestState = ko.observable(currentUserRequestState);
 
     self.checkRequestStatus = function() {
         if (self.requestState() === 'rejected') {
-            this.accessRequestTooltip('Request declined');
-            this.accessRequestPendingOrDenied(true);
+            self.accessRequestTooltip('Request declined');
+            self.accessRequestPendingOrDenied(true);
             self.requestAccessButton = ko.observable('Access requested');
         }
 
         if (self.requestState() === 'pending') {
-            this.accessRequestPendingOrDenied(true);
+            self.accessRequestPendingOrDenied(true);
             self.requestAccessButton = ko.observable('Access requested');
         }
     };
@@ -53,8 +53,8 @@ var RequestAccessViewModel = function(currentUserRequestState) {
         );
 
         request.done(function() {
-            this.accessRequestPendingOrDenied(true);
-            this.requestAccessButton('Access requested');
+            self.accessRequestPendingOrDenied(true);
+            self.requestAccessButton('Access requested');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
@@ -81,22 +81,5 @@ var RequestAccessViewModel = function(currentUserRequestState) {
 
 };
 
-function RequestAccessManager(selector, currentUserRequestState) {
-    var self = this;
-    self.selector = selector;
-    self.$element = $(selector);
-    self.currentUserRequestState = currentUserRequestState;
-    self.viewModel = new RequestAccessViewModel(currentUserRequestState);
-    $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.');
-
-    self.init();
-
-}
-
-RequestAccessManager.prototype.init = function() {
-    $osf.applyBindings(this.viewModel, this.$element[0]);
-    this.$element.show();
-};
-
-module.exports = RequestAccessManager;
+module.exports = RequestAccessViewModel;
 

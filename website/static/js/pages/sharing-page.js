@@ -22,7 +22,6 @@ var arm;
 
 if (isContribPage) {
     cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.currentUser, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
-    arm = new AccessRequestManager('#manageAccessRequests', ctx.accessRequests, ctx.currentUser, ctx.isRegistration, '#manageAccessRequestsTable');
 }
 
 if (hasAccessRequests) {

@@ -28,6 +28,7 @@ var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
+var currentUserRequestState = ctx.currentUserRequestState;
 
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -42,7 +43,7 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
+    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
 });
 
 // Initialize comment pane w/ its viewmodel
@@ -199,7 +200,7 @@ $(document).ready(function () {
                     document.getElementById('shareButtonsPopover'),
                     m.component(
                         SocialShare.ShareButtonsPopover,
-                        {title: window.contextVars.node.title, url: window.location.href}
+                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
                     )
                 );
             }
@@ -336,6 +337,13 @@ $(document).ready(function () {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
+    // Add a popover if the current user's access request was rejected
+    if (currentUserRequestState === 'rejected') {
+        $('.request-access').popover({
+            trigger: 'hover'
         });
     }
 });

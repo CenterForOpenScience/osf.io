@@ -8,7 +8,7 @@
 <%def name="content()">
 
 
-<div id="requestAccessScope">
+<div id="requestAccessPrivateScope">
     <header class="subhead" id="overview">
         <div class="row no-gutters">
             <div class="col-lg-8 col-md-12 cite-container">
@@ -42,6 +42,6 @@
     <script src="${'/static/public/js/request-access-page.js' | webpack_asset}"></script>
     <script type="text/javascript">
         window.contextVars.nodeId = ${ node['id'] | sjson, n };
-        window.contextVars.currentUserRequestState = ${ access_request_state | sjson, n };
+        window.contextVars.currentUserRequestState = ${ user['access_request_state'] | sjson, n };
     </script>
 </%def>

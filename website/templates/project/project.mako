@@ -34,6 +34,7 @@
             </div>
             <div class="clearfix visible-md-block"></div>
             <div class="col-lg-4">
+                <div class="row">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -97,29 +98,43 @@
                                 </ul>
                             </div>
                     </div>
-                    <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none;" data-bind="visible: true">
+                    <div class="btn-group">
+                        <button class="btn btn-default" data-toggle="collapse" data-target="#otherActions">
+                            <i class="fa fa-ellipsis-h"></i>
+                        </button>
+                    </div>
 
+                </div>
+                </div>
+                <div class="row">
+                    <div class="collapse pull-right" id="otherActions">
+                    <div class="panel" id="other-actions-panel">
+                    <!-- ko if: canBeOrganized -->
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks'}">
+                               Bookmark
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-minus"></i>
+                            placement: 'bottom', container : 'body'}">
+                               Remove from bookmarks
                            </a>
                         <!-- /ko -->
-
-                    </div>
                     <!-- /ko -->
                     % if node["is_public"]:
-                        <div class="btn-group" id="shareButtonsPopover"></div>
+                        <div id="shareButtonsPopover">Share</div>
                     % endif
+                    % if node['access_requests_enabled'] and not user['is_contributor']:
+                        <span class="request-access"
+                          data-content="Request declined"
+                          data-toggle="popover"
+                          data-placement="left">
+                            <a data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled-link': requestAccess.accessRequestPendingOrDenied()}"></a>
+                        </span>
+                    % endif
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -516,7 +531,8 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
-        customCitations: ${ custom_citations | sjson, n }
+        customCitations: ${ custom_citations | sjson, n },
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
     });
 </script>
 

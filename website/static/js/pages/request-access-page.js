@@ -1,14 +1,16 @@
 'use strict';
 
 var $osf = require('js/osfHelpers');
-var RequestAccessManager = require('js/requestAccess');
+var RequestAccessViewModel = require('js/requestAccess');
 
 
 var ctx = window.contextVars;
 
 
 $(window).on('load', function() {
-    new RequestAccessManager('#requestAccessScope', ctx.currentUserRequestState);
+    var viewModel = new RequestAccessViewModel(ctx.currentUserRequestState, ctx.nodeId);
+    $osf.applyBindings(viewModel, '#requestAccessPrivateScope');
+    $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.');
 });
 
 $(function() {
