@@ -118,18 +118,20 @@
                         % endif
                         % if addon['addon_short_name'] == 'github':
                             <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
-                                <div class="alert alert-info">
+                                <div class="alert alert-info alert-dismissible" role="alert">
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"
+                                        data-bind="tooltip: {title: 'Once dismissed, this alert will not be shown again.', placement: 'left'}, click: $root.dismiss.bind($root, 'githubOrgs')">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                     <div>
                                         <h4>Don’t see your Github Organization repositories?</h4>
                                         <p>
                                             You may need to reauthorize your Github access token.
-                                            Follow the steps in the <a href='http://help.osf.io/m/addons/l/837168-connect-to-a-github-organization' target='_black'>help guide</a> to resolve the issue. <br>
-                                            Contact support <a href="mailto:contact@osf.io">support@osf.io</a> if you have questions.
+                                            Follow the steps in the <a class="alert-link" href="http://help.osf.io/a/850865-reauthorize-github" target="_black">help guide</a> to resolve the issue. <br>
                                         </p>
-                                    </div>
-                                    <div>
-                                        <button type="button" class="btn btn-danger" data-bind="click: $root.dismiss.bind($root, 'githubOrgs')" data-dismiss="alert" aria-label="Close">Dismiss</button>
-                                        <i>(Once dismissed, the alert will not be shown again)</i>
+                                        <p>
+                                            Please contact support <a class="alert-link" href="mailto:contact@osf.io">support@osf.io</a> if you have questions.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
