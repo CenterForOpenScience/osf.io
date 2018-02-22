@@ -6,16 +6,140 @@ import datetime
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
+from addons.wiki.models import WikiVersion
+from addons.wiki.tests.factories import (
+    WikiFactory,
+    WikiVersionFactory,
+)
+
 from api.base.settings.defaults import API_BASE
 
 from osf.models import Guid
+from osf_tests.factories import (
+    AuthUserFactory,
+    CommentFactory,
+    PrivateLinkFactory,
+    ProjectFactory,
+    RegistrationFactory,
+)
+from tests.base import ApiWikiTestCase, fake
+from website.util import permissions
 
-from addons.wiki.models import WikiVersion
 
-from tests.base import ApiWikiTestCase
-from osf_tests.factories import (ProjectFactory, RegistrationFactory,
-                                 PrivateLinkFactory, CommentFactory)
-from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+def make_rename_payload(wiki_page):
+    new_page_name = fake.word()
+    payload = {
+        'data': {
+            'id': wiki_page._id,
+            'type': 'wikis',
+            'attributes': {
+                'name': new_page_name
+            }
+        }
+    }
+    return payload, new_page_name
+
+
+@pytest.mark.django_db
+class WikiCRUDTestCase:
+
+    @pytest.fixture()
+    def user_creator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_public(self, user_creator):
+        project_public = ProjectFactory(
+            is_public=True,
+            creator=user_creator
+        )
+        wiki_page = WikiFactory(node=project_public, user=user_creator)
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return project_public
+
+    @pytest.fixture()
+    def project_private(self, user_creator):
+        project_private = ProjectFactory(
+            is_public=False,
+            creator=user_creator
+        )
+        wiki_page = WikiFactory(node=project_private, user=user_creator)
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return project_private
+
+    @pytest.fixture()
+    def user_non_contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_write_contributor(self, project_public, project_private):
+        user = AuthUserFactory()
+        project_public.add_contributor(user, permissions=[permissions.WRITE])
+        project_private.add_contributor(user, permissions=[permissions.WRITE])
+        return user
+
+    @pytest.fixture()
+    def user_read_contributor(self, project_public, project_private):
+        user = AuthUserFactory()
+        project_public.add_contributor(user, permissions=[permissions.READ])
+        project_private.add_contributor(user, permissions=[permissions.READ])
+        return user
+
+    @pytest.fixture()
+    def wiki_public(self, project_public, user_creator):
+        wiki_page = WikiFactory(node=project_public, user=user_creator, page_name=fake.word())
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return wiki_page
+
+    @pytest.fixture()
+    def wiki_private(self, project_private, user_creator):
+        wiki_page = WikiFactory(node=project_private, user=user_creator, page_name=fake.word())
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return wiki_page
+
+    @pytest.fixture()
+    def wiki_publicly_editable(self, project_public, user_creator):
+        pass
+
+    @pytest.fixture()
+    def wiki_registration_public(self, project_public, user_creator):
+        registration = RegistrationFactory(project=project_public, is_public=True)
+        wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return wiki_page
+
+    @pytest.fixture()
+    def wiki_registration_private(self, project_public, user_creator):
+        registration = RegistrationFactory(project=project_public, is_public=False)
+        wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
+        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        return wiki_page
+
+    @pytest.fixture()
+    def url_wiki_public(self, wiki_public):
+        return '/{}wikis/{}/'.format(API_BASE, wiki_public._id)
+
+    @pytest.fixture()
+    def url_wiki_home(self, project_public):
+        wiki_home = project_public.wikis.get(page_name='home')
+        return '/{}wikis/{}/'.format(API_BASE, wiki_home._id)
+
+    @pytest.fixture()
+    def url_wiki_private(self, wiki_private):
+        return '/{}wikis/{}/'.format(API_BASE, wiki_private._id)
+
+    @pytest.fixture()
+    def url_wiki_publicly_editable(self, wiki_publicly_editable):
+        # return '/{}wikis/{}/'.format(API_BASE, wiki_publicly_editable._id)
+        pass
+
+    @pytest.fixture()
+    def url_registration_wiki_public(self, wiki_registration_public):
+        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_public._id)
+
+    @pytest.fixture()
+    def url_registration_wiki_private(self, wiki_registration_private):
+        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_private._id)
 
 
 class TestWikiDetailView(ApiWikiTestCase):
@@ -329,3 +453,160 @@ class TestWikiDetailView(ApiWikiTestCase):
         assert_in(
             expected_comments_relationship_url,
             res.json['data']['relationships']['comments']['links']['related']['href'])
+
+
+@pytest.mark.django_db
+class TestWikiDelete(WikiCRUDTestCase):
+
+    def test_delete_public_wiki_page(
+        self, app, user_write_contributor, url_wiki_public
+    ):
+        res = app.delete(url_wiki_public, auth=user_write_contributor.auth)
+        assert res.status_code == 204
+
+    def test_do_not_delete_public_wiki_page(
+        self, app, user_creator, user_read_contributor, user_non_contributor,
+        url_wiki_public, url_wiki_home, url_wiki_publicly_editable
+    ):
+        # test_do_not_delete_home_wiki_page
+        res = app.delete(url_wiki_home, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'The home wiki page cannot be deleted.'
+
+        # test_do_not_delete_public_wiki_page_as_read_contributor
+        res = app.delete(url_wiki_public, auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_delete_public_wiki_page_as_non_contributor
+        res = app.delete(url_wiki_public, auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_delete_public_wiki_page_as_unauthenticated
+        res = app.delete(url_wiki_public, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_delete_private_wiki_page(self, app, user_write_contributor, url_wiki_private):
+        res = app.delete(url_wiki_private, auth=user_write_contributor.auth)
+        assert res.status_code == 204
+
+    def test_do_not_delete_private_wiki_page(
+        self, app, user_read_contributor, user_non_contributor, url_wiki_private
+    ):
+        # test_do_not_delete_private_wiki_page_as_read_contributor
+        res = app.delete(url_wiki_private, auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_delete_private_wiki_page_as_non_contributor
+        res = app.delete(url_wiki_private, auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_delete_private_wiki_page_as_unauthenticated
+        res = app.delete(url_wiki_private, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_do_not_delete_registration_wiki_page(
+        self, app, user_creator,
+        url_registration_wiki_public, url_registration_wiki_private
+    ):
+        # test_do_not_delete_wiki_on_public_registration
+        res = app.delete(url_registration_wiki_public, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405
+
+        # test_do_not_delete_wiki_on_embargoed_registration
+        res = app.delete(url_registration_wiki_private, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405
+
+
+@pytest.mark.django_db
+class TestWikiUpdate(WikiCRUDTestCase):
+
+    def test_rename_public_wiki_page(
+        self, app, user_write_contributor, url_wiki_public, wiki_public
+    ):
+        payload, new_name = make_rename_payload(wiki_public)
+        res = app.patch_json_api(url_wiki_public, payload, auth=user_write_contributor.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == new_name
+
+    def test_do_not_update_content_public_wiki_page(
+        self, app, user_write_contributor, url_wiki_public, wiki_public
+    ):
+        res = app.patch_json_api(
+            url_wiki_public,
+            {
+                'data': {
+                    'id': wiki_public._id,
+                    'type': 'wikis',
+                    'attributes': {
+                        'content': 'brave new wiki'
+                    }
+                }
+            },
+            auth=user_write_contributor.auth
+        )
+        assert res.status_code == 200
+        assert wiki_public.get_version().content != 'brave new wiki'
+
+    def test_do_not_rename_public_wiki_page(
+        self, app, wiki_public, project_public,
+        user_creator, user_read_contributor, user_non_contributor,
+        url_wiki_public, url_wiki_home, url_wiki_publicly_editable
+    ):
+        # test_do_not_rename_home_wiki_page
+        wiki_home = project_public.wikis.get(page_name='home')
+        payload, _ = make_rename_payload(wiki_home)
+        res = app.patch_json_api(url_wiki_home, payload, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot rename wiki home page'
+
+        # test_do_not_rename_public_wiki_page_as_read_contributor
+        payload, _ = make_rename_payload(wiki_public)
+        res = app.patch_json_api(url_wiki_public, payload, auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_rename_public_wiki_page_as_non_contributor
+        res = app.patch_json_api(url_wiki_public, payload, auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_rename_public_wiki_page_as_unauthenticated
+        res = app.patch_json_api(url_wiki_public, payload, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_rename_private_wiki_page(
+        self, app, user_write_contributor, wiki_private, url_wiki_private
+    ):
+        payload, new_name = make_rename_payload(wiki_private)
+        res = app.patch_json_api(url_wiki_private, payload, auth=user_write_contributor.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == new_name
+
+    def test_do_not_rename_private_wiki_page(
+        self, app, wiki_private,
+        user_read_contributor, user_non_contributor, url_wiki_private
+    ):
+        # test_do_not_rename_public_wiki_page_as_read_contributor
+        payload, _ = make_rename_payload(wiki_private)
+        res = app.patch_json_api(url_wiki_private, payload, auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_rename_public_wiki_page_as_non_contributor
+        res = app.patch_json_api(url_wiki_private, payload, auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_rename_public_wiki_page_as_unauthenticated
+        res = app.patch_json_api(url_wiki_private, payload, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_do_not_rename_registration_wiki_page(
+        self, app, wiki_registration_public, wiki_registration_private,
+        user_creator, url_registration_wiki_public, url_registration_wiki_private
+    ):
+        # test_do_not_rename_wiki_on_public_registration
+        payload, _ = make_rename_payload(wiki_registration_public)
+        res = app.patch_json_api(url_registration_wiki_public, payload, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405
+
+        # test_do_not_rename_wiki_on_embargoed_registration
+        payload, _ = make_rename_payload(wiki_registration_private)
+        res = app.patch_json_api(url_registration_wiki_private, payload, auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405

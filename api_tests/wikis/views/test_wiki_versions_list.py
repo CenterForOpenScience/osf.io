@@ -3,13 +3,25 @@ import pytest
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     RegistrationFactory,
 )
 from rest_framework import exceptions
+from tests.base import fake
 
+def update_payload(wiki_page, content):
+    return {
+        'data': {
+            'id': wiki_page._id,
+            'type': 'wiki-versions',
+            'attributes': {
+                'content': content
+            }
+        }
+    }
 
 @pytest.fixture()
 def user():
@@ -187,3 +199,140 @@ class TestWikiVersionList:
         assert res.status_code == 200
         assert len(node_relationships) == 1
         assert public_registration.get_wiki_page('home')._id in node_relationships[0]
+
+
+@pytest.mark.django_db
+class TestWikiVersionCreate(WikiCRUDTestCase):
+
+    @pytest.fixture()
+    def url_wiki_versions_public(self, wiki_public):
+        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_public._id)
+
+    @pytest.fixture()
+    def url_wiki_versions_private(self, wiki_private):
+        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_private._id)
+
+    @pytest.fixture()
+    def url_wiki_versions_registration_public(self, wiki_registration_public):
+        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_registration_public._id)
+
+    @pytest.fixture()
+    def url_wiki_versions_registration_private(self, wiki_registration_private):
+        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_registration_private._id)
+
+    def test_update_public_wiki_page_as_contributor(
+        self, app, user_write_contributor, wiki_public,
+        url_wiki_versions_public
+    ):
+        new_content = fake.text()
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            update_payload(wiki_public, new_content),
+            auth=user_write_contributor.auth
+        )
+        wiki_public.reload()
+        assert res.status_code == 201
+        assert wiki_public.get_version().content == new_content
+
+    def test_do_not_update_public_wiki_page(
+        self, app, wiki_public,
+        user_read_contributor, user_non_contributor,
+        url_wiki_versions_public
+    ):
+        payload = update_payload(wiki_public, fake.text())
+
+        # test_do_not_update_public_wiki_page_as_read_contributor
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            payload,
+            auth=user_read_contributor.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_do_not_update_public_wiki_page_as_non_contributor
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            payload,
+            auth=user_non_contributor.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_do_not_update_public_wiki_page_unauthenticated
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+    def test_update_private_wiki_page(
+        self, app, wiki_private,
+        user_write_contributor, url_wiki_versions_private
+    ):
+        new_content = fake.text()
+        res = app.post_json_api(
+            url_wiki_versions_private,
+            update_payload(wiki_private, new_content),
+            auth=user_write_contributor.auth
+        )
+        wiki_private.reload()
+        assert res.status_code == 201
+        assert wiki_private.get_version().content == new_content
+
+    def test_do_not_update_private_wiki_page(
+        self, app, wiki_private,
+        user_read_contributor, user_non_contributor,
+        url_wiki_versions_private
+    ):
+        payload = update_payload(wiki_private, fake.text())
+
+        # test_do_not_update_private_wiki_page_as_read_contributor
+        res = app.post_json_api(
+            url_wiki_versions_private,
+            payload,
+            auth=user_read_contributor.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_do_not_update_private_wiki_page_as_non_contributor
+        res = app.post_json_api(
+            url_wiki_versions_private,
+            payload,
+            auth=user_non_contributor.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_do_not_update_private_wiki_page_unauthenticated
+        res = app.post_json_api(
+            url_wiki_versions_private,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+    def test_do_not_update_wiki_on_registrations(
+        self, app, user_creator,
+        wiki_registration_public, wiki_registration_private,
+        url_wiki_versions_registration_public, url_wiki_versions_registration_private
+    ):
+        # test_do_not_update_wiki_on_public_registration
+        res = app.post_json_api(
+            url_wiki_versions_registration_public,
+            update_payload(wiki_registration_public, fake.text()),
+            auth=user_creator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 405
+
+        # test_do_not_update_wiki_on_private_registration
+        res = app.post_json_api(
+            url_wiki_versions_registration_private,
+            update_payload(wiki_registration_private, fake.text()),
+            auth=user_creator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 405

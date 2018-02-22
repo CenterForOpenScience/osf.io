@@ -2820,8 +2820,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         return ret
 
 
-class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
-    """List of wiki pages on a node. *Read only*.
+class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
+    """List of wiki pages on a node.
 
     Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
     full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
@@ -2875,7 +2875,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
     serializer_class = NodeWikiSerializer
 
     view_category = 'nodes'
@@ -2888,6 +2888,9 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        return serializer.save(node=self.get_node())
 
 
 class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):

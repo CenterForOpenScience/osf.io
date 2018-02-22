@@ -1,19 +1,33 @@
 import mock
 import pytest
 
+from rest_framework import exceptions
+
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     RegistrationFactory,
 )
-from rest_framework import exceptions
+from tests.base import fake
 
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
+
+def create_wiki_payload(name):
+    return {
+        'data': {
+            'type': 'wikis',
+            'attributes': {
+                'name': name
+            }
+        }
+    }
 
 
 @pytest.mark.django_db
@@ -278,3 +292,108 @@ class TestFilterNodeWikiList:
         url = base_url + '?filter[date_modified][gt]={}'.format(date)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
+
+
+@pytest.mark.django_db
+class TestNodeWikiCreate(WikiCRUDTestCase):
+
+    @pytest.fixture
+    def url_node_public(self, project_public):
+        return '/{}nodes/{}/wikis/'.format(API_BASE, project_public._id)
+
+    @pytest.fixture
+    def url_node_private(self, project_private):
+        return '/{}nodes/{}/wikis/'.format(API_BASE, project_private._id)
+
+    @pytest.fixture
+    def url_registration_public(self, wiki_registration_public):
+        return '/{}registrations/{}/wikis/'.format(API_BASE, wiki_registration_public.node._id)
+
+    @pytest.fixture
+    def url_registration_private(self, wiki_registration_private):
+        return '/{}registrations/{}/wikis/'.format(API_BASE, wiki_registration_private.node._id)
+
+    def test_create_public_wiki_page(self, app, user_write_contributor, url_node_public):
+        page_name = fake.word()
+        res = app.post_json_api(url_node_public, create_wiki_payload(page_name), auth=user_write_contributor.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['name'] == page_name
+
+    def test_create_public_wiki_page_with_content(self, app, user_write_contributor, url_node_public, project_public):
+        page_name = fake.word()
+        payload = create_wiki_payload(page_name)
+        payload['data']['attributes']['content'] = 'my first wiki page'
+        res = app.post_json_api(url_node_public, payload, auth=user_write_contributor.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['name'] == page_name
+        wiki_page = project_public.get_wiki_page(page_name)
+        assert wiki_page.get_version().content == 'my first wiki page'
+
+    def test_create_public_wiki_page_with_empty_content(self, app, user_write_contributor, url_node_public, project_public):
+        page_name = fake.word()
+        payload = create_wiki_payload(page_name)
+        payload['data']['attributes']['content'] = ''
+        res = app.post_json_api(url_node_public, payload, auth=user_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
+
+    def test_do_not_create_public_wiki_page(
+        self, app, user_creator, user_read_contributor, user_non_contributor,
+        url_node_public, wiki_public
+    ):
+        # test_do_not_create_home_wiki_page
+        res = app.post_json_api(url_node_public, create_wiki_payload('home'), auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == "A wiki page with the name 'home' already exists."
+
+        # test_do_not_create_wiki_page_name_exists
+        res = app.post_json_api(url_node_public, create_wiki_payload(wiki_public.page_name), auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == "A wiki page with the name '{}' already exists.".format(wiki_public.page_name)
+
+        # test_do_not_create_public_wiki_page_as_read_contributor
+        res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_create_public_wiki_page_as_non_contributor
+        res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_create_public_wiki_page_as_unauthenticated
+        res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), expect_errors=True)
+        assert res.status_code == 401
+
+    def test_create_private_wiki_page(self, app, user_write_contributor, url_node_private):
+        page_name = fake.word()
+        res = app.post_json_api(url_node_private, create_wiki_payload(page_name), auth=user_write_contributor.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['name'] == page_name
+
+    def test_do_not_create_private_wiki_page(
+        self, app, wiki_private, url_node_private,
+        user_read_contributor, user_non_contributor
+    ):
+
+        # test_do_not_create_private_wiki_page_as_read_contributor
+        res = app.post_json_api(url_node_private, create_wiki_payload(fake.word()), auth=user_read_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_create_private_wiki_page_as_non_contributor
+        res = app.post_json_api(url_node_private, create_wiki_payload(fake.word()), auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_do_not_create_private_wiki_page_as_unauthenticated
+        res = app.post_json_api(url_node_private, create_wiki_payload(fake.word()), expect_errors=True)
+        assert res.status_code == 401
+
+    def test_do_not_create_registration_wiki_page(
+        self, app, user_creator,
+        url_registration_public, url_registration_private
+    ):
+        # test_do_not_create_wiki_on_public_registration
+        res = app.post_json_api(url_registration_public, create_wiki_payload(fake.word()), auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405
+
+        # test_do_not_create_wiki_on_embargoed_registration
+        res = app.post_json_api(url_registration_private, create_wiki_payload(fake.word()), auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 405
