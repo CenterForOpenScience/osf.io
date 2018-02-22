@@ -5,13 +5,11 @@
   <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
-    This email address has been added to an account on the Open Science Framework.<br>
-    <br>
-    Please verify your email address by visiting this link:<br>
+    Welcome to the Open Science Framework and the Preregistration Challenge. To continue, please verify your email address by visiting this link:<br>
     <br>
     ${confirmation_url}<br>
     <br>
-    Sincerely yours,<br>
+    From the team at the Center for Open Science<br>
     <br>
     Center for Open Science<br>
 
