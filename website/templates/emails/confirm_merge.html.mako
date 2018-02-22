@@ -13,8 +13,6 @@
     <br>
     If you do not wish to merge these accounts, no action is required on your part. If you have any questions about this email, please direct them to ${osf_support_email}.<br>
     <br>
-    Sincerely yours,<br>
-    <br>
     Center for Open Science<br>
 
 </tr>

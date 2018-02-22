@@ -9,7 +9,7 @@
     <br>
     ${confirmation_url}<br>
     <br>
-    Sincerely yours,<br>
+    Sincerely,<br>
     <br>
     Open Science Framework Robot<br>
     <br>
