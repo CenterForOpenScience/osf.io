@@ -72,6 +72,7 @@ def limit_filter(limit, (item, usage)):
     """Note: usage is a tuple(current_usage, deleted_usage)"""
     return item not in WHITE_LIST and sum(usage) >= limit
 
+
 def main(send_email=False):
     logger.info('Starting Project storage audit')
 
