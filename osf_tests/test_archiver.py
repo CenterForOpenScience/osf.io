@@ -1356,7 +1356,7 @@ def test_archiver_uncaught_error_mail_renders():
     user = src.creator
     job = factories.ArchiveJobFactory()
     mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
-    assert mail.text(
+    assert mail.html(
         user=user,
         src=src,
         results=job.target_addons.all(),

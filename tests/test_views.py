@@ -4305,7 +4305,7 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/robots.txt')
         assert_equal(res.status_code, 200)
         assert_in('User-agent', res)
-        assert_in('text/plain', res.headers['Content-Type'])
+        assert_in('html', res.headers['Content-Type'])
 
     def test_favicon(self):
         res = self.app.get('/favicon.ico')
