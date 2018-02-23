@@ -2361,7 +2361,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 for wiki_page in self.get_wiki_pages_latest():
                     if not newest_wiki_page:
                         newest_wiki_page = wiki_page
-                    elif wiki_page.modified > newest_wiki_page.modified:
+                    elif wiki_page.created > newest_wiki_page.created:
                         newest_wiki_page = wiki_page
                 if newest_wiki_page:
                     content.append(newest_wiki_page.raw_text(self).encode('utf-8'))

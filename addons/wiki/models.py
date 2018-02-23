@@ -117,7 +117,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     @property
     def rendered_before_update(self):
-        return self.modified < WIKI_CHANGE_DATE
+        return self.created < WIKI_CHANGE_DATE
 
     def get_draft(self, node):
         """
@@ -135,7 +135,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_timestamp /= 1000  # Convert to appropriate units
             sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
 
-            if sharejs_version > 1 and sharejs_date > self.modified:
+            if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']
 
         return self.content
@@ -332,7 +332,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def rendered_before_update(self):
-        return self.modified < WIKI_CHANGE_DATE
+        return self.date < WIKI_CHANGE_DATE
 
     # For Comment API compatibility
     @property
@@ -403,7 +403,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
             sharejs_timestamp /= 1000  # Convert to appropriate units
             sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
 
-            if sharejs_version > 1 and sharejs_date > self.modified:
+            if sharejs_version > 1 and sharejs_date > self.date:
                 return doc_item['_data']
 
         return self.content
