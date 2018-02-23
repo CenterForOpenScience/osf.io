@@ -26,6 +26,12 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
 
     self.pageOwner = pageOwner;
 
+    self.expanded = ko.observable(false);
+
+    self.toggleExpand = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));
     };
@@ -129,6 +135,20 @@ var AccessRequestsViewModel = function(accessRequests, user, isRegistration, tab
 
     self.serialize = function(accessRequest) {
         return accessRequest.serialize();
+    };
+
+    self.afterRender = function(elements, data) {
+        var table;
+        table = self.table[0];
+        if (!!table) {
+            rt.responsiveTable(table);
+        }
+    };
+
+    self.collapsed = ko.observable(true);
+
+    self.onWindowResize = function() {
+        self.collapsed(self.table.children().filter('thead').is(':hidden'));
     };
 
 };

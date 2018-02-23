@@ -146,6 +146,7 @@
         class="table responsive-table responsive-table-xxs"
         data-bind="template: {
             name: 'accessRequestsTable',
+            afterRender: afterRender,
             options: {
                 containment: '#manageAccessRequests'
             }
@@ -319,7 +320,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
                         <span href="#removeContributor"
-                           data-bind="click: remove"
+                           data-bind="click: remove, class: {}"
                            data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
@@ -334,9 +335,11 @@
 
 <script id="accessRequestRow" type="text/html">
     <tr>
-        <td>
+        <td data-bind="attr: {class: accessRequest.expanded() ? 'expanded' : null,
+                       role: $root.collapsed() ? 'button' : null},
+                       click: $root.collapsed() ? toggleExpand : null">
             <img data-bind="attr: {src: accessRequest.user.profile_image_url}" />
-            <span></span>
+            <span data-bind="attr: {class: accessRequest.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">
                 <span data-bind="ifnot: profileUrl">
                     <span class="name-search" data-bind="text: accessRequest.user.shortname"></span>
@@ -356,8 +359,8 @@
             </span>
         </td>
         <td class="permissions">
-            <div class="header"></div>
-            <div class="td-content">
+            <div class="header" data-bind="visible: accessRequest.expanded() && $root.collapsed()"></div>
+                <div class="td-content" data-bind="visible: !$root.collapsed() ||  accessRequest.expanded()">
                 <select class="form-control input-sm" data-bind="
                     options: $parents[0].permissionList,
                     value: permission,
@@ -368,8 +371,8 @@
             </div>
         </td>
         <td>
-            <div class="header"></div>
-            <div class="td-content">
+            <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <input
                     type="checkbox" class="biblio"
                     data-bind="checked: visible"
@@ -377,16 +380,14 @@
             </div>
         </td>
         <td>
-            <div class="header"></div>
-            <div class="td-content">
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <button class="btn btn-success btn-sm m-l-md request-accept-button"
                        data-bind="click: function() {respondToAccessRequest('accept')}"
                 ><i class="fa fa-plus"></i> Add</button>
             </div>
         </td>
         <td>
-            <div class="header"></div>
-            <div class="td-content">
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <span data-bind="click: function() {respondToAccessRequest('reject')}"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
             </div>
         </td>

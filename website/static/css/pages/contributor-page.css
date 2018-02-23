@@ -101,6 +101,17 @@ th.access-permissions {
   .btn-group-justified-vertical > .btn-group .btn {
     width: 100%;
   }
+
+  .remove-or-reject {
+    padding-top: 4px;
+    color: lightgrey;
+    cursor: pointer;
+    font-size: 1.5em;
+  }
+
+  td div.td-content {
+      display: inline;
+  }
 }
 
 @media screen and (min-width: 992px) {
@@ -151,15 +162,15 @@ th.access-permissions {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
-}
-
-.remove-or-reject {
+  .remove-or-reject {
     padding-top: 4px;
     color: lightgrey;
     cursor: pointer;
     float: right;
     font-size: 1.5em;
+  }
 }
+
 
 .request-accept-button {
     margin-right: 5px;

@@ -47,6 +47,9 @@ $(window).on('load', function() {
     if (typeof cm !== 'undefined') {
       cm.viewModel.onWindowResize();
     }
+    if (typeof arm !== 'undefined') {
+      arm.viewModel.onWindowResize();
+    }
     if (!!privateLinkTable){
         privateLinkTable.viewModel.onWindowResize();
         rt.responsiveTable(linkTable[0]);
@@ -63,5 +66,8 @@ $(window).resize(function() {
     }
     if (typeof cm !== 'undefined') {
       cm.viewModel.onWindowResize();
+    }
+    if (typeof arm !== 'undefined') {
+      arm.viewModel.onWindowResize();
     }
 });
