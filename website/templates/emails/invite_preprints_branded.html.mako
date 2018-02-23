@@ -26,9 +26,9 @@
     <br>
     Center for Open Science<br>
     <br>
-    Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
+    Want more information? Visit https://osf.io/preprints/${branded_service._id} to learn about ${branded_service.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
-    Questions? Email contact@osf.io<br>
+    Questions? Email support+${branded_service._id}@osf.io<br>
 
 </tr>
 </%def>
