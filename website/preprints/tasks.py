@@ -195,4 +195,5 @@ def send_desk_share_preprint_error(preprint, resp, retries):
         preprint=preprint,
         resp=resp,
         retries=retries,
+        can_change_preferences=False
     )

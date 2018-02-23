@@ -54,6 +54,7 @@ def main():
         to_addr=settings.PREREG_EMAIL,
         attachment_name=filename,
         attachment_content=output.getvalue(),
+        can_change_preferences=False,
         celery=False  # attachment is not JSON-serializable, so don't pass it to celery
     )
 

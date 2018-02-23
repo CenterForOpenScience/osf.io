@@ -156,4 +156,5 @@ def send_desk_share_error(node, resp, retries):
         node=node,
         resp=resp,
         retries=retries,
+        can_change_preferences=False,
     )

@@ -856,6 +856,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
             results={},
+            can_change_preferences=False,
             url=url,
         )
         mock_send_mail.assert_has_calls([
@@ -887,6 +888,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             stat_result={},
+            can_change_preferences=False,
             url=url,
         )
         mock_send_mail.assert_has_calls([
@@ -1361,4 +1363,5 @@ def test_archiver_uncaught_error_mail_renders():
         src=src,
         results=job.target_addons.all(),
         url=settings.INTERNAL_DOMAIN + src._id,
+        can_change_preferences=False,
     )

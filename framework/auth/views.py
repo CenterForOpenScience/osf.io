@@ -180,7 +180,8 @@ def forgot_password_post():
                 mails.send_mail(
                     to_addr=email,
                     mail=mails.FORGOT_PASSWORD,
-                    reset_link=reset_link
+                    reset_link=reset_link,
+                    can_change_preferences=False,
                 )
 
         status.push_status_message(status_message, kind=kind, trust=False)
@@ -554,6 +555,7 @@ def external_login_confirm_email_get(auth, uid, token):
             to_addr=user.username,
             mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
             external_id_provider=provider,
+            can_change_preferences=False,
         )
 
     # redirect to CAS and authenticate the user with the verification key
@@ -763,7 +765,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         merge_target=merge_target,
         external_id_provider=external_id_provider,
         branded_preprints_provider=branded_preprints_provider,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL
+        osf_support_email=settings.OSF_SUPPORT_EMAIL,
+        can_change_preferences=False,
     )
 
 

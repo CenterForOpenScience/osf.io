@@ -98,7 +98,7 @@ class TestAuthUtils(OsfTestCase):
             'user': user,
             'mimetype': 'html',
             'mail': mails.WELCOME,
-            'to_addr': user.username,
+            'to_addr': user.username
         })
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
@@ -189,6 +189,7 @@ class TestAuthUtils(OsfTestCase):
             'mimetype': 'html',
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
+            'can_change_preferences': False,
         })
 
     @mock.patch('framework.auth.utils.requests.post')

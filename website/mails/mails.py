@@ -192,7 +192,6 @@ CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 

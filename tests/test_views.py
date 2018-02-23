@@ -2086,7 +2086,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE_DEFAULT
+            mail=mails.INVITE_DEFAULT,
+            can_change_preferences=False,
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2112,7 +2113,8 @@ class TestUserInviteViews(OsfTestCase):
             email=real_email.lower().strip(),
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
-            branded_service=None
+            branded_service=None,
+            can_change_preferences=False,
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
