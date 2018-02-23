@@ -57,7 +57,7 @@ def update_comments_viewed_timestamp(node, current_wiki_object, desired_wiki_obj
             contrib.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
             del contrib.comments_viewed_timestamp[current_wiki_object._id]
             contributors_pending_save.append(contrib)
-    bulk_update(contributors_pending_save)
+    bulk_update(contributors_pending_save, batch_size=1000)
     return
 
 def migrate_guid_referent(guid, desired_referent, content_type_id):
@@ -117,12 +117,12 @@ def create_wiki_pages(nodes):
                 wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
         if i % 500 == 0:
             with disable_auto_now_add_fields(models=[WikiPage]):
-                WikiPage.objects.bulk_create(wiki_pages)
+                WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
                 wiki_pages = []
     progress_bar.finish()
     # Create the remaining wiki pages that weren't created in the loop above
     with disable_auto_now_add_fields(models=[WikiPage]):
-        WikiPage.objects.bulk_create(wiki_pages)
+        WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
     logger.info('WikiPages saved.')
     create_guids()
     return
@@ -150,16 +150,16 @@ def create_wiki_versions(nodes):
                 update_comments_viewed_timestamp(node, node_wiki, wiki_page)
         if i % 500 == 0:
             with disable_auto_now_add_fields(models=[WikiVersion]):
-                WikiVersion.objects.bulk_create(wiki_versions_pending)
+                WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
                 wiki_versions_pending = []
-            bulk_update(guids_pending)
+            bulk_update(guids_pending, batch_size=1000)
             guids_pending = []
             gc.collect()
     progress_bar.finish()
     # Create the remaining wiki pages that weren't created in the loop above
     with disable_auto_now_add_fields(models=[WikiVersion]):
-        WikiVersion.objects.bulk_create(wiki_versions_pending)
-    bulk_update(guids_pending)
+        WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
+    bulk_update(guids_pending, batch_size=1000)
     logger.info('WikiVersions saved.')
     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
     return
