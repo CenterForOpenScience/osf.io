@@ -12,8 +12,6 @@
     ${confirmation_url}<br>
     <br>
     The OSF Team<br>
-    <br>
-    Center for Open Science<br>
 
 
 </tr>

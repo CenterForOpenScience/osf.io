@@ -18,8 +18,6 @@
     <br>
     Open Science Framework Robot<br>
     <br>
-    Center for Open Science<br>
-    <br>
     Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
     Questions? Email contact@osf.io<br>

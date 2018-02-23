@@ -10,8 +10,6 @@
     ${confirmation_url}<br>
     <br>
     From the team at the Center for Open Science<br>
-    <br>
-    Center for Open Science<br>
 
 </tr>
 </%def>

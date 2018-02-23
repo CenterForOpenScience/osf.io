@@ -12,8 +12,6 @@
     Sincerely,<br>
     <br>
     Open Science Framework Robot<br>
-    <br>
-    Center for Open Science<br>
 
 </tr>
 </%def>

@@ -12,8 +12,6 @@
     Sincerely yours,<br>
     <br>
     Your ${branded_preprints_provider} and OSF teams<br>
-    <br>
-    Center for Open Science<br>
 
 </tr>
 </%def>

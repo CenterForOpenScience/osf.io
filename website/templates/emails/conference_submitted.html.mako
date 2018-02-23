@@ -29,8 +29,6 @@
     Sincerely yours,<br>
     <br>
     The OSF Robot<br>
-    <br>
-    Center for Open Science<br>
 
 </tr>
 </%def>

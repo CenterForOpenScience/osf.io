@@ -25,8 +25,6 @@
     <br>
     Your ${preprint.provider.name} and OSF teams<br>
     <br>
-    Center for Open Science<br>
-    <br>
     Want more information? Visit ${preprint.provider.landing_url} to learn about ${preprint.provider.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
     Questions? Email support+${preprint.provider._id}@osf.io<br>
