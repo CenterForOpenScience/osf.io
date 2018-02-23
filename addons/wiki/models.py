@@ -312,7 +312,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
-    former_guid = models.CharField(null=True, blank=True, max_length=5)
+    former_guid = models.CharField(null=True, blank=True, max_length=100)
 
     @property
     def is_current(self):
