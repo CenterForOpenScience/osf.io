@@ -416,14 +416,6 @@ def view_project(auth, node, **kwargs):
                         embed_descendants=True
                         )
 
-    access_request = node.requests.filter(creator=auth.user)
-    ret['node']['access_requests_enabled'] = node.access_requests_enabled
-    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
-
-    # Return early if it's simply a request access page
-    if not node.is_public and not node.is_contributor(auth.user):
-        return ret
-
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
     ret['addon_widget_js'] = list(collect_addon_js(
@@ -432,6 +424,9 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    access_request = node.requests.filter(creator=auth.user)
+    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
@@ -663,18 +658,6 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
-
-    # Return early if it's simply a request access page to avoid many queries
-    if not node.is_public and not node.is_contributor(auth.user):
-        return {
-            'node': {
-                'id': node._primary_key,
-                'is_public': False
-            },
-            'user': {
-                'has_read_permissions': False
-            }
-        }
 
     try:
         contributor = node.contributor_set.get(user=user)

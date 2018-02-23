@@ -1025,7 +1025,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.view_project,
-            OsfWebRenderer('project/project_landing.mako', trust=False)
+            OsfWebRenderer('project/project.mako', trust=False)
         ),
 
         # Create a new subproject/component

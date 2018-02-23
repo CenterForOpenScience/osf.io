@@ -1,10 +1,5 @@
-<%inherit file="../base.mako"/>
-
-
-<%def name="title_meta()">
-    Request Access
-</%def>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Request Access</%def>
 <%def name="content()">
 
 
