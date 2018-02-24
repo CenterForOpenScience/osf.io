@@ -2,12 +2,12 @@ import logging
 import requests
 from io import BytesIO
 from lxml import etree
-import base64
-from datetime import datetime
 import os
 import datetime
 import mimetypes
+import httplib as http
 from framework.exceptions import HTTPError
+from requests.exceptions import ConnectionError
 
 logger = logging.getLogger('addons.weko.client')
 
@@ -15,6 +15,11 @@ APP_NAMESPACE = 'http://www.w3.org/2007/app'
 ATOM_NAMESPACE = 'http://www.w3.org/2005/Atom'
 RDF_NAMESPACE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
 DC_NAMESPACE = 'http://purl.org/metadata/dublin_core#'
+
+
+class UnauthorizedError(IOError):
+    pass
+
 
 class Index(object):
     raw = None
@@ -44,35 +49,6 @@ class Index(object):
     def about(self):
         return self.raw['about']
 
-class Item(object):
-    raw = None
-    parentIdentifier = None
-
-    def __init__(self, entry):
-        self.raw = {'id': entry.find('{%s}id' % ATOM_NAMESPACE).text.strip(),
-                    'title': entry.find('{%s}title' % ATOM_NAMESPACE).text,
-                    'updated': entry.find('{%s}updated' % ATOM_NAMESPACE).text}
-
-    @property
-    def about(self):
-        return self.raw['id']
-
-    @property
-    def file_id(self):
-        return 'item{}'.format(itemId(self.raw['id']))
-
-    @property
-    def title(self):
-        return self.raw['title']
-
-    @property
-    def author(self):
-        return self.raw['author']
-
-    @property
-    def updated(self):
-        return self.raw['updated']
-
 
 class Connection(object):
     host = None
@@ -83,14 +59,14 @@ class Connection(object):
         self.token = token
 
     def get_login_user(self, default_user=None):
-        headers = {"Authorization":"Bearer " + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
         resp = requests.get(self.host + 'servicedocument.php', headers=headers)
         if resp.status_code != 200:
             resp.raise_for_status()
         return resp.headers.get('X-WEKO-Login-User', default_user)
 
     def get(self, path):
-        headers = {"Authorization":"Bearer " + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
         resp = requests.get(self.host + path, headers=headers)
         if resp.status_code != 200:
             resp.raise_for_status()
@@ -98,7 +74,7 @@ class Connection(object):
         return tree
 
     def get_url(self, url):
-        headers = {"Authorization":"Bearer " + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
         resp = requests.get(url, headers=headers)
         if resp.status_code != 200:
             resp.raise_for_status()
@@ -106,30 +82,20 @@ class Connection(object):
         return tree
 
     def delete_url(self, url):
-        headers = {"Authorization":"Bearer " + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
         resp = requests.delete(url, headers=headers)
         if resp.status_code != 200:
             resp.raise_for_status()
 
-    def post_url(self, url, stream, headers={}):
-        headers = headers.copy()
-        headers["Authorization"] = "Bearer " + self.token
+    def post_url(self, url, stream, default_headers={}):
+        headers = {'Authorization': 'Bearer ' + self.token}
+        headers.update(default_headers)
         resp = requests.post(url, headers=headers, data=stream)
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
         return tree
 
-
-def itemId(url, default_value=None):
-    query = parse_qs(urlparse(url).query)
-    if 'item_id' in query:
-        return query['item_id'][0]
-    elif 'itemId' in query:
-        return query['itemId'][0]
-    else:
-        logger.warn('Unexpected Query: {}'.format(str(query)))
-        return default_value
 
 def parse_index(desc):
     return Index(title=desc.find('{%s}title' % DC_NAMESPACE).text,
@@ -199,14 +165,6 @@ def get_all_indices(connection):
 
 def get_index_by_id(connection, index_id):
     return list(filter(lambda i: i.identifier == index_id, get_all_indices(connection)))[0]
-
-def get_items(connection, index):
-    root = connection.get_url(index.about)
-    items = []
-    for entry in root.findall('.//atom.entry'):
-        logger.info('Name: {}'.format(entry.find('{%s}title' % ATOM_NAMESPACE).text))
-        items.append(Item(entry))
-    return items
 
 def get_serviceitemtype(connection):
     root = connection.get('serviceitemtype.php')

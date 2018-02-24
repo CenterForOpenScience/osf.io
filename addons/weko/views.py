@@ -2,32 +2,25 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
-import uuid
 import os
-import tempfile
 import re
-from requests.exceptions import SSLError
 from lxml import etree
 
 from flask import request
 from flask import redirect
-from django.core.exceptions import ValidationError
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from addons.base import generic_views
 from addons.weko import client
-from addons.weko.models import WEKOProvider
 from addons.weko.serializer import WEKOSerializer
 from addons.weko import settings as weko_settings
-from osf.models import ExternalAccount
 from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public,
-    must_be_valid_project
 )
 
 from website.util import rubeus, api_url_for
@@ -149,7 +142,6 @@ def weko_get_serviceitemtype(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon(SHORT_NAME, 'node')
 def weko_get_item_view(itemid, node_addon, **kwargs):
-    weko_host = weko_settings.REPOSITORIES[node_addon.external_account.provider_id.split(':')[0]]['host']
     connection = client.connect_from_settings_or_401(weko_settings, node_addon)
     index_url = client.get_all_indices(connection)[0].about
     base_url = re.compile(r'^(.+)\?action=.*$').match(index_url).group(1)
@@ -159,9 +151,6 @@ def weko_get_item_view(itemid, node_addon, **kwargs):
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
 def weko_add_item_created(node_addon, auth, **kwargs):
-    node = node_addon.owner
-
-    now = datetime.datetime.utcnow()
     parent_id = request.json.get('parent_id', None)
     item_id = request.json.get('item_id', None)
     title = request.json.get('title', None)
@@ -251,8 +240,6 @@ def weko_generate_metadata(node_addon, auth, **kwargs):
 ## HGRID ##
 
 def _weko_root_folder(node_addon, auth, **kwargs):
-    node = node_addon.owner
-
     # Quit if no indices linked
     if not node_addon.complete:
         return []
