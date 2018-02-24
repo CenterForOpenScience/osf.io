@@ -24,7 +24,6 @@ def parse_auth_desc(host):
         raise ValueError('Unexpected auth_desc: {}'.format(host))
 
 
-
 class SwiftProvider(BasicAuthProviderMixin):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 

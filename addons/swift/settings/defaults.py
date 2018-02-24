@@ -1,2 +1,2 @@
 # Timeout using connection checking
-TEST_TIMEOUT=30
+TEST_TIMEOUT = 30
