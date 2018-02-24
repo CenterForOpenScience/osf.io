@@ -7,7 +7,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from django.db import models
 
 from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
 from requests_oauthlib import OAuth2Session
 from flask import request
@@ -67,6 +67,7 @@ class WEKOProvider(ExternalProvider):
         # save state token to the session for confirmation in the callback
         session.data['oauth_states'][self.short_name] = {'state': state}
 
+        session.save()
         return url
 
     def repo_auth_callback(self, user, repoid, **kwargs):
