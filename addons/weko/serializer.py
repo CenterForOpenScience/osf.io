@@ -55,8 +55,6 @@ class WEKOSerializer(OAuthAddonSerializer):
     @property
     def addon_serialized_urls(self):
         node = self.node_settings.owner
-        external_account = self.node_settings.external_account
-        host = external_account.oauth_key if external_account else ''
 
         return {
             'auth': api_url_for('weko_oauth_connect',

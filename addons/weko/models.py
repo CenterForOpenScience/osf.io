@@ -21,7 +21,7 @@ from addons.weko.client import connect_or_error
 from addons.weko.serializer import WEKOSerializer
 from addons.weko.utils import WEKONodeLogger
 from addons.weko import settings as weko_settings
-from website.util import web_url_for, api_v2_url
+from website.util import web_url_for
 
 OAUTH2 = 2
 

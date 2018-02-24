@@ -19,7 +19,7 @@ oauth_routes = {
         ),
     ],
     'prefix': '/oauth'
-  }
+}
 
 api_routes = {
     'rules': [
