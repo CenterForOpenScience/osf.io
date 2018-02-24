@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import httplib as http
+import httplib
 from flask import request
 import logging
 
@@ -8,10 +7,9 @@ from . import settings
 from framework.exceptions import HTTPError
 from website.project.decorators import (
     must_be_contributor_or_public,
-    must_have_addon, must_not_be_registration,
+    must_have_addon,
     must_be_valid_project,
     must_have_permission,
-    must_have_write_permission_or_public_wiki,
 )
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,6 @@ Routes associated with the jupyterhub addon
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from . import views
 
