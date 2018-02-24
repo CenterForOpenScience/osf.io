@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
-import functools
 import logging
 import json
 
