@@ -87,9 +87,10 @@ class Connection(object):
         if resp.status_code != 200:
             resp.raise_for_status()
 
-    def post_url(self, url, stream, default_headers={}):
+    def post_url(self, url, stream, default_headers=None):
         headers = {'Authorization': 'Bearer ' + self.token}
-        headers.update(default_headers)
+        if default_headers is not None:
+            headers.update(default_headers)
         resp = requests.post(url, headers=headers, data=stream)
         if resp.status_code != 200:
             resp.raise_for_status()
@@ -216,11 +217,11 @@ def post(connection, insert_index_id, stream, stream_size):
         target = collection.attrib['href']
     logger.info('Post: {} on {}'.format(insert_index_id, target))
     weko_headers = {
-        "Content-Disposition": "filename=temp.zip",
-        "Content-Type": "application/zip",
-        "Packaging": "http://purl.org/net/sword/package/SimpleZip",
-        "Content-Length": str(stream_size),
-        "insert_index": str(insert_index_id)
+        'Content-Disposition': 'filename=temp.zip',
+        'Content-Type': 'application/zip',
+        'Packaging': 'http://purl.org/net/sword/package/SimpleZip',
+        'Content-Length': str(stream_size),
+        'insert_index': str(insert_index_id)
     }
     resp = connection.post_url(target, stream, headers=weko_headers)
     logger.info(etree.tostring(resp))
@@ -261,9 +262,9 @@ def create_index(connection, title_ja=None, title_en=None, relation=None):
     logger.debug('XML: {}'.format(etree.tostring(post_xml)))
     stream = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
     weko_headers = {
-        "Content-Disposition": "filename=tree.xml",
-        "Content-Type": "text/xml",
-        "Content-Length": str(len(stream)),
+        'Content-Disposition': 'filename=tree.xml',
+        'Content-Type': 'text/xml',
+        'Content-Length': str(len(stream)),
     }
     root = connection.post_url(target, stream, headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
@@ -294,9 +295,9 @@ def update_index(connection, index_id, title_ja=None, title_en=None, relation=No
     logger.debug('XML: {}'.format(etree.tostring(post_xml)))
     stream = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
     weko_headers = {
-        "Content-Disposition": "filename=tree.xml",
-        "Content-Type": "text/xml",
-        "Content-Length": str(len(stream)),
+        'Content-Disposition': 'filename=tree.xml',
+        'Content-Type': 'text/xml',
+        'Content-Length': str(len(stream)),
     }
     root = connection.post_url(target, stream, headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
