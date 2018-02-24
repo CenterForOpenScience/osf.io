@@ -50,6 +50,7 @@ from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
+from addons.jupyterhub.utils import serialize_jupyterhub_widget
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -421,7 +422,8 @@ def view_project(auth, node, **kwargs):
         'mendeley': None,
         'zotero': None,
         'forward': None,
-        'dataverse': None
+        'dataverse': None,
+        'jupyterhub': None
     }
 
     if 'wiki' in ret['addons']:
@@ -442,6 +444,9 @@ def view_project(auth, node, **kwargs):
         node_addon = node.get_addon('mendeley')
         mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
         addons_widget_data['mendeley'] = mendeley_widget_data
+
+    if 'jupyterhub' in ret['addons']:
+        addons_widget_data['jupyterhub'] = serialize_jupyterhub_widget(node)
 
     ret.update({'addons_widget_data': addons_widget_data})
     return ret

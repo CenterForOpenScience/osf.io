@@ -499,6 +499,36 @@
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of making an S3 Compatible Storage bucket public or private. The OSF does not alter the permissions of linked S3 Compatible Storage buckets."
             }
+        },
+        "JupyterHub": {
+            "Permissions": {
+                "status": "none",
+                "text": "The OSF does not affect the permissions of JupyterHub."
+            },
+            "View / download file versions": {
+                "status": "none",
+                "text": "The JupyterHub add-on does not provide Storage Features."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "The JupyterHub add-on does not provide Storage Features."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "The JupyterHub add-on does not provide Storage Features."
+            },
+            "Logs": {
+                "status": "none",
+                "text": "The JupyterHub add-on does not provide Storage Features."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component copies information about linked JupyterHub but the OSF does not affect authentication of JupyterHub."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "JupyterHub information will not be registered."
+            }
         }
     },
     "disclaimers": [
