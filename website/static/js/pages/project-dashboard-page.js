@@ -44,6 +44,9 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
+
+    // Enable the otherActionsButton once the page is loaded so the menu is properly populated
+    $('#otherActionsButton').removeClass('disabled')
 });
 
 // Initialize comment pane w/ its viewmodel

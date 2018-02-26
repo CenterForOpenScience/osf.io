@@ -98,7 +98,7 @@
                             </div>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-default" data-toggle="collapse" data-target="#otherActions">
+                        <button class="btn btn-default disabled" data-toggle="collapse" data-target="#otherActions" id="otherActionsButton">
                             <i class="fa fa-ellipsis-h"></i>
                         </button>
                     </div>
