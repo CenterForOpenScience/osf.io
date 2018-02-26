@@ -51,13 +51,15 @@
                 {% endif %}
                 {% endif %}
             {% if perms.osf.mark_spam %}
-            <span class="col-md-2">
-                <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
-                   data-toggle="modal" data-target="#confirmSpamModal"
-                   class="btn btn-warning">
-                    Confirm Spam
-                </a>
-            </span>
+                {% if not node.is_registration %}
+                    <span class="col-md-2">
+                        <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
+                            data-toggle="modal" data-target="#confirmSpamModal"
+                            class="btn btn-warning">
+                            Confirm Spam
+                        </a>
+                    </span>
+                {% endif %}
             <div class="modal" id="confirmSpamModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>

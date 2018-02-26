@@ -27,13 +27,19 @@ $(document).ready(function() {
         }
     }
 
-    var draftManager = new RegistrationManager(node, '#draftRegistrationsScope', {
-        list: node.urls.api + 'drafts/',
-        submit: node.urls.api + 'draft/{draft_pk}/submit/',
-        delete: node.urls.api + 'drafts/{draft_pk}/',
-        schemas: '/api/v1/project/drafts/schemas/',
-        edit: node.urls.web + 'drafts/{draft_pk}/',
-        create: node.urls.web + 'registrations/'
-    }, $('#registerNode'));
-    draftManager.init();
+    var isSpammy = node.isSpammy;
+    if (!isSpammy) {
+        var draftManager = new RegistrationManager(node, '#draftRegistrationsScope', {
+            list: node.urls.api + 'drafts/',
+            submit: node.urls.api + 'draft/{draft_pk}/submit/',
+            delete: node.urls.api + 'drafts/{draft_pk}/',
+            schemas: '/api/v1/project/drafts/schemas/',
+            edit: node.urls.web + 'drafts/{draft_pk}/',
+            create: node.urls.web + 'registrations/'
+        }, $('#registerNode'));
+        draftManager.init();
+    } else{
+        //To change the text from "Loading..." to "New registration" when RegistrationManager is not initialized
+        $('#registerNode').text('New registration');
+    }
 });
