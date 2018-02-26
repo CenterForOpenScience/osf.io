@@ -75,21 +75,7 @@ class Migration(migrations.Migration):
                         access_token, preprint_word, subjects_acceptable, default_license_id, 'osf.preprintprovider' as type
                     FROM osf_preprintprovider
                 """
-            ], [
-                """
-                INSERT INTO osf_preprintprovider (id, created, modified, _id,
-                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,
-                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,
-                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,
-                        access_token, preprint_word, subjects_acceptable, default_license_id)
-                    SELECT id, created, modified, _id,
-                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,
-                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,
-                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,
-                        access_token, preprint_word, subjects_acceptable, default_license_id
-                    FROM osf_abstractprovider
-                """
-            ]
+            ], migrations.RunSQL.noop
         ),
         migrations.RunSQL(
             [
@@ -106,6 +92,29 @@ class Migration(migrations.Migration):
                 """
             ]
         ),
+        migrations.AlterField(
+            model_name='subject',
+            name='provider',
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='subjects', to='osf.AbstractProvider'),
+        ),
+        migrations.RunSQL(
+            migrations.RunSQL.noop,
+            [
+                """
+                INSERT INTO osf_preprintprovider (id, created, modified, _id,
+                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,
+                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,
+                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,
+                        access_token, preprint_word, subjects_acceptable, default_license_id)
+                    SELECT id, created, modified, _id,
+                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,
+                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,
+                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,
+                        access_token, preprint_word, subjects_acceptable, default_license_id
+                    FROM osf_abstractprovider
+                """
+            ]
+        ),
         migrations.RemoveField(
             model_name='preprintprovider',
             name='default_license',
@@ -113,11 +122,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='preprintprovider',
             name='licenses_acceptable',
-        ),
-        migrations.AlterField(
-            model_name='subject',
-            name='provider',
-            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='subjects', to='osf.AbstractProvider'),
         ),
         migrations.DeleteModel(
             name='PreprintProvider',
