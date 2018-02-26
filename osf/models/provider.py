@@ -86,6 +86,7 @@ class PreprintProvider(AbstractProvider):
         ('preprint', 'Preprint'),
         ('paper', 'Paper'),
         ('thesis', 'Thesis'),
+        ('work', 'Work'),
         ('none', 'None')
     )
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
