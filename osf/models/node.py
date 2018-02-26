@@ -2628,7 +2628,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # After delete callback
         for addon in self.get_addons():
-            message = addon.after_delete(self, auth.user)
+            message = addon.after_delete(auth.user)
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 

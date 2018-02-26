@@ -275,7 +275,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def fetch_access_token(self):
         return self.api.fetch_access_token()
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True, save=True)
 
     def on_delete(self):

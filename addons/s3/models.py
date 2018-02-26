@@ -153,5 +153,5 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)

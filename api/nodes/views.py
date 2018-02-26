@@ -374,7 +374,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if settings_model:
                 addon_list = settings_model.objects.filter(owner__in=resource_object_list)
                 for addon in addon_list:
-                    addon.after_delete(None, auth.user)
+                    addon.after_delete(auth.user)
 
         for node in resource_object_list:
             if node.parent_node:

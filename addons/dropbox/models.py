@@ -256,7 +256,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return u'<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
