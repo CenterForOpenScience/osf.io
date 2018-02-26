@@ -28,6 +28,7 @@ def get_campaigns():
                     'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
                     'login_type': 'native',
+                    'logo': 'osf_prereg'
                 },
                 'erpc': {
                     'system_tag': 'erp_challenge_campaign',
@@ -69,6 +70,7 @@ def get_campaigns():
                         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                         'login_type': 'proxy',
                         'provider': name,
+                        'logo': name if name != 'OSF' else 'osf_logo',
                     }
                 })
 
@@ -81,6 +83,7 @@ def get_campaigns():
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
+                    'logo': 'osf_registries'
                 }
             })
 
@@ -130,6 +133,13 @@ def is_proxy_login(campaign):
     campaigns = get_campaigns()
     if campaign in campaigns:
         return campaigns.get(campaign).get('login_type') == 'proxy'
+    return None
+
+
+def get_campaign_logo(campaign):
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('logo', None)
     return None
 
 

@@ -450,6 +450,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
     preprint_provider = None
+    logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
         if email_template == 'preprint':
@@ -457,6 +458,10 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             if not email_template or not preprint_provider:
                 return
             mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+            if preprint_provider._id =='osf':
+                logo = 'osf_preprints'
+            else:
+                logo = preprint_provider.name
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -511,6 +516,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         fullname=unclaimed_record['name'],
         branded_service=preprint_provider,
         can_change_preferences=False,
+        logo=logo if logo else 'osf_logo'
     )
 
     return to_addr
@@ -528,13 +534,19 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
         preprint_provider = None
+        logo = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+            if preprint_provider._id == 'osf':
+                logo = 'osf_preprints'
+            else:
+                logo = preprint_provider.name
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            logo = 'osf_preprints'
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
@@ -556,6 +568,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
             branded_service=preprint_provider,
             can_change_preferences=False,
+            logo=logo if logo else 'osf_logo',
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

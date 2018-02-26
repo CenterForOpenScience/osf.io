@@ -855,6 +855,7 @@ class DraftRegistrationApproval(Sanction):
                 user=user,
                 draft_url=draft.absolute_url,
                 can_change_preferences=False,
+                logo='osf_prereg'
             )
         else:
             raise NotImplementedError(
