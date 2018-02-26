@@ -31,6 +31,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
     };
 
     self.requestProjectAccess = function() {
+        self.accessRequestPendingOrDenied(true);
         var payload = {
             data: {
                 type: 'node-requests',
@@ -53,10 +54,10 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
         );
 
         request.done(function() {
-            self.accessRequestPendingOrDenied(true);
             self.requestAccessButton('Access requested');
         }.bind(this));
         request.fail(function(xhr, status, error) {
+            self.accessRequestPendingOrDenied(false);
             $osf.growl('Error',
                 'Access request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                 'danger'
