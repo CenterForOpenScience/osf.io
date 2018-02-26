@@ -1792,6 +1792,7 @@ class TestSendDigest(OsfTestCase):
         assert_equal(kwargs['mimetype'], 'html')
         assert_equal(kwargs['mail'], mails.DIGEST)
         assert_equal(kwargs['name'], user.fullname)
+        assert_equal(kwargs['can_change_node_preferences'], True)
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
 
