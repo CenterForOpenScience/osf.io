@@ -304,7 +304,7 @@ FROM osf_abstractnode AS N
             ORDER BY P.is_published DESC, P.created DESC
             LIMIT 1
             ) PREPRINT ON TRUE
-WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
+WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
   AND is_public IS TRUE
   AND is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -651,7 +651,7 @@ FROM osf_abstractnode AS N
             AND N._is_preprint_orphan != TRUE
           LIMIT 1
           ) PREPRINT ON TRUE
-WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration')
+WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
