@@ -21,10 +21,6 @@ from api.base.parsers import (
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
-from api.preprints.parsers import (
-    PreprintDetailJSONAPIMultipleRelationshipsParser,
-    PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON
-)
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
@@ -261,8 +257,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         PreprintPublishedOrAdmin,
     )
     parser_classes = (
-        PreprintDetailJSONAPIMultipleRelationshipsParser,
-        PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON,
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
     )
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
@@ -280,6 +276,14 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
         PreprintService.delete(instance)
+
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that type is required in request
+        """
+        res = super(PreprintDetail, self).get_parser_context(http_request)
+        res['type_required'] = True
+        return res
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):

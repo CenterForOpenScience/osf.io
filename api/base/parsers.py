@@ -54,6 +54,7 @@ class JSONAPIParser(JSONParser):
         relationships = resource_object.get('relationships')
         is_relationship = parser_context.get('is_relationship')
         attributes_required = parser_context.get('attributes_required', True)
+        type_required = parser_context.get('type_required', False)
         request_method = parser_context['request'].method
 
         # Request must include "relationships" or "attributes"
@@ -72,8 +73,9 @@ class JSONAPIParser(JSONParser):
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if object_type is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+            if type_required and parser_context['request'].version >= 2.7 and request_method == 'PATCH':
+                if object_type is None:
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
@@ -170,6 +172,8 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
         data = res.get('data')
+        type_required = parser_context.get('type_required', False)
+        request_method = parser_context['request'].method
 
         if data:
             id_ = data.get('id')
@@ -178,8 +182,9 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
             if id_ is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if type_ is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+            if type_required and parser_context['request'].version >= 2.7 and request_method == 'PATCH':
+                if type_ is None:
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
             return data
 
