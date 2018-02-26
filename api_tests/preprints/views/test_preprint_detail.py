@@ -303,6 +303,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
     def test_update_preprints_with_no_type(self, app, user, preprint, url):
         payload = {
@@ -313,6 +314,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
     def test_update_preprints_with_wrong_type(self, app, user, preprint, url):
         update_file_payload = build_preprint_update_payload(preprint._id, jsonapi_type='Nonsense')
