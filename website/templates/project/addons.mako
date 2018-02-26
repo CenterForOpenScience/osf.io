@@ -120,17 +120,17 @@
                             <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
                                 <div class="alert alert-info alert-dismissible" role="alert">
                                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                                        data-bind="tooltip: {title: 'Once dismissed, this alert will not be shown again.', placement: 'left'}, click: $root.dismiss.bind($root, 'githubOrgs')">
+                                        data-bind="click: $root.dismiss.bind($root, 'githubOrgs')">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                                     <div>
-                                        <h4>Don’t see your Github Organization repositories?</h4>
+                                        <h4>Don’t see your GitHub Organization repositories?</h4>
                                         <p>
-                                            You may need to reauthorize your Github access token.
+                                            You may need to reauthorize your GitHub access token.
                                             Follow the steps in the <a class="alert-link" href="http://help.osf.io/a/850865-reauthorize-github" target="_black">help guide</a> to resolve the issue. <br>
                                         </p>
                                         <p>
-                                            Please contact support <a class="alert-link" href="mailto:contact@osf.io">support@osf.io</a> if you have questions.
+                                            Please contact support <a class="alert-link" href="mailto:support@osf.io">support@osf.io</a> if you have questions.
                                         </p>
                                     </div>
                                 </div>
