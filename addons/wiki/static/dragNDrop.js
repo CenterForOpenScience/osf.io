@@ -62,12 +62,12 @@ var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
         if (!!path) {
             $.each(files, function(i, file) {
                 ext = getExtension(file.name);
-                name = newName ? encodeURI(newName) : encodeURI(file.name);
+                name = newName ? newName : file.name;
                 if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
                     $osf.growl('Error', 'File type not supported (' + file.name + ')', 'danger');
                     editor.enable();
                 } else {
-                    var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + name + '&type=file';
+                    var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
                     promises.push(
                         $.ajax({
                             url: waterbutlerURL,
@@ -301,7 +301,7 @@ var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, f
  */
 var createFolder = function() {
     return $.ajax({
-        url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=' + imageFolder.replace(/\s+/g, '+') + '&kind=folder',
+        url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=' + encodeURI(imageFolder) + '&kind=folder',
         type: 'PUT',
         beforeSend: $osf.setXHRAuthorization,
     });
@@ -315,23 +315,22 @@ var createFolder = function() {
  * @return {*} The folder's path attribute if it exists/was created
  */
 var checkFolder = function() {
-    var folderUrl = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=' + imageFolder.replace(/\s+/g, '+').toLowerCase();
+    var folderUrl = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&fields[file]=name,path&filter[name]=' + encodeURI(imageFolder);
     return $.ajax({
         url: folderUrl,
         type: 'GET',
         beforeSend: $osf.setXHRAuthorization,
-    }).then(function(data, responseText, response) {
-        var json = response.responseJSON;
-        var exists = false;
-        if (json.data.length > 0) {
-            for (var i = 0, folder; folder = json.data[i]; i++) {
+        dataType: 'json'
+    }).then(function(response) {
+        if (response.data.length > 0) {
+            for (var i = 0, folder; folder = response.data[i]; i++) {
                 var name = folder.attributes.name;
                 if (name === imageFolder) {
                     return folder.attributes.path;
                 }
             }
         }
-        if (json.data.length === 0 || !exists) {
+        if (response.data.length === 0) {
             return createFolder().then(function(response) {
                 return response.data.attributes.path;
             });
