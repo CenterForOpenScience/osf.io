@@ -282,7 +282,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         Tells parser that type is required in request
         """
         res = super(PreprintDetail, self).get_parser_context(http_request)
-        res['type_required'] = True
+        if self.request.version < 2.7:
+            res['type_required'] = False
         return res
 
 
