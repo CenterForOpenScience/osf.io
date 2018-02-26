@@ -768,7 +768,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         branded_preprints_provider=branded_preprints_provider,
         osf_support_email=settings.OSF_SUPPORT_EMAIL,
         can_change_preferences=False,
-        logo=logo if logo else 'osf_logo'
+        logo=logo if logo else settings.OSF_LOGO
     )
 
 

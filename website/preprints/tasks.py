@@ -196,5 +196,5 @@ def send_desk_share_preprint_error(preprint, resp, retries):
         resp=resp,
         retries=retries,
         can_change_preferences=False,
-        logo='osf_preprints'
+        logo=settings.OSF_PREPRINTS_LOGO
     )

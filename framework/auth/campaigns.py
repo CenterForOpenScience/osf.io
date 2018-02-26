@@ -3,7 +3,7 @@ import threading
 
 from django.utils import timezone
 
-from website import mails
+from website import mails, settings
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.time import throttle_period_expired
@@ -28,7 +28,7 @@ def get_campaigns():
                     'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
                     'login_type': 'native',
-                    'logo': 'osf_prereg'
+                    'logo': settings.OSF_PREREG_LOGO
                 },
                 'erpc': {
                     'system_tag': 'erp_challenge_campaign',
@@ -70,7 +70,7 @@ def get_campaigns():
                         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                         'login_type': 'proxy',
                         'provider': name,
-                        'logo': name if name != 'OSF' else 'osf_logo',
+                        'logo': name if name != 'OSF' else settings.OSF_LOGO,
                     }
                 })
 
@@ -83,7 +83,7 @@ def get_campaigns():
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
-                    'logo': 'osf_registries'
+                    'logo': settings.OSF_REGISTRIES_LOGO
                 }
             })
 

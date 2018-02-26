@@ -68,7 +68,8 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
-            username=None, password=None, callback=None, attachment_name=None, attachment_content=None, logo='osf_logo', **context):
+            username=None, password=None, callback=None, attachment_name=None,
+              attachment_content=None, logo=settings.OSF_LOGO, **context):
     """Send an email from the OSF.
     Example: ::
 

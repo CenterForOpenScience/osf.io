@@ -1912,3 +1912,10 @@ CUSTOM_CITATIONS = {
 }
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'

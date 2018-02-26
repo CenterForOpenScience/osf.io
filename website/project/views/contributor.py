@@ -459,7 +459,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                 return
             mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
             if preprint_provider._id == 'osf':
-                logo = 'osf_preprints'
+                logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = 'preprints_assets/{}/square_color_no_transparent'.format(preprint_provider.name)
         else:
@@ -516,7 +516,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         fullname=unclaimed_record['name'],
         branded_service=preprint_provider,
         can_change_preferences=False,
-        logo=logo if logo else 'osf_logo'
+        logo=logo if logo else settings.OSF_LOGO
     )
 
     return to_addr
@@ -541,12 +541,12 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
             if preprint_provider._id == 'osf':
-                logo = 'osf_preprints'
+                logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = 'preprints_assets/{}/square_color_no_transparent'.format(preprint_provider.name)
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
-            logo = 'osf_preprints'
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
@@ -568,7 +568,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
             branded_service=preprint_provider,
             can_change_preferences=False,
-            logo=logo if logo else 'osf_logo',
+            logo=logo if logo else settings.OSF_LOGO,
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

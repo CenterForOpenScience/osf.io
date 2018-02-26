@@ -55,7 +55,7 @@ def main():
         attachment_name=filename,
         attachment_content=output.getvalue(),
         can_change_preferences=False,
-        logo='osf_prereg',
+        logo=settings.OSF_PREREG_LOGO,
         celery=False  # attachment is not JSON-serializable, so don't pass it to celery
     )
 

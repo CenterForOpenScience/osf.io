@@ -48,7 +48,7 @@ def meeting_hook():
             fullname=message.sender_display,
             presentations_url=web_url_for('conference_view', _absolute=True),
             can_change_preferences=False,
-            logo='osf_meetings',
+            logo=settings.OSF_MEETINGS_LOGO,
         )
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
@@ -67,7 +67,7 @@ def add_poster_by_email(conference, message):
             CONFERENCE_FAILED,
             fullname=message.sender_display,
             can_change_preferences=False,
-            logo='osf_meetings'
+            logo=settings.OSF_MEETINGS_LOGO
         )
 
     nodes_created = []
@@ -146,7 +146,7 @@ def add_poster_by_email(conference, message):
         presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
         can_change_preferences=False,
-        logo='osf_meetings'
+        logo=settings.OSF_MEETINGS_LOGO
     )
     if node_created and user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)

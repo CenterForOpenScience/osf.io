@@ -250,7 +250,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         # Send creator confirmation email
         if self.provider._id == 'osf':
             email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
-            logo = 'osf_preprints'
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
             logo = self.provider.name

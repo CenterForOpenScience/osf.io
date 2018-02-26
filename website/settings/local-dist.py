@@ -115,3 +115,10 @@ SENDGRID_EMAIL_WHITELIST = []
 
 # support email
 OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
+
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
