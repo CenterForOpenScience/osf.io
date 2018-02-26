@@ -20,11 +20,11 @@ from website.settings import EZID_FORMAT, DOI_NAMESPACE
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
-        content_type='preprints'):
+        jsonapi_type='preprints'):
     payload = {
         'data': {
             'id': node_id,
-            'type': content_type,
+            'type': jsonapi_type,
             'attributes': attributes,
             'relationships': relationships
         }
@@ -293,7 +293,7 @@ class TestPreprintUpdate:
         assert log.action == 'preprint_file_updated'
         assert log.params.get('preprint') == preprint._id
 
-    def test_update_preprints_with_no_type(self, app, user, preprint, url):
+    def test_update_preprints_with_none_type(self, app, user, preprint, url):
         payload = {
             'data': {
                 'id': preprint._id,
@@ -304,8 +304,18 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
+    def test_update_preprints_with_no_type(self, app, user, preprint, url):
+        payload = {
+            'data': {
+                'id': preprint._id,
+            }
+        }
+
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
     def test_update_preprints_with_wrong_type(self, app, user, preprint, url):
-        update_file_payload = build_preprint_update_payload(preprint._id, content_type='Nonsense')
+        update_file_payload = build_preprint_update_payload(preprint._id, jsonapi_type='Nonsense')
 
         res = app.patch_json_api(url, update_file_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
@@ -634,7 +644,7 @@ class TestPreprintUpdateLicense:
     def make_payload(self):
         def payload(
                 node_id, license_id=None, license_year=None,
-                copyright_holders=None, content_type='preprints'
+                copyright_holders=None, jsonapi_type='preprints'
         ):
             attributes = {}
 
@@ -661,7 +671,7 @@ class TestPreprintUpdateLicense:
             return {
                 'data': {
                     'id': node_id,
-                    'type': content_type,
+                    'type': jsonapi_type,
                     'attributes': attributes,
                     'relationships': {
                         'license': {
@@ -675,7 +685,7 @@ class TestPreprintUpdateLicense:
             } if license_id else {
                 'data': {
                     'id': node_id,
-                    'type': content_type,
+                    'type': jsonapi_type,
                     'attributes': attributes
                 }
             }
