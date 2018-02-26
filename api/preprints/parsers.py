@@ -16,7 +16,7 @@ class PreprintDetailMixin(JSONAPIParser):
         """
         request_method = parser_context['request'].method
         object_type = resource_object.get('type')
-        
+
         if parser_context['request'].version >= 2.7 and request_method == 'PATCH':
             if object_type is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
