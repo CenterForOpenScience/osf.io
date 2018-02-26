@@ -121,12 +121,16 @@
                             <div id="shareButtonsPopover">Share</div>
                         % endif
                         % if node['access_requests_enabled'] and not user['is_contributor']:
+                            %if user_name:
                             <span class="request-access"
                               data-content="Request declined"
                               data-toggle="popover"
                               data-placement="left">
                                 <a data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled-link': requestAccess.accessRequestPendingOrDenied()}"></a>
                             </span>
+                            %else:
+                                <a href="${login_url}" >Login to request access</a>
+                            %endif
                         % endif
                         </div>
                     </div>
