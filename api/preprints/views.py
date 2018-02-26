@@ -17,12 +17,14 @@ from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
-    PreprintDetailJSONAPIMultipleRelationshipsParser,
-    PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
+from api.preprints.parsers import (
+    PreprintDetailJSONAPIMultipleRelationshipsParser,
+    PreprintDetailJSONAPIMultipleRelationshipsParserForRegularJSON
+)
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
