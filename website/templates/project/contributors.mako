@@ -242,8 +242,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th class="add"></th>
-            <th class="access-remove"></th>
+            <th class="add-remove-header"></th>
         </tr>
     </thead>
     <tbody data-bind="template: {
@@ -316,12 +315,14 @@
                 />
             </div>
         </td>
-        <td>
+        <td data-bind="css: {'add-remove': contributor.expanded()  && $root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
                         <span href="#removeContributor"
-                           data-bind="click: remove, class: {}"
+                           data-bind="click: remove, class: {}, visible: !$root.collapsed()"
                            data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                        <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-minus"></i> Remove</button>
+
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
@@ -379,16 +380,13 @@
                 />
             </div>
         </td>
-        <td>
+        <td data-bind="css: {'add-remove': accessRequest.expanded()  && $root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <button class="btn btn-success btn-sm m-l-md request-accept-button"
                        data-bind="click: function() {respondToAccessRequest('accept')}"
                 ><i class="fa fa-plus"></i> Add</button>
-            </div>
-        </td>
-        <td>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
-                <span data-bind="click: function() {respondToAccessRequest('reject')}"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-minus"></i> Remove</button>
             </div>
         </td>
     </tr>
