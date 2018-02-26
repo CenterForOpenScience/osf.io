@@ -32,6 +32,8 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
 
     self.requestProjectAccess = function() {
         self.accessRequestPendingOrDenied(true);
+        $osf.trackClick('link', 'click', 'request-project-access');
+
         var payload = {
             data: {
                 type: 'node-requests',
