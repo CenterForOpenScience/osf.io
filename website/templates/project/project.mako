@@ -34,7 +34,6 @@
             </div>
             <div class="clearfix visible-md-block"></div>
             <div class="col-lg-4">
-                <div class="row">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -103,37 +102,33 @@
                             <i class="fa fa-ellipsis-h"></i>
                         </button>
                     </div>
-
-                </div>
-                </div>
-                <div class="row">
                     <div class="collapse pull-right" id="otherActions">
-                    <div class="panel" id="other-actions-panel">
-                    <!-- ko if: canBeOrganized -->
-                        <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks'}">
-                               Bookmark
-                           </a>
+                        <div class="panel" id="other-actions-panel">
+                        <!-- ko if: canBeOrganized -->
+                            <!-- ko ifnot: inDashboard -->
+                               <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks'}">
+                                   Bookmark
+                               </a>
+                            <!-- /ko -->
+                            <!-- ko if: inDashboard -->
+                               <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
+                                placement: 'bottom', container : 'body'}">
+                                   Remove from bookmarks
+                               </a>
+                            <!-- /ko -->
                         <!-- /ko -->
-                        <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                            placement: 'bottom', container : 'body'}">
-                               Remove from bookmarks
-                           </a>
-                        <!-- /ko -->
-                    <!-- /ko -->
-                    % if node["is_public"]:
-                        <div id="shareButtonsPopover">Share</div>
-                    % endif
-                    % if node['access_requests_enabled'] and not user['is_contributor']:
-                        <span class="request-access"
-                          data-content="Request declined"
-                          data-toggle="popover"
-                          data-placement="left">
-                            <a data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled-link': requestAccess.accessRequestPendingOrDenied()}"></a>
-                        </span>
-                    % endif
-                    </div>
+                        % if node["is_public"]:
+                            <div id="shareButtonsPopover">Share</div>
+                        % endif
+                        % if node['access_requests_enabled'] and not user['is_contributor']:
+                            <span class="request-access"
+                              data-content="Request declined"
+                              data-toggle="popover"
+                              data-placement="left">
+                                <a data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled-link': requestAccess.accessRequestPendingOrDenied()}"></a>
+                            </span>
+                        % endif
+                        </div>
                     </div>
                 </div>
             </div>
