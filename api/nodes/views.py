@@ -104,6 +104,7 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.models.node import remove_addon
 from osf.models.nodelog import NodeLog
 from addons.wiki.models import NodeWikiPage
 from website import mails
@@ -365,38 +366,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         ).exclude(parent__in=resource_object_list).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
-        for config in AbstractNode.ADDONS_AVAILABLE:
-            try:
-                settings_model = config.node_settings
-            except LookupError:
-                settings_model = None
-
-            if settings_model:
-                addon_list = settings_model.objects.filter(owner__in=resource_object_list)
-                for addon in addon_list:
-                    addon.after_delete(auth.user)
+        remove_addon(auth, resource_object_list)
 
         for node in resource_object_list:
-            if node.parent_node:
-                node.parent_node.add_log(
-                    NodeLog.NODE_REMOVED,
-                    params={
-                        'project': node._primary_key,
-                    },
-                    auth=auth,
-                    log_date=date,
-                    save=True,
-                )
-            else:
-                node.add_log(
-                    NodeLog.PROJECT_DELETED,
-                    params={
-                        'project': node._primary_key,
-                    },
-                    auth=auth,
-                    log_date=date,
-                    save=True,
-                )
+            node.add_remove_node_log(auth=auth, date=date)
 
         nodes = AbstractNode.objects.filter(id__in=id_list)
         nodes.update(is_deleted=True, deleted_date=date)
