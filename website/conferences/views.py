@@ -5,7 +5,8 @@ import logging
 from flask import request
 
 from django.db import transaction
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import OuterRef, Count, Value, Case, When, Subquery, CharField
+from django.db.models.functions import Length, Substr, Coalesce
 from django_bulk_update.helper import bulk_update
 from django.core.paginator import Paginator, EmptyPage
 
@@ -15,7 +16,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
-from osf.models import AbstractNode, Node, Conference, Tag, OSFUser
+from osf.models import AbstractNode, Node, Conference, Tag, PageCounter
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -183,19 +184,61 @@ def _render_conference_node(node, idx, conf):
         'tags': ' '.join(tags)
     }
 
-
-def conference_data(meeting, meetings_page=1):
-    try:
-        conf = Conference.objects.get(endpoint__iexact=meeting)
-    except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+def filter_and_sort_conference_data(nodes, conf):
+    """
+    If appropriate query params are present, filter and sort conference submissions
+    Returns: node queryset
+    """
     q = request.args.get('q', '')
     if q:
-        nodes = nodes.filter(title__icontains=q)
-        #  u = OSFUser.objects.filter(contributor__visible=True, contributor__node=OuterRef('pk')).order_by('contributor___order').values_list('fullname', flat=True)
-        # AbstractNode.objects.annotate(first_visible_contrib=Subquery(u)).filter(first_visible_contrib__icontains='Dawn')
+        format_q = '%' + q + '%'
+        # Use a raw queryset to get around some limitations with django-include,
+        # as subqueries can only return one column, but guids are being fetched.
+        # This subquery looks for "q" query param in the node title, and the first visible
+        # contributor's fullname.
+        raw_queryset = nodes.raw(
+            """
+            SELECT *,
+              (SELECT U0."fullname"
+               FROM "osf_osfuser" U0
+               INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id")
+               WHERE (U1."node_id" = ("osf_abstractnode"."id")
+                      AND U1."visible" = true)
+               ORDER BY U1."_order" ASC
+               LIMIT 1) AS "first_visible_contrib"
+            FROM "osf_abstractnode"
+            WHERE (UPPER("osf_abstractnode"."title"::text) LIKE UPPER(%s)
+                   OR UPPER(
+                               (SELECT U0."fullname"
+                                FROM "osf_osfuser" U0
+                                INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id")
+                                WHERE (U1."node_id" = ("osf_abstractnode"."id")
+                                       AND U1."visible" = true)
+                                ORDER BY U1."_order" ASC
+                                LIMIT 1)::text) LIKE UPPER(%s))
+            """, [format_q, format_q]
+        )
+        nodes = nodes.filter(id__in=(x.id for x in raw_queryset))
+    sort = request.args.get('sort', '')
+    if sort:
+        if 'title' in sort:
+            nodes = nodes.order_by(sort)
+        elif 'created' in sort:
+            nodes = nodes.order_by(sort)
+        elif 'author' in sort:
+            # TODO sort on visible contributors
+            pass
+        elif 'category' in sort:
+            tag_subqs = Tag.objects.filter(abstractnode_tagged=OuterRef('pk'), name=conf.field_names['submission1']).values_list('name', flat=True)
+            nodes = nodes.annotate(sub_one_count=Count(Subquery(tag_subqs))).annotate(sub_name=Case(When(sub_one_count=1, then=Value(conf.field_names['submission1'])), default=Value(conf.field_names['submission2']), output_field=CharField())).order_by('-sub_name' if '-' in sort else 'sub_name')
+        elif 'downloads' in sort:
+            pages = PageCounter.objects.annotate(node_id=Substr('_id', 10, 5)).annotate(file_id=Substr('_id', 16)).filter(_id__icontains='download').annotate(_id_length=Length('_id')).exclude(_id_length__gt=39).filter(node_id=OuterRef('guids___id'), file_id=OuterRef('file_id'))
+            file_subqs = OsfStorageFile.objects.filter(node=OuterRef('pk')).order_by('created')
+            nodes = nodes.annotate(file_id=Subquery(file_subqs.values('_id')[:1])).annotate(downloads=Coalesce(Subquery(pages.values('total')[:1]), Value(0))).order_by(sort)
+    return nodes
+
+def conference_data(meeting, conf, meetings_page=1):
+    nodes = filter_and_sort_conference_data(AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False), conf)
 
     paginator = Paginator(nodes, SUBMISSIONS_PER_PAGE)
     try:
@@ -279,7 +322,7 @@ def create_pagination_array(current_page, total_pages):
     if not middle or (middle[-1] != '...' and middle[-1] != (total_pages - 2)):
         middle.append('...')
 
-    # Now flatten the start, middle, and end lists into one! This is your pagination.
+    # Now flatten the start, middle, and end lists into one! This is your pagination array.
     return [item for sublist in [start, middle, end] for item in sublist]
 
 def conference_results(meeting, **kwargs):
@@ -292,7 +335,7 @@ def conference_results(meeting, **kwargs):
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
-    data, current_page = conference_data(meeting, meetings_page=get_meetings_page())
+    data, current_page = conference_data(meeting, conf, meetings_page=get_meetings_page())
 
     return {
         'data': data,
@@ -303,6 +346,7 @@ def conference_results(meeting, **kwargs):
         'pagination': create_pagination_array(current_page.number, current_page.paginator.num_pages),
         'page': current_page,
         'q': request.args.get('q', ''),
+        'sort': request.args.get('sort', ''),
         'query_params': build_conference_query_params()
     }
 
@@ -310,10 +354,11 @@ def build_conference_query_params():
     q = request.args.get('q', '')
     page = get_meetings_page()
     sort = request.args.get('sort', '')
+    # Order of query params will be page, q, sort
     return {
-        'q_and_sort': '&q={}&sort={}'.format(q, sort),
-        'q_first': '?q={}&page={}&sort={}'.format(q, page, sort),
-        'sort_first': '?sort={}&page={}&q={}'.format(sort, page, q)
+        'page': '?page={}'.format(page),
+        'q': '&q={}'.format(q.replace(" ", '+')),
+        'sort': '&sort={}'.format(sort)
     }
 
 def conference_submissions(**kwargs):

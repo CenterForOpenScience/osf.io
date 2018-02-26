@@ -73,17 +73,101 @@
 <div class="tb-head">
     <div class="tb-head-filter col-xs-12 col-sm-6 col-sm-offset-6">
         <form id="meetingsFilter" method="GET">
+            <input type="hidden" name="page" value="1">
             <input id="filterAttachments" placeholder="Search" value="${ q }" name="q" type="text" style="width:100%;display:inline;" class="pull-right form-control">
+            <input type="hidden" name="sort" value="${ sort }">
         </form>
     </div>
 </div>
 
-<div id="grid" style="width: 100%;"></div>
+<div style="width: 100%;">
+    <div class="gridWrapper">
+        <div style="width:auto;" class="tb-table">
+            <div class="tb-row-titles">
+                <div class="tb-th" data-tb-th-col="0" style="width: 49%">
+                    <span class="m-r-sm">Title</span>
+                    % if sort == 'title':
+                        <a href=${"?page=1" + query_params['q'] + '&sort=title'}><i class="fa fa-chevron-up asc-button"></i></a>
+                    % else:
+                        <a href=${"?page=1" + query_params['q'] + '&sort=title'}><i class="fa fa-chevron-up asc-button tb-sort-inactive"></i></a>
+                    % endif
+                    % if sort == '-title':
+                        <a href=${"?page=1" + query_params['q'] + '&sort=-title'}><i class="fa fa-chevron-down desc-btn"></i></a>
+                    % else:
+                        <a href=${"?page=1" + query_params['q'] + '&sort=-title'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
+                    % endif
+                </div>
+                <div class="tb-th" data-tb-th-col="1" style="width: 9%">
+                    <span class="m-r-sm">Author</span>
+                    % if sort == 'author':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=author'}><i class="fa fa-chevron-up asc-btn m-r-xs"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=author'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
+                    % endif
+                    % if sort == '-author':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-author'}><i class="fa fa-chevron-down desc-btn"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-author'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
+                    % endif
+                </div>
+                <div class="tb-th" data-tb-th-col="2" style="width: 11%">
+                    <span class="m-r-sm">Category</span>
+                    % if sort == 'category':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=category'}><i class="fa fa-chevron-up asc-btn m-r-xs"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=category'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
+                    % endif
+                    % if sort == '-category':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-category'}><i class="fa fa-chevron-down desc-btn"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-category'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
+                    % endif
+                </div>
+                <div class="tb-th" data-tb-th-col="3" style="width: 14%">
+                    <span class="m-r-sm">Date Created</span>
+                    % if sort == 'created':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=created'}><i class="fa fa-chevron-up asc-btn m-r-xs"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=created'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
+                    % endif
+                    % if sort == '-created':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-created'}><i class="fa fa-chevron-down desc-btn"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-created'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
+                    % endif
+                </div>
+                <div class="tb-th" data-tb-th-col="4" style="width: 13%">
+                    <span class="m-r-sm">Downloads</span>
+                    % if sort == 'downloads':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=downloads'}><i class="fa fa-chevron-up asc-btn m-r-xs"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=downloads'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
+                    % endif
+                    % if sort == '-downloads':
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-downloads'}><i class="fa fa-chevron-down desc-btn"></i></a>
+                    % else:
+                        <a href=${"?page=1" +  query_params['q'] + '&sort=-downloads'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
+                    % endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+% if data:
+    <div id="grid" style="width: 100%;"></div>
+% else:
+    <div class="tb-no-results" style="border-left:1px solid #eee; border-right: 1px solid #eee;">
+        No results found for this search term.
+    </div>
+    <div id="grid" style="width: 100%;"></div>
+% endif
+
 % if page.has_other_pages():
     <div class="pull-right">
         <ul class="pagination">
             % if page.has_previous():
-                <li><a href=${"?page=" + str(page.previous_page_number()) + query_params['q_and_sort']}>&laquo;</a></li>
+                <li><a href=${"?page=" + str(page.previous_page_number()) + query_params['q'] + query_params['sort']}>&laquo;</a></li>
             % else:
                 <li class="disabled"><span>&laquo;</span></li>
             % endif
@@ -93,11 +177,11 @@
                 % elif i == '...':
                     <li> <span>${i} <span> </li>
                 % else:
-                    <li><a href=${"?page=" + str(i) + query_params['q_and_sort']}>${ i }</a></li>
+                    <li><a href=${"?page=" + str(i) + query_params['q'] + query_params['sort']}>${ i }</a></li>
                 % endif
             % endfor
             % if page.has_next():
-                <li><a href=${"?page=" + str(page.next_page_number()) + query_params['q_and_sort']}>&raquo;</a></li>
+                <li><a href=${"?page=" + str(page.next_page_number()) + query_params['q'] + query_params['sort']}>&raquo;</a></li>
             % else:
                 <li class="disabled"><span>&raquo;</span></li>
             % endif

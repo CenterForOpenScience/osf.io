@@ -12,6 +12,7 @@ function Meeting(data) {
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
+        hideColumnTitles: true,
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
