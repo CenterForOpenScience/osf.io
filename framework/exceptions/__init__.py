@@ -103,10 +103,10 @@ class PermissionsError(FrameworkError):
     pass
 
 
-class TemplateHttpError(HTTPError):
+class TemplateHTTPError(HTTPError):
     """Use in order to pass a specific error template to WebRenderer
     """
 
     def __init__(self, code, message=None, redirect_url=None, data=None, template=None):
         self.template = template
-        super(TemplateHttpError, self).__init__(code, message, redirect_url, data)
+        super(TemplateHTTPError, self).__init__(code, message, redirect_url, data)

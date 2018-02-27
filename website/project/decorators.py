@@ -8,7 +8,7 @@ from flask import request
 from framework import status
 from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
-from framework.exceptions import HTTPError, TemplateHttpError
+from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
@@ -203,10 +203,10 @@ def check_can_access(node, user, key=None, api_node=None):
                     'id': node._primary_key
                 },
                 'user': {
-                    'access_request_state': access_request.last().machine_state if access_request else None
+                    'access_request_state': access_request.get().machine_state if access_request else None
                 }
             }
-            raise TemplateHttpError(
+            raise TemplateHTTPError(
                 http.FORBIDDEN,
                 template='request_access.mako',
                 data=data
