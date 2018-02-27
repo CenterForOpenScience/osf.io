@@ -1,8 +1,8 @@
 'use strict';
 
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var RequestAccessViewModel = require('js/requestAccess');
-
 
 var ctx = window.contextVars;
 

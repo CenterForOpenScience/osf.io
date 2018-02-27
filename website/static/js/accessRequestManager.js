@@ -54,7 +54,7 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
                 },
                 'type': 'node-request-actions'
             }
-        }
+        };
     };
 
     self.respondToAccessRequest = function(trigger, data, event) {

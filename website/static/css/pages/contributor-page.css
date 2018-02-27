@@ -65,17 +65,9 @@ th.biblio-contrib {
     width: 109px;
 }
 
-th.add {
-    width: 50px;
-}
-
 th.remove {
     width: 94px;
 }
-
-/*td.add-remove {*/
-    /*padding-bottom: 5px !important;*/
-/*}*/
 
 th.access-permissions {
     width: 200px;

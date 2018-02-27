@@ -50,9 +50,9 @@ var ShareButtonsPopover = {
     view: function(ctrl, options) {
         var selector;
         if (options.type === 'link') {
-            selector = 'a#sharePopoverBtn[text=Share]'
+            selector = 'a#sharePopoverBtn[text=Share]';
         } else {
-            selector = 'a#sharePopoverBtn.btn.btn-default.glyphicon.glyphicon-share'
+            selector = 'a#sharePopoverBtn.btn.btn-default.glyphicon.glyphicon-share';
         }
         return [
             m(selector + '[href=#][data-toggle=popover]', {
