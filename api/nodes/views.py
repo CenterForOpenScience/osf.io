@@ -355,11 +355,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         date = timezone.now()
         id_list = [x.id for x in resource_object_list if x.can_edit(auth=auth)]
 
-        if len(id_list) != len(resource_object_list):
-            raise PermissionDenied(
-                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
-            )
-
         if NodeRelation.objects.filter(
                 child__in=resource_object_list, is_node_link=False
         ).exclude(parent__in=resource_object_list).exists():
