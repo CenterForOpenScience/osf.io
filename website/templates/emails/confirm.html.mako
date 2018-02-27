@@ -13,7 +13,7 @@
     <br>
     Sincerely yours,<br>
     <br>
-    Center for Open Science<br>
+    The OSF Team<br>
 
 </tr>
 </%def>
