@@ -2641,7 +2641,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
-        remove_addon(auth, [self])
+        remove_addons(auth, [self])
 
         log_date = date or timezone.now()
 
@@ -2971,7 +2971,7 @@ class Collection(AbstractNode):
         return super(Collection, self).save(*args, **kwargs)
 
 
-def remove_addon(auth, resource_object_list):
+def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:
             settings_model = config.node_settings

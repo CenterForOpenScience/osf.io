@@ -104,7 +104,7 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
-from osf.models.node import remove_addon
+from osf.models.node import remove_addons
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
@@ -360,7 +360,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         ).exclude(child__in=resource_object_list).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
-        remove_addon(auth, resource_object_list)
+        remove_addons(auth, resource_object_list)
 
         for node in resource_object_list:
             node.add_remove_node_log(auth=auth, date=date)
