@@ -298,6 +298,8 @@ class TestPreprintUpdate:
             'data': {
                 'id': preprint._id,
                 'type': None,
+                'attributes': None,
+                'relationship': None
             }
         }
 
@@ -309,6 +311,8 @@ class TestPreprintUpdate:
         payload = {
             'data': {
                 'id': preprint._id,
+                'attributes': None,
+                'relationship': None
             }
         }
 
