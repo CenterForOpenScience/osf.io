@@ -70,7 +70,7 @@ class JSONAPIParser(JSONParser):
         object_type = resource_object.get('type')
 
         type_required = not (
-            legacy_type_allowed and self.parser_context['request'].version < 2.7 and request_method == 'PATCH'
+            legacy_type_allowed and parser_context['request'].version < 2.7 and request_method == 'PATCH'
         )
 
         # For validating type and id for bulk delete:
@@ -180,7 +180,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         legacy_type_allowed = parser_context.get('legacy_type_allowed', True)
         type_required = not (
             legacy_type_allowed and
-            self.parser_context['request'].version < 2.7 and
+            parser_context['request'].version < 2.7 and
             parser_context['request'].method == 'PATCH'
         )
         if data:
