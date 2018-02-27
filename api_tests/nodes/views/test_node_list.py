@@ -2950,7 +2950,7 @@ class TestNodeBulkDelete:
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth,
             expect_errors=True, bulk=True)
-        assert res.status_code == 400
+        assert res.status_code == 204
 
         new_payload = {'data': [
             {'id': public_component._id, 'type': 'nodes'},
