@@ -1869,6 +1869,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
+            mimetype='plain',
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
