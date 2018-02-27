@@ -105,7 +105,6 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from osf.models.node import remove_addon
-from osf.models.nodelog import NodeLog
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
