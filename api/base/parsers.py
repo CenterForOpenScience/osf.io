@@ -54,7 +54,8 @@ class JSONAPIParser(JSONParser):
         relationships = resource_object.get('relationships')
         is_relationship = parser_context.get('is_relationship')
         attributes_required = parser_context.get('attributes_required', True)
-        type_required = parser_context.get('type_required', True)
+        # allow skip type check for legacy api version
+        legacy_type_allowed = parser_context.get('legacy_type_allowed', False)
         request_method = parser_context['request'].method
 
         # Request must include "relationships" or "attributes"
@@ -68,13 +69,17 @@ class JSONAPIParser(JSONParser):
         object_id = resource_object.get('id')
         object_type = resource_object.get('type')
 
+        type_required = not (
+            legacy_type_allowed and self.parser_context['request'].version < 2.7 and request_method == 'PATCH'
+        )
+
         # For validating type and id for bulk delete:
         if is_list and request_method == 'DELETE':
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
             if type_required and object_type is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
@@ -171,8 +176,13 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
         data = res.get('data')
-        type_required = parser_context.get('type_required', True)
-
+        # allow skip type check for legacy api version
+        legacy_type_allowed = parser_context.get('legacy_type_allowed', True)
+        type_required = not (
+            legacy_type_allowed and
+            self.parser_context['request'].version < 2.7 and
+            parser_context['request'].method == 'PATCH'
+        )
         if data:
             id_ = data.get('id')
             type_ = data.get('type')
