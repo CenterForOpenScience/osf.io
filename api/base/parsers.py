@@ -79,7 +79,7 @@ class JSONAPIParser(JSONParser):
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
             if type_required and object_type is None:
-                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
