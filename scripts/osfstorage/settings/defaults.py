@@ -1,4 +1,6 @@
 # encoding: utf-8
+import os
+
 
 USERNAME = 'changeme'
 API_KEY = 'changeme'
@@ -16,3 +18,8 @@ AWS_ACCESS_KEY = 'changeme'
 AWS_SECRET_KEY = 'changeme'
 
 AUDIT_TEMP_PATH = '/opt/data/files_audit'
+
+GCS_SERVICE_ACCOUNT_JSON = os.path.expanduser('~/service_account.json')
+GCS_BUCKET_NAME = 'changeme'
+GCS_BACKUP_BUCKET_NAME = 'changeme'
+GCS_PARITY_BUCKET_NAME = 'changeme'
