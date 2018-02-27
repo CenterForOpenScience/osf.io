@@ -197,13 +197,13 @@ def check_can_access(node, user, key=None, api_node=None):
             status.push_status_message('The view-only links you used are expired.', trust=False)
 
         if node.access_requests_enabled:
-            access_request = node.requests.filter(creator=user)
+            access_request = node.requests.filter(creator=user).exclude(machine_state='accepted')
             data = {
                 'node': {
                     'id': node._primary_key
                 },
                 'user': {
-                    'access_request_state': access_request.get().machine_state if access_request else None
+                    'access_request_state': access_request.last().machine_state if access_request else None
                 }
             }
             raise TemplateHttpError(

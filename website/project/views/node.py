@@ -425,8 +425,8 @@ def view_project(auth, node, **kwargs):
     ))
     ret.update(rubeus.collect_addon_assets(node))
 
-    access_request = node.requests.filter(creator=auth.user)
-    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
+    access_request = node.requests.filter(creator=auth.user).exclude(machine_state='accepted')
+    ret['user']['access_request_state'] = access_request.last().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
