@@ -2610,7 +2610,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def add_remove_node_log(self, auth, date):
         node_to_log = self.parent_node if self.parent_node else self
-        log_action = NodeLog.NODE_REMOVED if self.panret_node else NodeLog.PROJECT_DELETED
+        log_action = NodeLog.NODE_REMOVED if self.parent_node else NodeLog.PROJECT_DELETED
         node_to_log.add_log(
             log_action,
             params={
