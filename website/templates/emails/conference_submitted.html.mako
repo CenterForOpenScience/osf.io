@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${fullname},<br>
     <br>
-    You recently tried to create a project on the Open Science Framework via email, but the conference you attempted to submit to is not currently accepting new submissions. For a list of conferences, see [ ${presentations_url} ].<br>
+    Congratulations! You have successfully added your ${conf_full_name} ${presentation_type} to the Open Science Framework (OSF).<br>
     <br>
     % if user_created:
     Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: ${set_password_url}. Please verify your profile information at: ${profile_url}.<br>
