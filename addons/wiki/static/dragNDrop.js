@@ -64,7 +64,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
                 ext = getExtension(file.name);
                 name = newName ? newName : file.name;
                 if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
-                    $osf.growl('Error', 'File type not supported (' + file.name + ')', 'danger');
+                    $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
                     editor.enable();
                 } else {
                     var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
@@ -274,7 +274,7 @@ var imageFolder = 'Wiki images';
 var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, file) {
     var files = multiple ? 'File(s)' : 'File';
     if (response.status === 403) {
-        $osf.growl('Error', files + ' not uploaded. You do not have permission to upload files to' +
+        $osf.growl('Error', 'File not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
         editor.enable();
     } else if (response.status === 409) {

@@ -1204,11 +1204,9 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
             if(folder.data.materialized === wiki_images_folder_path){
                 deleteMessage = m('p.text-danger',
-                    'This folder and ALL its contents will be deleted. ',
-                    m('b', 'This folder is linked to your wiki(s). If deleted any embedded images' +
-                        ' contained in this folder will break. '),
-                        'This action is irreversible.'
-                );
+                    'This folder and all of its contents will be deleted. This folder is linked to ' +
+                    'your wiki(s). Deleting it will remove images embedded in your wiki(s). ' +
+                    'This action is irreversible.');
             } else {
                 deleteMessage = m('p.text-danger',
                     'This folder and ALL its contents will be deleted. This action is irreversible.');
@@ -1229,8 +1227,8 @@ function _removeEvent (event, items, col) {
     if(items.length === 1) {
         var detail;
         if(items[0].data.materialized.substring(0, 13) === wiki_images_folder_path) {
-            detail = m('b', 'This file may be linked to your wiki(s). If deleted ' +
-                    'any embedded images linked to this file will break. ');
+            detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
+                ' image embedded in your wiki(s).');
         } else {
             detail = '';
         }
@@ -1264,8 +1262,8 @@ function _removeEvent (event, items, col) {
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
             if(item.data.materialized.substring(0, 13) === wiki_images_folder_path) {
-                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to your wiki(s). If deleted ' +
-                    'any embedded images linked to this file will break. '));
+                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to' +
+                    ' your wiki(s). Deleting them will remove images embedded in your wiki(s).'));
             } else if(!item.data.permissions.edit){
                 canDelete = false;
                 noDeleteList.push(item);
