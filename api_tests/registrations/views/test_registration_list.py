@@ -22,7 +22,7 @@ from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
-from website.util import permissions
+from osf.utils import permissions
 
 
 class TestRegistrationList(ApiTestCase):

@@ -8,7 +8,6 @@ from osf_tests.factories import (
     SubjectFactory,
 )
 
-
 @pytest.mark.django_db
 class PreprintListMatchesPreprintDetailMixin:
 
