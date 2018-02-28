@@ -29,7 +29,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = S3CompatSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = S3CompatProvider
     serializer = S3CompatSerializer
 
