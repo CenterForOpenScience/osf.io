@@ -49,6 +49,7 @@ from addons.wiki import utils as wiki_utils
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -60,13 +61,12 @@ from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
-
-from website.util import (api_url_for, api_v2_url, get_headers_from_request,
-                          sanitize, web_url_for)
-from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+from osf.utils.requests import get_headers_from_request
+from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
+from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
 
@@ -302,6 +302,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
+    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -327,9 +328,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def parent_node(self):
-        # TODO: Use .filter when chaining is fixed in django-include
         try:
-            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
+            node_rel = next(parent for parent in self._parents.filter(is_node_link=False))
         except StopIteration:
             node_rel = None
         if node_rel:
@@ -1691,6 +1691,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.clone_logs(registered)
 
         registered.is_public = False
+        registered.access_requests_enabled = False
         # Copy unclaimed records to unregistered users for parent
         registered.copy_unclaimed_records()
 
@@ -1708,7 +1709,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
-                registered_child = node_contained.register_node(  # noqa
+                node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
@@ -1873,28 +1874,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to access m2m fields
         forked.save()
 
+        forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
 
-        forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='', parent=forked)
+                    node_contained.fork_node(
+                        auth=auth,
+                        title='',
+                        parent=forked,
+                    )
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
-                    forked_node = None
-                if forked_node is not None:
-                    NodeRelation.objects.get_or_create(
-                        is_node_link=False,
-                        parent=forked,
-                        child=forked_node
-                    )
-                    forked_node.root = None
-                    forked_node.save()  # Recompute root on save()
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(

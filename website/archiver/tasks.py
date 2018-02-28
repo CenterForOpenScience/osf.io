@@ -9,6 +9,8 @@ from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
+from api.base.utils import waterbutler_api_url_for
+
 from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
@@ -31,7 +33,6 @@ from osf.models import (
     DraftRegistration,
 )
 
-from website.util import waterbutler_api_url_for
 
 def create_app_context():
     try:

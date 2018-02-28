@@ -3,7 +3,7 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from website.util import permissions
+from osf.utils import permissions
 
 
 def test_expand_permissions():

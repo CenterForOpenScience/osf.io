@@ -98,6 +98,9 @@ class CoreScopes(object):
     ACTIONS_READ = 'actions_read'
     ACTIONS_WRITE = 'actions_write'
 
+    NODE_REQUESTS_READ = 'node_requests_read'
+    NODE_REQUESTS_WRITE = 'node_requests_write'
+
     PROVIDERS_WRITE = 'providers_write'
 
     WAFFLE_READ = 'waffle_read'

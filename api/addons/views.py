@@ -59,27 +59,7 @@ class AddonSettingsMixin(object):
         return addon_settings
 
 class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of addons configurable with the OSF *Read-only*.
-
-    Paginated list of addons associated with third-party services
-
-    ##Permissions
-
-    No restrictions.
-
-    ## <Addon> Attributes
-
-    OSF <Addon\> entities have the "addons" `type`, and their `id` indicates the
-    `short_name` of the associated service provider (eg. `box`, `googledrive`, etc).
-
-        name        type        description
-        ======================================================================================================
-        url         string      Url of this third-party service
-        name        string      `full_name` of third-party service provider
-        description string      Description of this addon
-        categories  list        List of categories this addon belongs to
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/addons_list).
     """
     permission_classes = (
         drf_permissions.AllowAny,

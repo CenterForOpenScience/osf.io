@@ -94,6 +94,7 @@ def request_identifiers_from_ezid(target_object):
 
         client = get_ezid_client()
         already_exists = False
+        only_doi = True
         try:
             resp = client.create_identifier(doi, metadata)
         except HTTPError as error:
@@ -101,11 +102,13 @@ def request_identifiers_from_ezid(target_object):
             if 'identifier already exists' not in error.message.lower():
                 raise
             resp = client.get_identifier(doi)
-
+            only_doi = False
         return {
             'response': resp,
-            'already_exists': already_exists
+            'already_exists': already_exists,
+            'only_doi': only_doi
         }
+
 
 def parse_identifiers(ezid_response):
     """
@@ -125,10 +128,12 @@ def parse_identifiers(ezid_response):
             'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
-        return dict(
+        identifiers = dict(
             [each.strip('/') for each in pair.strip().split(':')]
             for pair in resp['success'].split('|')
         )
+        return {'doi': identifiers['doi']}
+
 
 def get_or_create_identifiers(target_object):
     """
@@ -142,16 +147,20 @@ def get_or_create_identifiers(target_object):
 
         resp = response_dict['response']
         exists = response_dict['already_exists']
-
+        only_doi = response_dict['only_doi']
         if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
-            return {
-                'doi': doi.replace('doi:', ''),
-                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-            }
+            if not only_doi:
+                return {
+                    'doi': doi.replace('doi:', ''),
+                    'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+                }
+            else:
+                return {'doi': doi.replace('doi:', '')}
         else:
-            return dict(
+            identifiers = dict(
                 [each.strip('/') for each in pair.strip().split(':')]
                 for pair in resp['success'].split('|')
             )
+            return {'doi': identifiers['doi']}

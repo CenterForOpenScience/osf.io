@@ -20,11 +20,9 @@ $(document).ready(function(){
     var osfDonateBanner = {
         view : function(ctrl, args) {
             return [
-                m(DonateBanner.background, m('.container',
+                m('.donate-banner-background', m('.container',
                     [
-                        m('.row', [
-                            m(columnSizeClass,  m.component(DonateBanner.Banner, {}))
-                        ])
+                        m(columnSizeClass, m.component(DonateBanner, {}))
                     ]
                 )),
             ];
