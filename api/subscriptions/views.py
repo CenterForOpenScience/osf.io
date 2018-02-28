@@ -1,15 +1,21 @@
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
+from rest_framework import permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
 from api.subscriptions.serializers import UserProviderSubscriptionSerializer
-from osf.models import NotificationSubscription, PreprintProvider, OSFUser
+from api.subscriptions.permissions import IsSelf
+from osf.models import PreprintProvider, OSFUser
 
 
 class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'user-provider-subscription-detail'
     view_category = 'subscriptions'
     serializer_class = UserProviderSubscriptionSerializer
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsSelf
+    )
 
     def get_object(self):
         provider_id = self.kwargs['provider_id']
@@ -22,6 +28,6 @@ class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPI
         subscribers = notification.none.all() | notification.email_transactional.all() | notification.email_digest.all()
         if user not in subscribers:
             raise NotFound('User with id {} cannot be found in the list of subscribers.'.format(user_id))
-
+        self.check_object_permissions(self.request, notification)
         return notification
 
