@@ -302,7 +302,9 @@
                     <div class="osf-treebeard">
                         <div id="addContributorsTreebeard">
                             <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-md"></div>
+                                <div class="ball-scale ball-scale-blue">
+                                    <div></div>
+                                </div>
                                 <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>

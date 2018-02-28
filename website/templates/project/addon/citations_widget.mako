@@ -10,7 +10,9 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
 </div>
 <div id="${short_name}Widget" class="citation-widget">
     <div class="spinner-loading-wrapper">
-        <div class="logo-spin logo-lg"></div>
+        <div class="ball-scale ball-scale-blue">
+            <div></div>
+        </div>
         <p class="m-t-sm fg-load-message"> Loading citations...</p>
     </div>
 </div>

@@ -2,14 +2,15 @@
 import httplib as http
 import urlparse
 
-import httpretty
 import mock
+import responses
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa (PEP8 asserts)
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from addons.base.testing.base import OAuthAddonTestCaseMixin
-from website.util import api_url_for, permissions, web_url_for
+from osf.utils import permissions
+from website.util import api_url_for, web_url_for
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
@@ -302,10 +303,13 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             self.user,
             self.folder.json['id'],
             self.folder.name,
-            Auth(self.user)
+            Auth(self.user),
+            self.library.json['id'],
+            self.library.name
         )
         assert_true(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, 'Fake Key')
+        assert_equal(self.node_settings.library_id, 'Fake Key')
         url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth).json
 
@@ -324,14 +328,16 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         assert_false(res['complete'])
         assert_is_none(res['list_id'])
 
-    @httpretty.activate
+    @responses.activate
     def test_citation_list_root(self):
 
-        httpretty.register_uri(
-            httpretty.GET,
-            self.foldersApiUrl,
-            body=self.mockResponses['folders'],
-            content_type='application/json'
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.foldersApiUrl,
+                json=self.mockResponses['folders'],
+                content_type='application/json'
+            )
         )
 
         res = self.app.get(
@@ -343,21 +349,25 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         assert_equal(root['id'], 'ROOT')
         assert_equal(root['parent_list_id'], '__')
 
-    @httpretty.activate
+    @responses.activate
     def test_citation_list_non_root(self):
 
-        httpretty.register_uri(
-            httpretty.GET,
-            self.foldersApiUrl,
-            body=self.mockResponses['folders'],
-            content_type='application/json'
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.foldersApiUrl,
+                json=self.mockResponses['folders'],
+                content_type='application/json'
+            )
         )
 
-        httpretty.register_uri(
-            httpretty.GET,
-            self.documentsApiUrl,
-            body=self.mockResponses['documents'],
-            content_type='application/json'
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.documentsApiUrl,
+                body=self.mockResponses['documents'],
+                content_type='application/json'
+            )
         )
 
         res = self.app.get(
@@ -371,7 +381,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
 
-    @httpretty.activate
+    @responses.activate
     def test_citation_list_non_linked_or_child_non_authorizer(self):
 
         non_authorizing_user = AuthUserFactory()
@@ -380,18 +390,22 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         self.node_settings.list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
         self.node_settings.save()
 
-        httpretty.register_uri(
-            httpretty.GET,
-            self.foldersApiUrl,
-            body=self.mockResponses['folders'],
-            content_type='application/json'
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.foldersApiUrl,
+                json=self.mockResponses['folders'],
+                content_type='application/json'
+            )
         )
 
-        httpretty.register_uri(
-            httpretty.GET,
-            self.documentsApiUrl,
-            body=self.mockResponses['documents'],
-            content_type='application/json'
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.documentsApiUrl,
+                json=self.mockResponses['documents'],
+                content_type='application/json'
+            )
         )
 
         res = self.app.get(

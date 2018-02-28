@@ -13,7 +13,7 @@ from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine
+from osf.utils.machines import ReviewsMachine, RequestMachine
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 from website.exceptions import NodeStateError
 from website import settings
@@ -556,6 +556,15 @@ class MachineableMixin(models.Model):
                 valid_triggers = machine.get_triggers(self.machine_state)
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
+
+class RequestableMixin(MachineableMixin):
+    """Something that users may request access or changes to.
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = RequestMachine
 
 
 class ReviewableMixin(MachineableMixin):

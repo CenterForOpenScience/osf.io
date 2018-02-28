@@ -14,10 +14,10 @@ from osf.models.mixins import ReviewableMixin
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
+from osf.utils.permissions import ADMIN
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url
-from website.util.permissions import ADMIN
 from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
@@ -228,9 +228,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if save:
             self.save()
 
-    def set_identifier_values(self, doi, ark, save=False):
+    def set_identifier_values(self, doi, save=False):
         self.set_identifier_value('doi', doi)
-        self.set_identifier_value('ark', ark)
         self.preprint_doi_created = timezone.now()
 
         if save:
@@ -258,5 +257,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             email_template,
             user=auth.user,
             node=self.node,
-            preprint=self
+            preprint=self,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
         )

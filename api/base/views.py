@@ -398,7 +398,7 @@ def root(request, format=None, **kwargs):
     The OSF serves as a repository and archive for study designs, materials, data, manuscripts, or anything else
     associated with your research during the research process. Every project and file on the OSF has a permanent unique
     identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned a
-    DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
+    DOI. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
     public. With the OSF you have full control of what parts of your research are public and what remains private.
 
     Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support

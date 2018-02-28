@@ -23,7 +23,7 @@ from website.project.decorators import (
 from website.identifiers.utils import build_ezid_metadata
 from osf.models import Identifier, MetaSchema
 from website.project.utils import serialize_node
-from website.util.permissions import ADMIN
+from osf.utils.permissions import ADMIN
 from website import language
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name

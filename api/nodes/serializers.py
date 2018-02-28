@@ -31,7 +31,7 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeTagField(ser.Field):
@@ -165,7 +165,7 @@ class NodeSerializer(JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
+    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '

@@ -1,6 +1,6 @@
 import json
 
-from website.util.permissions import reduce_permissions
+from osf.utils.permissions import reduce_permissions
 
 from admin.users.serializers import serialize_simple_node
 

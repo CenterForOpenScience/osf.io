@@ -23,11 +23,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
+from framework.utils import throttle_period_expired
 from osf.models import OSFUser
+from osf.utils.sanitize import strip_html
 from website import settings, mails, language
 from website.util import web_url_for
-from website.util.time import throttle_period_expired
-from website.util.sanitize import strip_html
 from osf.exceptions import ValidationValueError
 from osf.models.preprint_provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
@@ -545,7 +545,8 @@ def external_login_confirm_email_get(auth, uid, token):
             to_addr=user.username,
             mail=mails.WELCOME,
             mimetype='html',
-            user=user
+            user=user,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
@@ -624,7 +625,8 @@ def confirm_email_get(token, auth=None, **kwargs):
             to_addr=user.username,
             mail=mails.WELCOME,
             mimetype='html',
-            user=user
+            user=user,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.

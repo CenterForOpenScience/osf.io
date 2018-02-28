@@ -7,7 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from website.util import api_v2_url
-from website.util import sanitize
+from osf.utils import sanitize
 
 
 @pytest.mark.django_db

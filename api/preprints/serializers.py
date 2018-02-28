@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField,
+    JSONAPISerializer, IDField, TypeField,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -16,11 +16,11 @@ from api.nodes.serializers import (
     NodeTagField
 )
 from framework.exceptions import PermissionsError
-from website.util import permissions
 from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.utils import permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -71,6 +71,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
+    type = TypeField()
     subjects = ser.SerializerMethodField()
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
