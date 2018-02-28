@@ -31,7 +31,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = SwiftSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = SwiftProvider
     serializer = SwiftSerializer
 

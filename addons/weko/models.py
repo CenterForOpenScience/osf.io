@@ -145,7 +145,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = WEKOSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = WEKOProvider
     serializer = WEKOSerializer
 

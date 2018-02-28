@@ -31,7 +31,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = AzureBlobStorageSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = AzureBlobStorageProvider
     serializer = AzureBlobStorageSerializer
 
