@@ -23,11 +23,33 @@ class FrequencyField(ser.Field):
     def to_internal_value(self, data):
         if data not in frequencies:
             raise ValidationError('Invalid frequency "{}"'.format(data))
-        return ''
+        return {'frequency': data}
 
 class UserProviderSubscriptionSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*')
+
     class Meta:
         type_ = 'user-provider-subscription'
+
+    def update(self, instance, validated_data):
+        user = OSFUser.load(self.context['view'].kwargs['user_id'])
+        frequency = validated_data.get('frequency')
+        if frequency:
+            if frequency == 'none' and user not in instance.none.all():
+                instance.email_digest.remove(user)
+                instance.email_transactional.remove(user)
+                instance.none.add(user)
+                instance.save()
+            elif frequency == 'daily' and user not in instance.email_digest.all():
+                instance.none.remove(user)
+                instance.email_transactional.remove(user)
+                instance.email_digest.add(user)
+                instance.save()
+            elif frequency == 'instant' and user not in instance.email_transactional.all():
+                instance.email_digest.remove(user)
+                instance.none.remove(user)
+                instance.email_transactional.add(user)
+                instance.save()
+        return instance

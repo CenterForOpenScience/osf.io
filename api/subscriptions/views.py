@@ -18,10 +18,10 @@ class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPI
         if not user:
             raise NotFound('User with id {} cannot be found.'.format(user_id))
         provider = PreprintProvider.objects.get(_id=provider_id)
-        notification = NotificationSubscription.objects.get(provider=provider)
+        notification = provider.notification_subscriptions.get(_id='{}_preprints_added'.format(provider._id))
         subscribers = notification.none.all() | notification.email_transactional.all() | notification.email_digest.all()
         if user not in subscribers:
-            raise NotFound('{} cannot be found in the list of subscribers.'.format(user))
+            raise NotFound('User with id {} cannot be found in the list of subscribers.'.format(user_id))
 
         return notification
 
