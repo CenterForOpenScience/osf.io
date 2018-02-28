@@ -32,7 +32,7 @@ def revert(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0084_notificationsubscription_provider'),
+        ('osf', '0083_notificationsubscription_provider'),
     ]
 
     operations = [
