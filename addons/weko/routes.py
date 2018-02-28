@@ -1,4 +1,4 @@
-from framework.routing import Rule, json_renderer
+from framework.routing import Rule, json_renderer, xml_renderer
 from website.routes import OsfWebRenderer
 
 from . import views
@@ -109,30 +109,21 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/draft/',
-                '/project/<pid>/node/<nid>/weko/draft/',
+                '/project/<pid>/weko/item_log/',
+                '/project/<pid>/node/<nid>/weko/item_log/',
             ],
             'post',
-            views.weko_upload_draft,
+            views.weko_add_item_created,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/weko/draft/<draftid>/',
-                '/project/<pid>/node/<nid>/weko/draft/<draftid>/',
+                '/project/<pid>/weko/metadata/',
+                '/project/<pid>/node/<nid>/weko/metadata/',
             ],
-            'put',
-            views.weko_submit_draft,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/weko/draft/<draftid>/',
-                '/project/<pid>/node/<nid>/weko/draft/<draftid>/',
-            ],
-            'delete',
-            views.weko_cancel_draft,
-            json_renderer,
+            'get',
+            views.weko_generate_metadata,
+            xml_renderer,
         ),
     ],
     'prefix': '/api/v1'

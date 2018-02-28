@@ -343,7 +343,7 @@ def update_index(connection, index_id, title_ja=None, title_en=None, relation=No
     root = connection.post_url(target, stream, headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
 
-def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title, title_en, contributors):
+def create_import_xml(item_type, internal_item_type_id, uploaded_filenames, title, title_en, contributors):
     post_xml = etree.Element('export')
     item_elem = etree.SubElement(post_xml, 'repository_item')
     item_elem.attrib['item_id'] = '1'
@@ -390,28 +390,29 @@ def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title
             item_attr_type_elem.attrib[k] = item_attr_type[k]
 
         if item_attr_type['type'] == 'file' and item_attr_type['junii2_mapping'] == 'fullTextURL':
-            file_elem = etree.SubElement(post_xml, 'repository_file')
-            file_elem.attrib['item_type_id'] = str(internal_item_type_id)
-            file_elem.attrib['attribute_id'] = str(index + 1)
-            file_elem.attrib['item_no'] = '1'
-            file_elem.attrib['file_no'] = '1'
-            file_elem.attrib['file_name'] = uploaded_filename
-            filename_body, filename_ext = os.path.splitext(uploaded_filename)
-            file_elem.attrib['display_name'] = filename_body
-            file_elem.attrib['display_type'] = '0'
-            mime_type = mimetypes.guess_type(uploaded_filename)[0]
-            file_elem.attrib['mime_type'] = mime_type if mime_type is not None else 'application/octet-stream'
-            file_elem.attrib['extension'] = filename_ext
-            file_elem.attrib['license_id'] = '0'
-            file_elem.attrib['license_notation'] = ''
-            file_elem.attrib['pub_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
-            file_elem.attrib['item_id'] = '1'
-            file_elem.attrib['browsing_flag'] = '0'
-            file_elem.attrib['cover_created_flag'] = '0'
+            for i, uploaded_filename in enumerate(uploaded_filenames):
+                file_elem = etree.SubElement(post_xml, 'repository_file')
+                file_elem.attrib['item_type_id'] = str(internal_item_type_id)
+                file_elem.attrib['attribute_id'] = str(index + 1)
+                file_elem.attrib['item_no'] = '1'
+                file_elem.attrib['file_no'] = str(i + 1)
+                file_elem.attrib['file_name'] = uploaded_filename
+                filename_body, filename_ext = os.path.splitext(uploaded_filename)
+                file_elem.attrib['display_name'] = filename_body
+                file_elem.attrib['display_type'] = '0'
+                mime_type = mimetypes.guess_type(uploaded_filename)[0]
+                file_elem.attrib['mime_type'] = mime_type if mime_type is not None else 'application/octet-stream'
+                file_elem.attrib['extension'] = filename_ext
+                file_elem.attrib['license_id'] = '0'
+                file_elem.attrib['license_notation'] = ''
+                file_elem.attrib['pub_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+                file_elem.attrib['item_id'] = '1'
+                file_elem.attrib['browsing_flag'] = '0'
+                file_elem.attrib['cover_created_flag'] = '0'
 
-            license_elem = etree.SubElement(post_xml, 'repository_license_master')
-            license_elem.attrib['license_id'] = '0'
-            license_elem.attrib['license_notation'] = ''
+                license_elem = etree.SubElement(post_xml, 'repository_license_master')
+                license_elem.attrib['license_id'] = '0'
+                license_elem.attrib['license_notation'] = ''
         elif item_attr_type['type'] == 'name' and item_attr_type['junii2_mapping'] == 'creator':
             for name_index, contributor in enumerate(contributors):
                 logger.info('Contributor: {}'.format(contributor))

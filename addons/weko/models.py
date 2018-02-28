@@ -17,7 +17,7 @@ from osf.models.files import File, Folder, BaseFileNode
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
-from addons.weko.client import connect_or_error, connect_from_settings_or_401
+from addons.weko.client import connect_or_error
 from addons.weko.serializer import WEKOSerializer
 from addons.weko.utils import WEKONodeLogger
 from addons.weko import settings as weko_settings
@@ -230,13 +230,17 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_key}
+        provider_id = self.external_account.provider_id
+        login_user = provider_id[provider_id.index(':') + 1:]
+        return {'token': self.external_account.oauth_key,
+                'user_id': login_user}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('WEKO is not configured')
         return {
             'host': self.external_account.oauth_key,
+            'nid': self.owner._id,
             'url': weko_settings.REPOSITORIES[self.external_account.provider_id.split(':')[0]]['host'],
             'index_id': self.index_id,
             'index_title': self.index_title,
