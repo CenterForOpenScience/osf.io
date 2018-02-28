@@ -480,6 +480,8 @@ function _uploadSuccess(file, item, response) {
         console.log('Publishing...', response);
         _publish(tb, _findItem(tb.treeData, item.parentID), item,
                  response.data.attributes);
+    }else{
+        tb.updateFolder(null, _findItem(tb.treeData, item.parentID));
     }
     return {};
 }
