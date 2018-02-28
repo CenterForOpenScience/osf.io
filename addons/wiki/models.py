@@ -22,7 +22,7 @@ from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
-from website.util import get_headers_from_request
+from osf.utils.requests import get_headers_from_request
 
 from .exceptions import (
     NameEmptyError,

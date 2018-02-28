@@ -28,7 +28,7 @@ def reverse_func(state, schema):
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
                 for index, version in enumerate(version_list):
-                    nwp = NodeWikiPage.objects.get(former_guid=version)
+                    nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
                     wp = WikiPage.load(version)
                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
                     guid.save()
@@ -137,12 +137,12 @@ def create_wiki_versions(nodes):
         progress_bar.update(i)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
-                node_wiki = NodeWikiPage.objects.get(former_guid=version_list[0])
+                node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).include(None)[0]
                 page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
                 wiki_page = node.wikis.get(page_name=page_name)
                 for index, version in enumerate(version_list):
                     if index:
-                        node_wiki = NodeWikiPage.objects.get(former_guid=version)
+                        node_wiki = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
                     wiki_versions_pending.append(create_wiki_version(node_wiki, wiki_page))
                     current_guid = Guid.load(version)
                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
