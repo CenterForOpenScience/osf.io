@@ -103,8 +103,13 @@ function JupyterWidget() {
                 }, 'JupyterHub');
                 return {
                   view : function(ctrl, args, children) {
-                    return m('span', [base.view(ctrl, args, children),
-                                      launcher.view(ctrl, args, children)]);
+                    var tb = args.treebeard;
+                    var mode = tb.toolbarMode;
+                    return m('span', [
+                               m.component(base, {treebeard : tb, mode : mode,
+                                           item : item }),
+                               launcher
+                             ]);
                   }
                 };
               };
