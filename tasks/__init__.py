@@ -297,6 +297,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args = ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
+    args.append('--junitxml=testresults.xml')
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if params:
