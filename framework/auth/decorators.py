@@ -198,10 +198,8 @@ def create_or_join_group_projects(user):
 
 
 def leave_group_projects(auth):
-    from osf.models.node import Node
-
     user = auth.user
-    nodes = Node.find_for_user(user)
+    nodes = user.nodes.filter()
     for node in nodes:
         if node.group is None:
             continue  # skip
