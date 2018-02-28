@@ -112,8 +112,8 @@ def create_wiki_pages(nodes):
         progress_bar.update(i)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
-                node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).only('user_id', 'date', 'modified').include(None).get()
-                latest_page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None).get()
+                node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).only('user_id', 'date', 'modified').include(None)[0]
+                latest_page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
                 wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
         if i % 500 == 0:
             with disable_auto_now_add_fields(models=[WikiPage]):
@@ -138,7 +138,7 @@ def create_wiki_versions(nodes):
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             if version_list:
                 node_wiki = NodeWikiPage.objects.get(former_guid=version_list[0])
-                page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None).get()
+                page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
                 wiki_page = node.wikis.get(page_name=page_name)
                 for index, version in enumerate(version_list):
                     if index:

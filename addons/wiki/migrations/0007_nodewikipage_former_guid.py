@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='nodewikipage',
             name='former_guid',
-            field=models.CharField(blank=True, max_length=100, null=True),
+            field=models.CharField(blank=True, max_length=100, null=True, db_index=True),
         ),
     ]
