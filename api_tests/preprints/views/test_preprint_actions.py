@@ -5,7 +5,7 @@ from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin

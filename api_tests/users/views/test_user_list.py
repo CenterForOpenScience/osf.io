@@ -15,8 +15,8 @@ from osf_tests.factories import (
     ProjectFactory,
     Auth,
 )
+from osf.utils.permissions import CREATOR_PERMISSIONS
 from website import settings
-from website.util.permissions import CREATOR_PERMISSIONS
 
 
 @pytest.mark.django_db

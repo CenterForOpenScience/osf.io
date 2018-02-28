@@ -176,6 +176,20 @@
           {% if perms.osf.view_subject%}
             <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
           {% endif %}
+          {% if perms.osf.view_scheduledbanner %}
+              <li><a role="button" data-toggle="collapse" href="#collapseBanners">
+                  <i class='fa fa-caret-down'></i> Banners
+              </a></li>
+              <div class="collapse" id="collapseBanners">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'banners:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_scheduledbanner %}
+                      <li><a href="{% url 'banners:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
           {% endif %}

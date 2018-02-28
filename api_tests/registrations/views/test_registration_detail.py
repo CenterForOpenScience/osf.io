@@ -3,7 +3,7 @@ from urlparse import urlparse
 
 from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
-from website.util import permissions
+from osf.utils import permissions
 from osf.models import Registration, NodeLog
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer

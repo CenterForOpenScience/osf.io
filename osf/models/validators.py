@@ -6,9 +6,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util.sanitize import strip_html
 from website import settings
 
+from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
 
 

@@ -14,7 +14,7 @@ from website import (
     mails,
     settings
 )
-from website.util import sanitize
+from osf.utils.sanitize import unescape_entities
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
@@ -216,7 +216,7 @@ def get_file_map(node, file_map):
 def find_registration_file(value, node):
     from osf.models import AbstractNode
     orig_sha256 = value['sha256']
-    orig_name = sanitize.unescape_entities(
+    orig_name = unescape_entities(
         value['selectedFileName'],
         safe={
             '&lt;': '<',

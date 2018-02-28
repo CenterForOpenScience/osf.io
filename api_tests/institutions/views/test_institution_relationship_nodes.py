@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 def make_payload(*node_ids):

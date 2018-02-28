@@ -6,15 +6,15 @@ import urlparse
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 
+from osf.utils.sanitize import strip_html
 from osf.models import QuickFilesNode
-from website import util as website_utils
 from api.base.settings.defaults import API_BASE
+from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     ProjectFactory,
 )
-from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 
@@ -97,7 +97,7 @@ class TestUserDetail:
         quickfiles = QuickFilesNode.objects.get(creator=user_one)
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = website_utils.waterbutler_api_url_for(
+        waterbutler_upload = waterbutler_api_url_for(
             quickfiles._id, 'osfstorage')
 
         assert upload_url == waterbutler_upload
@@ -292,6 +292,14 @@ class TestUserRoutesNodeRoutes:
         assert folder._id not in ids
         assert folder_deleted._id not in ids
         assert project_deleted_user_one._id not in ids
+
+    def test_embed_nodes(self, app, user_one, project_public_user_one):
+
+        url = '/{}users/{}/?embed=nodes'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        embedded_data = res.json['data']['embeds']['nodes']['data'][0]['attributes']
+        assert embedded_data['title'] == project_public_user_one.title
 
     def test_get_400_responses(self, app, user_one, user_two):
 

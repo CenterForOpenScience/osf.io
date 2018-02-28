@@ -26,7 +26,7 @@ from website.exceptions import (
 from website import tokens
 from osf.models import AbstractNode
 from osf.models.sanctions import PreregCallbackMixin, Embargo
-from website.util import permissions
+from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
