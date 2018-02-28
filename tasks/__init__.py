@@ -81,7 +81,6 @@ def reset_user(ctx, username=None):
 
     from osf.models import OSFUser
     from osf.models import Guid
-    from osf.models import Node
 
     if username is None:
         print 'usage: invoke reset_user -u <username>'
@@ -100,7 +99,7 @@ def reset_user(ctx, username=None):
         return
 
     try:
-        nodes = Node.find_for_user(user, None)
+        nodes = user.nodes.filter()
     except Exception as ex:
         print ex
         nodes = None
