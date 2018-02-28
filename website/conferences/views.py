@@ -190,55 +190,79 @@ def filter_and_sort_conference_data(nodes, conf):
     Returns: node queryset
     """
     q = request.args.get('q', '')
+    # Give "sort" a default value, since pagination may be inconsistent with unordered objects.
+    sort = request.args.get('sort', '-downloads')
+
     if q:
         format_q = '%' + q + '%'
-        # Use a raw queryset to get around some limitations with django-include,
-        # as subqueries can only return one column, but guids are being fetched.
-        # This subquery looks for "q" query param in the node title, and the first visible
-        # contributor's fullname.
+        # TODO replace this raw sql with a regular django query when django-include
+        # limitations are fixed: Subqueries can only return one column, but a first visible
+        # contributor subquery also fetches guids, despite .include(None)
+        # This subquery looks for "q" query param in the node title and the first visible contrib's fullname.
         raw_queryset = nodes.raw(
             """
-            SELECT *,
-              (SELECT U0."fullname"
-               FROM "osf_osfuser" U0
-               INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id")
-               WHERE (U1."node_id" = ("osf_abstractnode"."id")
-                      AND U1."visible" = true)
-               ORDER BY U1."_order" ASC
-               LIMIT 1) AS "first_visible_contrib"
+            SELECT *
             FROM "osf_abstractnode"
             WHERE (UPPER("osf_abstractnode"."title"::text) LIKE UPPER(%s)
-                   OR UPPER(
-                               (SELECT U0."fullname"
-                                FROM "osf_osfuser" U0
-                                INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id")
-                                WHERE (U1."node_id" = ("osf_abstractnode"."id")
-                                       AND U1."visible" = true)
-                                ORDER BY U1."_order" ASC
-                                LIMIT 1)::text) LIKE UPPER(%s))
+               OR UPPER(
+                   (SELECT U0."fullname"
+                    FROM "osf_osfuser" U0
+                    INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id")
+                    WHERE (U1."node_id" = ("osf_abstractnode"."id")
+                        AND U1."visible" = true)
+                    ORDER BY U1."_order" ASC
+                    LIMIT 1)::text) LIKE UPPER(%s))
             """, [format_q, format_q]
         )
+        # Turns the raw queryset back into a queryset - we still need to sort and paginate it.
         nodes = nodes.filter(id__in=(x.id for x in raw_queryset))
-    sort = request.args.get('sort', '')
-    if sort:
-        if 'title' in sort:
-            nodes = nodes.order_by(sort)
-        elif 'created' in sort:
-            nodes = nodes.order_by(sort)
-        elif 'author' in sort:
-            # TODO sort on visible contributors
-            pass
-        elif 'category' in sort:
-            tag_subqs = Tag.objects.filter(abstractnode_tagged=OuterRef('pk'), name=conf.field_names['submission1']).values_list('name', flat=True)
-            nodes = nodes.annotate(sub_one_count=Count(Subquery(tag_subqs))).annotate(sub_name=Case(When(sub_one_count=1, then=Value(conf.field_names['submission1'])), default=Value(conf.field_names['submission2']), output_field=CharField())).order_by('-sub_name' if '-' in sort else 'sub_name')
-        elif 'downloads' in sort:
-            pages = PageCounter.objects.annotate(node_id=Substr('_id', 10, 5)).annotate(file_id=Substr('_id', 16)).filter(_id__icontains='download').annotate(_id_length=Length('_id')).exclude(_id_length__gt=39).filter(node_id=OuterRef('guids___id'), file_id=OuterRef('file_id'))
-            file_subqs = OsfStorageFile.objects.filter(node=OuterRef('pk')).order_by('created')
-            nodes = nodes.annotate(file_id=Subquery(file_subqs.values('_id')[:1])).annotate(downloads=Coalesce(Subquery(pages.values('total')[:1]), Value(0))).order_by(sort)
+
+    if 'title' in sort or 'created' in sort:
+        nodes = nodes.order_by(sort)
+    elif 'author' in sort:
+        nodes = nodes.extra(select={
+            'author': '\
+                (SELECT U0."family_name" \
+                 FROM "osf_osfuser" U0 \
+                 INNER JOIN "osf_contributor" U1 ON (U0."id" = U1."user_id") \
+                 WHERE (U1."node_id" = ("osf_abstractnode"."id") AND U1."visible" = true) \
+                 ORDER BY U1."_order" ASC LIMIT 1)'
+        })
+        nodes = nodes.extra(order_by=[sort])
+    elif 'category' in sort:
+        tag_subqs = Tag.objects.filter(
+            abstractnode_tagged=OuterRef('pk'),
+            name=conf.field_names['submission1']).values_list('name', flat=True)
+        nodes = nodes.annotate(sub_one_count=Count(Subquery(tag_subqs))).annotate(
+            sub_name=Case(
+                When(sub_one_count=1, then=Value(conf.field_names['submission1'])),
+                default=Value(conf.field_names['submission2']),
+                output_field=CharField()
+            )
+        ).order_by('-sub_name' if '-' in sort else 'sub_name')
+    elif 'downloads' in sort:
+        pages = PageCounter.objects.annotate(
+            node_id=Substr('_id', 10, 5),
+            file_id=Substr('_id', 16),
+            _id_length=Length('_id')
+        ).filter(
+            _id__icontains='download',
+            node_id=OuterRef('guids___id'),
+            file_id=OuterRef('file_id')
+        ).exclude(_id_length__gt=39)
+        file_subqs = OsfStorageFile.objects.filter(node=OuterRef('pk')).order_by('created')
+        nodes = nodes.annotate(
+            file_id=Subquery(file_subqs.values('_id')[:1])
+        ).annotate(
+            downloads=Coalesce(Subquery(pages.values('total')[:1]), Value(0))
+        ).order_by(sort)
     return nodes
 
 def conference_data(meeting, conf, meetings_page=1):
-    nodes = filter_and_sort_conference_data(AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False), conf)
+    nodes = filter_and_sort_conference_data(AbstractNode.objects.filter(
+        tags__id__in=Tag.objects.filter(
+            name__iexact=meeting, system=False
+        ).values_list('id', flat=True), is_public=True, is_deleted=False), conf)
 
     paginator = Paginator(nodes, SUBMISSIONS_PER_PAGE)
     try:
@@ -357,7 +381,7 @@ def build_conference_query_params():
     # Order of query params will be page, q, sort
     return {
         'page': '?page={}'.format(page),
-        'q': '&q={}'.format(q.replace(" ", '+')),
+        'q': '&q={}'.format(q.replace(' ', '+')),
         'sort': '&sort={}'.format(sort)
     }
 

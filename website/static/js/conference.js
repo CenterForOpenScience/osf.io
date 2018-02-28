@@ -19,31 +19,31 @@ function Meeting(data) {
                     title: 'Title',
                     width: '50%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Author',
                     width : '10%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Category',
                     width : '10%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Date Created',
                     width: '15%',
                     sortType: 'date',
-                    sort: true
+                    sort: false
                 },
                 {
                     title: 'Downloads',
                     width : '15%',
                     sortType : 'number',
-                    sort : true
+                    sort : false
                 },
             ];
         },
