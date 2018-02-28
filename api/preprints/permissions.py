@@ -5,7 +5,7 @@ from rest_framework import exceptions
 from api.base.utils import get_user_auth
 from osf.models import PreprintService
 from osf.utils.workflows import DefaultStates
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class PreprintPublishedOrAdmin(permissions.BasePermission):

@@ -6,7 +6,7 @@ from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFa
 from framework.exceptions import HTTPError
 
 from addons.dataverse import settings
-from website.util.sanitize import strip_html
+from osf.utils.sanitize import strip_html
 
 def _connect(host, token):
     try:

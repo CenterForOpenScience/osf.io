@@ -7,7 +7,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, Folder, FileVersion, BaseFileNode
+from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
@@ -25,20 +25,12 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     version_identifier = 'ref'
 
-    def touch(self, bearer, revision=None, **kwargs):
-        return super(FigshareFile, self).touch(bearer, revision=None, **kwargs)
-
-    def update(self, revision, data, save=True, user=None):
+    def update(self, revision, data, user=None, save=True):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
+        Call super to update _history and last_touched anyway.
         """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-        if save:
-            self.save()
-
-        version = FileVersion(identifier=None)
-        version.update_metadata(data, save=False)
+        version = super(FigshareFile, self).update(None, data, user=user, save=save)
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':

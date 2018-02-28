@@ -86,7 +86,7 @@ class TestNodeLicenses(OsfTestCase):
 
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.objects.all().count()
-        NodeLicense.remove()
+        NodeLicense.objects.all().delete()
         assert_false(NodeLicense.objects.all().count())
 
         ensure_licenses()

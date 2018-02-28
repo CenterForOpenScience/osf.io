@@ -4,7 +4,7 @@ import mock
 
 from osf.models import ApiOAuth2Application
 from website.util import api_v2_url
-from website.util import sanitize
+from osf.utils import sanitize
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
@@ -17,9 +17,11 @@ def _get_application_list_url():
     path = 'applications/'
     return api_v2_url(path, base_route='/')
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestApplicationList:
@@ -49,19 +51,25 @@ class TestApplicationList:
             }
         }
 
-    def test_user_should_see_only_their_applications(self, app, user, user_app, url):
+    def test_user_should_see_only_their_applications(
+            self, app, user, user_app, url):
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == ApiOAuth2Application.objects.filter(owner=user).count()
+        assert len(
+            res.json['data']
+        ) == ApiOAuth2Application.objects.filter(owner=user).count()
 
     def test_other_user_should_see_only_their_applications(self, app, url):
         other_user = AuthUserFactory()
-        other_user_apps = [ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)]
-        
+        other_user_apps = [
+            ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)
+        ]
+
         res = app.get(url, auth=other_user.auth)
         assert len(res.json['data']) == len(other_user_apps)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
-    def test_deleting_application_should_hide_it_from_api_list(self, mock_method, app, user, user_app, url):
+    def test_deleting_application_should_hide_it_from_api_list(
+            self, mock_method, app, user, user_app, url):
         mock_method.return_value(True)
         api_app = user_app
         delete_url = _get_application_detail_route(api_app)
@@ -71,10 +79,17 @@ class TestApplicationList:
 
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == ApiOAuth2Application.objects.count() - 1
+        assert len(
+            res.json['data']
+        ) == ApiOAuth2Application.objects.count() - 1
 
-    def test_created_applications_are_tied_to_request_user_with_data_specified(self, app, user, url, sample_data):
-        res = app.post_json_api(url, sample_data, auth=user.auth, expect_errors=True)
+    def test_created_applications_are_tied_to_request_user_with_data_specified(
+            self, app, user, url, sample_data):
+        res = app.post_json_api(
+            url, sample_data,
+            auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 201
 
         assert res.json['data']['attributes']['owner'] == user._id
@@ -82,14 +97,17 @@ class TestApplicationList:
         assert res.json['data']['attributes']['client_id'] != sample_data['data']['attributes']['client_id']
         assert res.json['data']['attributes']['client_secret'] != sample_data['data']['attributes']['client_secret']
 
-    def test_creating_application_fails_if_callbackurl_fails_validation(self, app, user, url, sample_data):
+    def test_creating_application_fails_if_callbackurl_fails_validation(
+            self, app, user, url, sample_data):
         data = copy.copy(sample_data)
         data['data']['attributes']['callback_url'] = 'itunes:///invalid_url_of_doom'
-        res = app.post_json_api(url, data,
-                            auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, data, auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
 
-    def test_field_content_is_sanitized_upon_submission(self, app, user, url, sample_data):
+    def test_field_content_is_sanitized_upon_submission(
+            self, app, user, url, sample_data):
         bad_text = '<a href=\'http://sanitized.name\'>User_text</a>'
         cleaned_text = sanitize.strip_html(bad_text)
 
@@ -101,7 +119,8 @@ class TestApplicationList:
         assert res.status_code == 201
         assert res.json['data']['attributes']['name'] == cleaned_text
 
-    def test_created_applications_show_up_in_api_list(self, app, user, user_app, url, sample_data):
+    def test_created_applications_show_up_in_api_list(
+            self, app, user, user_app, url, sample_data):
         res = app.post_json_api(url, sample_data, auth=user.auth)
         assert res.status_code == 201
 

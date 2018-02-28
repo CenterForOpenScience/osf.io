@@ -6,7 +6,7 @@ var faker = require('faker');
 
 var utils = require('./utils');
 var profile = require('../profile');
-var urlData = require('json!../../urlValidatorTest.json');
+var urlData = require('json-loader!../../urlValidatorTest.json');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});

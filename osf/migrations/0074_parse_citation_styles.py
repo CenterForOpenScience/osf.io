@@ -27,7 +27,7 @@ def get_style_files(path):
 
 def parse_citation_styles(*args):
     # drop all styles
-    CitationStyle.remove()
+    CitationStyle.objects.all().delete()
 
     for style_file in get_style_files(settings.CITATION_STYLES_PATH):
         with open(style_file, 'r') as f:
@@ -65,7 +65,7 @@ def parse_citation_styles(*args):
 
 def revert(*args):
     # The revert of this migration simply removes all CitationStyle instances.
-    CitationStyle.remove()
+    CitationStyle.objects.all().delete()
 
 class Migration(migrations.Migration):
 

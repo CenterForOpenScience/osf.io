@@ -4,18 +4,21 @@ from django.utils import timezone
 import mock
 import pytest
 import pytz
-import random, string
+import random
+import string
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
-from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
-from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
+from osf.utils import permissions
+from website.util import api_url_for, web_url_for
+from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
     AbstractNode,
@@ -182,17 +185,15 @@ class TestParentNode:
         grandchild2 = NodeFactory(parent=child)
         grandchild3 = NodeFactory(parent=child)
         grandchild_1 = NodeFactory(parent=child1)
-        grandchild1_1 = NodeFactory(parent=child1)
-        grandchild2_1 = NodeFactory(parent=child1)
-        grandchild3_1 = NodeFactory(parent=child1)
-        grandchild_2 = NodeFactory(parent=child2)
-        grandchild1_2 = NodeFactory(parent=child2)
-        grandchild2_2 = NodeFactory(parent=child2)
-        grandchild3_2 = NodeFactory(parent=child2)
-        greatgrandchild = NodeFactory(parent=grandchild)
-        greatgrandchild1 = NodeFactory(parent=grandchild1)
-        greatgrandchild2 = NodeFactory(parent=grandchild2)
-        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        for _ in range(0, 3):
+            NodeFactory(parent=child1)
+        for _ in range(0, 4):
+            NodeFactory(parent=child2)
+
+        NodeFactory(parent=grandchild)
+        NodeFactory(parent=grandchild1)
+        NodeFactory(parent=grandchild2)
+        NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
         assert 20 == Node.objects.get_children(root).count()
@@ -234,17 +235,15 @@ class TestParentNode:
         grandchild2 = NodeFactory(parent=child)
         grandchild3 = NodeFactory(parent=child)
         grandchild_1 = NodeFactory(parent=child1)
-        grandchild1_1 = NodeFactory(parent=child1)
-        grandchild2_1 = NodeFactory(parent=child1)
-        grandchild3_1 = NodeFactory(parent=child1)
-        grandchild_2 = NodeFactory(parent=child2)
-        grandchild1_2 = NodeFactory(parent=child2)
-        grandchild2_2 = NodeFactory(parent=child2)
-        grandchild3_2 = NodeFactory(parent=child2)
-        greatgrandchild = NodeFactory(parent=grandchild)
-        greatgrandchild1 = NodeFactory(parent=grandchild1)
-        greatgrandchild2 = NodeFactory(parent=grandchild2)
-        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        for _ in range(0, 3):
+            NodeFactory(parent=child1)
+        for _ in range(0, 4):
+            NodeFactory(parent=child2)
+
+        NodeFactory(parent=grandchild)
+        NodeFactory(parent=grandchild1)
+        NodeFactory(parent=grandchild2)
+        NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
         child.add_node_link(root, auth=Auth(root.creator))
@@ -287,9 +286,9 @@ class TestParentNode:
 
     def test_get_roots_distinct(self):
         top_level = ProjectFactory()
-        child1 = ProjectFactory(parent=top_level)
-        child2 = ProjectFactory(parent=top_level)
-        child3 = ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
 
         assert AbstractNode.objects.get_roots().count() == 1
         assert top_level in AbstractNode.objects.get_roots()
@@ -308,7 +307,7 @@ class TestParentNode:
         assert child.parent_node._id == project._id
 
     def test_grandchild_has_parent_of_child(self, child):
-        grandchild = NodeFactory(parent=child, description="Spike")
+        grandchild = NodeFactory(parent=child, description='Spike')
         assert grandchild.parent_node._id == child._id
 
     def test_registration_has_no_parent(self, registration):
@@ -325,7 +324,7 @@ class TestParentNode:
 
     def test_recursive_registrations_have_correct_root(self, project, auth):
         child = NodeFactory(parent=project)
-        grandchild = NodeFactory(parent=child)
+        NodeFactory(parent=child)
 
         with disconnected_from_listeners(after_create_registration):
             reg_root = project.register_node(get_default_metaschema(), auth, '', None)
@@ -353,7 +352,7 @@ class TestParentNode:
 
     def test_recursive_forks_have_correct_root(self, project, auth):
         child = NodeFactory(parent=project)
-        grandchild = NodeFactory(parent=child)
+        NodeFactory(parent=child)
 
         fork_root = project.fork_node(auth=auth)
         fork_child = fork_root._nodes.first()
@@ -377,7 +376,7 @@ class TestParentNode:
 
     def test_recursive_templates_have_correct_root(self, project, auth):
         child = NodeFactory(parent=project)
-        grandchild = NodeFactory(parent=child)
+        NodeFactory(parent=child)
 
         template_root = project.use_as_template(auth=auth)
         template_child = template_root._nodes.first()
@@ -544,14 +543,6 @@ class TestNodeMODMCompat:
         with pytest.raises(ValidationError) as excinfo:
             node.save()
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
-
-    def test_remove_one(self):
-        node = ProjectFactory()
-        node2 = ProjectFactory()
-        assert Node.objects.all().count() == 2  # sanity check
-        Node.remove_one(node)
-        assert Node.objects.all().count() == 1
-        assert node2 in Node.objects.all()
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -1991,12 +1982,12 @@ class TestPrivateLinks:
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = True
 
-        link1 = PrivateLinkFactory(key="link1")
+        link1 = PrivateLinkFactory(key='link1')
         link1.nodes.add(node)
         link1.save()
 
         user2 = UserFactory()
-        auth2 = Auth(user=user2, private_key="link1")
+        auth2 = Auth(user=user2, private_key='link1')
 
         assert has_anonymous_link(node, auth2) is True
 
@@ -3369,13 +3360,6 @@ class TestOnNodeUpdate:
         assert task.args[2] is False
         assert 'title' in task.args[3]
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
-    @mock.patch('website.project.tasks.requests')
-    def test_skips_no_settings(self, requests, node, user, request_context):
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert requests.post.called is False
-
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
@@ -3683,7 +3667,7 @@ class TestTemplateNode:
         registration = RegistrationFactory(project=project, is_deleted=True)
         new = registration.use_as_template(auth=auth)
         assert not new.nodes
-        
+
     @pytest.fixture()
     def pointee(self, project, user, auth):
         pointee = ProjectFactory(creator=user)
@@ -3709,7 +3693,7 @@ class TestTemplateNode:
 
         # create templated node
         project1 = ProjectFactory(creator=user)
-        subproject1 = ProjectFactory(creator=user, parent=project1)
+        ProjectFactory(creator=user, parent=project1)
 
         new = project1.use_as_template(auth=auth)
 

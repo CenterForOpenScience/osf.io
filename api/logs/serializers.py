@@ -6,13 +6,13 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
     is_anonymized,
-    DateByVersion,
+    VersionedDateTimeField,
     HideIfNotNodePointerLog,
     HideIfNotRegistrationPointerLog,
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -65,6 +65,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
+    library_name = ser.CharField(read_only=True)
     license = ser.CharField(read_only=True, source='new_license')
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
     institution = NodeLogInstitutionSerializer(read_only=True)
@@ -180,7 +181,7 @@ class NodeLogSerializer(JSONAPISerializer):
     ]
 
     id = ser.CharField(read_only=True, source='_id')
-    date = DateByVersion(read_only=True)
+    date = VersionedDateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
     params = ser.SerializerMethodField(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})

@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField,
-    LinksField, RelationshipField, DateByVersion, JSONAPIListField
+    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
@@ -16,11 +16,11 @@ from api.nodes.serializers import (
     NodeTagField
 )
 from framework.exceptions import PermissionsError
-from website.util import permissions
 from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.utils import permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -72,10 +72,10 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = ser.SerializerMethodField()
-    date_created = DateByVersion(source='created', read_only=True)
-    date_modified = DateByVersion(source='modified', read_only=True)
-    date_published = DateByVersion(read_only=True)
-    original_publication_date = DateByVersion(required=False)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+    date_published = VersionedDateTimeField(read_only=True)
+    original_publication_date = VersionedDateTimeField(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
@@ -84,15 +84,14 @@ class PreprintSerializer(JSONAPISerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
     node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
-    preprint_doi_created = DateByVersion(read_only=True)
+    preprint_doi_created = VersionedDateTimeField(read_only=True)
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
-
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
-    date_last_transitioned = DateByVersion(read_only=True)
+    date_last_transitioned = VersionedDateTimeField(read_only=True)
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',

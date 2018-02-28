@@ -1,6 +1,7 @@
 import json
 from io import StringIO
 
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -188,7 +189,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
         stripped_description = '<span>Open Preprints Open Science</span>'
-        stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
+        stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
 
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -239,6 +240,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
+        content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
         data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
@@ -249,6 +251,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider._id, 'new_id')
         nt.assert_equal(new_provider.name, 'Awesome New Name')
         nt.assert_equal(new_provider.subjects.all().count(), 1)
         nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
@@ -261,6 +264,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
+        content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
@@ -274,6 +278,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider._id, 'new_id')
         nt.assert_equal(new_provider.name, 'Awesome New Name')
 
     def test_update_provider_existing_subjects(self):
@@ -418,3 +423,41 @@ class TestProcessCustomTaxonomy(AdminTestCase):
 
         with nt.assert_raises(AssertionError):
             self.view.post(self.request)
+
+
+class TestShareSourcePreprintProvider(AdminTestCase):
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.preprint_provider = PreprintProviderFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.ShareSourcePreprintProvider()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+
+    @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
+    def test_update_share_token_and_source(self, share_resp):
+        token = 'tokennethbranagh'
+        label = 'sir'
+        share_resp.return_value = {
+            'included': [{
+                'attributes': {
+                    'token': token,
+                },
+                'type': 'ShareUser',
+            }, {
+                'attributes': {
+                    'label': label
+                },
+                'type': 'SourceConfig',
+            }]
+        }
+
+        self.view.get(self.request)
+        self.preprint_provider.refresh_from_db()
+
+        assert self.preprint_provider.access_token == token
+        assert self.preprint_provider.share_source == label

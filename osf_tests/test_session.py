@@ -40,8 +40,8 @@ class SessionUtilsTestCase(DbTestCase):
 
     def tearDown(self, *args, **kwargs):
         super(SessionUtilsTestCase, self).tearDown(*args, **kwargs)
-        OSFUser.remove()
-        Session.remove()
+        OSFUser.objects.all().delete()
+        Session.objects.all().delete()
 
     def test_remove_session_for_user(self):
         SessionFactory(user=self.user)

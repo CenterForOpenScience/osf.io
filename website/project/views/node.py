@@ -9,13 +9,14 @@ from itertools import islice
 from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q, OuterRef, Exists, Subquery
+from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
+from api.base.utils import rapply
 
 from website import language
 
@@ -31,7 +32,6 @@ from website.project.decorators import (
     must_not_be_retracted_registration,
 )
 from website.tokens import process_token_or_pass
-from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
@@ -39,12 +39,12 @@ from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
+from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
-from website.util.sanitize import strip_html
-from website.util import rapply
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
@@ -373,7 +373,7 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
-    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
 
@@ -804,12 +804,12 @@ def _view_project(node, auth, primary=False,
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True)
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date').annotate(nlogs=Count('logs'))
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
         ]
     return data
 
