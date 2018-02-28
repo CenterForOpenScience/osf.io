@@ -181,6 +181,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
 
         raise PermissionDenied if auth.user else NotAuthenticated
 
+
 class PreprintIdentifierList(IdentifierList, PreprintMixin):
     """List of identifiers for a specified preprint. *Read-only*.
 
@@ -226,7 +227,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
     preprint_lookup_url_kwarg = 'preprint_id'
 
-    view_category = 'identifiers'
+    view_category = 'preprints'
     view_name = 'identifier-list'
 
     # overrides IdentifierList
