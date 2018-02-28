@@ -23,7 +23,7 @@ from api.base.serializers import (
     RelationshipField,
     TypeField,
     WaterbutlerLink,
-    DateByVersion,
+    VersionedDateTimeField,
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
@@ -156,7 +156,7 @@ class BaseFileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
         read_only=True, help_text='The Unix-style path of this object relative to the provider root')
-    last_touched = DateByVersion(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
@@ -355,7 +355,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
-    date_created = DateByVersion(source='created', read_only=True, help_text='The date that this version was created')
+    date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

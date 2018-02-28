@@ -15,8 +15,8 @@ from django.db.models import Exists, OuterRef
 
 from website import settings
 from website.util import paths
-from website.util import sanitize
 from website.settings import DISK_SAVING_MODE
+from osf.utils import sanitize
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ def build_addon_root(node_settings, name, permissions=None,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
-    from website.util import check_private_key_for_anonymized_link
+    from osf.utils.permissions import check_private_key_for_anonymized_link
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):
@@ -169,7 +169,7 @@ class NodeFileCollector(object):
         root = self._get_nodes(self.node, grid_root=self.node)
         return [root]
 
-    def find_readable_descendants(self, node):
+    def find_readable_descendants(self, node, visited):
         """
         Returns a generator of first descendant node(s) readable by <user>
         in each descendant branch.
@@ -190,11 +190,12 @@ class NodeFileCollector(object):
         for descendant in descendants_qs:
             if descendant.can_view(self.auth):
                 yield descendant
-            else:
+            elif descendant._id not in visited:
                 new_branches.append(descendant)
+                visited.append(descendant._id)
 
         for bnode in new_branches:
-            for descendant in self.find_readable_descendants(bnode):
+            for descendant in self.find_readable_descendants(bnode, visited=visited):
                 yield descendant
 
     def _serialize_node(self, node, parent=None, grid_root=None, children=None):
@@ -236,7 +237,7 @@ class NodeFileCollector(object):
             serialized_addons = self._collect_addons(node)
             serialized_children = [
                 self._serialize_node(child, parent=node, grid_root=grid_root)
-                for child in self.find_readable_descendants(node)
+                for child in self.find_readable_descendants(node, visited=[])
             ]
             data = serialized_addons + serialized_children
         return self._serialize_node(node, children=data)

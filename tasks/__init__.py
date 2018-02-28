@@ -120,90 +120,6 @@ def shell(ctx, transaction=True, print_sql=False, notebook=False):
         cmd += ' --no-transaction'
     return ctx.run(cmd, pty=True, echo=True)
 
-@task(aliases=['mongo'])
-def mongoserver(ctx, daemon=False, config=None):
-    """Run the mongod process.
-    """
-    if not config:
-        platform_configs = {
-            'darwin': '/usr/local/etc/tokumx.conf',  # default for homebrew install
-            'linux': '/etc/tokumx.conf',
-        }
-        platform = str(sys.platform).lower()
-        config = platform_configs.get(platform)
-    port = settings.DB_PORT
-    cmd = 'mongod --port {0}'.format(port)
-    if config:
-        cmd += ' --config {0}'.format(config)
-    if daemon:
-        cmd += ' --fork'
-    ctx.run(cmd, echo=True)
-
-
-@task(aliases=['mongoshell'])
-def mongoclient(ctx):
-    """Run the mongo shell for the OSF database."""
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-    ctx.run('mongo {db} --port {port}'.format(db=db, port=port), pty=True)
-
-
-@task
-def mongodump(ctx, path):
-    """Back up the contents of the running OSF database"""
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-
-    cmd = 'mongodump --db {db} --port {port} --out {path}'.format(
-        db=db,
-        port=port,
-        path=path,
-        pty=True)
-
-    if settings.DB_USER:
-        cmd += ' --username {0}'.format(settings.DB_USER)
-    if settings.DB_PASS:
-        cmd += ' --password {0}'.format(settings.DB_PASS)
-
-    ctx.run(cmd, echo=True)
-
-    print()
-    print('To restore from the dumped database, run `invoke mongorestore {0}`'.format(
-        os.path.join(path, settings.DB_NAME)))
-
-
-@task
-def mongorestore(ctx, path, drop=False):
-    """Restores the running OSF database with the contents of the database at
-    the location given its argument.
-
-    By default, the contents of the specified database are added to
-    the existing database. The `--drop` option will cause the existing database
-    to be dropped.
-
-    A caveat: if you `invoke mongodump {path}`, you must restore with
-    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
-    database dump will be stored.
-    """
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-
-    cmd = 'mongorestore --db {db} --port {port}'.format(
-        db=db,
-        port=port,
-        pty=True)
-
-    if settings.DB_USER:
-        cmd += ' --username {0}'.format(settings.DB_USER)
-    if settings.DB_PASS:
-        cmd += ' --password {0}'.format(settings.DB_PASS)
-
-    if drop:
-        cmd += ' --drop'
-
-    cmd += ' ' + path
-    ctx.run(cmd, echo=True)
-
 
 @task
 def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
@@ -253,31 +169,6 @@ def celery_beat(ctx, level='debug', schedule=None):
         cmd = cmd + ' --schedule={}'.format(schedule)
     ctx.run(bin_prefix(cmd), pty=True)
 
-
-@task
-def rabbitmq(ctx):
-    """Start a local rabbitmq server.
-
-    NOTE: this is for development only. The production environment should start
-    the server as a daemon.
-    """
-    ctx.run('rabbitmq-server', pty=True)
-
-
-@task(aliases=['elastic'])
-def elasticsearch(ctx):
-    """Start a local elasticsearch server
-
-    NOTE: Requires that elasticsearch is installed. See README for instructions
-    """
-    import platform
-    if platform.linux_distribution()[0] == 'Ubuntu':
-        ctx.run('sudo service elasticsearch start')
-    elif platform.system() == 'Darwin':  # Mac OSX
-        ctx.run('elasticsearch')
-    else:
-        print('Your system is not recognized, you will have to start elasticsearch manually')
-
 @task
 def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
@@ -292,7 +183,6 @@ def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX)
         logging.getLogger(logger).setLevel(logging.ERROR)
 
     migrate(delete, remove=remove, index=index)
-
 
 @task
 def rebuild_search(ctx):
@@ -436,7 +326,9 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
+    'api_tests/actions',
     'api_tests/nodes',
+    'api_tests/requests'
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
@@ -572,7 +464,8 @@ def test_travis_else(ctx, numprocesses=None):
 def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
-    karma(ctx)
+    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+    # karma(ctx)
     test_api1(ctx, numprocesses=numprocesses)
 
 
@@ -764,8 +657,7 @@ def hotfix(ctx, name, finish=False, push=False):
     if finish:
         ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
-        ctx.run('git push origin master', echo=True)
-        ctx.run('git push --tags', echo=True)
+        ctx.run('git push --tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
 
 

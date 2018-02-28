@@ -7,8 +7,9 @@ python:
 
 sudo: false
 
-addons:
-  chrome: stable
+# TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+# addons:
+#   chrome: stable
 
 cache:
   yarn: true
@@ -151,7 +152,7 @@ before_cache:
   # exclude python requirements from github repo's
   - rm -f $HOME/.cache/wheelhouse/modular_odm-*.whl
   - rm -f $HOME/.cache/wheelhouse/mfr-*.whl
-  - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
+  - rm -f $HOME/.cache/wheelhouse/responses-*.whl
   - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
   - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
   # kill any running processes

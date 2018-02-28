@@ -6,10 +6,9 @@ from django.utils import timezone
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils import akismet
 
 from website import settings
-from website.util import akismet
-from website.util.akismet import AkismetClientError
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +202,7 @@ class SpamMixin(models.Model):
                 comment_author=author,
                 comment_author_email=author_email
             )
-        except AkismetClientError:
+        except akismet.AkismetClientError:
             logger.exception('Error performing SPAM check')
             return False
         if update:

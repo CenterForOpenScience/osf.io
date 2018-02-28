@@ -33,19 +33,22 @@ class TestUserInstititutionRelationship:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/relationships/institutions/'.format(API_BASE, user._id)
+        return '/{}users/{}/relationships/institutions/'.format(
+            API_BASE, user._id)
 
     def test_get(self, app, user, institution_one, institution_two, url):
 
-    #   test_get_relationship_institutions
+        #   test_get_relationship_institutions
         res = app.get(
             url, auth=user.auth
         )
 
         assert res.status_code == 200
 
-        assert user.absolute_api_v2_url + 'relationships/institutions/' in res.json['links']['self']
-        assert user.absolute_api_v2_url + 'institutions/' in res.json['links']['html']
+        assert user.absolute_api_v2_url + \
+            'relationships/institutions/' in res.json['links']['self']
+        assert user.absolute_api_v2_url + \
+            'institutions/' in res.json['links']['html']
 
         ids = [val['id'] for val in res.json['data']]
         assert institution_one._id in ids
@@ -59,7 +62,8 @@ class TestUserInstititutionRelationship:
         assert institution_one._id in ids
         assert institution_two._id in ids
 
-    def test_delete_one(self, app, user, institution_one, institution_two, url):
+    def test_delete_one(
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -76,7 +80,8 @@ class TestUserInstititutionRelationship:
         assert institution_one._id not in ids
         assert institution_two._id in ids
 
-    def test_delete_multiple(self, app, user, institution_one, institution_two, url):
+    def test_delete_multiple(
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -94,7 +99,8 @@ class TestUserInstititutionRelationship:
         assert institution_one._id not in ids
         assert institution_two._id not in ids
 
-    def test_delete_one_not_existing(self, app, user, institution_one, institution_two, url):
+    def test_delete_one_not_existing(
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -111,9 +117,10 @@ class TestUserInstititutionRelationship:
         assert institution_one._id in ids
         assert institution_two._id in ids
 
-    def test_institution_relationship_errors(self, app, user, user_two, institution_one, institution_two, url):
+    def test_institution_relationship_errors(
+            self, app, user, user_two, institution_one, institution_two, url):
 
-    #   test_type_mistyped
+        #   test_type_mistyped
         res = app.delete_json_api(
             url,
             {'data': [
@@ -183,7 +190,7 @@ class TestUserInstititutionRelationship:
             url,
             {'data':
                 {'type': 'institutions', 'id': institution_one._id}
-            },
+             },
             auth=user.auth, expect_errors=True
         )
 

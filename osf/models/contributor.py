@@ -2,7 +2,7 @@ from django.db import models
 from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
-from website.util.permissions import (
+from osf.utils.permissions import (
     READ,
     WRITE,
     ADMIN,

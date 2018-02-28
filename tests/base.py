@@ -9,7 +9,7 @@ import unittest
 import uuid
 
 import blinker
-import httpretty
+import responses
 import mock
 import pytest
 
@@ -157,7 +157,7 @@ class SearchTestCase(unittest.TestCase):
         elastic_search.create_index(settings.ELASTIC_INDEX)
 
         # NOTE: Super is called last to ensure the ES connection can be established before
-        #       the httpretty module patches the socket.
+        #       the responses module patches the socket.
         super(SearchTestCase, self).setUp()
 
     def tearDown(self):
@@ -167,42 +167,8 @@ class SearchTestCase(unittest.TestCase):
         elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
-methods = [
-    httpretty.GET,
-    httpretty.PUT,
-    httpretty.HEAD,
-    httpretty.POST,
-    httpretty.PATCH,
-    httpretty.DELETE,
-]
-def kill(*args, **kwargs):
-    logger.error('httppretty.kill: %s - %s', args, kwargs)
-    raise httpretty.errors.UnmockedError()
 
-
-class MockRequestTestCase(unittest.TestCase):
-
-    DISABLE_OUTGOING_CONNECTIONS = False
-
-    def setUp(self):
-        super(MockRequestTestCase, self).setUp()
-        if self.DISABLE_OUTGOING_CONNECTIONS:
-            httpretty.enable()
-            for method in methods:
-                httpretty.register_uri(
-                    method,
-                    re.compile(r'.*'),
-                    body=kill,
-                    priority=-1,
-                )
-
-    def tearDown(self):
-        super(MockRequestTestCase, self).tearDown()
-        httpretty.reset()
-        httpretty.disable()
-
-
-class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -210,7 +176,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -290,18 +256,14 @@ class ApiAddonTestCase(ApiTestCase):
 
     def tearDown(self):
         super(ApiAddonTestCase, self).tearDown()
-        self.user.remove()
-        self.node.remove()
-        if self.node_settings:
-            self.node_settings.remove()
-        if self.user_settings:
-            self.user_settings.remove()
+        self.user.delete()
+        self.node.delete()
         if self.account:
-            self.account.remove()
+            self.account.delete()
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')
-class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
 class NotificationTestCase(OsfTestCase):

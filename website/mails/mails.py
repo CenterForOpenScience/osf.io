@@ -73,7 +73,7 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
+def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, celery=True,
             username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
@@ -118,7 +118,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
     logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
-        if settings.USE_CELERY:
+        if settings.USE_CELERY and celery:
             logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
@@ -221,6 +221,10 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
+)
+CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
+    'contributor_added_access_request',
+    subject='Your access request to an OSF project has been approved.'
 )
 PREPRINT_CONFIRMATION_DEFAULT = Mail(
     'preprint_confirmation_default',
@@ -403,4 +407,14 @@ SHARE_PREPRINT_ERROR_DESK = Mail(
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
     subject='Confirmation of your submission to ${provider_name}'
+)
+
+ACCESS_REQUEST_SUBMITTED = Mail(
+    'access_request_submitted',
+    subject='An OSF user has requested access to your ${node.project_or_component}'
+)
+
+ACCESS_REQUEST_DENIED = Mail(
+    'access_request_rejected',
+    subject='Your access request to an OSF project has been declined.'
 )

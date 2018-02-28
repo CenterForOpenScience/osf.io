@@ -25,7 +25,7 @@ from admin.spam.views import (
 class TestSpamListView(AdminTestCase):
     def setUp(self):
         super(TestSpamListView, self).setUp()
-        Comment.remove()
+        Comment.objects.all().delete()
         self.project = ProjectFactory(is_public=True)
         self.user_1 = AuthUserFactory()
         self.user_2 = AuthUserFactory()

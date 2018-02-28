@@ -186,24 +186,24 @@
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
-                <span data-bind="if: hasIdentifiers()" class="scripted">
+                    <span data-bind="if: hasDoi()" class="scripted">
                   <p>
-                    Identifiers:
-                  DOI <span data-bind="text: doi"></span> |
-                  ARK <span data-bind="text: ark"></span>
+                    <span data-bind="text:identifier"></span>:
+                  DOI <span data-bind="text: doi"></span>
+                      <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
-                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                        <span class="text-info">Creating DOI. Please wait...</span>
                     </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
                   <p>
-                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI</a>
                   </p>
                   <!-- /ko -->
                 </span>
@@ -273,7 +273,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint']:
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
@@ -299,9 +299,9 @@
                 This project represents a ${node['preprint_word']}.
             % endif
             <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
             % endif
         </div>
     </div>
