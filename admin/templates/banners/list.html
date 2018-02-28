@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% block title %}
+    <title>List of Banners</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Banners</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Dates</th>
+            <th>Color</th>
+            <th>Text</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for banner in banners %}
+    <tr>
+        <td>
+            <a href="{% url 'banners:detail' banner_id=banner.id %}">{{ banner.name }}</a>
+        </td>
+        <td>
+            {{ banner.start_date }} - {{ banner.end_date }}
+        </td>
+        <td>
+            {{ banner.color }}
+        </td>
+        <td>
+            {{ banner.default_alt_text }}
+        </td>
+        <td>
+            {%  if perms.osf.delete_scheduledbanner %}
+                <a class="btn btn-danger" href={% url 'banners:delete' banner.id %}>Delete banner</a>
+            {% endif %}
+        </td>
+    </a>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -23,7 +23,6 @@ from website.project.decorators import (
     must_be_contributor_or_public
 )
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'
@@ -130,12 +129,6 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse', {}).get('alias')
     doi = request.json.get('dataset', {}).get('doi')

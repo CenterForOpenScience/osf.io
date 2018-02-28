@@ -53,3 +53,24 @@ def get_request_and_user_id():
         # admin module can return a user w/o an id
         user_id = getattr(req.user, '_id', None)
     return req, user_id
+
+
+def get_headers_from_request(req):
+    """ Get and normalize DRF and Flask request headers
+    """
+    headers = getattr(req, 'META', {})
+    if headers:
+        headers = {
+            '-'.join([part.capitalize() for part in k.split('_')]).replace('Http-', ''): v
+            for k, v in headers.items()
+        }
+        remote_addr = (headers.get('X-Forwarded-For') or headers.get('Remote-Addr'))
+        headers['Remote-Addr'] = remote_addr.split(',')[0].strip() if remote_addr else None
+    else:
+        headers = getattr(req, 'headers', {})
+        headers = {
+            k: v
+            for k, v in headers.items()
+        }
+        headers['Remote-Addr'] = req.remote_addr
+    return headers

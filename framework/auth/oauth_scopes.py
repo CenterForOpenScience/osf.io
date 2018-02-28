@@ -101,6 +101,9 @@ class CoreScopes(object):
     MODERATORS_READ = 'moderators_read'
     MODERATORS_WRITE = 'moderators_write'
 
+    NODE_REQUESTS_READ = 'node_requests_read'
+    NODE_REQUESTS_WRITE = 'node_requests_write'
+
     PROVIDERS_WRITE = 'providers_write'
 
     WAFFLE_READ = 'waffle_read'

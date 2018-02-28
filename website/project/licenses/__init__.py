@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 from framework import exceptions as framework_exceptions
 from website import exceptions as web_exceptions
-from website.util import permissions
+from osf.utils import permissions
 
 
 def set_license(node, license_detail, auth, node_type='node'):

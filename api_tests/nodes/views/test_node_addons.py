@@ -24,7 +24,7 @@ from addons.mendeley.tests.factories import (
 from addons.zotero.tests.factories import (
     ZoteroAccountFactory, ZoteroNodeSettingsFactory
 )
-from website.util.permissions import WRITE, READ, ADMIN
+from osf.utils.permissions import WRITE, READ, ADMIN
 
 pytestmark = pytest.mark.django_db
 # Varies between addons. Some need to make a call to get the root,

@@ -5,10 +5,10 @@ from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from api.actions.permissions import ReviewActionPermission
-from api.actions.serializers import ReviewActionSerializer
+from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer
 from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -18,17 +18,23 @@ from api.base.parsers import (
 )
 from api.base import permissions as base_permissions
 from api.base.utils import absolute_reverse
+from api.requests.views import NodeRequestMixin
+from api.requests.permissions import NodeRequestPermission
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, ReviewAction
+from osf.models import PreprintProvider, ReviewAction, NodeRequestAction
 
 
 def get_review_actions_queryset():
     return ReviewAction.objects.include(
-        'creator',
         'creator__guids',
-        'target',
         'target__guids',
         'target__provider',
+    ).filter(is_deleted=False)
+
+def get_request_actions_queryset():
+    return NodeRequestAction.objects.include(
+        'creator__guids',
+        'target__guids',
     ).filter(is_deleted=False)
 
 
@@ -66,6 +72,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReviewActionPermission,
+        # TODO: Consider generic "ActionPermission" when RequestActions are viewable
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
@@ -75,10 +82,17 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_category = 'actions'
     view_name = 'action-detail'
 
+    def get_serializer_class(self):
+        # Not allowed to view NodeRequestActions yet, making extra logic unnecessary
+        return ReviewActionSerializer
+
     def get_object(self):
         action = None
         if ReviewAction.objects.filter(_id=self.kwargs['action_id']).exists():
             action = get_object_or_404(get_review_actions_queryset(), _id=self.kwargs['action_id'])
+        elif NodeRequestAction.objects.filter(_id=self.kwargs['action_id']).exists():
+            # No permissions allow for viewing NodeRequestActions yet
+            raise PermissionDenied('You do not have permission to view this Action')
         if not action:
             raise NotFound('Unable to find specified Action')
         self.check_object_permissions(self.request, action)
@@ -165,3 +179,26 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeRequestMixin):
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        NodeRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    serializer_class = NodeRequestActionSerializer
+
+    view_category = 'request-actions'
+    view_name = 'create-node-request-action'
+
+    # overrides CreateAPIView
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
+
+        serializer.save(user=self.request.user)

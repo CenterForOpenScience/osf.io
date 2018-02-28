@@ -1,5 +1,6 @@
 {
     "zotero_folder_selected" : "A user linked a Zotero folder to a project",
+    "zotero_library_selected" : "A user linked a Zotero library to a project",
     "zotero_node_authorized" : "A user authorized the Zotero addon for a project",
     "zotero_node_deauthorized" : "A user deauthorized the Zotero addon for a project"
 }
