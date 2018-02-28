@@ -1,6 +1,6 @@
 import pytest
 
-from website.util import permissions
+from osf.utils import permissions
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,

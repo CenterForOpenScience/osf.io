@@ -20,9 +20,10 @@ from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url, waterbutler_api_url_for
+from website.util import api_v2_url
 
 __all__ = (
     'File',

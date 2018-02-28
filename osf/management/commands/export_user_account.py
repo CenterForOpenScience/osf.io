@@ -22,7 +22,7 @@ from osf.models import (
     Registration,
 )
 from scripts.utils import Progress
-from website.util import waterbutler_api_url_for
+from api.base.utils import waterbutler_api_url_for
 
 ERRORS = []
 GBs = 1024 ** 3.0

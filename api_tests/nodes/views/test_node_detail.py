@@ -8,6 +8,8 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
+from osf.utils.sanitize import strip_html
+from osf.utils import permissions
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -24,8 +26,6 @@ from rest_framework import exceptions
 from tests.base import fake
 from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
-from website.util import permissions
-from website.util.sanitize import strip_html
 
 
 @pytest.fixture()

@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from osf.models import ExternalAccount
 
-from website.util import permissions
+from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,

@@ -152,7 +152,7 @@ before_cache:
   # exclude python requirements from github repo's
   - rm -f $HOME/.cache/wheelhouse/modular_odm-*.whl
   - rm -f $HOME/.cache/wheelhouse/mfr-*.whl
-  - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
+  - rm -f $HOME/.cache/wheelhouse/responses-*.whl
   - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
   - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
   # kill any running processes

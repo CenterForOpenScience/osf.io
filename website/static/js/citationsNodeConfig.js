@@ -37,6 +37,10 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 self.urls().files + '">Overview page</a> to view your citations.';
         });
 
+        self.messages.submitLibrarySettingsSuccess = ko.pureComputed(function(){
+            return 'Successfully linked "' + $osf.htmlEscape(self.library().name) + '". Next, choose which folder to link above.';
+        });
+
         self.treebeardOptions = $.extend(
             {},
             FolderPickerViewModel.prototype.treebeardOptions,

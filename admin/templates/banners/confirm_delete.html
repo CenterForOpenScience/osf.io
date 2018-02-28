@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}
+    <title>OSF Admin | Delete banner</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Confirm Delete Banner</h4>
+                <form action="" method="post">{% csrf_token %}
+                    <p>
+                        Are you sure you want to delete <b>{{ object.name }}</b>? It is scheduled for {{ object.start_date }} -
+                        {{ object.end_date }}
+                    </p>
+                    <input class="btn btn-primary" type="submit" value="Confirm" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

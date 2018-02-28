@@ -5,10 +5,10 @@ import datetime
 from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
+from osf.utils.permissions import READ, WRITE, ADMIN
 from addons.wiki.models import NodeWikiPage
 
 from website import settings
-from website.util.permissions import READ, WRITE, ADMIN
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive

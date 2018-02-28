@@ -13,8 +13,8 @@ from osf.models import (
     PreprintService,
     PrivateLink,
 )
+from osf.utils import permissions as osf_permissions
 from website.project.metadata.utils import is_prereg_admin
-from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth, is_deprecated
 
