@@ -1,10 +1,8 @@
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
-from api.base.serializers import (JSONAPISerializer, IDField)
+from api.base.serializers import JSONAPISerializer
 from osf.models import OSFUser
-
-from osf.models import PreprintProvider
 
 frequencies = ['none', 'instant', 'daily']
 
