@@ -186,8 +186,11 @@ def _render_conference_node(node, idx, conf):
 
 def filter_and_sort_conference_data(nodes, conf):
     """
-    If appropriate query params are present, filter and sort conference submissions
-    Returns: node queryset
+    Filter and sort conference submissions
+    Returns: filtered/sorted node queryset.  Sorts on download count by default.
+
+    :param obj nodes: Node queryset - conference submissions
+    :param conf obj: Conference
     """
     q = request.args.get('q', '')
     # Give "sort" a default value, since pagination may be inconsistent with unordered objects.
@@ -258,7 +261,13 @@ def filter_and_sort_conference_data(nodes, conf):
         ).order_by(sort)
     return nodes
 
-def conference_data(meeting, conf, meetings_page=1):
+def paginated_conference_data(meeting, conf, meetings_page=1):
+    """
+    Returns a paginated, sorted, filtered array of conference nodes
+    :param str meeting: Endpoint name for a conference.
+    :param object conf: Conference
+    :param int meetings_page: Requested page of results, 1 by default
+    """
     nodes = filter_and_sort_conference_data(AbstractNode.objects.filter(
         tags__id__in=Tag.objects.filter(
             name__iexact=meeting, system=False
@@ -269,19 +278,39 @@ def conference_data(meeting, conf, meetings_page=1):
         selected_nodes = paginator.page(meetings_page)
     except EmptyPage:
         selected_nodes = paginator.page(paginator.num_pages)
+
+    return render_submissions(selected_nodes.object_list, conf), selected_nodes
+
+def conference_data(meeting):
+    """
+    Returns an array of all serialized conference nodes.
+    :param str meeting: Endpoint name for a conference.
+    """
+    try:
+        conf = Conference.objects.get(endpoint__iexact=meeting)
+    except Conference.DoesNotExist:
+        raise HTTPError(httplib.NOT_FOUND)
+
+    nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+    return render_submissions(nodes, conf)
+
+def render_submissions(nodes, conf):
+    """
+    Returns an array of serialized conference nodes.
+    :param obj nodes: Node queryset - conference submissions
+    :param conf obj: Conference
+    """
     ret = []
-    for idx, each in enumerate(selected_nodes.object_list):
+    for idx, each in enumerate(nodes):
         # To handle OSF-8864 where projects with no users caused meetings to be unable to resolve
         try:
             ret.append(_render_conference_node(each, idx, conf))
         except IndexError:
             sentry.log_exception()
-    return ret, selected_nodes
-
+    return ret
 
 def redirect_to_meetings(**kwargs):
     return redirect('/meetings/')
-
 
 def serialize_conference(conf):
     return {
@@ -359,7 +388,7 @@ def conference_results(meeting, **kwargs):
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
-    data, current_page = conference_data(meeting, conf, meetings_page=get_meetings_page())
+    data, current_page = paginated_conference_data(meeting, conf, meetings_page=get_meetings_page())
 
     return {
         'data': data,
@@ -375,6 +404,12 @@ def conference_results(meeting, **kwargs):
     }
 
 def build_conference_query_params():
+    """
+    Return a dictionary of current query params used for conference_results
+
+    These are used to build links on the conference_results page to ensure
+    query params are retained while paginating, sorting, and filtering.
+    """
     q = request.args.get('q', '')
     page = get_meetings_page()
     sort = request.args.get('sort', '')
