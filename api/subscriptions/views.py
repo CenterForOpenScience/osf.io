@@ -1,5 +1,5 @@
 from rest_framework import generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework import permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
@@ -20,6 +20,9 @@ class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPI
     def get_object(self):
         provider_id = self.kwargs['provider_id']
         user_id = self.kwargs['user_id']
+        current_user_id = self.request.user._id
+        if user_id != current_user_id:
+            raise PermissionDenied()
         user = OSFUser.load(user_id)
         if not user:
             raise NotFound('User with id {} cannot be found.'.format(user_id))
