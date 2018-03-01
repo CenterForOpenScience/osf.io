@@ -6,13 +6,9 @@
     <%!
         from website import settings
     %>
-    Hello ${admin.fullname},<br>
+    Hello ${requester.fullname},<br>
     <br>
-    ${requester.fullname} (${requester.absolute_url}) has requested access to your ${node.project_or_component} "${node.title}" (${node.absolute_url}).<br>
-    <br>
-    To review the request, click here ${contributors_url} to allow or deny access and configure permissions.<br>
-    <br>
-    This request is being sent to you because your project has the 'Request Access' feature enabled. This allows potential collaborators to request to be added to your project. To disable this feature, click here ${project_settings_url}<br>
+    This email is to inform you that your request for access to the project at ${node.absolute_url} has been declined.<br>
     <br>
     Sincerely,<br>
     <br>
