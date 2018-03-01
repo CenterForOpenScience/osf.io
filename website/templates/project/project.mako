@@ -104,34 +104,33 @@
                     </div>
                     <div class="collapse pull-right" id="otherActions">
                         <div class="panel" id="other-actions-panel">
-                        <!-- ko if: canBeOrganized -->
-                            <!-- ko ifnot: inDashboard -->
-                               <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks'}">
-                                   Bookmark
-                               </a>
+                            <!-- ko if: canBeOrganized -->
+                                <!-- ko ifnot: inDashboard -->
+                                   <div id="addDashboardFolder" data-bind="click: addToDashboard">
+                                       Bookmark
+                                   </div>
+                                <!-- /ko -->
+                                <!-- ko if: inDashboard -->
+                                   <div id="removeDashboardFolder" data-bind="click: removeFromDashboard">
+                                       Remove from bookmarks
+                                   </div>
+                                <!-- /ko -->
                             <!-- /ko -->
-                            <!-- ko if: inDashboard -->
-                               <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                                placement: 'bottom', container : 'body'}">
-                                   Remove from bookmarks
-                               </a>
-                            <!-- /ko -->
-                        <!-- /ko -->
-                        % if node["is_public"]:
-                            <div id="shareButtonsPopover">Share</div>
-                        % endif
-                        % if node['access_requests_enabled'] and not user['is_contributor']:
-                            %if user_name:
-                            <span class="request-access"
-                              data-content="Request declined"
-                              data-toggle="popover"
-                              data-placement="left">
-                                <a data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled-link': requestAccess.accessRequestPendingOrDenied()}"></a>
-                            </span>
-                            %else:
-                                <a href="${login_url}" >Login to request access</a>
-                            %endif
-                        % endif
+                            % if node["is_public"]:
+                                <div id="shareButtonsPopover">Share</div>
+                            % endif
+                            % if node['access_requests_enabled'] and not user['is_contributor']:
+                                %if user_name:
+                                <span class="request-access"
+                                  data-content="Request declined"
+                                  data-toggle="popover"
+                                  data-placement="left">
+                                    <div data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled': requestAccess.accessRequestPendingOrDenied()}"></div>
+                                </span>
+                                %else:
+                                    <a href="${login_url}" >Login to request access</a>
+                                %endif
+                            % endif
                         </div>
                     </div>
                 </div>
