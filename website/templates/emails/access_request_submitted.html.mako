@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
     Hello ${admin.fullname},<br>
     <br>
     ${requester.fullname} (${requester.absolute_url}) has requested access to your ${node.project_or_component} "${node.title}" (${node.absolute_url}).<br>
