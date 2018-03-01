@@ -33,9 +33,9 @@ $(document).ready(function(){
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
             return [
-                m(DonateBanner.background, m('.container',
+                m('.donate-banner-background', m('.container',
                     [
-                        m(columnSizeClass, m.component(DonateBanner.Banner, {}))
+                        m(columnSizeClass, m.component(DonateBanner, {}))
                     ]
                 )),
                 m('.prereg-banner', m('.container',

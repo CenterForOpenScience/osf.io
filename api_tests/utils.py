@@ -1,4 +1,6 @@
+from blinker import ANY
 from urlparse import urlparse
+from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 
 
@@ -26,3 +28,14 @@ def urlparse_drop_netloc(url):
     if url[4]:
         return url[2] + '?' + url[4]
     return url[2]
+
+
+@contextmanager
+def disconnected_from_listeners(signal):
+    """Temporarily disconnect all listeners for a Blinker signal."""
+    listeners = list(signal.receivers_for(ANY))
+    for listener in listeners:
+        signal.disconnect(listener)
+    yield
+    for listener in listeners:
+        signal.connect(listener)

@@ -17,7 +17,7 @@ var MeetingsAndConferences = {
                         [
                             m('div.conference-centering',  m('h3', 'Hosting a conference or meeting?')),
                             m('div.conference-centering.m-t-lg',
-                                m('p.text-bigger', 'Use the OSF for Meetings service to provide a central location for conference submissions.')
+                                m('p.text-bigger', 'Use the OSF Meetings service to provide a central location for conference submissions.')
                             )
                         ]
                     ),
