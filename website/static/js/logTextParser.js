@@ -540,6 +540,12 @@ var LogPieces = {
         }
     },
 
+    library_name: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('library_name', 'a library', logObject);
+        }
+    },
+
     bucket: {
         view: function(ctrl, logObject) {
             return returnTextParams('bucket', 'a bucket', logObject);

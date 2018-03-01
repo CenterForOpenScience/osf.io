@@ -185,7 +185,7 @@ def get_and_set_preprint_identifiers(preprint_id):
     if ezid_response is None:
         return
     id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'], save=True)
+    preprint.set_identifier_values(doi=id_dict['doi'], save=True)
 
 
 def send_desk_share_preprint_error(preprint, resp, retries):

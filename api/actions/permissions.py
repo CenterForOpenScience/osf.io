@@ -7,7 +7,7 @@ from api.base.utils import get_user_auth
 from osf.models.action import ReviewAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import DefaultTriggers
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {

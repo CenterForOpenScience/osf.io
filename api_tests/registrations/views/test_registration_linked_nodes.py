@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from website.util import disconnected_from_listeners
+from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 from osf_tests.factories import (
     NodeFactory,

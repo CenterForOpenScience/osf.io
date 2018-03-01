@@ -13,7 +13,7 @@ webtest-plus==0.3.3
 mock==1.0.1
 fake-factory==0.5.4
 schema==0.3.1
-HTTPretty==0.8.14
+responses==0.8.1
 
 # Syntax checking
 flake8==2.4.0

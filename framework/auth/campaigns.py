@@ -6,7 +6,7 @@ from django.utils import timezone
 from website import mails, settings
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
-from website.util.time import throttle_period_expired
+from framework.utils import throttle_period_expired
 
 
 mutex = threading.Lock()

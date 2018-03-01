@@ -24,9 +24,9 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from osf.models import OSFUser, Session
+from osf.utils import permissions
 from website import mails
 from website import settings
-from website.util import permissions
 from website.project.decorators import (
     must_have_permission,
     must_be_contributor,
