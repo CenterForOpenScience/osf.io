@@ -27,6 +27,7 @@ from osf.models import BaseFileNode, Guid, Institution, PreprintService, Abstrac
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
+from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -275,9 +276,13 @@ def resolve_guid(guid, suffix=None):
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
-                    # admins should be able to know it exists.
+                    # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                    group_helper = GroupHelper(referent.provider)
+                    admin_group = group_helper.get_group('admin')
+                    mod_group = group_helper.get_group('moderator')
+                    # Check if user isn't a nonetype or that the user has admin/moderator permissions
+                    if auth.user is None or not (referent.node.has_permission(auth.user, permissions.ADMIN) or (mod_group.user_set.all() | admin_group.user_set.all()).filter(id=auth.user.id).exists()):
                         raise HTTPError(http.NOT_FOUND)
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
