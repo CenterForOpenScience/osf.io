@@ -4,7 +4,7 @@ import mock
 
 from osf.models import ApiOAuth2Application
 from website.util import api_v2_url
-from website.util import sanitize
+from osf.utils import sanitize
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 

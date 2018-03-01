@@ -2,10 +2,10 @@
 import pytest
 
 from osf_tests.factories import AuthUserFactory
+from api.base import utils
 from api.base.settings.defaults import API_BASE
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
-from website import util as website_utils
 
 
 @pytest.fixture()
@@ -109,7 +109,7 @@ class TestUserQuickFiles:
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data'][0]
         quickfiles_node = quickfiles(user)
-        waterbutler_url = website_utils.waterbutler_api_url_for(
+        waterbutler_url = utils.waterbutler_api_url_for(
             quickfiles_node._id,
             'osfstorage',
             file_detail_json['attributes']['path']

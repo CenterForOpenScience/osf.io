@@ -1,6 +1,6 @@
-import requests
+from __future__ import absolute_import
 
-from requests.exceptions import RequestException
+import requests
 
 
 class AkismetClientError(Exception):
@@ -76,7 +76,7 @@ class AkismetClient(object):
                 timeout=5
             )
             res.raise_for_status()
-        except RequestException as e:
+        except requests.exceptions.RequestException as e:
             raise AkismetClientError(reason=e.args[0])
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 

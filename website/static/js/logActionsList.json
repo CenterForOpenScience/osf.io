@@ -16,7 +16,7 @@
     "edit_title":   "${user} changed the title from ${title_original} to ${title_new}",
     "edit_description": "${user} edited description of ${node}",
     "updated_fields":   "${user} changed the ${updated_fields} for ${node}",
-    "external_ids_added":   "${user} created external identifiers ${identifiers} on ${node}",
+    "external_ids_added":   "${user} created external identifier(s) ${identifiers} on ${node}",
     "citation_added" : "${user} added a citation ${citation} to ${node}",
     "citation_edited" : "${user} updated citation ${citation} in ${node}",
     "citation_removed" : "${user} removed citation ${citation} in ${node}",

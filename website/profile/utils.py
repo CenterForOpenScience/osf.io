@@ -5,7 +5,7 @@ from website import settings
 from osf.models import Contributor
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
-from website.util.permissions import reduce_permissions
+from osf.utils.permissions import reduce_permissions
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):

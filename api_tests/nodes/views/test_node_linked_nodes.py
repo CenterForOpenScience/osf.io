@@ -7,7 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from website.project.signals import contributor_removed
-from website.util import disconnected_from_listeners
+from api_tests.utils import disconnected_from_listeners
 
 
 @pytest.fixture()

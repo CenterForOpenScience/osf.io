@@ -51,8 +51,9 @@ from website.project.views.contributor import (
 )
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
-from website.util import permissions, rubeus
+from website.util import rubeus
 from website.views import index
+from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
 from tests.base import (
@@ -820,6 +821,19 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert_equal(res.status_code, http.OK)
         assert_in('show_wiki_widget', res.json['user'])
+
+    def test_fork_grandcomponents_has_correct_root(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        child = NodeFactory(parent=project, creator=user)
+        grand_child = NodeFactory(parent=child, creator=user)
+        project.save()
+
+        fork = project.fork_node(auth)
+        fork.save()
+        grand_child_fork = fork.nodes[0].nodes[0]
+        assert_equal(grand_child_fork.root, fork)
 
     def test_fork_count_does_not_include_deleted_forks(self):
         user = AuthUserFactory()

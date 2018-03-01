@@ -14,6 +14,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 from osf.models import PreprintService, Node
 from osf.utils.workflows import DefaultStates
+from osf.utils import permissions
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -23,7 +24,6 @@ from osf_tests.factories import (
 )
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
-from website.util import permissions
 
 
 def build_preprint_create_payload(

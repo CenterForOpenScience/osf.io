@@ -117,7 +117,7 @@ def before_request():
     # TODO: Fix circular import
     from framework.auth.core import get_user
     from framework.auth import cas
-    from website.util import time as util_time
+    from framework.utils import throttle_period_expired
     Session = apps.get_model('osf.Session')
 
     # Central Authentication Server Ticket Validation and Authentication
@@ -163,7 +163,7 @@ def before_request():
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if not util_time.throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
+        if not throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
             # Update date last login when making non-api requests
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')

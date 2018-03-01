@@ -12,7 +12,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from website import mails
-from website.util import permissions
+from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
 

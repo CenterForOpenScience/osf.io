@@ -5,7 +5,7 @@ import re
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
-from website.util import sanitize
+from osf.utils import sanitize
 
 logger = logging.getLogger(__name__)
 

@@ -120,6 +120,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = [
             'contributors',
+            'implicit_contributors',
             'date_created',
             'date_modified',
             'description',
