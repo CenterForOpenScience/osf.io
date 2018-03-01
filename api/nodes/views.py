@@ -966,7 +966,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
                 return base_class.objects.filter(node=node, _path=path)
             elif isinstance(fobj, OsfStorageFolder):
-                return BaseFileNode.objects.filter(id__in=[fobj.id])
+                return BaseFileNode.objects.filter(id=fojb.id)
             else:
                 raise NotFound
         else:
