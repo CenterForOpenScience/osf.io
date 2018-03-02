@@ -46,7 +46,7 @@
     "lodash.includes": "^4.3.0",
     "lodash.set": "^4.3.2",
     "markdown-it": "~4.1.0",
-    "markdown-it-imsize": "git://github.com/cos-forks/markdown-it-imsize.git#cos",
+    "markdown-it-imsize": "git://github.com/cos-forks/markdown-it-imsize.git#v2.0.1.cos1",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
     "markdown-it-video": "~0.4.0",
