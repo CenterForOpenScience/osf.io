@@ -271,7 +271,6 @@ function NodeControl (selector, data, options) {
 NodeControl.prototype.init = function() {
     var self = this;
     $osf.applyBindings(self.viewModel, this.selector);
-    new RequestAccess('#requestAccessPublic', self.currentUserRequestState);
     if (self.data.user.is_admin && !self.data.node.is_retracted) {
         new NodesPrivacy('#nodesPrivacy', self.data.node, function(nodesChanged, requestedEmbargoTermination) {
             // TODO: The goal here is to update the UI of the project dashboard to

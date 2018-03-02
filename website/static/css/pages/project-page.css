@@ -269,12 +269,12 @@ li.addon-categories a{
     padding-right: 0;
 }
 
-#other-actions-panel div {
-    padding: 5px 11px 5px 11px;
-    cursor: pointer;
+#other-actions-panel button {
+    background-color: #f5f5f5;
+    text-align: left;
 }
 
-#other-actions-panel div:hover {
+#other-actions-panel .btn-block:hover {
     background-color: #dcdcdc;
 }
 
@@ -283,8 +283,8 @@ li.addon-categories a{
     text-decoration: none;
 }
 
-#other-actions-panel div.disabled {
-    color: grey;
+#shareButtonsPopover {
+    text-align: left;
 }
 
 #shareButtonsPopover a {

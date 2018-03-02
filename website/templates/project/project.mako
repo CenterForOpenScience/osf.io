@@ -105,31 +105,34 @@
                     <div class="collapse pull-right" id="otherActions">
                         <div class="panel" id="other-actions-panel">
                             <!-- ko if: canBeOrganized -->
+                            <div>
                                 <!-- ko ifnot: inDashboard -->
-                                   <div id="addDashboardFolder" data-bind="click: addToDashboard">
+                                   <button class="btn btn-block pull-left" id="addDashboardFolder" data-bind="click: addToDashboard">
                                        Bookmark
-                                   </div>
+                                   </button>
                                 <!-- /ko -->
                                 <!-- ko if: inDashboard -->
-                                   <div id="removeDashboardFolder" data-bind="click: removeFromDashboard">
+                                   <button class="btn btn-block" id="removeDashboardFolder" data-bind="click: removeFromDashboard">
                                        Remove from bookmarks
-                                   </div>
+                                   </button>
                                 <!-- /ko -->
+                            </div>
                             <!-- /ko -->
                             % if node["is_public"]:
-                                <div id="shareButtonsPopover">Share</div>
+                                <div class="btn btn-block" id="shareButtonsPopover">Share</div>
                             % endif
                             % if node['access_requests_enabled'] and not user['is_contributor']:
+                                <div>
                                 %if user_name:
-                                <span class="request-access"
-                                  data-content="Request declined"
-                                  data-toggle="popover"
-                                  data-placement="left">
-                                    <div data-bind="click: requestAccess.requestProjectAccess, text: requestAccess.requestAccessButton, css: {'disabled': requestAccess.accessRequestPendingOrDenied()}"></div>
-                                </span>
+                                    <button class="btn btn-block" data-bind="click: requestAccess.requestProjectAccess,
+                                                    text: requestAccess.requestAccessButton,
+                                                    css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
+                                                    tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
+                                    </button>
                                 %else:
-                                    <a href="${login_url}" >Login to request access</a>
+                                    <a role="button" class="btn btn-block" href="${login_url}" >Login to request access</a>
                                 %endif
+                                </div>
                             % endif
                         </div>
                     </div>

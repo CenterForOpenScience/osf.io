@@ -13,17 +13,17 @@
                 <p data-bind="visible: !accessRequestPendingOrDenied()">Ask for access, or switch to an account with permission.</p>
                 <p data-bind="visible: accessRequestPendingOrDenied()">Your request for access has been sent. You will receive an email if and when your request is approved.</p>
                 <div>
-                    <span class="request-access"
-                          data-content="Request declined"
-                          data-toggle="popover"
-                          data-placement="top">
-                    <button data-bind="click: requestProjectAccess, text: requestAccessButton, css: {disabled: accessRequestPendingOrDenied()}"
-                            class="btn btn-success btn-success-high-contrast f-w-xl request-access"></button>
-                    </span>
-                    <a type="button" href="/logout/" class="btn btn-default">Switch account</a>
+
+                    <button class="btn btn-success btn-success-high-contrast f-w-xl request-access"
+                            data-bind="click: requestProjectAccess,
+                                       text: requestAccessButton,
+                                       css: {'disabled': accessRequestPendingOrDenied()},
+                                       tooltip: {title: accessRequestTooltip(),'disabled': true, 'placement': 'top'}">
+                    </button>
+                    <a type="button" class="btn btn-default" href="${reauth_url}" >Switch account</a>
                 </div>
                 <div>
-                    <span id="supportMessage"></span>
+                    <p style="margin-top: 10px;" id="supportMessage"></p>
                 </div>
             </div>
         </div>

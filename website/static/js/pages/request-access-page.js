@@ -12,11 +12,3 @@ $(window).on('load', function() {
     $osf.applyBindings(viewModel, '#requestAccessPrivateScope');
     $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.');
 });
-
-$(function() {
-    if (ctx.currentUserRequestState === 'rejected') {
-        $('.request-access').popover({
-            trigger: 'hover'
-        });
-    }
-});

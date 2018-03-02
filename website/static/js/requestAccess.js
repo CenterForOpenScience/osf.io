@@ -18,12 +18,13 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
     self.requestState = ko.observable(currentUserRequestState);
 
     self.checkRequestStatus = function() {
+
         if (self.requestState() === 'rejected') {
             self.accessRequestTooltip('Request declined');
             self.accessRequestPendingOrDenied(true);
             self.requestAccessButton = ko.observable('Access requested');
+            self.requestStateRel = ko.observable(null);
         }
-
         if (self.requestState() === 'pending') {
             self.accessRequestPendingOrDenied(true);
             self.requestAccessButton = ko.observable('Access requested');
@@ -31,6 +32,9 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
     };
 
     self.requestProjectAccess = function() {
+        if (self.requestState() === 'rejected') {
+            return false;
+        }
         self.accessRequestPendingOrDenied(true);
         $osf.trackClick('link', 'click', 'request-project-access');
 

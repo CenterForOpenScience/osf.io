@@ -343,10 +343,4 @@ $(document).ready(function () {
         });
     }
 
-    // Add a popover if the current user's access request was rejected
-    if (currentUserRequestState === 'rejected') {
-        $('.request-access').popover({
-            trigger: 'hover'
-        });
-    }
 });
