@@ -83,7 +83,11 @@ def must_be_logged_in(func):
 
     return wrapped
 
-def ember_flag_must_be_active(flag_name):
+def ember_flag_is_active(flag_name):
+    """
+    Decorator for checking whether ember flag is active.  If so, proxy to ember
+    app, otherwise, load old view.
+    """
     def decorator(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):

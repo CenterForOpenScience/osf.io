@@ -7,7 +7,7 @@ from flask import request
 
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, ember_flag_is_active
 from framework.flask import redirect
 
 from addons.wiki.utils import to_mongo_key
@@ -365,6 +365,7 @@ def get_node_wiki_permissions(node, auth, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
+@ember_flag_is_active('ember_project_wiki_page')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))

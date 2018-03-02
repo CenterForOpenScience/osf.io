@@ -14,6 +14,7 @@ import pytz
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
+from framework.auth.decorators import ember_flag_is_active
 
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 
@@ -252,6 +253,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@ember_flag_is_active('ember_create_draft_registration_page')
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -289,6 +291,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@ember_flag_is_active('ember_edit_draft_registration_page')
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor
