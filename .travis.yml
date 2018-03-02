@@ -119,6 +119,12 @@ before_install:
     #     export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
     #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
     #   fi
+    # Install and configure Testspace client
+    - mkdir -p $HOME/bin
+    - curl -fsSL https://testspace-client.s3.amazonaws.com/testspace-linux.tgz | tar -zxvf- -C $HOME/bin
+    - cd $TRAVIS_BUILD_DIR
+    - testspace config url $TS_ORG.testspace.com
+
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
@@ -145,7 +151,10 @@ install:
 # Run Python tests (core and addon) and JS tests
 script:
     - invoke test_travis_$TEST_BUILD -n 4
-
+    
+after_script:
+    - testspace testresults.xml{.};
+ 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
   - rm -f $HOME/.cache/pip/log/debug.log
