@@ -867,7 +867,8 @@ class TargetField(ser.Field):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         meta = utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
+        referent = value if isinstance(value, AbstractNode) else value.referent
+        return {'links': {self.link_type: {'href': referent.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
