@@ -13,7 +13,7 @@ from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in, ember_flag_must_be_active
+from framework.auth.decorators import must_be_logged_in, ember_flag_is_active
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -124,7 +124,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
-
+@ember_flag_is_active('ember_home_page')
 def index():
     try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
@@ -173,14 +173,16 @@ def find_bookmark_collection(user):
     return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_dashboard_page')
 def dashboard(auth):
     return redirect('/')
 
-@ember_flag_must_be_active('ember_support_page')
+@ember_flag_is_active('ember_support_page')
 def support():
     return {}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
     bookmark_collection = find_bookmark_collection(user)

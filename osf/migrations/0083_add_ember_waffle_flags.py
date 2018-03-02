@@ -5,15 +5,14 @@ from waffle.models import Flag
 from django.db import migrations, IntegrityError, transaction
 
 EMBER_WAFFLE_PAGES = [
-    'completed_registration_form_detail',
     'dashboard',
-    'draft_registration_form',
+    'create_draft_registration',
+    'edit_draft_registration'
     'file_detail',
-    'home_logged_out',
+    'home',
     'meeting_detail',
     'meetings',
     'my_projects',
-    'prereg_onboarder',
     'project_analytics',
     'project_contributors',
     'project_detail',
@@ -22,7 +21,7 @@ EMBER_WAFFLE_PAGES = [
     'project_registrations',
     'project_settings',
     'project_wiki',
-    'registration_detail',
+    'registration_form_detail',
     'search',
     'support',
     'user_profile',

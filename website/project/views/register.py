@@ -8,7 +8,7 @@ from framework import status
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.auth.decorators import must_be_signed
+from framework.auth.decorators import must_be_signed, ember_flag_is_active
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
@@ -119,6 +119,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_registration_form_detail_page')
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
