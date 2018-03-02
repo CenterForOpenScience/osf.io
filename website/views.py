@@ -13,7 +13,7 @@ from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, ember_flag_must_be_active
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -176,6 +176,9 @@ def find_bookmark_collection(user):
 def dashboard(auth):
     return redirect('/')
 
+@ember_flag_must_be_active('ember_support_page')
+def support():
+    return {}
 
 @must_be_logged_in
 def my_projects(auth):
