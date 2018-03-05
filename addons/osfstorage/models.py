@@ -175,7 +175,7 @@ class OsfStorageFileNode(BaseFileNode):
             else:
                 raise exceptions.FileNodeCheckedOutError()
 
-        if self.node.has_permission(user, permissions.WRITE):
+        if not self.node.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
