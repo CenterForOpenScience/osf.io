@@ -97,6 +97,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
@@ -106,7 +107,10 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         ContributorOrPublic,
         PreprintPublishedOrAdmin,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -123,6 +127,14 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
         PreprintService.delete(instance)
+
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that type is required in request
+        """
+        res = super(PreprintDetail, self).get_parser_context(http_request)
+        res['legacy_type_allowed'] = True
+        return res
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):

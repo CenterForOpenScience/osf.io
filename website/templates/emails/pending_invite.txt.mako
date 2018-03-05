@@ -20,4 +20,4 @@ Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVA
 
 More information? Visit https://osf.io/ and https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science.
 
-Questions? Email contact@osf.io
+Questions? Email ${osf_contact_email}

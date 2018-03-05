@@ -31,6 +31,7 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
+from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema,
@@ -55,8 +56,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'FILE_GONE_ACTOR_UNKNOWN': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -67,8 +67,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'DONT_KNOW': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -76,8 +75,7 @@ It was deleted on {deleted_on}.
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>
-</div>''',
+</p>''',
                   'BLAME_PROVIDER': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -89,15 +87,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>
-</div>''',
+</p>''',
                   'FILE_SUSPENDED': u'''
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.
-</div>'''}
+This content has been removed.'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -534,9 +530,9 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
-        if file_node.suspended:
+        if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None:
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
@@ -564,10 +560,14 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
+    error_msg = ''.join([
+        ERROR_MESSAGES[error_type].format(**format_params),
+        format_last_known_metadata(auth, node, file_node, error_type)
+    ])
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
     ret.update({
-        'error': ERROR_MESSAGES[error_type].format(**format_params),
+        'error': error_msg,
         'urls': {
             'render': None,
             'sharejs': None,
@@ -648,16 +648,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         # Rollback the insertion of the file_node
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
-            redirect_file_node = BaseFileNode.load(path)
+            file_node = BaseFileNode.load(path)
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if redirect_file_node and redirect_file_node.provider == 'osfstorage' and not redirect_file_node.is_deleted:
+            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    redirect_file_node.node.web_url_for('addon_view_or_download_file', path=redirect_file_node._id, provider=redirect_file_node.provider)
+                    file_node.node.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
-            raise HTTPError(httplib.NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
     else:
         transaction.savepoint_commit(savepoint_id)

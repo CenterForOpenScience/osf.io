@@ -113,7 +113,9 @@
                 Recent Activity
                 <div id="logFeed-${summary['primary_id'] if not summary['primary'] else summary['id']}">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>

@@ -18,6 +18,7 @@ from website.project.signals import contributor_removed, node_deleted
 from website.reviews import listeners
 from website.util import api_url_for
 from website.util import web_url_for
+from website import settings
 
 from osf_tests import factories
 from tests.base import capture_signals
@@ -1791,6 +1792,7 @@ class TestSendDigest(OsfTestCase):
         assert_equal(kwargs['mimetype'], 'html')
         assert_equal(kwargs['mail'], mails.DIGEST)
         assert_equal(kwargs['name'], user.fullname)
+        assert_equal(kwargs['can_change_node_preferences'], True)
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
 
@@ -1840,8 +1842,8 @@ class TestNotificationsReviews(OsfTestCase):
             'domain': 'osf.io',
             'reviewable': self.preprint,
             'workflow': 'pre-moderation',
-            'provider_contact_email': 'contact@osf.io',
-            'provider_support_email': 'support@osf.io',
+            'provider_contact_email': settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': settings.OSF_SUPPORT_EMAIL,
         }
         self.action = factories.ReviewActionFactory()
         factories.NotificationSubscriptionFactory(

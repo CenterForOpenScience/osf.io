@@ -20,6 +20,7 @@ from osf_tests.factories import (
 from osf.models.registrations import DraftRegistration
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
 
+from website.files import exceptions as file_exceptions
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
@@ -36,6 +37,7 @@ from admin.pre_reg.views import (
 )
 from admin.pre_reg.forms import DraftRegistrationForm
 from osf.models.admin_log_entry import AdminLogEntry
+
 
 class TestDraftListView(AdminTestCase):
     @mock.patch('website.archiver.tasks.archive')
@@ -397,6 +399,13 @@ class TestPreregFiles(AdminTestCase):
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
+        # test user attempt force checkin
+        with nt.assert_raises(file_exceptions.FileNodeCheckedOutError):
+            self.d_of_qs['q7'].check_in_or_out(self.user, self.admin_user)
+
+        # test delete draft returns files
+        utils.checkin_files(self.draft)
+
         view2 = DraftFormView()
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
         view2.checkin_files(self.draft)
@@ -546,3 +555,11 @@ class TestPreregFiles(AdminTestCase):
         with nt.assert_raises(Http404):
             for item in get_metadata_files(self.draft):
                 pass
+
+    def test_delete_pre_submit_draft_does_not_change_checkouts(self):
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.user
+        file_q7.save()
+        utils.checkin_files(self.draft)
+        file_q7.refresh_from_db()
+        nt.assert_equal(file_q7.checkout, self.user)
