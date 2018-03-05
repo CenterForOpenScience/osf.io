@@ -2,14 +2,17 @@ from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
 from api.base.serializers import JSONAPISerializer
-from osf.models import OSFUser
 
-frequencies = ['none', 'instant', 'daily']
+NOTIFICATION_TYPES = {
+    'none': 'none',
+    'instant': 'email_transactional',
+    'daily': 'email_digest'
+}
+
 
 class FrequencyField(ser.Field):
     def to_representation(self, obj):
-        user_id = self.context['view'].kwargs['user_id']
-        user = OSFUser.load(user_id)
+        user = self.context['request'].user
         if user in obj.none.all():
             frequency = 'none'
         elif user in obj.email_transactional.all():
@@ -19,35 +22,30 @@ class FrequencyField(ser.Field):
         return frequency
 
     def to_internal_value(self, data):
-        if data not in frequencies:
+        if data not in NOTIFICATION_TYPES.keys():
             raise ValidationError('Invalid frequency "{}"'.format(data))
-        return {'frequency': data}
+        return {'notification_type': NOTIFICATION_TYPES[data]}
 
-class UserProviderSubscriptionSerializer(JSONAPISerializer):
+
+class UserProviderSubscriptionListSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*')
 
     class Meta:
-        type_ = 'user-provider-subscription'
+        type_ = 'user-subscription'
+
+
+class UserProviderSubscriptionDetailSerializer(JSONAPISerializer):
+    id = ser.CharField(source='_id', read_only=True)
+    event_name = ser.CharField(read_only=True)
+    frequency = FrequencyField(source='*',required=True)
+
+    class Meta:
+        type_ = 'user-subscription'
 
     def update(self, instance, validated_data):
-        user = OSFUser.load(self.context['view'].kwargs['user_id'])
-        frequency = validated_data.get('frequency')
-        if frequency:
-            if frequency == 'none' and user not in instance.none.all():
-                instance.email_digest.remove(user)
-                instance.email_transactional.remove(user)
-                instance.none.add(user)
-                instance.save()
-            elif frequency == 'daily' and user not in instance.email_digest.all():
-                instance.none.remove(user)
-                instance.email_transactional.remove(user)
-                instance.email_digest.add(user)
-                instance.save()
-            elif frequency == 'instant' and user not in instance.email_transactional.all():
-                instance.email_digest.remove(user)
-                instance.none.remove(user)
-                instance.email_transactional.add(user)
-                instance.save()
+        user = self.context['request'].user
+        notification_type = validated_data.get('notification_type')
+        instance.add_user_to_subscription(user, notification_type, save=True)
         return instance
