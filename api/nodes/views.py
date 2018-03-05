@@ -1164,6 +1164,9 @@ class NodeProvider(object):
         self.pk = node._id
         self.id = node.id
 
+    @property
+    def target(self):
+        return self.node
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
