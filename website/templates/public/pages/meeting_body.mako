@@ -160,7 +160,13 @@
     </div>
 % endif
 
-<div id="grid" style="width: 100%;"></div>
+<div id="grid" style="width:100%; height:500px;">
+    <div class="spinner-loading-wrapper">
+        <div class="ball-scale ball-scale-blue">
+            <div></div>
+        </div>
+    </div>
+</div>
 
 % if page.has_other_pages():
     <div class="pull-right">
