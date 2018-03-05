@@ -39,7 +39,7 @@ class UserProviderSubscriptionListSerializer(JSONAPISerializer):
 class UserProviderSubscriptionDetailSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
-    frequency = FrequencyField(source='*',required=True)
+    frequency = FrequencyField(source='*', required=True)
 
     class Meta:
         type_ = 'user-subscription'
