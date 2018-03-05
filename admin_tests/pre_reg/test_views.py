@@ -38,6 +38,7 @@ from admin.pre_reg.views import (
 from admin.pre_reg.forms import DraftRegistrationForm
 from osf.models.admin_log_entry import AdminLogEntry
 
+
 class TestDraftListView(AdminTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def setUp(self, mock_archive):
@@ -403,7 +404,8 @@ class TestPreregFiles(AdminTestCase):
             self.d_of_qs['q7'].check_in_or_out(self.user, self.admin_user)
 
         # test delete draft returns files
-        DraftRegistration.remove_one(self.draft)
+        utils.checkin_files(self.draft)
+
         view2 = DraftFormView()
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
         view2.checkin_files(self.draft)
@@ -558,6 +560,6 @@ class TestPreregFiles(AdminTestCase):
         file_q7 = self.d_of_qs['q7']
         file_q7.checkout = self.user
         file_q7.save()
-        DraftRegistration.remove_one(self.draft)
+        utils.checkin_files(self.draft)
         file_q7.refresh_from_db()
         nt.assert_equal(file_q7.checkout, self.user)
