@@ -14,8 +14,7 @@ def main():
                                                                            provider=provider)
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default
-            instance.none.add(user)
-        instance.save()
+            instance.add_user_to_subscription(user, 'none', save=True)
 
 if __name__ == '__main__':
     main()

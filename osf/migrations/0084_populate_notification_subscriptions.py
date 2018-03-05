@@ -22,8 +22,7 @@ def populate_provider_notification_subscriptions(*args):
             instances_created.append(instance)
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default
-            instance.none.add(user)
-        instance.save()
+            instance.add_user_to_subscription(user, 'none', save=True)
 
 def revert(*args):
     # The revert of this migration deletes all NotificationSubscription instances

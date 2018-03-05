@@ -588,8 +588,7 @@ class ReviewProviderMixin(models.Model):
         notification = self.notification_subscriptions.get(_id='{}_preprints_added'.format(self._id))
         subscribers = notification.none.all() | notification.email_digest.all() | notification.email_transactional.all()
         if user not in subscribers:
-            notification.none.add(user)
-            notification.save()
+            notification.add_user_to_subscription(user, 'none', save=True)
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -601,12 +600,6 @@ class ReviewProviderMixin(models.Model):
         if unsubscribe:
             # remove notification subscription
             notification = self.notification_subscriptions.get(_id='{}_preprints_added'.format(self._id))
-            if user in notification.none.all():
-                notification.none.remove(user)
-            if user in notification.email_digest.all():
-                notification.email_digest.remove(user)
-            if user in notification.email_transactional.all():
-                notification.email_transactional.remove(user)
-            notification.save()
+            notification.remove_user_from_subscription(user, save=True)
 
         return _group.user_set.remove(user)
