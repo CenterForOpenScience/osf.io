@@ -5,8 +5,8 @@ from waffle.models import Flag
 from django.db import migrations, IntegrityError, transaction
 
 EMBER_WAFFLE_PAGES = [
-    'dashboard',
     'create_draft_registration',
+    'dashboard',
     'edit_draft_registration'
     'file_detail',
     'home',
@@ -57,7 +57,7 @@ def add_ember_waffle_flags(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0082_merge_20180213_1502'),
+        ('waffle', '0002_auto_20161201_0958'),
     ]
 
     operations = [
