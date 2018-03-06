@@ -170,26 +170,10 @@
 
 % if page.has_other_pages():
     <div class="pull-right">
-        <ul class="pagination">
-            % if page.has_previous():
-                <li><a href=${"?page=" + str(page.previous_page_number()) + query_params['q'] + query_params['sort']}>&laquo;</a></li>
-            % else:
-                <li class="disabled"><span>&laquo;</span></li>
-            % endif
-            % for i in pagination:
-                % if page.number == i:
-                    <li class="active"><span>${ i } <span class="sr-only">(current)</span></span></li>
-                % elif i == '...':
-                    <li> <span>${i} <span> </li>
-                % else:
-                    <li><a href=${"?page=" + str(i) + query_params['q'] + query_params['sort']}>${ i }</a></li>
-                % endif
-            % endfor
-            % if page.has_next():
-                <li><a href=${"?page=" + str(page.next_page_number()) + query_params['q'] + query_params['sort']}>&raquo;</a></li>
-            % else:
-                <li class="disabled"><span>&raquo;</span></li>
-            % endif
+        <ul id="meetingPagination" class="pagination" data-bind="foreach: pagination">
+            <li class="active" data-bind="if: $data.isCurrent"><span data-bind='text:$data.page'><span class="sr-only">(current)</span></span></li>
+            <li class="disabled" data-bind="if: $data.isDisabled"> <span data-bind='text:$data.page'><span> </li>
+            <li data-bind="if: $data.href"><a data-bind="attr: {href: $data.href}, text:$data.page"></a></li>
         </ul>
     </div>
 % endif

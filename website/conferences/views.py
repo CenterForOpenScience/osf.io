@@ -343,41 +343,6 @@ def get_meetings_page():
             return 1
     return 1
 
-def create_pagination_array(current_page, total_pages):
-    """
-    Returns an array of page numbers for pagination in UI. Creates similar UI
-    to ember addon https://github.com/mharris717/ember-cli-pagination
-
-    For example: [1, 2, '...', 23, 24, 25, 26], where current page is 25.
-    Or, [1, 2, '...', 6, 7, 8, 9, 10, '...', 25, 26], where current page is 8.
-    : param integer current_page: current page of results being displayed
-    : param integer total_pages: total number of pages available
-    """
-    if total_pages <= 4:
-        return range(1, total_pages + 1)
-
-    # Pagination available will always include the first two and last two pages
-    start = [1, 2]
-    end = [total_pages - 1, total_pages]
-
-    # Middle range of pagination available will take the form:
-    # [current - 2, current - 1, current, current + 1, current + 2]
-    middle = []
-    for page_num in range(current_page - 2, current_page + 3):
-        if page_num > 2 and page_num < total_pages - 1:
-            middle.append(page_num)
-
-    # If there is a gap between the start range and the middle range, add a '...'
-    if not middle or middle[0] != 3:
-        middle.insert(0, '...')
-
-    # If gap between middle and end ranges, add a '...'
-    if not middle or (middle[-1] != '...' and middle[-1] != (total_pages - 2)):
-        middle.append('...')
-
-    # Now flatten the start, middle, and end lists into one! This is your pagination array.
-    return [item for sublist in [start, middle, end] for item in sublist]
-
 def conference_results(meeting, **kwargs):
     """Return the data for the grid view for a conference.
 
@@ -389,14 +354,14 @@ def conference_results(meeting, **kwargs):
         raise HTTPError(httplib.NOT_FOUND)
 
     data, current_page = paginated_conference_data(meeting, conf, meetings_page=get_meetings_page())
-
     return {
         'data': data,
         'label': meeting,
         'meeting': serialize_conference(conf),
         # Needed in order to use base.mako namespace
         'settings': settings,
-        'pagination': create_pagination_array(current_page.number, current_page.paginator.num_pages),
+        'current_page_number': current_page.number,
+        'total_pages': current_page.paginator.num_pages,
         'page': current_page,
         'q': request.args.get('q', ''),
         'sort': request.args.get('sort', ''),
