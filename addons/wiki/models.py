@@ -189,6 +189,11 @@ class WikiPage(GuidMixin, BaseModel):
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
     deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['page_name', 'node'])
+        ]
+
     def save(self, *args, **kwargs):
         rv = super(WikiPage, self).save(*args, **kwargs)
         if self.node and self.node.is_public:
