@@ -1,38 +1,37 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
-from api.subscriptions.serializers import UserProviderSubscriptionDetailSerializer, UserProviderSubscriptionListSerializer
-from api.subscriptions.permissions import IsOwner
+from api.subscriptions.serializers import SubscriptionDetailSerializer, SubscriptionListSerializer
+from api.subscriptions.permissions import IsSubscriptionOwner
 from osf.models import NotificationSubscription
 
 
-class UserProviderSubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'user-provider-subscription-list'
     view_category = 'subscriptions'
-    serializer_class = UserProviderSubscriptionListSerializer
+    serializer_class = SubscriptionListSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,
     )
 
     def get_queryset(self):
         user = self.request.user
-        notification_none = NotificationSubscription.objects.filter(none=user)
-        notification_daily = NotificationSubscription.objects.filter(email_digest=user)
-        notification_instant = NotificationSubscription.objects.filter(email_transactional=user)
-        return notification_none | notification_daily | notification_instant
+        queryset = NotificationSubscription.objects.filter(Q(none=user) | Q(email_digest=user) | Q(email_transactional=user))
+        return queryset
 
 
-class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'user-provider-subscription-detail'
     view_category = 'subscriptions'
-    serializer_class = UserProviderSubscriptionDetailSerializer
+    serializer_class = SubscriptionDetailSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        IsOwner
+        IsSubscriptionOwner
     )
 
     def get_object(self):
@@ -40,5 +39,5 @@ class UserProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPI
         try:
             subscription = NotificationSubscription.objects.get(_id=subscription_id)
         except ObjectDoesNotExist:
-            raise PermissionDenied
+            raise NotFound
         return subscription

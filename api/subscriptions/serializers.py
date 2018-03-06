@@ -12,14 +12,12 @@ NOTIFICATION_TYPES = {
 
 class FrequencyField(ser.Field):
     def to_representation(self, obj):
-        user = self.context['request'].user
-        if user in obj.none.all():
-            frequency = 'none'
-        elif user in obj.email_transactional.all():
-            frequency = 'instant'
-        elif user in obj.email_digest.all():
-            frequency = 'daily'
-        return frequency
+        user_id = self.context['request'].user.id
+        if obj.email_transactional.filter(id=user_id).exists():
+            return 'instant'
+        if obj.email_digest.filter(id=user_id).exists():
+            return 'daily'
+        return 'none'
 
     def to_internal_value(self, data):
         if data not in NOTIFICATION_TYPES.keys():
@@ -27,7 +25,7 @@ class FrequencyField(ser.Field):
         return {'notification_type': NOTIFICATION_TYPES[data]}
 
 
-class UserProviderSubscriptionListSerializer(JSONAPISerializer):
+class SubscriptionListSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*')
@@ -36,7 +34,7 @@ class UserProviderSubscriptionListSerializer(JSONAPISerializer):
         type_ = 'user-subscription'
 
 
-class UserProviderSubscriptionDetailSerializer(JSONAPISerializer):
+class SubscriptionDetailSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*', required=True)

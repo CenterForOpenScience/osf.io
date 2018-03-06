@@ -586,8 +586,11 @@ class ReviewProviderMixin(models.Model):
         from api.preprint_providers.permissions import GroupHelper
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_preprints_added'.format(self._id))
-        subscribers = notification.none.all() | notification.email_digest.all() | notification.email_transactional.all()
-        if user not in subscribers:
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
             notification.add_user_to_subscription(user, 'none', save=True)
         return GroupHelper(self).get_group(group).user_set.add(user)
 

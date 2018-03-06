@@ -77,9 +77,10 @@ class RegisterUser(PermissionRequiredMixin, FormView):
         prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
-            group_type = group.name.split('_')[0]
+            split = group.name.split('_')
+            group_type = split[0]
             if group_type == 'reviews':
-                provider_id = group.name.split('_')[1]
+                provider_id = split[1]
                 provider = PreprintProvider.load(provider_id)
                 provider.notification_subscriptions.get().add_user_to_subscription(osf_user, 'none')
             if group == prereg_admin_group:
