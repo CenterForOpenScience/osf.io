@@ -435,8 +435,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if not contributor.is_registered:
                 raise ValueError(
-                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
-                        .format(user_id, self._id)
+                    'Cannot add unconfirmed user {} to node {} by guid. '
+                    'Add an unregistered contributor with fullname and email.'.format(user_id, self._id)
                 )
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
