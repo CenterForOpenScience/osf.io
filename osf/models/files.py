@@ -318,9 +318,20 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection
         Limit to version if specified.
-        Currently only useful for OsfStorage
         """
         parts = ['download', self.node._id, self._id]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
+
+        return count or 0
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection
+        Limit to version if specified.
+        """
+        parts = ['view', self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
