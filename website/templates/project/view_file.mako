@@ -49,7 +49,9 @@
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
-            <div class="logo-spin logo-lg"></div>
+            <div class="ball-scale ball-scale-blue">
+                <div></div>
+            </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
         </div>

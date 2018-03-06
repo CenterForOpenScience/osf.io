@@ -1,7 +1,6 @@
 {
   "name": "osf",
   "dependencies": {
-    "bootstrap": "^3.3.7",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
     "jquery": "^3.2.1",

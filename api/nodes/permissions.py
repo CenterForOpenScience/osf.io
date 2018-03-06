@@ -8,6 +8,7 @@ from osf.models import (
     Contributor,
     DraftRegistration,
     Institution,
+    Node,
     NodeRelation,
     OSFUser,
     PreprintService,
@@ -76,8 +77,11 @@ class AdminOrPublic(permissions.BasePermission):
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        context = request.parser_context['kwargs']
-        node = AbstractNode.load(context[view.node_lookup_url_kwarg])
+        if isinstance(obj, Node):
+            node = obj
+        else:
+            context = request.parser_context['kwargs']
+            node = AbstractNode.load(context[view.node_lookup_url_kwarg])
         if node.is_retracted:
             return False
         return True

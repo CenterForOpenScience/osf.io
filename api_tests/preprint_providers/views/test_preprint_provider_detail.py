@@ -87,10 +87,11 @@ class TestPreprintProviderExists:
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:
 
-    def settings_payload(self, provider_id, **kwargs):
+    def settings_payload(self, provider_id, jsonapi_type='preprintproviders', **kwargs):
         payload = {
             'data': {
                 'id': provider_id,
+                'type': jsonapi_type,
                 'attributes': kwargs
             }
         }

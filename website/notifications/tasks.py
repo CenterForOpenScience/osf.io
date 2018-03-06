@@ -34,6 +34,7 @@ def send_users_email(send_type):
                 mails.send_mail(
                     to_addr=user.username,
                     mimetype='html',
+                    can_change_node_preferences=True,
                     mail=mails.DIGEST,
                     name=user.fullname,
                     message=sorted_messages,

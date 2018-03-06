@@ -487,7 +487,7 @@ bootbox@^4.4.0:
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/bootbox/-/bootbox-4.4.0.tgz#ff7f898fb87d4527e547feb64158f88450d1a0c9"
 
-bootstrap@~3.3.2:
+bootstrap@3.3.7, bootstrap@~3.3.2:
   version "3.3.7"
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.3.7.tgz#5a389394549f23330875a3b150656574f8a9eb71"
 
@@ -2882,9 +2882,9 @@ macaddress@^0.2.8:
   version "0.2.8"
   resolved "https://registry.yarnpkg.com/macaddress/-/macaddress-0.2.8.tgz#5904dc537c39ec6dbefeae902327135fa8511f12"
 
-markdown-it-imsize@^2.0.1:
+"markdown-it-imsize@git://github.com/cos-forks/markdown-it-imsize.git#v2.0.1.cos1":
   version "2.0.1"
-  resolved "https://registry.yarnpkg.com/markdown-it-imsize/-/markdown-it-imsize-2.0.1.tgz#cca0427905d05338a247cb9ca9d968c5cddd5170"
+  resolved "git://github.com/cos-forks/markdown-it-imsize.git#fc313a03b00cb7379eab4785f880d072847ac0a0"
 
 markdown-it-ins-del@^0.1.1:
   version "0.1.1"
