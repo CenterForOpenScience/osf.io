@@ -318,13 +318,11 @@ def create_waterbutler_log(payload, **kwargs):
             user = OSFUser.load(auth['id'])
             if payload['action'] in ('download_file', 'download_zip'):
                 node = AbstractNode.load(payload['metadata']['nid'])
-                downloaded_file = BaseFileNode.objects.get(_id=payload['metadata']['path'].lstrip('/'), node_id=node.id)
-
                 if not node.is_contributor(user):
                     if payload['action_meta']['is_mfr_render']:
-                        update_analytics(node, downloaded_file._id, payload['metadata'].get('version'), 'view')
+                        update_analytics(node, payload['metadata']['path'].lstrip('/'), payload['metadata'].get('version'), 'view')
                     else:
-                        update_analytics(node, downloaded_file._id, payload['metadata'].get('version'), 'download')
+                        update_analytics(node, payload['metadata']['path'].lstrip('/'), payload['metadata'].get('version'), 'download')
 
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
