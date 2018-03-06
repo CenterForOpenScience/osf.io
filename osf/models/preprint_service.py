@@ -17,7 +17,7 @@ from osf.models.mixins import ReviewableMixin
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
-from osf.utils.permissions import ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.utils.permissions import expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.project import signals as project_signals
@@ -59,6 +59,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         unique_together = ('node', 'provider')
         permissions = (
             ('view_preprintservice', 'Can view preprint service details in the admin app.'),
+            ('ADMIN', 'Can do anything the preprint'),
+            ('EDIT', 'Can edit the preprint'),
+            ('READ', 'Can read the preprint')
         )
 
     def __unicode__(self):
@@ -141,7 +144,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         return ret
 
     def set_subjects(self, preprint_subjects, auth):
-        if not self.has_permission(auth.user, ADMIN):
+        if not self.has_permission(auth.user, 'ADMIN'):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -158,7 +161,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
+        if not self.has_permission(auth.user, 'ADMIN'):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
@@ -183,7 +186,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node.save()
 
     def set_published(self, published, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
+        if not self.has_permission(auth.user, 'ADMIN'):
             raise PermissionsError('Only admins can publish a preprint.')
 
         if self.is_published and not published:
@@ -298,7 +301,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if isinstance(user, PreprintContributor):
             user = user.user
 
-        if validate and (self.has_permission(user, ADMIN) and ADMIN not in permissions):
+        if validate and (self.has_permission(user, 'ADMIN') and 'ADMIN' not in permissions):
             admin_contribs = PreprintContributor.objects.filter(preprint=self, admin=True)
             if admin_contribs.count() <= 1:
                 raise PreprintStateError('Must have at least one registered admin contributor')
