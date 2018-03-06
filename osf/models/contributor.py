@@ -56,17 +56,17 @@ class Contributor(AbstractBaseContributor):
 
 
 class PreprintContributor(AbstractBaseContributor):
-    node = models.ForeignKey('Preprint', on_delete=models.CASCADE)
+    preprintservice = models.ForeignKey('PreprintService', on_delete=models.CASCADE)
 
     @property
     def _id(self):
-        return '{}-{}'.format(self.preprint._id, self.user._id)
+        return '{}-{}'.format(self.preprintservice._id, self.user._id)
 
     class Meta:
-        unique_together = ('user', 'preprint')
+        unique_together = ('user', 'preprintservice')
         # Make contributors orderable
         # NOTE: Adds an _order column
-        order_with_respect_to = 'preprint'
+        order_with_respect_to = 'preprintservice'
 
 
 class InstitutionalContributor(AbstractBaseContributor):
