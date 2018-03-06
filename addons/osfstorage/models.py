@@ -6,13 +6,16 @@ from django.apps import apps
 from django.db import models, connection
 from psycopg2._psycopg import AsIs
 
-from addons.base.models import BaseNodeSettings, BaseStorageAddon
+from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
 from osf.utils import permissions
 from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
+from website import settings as website_settings
+from addons.osfstorage.settings import DEFAULT_STORAGE_REGION_NAME
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -413,12 +416,32 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
+class Region(models.Model):
+    name = models.CharField(db_index=True, max_length=200)
+    storage_credentials = DateTimeAwareJSONField(default=dict)
+    storage_settings = DateTimeAwareJSONField(default=dict)
+
+
+class UserSettings(BaseUserSettings):
+    default_storage_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    default_waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+
+    def on_add(self):
+        default_region = Region.objects.get(name=DEFAULT_STORAGE_REGION_NAME)
+        self.default_storage_region = default_region
+        self.save()
+
+
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
     root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
+
+    storage_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
@@ -431,7 +454,12 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         if self.root_node:
             return
 
-        # A save is required here to both create and attach the root_node
+        creator_user_settings = UserSettings.objects.get(owner=self.owner.creator)
+        self.user_settings = creator_user_settings
+        self.storage_region = creator_user_settings.default_storage_region
+        self.waterbutler_url = creator_user_settings.default_waterbutler_url
+
+        # A save is required here to qboth create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
         self.save()
