@@ -2967,37 +2967,7 @@ class Node(AbstractNode):
         )
 
 
-class Collection(AbstractNode):
-    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
-
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
-
-    def remove_node(self, auth, date=None):
-        if self.is_bookmark_collection:
-            raise NodeStateError('Bookmark collections may not be deleted.')
-        # Remove all the collections that this is pointing at.
-        for pointed in self.linked_nodes.all():
-            if pointed.is_collection:
-                pointed.remove_node(auth=auth)
-        return super(Collection, self).remove_node(auth=auth, date=date)
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
-
-
 ##### Signal listeners #####
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -3012,7 +2982,6 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
@@ -3034,14 +3003,12 @@ def add_project_created_log(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
@@ -3050,7 +3017,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
                 instance.add_addon(addon.short_name, auth=None, log=False)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 @receiver(post_save, sender='osf.QuickFilesNode')
