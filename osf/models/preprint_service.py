@@ -17,9 +17,10 @@ from osf.models.mixins import ReviewableMixin
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
-from osf.utils.permissions import ADMIN, READ, WRITE
+from osf.utils.permissions import ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
+from website.project import signals as project_signals
 from website.util import api_v2_url
 from website import settings, mails
 from osf.exceptions import (
@@ -27,7 +28,7 @@ from osf.exceptions import (
     ValidationValueError
 )
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.contributor import PreprintContributor, get_contributor_permissions
+from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.user import OSFUser
 
@@ -123,6 +124,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     def absolute_api_v2_url(self):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def is_contributor(self, user):
+        """Return whether ``user`` is a contributor on this node."""
+        return user is not None and PreprintContributor.objects.filter(user=user, preprint=self).exists()
 
     def get_subjects(self):
         ret = []
@@ -293,25 +298,18 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if isinstance(user, PreprintContributor):
             user = user.user
 
-        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
-                                 reduce_permissions(permissions) != ADMIN):
-            admin_contribs = PreprintContributor.objects.filter(node=self, admin=True)
+        if validate and (self.has_permission(user, ADMIN) and ADMIN not in permissions):
+            admin_contribs = PreprintContributor.objects.filter(preprint=self, admin=True)
             if admin_contribs.count() <= 1:
                 raise PreprintStateError('Must have at least one registered admin contributor')
 
-        contrib_obj = PreprintContributor.objects.get(node=self, user=user)
-
-        for permission_level in [READ, WRITE, ADMIN]:
-            if permission_level in permissions:
-                setattr(contrib_obj, permission_level, True)
-            else:
-                setattr(contrib_obj, permission_level, False)
+        contrib_obj = PreprintContributor.objects.get(preprint=self, user=user)
+        assign_perm(permissions, contrib_obj, self)
         contrib_obj.save()
         if save:
             self.save()
 
-            # TODO: Remove save parameter
-
+    # TODO: Remove save parameter
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
@@ -320,14 +318,13 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        contributor = user.contributor_set.get(node=self)
-        if not getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, True)
+        contributor = user.contributor_set.get(preprint=self)
+        if not contributor.has_perm(permission, self):
+            permission_to_add = expand_permissions(permission)
+            assign_perm(permission_to_add, contributor, self)
             contributor.save()
-        else:
-            if getattr(contributor, permission, False):
-                raise ValueError('User already has permission {0}'.format(permission))
+        elif contributor.has_perm(permission, self):
+            raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
 
@@ -341,9 +338,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :raises: ValueError if user does not have permission
         """
         contributor = user.contributor_set.get(node=self)
-        if getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, False)
+        if contributor.has_perm(permission, self):
+            permission_to_remove = expand_permissions(permission)
+            remove_perm(permission_to_remove, contributor, self)
             contributor.save()
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
@@ -368,20 +365,21 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 contributor=contrib['user'], permissions=contrib['permissions'],
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
-        if log and contributors:
-            self.add_log(
-                action=NodeLog.CONTRIB_ADDED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                    'contributors': [
-                        contrib['user']._id
-                        for contrib in contributors
-                    ],
-                },
-                auth=auth,
-                save=False,
-            )
+        # todo: implement preprint log
+        # if log and contributors:
+        #     self.add_log(
+        #         action=NodeLog.CONTRIB_ADDED,
+        #         params={
+        #             'project': self.parent_id,
+        #             'node': self._primary_key,
+        #             'contributors': [
+        #                 contrib['user']._id
+        #                 for contrib in contributors
+        #             ],
+        #         },
+        #         auth=auth,
+        #         save=False,
+        #     )
         if save:
             self.save()
 
@@ -463,9 +461,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
 
         contributor_obj = self.contributor_set.get(user=contributor)
-        contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
+        contributor.permission = get_perms(contributor_obj, self)
         contributor.bibliographic = contributor_obj.visible
-        contributor.node_id = self._id
+        contributor.preprint_id = self._id
         contributor_order = list(self.get_contributor_order())
         contributor.index = contributor_order.index(contributor_obj.pk)
 
@@ -473,3 +471,114 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             contributor.save()
 
         return contributor_obj
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
+        if not self.is_contributor(user):
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        if visible and not PreprintContributor.objects.filter(preprint=self, user=user, visible=True).exists():
+            PreprintContributor.objects.filter(preprint=self, user=user, visible=False).update(visible=True)
+        elif not visible and PreprintContributor.objects.filter(preprint=self, user=user, visible=True).exists():
+            if PreprintContributor.objects.filter(preprint=self, visible=True).count() == 1:
+                raise ValueError('Must have at least one visible contributor')
+            PreprintContributor.objects.filter(preprint=self, user=user, visible=True).update(visible=False)
+        else:
+            return
+
+        # todo: implement preprint log
+        # message = (
+        #     NodeLog.MADE_CONTRIBUTOR_VISIBLE
+        #     if visible
+        #     else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        # )
+        # if log:
+        #     self.add_log(
+        #         message,
+        #         params={
+        #             'parent': self.parent_id,
+        #             'node': self._id,
+        #             'contributors': [user._id],
+        #         },
+        #         auth=auth,
+        #         save=False,
+        #     )
+        if save:
+            self.save()
+
+    def add_contributor(self, contributor, permissions=None, visible=True,
+                        send_email='default', auth=None, log=True, save=False):
+        """Add a contributor to the project.
+
+        :param User contributor: The contributor to be added
+        :param list permissions: Permissions to grant to the contributor
+        :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
+        :param Auth auth: All the auth information including user, API key
+        :param bool log: Add log to self
+        :param bool save: Save after adding contributor
+        :returns: Whether contributor was added
+        """
+        MAX_RECENT_LENGTH = 15
+
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add.is_disabled:
+            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+
+        if not self.is_contributor(contrib_to_add):
+
+            contributor_obj, created = PreprintContributor.objects.get_or_create(user=contrib_to_add, node=self)
+            contributor_obj.visible = visible
+
+            # Add default contributor permissions
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
+            assign_perm(permissions, contributor_obj, self)
+            contributor_obj.save()
+
+            # Add contributor to recently added list for user
+            if auth is not None:
+                user = auth.user
+                recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
+                    user=user,
+                    contributor=contrib_to_add
+                )
+                recently_added_contributor_obj.date_added = timezone.now()
+                recently_added_contributor_obj.save()
+                count = user.recently_added.count()
+                if count > MAX_RECENT_LENGTH:
+                    difference = count - MAX_RECENT_LENGTH
+                    for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
+                        each.delete()
+
+            # todo: implement preprint log
+            # if log:
+            #     self.add_log(
+            #         action=NodeLog.CONTRIB_ADDED,
+            #         params={
+            #             'project': self.parent_id,
+            #             'node': self._primary_key,
+            #             'contributors': [contrib_to_add._primary_key],
+            #         },
+            #         auth=auth,
+            #         save=False,
+            #     )
+            if save:
+                self.save()
+
+            if self._id:
+                project_signals.contributor_added.send(self,
+                                                       contributor=contributor,
+                                                       auth=auth, email_template=send_email)
+            self.update_search()
+            self.save_node_preprints()
+            return contrib_to_add, True
+
+        # Permissions must be overridden if changed when contributor is
+        # added to parent he/she is already on a child of.
+        elif self.is_contributor(contrib_to_add) and permissions is not None:
+            self.set_permissions(contrib_to_add, permissions)
+            if save:
+                self.save()
+
+            return False
+        else:
+            return False

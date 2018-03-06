@@ -1332,16 +1332,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param Node node: Node this unclaimed user was added to.
+        :param Node node/preprint: Node/Preprint this unclaimed user was added to.
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
         :returns: The added record
         """
-        if not node.can_edit(user=referrer):
-            raise PermissionsError(
-                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
-            )
+        if not node.is_preprint:
+            if not node.can_edit(user=referrer):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+                )
+        else:
+            if not self.has_perm('ADMIN', node):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to preprint {0}'.format(node._primary_key)
+                )
+
         project_id = str(node._id)
         referrer_id = str(referrer._id)
         if email:
