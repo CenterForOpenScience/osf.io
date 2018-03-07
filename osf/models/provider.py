@@ -176,7 +176,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         GroupHelper(instance).update_provider_auth_groups()
 
-@receiver(post_save,sender=PreprintProvider)
+@receiver(post_save, sender=PreprintProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
         NotificationSubscription.objects.get_or_create(
