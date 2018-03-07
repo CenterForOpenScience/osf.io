@@ -414,7 +414,7 @@ class TestPublicNodes(OsfTestCase):
             self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
-        assert_equal(docs[0]['parent_title'], '-- private project --')
+        assert_false(docs[0]['parent_title'])
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):

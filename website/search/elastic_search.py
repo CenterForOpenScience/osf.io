@@ -292,11 +292,6 @@ def load_parent(parent_id):
         parent_info['url'] = parent.url
         parent_info['is_registration'] = parent.is_registration
         parent_info['id'] = parent._id
-    else:
-        parent_info['title'] = '-- private project --'
-        parent_info['url'] = ''
-        parent_info['is_registration'] = None
-        parent_info['id'] = None
     return parent_info
 
 
