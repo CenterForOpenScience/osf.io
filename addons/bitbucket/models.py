@@ -342,7 +342,17 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                         repo=self.repo,
                     )
                 messages.append(message)
-                return messages
+        else:
+            message = (
+                'Warning: the Bitbucket repo {user} / {repo} connected to this OSF {category} has been deleted.'.format(
+                    category=markupsafe.escape(node.project_or_component),
+                    user=markupsafe.escape(self.user),
+                    repo=markupsafe.escape(self.repo),
+                )
+            )
+            messages.append(message)
+
+        return messages
 
     def before_remove_contributor_message(self, node, removed):
         """
@@ -420,19 +430,18 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return clone
 
     def before_make_public(self, node):
-        if self.ensure_repo:
-            try:
-                is_private = self.is_private
-            except NotFoundError:
-                return None
-            if is_private:
-                return (
-                    'This {cat} is connected to a private Bitbucket repository. Users '
-                    '(other than contributors) will not be able to see the '
-                    'contents of this repo unless it is made public on Bitbucket.'
-                ).format(
-                    cat=node.project_or_component,
-                )
+        try:
+            is_private = self.is_private
+        except NotFoundError:
+            return None
+        if is_private:
+            return (
+                'This {cat} is connected to a private Bitbucket repository. Users '
+                '(other than contributors) will not be able to see the '
+                'contents of this repo unless it is made public on Bitbucket.'
+            ).format(
+                cat=node.project_or_component,
+            )
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True)

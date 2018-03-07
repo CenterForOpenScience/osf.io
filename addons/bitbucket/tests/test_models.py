@@ -179,7 +179,7 @@ class TestCallbacks(OsfTestCase):
             user=self.node_settings.user,
             repo=self.node_settings.repo,
         )
-        assert_false(message)
+        assert_true(message)
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_public(self, mock_repo):
