@@ -342,6 +342,8 @@ PREPRINTS_ASSETS = '/static/img/preprints_assets/'
 
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'contact@osf.io'
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
