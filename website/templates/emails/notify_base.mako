@@ -44,7 +44,7 @@
                     <tr>
                         <td style="border-collapse: collapse;">
                             <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
-                                % if context.get('can_change_node_preferences', False):
+                                % if context.get('can_change_node_preferences', False) and node:
                                     this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
                                 % endif
                                 your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
