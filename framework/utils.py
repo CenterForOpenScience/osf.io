@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 import re
-
+import pytz
+import time
+from datetime import datetime
+from django.utils import timezone
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
 
@@ -28,3 +31,19 @@ def secure_filename(filename):
         pass
 
     return secure
+
+
+def get_timestamp():
+    return int(time.time())
+
+
+def throttle_period_expired(timestamp, throttle):
+    if not timestamp:
+        return True
+    elif isinstance(timestamp, datetime):
+        if timestamp.tzinfo:
+            return (timezone.now() - timestamp).total_seconds() > throttle
+        else:
+            return (timezone.now() - timestamp.replace(tzinfo=pytz.utc)).total_seconds() > throttle
+    else:
+        return (get_timestamp() - timestamp) > throttle

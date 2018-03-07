@@ -11,7 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):

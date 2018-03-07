@@ -22,47 +22,9 @@ from api.preprints.permissions import PreprintPublishedOrAdmin
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
 
+
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """
-    Paginated list of verified PreprintProviders available. *Read-only*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name                       type                description
-        =============================================================================================================
-        name                       string              name of the preprint provider
-        logo_path                  string              a path to the preprint provider's static logo
-        banner_path                string              a path to the preprint provider's banner
-        description                string              description of the preprint provider
-        advisory_board             string              HTML for the advisory board/steering committee section
-        email_contact              string              the contact email for the preprint provider
-        email_support              string              the support email for the preprint provider
-        social_facebook            string              the preprint provider's Facebook account
-        social_instagram           string              the preprint provider's Instagram account
-        social_twitter             string              the preprint provider's Twitter account
-        domain                     string              the domain name of the preprint provider
-        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
-        example                    string              an example guid for a preprint created for the preprint provider
-        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
-        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
-        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -106,73 +68,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    """ Details about a given preprint provider. *Writeable*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name                       type                description
-        =============================================================================================================
-        name                       string              name of the preprint provider
-        logo_path                  string              a path to the preprint provider's static logo
-        banner_path                string              a path to the preprint provider's banner
-        description                string              description of the preprint provider
-        advisory_board             string              HTML for the advisory board/steering committee section
-        email_contact              string              the contact email for the preprint provider
-        email_support              string              the support email for the preprint provider
-        social_facebook            string              the preprint provider's Facebook account
-        social_instagram           string              the preprint provider's Instagram account
-        social_twitter             string              the preprint provider's Twitter account
-        domain                     string              the domain name of the preprint provider
-        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
-        example                    string              an example guid for a preprint created for the preprint provider
-        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
-        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
-        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    ##Setting up Moderation
-
-    Set up moderation for a provider by sending a patch request to the ID of the existing provider.
-
-    Currently, the only parameters which may be set are `reviews_workflow`,
-    `reviews_comments_private`, and `reviews_comments_anonymous`. These parameters may be set
-    only once, after which they may be updated only by an OSF Admin.
-
-    If `reviews_workflow` is already non-null, attempting to update the provider will return
-    a `409` Conflict error. If you need to change your provider's moderation settings, contact
-    [support@osf.io](mailto:support@osf.io) for help.
-
-        Method:        PATCH
-        URL:           /preprint_providers/{provider_id}/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": provider_id,
-                            "attributes": {
-                                "reviews_workflow": {workflow},  # Valid workflows: "pre-moderation", "post-moderation"
-                                "reviews_comments_private": {boolean},
-                                "reviews_comments_anonymous": {boolean}
-                            },
-                        }
-                    }
-        Success:       200 OK + provider representation
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -200,45 +96,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
-    """Preprints from a given preprint_provider. *Read Only*
-
-    To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -286,6 +144,8 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -351,6 +211,8 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
 
 class PreprintProviderLicenseList(LicenseList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
+    """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
 

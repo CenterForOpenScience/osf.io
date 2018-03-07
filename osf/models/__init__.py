@@ -23,6 +23,7 @@ from osf.models.spam import SpamStatus, SpamMixin  # noqa
 from osf.models.subject import Subject  # noqa
 from osf.models.provider import AbstractProvider, PreprintProvider  # noqa
 from osf.models.preprint_service import PreprintService  # noqa
+from osf.models.request import NodeRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,
@@ -34,5 +35,6 @@ from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
 from osf.models.admin_profile import AdminProfile  # noqa
 from osf.models.admin_log_entry import AdminLogEntry  # noqa
 from osf.models.maintenance_state import MaintenanceState  # noqa
+from osf.models.banner import ScheduledBanner  # noqa
 from osf.models.quickfiles import QuickFilesNode  # noqa
-from osf.models.action import ReviewAction  # noqa
+from osf.models.action import NodeRequestAction, ReviewAction  # noqa

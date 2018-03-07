@@ -230,6 +230,10 @@ MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject='You have been added as a moderator for {}'.format(provider.name)
 )
+CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
+    'contributor_added_access_request',
+    subject='Your access request to an OSF project has been approved.'
+)
 PREPRINT_CONFIRMATION_DEFAULT = Mail(
     'preprint_confirmation_default',
     subject="You've shared a preprint on OSF preprints"
@@ -411,4 +415,14 @@ SHARE_PREPRINT_ERROR_DESK = Mail(
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
     subject='Confirmation of your submission to ${provider_name}'
+)
+
+ACCESS_REQUEST_SUBMITTED = Mail(
+    'access_request_submitted',
+    subject='An OSF user has requested access to your ${node.project_or_component}'
+)
+
+ACCESS_REQUEST_DENIED = Mail(
+    'access_request_rejected',
+    subject='Your access request to an OSF project has been declined.'
 )

@@ -2,6 +2,22 @@
 Changelog
 *********
 
+0.134.0 (2018-02-28)
+====================
+
+- Add support for Zotero Group libraries
+- Add registered reports registration form.
+- Upgrade requests dependency.
+- Send logged in/logged out status and page to Google Analytics.
+- Remove ARK creation.
+- Admin: Add banner creator.
+- API: Optimize InstitutionNodeList Endpoint.
+- API: Fix embeds on user endpoints.
+- API: Endpoints for requesting project access.
+- API: Remove old documentation and link to new docs.
+- Fix showing component logs on forks.
+- Quick files with the qatest tag don't appear in search.
+
 0.133.0 (2018-02-07)
 ====================
 
