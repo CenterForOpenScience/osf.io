@@ -170,6 +170,18 @@ class TestCallbacks(OsfTestCase):
         assert_true(message)
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    def test_before_page_load_repo_deleted(self, mock_repo):
+        self.project.is_public = True
+        self.project.save()
+        mock_repo.return_value = None
+        message = self.node_settings.before_page_load(self.project, self.project.creator)
+        mock_repo.assert_called_with(
+            user=self.node_settings.user,
+            repo=self.node_settings.repo,
+        )
+        assert_false(message)
+
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_public(self, mock_repo):
         mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)

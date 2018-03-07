@@ -193,6 +193,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         connection = BitbucketClient(access_token=self.api.fetch_access_token())
         return connection.repo(user=self.user, repo=self.repo)['is_private']
 
+    @property
+    def ensure_repo(self):
+        connection = BitbucketClient(access_token=self.api.fetch_access_token())
+        return connection.repo(user=self.user, repo=self.repo)
+
     def fetch_access_token(self):
         return self.api.fetch_access_token()
 
@@ -309,34 +314,35 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.user_settings is None:
             return messages
 
-        node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if self.is_private else 'public'
-        if repo_permissions != node_permissions:
-            message = (
-                'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
-                'repo {user} / {repo} is {repo_perm}.'.format(
-                    category=markupsafe.escape(node.project_or_component),
-                    node_perm=markupsafe.escape(node_permissions),
-                    repo_perm=markupsafe.escape(repo_permissions),
-                    user=markupsafe.escape(self.user),
-                    repo=markupsafe.escape(self.repo),
+        if self.ensure_repo:
+            node_permissions = 'public' if node.is_public else 'private'
+            repo_permissions = 'private' if self.is_private else 'public'
+            if repo_permissions != node_permissions:
+                message = (
+                    'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
+                    'repo {user} / {repo} is {repo_perm}.'.format(
+                        category=markupsafe.escape(node.project_or_component),
+                        node_perm=markupsafe.escape(node_permissions),
+                        repo_perm=markupsafe.escape(repo_permissions),
+                        user=markupsafe.escape(self.user),
+                        repo=markupsafe.escape(self.repo),
+                    )
                 )
-            )
-            if repo_permissions == 'private':
-                message += (
-                    ' Users can view the contents of this private Bitbucket '
-                    'repository through this public project.'
-                )
-            else:
-                message += (
-                    ' The files in this Bitbucket repo can be viewed on Bitbucket '
-                    '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
-                ).format(
-                    user=self.user,
-                    repo=self.repo,
-                )
-            messages.append(message)
-            return messages
+                if repo_permissions == 'private':
+                    message += (
+                        ' Users can view the contents of this private Bitbucket '
+                        'repository through this public project.'
+                    )
+                else:
+                    message += (
+                        ' The files in this Bitbucket repo can be viewed on Bitbucket '
+                        '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
+                    ).format(
+                        user=self.user,
+                        repo=self.repo,
+                    )
+                messages.append(message)
+                return messages
 
     def before_remove_contributor_message(self, node, removed):
         """
@@ -414,18 +420,19 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return clone
 
     def before_make_public(self, node):
-        try:
-            is_private = self.is_private
-        except NotFoundError:
-            return None
-        if is_private:
-            return (
-                'This {cat} is connected to a private Bitbucket repository. Users '
-                '(other than contributors) will not be able to see the '
-                'contents of this repo unless it is made public on Bitbucket.'
-            ).format(
-                cat=node.project_or_component,
-            )
+        if self.ensure_repo:
+            try:
+                is_private = self.is_private
+            except NotFoundError:
+                return None
+            if is_private:
+                return (
+                    'This {cat} is connected to a private Bitbucket repository. Users '
+                    '(other than contributors) will not be able to see the '
+                    'contents of this repo unless it is made public on Bitbucket.'
+                ).format(
+                    cat=node.project_or_component,
+                )
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True)
