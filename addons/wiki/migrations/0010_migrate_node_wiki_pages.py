@@ -12,6 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from addons.wiki.models import WikiPage, NodeWikiPage, WikiVersion
 from osf.models import Comment, Guid, AbstractNode
 from bulk_update.helper import bulk_update
+
 logger = logging.getLogger(__name__)
 
 # Cache of WikiPage id => guid, of the form
@@ -57,15 +58,19 @@ def move_comment_target(current_guid, current_target, desired_target):
 
 def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
-    contributors_pending_save = []
-    for contrib in node.contributors.filter(comments_viewed_timestamp__has_key=current_wiki_guid):
-        timestamp = contrib.comments_viewed_timestamp[current_wiki_guid]
-        contrib.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
-        del contrib.comments_viewed_timestamp[current_wiki_guid]
-        contributors_pending_save.append(contrib)
-    if contributors_pending_save:
-        bulk_update(contributors_pending_save, batch_size=100)
-    return contributors_pending_save
+    users_pending_save = []
+    # We iterate over .contributor_set instead of .contributors in order
+    # to take advantage of .include('contributor__user')
+    for contrib in node.contributor_set.all():
+        user = contrib.user
+        if user.comments_viewed_timestamp.get(current_wiki_guid, None):
+            timestamp = user.comments_viewed_timestamp[current_wiki_guid]
+            user.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
+            del user.comments_viewed_timestamp[current_wiki_guid]
+            users_pending_save.append(user)
+    if users_pending_save:
+        bulk_update(users_pending_save, update_fields=['comments_viewed_timestamp'])
+    return users_pending_save
 
 def migrate_guid_referent(guid, desired_referent, content_type_id):
     """
@@ -190,7 +195,8 @@ def migrate_node_wiki_pages(state, schema):
         - For the most recent version of the WikiPage, repoint comments to the new WikiPage
         - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
     """
-    nodes_with_wikis = AbstractNode.objects.exclude(wiki_pages_versions={})
+    # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
+    nodes_with_wikis = AbstractNode.objects.exclude(wiki_pages_versions={}).include(None).include('contributor__user')
     if nodes_with_wikis:
         create_wiki_pages(nodes_with_wikis)
         create_wiki_versions(nodes_with_wikis)
