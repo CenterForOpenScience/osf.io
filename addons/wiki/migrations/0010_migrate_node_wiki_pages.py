@@ -16,10 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Cache of WikiPage id => guid, of the form
 # {
-#     <id>: {
-#         'guid_pk': <guid_pk>,
-#         'guid_id': <guid _id>,
-#     }
+#     <id>: <guid_pk>
 #
 # }
 WIKI_PAGE_GUIDS = {}
@@ -52,7 +49,7 @@ def reverse_func(state, schema):
 
 def move_comment_target(current_guid, current_target, desired_target):
     """Move the comment's target from the current target to the desired target"""
-    desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]['guid_pk']
+    desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]
     if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
         Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
         Comment.objects.filter(target=current_guid).update(target_id=desired_target_guid_id)
@@ -110,10 +107,7 @@ def create_guids():
         # looping instead of bulk_create, so _id's are not the same
         progress_bar.update(i)
         guid = Guid.objects.create(object_id=wiki_page_id, content_type_id=content_type.id)
-        WIKI_PAGE_GUIDS[wiki_page_id] = {
-            'guid_pk': guid.id,
-            'guid_id': guid._id,
-        }
+        WIKI_PAGE_GUIDS[wiki_page_id] = guid.id
     progress_bar.finish()
     logger.info('WikiPage guids created.')
     return
