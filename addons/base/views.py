@@ -717,7 +717,7 @@ def persistent_file_download(auth, **kwargs):
         return auth_redirect
 
     query_params = request.args.to_dict()
-    query_params.setdefault('version', file.versions.first().identifier)
+    query_params.setdefault(file.version_identifier, file.versions.first().identifier)
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
