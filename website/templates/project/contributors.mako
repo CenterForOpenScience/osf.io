@@ -321,8 +321,9 @@
                         <span href="#removeContributor"
                            data-bind="click: remove, class: {}, visible: !$root.collapsed()"
                            data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
-                        <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-minus"></i> Remove</button>
-
+                        <button href="#removeContributor" class="btn btn-default btn-sm m-l-md"
+                           data-bind="click: remove, visible: $root.collapsed()"
+                           data-toggle="modal"><i class="fa fa-times"></i> Remove</button>
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
@@ -342,22 +343,12 @@
             <img data-bind="attr: {src: accessRequest.user.profile_image_url}" />
             <span data-bind="attr: {class: accessRequest.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">
-                <span data-bind="ifnot: profileUrl">
-                    <span class="name-search" data-bind="text: accessRequest.user.shortname"></span>
-                </span>
-                <span data-bind="if: profileUrl">
-                    <a class="name-search" data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
-                </span>
-                <span data-bind="text: permissionText()"></span>
+                <a data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
+                <span data-bind="text: accessRequest.permissionText()"></span>
             </div>
         </td>
         <td class="table-only">
-            <span data-bind="ifnot: profileUrl">
-                <span class="name-search" data-bind="text: accessRequest.user.shortname"></span>
-            </span>
-            <span data-bind="if: profileUrl">
-                <a class="name-search" data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
-            </span>
+            <a data-bind="text: accessRequest.user.shortname, attr:{href: accessRequest.profileUrl}"></a>
         </td>
         <td class="permissions">
             <div class="header" data-bind="visible: accessRequest.expanded() && $root.collapsed()"></div>
@@ -386,7 +377,7 @@
                        data-bind="click: function() {respondToAccessRequest('accept')}"
                 ><i class="fa fa-plus"></i> Add</button>
                 <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
-                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-minus"></i> Remove</button>
+                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>
             </div>
         </td>
     </tr>

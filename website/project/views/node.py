@@ -395,6 +395,7 @@ def configure_comments(node, **kwargs):
     node.save()
 
 @must_have_permission(ADMIN)
+@must_not_be_registration
 def configure_requests(node, **kwargs):
     node.access_requests_enabled = request.json.get('accessRequestsEnabled')
     node.save()

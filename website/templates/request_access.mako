@@ -23,7 +23,7 @@
                     <a type="button" class="btn btn-default" href="${reauth_url}" >Switch account</a>
                 </div>
                 <div>
-                    <p style="margin-top: 10px;" id="supportMessage"></p>
+                    <p style="margin-top: 10px;" data-bind="html: supportMessage"></p>
                 </div>
             </div>
         </div>

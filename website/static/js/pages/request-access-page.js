@@ -10,5 +10,4 @@ var ctx = window.contextVars;
 $(window).on('load', function() {
     var viewModel = new RequestAccessViewModel(ctx.currentUserRequestState, ctx.nodeId);
     $osf.applyBindings(viewModel, '#requestAccessPrivateScope');
-    $('#supportMessage').html('If this should not have occured, please contact ' + $osf.osfSupportLink() + '.');
 });

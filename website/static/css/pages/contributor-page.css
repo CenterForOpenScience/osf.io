@@ -99,7 +99,7 @@ th.access-permissions {
   }
   .remove-or-reject {
     padding-top: 4px;
-    color: lightgrey;
+    color: #343333;
     cursor: pointer;
     font-size: 1.5em;
   }
@@ -155,7 +155,7 @@ th.access-permissions {
   }
   .remove-or-reject {
     padding-top: 4px;
-    color: lightgrey;
+    color: #343333;
     cursor: pointer;
     float: right;
     font-size: 1.5em;

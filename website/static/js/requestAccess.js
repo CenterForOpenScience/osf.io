@@ -19,15 +19,12 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
 
     self.checkRequestStatus = function() {
 
-        if (self.requestState() === 'rejected') {
-            self.accessRequestTooltip('Request declined');
+        if (self.requestState() === 'pending' || self.requestState() === 'rejected') {
             self.accessRequestPendingOrDenied(true);
             self.requestAccessButton = ko.observable('Access requested');
-            self.requestStateRel = ko.observable(null);
         }
         if (self.requestState() === 'pending') {
-            self.accessRequestPendingOrDenied(true);
-            self.requestAccessButton = ko.observable('Access requested');
+            self.accessRequestTooltip('Request declined');
         }
     };
 
@@ -42,7 +39,6 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
             data: {
                 type: 'node-requests',
                 attributes: {
-                    comment: '',
                     request_type: 'access'
                 }
             }
