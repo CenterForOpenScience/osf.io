@@ -22,7 +22,7 @@ class TestSubscriptionList:
         return ProjectFactory(creator=user)
 
     @pytest.fixture()
-    def global_user_notification(self,user):
+    def global_user_notification(self, user):
         notification = NotificationSubscriptionFactory(_id='{}_global'.format(user._id), user=user, event_name='global')
         notification.add_user_to_subscription(user, 'email_transactional')
         return notification

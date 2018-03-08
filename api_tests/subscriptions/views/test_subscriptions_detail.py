@@ -12,7 +12,7 @@ class TestSubscriptionDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def global_user_notification(self,user):
+    def global_user_notification(self, user):
         notification = NotificationSubscriptionFactory(_id='{}_global'.format(user._id), user=user, event_name='global')
         notification.add_user_to_subscription(user, 'email_transactional')
         return notification
@@ -32,10 +32,10 @@ class TestSubscriptionDetail:
 
     def test_update_successful(self, app, user, global_user_notification, url):
         payload = {
-            "data": {
-                "type": "user-provider-subscription",
-                "attributes": {
-                    "frequency": "none"
+            'data': {
+                'type': 'user-provider-subscription',
+                'attributes': {
+                    'frequency': 'none'
                 }
             }
         }
@@ -44,10 +44,10 @@ class TestSubscriptionDetail:
 
     def test_update_with_invalid_frequency(self, app, user, global_user_notification, url):
         payload = {
-            "data": {
-                "type": "user-provider-subscription",
-                "attributes": {
-                    "frequency": "invalid-frequency"
+            'data': {
+                'type': 'user-provider-subscription',
+                'attributes': {
+                    'frequency': 'invalid-frequency'
                 }
             }
         }
