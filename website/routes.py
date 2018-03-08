@@ -21,6 +21,7 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
+from framework.auth.decorators import ember_flag_is_active
 
 from osf.models import Institution
 from osf.utils import sanitize
@@ -212,6 +213,7 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
+@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -342,8 +344,7 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
-
+        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -953,7 +954,7 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {'shareUrl': settings.SHARE_URL},
+            search_views.search_view,
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(

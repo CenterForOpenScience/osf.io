@@ -9,6 +9,7 @@ from django_bulk_update.helper import bulk_update
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
+from framework.auth.decorators import ember_flag_is_active
 from framework.flask import redirect
 from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
@@ -221,7 +222,7 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
-
+@ember_flag_is_active('ember_meeting_detail_page')
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
 
@@ -260,6 +261,7 @@ def conference_submissions(**kwargs):
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
 
+@ember_flag_is_active('ember_meetings_page')
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():

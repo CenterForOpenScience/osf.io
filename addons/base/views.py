@@ -22,7 +22,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
-from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
+from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed, ember_flag_is_active
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
@@ -597,6 +597,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
 @must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
