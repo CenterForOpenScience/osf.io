@@ -5,7 +5,7 @@ from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  RelationshipPostMakesNoChanges)
 from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField, ValuesListField,
+                                  JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer)
