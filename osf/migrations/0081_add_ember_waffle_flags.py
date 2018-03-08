@@ -46,12 +46,7 @@ def add_ember_waffle_flags(state, schema):
     making the flag False for everyone.  Flag settings can be changed in the Django admin app.
     """
     for page in EMBER_WAFFLE_PAGES:
-        try:
-            with transaction.atomic():
-                Flag.objects.create(name=format_ember_waffle_flag_name(page), everyone=False)
-        except IntegrityError as e:
-            # just in case someone has already added a flag with this name to the db
-            pass
+        Flag.objects.get_or_create(name=format_ember_waffle_flag_name(page), everyone=False)
     return
 
 class Migration(migrations.Migration):
