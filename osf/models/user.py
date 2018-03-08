@@ -231,6 +231,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
+    change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``

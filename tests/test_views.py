@@ -1535,6 +1535,25 @@ class TestUserAccount(OsfTestCase):
         error_strings = [e[1][0] for e in mock_push_status_message.mock_calls]
         assert_in(error_message, error_strings)
 
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_rate_limiting(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'invalid old password',
+            'new_password': 'this is a new password',
+            'confirm_password': 'this is my new password',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(200, res.status_code)
+        # Make a second request right away
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(400, res.status_code)
+        assert_in('Too many requests.', res)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+
+
     def test_password_change_invalid_old_password(self):
         self.test_password_change_invalid(
             old_password='invalid old password',
@@ -1574,13 +1593,17 @@ class TestUserAccount(OsfTestCase):
             error_message='Passwords cannot be blank',
         )
 
+    def test_password_change_invalid_empty_string_new_password(self):
+        self.test_password_change_invalid_blank_password('password', '', 'new password')
+
     def test_password_change_invalid_blank_new_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', password, 'new password')
+        self.test_password_change_invalid_blank_password('password', '      ', 'new password')
+
+    def test_password_change_invalid_empty_string_confirm_password(self):
+        self.test_password_change_invalid_blank_password('password', 'new password', '')
 
     def test_password_change_invalid_blank_confirm_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', 'new password', password)
+        self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):

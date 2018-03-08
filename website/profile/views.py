@@ -284,6 +284,10 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
+    if not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before attempting to change your password.'})
+
     try:
         user.change_password(old_password, new_password, confirm_password)
         user.save()
@@ -292,6 +296,9 @@ def user_account_password(auth, **kwargs):
             push_status_message(m, kind='warning', trust=False)
     else:
         push_status_message('Password updated successfully.', kind='success', trust=False)
+
+    user.change_password_last_attempt = timezone.now()
+    user.save()
 
     return redirect(web_url_for('user_account'))
 
