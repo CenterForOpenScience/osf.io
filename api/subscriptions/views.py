@@ -4,9 +4,11 @@ from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
+from framework.auth.oauth_scopes import CoreScopes
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
-from api.subscriptions.serializers import SubscriptionDetailSerializer, SubscriptionListSerializer
+from api.base import permissions as base_permissions
+from api.subscriptions.serializers import SubscriptionSerializer
 from api.subscriptions.permissions import IsSubscriptionOwner
 from osf.models import NotificationSubscription
 
@@ -14,10 +16,14 @@ from osf.models import NotificationSubscription
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'user-provider-subscription-list'
     view_category = 'subscriptions'
-    serializer_class = SubscriptionListSerializer
+    serializer_class = SubscriptionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope
     )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     def get_queryset(self):
         user = self.request.user
@@ -28,11 +34,15 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'user-provider-subscription-detail'
     view_category = 'subscriptions'
-    serializer_class = SubscriptionDetailSerializer
+    serializer_class = SubscriptionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
         IsSubscriptionOwner
     )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']

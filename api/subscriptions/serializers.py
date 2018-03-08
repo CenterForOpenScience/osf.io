@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, LinksField
 
 NOTIFICATION_TYPES = {
     'none': 'none',
@@ -24,23 +24,19 @@ class FrequencyField(ser.Field):
             raise ValidationError('Invalid frequency "{}"'.format(data))
         return {'notification_type': NOTIFICATION_TYPES[data]}
 
-
-class SubscriptionListSerializer(JSONAPISerializer):
-    id = ser.CharField(source='_id', read_only=True)
-    event_name = ser.CharField(read_only=True)
-    frequency = FrequencyField(source='*')
-
-    class Meta:
-        type_ = 'user-subscription'
-
-
-class SubscriptionDetailSerializer(JSONAPISerializer):
+class SubscriptionSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*', required=True)
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
 
     class Meta:
         type_ = 'user-subscription'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
