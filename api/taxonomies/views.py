@@ -14,31 +14,8 @@ from framework.auth.oauth_scopes import CoreScopes
 
 
 class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Taxonomy Attributes
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        text           array of strings       Actual text of the subject
-        parents        array of subjects      Parent subjects, [] indicates a top level subject.
-
-    ##Query Params
-
-    + `field['id']=<subject_id>` -- Finds one subject with the given id
-    + `field['text']=<Str>` -- Find subjects with texts that match the passed string
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-    + `filter['parents']=<subject_id>` -- Find subjects that have a parent with the id passed
-    + `filter['parents']=null` -- Find top level subjects
-
-    Subjects may be filtered by their 'text', 'parents', and 'id' fields.
-
-    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
@@ -78,17 +55,8 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Taxonomy Attributes
-
-    See TaxonomyList
-
-    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope

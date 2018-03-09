@@ -32,7 +32,7 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeTagField(ser.Field):
@@ -166,6 +166,7 @@ class NodeSerializer(JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
+    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
@@ -214,6 +215,12 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
+    )
+
+    implicit_contributors = RelationshipField(
+        related_view='nodes:node-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+        help_text='This feature is experimental and being tested. It may be deprecated.'
     )
 
     files = RelationshipField(

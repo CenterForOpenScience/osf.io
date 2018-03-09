@@ -16,11 +16,11 @@ from api.nodes.serializers import (
     NodeTagField
 )
 from framework.exceptions import PermissionsError
-from website.util import permissions
 from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.utils import permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):

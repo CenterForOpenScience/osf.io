@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import urllib
+import furl
 import urlparse
+import collections
 
+from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import OuterRef, Exists, Q
 from rest_framework.exceptions import NotFound
@@ -173,3 +176,32 @@ def is_deprecated(request_version, min_version, max_version):
     if request_version < min_version or request_version > max_version:
         return True
     return False
+
+
+def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urlquote(x) for x in segments])
+    url.args.update(kwargs)
+    return url.url
+
+
+# Function courtesy of @brianjgeiger and @abought
+def rapply(data, func, *args, **kwargs):
+    """Recursively apply a function to all values in an iterable
+    :param dict | list | basestring data: iterable to apply func to
+    :param function func:
+    """
+    if isinstance(data, collections.Mapping):
+        return {
+            key: rapply(value, func, *args, **kwargs)
+            for key, value in data.iteritems()
+        }
+    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
+        desired_type = type(data)
+        return desired_type(
+            rapply(item, func, *args, **kwargs) for item in data
+        )
+    else:
+        return func(data, *args, **kwargs)

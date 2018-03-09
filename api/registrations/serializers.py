@@ -32,6 +32,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
+    access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
     tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
@@ -95,6 +96,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'}
+    )
+
+    implicit_contributors = RelationshipField(
+        related_view='registrations:registration-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+        help_text='This feature is experimental and being tested. It may be deprecated.'
     )
 
     files = HideIfWithdrawal(RelationshipField(

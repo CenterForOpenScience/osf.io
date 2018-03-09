@@ -21,6 +21,7 @@ from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
+from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from website import mails
@@ -28,7 +29,6 @@ from website import mailchimp_utils
 from website import settings
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
-from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils

@@ -16,10 +16,12 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import ember_flag_is_active
 
+from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
+from api.base.utils import rapply
 
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
@@ -31,8 +33,6 @@ from website.project import utils as project_utils
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
-from website.util import rapply
-from website.util.sanitize import strip_html
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')

@@ -2,6 +2,22 @@
 Changelog
 *********
 
+0.134.0 (2018-02-28)
+====================
+
+- Add support for Zotero Group libraries
+- Add registered reports registration form.
+- Upgrade requests dependency.
+- Send logged in/logged out status and page to Google Analytics.
+- Remove ARK creation.
+- Admin: Add banner creator.
+- API: Optimize InstitutionNodeList Endpoint.
+- API: Fix embeds on user endpoints.
+- API: Endpoints for requesting project access.
+- API: Remove old documentation and link to new docs.
+- Fix showing component logs on forks.
+- Quick files with the qatest tag don't appear in search.
+
 0.133.0 (2018-02-07)
 ====================
 
@@ -116,7 +132,7 @@ Changelog
 - Search in 'add link' should show all your projects by default
 - Incorrect grammar in My Projects slow load error text
 - Clear Deactivate Flag on User Accounts
-- Add new logo / branding to OSF for Meetings
+- Add new logo / branding to OSF Meetings
 - Add user's registrations and preprints relationships to user serializer
 - There should not be a link to Box.com in the Welcome to the OSF email
 - Users Should be Alerted of Maintenance on All Pages
@@ -1137,7 +1153,7 @@ Migrations
 - Search files by name and tags.
 - Add licenses to projects.
 - Multiple Google Drive accounts can be associated with a user account.
-- Redesign of OSF for Meetings landing page.
+- Redesign of OSF Meetings landing page.
 - APIv2: Comparison operators for filtering.
 
 Migrations
@@ -1210,7 +1226,7 @@ Migrations
 
 - Add project settings that allows a project's wiki to be editable by any OSF user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
-- Update UI for OSF for Meetings page.
+- Update UI for OSF Meetings page.
 - Various UI improvements.
 
 0.47.0 (2015-08-15)
