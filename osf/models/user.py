@@ -1483,6 +1483,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
 @receiver(post_save, sender=OSFUser)
+def create_osfstorage_usersettings(sender, instance, created, **kwargs):
+    if created:
+        instance.add_addon('osfstorage')
+
+@receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
