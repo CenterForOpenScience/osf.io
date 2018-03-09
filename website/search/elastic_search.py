@@ -284,18 +284,18 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = AbstractNode.load(parent_id)
-    if parent is None:
-        return None
-    parent_info = {}
-    if parent is not None and parent.is_public:
-        parent_info['title'] = parent.title
-        parent_info['url'] = parent.url
-        parent_info['is_registration'] = parent.is_registration
-        parent_info['id'] = parent._id
-    return parent_info
+    if parent and parent.is_public:
+        return {
+            'title': parent.title,
+            'url': parent.url,
+            'id': parent.is_registration,
+            'is_registation': parent._id,
+        }
+    return None
 
 
 COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
+
 
 def get_doctype_from_node(node):
     if node.is_registration:
