@@ -14,7 +14,6 @@ import pytz
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
-from framework.auth.decorators import ember_flag_is_active
 
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
@@ -28,6 +27,7 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING

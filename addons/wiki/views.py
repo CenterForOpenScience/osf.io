@@ -7,7 +7,7 @@ from flask import request
 
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
-from framework.auth.decorators import must_be_logged_in, ember_flag_is_active
+from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
 from addons.wiki.utils import to_mongo_key
@@ -16,6 +16,7 @@ from addons.wiki import utils as wiki_utils
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,

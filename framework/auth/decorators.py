@@ -3,18 +3,15 @@
 import time
 import httplib
 import functools
-import waffle
 
 from flask import request
 
 from framework.auth import cas
 from framework.auth import signing
 from framework.flask import redirect
-from framework.auth.core import _get_current_user
 from framework.exceptions import HTTPError
 from .core import Auth
 from website import settings
-from website.ember_osf_web.views import use_ember_app
 
 
 # TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch
@@ -82,22 +79,6 @@ def must_be_logged_in(func):
             return redirect(cas.get_login_url(request.url))
 
     return wrapped
-
-def ember_flag_is_active(flag_name):
-    """
-    Decorator for checking whether ember flag is active.  If so, proxy to ember
-    app, otherwise, load old view.
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            request.user = _get_current_user()
-            if waffle.flag_is_active(request, flag_name):
-                return use_ember_app()
-            else:
-                return func(*args, **kwargs)
-        return wrapped
-    return decorator
 
 def must_be_signed(func):
     @functools.wraps(func)

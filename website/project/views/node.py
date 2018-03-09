@@ -13,7 +13,8 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
-from framework.auth.decorators import must_be_logged_in, collect_auth, ember_flag_is_active
+from framework.auth.decorators import must_be_logged_in, collect_auth
+from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from api.base.utils import rapply

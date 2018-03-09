@@ -13,7 +13,7 @@ from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in, ember_flag_is_active
+from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -25,6 +25,7 @@ from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from api.preprint_providers.permissions import GroupHelper

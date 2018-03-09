@@ -9,7 +9,6 @@ from django.db.models import Q
 from flask import request
 
 from framework.auth.decorators import collect_auth
-from framework.auth.decorators import ember_flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
@@ -17,6 +16,7 @@ from website import language
 from osf.models import OSFUser, AbstractNode
 from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query

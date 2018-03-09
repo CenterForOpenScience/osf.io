@@ -22,7 +22,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
-from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed, ember_flag_is_active
+from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
@@ -37,6 +37,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus

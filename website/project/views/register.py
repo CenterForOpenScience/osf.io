@@ -8,7 +8,7 @@ from framework import status
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.auth.decorators import must_be_signed, ember_flag_is_active
+from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
@@ -25,6 +25,7 @@ from osf.models import Identifier, MetaSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util

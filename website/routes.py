@@ -21,7 +21,6 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
-from framework.auth.decorators import ember_flag_is_active
 
 from osf.models import Institution
 from osf.utils import sanitize
@@ -51,6 +50,7 @@ from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
+from website.ember_osf_web.decorators import ember_flag_is_active
 
 
 def get_globals():

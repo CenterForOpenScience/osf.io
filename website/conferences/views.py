@@ -9,7 +9,6 @@ from django_bulk_update.helper import bulk_update
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
-from framework.auth.decorators import ember_flag_is_active
 from framework.flask import redirect
 from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
@@ -17,6 +16,7 @@ from osf.models import AbstractNode, Node, Conference, Tag
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
 from website.util import web_url_for

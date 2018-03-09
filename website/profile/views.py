@@ -14,7 +14,6 @@ from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.decorators import must_be_confirmed
-from framework.auth.decorators import ember_flag_is_active
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
 from framework.auth.signals import user_merged
@@ -27,6 +26,7 @@ from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, Qu
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
