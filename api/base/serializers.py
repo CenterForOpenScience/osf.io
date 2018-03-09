@@ -700,6 +700,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             filters.append({'field_name': field_name, 'value': value})
         return filters if filters else None
 
+    def to_internal_value(self, data):
+        return data
+
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
         request = self.context.get('request', None)
@@ -768,6 +771,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     return relationship
                 relationship['data'] = {'id': related_id, 'type': related_type}
         return relationship
+
 
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):

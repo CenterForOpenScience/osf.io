@@ -35,6 +35,45 @@ from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
 
 
+def get_institutions_to_add_remove(institutions, new_institutions):
+    diff = relationship_diff(
+        current_items={inst._id: inst for inst in institutions.all()},
+        new_items={inst['_id']: inst for inst in new_institutions}
+    )
+
+    insts_to_add = []
+    for inst_id in diff['add']:
+        inst = Institution.load(inst_id)
+        if not inst:
+            raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+        insts_to_add.append(inst)
+
+    return insts_to_add, diff['remove'].values()
+
+
+def update_institutions(node, new_institutions, user, post=False):
+    add, remove = get_institutions_to_add_remove(
+        institutions=node.affiliated_institutions,
+        new_institutions=new_institutions
+    )
+
+    if post and not len(add):
+        raise RelationshipPostMakesNoChanges
+
+    if not post:
+        for inst in remove:
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
+                raise exceptions.PermissionDenied(
+                    detail='User needs to be affiliated with {}'.format(inst.name))
+            node.remove_affiliated_institution(inst, user)
+
+    for inst in add:
+        if not user.is_affiliated_with_institution(inst):
+            raise exceptions.PermissionDenied(
+                detail='User needs to be affiliated with {}'.format(inst.name))
+        node.add_affiliated_institution(inst, user)
+
+
 class NodeTagField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
@@ -281,7 +320,10 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<_id>'},
         self_view='nodes:node-relationships-institutions',
-        self_view_kwargs={'node_id': '<_id>'}
+        self_view_kwargs={'node_id': '<_id>'},
+        read_only=False,
+        many=True,
+        required=False,
     )
 
     root = RelationshipField(
@@ -439,6 +481,13 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.NotFound
             if not template_node.has_permission(user, 'read', check_parent=False):
                 raise exceptions.PermissionDenied
+            if 'affiliated_institutions' in validated_data:
+                institutions_list = validated_data.pop('affiliated_institutions')
+                new_institutions = [{'_id': institution} for institution in institutions_list]
+                instance = self.context['view'].get_object()
+                node = instance['self']
+                update_institutions(node, new_institutions, user, post=True)
+                node.save()
 
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
@@ -475,18 +524,22 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(node, AbstractNode), 'node must be a Node'
+        user = self.context['request'].user
         auth = get_user_auth(self.context['request'])
 
-        # Update tags
-        if 'tags' in validated_data:
-            new_tags = set(validated_data.pop('tags', []))
-            node.update_tags(new_tags, auth=auth)
-
         if validated_data:
-
+            if 'tags' in validated_data:
+                new_tags = set(validated_data.pop('tags', []))
+                node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
                 validated_data['node_license'] = license_details
+            if 'affiliated_institutions' in validated_data:
+                institutions_list = validated_data.pop('affiliated_institutions')
+                new_institutions = [{'_id': institution} for institution in institutions_list]
+
+                update_institutions(node, new_institutions, user)
+                node.save()
 
             try:
                 node.update(validated_data, auth=auth)
@@ -1016,21 +1069,6 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'institutions'
 
-    def get_institutions_to_add_remove(self, institutions, new_institutions):
-        diff = relationship_diff(
-            current_items={inst._id: inst for inst in institutions.all()},
-            new_items={inst['_id']: inst for inst in new_institutions}
-        )
-
-        insts_to_add = []
-        for inst_id in diff['add']:
-            inst = Institution.load(inst_id)
-            if not inst:
-                raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
-            insts_to_add.append(inst)
-
-        return insts_to_add, diff['remove'].values()
-
     def make_instance_obj(self, obj):
         return {
             'data': obj.affiliated_institutions.all(),
@@ -1040,22 +1078,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     def update(self, instance, validated_data):
         node = instance['self']
         user = self.context['request'].user
-
-        add, remove = self.get_institutions_to_add_remove(
-            institutions=instance['data'],
-            new_institutions=validated_data['data']
-        )
-
-        for inst in remove:
-            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-            node.remove_affiliated_institution(inst, user)
-
-        for inst in add:
-            if not user.is_affiliated_with_institution(inst):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-            node.add_affiliated_institution(inst, user)
-
+        update_institutions(node, validated_data['data'], user)
         node.save()
 
         return self.make_instance_obj(node)
@@ -1064,20 +1087,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
         instance = self.context['view'].get_object()
         user = self.context['request'].user
         node = instance['self']
-
-        add, remove = self.get_institutions_to_add_remove(
-            institutions=instance['data'],
-            new_institutions=validated_data['data']
-        )
-        if not len(add):
-            raise RelationshipPostMakesNoChanges
-
-        for inst in add:
-            if not user.is_affiliated_with_institution(inst):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-
-        for inst in add:
-            node.add_affiliated_institution(inst, user)
+        update_institutions(node, validated_data['data'], user, post=True)
         node.save()
 
         return self.make_instance_obj(node)

@@ -392,11 +392,11 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 {'data': [
                     {
                         'type': 'institutions',
-                        'id': institution_one.name
+                        'id': institution_one._id
                     },
                     {
                         'type': 'institutions',
-                        'id': institution_two.name
+                        'id': institution_two._id
                     },
                 ]
                 }
@@ -404,6 +404,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         payload = make_node_payload(project_private, {'public': False}, relationships=affiliated_institutions)
         res = app.patch_json_api(url_private, payload, auth=user_two.auth, expect_errors=False)
         assert res.status_code == 200
+        institutions = project_private.affiliated_institutions.all()
+        assert institution_one in institutions
+        assert institution_two in institutions
 
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(
