@@ -13,12 +13,12 @@ from website.notifications.tasks import get_users_emails, send_users_email, grou
 from website.notifications import constants
 from website.notifications import emails
 from website.notifications import utils
-from website import mails, settings
+from website import mails
 from website.project.signals import contributor_removed, node_deleted
 from website.reviews import listeners
 from website.util import api_url_for
 from website.util import web_url_for
-from website import settings
+from api.base import settings
 
 from osf_tests import factories
 from tests.base import capture_signals
