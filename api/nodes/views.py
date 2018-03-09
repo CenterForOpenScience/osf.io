@@ -270,7 +270,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
         auth = get_user_auth(self.request)
         date = timezone.now()
-        id_list = [x.id for x in resource_object_list if x.can_edit(auth=auth)]
+        id_list = [x.id for x in resource_object_list]
 
         if NodeRelation.objects.filter(
             parent__in=resource_object_list
