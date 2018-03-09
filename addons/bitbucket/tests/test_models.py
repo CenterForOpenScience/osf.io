@@ -168,6 +168,7 @@ class TestCallbacks(OsfTestCase):
             repo=self.node_settings.repo,
         )
         assert_true(message)
+        assert_in('Users can view the contents of this private Bitbucket repository through this public project.', message[0])
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_repo_deleted(self, mock_repo):
@@ -180,6 +181,7 @@ class TestCallbacks(OsfTestCase):
             repo=self.node_settings.repo,
         )
         assert_true(message)
+        assert_in('has been deleted.', message[0])
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_public(self, mock_repo):
@@ -190,6 +192,7 @@ class TestCallbacks(OsfTestCase):
             repo=self.node_settings.repo,
         )
         assert_true(message)
+        assert_in('The files in this Bitbucket repo can be viewed on Bitbucket', message[0])
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_private(self, mock_repo):
