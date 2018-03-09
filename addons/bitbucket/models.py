@@ -194,7 +194,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return connection.repo(user=self.user, repo=self.repo)['is_private']
 
     @property
-    def fetch_repo(self):
+    def fetched_repo(self):
         connection = BitbucketClient(access_token=self.api.fetch_access_token())
         return connection.repo(user=self.user, repo=self.repo)
 
@@ -314,7 +314,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.user_settings is None:
             return messages
 
-        if self.fetch_repo:
+        if self.fetched_repo:
             node_permissions = 'public' if node.is_public else 'private'
             repo_permissions = 'private' if self.is_private else 'public'
             if repo_permissions != node_permissions:
