@@ -564,7 +564,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_id, self.user.id)
+        nt.assert_equal(user_id, self.user._id)
         nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)

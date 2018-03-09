@@ -7,7 +7,7 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
 from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select
 from wtforms.validators import ValidationError
 
-from website.util.sanitize import strip_html
+from osf.utils.sanitize import strip_html
 
 
 validators = validators

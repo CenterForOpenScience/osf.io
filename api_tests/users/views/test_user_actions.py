@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 

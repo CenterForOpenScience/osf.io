@@ -11,9 +11,9 @@ from osf_tests.factories import (
     CollectionFactory,
     DraftRegistrationFactory,
 )
+from osf.utils import permissions
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.util import permissions
 
 
 @pytest.mark.django_db

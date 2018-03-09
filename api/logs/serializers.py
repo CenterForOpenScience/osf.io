@@ -12,7 +12,7 @@ from api.base.serializers import (
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -65,6 +65,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
+    library_name = ser.CharField(read_only=True)
     license = ser.CharField(read_only=True, source='new_license')
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
     institution = NodeLogInstitutionSerializer(read_only=True)

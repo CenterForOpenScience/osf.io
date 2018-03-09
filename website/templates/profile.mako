@@ -1,6 +1,10 @@
 <%inherit file="base.mako"/>
 <%namespace name="render_nodes" file="util/render_nodes.mako" />
 <%def name="title()">${profile["fullname"]}</%def>
+<%def name="resource()"><%
+    return 'user'
+%>
+</%def>
 <%def name="stylesheets()">
    ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/profile-page.css'>

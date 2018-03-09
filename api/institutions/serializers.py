@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from osf.models import Node, Registration
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
     BaseAPISerializer

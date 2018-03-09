@@ -26,7 +26,7 @@ def add_identifiers_to_preprints(dry_run=True):
         if not dry_run:
             ezid_response = request_identifiers_from_ezid(preprint)
             id_dict = parse_identifiers(ezid_response)
-            preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+            preprint.set_identifier_values(doi=id_dict['doi'])
             preprint.save()
 
             doi = preprint.get_identifier('doi')
