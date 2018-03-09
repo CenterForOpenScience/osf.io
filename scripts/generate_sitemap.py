@@ -167,7 +167,7 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
+        objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
         progress.start(objs.count(), 'USER: ')
         for obj in objs:
             try:
@@ -219,14 +219,11 @@ class Sitemap(object):
                 try:
                     file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
                     file_config['loc'] = urlparse.urljoin(
-                        settings.DOMAIN,
+                        obj.provider.domain or settings.DOMAIN,
                         os.path.join(
-                            'project',
-                            obj.node._id,   # Parent node id
-                            'files',
-                            'osfstorage',
-                            obj.primary_file._id,  # Preprint file deep_url
-                            '?action=download'
+                            obj._id,
+                            'download',
+                            '?format=pdf'
                         )
                     )
                     file_config['lastmod'] = preprint_date
