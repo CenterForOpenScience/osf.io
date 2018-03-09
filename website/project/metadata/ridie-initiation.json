@@ -355,7 +355,7 @@
             "type": "choose",
             "format": "singleselect",
             "title": "Type of Organization",
-            "description": "What type of organization is this?",
+            "description": "What type of organization is this? <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#InterventionTimelineId_Section\">See help text for more information.</a>",
             "options": [
                 "Yes",
                 "No"
@@ -368,7 +368,7 @@
             "type": "string",
             "format": "text",
             "title": "Start Date",
-            "description": "When did the intervention or program begin? (If not yet started, provide estimated date.)",
+            "description": "When did the intervention or program begin? (If not yet started, provide estimated date.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#InterventionTimelineId_Section\">See help text for more information.</a>",
             "help": "",
             "required": true
         }, {
@@ -468,8 +468,8 @@
             "type": "string",
             "format": "textarea",
             "title": "Outcomes (Endpoints)",
-            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See examples for more details.)",
-            "help": "Most evaluation studies include both primary and secondary outcomes, and many also distinguish between final and intermediate outcomes. A primary outcome or endpoint are the prespecified outcomes that are considered to be the most important effect of the intervention and are the variables used in power calculations to determine sample size. Secondary outcomes are additional outcomes of interest. However, the study is not necessarily powered to detect impacts for secondary outcomes. For example, in an evaluation of microcredit intervention, primary outcomes may be household business activity and household income. Secondary outcomes could be child school enrolment, time allocation, and female empowerment.<br > <br >Final outcomes are those which represent the ultimate objective of the intervention, while intermediate outcomes are usually defined as outcomes which are links in the causal chain from the intervention to the final outcomes. Intermediate outcomes may not always be of direct interest, but they have to occur for the final outcomes to materialize. For example, to test the impacts on student learning of a program that trains teachers in new pedagogical techniques, an intermediate outcome would be a measure of whether teachers are using the new approach, and the final outcome is student skills measured by tests. For a study of the effects of fertilizer provision on farm productivity, intermediate outcomes could be the proper application of fertilizer by farmers, while final outcomes would be yields and farm incomes. There is usually a temporal sequence from intermediate to final outcomes in which the former occurs before the latter. In some longer term studies, the intermediate outcome is the same endpoint as the final outcome but is measured midway or at some other point between the intervention and final measurement.",
+            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See examples for more details.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Outcomes_Section\">See help text for definitions.</a>",
+            "help": "",
             "required": true
         }, {
             "qid": "q41",
@@ -495,7 +495,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Hypotheses",
-            "description": "What specific hypotheses do you plan to test with the outcome variables specified above (or other outcomes)? (You may distinguish primary and secondary hypotheses if you like.)",
+            "description": "What specific hypotheses do you plan to test with the outcome variables specified above (or other outcomes)? (You may distinguish primary and secondary hypotheses if you like.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Hypotheses_Section\">See help text for more informaiton.</a>",
             "help": "",
             "required": false
         }, {
