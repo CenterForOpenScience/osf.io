@@ -278,6 +278,20 @@ def main(env):
                 'delegation_protocol': 'cas-pac4j',
             },
             {
+                '_id': 'sc',
+                'name': 'University of South Carolina Libraries',
+                'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
+                'banner_name': 'sc-banner.png',
+                'logo_name': 'sc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.sc.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'thelabatdc',
                 'name': 'The Lab @ DC',
                 'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
@@ -764,6 +778,20 @@ def main(env):
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+            },
+            {
+                '_id': 'sc',
+                'name': 'University of South Carolina Libraries [Test]',
+                'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
+                'banner_name': 'sc-banner.png',
+                'logo_name': 'sc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-sc.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'thelabatdc',
