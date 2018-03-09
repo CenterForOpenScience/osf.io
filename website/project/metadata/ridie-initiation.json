@@ -349,27 +349,8 @@
             ],
             "help": "",
             "required": true
-        }, {
+        },  {
             "qid": "q31",
-            "nav": "Type of Organization",
-            "type": "choose",
-            "format": "singleselect",
-            "title": "Type of Organization",
-            "description": "What type of organization is this?",
-            "options": [
-                "Public Sector, e.g. Government Agency or Ministry",
-                "Foreign or Multilateral Aid Agency",
-                "NGO (International)",
-                "NGO (local)/Community Based Organization/Other civil society organization",
-                "Research Institution/University",
-                "Private for profit organization",
-                "Public-Private partnership",
-                "Other"
-            ],
-            "help": "",
-            "required": true
-        }, {
-            "qid": "q32",
             "nav": "Intervention Timeline",
             "type": "choose",
             "format": "singleselect",
@@ -382,7 +363,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q33",
+            "qid": "q32",
             "nav": "Start Date",
             "type": "string",
             "format": "text",
@@ -391,7 +372,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q34",
+            "qid": "q33",
             "nav": "End Date",
             "type": "string",
             "format": "text",
@@ -408,7 +389,7 @@
         "title": "Evaluation Method",
         "description": "",
         "questions": [{
-            "qid": "q35",
+            "qid": "q34",
             "nav": "Primary (or First) Evaluation Method",
             "type": "choose",
             "format": "singleselect",
@@ -427,7 +408,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q36",
+            "qid": "q35",
             "nav": "Other Method",
             "type": "string",
             "format": "text",
@@ -436,7 +417,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q37",
+            "qid": "q36",
             "nav": "Additional Evaluation Method (If Any)",
             "type": "choose",
             "format": "singleselect",
@@ -455,7 +436,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q38",
+            "qid": "q37",
             "nav": "Other Method",
             "type": "string",
             "format": "text",
@@ -464,7 +445,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q39",
+            "qid": "q38",
             "nav": "Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
@@ -473,7 +454,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q40",
+            "qid": "q39",
             "nav": "Private Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
@@ -482,7 +463,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q41",
+            "qid": "q40",
             "nav": "Outcomes (Endpoints)",
             "type": "string",
             "format": "textarea",
@@ -491,7 +472,7 @@
             "help": "Most evaluation studies include both primary and secondary outcomes, and many also distinguish between final and intermediate outcomes. A primary outcome or endpoint are the prespecified outcomes that are considered to be the most important effect of the intervention and are the variables used in power calculations to determine sample size. Secondary outcomes are additional outcomes of interest. However, the study is not necessarily powered to detect impacts for secondary outcomes. For example, in an evaluation of microcredit intervention, primary outcomes may be household business activity and household income. Secondary outcomes could be child school enrolment, time allocation, and female empowerment.<br > <br >Final outcomes are those which represent the ultimate objective of the intervention, while intermediate outcomes are usually defined as outcomes which are links in the causal chain from the intervention to the final outcomes. Intermediate outcomes may not always be of direct interest, but they have to occur for the final outcomes to materialize. For example, to test the impacts on student learning of a program that trains teachers in new pedagogical techniques, an intermediate outcome would be a measure of whether teachers are using the new approach, and the final outcome is student skills measured by tests. For a study of the effects of fertilizer provision on farm productivity, intermediate outcomes could be the proper application of fertilizer by farmers, while final outcomes would be yields and farm incomes. There is usually a temporal sequence from intermediate to final outcomes in which the former occurs before the latter. In some longer term studies, the intermediate outcome is the same endpoint as the final outcome but is measured midway or at some other point between the intervention and final measurement.",
             "required": true
         }, {
-            "qid": "q42",
+            "qid": "q41",
             "nav": "Measurement",
             "type": "string",
             "format": "textarea",
@@ -500,7 +481,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q43",
+            "qid": "q42",
             "nav": "Unit of Analysis",
             "type": "string",
             "format": "text",
@@ -509,7 +490,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q44",
+            "qid": "q43",
             "nav": "Hypotheses",
             "type": "string",
             "format": "textarea",
@@ -518,7 +499,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q45",
+            "qid": "q44",
             "nav": "Unit of Intervention or Assignment",
             "type": "string",
             "format": "text",
@@ -527,7 +508,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q46",
+            "qid": "q45",
             "nav": "Number of Clusters in Sample",
             "type": "string",
             "format": "text",
@@ -536,7 +517,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q47",
+            "qid": "q46",
             "nav": "Number of Individuals in Sample",
             "type": "string",
             "format": "text",
@@ -545,7 +526,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q48",
+            "qid": "q47",
             "nav": "Size of Treatment, Control, or Comparison Subsamples",
             "type": "string",
             "format": "text",
@@ -554,7 +535,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q49",
+            "qid": "q48",
             "nav": "Analysis Plan",
             "type": "object",
             "title": "Analysis Plan",
@@ -570,7 +551,7 @@
             ],
             "required": false
         }, {
-            "qid": "q50",
+            "qid": "q49",
             "nav": "Other Documents",
             "type": "object",
             "title": "Other Documents",
@@ -593,7 +574,7 @@
         "title": "Data",
         "description": "",
         "questions": [{
-            "qid": "q51",
+            "qid": "q50",
             "nav": "Description",
             "type": "string",
             "format": "textarea",
@@ -602,7 +583,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q52",
+            "qid": "q51",
             "nav": "Data Collection Status",
             "type": "choose",
             "format": "singleselect",
@@ -615,7 +596,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q53",
+            "qid": "q52",
             "nav": "Survey Name",
             "type": "string",
             "format": "text",
@@ -624,7 +605,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q54",
+            "qid": "q53",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -638,7 +619,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q55",
+            "qid": "q54",
             "nav": "Data Access",
             "type": "choose",
             "format": "singleselect",
@@ -651,7 +632,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q56",
+            "qid": "q55",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -664,7 +645,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q57",
+            "qid": "q56",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
@@ -673,7 +654,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q58",
+            "qid": "q57",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -687,7 +668,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q59",
+            "qid": "q58",
             "nav": "Participation or Assignment Information",
             "type": "choose",
             "format": "singleselect",
@@ -700,7 +681,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q60",
+            "qid": "q59",
             "nav": "Description",
             "type": "string",
             "format": "textarea",
@@ -709,7 +690,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q61",
+            "qid": "q60",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -722,7 +703,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q62",
+            "qid": "q61",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -736,7 +717,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q63",
+            "qid": "q62",
             "nav": "Data Access",
             "type": "string",
             "format": "textarea",
@@ -749,7 +730,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q64",
+            "qid": "q63",
             "nav": "Data Obtainment Status",
             "type": "choose",
             "format": "singleselect",
@@ -762,7 +743,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q65",
+            "qid": "q64",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
@@ -771,7 +752,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q66",
+            "qid": "q65",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -785,7 +766,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q67",
+            "qid": "q66",
             "nav": "Data Analysis Status",
             "type": "choose",
             "format": "singleselect",
@@ -799,7 +780,7 @@
             "required": true
         },
             {
-            "qid": "q68",
+            "qid": "q67",
             "nav": "Upload Study Materials",
             "type": "object",
             "title": "Upload Study Materials",
@@ -815,7 +796,7 @@
             ],
             "required": false
         }, {
-            "qid": "q69",
+            "qid": "q68",
             "nav": "Links",
             "type": "string",
             "format": "text",
@@ -824,7 +805,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q70",
+            "qid": "q69",
             "nav": "Links Description",
             "type": "string",
             "format": "text",
@@ -833,7 +814,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q71",
+            "qid": "q70",
             "nav": "Registration Category",
             "type": "string",
             "format": "textarea",
@@ -842,7 +823,7 @@
             "help": "",
             "required": true
         },{
-            "qid": "q72",
+            "qid": "q71",
             "nav": "Registration Category Comments",
             "type": "string",
             "format": "textarea",
