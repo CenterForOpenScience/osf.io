@@ -37,6 +37,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus
@@ -596,6 +597,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
 @must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
