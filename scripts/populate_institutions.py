@@ -50,6 +50,20 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'asu',
+                'name': 'Arizona State University',
+                'description': '<a href="https://asu.edu">Arizona State University</a>',
+                'banner_name': 'asu-banner.png',
+                'logo_name': 'asu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.asu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'brown',
                 'name': 'Brown University',
                 'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
@@ -551,6 +565,20 @@ def main(env):
         ]
     elif env == 'test':
         INSTITUTIONS = [
+            {
+                '_id': 'asu',
+                'name': 'Arizona State University [Test]',
+                'description': '<a href="https://asu.edu">Arizona State University</a>',
+                'banner_name': 'asu-banner.png',
+                'logo_name': 'asu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-asu.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
             {
                 '_id': 'brown',
                 'name': 'Brown University [Test]',
