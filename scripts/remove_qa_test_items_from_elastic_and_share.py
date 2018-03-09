@@ -16,6 +16,7 @@ from framework.database import paginated
 
 logger = logging.getLogger(__name__)
 
+
 def remove_search_index(dry_run=True):
     tag_query = Q()
     title_query = Q()

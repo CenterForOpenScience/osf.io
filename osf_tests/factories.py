@@ -17,7 +17,7 @@ from waffle.models import Flag, Sample, Switch
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util import permissions
+from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
@@ -549,7 +549,7 @@ def sync_set_identifiers(preprint):
         'already_exists': False
     }
     id_dict = parse_identifiers(ezid_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'])
 
 
 class PreprintFactory(DjangoModelFactory):
@@ -828,6 +828,20 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+class ScheduledBannerFactory(DjangoModelFactory):
+    # Banners are set for 24 hours from start_date if no end date is given
+    class Meta:
+        model = models.ScheduledBanner
+
+    name = factory.Faker('name')
+    default_alt_text = factory.Faker('text')
+    mobile_alt_text = factory.Faker('text')
+    default_photo = factory.Faker('file_name')
+    mobile_photo = factory.Faker('file_name')
+    license = factory.Faker('name')
+    color = 'white'
+    start_date = timezone.now()
+    end_date = factory.LazyAttribute(lambda o: o.start_date)
 
 class FlagFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
@@ -854,3 +868,10 @@ class SwitchFactory(DjangoModelFactory):
 
     class Meta:
         model = Switch
+
+
+class NodeRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeRequest
+
+    comment = factory.Faker('text')

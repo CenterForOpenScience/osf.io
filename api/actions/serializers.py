@@ -13,7 +13,7 @@ from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from osf.exceptions import InvalidTriggerError
-from osf.models import PreprintService
+from osf.models import PreprintService, NodeRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 
 
@@ -83,7 +83,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+    comment = ser.CharField(max_length=65535, required=False)
 
     from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
@@ -105,12 +105,11 @@ class BaseActionSerializer(JSONAPISerializer):
         }
     )
 
-    @property
-    def get_action_url(self):
-        raise NotImplementedError()
-
     def get_absolute_url(self, obj):
         return self.get_action_url(obj)
+
+    def get_action_url(self, obj):
+        return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def create(self, validated_data):
         trigger = validated_data.pop('trigger')
@@ -151,6 +150,8 @@ class ReviewActionSerializer(BaseActionSerializer):
         'target',
     ])
 
+    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+
     provider = RelationshipField(
         read_only=True,
         related_view='preprint_providers:preprint_provider-detail',
@@ -175,5 +176,14 @@ class ReviewActionSerializer(BaseActionSerializer):
         filter_key='target__guids___id',
     )
 
-    def get_action_url(self, obj):
-        return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
+class NodeRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'node-request-actions'
+
+    target = TargetRelationshipField(
+        target_class=NodeRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:node-request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )

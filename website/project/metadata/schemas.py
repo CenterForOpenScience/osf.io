@@ -37,6 +37,7 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('egap-project-2.json')),
     ensure_schema_structure(from_json('veer-1.json')),
     ensure_schema_structure(from_json('aspredicted.json')),
+    ensure_schema_structure(from_json('registered-report.json')),
     ensure_schema_structure(from_json('ridie-initiation.json')),
     ensure_schema_structure(from_json('ridie-complete.json')),
 ]
@@ -45,6 +46,7 @@ METASCHEMA_ORDERING = (
     'Prereg Challenge',
     'Open-Ended Registration',
     'AsPredicted Preregistration',
+    'Registered Report Protocol Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',

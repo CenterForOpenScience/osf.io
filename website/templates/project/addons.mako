@@ -134,6 +134,22 @@
                                         </p>
                                     </div>
                                 </div>
+                        % endif
+                        % if addon['addon_short_name'] == 'zotero':
+                            <div id='zotero-group-library-alert' class='scripted dismissible-alerts'>
+                                <div class="alert alert-info alert-dismissible" role="alert">
+                                    <button type="button" id="zoteroWarningCancel" class="close" data-dismiss="alert" aria-label="Close"
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                <div>
+                                <h4>Don’t see your Zotero group libraries?</h4>
+                                <p>
+                                    You may need to reauthorize your Zotero access token.
+                                    Follow the steps in the <a class="alert-link" href='http://help.osf.io/a/850167-reauthorize-zotero' target="_black">help guide</a> to resolve the issue.
+                                </p>
+                                <p>
+                                    Please contact <a class="alert-link" href="mailto:support@osf.io">support@osf.io</a> if you have questions.
+                                </p>
                             </div>
                         % endif
                         % if not loop.last:
