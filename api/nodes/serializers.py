@@ -469,6 +469,9 @@ class NodeSerializer(JSONAPISerializer):
         user = request.user
         Node = apps.get_model('osf.Node')
         tag_instances = []
+        affiliated_institutions = None
+        if 'affiliated_institutions' in validated_data:
+            affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -481,14 +484,6 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.NotFound
             if not template_node.has_permission(user, 'read', check_parent=False):
                 raise exceptions.PermissionDenied
-            if 'affiliated_institutions' in validated_data:
-                institutions_list = validated_data.pop('affiliated_institutions')
-                new_institutions = [{'_id': institution} for institution in institutions_list]
-                instance = self.context['view'].get_object()
-                node = instance['self']
-                update_institutions(node, new_institutions, user, post=True)
-                node.save()
-
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
@@ -498,6 +493,10 @@ class NodeSerializer(JSONAPISerializer):
             node.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
+        if affiliated_institutions:
+            new_institutions = [{'_id': institution} for institution in affiliated_institutions]
+            update_institutions(node, new_institutions, user, post=True)
+            node.save()
         if len(tag_instances):
             for tag in tag_instances:
                 node.tags.add(tag)

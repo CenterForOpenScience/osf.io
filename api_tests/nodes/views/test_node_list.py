@@ -14,6 +14,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
     PreprintFactory,
+    InstitutionFactory
 )
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
@@ -901,8 +902,14 @@ class TestNodeFiltering:
 class TestNodeCreate:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user_one(self, institution_one):
+        auth_user = AuthUserFactory()
+        auth_user.affiliated_institutions.add(institution_one)
+        return auth_user
 
     @pytest.fixture()
     def user_two(self):
@@ -924,8 +931,9 @@ class TestNodeCreate:
     def category(self):
         return 'data'
 
+
     @pytest.fixture()
-    def public_project(self, title, description, category):
+    def public_project(self, title, description, category, institution_one):
         return {
             'data': {
                 'type': 'nodes',
@@ -934,7 +942,17 @@ class TestNodeCreate:
                     'description': description,
                     'category': category,
                     'public': True,
-                }
+                },
+                'relationships': {
+                    'affiliated_institutions': {
+                        'data': [
+                            {
+                                'type': 'institutions',
+                                'id': institution_one._id,
+                            }
+                        ]
+                    }
+                },
             }
         }
 
@@ -982,7 +1000,7 @@ class TestNodeCreate:
         assert 'detail' in res.json['errors'][0]
 
     def test_creates_public_project_logged_in(
-            self, app, user_one, public_project, url):
+            self, app, user_one, public_project, url, institution_one):
         res = app.post_json_api(
             url, public_project,
             expect_errors=True,
@@ -994,7 +1012,8 @@ class TestNodeCreate:
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
-        assert project.logs.latest().action == NodeLog.PROJECT_CREATED
+        assert project.logs.latest().action == NodeLog.AFFILIATED_INSTITUTION_ADDED
+        assert institution_one in project.affiliated_institutions.all()
 
     def test_creates_private_project_logged_in_contributor(
             self, app, user_one, private_project, url):
