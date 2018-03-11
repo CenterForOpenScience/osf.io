@@ -931,7 +931,6 @@ class TestNodeCreate:
     def category(self):
         return 'data'
 
-
     @pytest.fixture()
     def public_project(self, title, description, category, institution_one):
         return {
