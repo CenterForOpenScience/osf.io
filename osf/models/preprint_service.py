@@ -10,8 +10,10 @@ from django.contrib.contenttypes.fields import GenericRelation
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
-from osf.models.mixins import ReviewableMixin
-from osf.models.validators import validate_subject_hierarchy
+from osf.models.contributor import PreprintContributor
+from osf.models.user import OSFUser
+from osf.models.mixins import ReviewableMixin, Taggable
+from osf.models.validators import validate_subject_hierarchy, validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
@@ -48,12 +50,12 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     description = models.TextField(blank=True, default='')
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
-                                related_name='nodes_created',
+                                related_name='preprints_created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
-                                           through=Contributor,
-                                           related_name='nodes')
+                                           through=PreprintContributor,
+                                           related_name='preprints')
     class Meta:
         unique_together = ('node', 'provider')
         permissions = (
@@ -313,6 +315,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         #     auth=auth,
         #     save=False
         # )
+        pass
 
     # Override Taggable
     def on_tag_added(self, tag):
