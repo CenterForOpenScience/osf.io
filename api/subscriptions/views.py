@@ -17,6 +17,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'user-provider-subscription-list'
     view_category = 'subscriptions'
     serializer_class = SubscriptionSerializer
+    model_class = NotificationSubscription
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope
@@ -25,10 +26,12 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         user = self.request.user
-        queryset = NotificationSubscription.objects.filter(Q(none=user) | Q(email_digest=user) | Q(email_transactional=user))
-        return queryset
+        return NotificationSubscription.objects.filter(Q(none=user) | Q(email_digest=user) | Q(email_transactional=user))
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
@@ -47,7 +50,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
         try:
-            subscription = NotificationSubscription.objects.get(_id=subscription_id)
+            obj = NotificationSubscription.objects.get(_id=subscription_id)
         except ObjectDoesNotExist:
             raise NotFound
-        return subscription
+        self.check_object_permissions(self.request, obj)
+        return obj

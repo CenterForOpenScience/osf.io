@@ -19,12 +19,18 @@ class FrequencyField(ser.Field):
             return 'daily'
         return 'none'
 
-    def to_internal_value(self, data):
-        if data not in NOTIFICATION_TYPES.keys():
-            raise ValidationError('Invalid frequency "{}"'.format(data))
-        return {'notification_type': NOTIFICATION_TYPES[data]}
+    def to_internal_value(self, frequency):
+        notification_type = NOTIFICATION_TYPES.get(frequency)
+        if notification_type:
+            return {'notification_type': notification_type}
+        raise ValidationError('Invalid frequency "{}"'.format(frequency))
 
 class SubscriptionSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'id',
+        'event_name',
+    ])
+
     id = ser.CharField(source='_id', read_only=True)
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*', required=True)
