@@ -346,7 +346,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
-        return user is not None and Contributor.objects.filter(user=user, node=self).exists()
+        return user is not None and PreprintContributor.objects.filter(user=user, preprint=self).exists()
 
 
     def add_contributor(self, contributor, permissions=None, visible=True,
@@ -355,7 +355,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
-        :param bool visible: Contributor is visible in project dashboard
+        :param bool visible: PreprintContributor is visible in project dashboard
         :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
@@ -371,7 +371,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
         if not self.is_contributor(contrib_to_add):
 
-            contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
+            contributor_obj, created = PreprintContributor.objects.get_or_create(user=contrib_to_add, preprint=self)
             contributor_obj.visible = visible
 
             # Add default contributor permissions
@@ -554,7 +554,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     def replace_contributor(self, old, new):
         try:
             contrib_obj = self.contributor_set.get(user=old)
-        except Contributor.DoesNotExist:
+        except PreprintContributor.DoesNotExist:
             return False
         contrib_obj.user = new
         contrib_obj.save()
@@ -573,7 +573,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :param auth: All the auth information including user, API key.
         """
 
-        if isinstance(contributor, Contributor):
+        if isinstance(contributor, PreprintContributor):
             contributor = contributor.user
 
         # remove unclaimed record if necessary
@@ -682,7 +682,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             contrib.id = None
             contrib.node = self
             contribs.append(contrib)
-        Contributor.objects.bulk_create(contribs)
+        PreprintContributor.objects.bulk_create(contribs)
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -691,7 +691,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
 
     def _get_admin_contributors_query(self, users):
-        return Contributor.objects.select_related('user').filter(
+        return PreprintContributor.objects.select_related('user').filter(
             node=self,
             user__in=users,
             user__is_active=True,
