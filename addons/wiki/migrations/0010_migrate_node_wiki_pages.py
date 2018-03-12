@@ -170,14 +170,14 @@ def create_wiki_versions(nodes):
                 wiki_versions_pending = []
                 gc.collect()
         if len(guids_pending) > 1000:
-            bulk_update(guids_pending, batch_size=100)
+            bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
             guids_pending = []
             gc.collect()
     progress_bar.finish()
     # Create the remaining wiki pages that weren't created in the loop above
     with disable_auto_now_add_fields(models=[WikiVersion]):
         WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
-    bulk_update(guids_pending, batch_size=100)
+    bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
     logger.info('WikiVersions saved.')
     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
     return
