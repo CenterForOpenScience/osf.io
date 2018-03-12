@@ -45,6 +45,10 @@ mock_responses = {
             "id": "547a1215-efdb-36d2-93b2-e3ef8991264f",
             "title": "Cloud Computing",
             "type": "journal",
+            "data": {
+                "collections": [],
+                "key": "abcde/547a1215-efdb-36d2-93b2-e3ef8991264f",
+            },
             "authors": [
                 {
                     "first_name": "Shivaji P",
@@ -73,6 +77,10 @@ mock_responses = {
             "id": "5e95a1a9-d789-3576-9943-35eee8e59ea9",
             "title": "The Google file system",
             "type": "generic",
+            "data": {
+                "collections": [],
+                "key": "abcde/5e95a1a9-d789-3576-9943-35eee8e59ea9",
+            },
             "authors": [
                 {
                     "first_name": "Sanjay",
@@ -102,6 +110,10 @@ mock_responses = {
             "id": "3480056e-fe4d-339b-afed-4312d03739a4",
             "title": "Above the clouds: A Berkeley view of cloud computing",
             "type": "journal",
+            "data": {
+                "collections": [],
+                "key": "abcde/3480056e-fe4d-339b-afed-4312d03739a4",
+            },
             "authors": [
                 {
                     "first_name": "M",
@@ -144,6 +156,10 @@ mock_responses = {
             "id": "e917dd51-8b94-3748-810b-cafa2accc18a",
             "title": "Toward the next generation of recommender systems: A survey of the state-of-the-art and possible extensions",
             "type": "generic",
+            "data": {
+                "collections": [],
+                "key": "abcde/e917dd51-8b94-3748-810b-cafa2accc18a",
+            },
             "authors": [
                 {
                     "first_name": "Gediminas",
@@ -176,6 +192,10 @@ mock_responses = {
             "id": "8cd60008-888a-3212-966f-29d481b4b7b7",
             "title": "An Introduction to Information Retrieval",
             "type": "patent",
+            "data": {
+                "collections": [],
+                "key": "abcde/8cd60008-888a-3212-966f-29d481b4b7b7",
+            },
             "authors": [
                 {
                     "first_name": "Christopher D.",
@@ -207,6 +227,10 @@ mock_responses = {
             "id": "de25a64f-493b-330e-a48c-4089bab938f5",
             "title": "Learning of ontologies for the web: The analysis of existent approaches",
             "type": "journal",
+            "data": {
+                "collections": [],
+                "key": "abcde/de25a64f-493b-330e-a48c-4089bab938f5",
+            },
             "authors": [
                 {
                     "first_name": "Borys",
