@@ -431,6 +431,10 @@ class UserSettings(BaseUserSettings):
         self.default_storage_region = default_region
         self.save()
 
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
@@ -468,6 +472,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         root.save()
         self.root_node = root
         self.save()
+
+    def before_fork(self, node, user):
+        pass
 
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
