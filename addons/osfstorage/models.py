@@ -472,6 +472,10 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
+        clone.user_settings = self.user_settings
+        clone.storage_region = self.storage_region
+        clone.waterbutler_url = self.waterbutler_url
+
         clone.save()
         if not self.root_node:
             self.on_add()
