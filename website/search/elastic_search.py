@@ -288,8 +288,8 @@ def load_parent(parent_id):
         return {
             'title': parent.title,
             'url': parent.url,
-            'id': parent.is_registration,
-            'is_registation': parent._id,
+            'id': parent._id,
+            'is_registation': parent.is_registration,
         }
     return None
 
