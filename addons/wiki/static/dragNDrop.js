@@ -68,6 +68,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
                     editor.enable();
                 } else {
                     var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
+                    $osf.trackClick('wiki-markdown-drop-image', ctx.node.id, 'dropped-image');
                     promises.push(
                         $.ajax({
                             url: waterbutlerURL,
@@ -284,9 +285,9 @@ var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, f
             url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path,
             beforeSend: $osf.setXHRAuthorization,
         }).then(function(response) {
-                var newName = autoIncrementFileName(file.name, response);
-                localFileHandler([file], cm, init, fixupInputArea, newName);
-            });
+            var newName = autoIncrementFileName(file.name, response);
+            localFileHandler([file], cm, init, fixupInputArea, newName);
+        });
     } else {
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
