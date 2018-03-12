@@ -7,7 +7,7 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from osf.models import OSFUser
+from osf.models import OSFUser, AbstractNode
 from osf.models import NotificationDigest
 from website import mails
 from website.notifications.utils import NotificationsDict
@@ -34,6 +34,7 @@ def send_users_email(send_type):
                 mails.send_mail(
                     to_addr=user.username,
                     mimetype='html',
+                    node=AbstractNode.load(group['children']),
                     can_change_node_preferences=True,
                     mail=mails.DIGEST,
                     name=user.fullname,
