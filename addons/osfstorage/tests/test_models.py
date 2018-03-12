@@ -10,8 +10,8 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
-from osf.models import Contributor
-from osf_tests.factories import ProjectFactory
+from osf.models import Contributor, OSFUser
+from osf_tests.factories import ProjectFactory, UserFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -551,6 +551,22 @@ class TestNodeSettingsModel(StorageTestCase):
         cloned_record = fork_node_settings.get_root().find_child_by_name(path)
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
+
+    def test_storage_region_wb_url_from_creators_defaults(self):
+        user = UserFactory()
+        region = factories.RegionFactory()
+        wb_url = 'http://123.456.test.woo'
+
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_waterbutler_url = wb_url
+        user_settings.default_storage_region = region
+        user_settings.save()
+
+        project = ProjectFactory(creator=user)
+        node_settings = project.get_addon('osfstorage')
+
+        assert node_settings.storage_region == region
+        assert node_settings.waterbutler_url == wb_url
 
 
 @pytest.mark.django_db
