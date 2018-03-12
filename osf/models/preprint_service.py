@@ -834,16 +834,16 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 permissions_changed = {
                     user._id: permissions
                 }
-                self.add_log(
-                    action=NodeLog.PERMISSIONS_UPDATED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': permissions_changed,
-                    },
-                    auth=auth,
-                    save=save
-                )
+                # self.add_log(
+                #     action=NodeLog.PERMISSIONS_UPDATED,
+                #     params={
+                #         'project': self.parent_id,
+                #         'node': self._id,
+                #         'contributors': permissions_changed,
+                #     },
+                #     auth=auth,
+                #     save=save
+                # )
                 with transaction.atomic():
                     if ['read'] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
@@ -867,17 +867,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if original_title == new_title:
             return False
         self.title = new_title
-        self.add_log(
-            action=NodeLog.EDITED_TITLE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'title_new': self.title,
-                'title_original': original_title,
-            },
-            auth=auth,
-            save=False,
-        )
+        # self.add_log(
+        #     action=NodeLog.EDITED_TITLE,
+        #     params={
+        #         'parent_node': self.parent_id,
+        #         'node': self._primary_key,
+        #         'title_new': self.title,
+        #         'title_original': original_title,
+        #     },
+        #     auth=auth,
+        #     save=False,
+        # )
         if save:
             self.save()
         return None
@@ -894,17 +894,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if original == new_description:
             return False
         self.description = new_description
-        self.add_log(
-            action=NodeLog.EDITED_DESCRIPTION,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'description_new': self.description,
-                'description_original': original
-            },
-            auth=auth,
-            save=False,
-        )
+        # self.add_log(
+        #     action=NodeLog.EDITED_DESCRIPTION,
+        #     params={
+        #         'parent_node': self.parent_id,
+        #         'node': self._primary_key,
+        #         'description_new': self.description,
+        #         'description_original': original
+        #     },
+        #     auth=auth,
+        #     save=False,
+        # )
         if save:
             self.save()
         return None
