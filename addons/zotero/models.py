@@ -158,7 +158,11 @@ class Zotero(CitationsOauthProvider):
                 more = False
             else:
                 offset = offset + len(page)
-        return citations
+        # Loops through all items in the library and extracts the keys for unfiled items
+        unfiled_keys = [citation['data']['key'] for citation in client.items() if not citation['data']['collections']]
+
+        # Return only unfiled items in csljson format
+        return [cite for cite in citations if cite['id'].split('/')[1] in unfiled_keys]
 
     @property
     def auth_url(self):
