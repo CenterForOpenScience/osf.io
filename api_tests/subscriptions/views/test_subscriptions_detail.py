@@ -62,7 +62,7 @@ class TestSubscriptionDetail:
         # Valid user
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
-        assert res.status_code == 200;
+        assert res.status_code == 200
         assert notification_id == '{}_global'.format(user._id)
 
         # GET with invalid notification_id
