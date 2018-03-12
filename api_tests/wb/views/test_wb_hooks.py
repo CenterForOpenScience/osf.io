@@ -2,14 +2,12 @@ from __future__ import unicode_literals
 
 import pytest
 
-from addons.osfstorage import settings as osfstorage_settings
-from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFolder
 from framework.auth import signing
 
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    UserFactory,
 )
 from api_tests.utils import create_test_file
 from osf.models import QuickFilesNode
@@ -142,7 +140,7 @@ class TestMove():
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert 'Cannot move file as it is checked out.' in  res.json['errors'][0]['detail']
+        assert 'Cannot move file as it is checked out.' in res.json['errors'][0]['detail']
 
     def test_move_preprint_file_out_of_node(self, app, user, move_url, root_node, node, node_two, node_two_root_node, folder):
         file = folder.append_file('No I don\'t wanna go')
@@ -165,7 +163,6 @@ class TestMove():
         assert 'Cannot move file as it is the primary file of preprint.' in res._app_iter[0]
 
     def test_move_file_out_of_node(self, app, user, move_url, root_node, node, node_two, node_two_root_node, folder):
-        file = folder.append_file('in a galaxy')
         # project having a preprint should not block other moves
         node.preprint_file = root_node.append_file('far')
         node.save()
@@ -216,7 +213,6 @@ class TestMove():
         assert res.status_code == 200
 
     def test_can_rename_file_in_quickfiles_node(self, app, node, user, quickfiles_move_url, quickfiles_node, quickfiles_file, quickfiles_folder):
-        dest_folder = OsfStorageFolder.objects.get(node=node)
         new_name = 'new_file_name.txt'
         signed_payload = sign_payload({
             'source': quickfiles_file._id,
@@ -315,7 +311,7 @@ class TestMove():
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
 
     def test_move_file_already_exists(self, app, move_url, user, file, root_node, folder):
-        test_file = folder.append_file('test_file')
+        folder.append_file('test_file')
         signed_payload = sign_payload(
             {
                 'source': file._id,
@@ -333,7 +329,6 @@ class TestMove():
         assert res.json['errors'][0]['detail'] == 'File already exists with this name.'
 
     def test_source_does_not_exist(self, app, move_url, root_node, user, folder):
-        test_file = folder.append_file('test_file')
         signed_payload = sign_payload(
             {
                 'source': '12345',
@@ -350,7 +345,6 @@ class TestMove():
         assert res.status_code == 404
 
     def test_parent_does_not_exist(self, app, file, move_url, root_node, user, folder):
-        test_file = folder.append_file('test_file')
         signed_payload = sign_payload(
             {
                 'source': file._id,
@@ -368,7 +362,6 @@ class TestMove():
 
     def test_node_in_params_does_not_exist(self, app, file, root_node, user, folder):
         move_url = '/_/wb/hooks/{}/move/'.format('12345')
-        test_file = folder.append_file('test_file')
         signed_payload = sign_payload(
             {
                 'source': file._id,
@@ -478,7 +471,6 @@ class TestCopy():
         assert res.status_code == 201
 
     def test_copy_file_out_of_node(self, app, user, copy_url, root_node, node, node_two, node_two_root_node, folder):
-        file = folder.append_file('in a galaxy')
         node.preprint_file = root_node.append_file('far')
         node.save()
 
@@ -588,7 +580,7 @@ class TestCopy():
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
 
     def test_copy_file_already_exists(self, app, copy_url, user, file, root_node, folder):
-        test_file = folder.append_file('test_file')
+        folder.append_file('test_file')
         signed_payload = sign_payload(
             {
                 'source': file._id,
