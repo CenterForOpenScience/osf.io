@@ -10,13 +10,13 @@ from addons.googledrive.models import GoogleDriveFile
 from addons.osfstorage.models import OsfStorageFile
 from addons.s3.models import S3File
 from website import settings
-from website.util import permissions
 from addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf.models import Comment, NodeLog, Guid, BaseFileNode
+from osf.utils import permissions
 from framework.auth.core import Auth
 from .factories import (
     CommentFactory,

@@ -80,7 +80,6 @@ def must_be_logged_in(func):
 
     return wrapped
 
-
 def must_be_signed(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

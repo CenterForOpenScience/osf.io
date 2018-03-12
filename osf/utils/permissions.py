@@ -22,3 +22,12 @@ def reduce_permissions(permissions):
         if permission in permissions:
             return permission
     raise ValueError('Permissions not in permissions list')
+
+
+def check_private_key_for_anonymized_link(private_key):
+    from osf.models import PrivateLink
+    try:
+        link = PrivateLink.objects.get(key=private_key)
+    except PrivateLink.DoesNotExist:
+        return False
+    return link.anonymous

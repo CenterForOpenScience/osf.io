@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
@@ -44,8 +44,15 @@ class TestReviewActionCreateRoot(object):
 
     @pytest.fixture()
     def preprint(self, node_admin, provider):
-        preprint = PreprintFactory(provider=provider, node__creator=node_admin, is_published=False)
-        preprint.node.add_contributor(node_admin, permissions=[osf_permissions.ADMIN])
+        preprint = PreprintFactory(
+            provider=provider,
+            node__creator=node_admin,
+            is_published=False
+        )
+        preprint.node.add_contributor(
+            node_admin, permissions=[
+                osf_permissions.ADMIN]
+        )
         return preprint
 
     @pytest.fixture()
@@ -55,7 +62,9 @@ class TestReviewActionCreateRoot(object):
         return moderator
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_create_permissions(self, mock_ezid, app, url, preprint, node_admin, moderator):
+    def test_create_permissions(
+            self, mock_ezid, app, url, preprint, node_admin, moderator
+    ):
         assert preprint.machine_state == 'initial'
 
         submit_payload = self.create_payload(preprint._id, trigger='submit')
@@ -66,7 +75,11 @@ class TestReviewActionCreateRoot(object):
 
         # A random user can't submit
         some_rando = AuthUserFactory()
-        res = app.post_json_api(url, submit_payload, auth=some_rando.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, submit_payload,
+            auth=some_rando.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # Node admin can submit
@@ -76,24 +89,40 @@ class TestReviewActionCreateRoot(object):
         assert preprint.machine_state == 'pending'
         assert not preprint.is_published
 
-        accept_payload = self.create_payload(preprint._id, trigger='accept', comment='This is good.')
+        accept_payload = self.create_payload(
+            preprint._id, trigger='accept', comment='This is good.'
+        )
 
         # Unauthorized user can't accept
         res = app.post_json_api(url, accept_payload, expect_errors=True)
         assert res.status_code == 401
 
         # A random user can't accept
-        res = app.post_json_api(url, accept_payload, auth=some_rando.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, accept_payload,
+            auth=some_rando.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # Moderator from another provider can't accept
         another_moderator = AuthUserFactory()
-        another_moderator.groups.add(GroupHelper(PreprintProviderFactory()).get_group('moderator'))
-        res = app.post_json_api(url, accept_payload, auth=another_moderator.auth, expect_errors=True)
+        another_moderator.groups.add(
+            GroupHelper(PreprintProviderFactory()).get_group('moderator')
+        )
+        res = app.post_json_api(
+            url, accept_payload,
+            auth=another_moderator.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # Node admin can't accept
-        res = app.post_json_api(url, accept_payload, auth=node_admin.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, accept_payload,
+            auth=node_admin.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # Still unchanged after all those tries
@@ -111,11 +140,17 @@ class TestReviewActionCreateRoot(object):
         # Check if "get_and_set_preprint_identifiers" is called once.
         assert mock_ezid.call_count == 1
 
-    def test_cannot_create_actions_for_unmoderated_provider(self, app, url, preprint, provider, node_admin):
+    def test_cannot_create_actions_for_unmoderated_provider(
+            self, app, url, preprint, provider, node_admin
+    ):
         provider.reviews_workflow = None
         provider.save()
         submit_payload = self.create_payload(preprint._id, trigger='submit')
-        res = app.post_json_api(url, submit_payload, auth=node_admin.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, submit_payload,
+            auth=node_admin.auth,
+            expect_errors=True
+        )
         assert res.status_code == 409
 
     def test_bad_requests(self, app, url, preprint, provider, moderator):
@@ -145,22 +180,39 @@ class TestReviewActionCreateRoot(object):
             for state, trigger in transitions:
                 preprint.machine_state = state
                 preprint.save()
-                bad_payload = self.create_payload(preprint._id, trigger=trigger)
-                res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
+                bad_payload = self.create_payload(
+                    preprint._id, trigger=trigger
+                )
+                res = app.post_json_api(
+                    url, bad_payload,
+                    auth=moderator.auth, expect_errors=True
+                )
                 assert res.status_code == 409
 
         # test invalid trigger
-        bad_payload = self.create_payload(preprint._id, trigger='badtriggerbad')
-        res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
+        bad_payload = self.create_payload(
+            preprint._id, trigger='badtriggerbad'
+        )
+        res = app.post_json_api(
+            url, bad_payload,
+            auth=moderator.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
 
         # test target is required
         bad_payload = self.create_payload(trigger='accept')
-        res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, bad_payload,
+            auth=moderator.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_valid_transitions(self, mock_ezid, app, url, preprint, provider, moderator):
+    def test_valid_transitions(
+            self, mock_ezid, app, url, preprint, provider, moderator
+    ):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),

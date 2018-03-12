@@ -19,15 +19,15 @@ from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 from website import maintenance
 
-from django.contrib.auth.models import User
-
 import importlib
 
 URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
     if name != 'base' and name != 'test':
         try:
-            URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
+            URLS_MODULES.append(
+                importlib.import_module('api.{}.urls'.format(name))
+            )
         except ImportError:
             pass
 
@@ -48,7 +48,10 @@ class TestApiBaseViews(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_does_not_exist_returns_404(self):
-        res = self.app.get('/{}{}'.format(API_BASE,"notapage"), expect_errors=True)
+        res = self.app.get(
+            '/{}{}'.format(API_BASE, "notapage"),
+            expect_errors=True
+        )
         assert_equal(res.status_code, 404)
 
     def test_does_not_exist_formatting(self):
@@ -72,9 +75,16 @@ class TestApiBaseViews(ApiTestCase):
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(view))
+                    assert_true(
+                        has_cls,
+                        "{0} lacks the appropriate permission classes".format(view)
+                    )
                 else:
-                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(view))
+                    assert_in(
+                        cls,
+                        view.permission_classes,
+                        "{0} lacks the appropriate permission classes".format(view)
+                    )
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert_true(bool(scopes))
@@ -87,27 +97,48 @@ class TestApiBaseViews(ApiTestCase):
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:
                 continue
-            assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
+            assert_true(
+                hasattr(view, '_get_embed_partial'),
+                "{0} lacks embed support".format(view)
+            )
 
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
-            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
-            assert_true(has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view))
+            has_serializer_class = getattr(view, 'serializer_class', None) or \
+                                   getattr(view, 'get_serializer_class', None)
+            assert_true(
+                has_serializer_class,
+                "{0} should include serializer class or override get_serializer_class()".format(view)
+            )
 
-    @mock.patch('osf.models.OSFUser.is_confirmed', mock.PropertyMock(return_value=False))
+    @mock.patch(
+        'osf.models.OSFUser.is_confirmed',
+        mock.PropertyMock(return_value=False)
+    )
     def test_unconfirmed_user_gets_error(self):
 
         user = factories.AuthUserFactory()
 
-        res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
+        res = self.app.get(
+            '/{}nodes/'.format(API_BASE),
+            auth=user.auth,
+            expect_errors=True
+        )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @mock.patch('osf.models.OSFUser.is_disabled', mock.PropertyMock(return_value=True))
+    @mock.patch(
+        'osf.models.OSFUser.is_disabled',
+        mock.PropertyMock(return_value=True)
+    )
     def test_disabled_user_gets_error(self):
 
         user = factories.AuthUserFactory()
 
-        res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
+        res = self.app.get(
+            '/{}nodes/'.format(API_BASE),
+            auth=user.auth,
+            expect_errors=True
+        )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
@@ -145,13 +176,19 @@ class TestJSONAPIBaseView(ApiTestCase):
         for i in range(5):
             factories.ProjectFactory(parent=self.node)
 
-    @mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True)
+    @mock.patch(
+        'api.base.serializers.JSONAPISerializer.to_representation',
+        autospec=True
+    )
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
         assert_in('request', mock_to_representation.call_args[0][0].context)
 
     def test_reverse_sort_possible(self):
-        response = self.app.get('http://localhost:8000/v2/users/me/nodes/?sort=-title', auth=self.user.auth)
+        response = self.app.get(
+            'http://localhost:8000/v2/users/me/nodes/?sort=-title',
+            auth=self.user.auth
+        )
         assert_equal(response.status_code, 200)
 
 

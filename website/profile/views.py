@@ -20,14 +20,15 @@ from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
+from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
-from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
@@ -240,6 +241,7 @@ def profile_view_id_json(uid, auth):
     return _profile_view(user, is_profile)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_profile_page')
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -254,6 +256,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_page')
 def user_profile(auth, **kwargs):
     user = auth.user
     return {

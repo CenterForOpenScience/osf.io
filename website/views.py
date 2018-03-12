@@ -24,12 +24,15 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.model import has_anonymous_link
-from website.util import permissions
+from osf.utils import permissions
+from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -123,7 +126,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
-
+@ember_flag_is_active('ember_home_page')
 def index():
     try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
@@ -172,11 +175,16 @@ def find_bookmark_collection(user):
     return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_dashboard_page')
 def dashboard(auth):
     return redirect('/')
 
+@ember_flag_is_active('ember_support_page')
+def support():
+    return {}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
     bookmark_collection = find_bookmark_collection(user)
@@ -274,9 +282,13 @@ def resolve_guid(guid, suffix=None):
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
-                    # admins should be able to know it exists.
+                    # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                    group_helper = GroupHelper(referent.provider)
+                    admin_group = group_helper.get_group('admin')
+                    mod_group = group_helper.get_group('moderator')
+                    # Check if user isn't a nonetype or that the user has admin/moderator permissions
+                    if auth.user is None or not (referent.node.has_permission(auth.user, permissions.ADMIN) or (mod_group.user_set.all() | admin_group.user_set.all()).filter(id=auth.user.id).exists()):
                         raise HTTPError(http.NOT_FOUND)
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
@@ -298,10 +310,19 @@ def resolve_guid(guid, suffix=None):
                 return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
             if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
+
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+            if referent.is_deleted:
+                raise HTTPError(http.GONE)
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+            return send_from_directory(ember_osf_web_dir, 'index.html')
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
