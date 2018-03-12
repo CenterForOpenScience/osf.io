@@ -58,12 +58,13 @@ def move_comment_target(current_guid, current_target, desired_target):
 def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
     contributors_pending_save = []
-    for contrib in node.contributors.exclude(comments_viewed_timestamp={}):
-        if contrib.comments_viewed_timestamp.get(current_wiki_guid, None):
-            timestamp = contrib.comments_viewed_timestamp[current_wiki_guid]
-            contrib.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
-            del contrib.comments_viewed_timestamp[current_wiki_guid]
-            contributors_pending_save.append(contrib)
+    for contrib in node.contributors.filter(comments_viewed_timestamp__has_key=current_wiki_guid):
+        timestamp = contrib.comments_viewed_timestamp[current_wiki_guid]
+        contrib.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
+        del contrib.comments_viewed_timestamp[current_wiki_guid]
+        contributors_pending_save.append(contrib)
+    if contributors_pending_save:
+        bulk_update(contributors_pending_save, batch_size=100)
     return contributors_pending_save
 
 def migrate_guid_referent(guid, desired_referent, content_type_id):
@@ -140,7 +141,6 @@ def create_wiki_versions(nodes):
     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     wiki_versions_pending = []
     guids_pending = []
-    contributors_pending = []
     progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
     logger.info('Starting migration of WikiVersions:')
     for i, node in enumerate(nodes, 1):
@@ -158,7 +158,7 @@ def create_wiki_versions(nodes):
                     current_guid = Guid.load(version)
                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
                 move_comment_target(current_guid, node_wiki_guid, wiki_page)
-                contributors_pending.extend(update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page))
+                update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
         if len(wiki_versions_pending) >= 1000:
             with disable_auto_now_add_fields(models=[WikiVersion]):
                 WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
@@ -168,16 +168,11 @@ def create_wiki_versions(nodes):
             bulk_update(guids_pending, batch_size=100)
             guids_pending = []
             gc.collect()
-        if len(contributors_pending) > 1000:
-            bulk_update(contributors_pending, batch_size=100)
-            contributors_pending = []
-            gc.collect()
     progress_bar.finish()
     # Create the remaining wiki pages that weren't created in the loop above
     with disable_auto_now_add_fields(models=[WikiVersion]):
         WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
     bulk_update(guids_pending, batch_size=100)
-    bulk_update(contributors_pending, batch_size=100)
     logger.info('WikiVersions saved.')
     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
     return
