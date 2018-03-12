@@ -165,7 +165,7 @@
                                 <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
-                              <div id="ace-loading-ball" class="ball-scale ball-scale-blue absolute-center-loading-ball">
+                              <div id="ace-loading-ball" class="ball-scale ball-scale-blue absolute-center">
                                   <div></div>
                                   <div></div>
                                   <div></div>

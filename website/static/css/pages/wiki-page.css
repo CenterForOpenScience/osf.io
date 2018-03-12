@@ -329,7 +329,7 @@ select.form-control {
   background: rgba(51, 122, 183, 0.15);
 }
 
-.absolute-center-loading-ball{
+.absolute-center{
     display: none;
     position: absolute;
     -webkit-transform:translateY(-50%);
@@ -340,7 +340,7 @@ select.form-control {
     top:50%;
     z-index: 1;
 }
-.absolute-center-loading-ball > div {
+.wmd-panel .ball-scale.absolute-center  > div {
     width: 30px !important;
     height: 30px !important;
 }

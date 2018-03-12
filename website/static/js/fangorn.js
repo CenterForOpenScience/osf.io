@@ -103,7 +103,7 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
-var wiki_images_folder_path = '/Wiki images/';
+var WIKI_IMAGES_FOLDER_PATH = '/Wiki images/';
 
 /**
  * Cancel a pending upload
@@ -482,8 +482,8 @@ function handleCancel(tb, provider, mode, item){
 
 function displayConflict(tb, item, folder, cb) {
 
-    if('/' + item.data.name + '/'  === wiki_images_folder_path) {
-        $osf.growl('Error', 'You cannot replace a folder named ' + wiki_images_folder_path);
+    if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
+        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
         return;
     }
 
@@ -512,8 +512,8 @@ function checkConflictsRename(tb, item, name, cb) {
     var messageArray = [];
     var parent = item.parent();
 
-    if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === wiki_images_folder_path){
-        $osf.growl('Error', 'You cannot replace a folder named ' + wiki_images_folder_path);
+    if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
+        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
         return;
     }
 
@@ -1202,7 +1202,7 @@ function _removeEvent (event, items, col) {
         var folder = items[0];
         var deleteMessage;
         if (folder.data.permissions.edit) {
-            if(folder.data.materialized === wiki_images_folder_path){
+            if(folder.data.materialized === WIKI_IMAGES_FOLDER_PATH){
                 deleteMessage = m('p.text-danger',
                     'This folder and all of its contents will be deleted. This folder is linked to ' +
                     'your wiki(s). Deleting it will remove images embedded in your wiki(s). ' +
@@ -1226,7 +1226,7 @@ function _removeEvent (event, items, col) {
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
         var detail;
-        if(items[0].data.materialized.substring(0, 13) === wiki_images_folder_path) {
+        if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
             detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
                 ' image embedded in your wiki(s).');
         } else {
@@ -1261,7 +1261,7 @@ function _removeEvent (event, items, col) {
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
-            if(item.data.materialized.substring(0, 13) === wiki_images_folder_path) {
+            if(item.data.materialized.substring(0, 13) === WIKI_IMAGES_FOLDER_PATH) {
                 deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to' +
                     ' your wiki(s). Deleting them will remove images embedded in your wiki(s).'));
             } else if(!item.data.permissions.edit){
@@ -1823,7 +1823,7 @@ function _renameEvent () {
     if  (val === item.name) {
         return;
     }
-    if(item.data.materialized === wiki_images_folder_path){
+    if(item.data.materialized === WIKI_IMAGES_FOLDER_PATH){
         $osf.growl('Error', 'You cannot rename your Wiki images folder.');
         return;
     }

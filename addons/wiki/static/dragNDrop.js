@@ -55,7 +55,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
     var promises = [];
     var editor = ace.edit('editor');
     editor.disable();
-    checkFolder().fail(function() {
+    getOrCreateWikiImagesFolder().fail(function() {
         notUploaded(multiple);
         editor.enable();
     }).done(function(path) {
@@ -272,7 +272,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
 var imageFolder = 'Wiki images';
 
 var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, file) {
-    var files = multiple ? 'File(s)' : 'File';
+    var files = multiple ? 'Files' : 'File';
     if (response.status === 403) {
         $osf.growl('Error', 'File not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
@@ -283,11 +283,10 @@ var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, f
         $.ajax({
             url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path,
             beforeSend: $osf.setXHRAuthorization,
-            success: function(response) {
+        }).then(function(response) {
                 var newName = autoIncrementFileName(file.name, response);
                 localFileHandler([file], cm, init, fixupInputArea, newName);
-            },
-        });
+            });
     } else {
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
@@ -314,7 +313,7 @@ var createFolder = function() {
  *
  * @return {*} The folder's path attribute if it exists/was created
  */
-var checkFolder = function() {
+var getOrCreateWikiImagesFolder = function() {
     var folderUrl = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&fields[file]=name,path&filter[name]=' + encodeURI(imageFolder);
     return $.ajax({
         url: folderUrl,
