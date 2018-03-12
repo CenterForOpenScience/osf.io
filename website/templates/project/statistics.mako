@@ -73,13 +73,13 @@
 
         <div id="dateRange" class="pull-right">
           Showing analytics from
-          <span class="m-l-xs text-bigger f-w-xl ball-pulse ball-scale-blue" id="startDateString">
+          <span class="m-l-xs text-bigger f-w-xl ball-pulse ball-pulse-small ball-scale-blue" id="startDateString">
             <div></div>
             <div></div>
             <div></div>
           </span>
           until
-          <span class="m-l-xs text-bigger f-w-xl ball-pulse ball-scale-blue" id="endDateString">
+          <span class="m-l-xs text-bigger f-w-xl ball-pulse ball-pulse-small ball-scale-blue" id="endDateString">
             <div></div>
             <div></div>
             <div></div>
