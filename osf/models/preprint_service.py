@@ -632,17 +632,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             )
             results.append(outcome)
             removed.append(contrib._id)
-        if log:
-            self.add_log(
-                action=NodeLog.CONTRIB_REMOVED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                    'contributors': removed,
-                },
-                auth=auth,
-                save=False,
-            )
+        # if log:
+        #     self.add_log(
+        #         action=NodeLog.CONTRIB_REMOVED,
+        #         params={
+        #             'project': self.parent_id,
+        #             'node': self._primary_key,
+        #             'contributors': removed,
+        #         },
+        #         auth=auth,
+        #         save=False,
+        #     )
 
         if save:
             self.save()
@@ -658,29 +658,29 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_contributor_order(contributor_ids)
-        self.add_log(
-            action=NodeLog.CONTRIB_REORDERED,
-            params={
-                'project': self.parent_id,
-                'node': self._id,
-                'contributors': [
-                    contributor.user._id
-                ],
-            },
-            auth=auth,
-            save=False,
-        )
+        # self.add_log(
+        #     action=NodeLog.CONTRIB_REORDERED,
+        #     params={
+        #         'project': self.parent_id,
+        #         'node': self._id,
+        #         'contributors': [
+        #             contributor.user._id
+        #         ],
+        #     },
+        #     auth=auth,
+        #     save=False,
+        # )
         if save:
             self.save()
         self.save_node_preprints()
 
 
-    def copy_contributors_from(self, node):
-        """Copies the contibutors from node (including permissions and visibility) into this node."""
+    def copy_contributors_from(self, preprint):
+        """Copies the contibutors from preprint (including permissions and visibility) into this preprint."""
         contribs = []
-        for contrib in node.contributor_set.all():
+        for contrib in preprint.contributor_set.all():
             contrib.id = None
-            contrib.node = self
+            contrib.preprint = self
             contribs.append(contrib)
         PreprintContributor.objects.bulk_create(contribs)
 
@@ -769,34 +769,34 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     each.id for each in sorted(self.contributor_set.all(), key=lambda c: user_ids.index(c.user._id))
                 ]
                 self.set_contributor_order(sorted_contrib_ids)
-                self.add_log(
-                    action=NodeLog.CONTRIB_REORDERED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': [
-                            user._id
-                            for user in users
-                        ],
-                    },
-                    auth=auth,
-                    save=False,
-                )
+                # self.add_log(
+                #     action=NodeLog.CONTRIB_REORDERED,
+                #     params={
+                #         'project': self.parent_id,
+                #         'node': self._id,
+                #         'contributors': [
+                #             user._id
+                #             for user in users
+                #         ],
+                #     },
+                #     auth=auth,
+                #     save=False,
+                # )
 
             if to_remove:
                 self.remove_contributors(to_remove, auth=auth, save=False)
 
-            if permissions_changed:
-                self.add_log(
-                    action=NodeLog.PERMISSIONS_UPDATED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': permissions_changed,
-                    },
-                    auth=auth,
-                    save=False,
-                )
+            # if permissions_changed:
+            #     self.add_log(
+            #         action=NodeLog.PERMISSIONS_UPDATED,
+            #         params={
+            #             'project': self.parent_id,
+            #             'node': self._id,
+            #             'contributors': permissions_changed,
+            #         },
+            #         auth=auth,
+            #         save=False,
+            #     )
             if save:
                 self.save()
 
