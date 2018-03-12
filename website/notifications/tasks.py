@@ -34,7 +34,7 @@ def send_users_email(send_type):
                 mails.send_mail(
                     to_addr=user.username,
                     mimetype='html',
-                    node=AbstractNode.load(group['children']),
+                    node=AbstractNode.load(sorted_messages['children'].keys()[0]),
                     can_change_node_preferences=True,
                     mail=mails.DIGEST,
                     name=user.fullname,
