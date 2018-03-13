@@ -4,7 +4,7 @@ from django.utils import timezone
 from website import settings
 
 def no_addon(email):
-    return len(email.user.get_addons()) == 0
+    return len([addon for addon in email.user.get_addons() if addon.config.short_name != 'osfstorage']) == 0
 
 def no_login(email):
     from osf.models.queued_mail import QueuedMail, NO_LOGIN_TYPE
