@@ -1005,9 +1005,12 @@ class TestNodeCreate:
             expect_errors=True,
             auth=user_one.auth)
         assert res.status_code == 201
+        self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
         assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
+        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] ==  \
+               '{}relationships/institutions/'.format(self_link)
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
