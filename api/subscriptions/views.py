@@ -14,7 +14,7 @@ from osf.models import NotificationSubscription
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    view_name = 'user-provider-subscription-list'
+    view_name = 'user-subscription-list'
     view_category = 'subscriptions'
     serializer_class = SubscriptionSerializer
     model_class = NotificationSubscription
@@ -23,8 +23,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         base_permissions.TokenHasScope
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     def get_default_queryset(self):
         user = self.request.user
@@ -35,7 +35,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    view_name = 'user-provider-subscription-detail'
+    view_name = 'user-subscription-detail'
     view_category = 'subscriptions'
     serializer_class = SubscriptionSerializer
     permission_classes = (
@@ -44,8 +44,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         IsSubscriptionOwner
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
+    required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']

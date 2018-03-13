@@ -600,7 +600,7 @@ class ReviewProviderMixin(models.Model):
                         or notification.email_digest.filter(id=user_id).exists() \
                         or notification.email_transactional.filter(id=user_id).exists()
         if not is_subscriber:
-            notification.add_user_to_subscription(user, 'none', save=True)
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):

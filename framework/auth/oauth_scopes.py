@@ -35,6 +35,9 @@ class CoreScopes(object):
 
     USER_ADDON_READ = 'users.addon_read'
 
+    SUBSCRIPTIONS_READ = 'subscriptions_read'
+    SUBSCRIPTIONS_WRITE = 'subscriptions_write'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
@@ -135,8 +138,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, )
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions

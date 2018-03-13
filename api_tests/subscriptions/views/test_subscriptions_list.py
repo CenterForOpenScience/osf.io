@@ -45,8 +45,12 @@ class TestSubscriptionList:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_cannot_patch_or_put(self, app, url, user):
+    def test_cannot_post_patch_put_or_delete(self, app, url, user):
+        post_res = app.post(url, expect_errors=True, auth=user.auth)
         patch_res = app.patch(url, expect_errors=True, auth=user.auth)
         put_res = app.put(url, expect_errors=True, auth=user.auth)
+        delete_res = app.delete(url, expect_errors=True, auth=user.auth)
+        assert post_res.status_code == 405
         assert patch_res.status_code == 405
         assert put_res.status_code == 405
+        assert delete_res.status_code == 405

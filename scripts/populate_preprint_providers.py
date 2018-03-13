@@ -73,12 +73,6 @@ def update_or_create(provider_data):
             new_provider.default_license = get_license(default_license)
             new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
-        # add NotificationSubscription instances to provider
-        NotificationSubscription.objects.get_or_create(
-            _id='{provider_id}_preprints_added'.format(provider_id=provider._id),
-            event_name='preprints_added',
-            provider=provider
-        )
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 

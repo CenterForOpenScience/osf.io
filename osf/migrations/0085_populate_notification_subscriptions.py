@@ -1,14 +1,14 @@
 import logging
 
 from django.db import migrations
+from django.apps import apps
 
-from osf.models import NotificationSubscription, PreprintProvider
 from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__file__)
 
-instances_created = []
-
+NotificationSubscription = apps.get_model('osf', 'notificationsubsciption')
+PreprintProvider = apps.get_model('osf', 'preprintprovider')
 
 def populate_provider_notification_subscriptions(*args):
     for provider in PreprintProvider.objects.all():
@@ -18,16 +18,13 @@ def populate_provider_notification_subscriptions(*args):
         instance, created = NotificationSubscription.objects.get_or_create(_id='{provider_id}_preprints_added'.format(provider_id=provider._id),
                                                                            event_name='preprints_added',
                                                                            provider=provider)
-        if created:
-            instances_created.append(instance)
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default
-            instance.add_user_to_subscription(user, 'none', save=True)
+            instance.add_user_to_subscription(user, 'email_transactional', save=True)
 
 def revert(*args):
     # The revert of this migration deletes all NotificationSubscription instances
-    for instance in instances_created:
-        instance.delete()
+    NotificationSubscription.objects.filter(provider__isnull=False).delete()
 
 class Migration(migrations.Migration):
 

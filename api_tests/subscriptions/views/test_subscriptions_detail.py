@@ -73,7 +73,7 @@ class TestSubscriptionDetail:
         res = app.get(url_invalid, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-        # POST with valid notification_id and invalid data
+        # PATCH with valid notification_id and invalid data
         # Invalid user
         res = app.patch_json_api(url, payload_invalid, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
@@ -85,7 +85,7 @@ class TestSubscriptionDetail:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid frequency "invalid-frequency"'
 
-        # POST with invalid notification_id
+        # PATCH with invalid notification_id
         # No user
         res = app.patch_json_api(url_invalid, payload, expect_errors=True)
         assert res.status_code == 404
@@ -93,7 +93,7 @@ class TestSubscriptionDetail:
         res = app.patch_json_api(url_invalid, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-        # POST with valid notification_id and valid data
+        # PATCH with valid notification_id and valid data
         # Invalid user
         res = app.patch_json_api(url, payload, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
