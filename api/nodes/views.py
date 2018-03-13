@@ -3,6 +3,7 @@ import re
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -964,7 +965,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             if isinstance(fobj, list):
                 node = self.get_node(check_object_permissions=False)
                 base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
-                return base_class.objects.filter(node=node, _path=path)
+                return base_class.objects.filter(
+                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path
+                )
             elif isinstance(fobj, OsfStorageFolder):
                 return BaseFileNode.objects.filter(id=fobj.id)
             else:
