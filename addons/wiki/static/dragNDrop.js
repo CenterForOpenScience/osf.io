@@ -68,7 +68,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
                     editor.enable();
                 } else {
                     var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
-                    $osf.trackClick('wiki-markdown-drop-image', ctx.node.id, 'dropped-image');
+                    $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
                     promises.push(
                         $.ajax({
                             url: waterbutlerURL,
