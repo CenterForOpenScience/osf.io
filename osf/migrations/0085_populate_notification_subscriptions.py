@@ -7,8 +7,8 @@ from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__file__)
 
-NotificationSubscription = apps.get_model('osf', 'notificationsubsciption')
-PreprintProvider = apps.get_model('osf', 'preprintprovider')
+NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
+PreprintProvider = apps.get_model('osf', 'PreprintProvider')
 
 def populate_provider_notification_subscriptions(*args):
     for provider in PreprintProvider.objects.all():
