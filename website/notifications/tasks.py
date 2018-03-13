@@ -31,11 +31,14 @@ def send_users_email(send_type):
         sorted_messages = group_by_node(info)
         if sorted_messages:
             if not user.is_disabled:
+                # If there's only one node in digest we can show it's preferences link in the template.
+                can_change_node_preferences = len(sorted_messages['children'].keys()) == 1
+                node = AbstractNode.load(sorted_messages['children'].keys()[0]) if can_change_node_preferences else None
                 mails.send_mail(
                     to_addr=user.username,
                     mimetype='html',
-                    node=AbstractNode.load(sorted_messages['children'].keys()[0]),
-                    can_change_node_preferences=True,
+                    can_change_node_preferences=can_change_node_preferences,
+                    node=node,
                     mail=mails.DIGEST,
                     name=user.fullname,
                     message=sorted_messages,
