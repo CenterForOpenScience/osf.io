@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db import models, transaction
 from include import IncludeQuerySet
 
-from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
 from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
@@ -592,12 +592,12 @@ class ReviewProviderMixin(models.Model):
         return counts
 
     def add_to_group(self, user, group):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         # TODO: Add default notification subscription
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         _group = GroupHelper(self).get_group(group)
         if group == 'admin':
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():

@@ -27,7 +27,7 @@ from osf.models import BaseFileNode, Guid, Institution, PreprintService, Abstrac
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
