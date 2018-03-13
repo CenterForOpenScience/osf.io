@@ -1239,29 +1239,36 @@ class JSONAPISerializer(BaseAPISerializer):
 
         for field in fields:
             try:
-                attribute = field.get_attribute(obj)
+                if hasattr(field, 'child_relation'):
+                    attribute = field.child_relation.get_attribute(obj)
+                else:
+                    attribute = field.get_attribute(obj)
             except SkipField:
                 continue
 
-            nested_field = getattr(field, 'field', None)
+            if hasattr(field, 'child_relation'):
+                nested_field = field.child_relation
+            else:
+                nested_field = getattr(field, 'field', None)
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
                 data['attributes'][field.field_name] = None
             else:
                 try:
-                    if hasattr(attribute, 'all'):
-                        representation = field.to_representation(attribute.all())
+                    if hasattr(field, 'child_relation'):
+                        if hasattr(attribute, 'all'):
+                            representation = field.child_relation.to_representation(attribute.all())
+                        else:
+                            representation = field.child_relation.to_representation(attribute)
                     else:
-                        representation = field.to_representation(attribute)
+                        if hasattr(attribute, 'all'):
+                            representation = field.to_representation(attribute.all())
+                        else:
+                            representation = field.to_representation(attribute)
                 except SkipField:
                     continue
-                child_is_link = False
-                if hasattr(field, 'child_relation'):
-                    child_is_link = getattr(field.child_relation, 'json_api_link', False)
-                if getattr(field, 'json_api_link', False) or \
-                        getattr(nested_field, 'json_api_link', False) or \
-                        child_is_link:
+                if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                     # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
