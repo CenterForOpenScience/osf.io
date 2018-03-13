@@ -700,6 +700,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             filters.append({'field_name': field_name, 'value': value})
         return filters if filters else None
 
+    def to_internal_value(self, data):
+        return data
+
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
         request = self.context.get('request', None)
@@ -768,6 +771,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     return relationship
                 relationship['data'] = {'id': related_id, 'type': related_type}
         return relationship
+
 
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
@@ -1252,7 +1256,12 @@ class JSONAPISerializer(BaseAPISerializer):
                         representation = field.to_representation(attribute)
                 except SkipField:
                     continue
-                if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
+                child_is_link = False
+                if hasattr(field, 'child_relation'):
+                    child_is_link = getattr(field.child_relation, 'json_api_link', False)
+                if getattr(field, 'json_api_link', False) or \
+                        getattr(nested_field, 'json_api_link', False) or \
+                        child_is_link:
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                     # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):

@@ -324,10 +324,19 @@ class TestNodeDetailViewOnlyLinks:
         assert res.status_code == 200
         res_relationships = res.json['data']['relationships']
         for key, value in res_relationships.iteritems():
-            if value['links'].get('related'):
-                assert private_node_one_private_link.key in value['links']['related']['href']
-            if value['links'].get('self'):
-                assert private_node_one_private_link.key in value['links']['self']['href']
+            if isinstance(value, list):
+                for relationship in value:
+                    links = relationship.get('links', {})
+                    if links.get('related', False):
+                        assert private_node_one_private_link.key in links['related']['href']
+                    if links.get('self', False):
+                        assert private_node_one_private_link.key in links['self']['href']
+            else:
+                links = value.get('links', {})
+                if links.get('related', False):
+                    assert private_node_one_private_link.key in links['related']['href']
+                if links.get('self', False):
+                    assert private_node_one_private_link.key in links['self']['href']
 
     #   test_view_only_key_in_self_and_html_links
         res = app.get(
