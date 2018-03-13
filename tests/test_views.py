@@ -1548,8 +1548,9 @@ class TestUserAccount(OsfTestCase):
         assert_true(200, res.status_code)
         # Make a second request right away
         res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
-        assert_true(400, res.status_code)
-        assert_in('Too many requests.', res)
+        assert_true(mock_push_status_message.called)
+        error_strings = mock_push_status_message.mock_calls[2][2]
+        assert_in('Too many requests.', error_strings['message'])
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
 

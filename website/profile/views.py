@@ -285,8 +285,12 @@ def user_account_password(auth, **kwargs):
     confirm_password = request.form.get('confirm_password', None)
 
     if not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST,
-                        data={'message_long': 'Too many requests. Please wait a while before attempting to change your password.'})
+        push_status_message(
+            message='Too many requests. Please wait a while before attempting to change your password.',
+            kind='error',
+            trust=False
+        )
+        return redirect(web_url_for('user_account'))
 
     try:
         user.change_password(old_password, new_password, confirm_password)
