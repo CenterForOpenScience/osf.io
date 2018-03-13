@@ -2,6 +2,8 @@
 import mock
 import pytest
 import urlparse
+import responses
+
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_true, assert_false)
 from addons.base.tests import views
@@ -10,7 +12,7 @@ from addons.zotero.models import Zotero
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.zotero.serializer import ZoteroSerializer
 
-from addons.zotero.tests.utils import ZoteroTestCase, mock_responses
+from addons.zotero.tests.utils import ZoteroTestCase, mock_responses, mock_responses_with_filed_and_unfiled
 from tests.base import OsfTestCase
 
 API_URL = 'https://api.zotero.org'
@@ -36,6 +38,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
     foldersApiUrl = None
     documentsApiUrl = None
     mockResponses = mock_responses
+    mockResponsesFiledUnfiled = mock_responses_with_filed_and_unfiled
 
     def setUp(self):
         super(TestConfigViews, self).setUp()
@@ -92,3 +95,36 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         assert_true(res['complete'])
         assert_equal(res['list_id'], 'Fake Key')
         assert_equal(res['library_id'], 'Fake Library Key')
+
+    @responses.activate
+    def test_citation_list_root_only_unfiled_items_included(self):
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.foldersApiUrl,
+                body=self.mockResponsesFiledUnfiled['folders'],
+                content_type='application/json'
+            )
+        )
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                self.documentsApiUrl,
+                body=self.mockResponsesFiledUnfiled['documents'],
+                content_type='application/json'
+            )
+        )
+
+        res = self.app.get(
+            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            auth=self.user.auth
+        )
+
+        children = res.json['contents']
+        # There are three items, one folder and two files, but one of the files gets pulled out because it
+        # belongs to a collection
+        assert_equal(len(children), 2)
+        assert_equal(children[0]['kind'], 'folder')
+        assert_equal(children[1]['kind'], 'file')
+        assert_true(children[1].get('csl') is not None)
