@@ -200,10 +200,10 @@ def init_cloud_gateway_groups(user, provider):
             groups_str = ''
 
     # clear groups
-    user.groups.clear()
-    user.groups_admin.clear()
-    user.groups_sync.clear()
-    user.groups_initialized = False  # for framework/auth/decorators.py
+    user.cggroups.clear()
+    user.cggroups_admin.clear()
+    user.cggroups_sync.clear()
+    user.cggroups_initialized = False  # for framework/auth/decorators.py
 
     # set groups
     import re

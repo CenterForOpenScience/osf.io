@@ -110,7 +110,7 @@ class Email(BaseModel):
         return self.address
 
 
-class Group(BaseModel):
+class CGGroup(BaseModel):
     name = models.CharField(max_length=255, unique=True)
 
     def __unicode__(self):
@@ -368,10 +368,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     eppn = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True)  # eduPersonPrincipalName
     eptid = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True)  # eduPersonTargetedID
     have_email = models.BooleanField(default=False)
-    groups = models.ManyToManyField(Group, related_name='users_group')
-    groups_admin = models.ManyToManyField(Group, related_name='users_group_admin')
-    groups_sync = models.ManyToManyField(Group, related_name='users_group_sync')
-    groups_initialized = models.BooleanField(default=False)
+    cggroups = models.ManyToManyField(CGGroup, related_name='users_group')
+    cggroups_admin = models.ManyToManyField(CGGroup, related_name='users_group_admin')
+    cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
+    cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
 
     def __repr__(self):
@@ -1243,14 +1243,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.date_last_access = timezone.now()
 
     def add_group(self, groupname):
-        if not self.groups.filter(name=groupname).exists():
-            group, created = Group.objects.get_or_create(name=groupname)
-            self.groups.add(group)
+        if not self.cggroups.filter(name=groupname).exists():
+            group, created = CGGroup.objects.get_or_create(name=groupname)
+            self.cggroups.add(group)
 
     def add_group_admin(self, groupname):
-        if not self.groups_admin.filter(name=groupname).exists():
-            group, created = Group.objects.get_or_create(name=groupname)
-            self.groups_admin.add(group)
+        if not self.cggroups_admin.filter(name=groupname).exists():
+            group, created = CGGroup.objects.get_or_create(name=groupname)
+            self.cggroups_admin.add(group)
 
     def get_summary(self, formatter='long'):
         return {

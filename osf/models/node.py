@@ -42,7 +42,7 @@ from osf.models.private_link import PrivateLink
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.user import Group
+from osf.models.user import CGGroup
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -415,7 +415,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
     # Group from Cloud Gateway
-    group = models.OneToOneField(Group,
+    group = models.OneToOneField(CGGroup,
                                  on_delete=models.SET_NULL,
                                  null=True, blank=True)
 
