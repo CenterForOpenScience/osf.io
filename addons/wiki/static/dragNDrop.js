@@ -33,14 +33,14 @@ var autoIncrementFileName = function(name, response) {
 };
 
 editor.enable = function() {
-    $('#ace-loading-ball').css('display', 'none');
+    $('#aceLoadingBall').css('display', 'none');
     editor.container.style.pointerEvents = 'initial';
     editor.container.style.opacity = 1;
     editor.renderer.setStyle('disabled', false);
 };
 
 editor.disable = function() {
-    $('#ace-loading-ball').css('display', 'block');
+    $('#aceLoadingBall').css('display', 'block');
     editor.container.style.pointerEvents = 'none';
     editor.container.style.opacity = 0.1;
     editor.renderer.setStyle('disabled', true);

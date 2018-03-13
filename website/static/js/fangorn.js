@@ -1261,7 +1261,7 @@ function _removeEvent (event, items, col) {
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
-            if(item.data.materialized.substring(0, 13) === WIKI_IMAGES_FOLDER_PATH) {
+            if(item.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
                 deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to' +
                     ' your wiki(s). Deleting them will remove images embedded in your wiki(s).'));
             } else if(!item.data.permissions.edit){
