@@ -1,55 +1,55 @@
-/* PREREG PAGES */
+/* REGISTRATION CAMPAIGN LANDING PAGES */
 
 body, html {
     height: 100%;
 }
 
-.prereg-container ol, .prereg-container p,  .prereg-button {
+.reg-landing-page-container ol, .reg-landing-page-container p,  .reg-landing-page-button {
     font-size: 16px;
     height: 100%;
 }
 
-.prereg-button-xs {
-    height: 100% !important; 
+.reg-landing-page-button-xs {
+    height: 100% !important;
     width: 100% !important;
     max-width:100% !important;
 }
 
-.prereg-button {
-    height: 90px; 
-    width: 100%; 
+.reg-landing-page-button {
+    height: 90px;
+    width: 100%;
     max-width: 500px;
     position: relative;
     cursor: pointer;
     display: inline-block;
     text-align: center;
     font-weight: 500;
-    margin-top: 20px; 
+    margin-top: 20px;
     text-align: center;
 }
 
-.prereg-button:hover {
+.reg-landing-page-button:hover {
     background-color: #E0EBF3;
 }
 
-.prereg-button.active {
+.reg-landing-page-button.active {
     background-color: #204762;
     color: white;
 }
 
-.prereg-button-row {
+.reg-landing-page-button-row {
     width: 100%;
     display: table;
 }
-.prereg-button-col {
+.reg-landing-page-button-col {
     height: 100%;
     text-align: center;
 }
-.prereg-button-contents {
+.reg-landing-page-button-contents {
     text-align: center;
 }
 
-.prereg-button-content-xs{
+.reg-landing-page-button-content-xs{
     position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -57,19 +57,19 @@ body, html {
     display: inline-block;
 }
 
-.prereg-action {
+.reg-landing-page-action {
     position: relative !important;
     max-width: 500px;
     width: 100%;
     display: inline-block;
 }
 
-.prereg-text-left{
+.reg-landing-page-text-left{
     text-align: left;
 }
 
-.prereg-logo {
-    max-height:140px; 
+.reg-landing-page-logo {
+    max-height:140px;
     max-width: 90%;
 }
 
@@ -83,7 +83,7 @@ body, html {
     div[class^='col']:first-of-type .prereg-button {
         line-height: 30px;
     }
-} 
+}
 
 /* CONSENT PAGE */
 

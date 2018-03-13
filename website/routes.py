@@ -411,6 +411,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -453,9 +464,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
