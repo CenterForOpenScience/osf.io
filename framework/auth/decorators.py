@@ -127,11 +127,11 @@ def must_be_logged_in_without_checking_email(func):
 
 def setup_groups(auth):
     user = auth.user
-    if user.groups_initialized:
+    if user.cggroups_initialized:
         return
     create_or_join_group_projects(user)
     leave_group_projects(auth)
-    user.groups_initialized = True
+    user.cggroups_initialized = True
     user.save()
 
 
@@ -145,7 +145,7 @@ def get_group_node(groupname):
 
 
 def is_group_admin(user, groupname):
-    if user.groups_admin.filter(name=groupname).exists():
+    if user.cggroups_admin.filter(name=groupname).exists():
         return True
     else:
         return False
@@ -157,19 +157,19 @@ def is_node_admin(node, user):
 
 def create_group_project(user, groupname):
     from osf.models.node import Node
-    from osf.models.user import Group
+    from osf.models.user import CGGroup
 
     node = Node(title = groupname,
                 category = "project",
                 description = groupname,
                 creator = user)
-    group, created = Group.objects.get_or_create(name=groupname)
+    group, created = CGGroup.objects.get_or_create(name=groupname)
     node.group = group
     node.save()
 
 def create_or_join_group_projects(user):
     from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
-    for group in user.groups.all():
+    for group in user.cggroups.all():
         groupname = group.name
         group_admin = is_group_admin(user, groupname)
         node = get_group_node(groupname)
@@ -203,9 +203,9 @@ def leave_group_projects(auth):
     for node in nodes:
         if node.group is None:
             continue  # skip
-        if user.groups is None:
+        if user.cggroups is None:
             continue  # skip
-        if user.groups.filter(id=node.group.id).exists():
+        if user.cggroups.filter(id=node.group.id).exists():
             continue  # skip
         if not node.contributors.filter(id=user.id).exists():
             continue  # skip
