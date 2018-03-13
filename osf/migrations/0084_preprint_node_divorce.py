@@ -11,20 +11,15 @@ import osf.models.validators
 def divorce_preprints_from_nodes(apps, schema_editor):
     Preprint = apps.get_model('osf', 'PreprintService')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
+    Preprint.objects.filter(node__isnull=False).update(title=F('node__title'), description=F('node__description'), creator=F('node__creator'))
     for preprint in Preprint.objects.all():
         if preprint.node:
-            preprint.title = preprint.node.title
-            preprint.description = preprint.node.description
-            preprint.creator = preprint.node.creator
+            # preprint.title = preprint.node.title
+            # preprint.description = preprint.node.description
+            # preprint.creator = preprint.node.creator
+            # use bulk create
             for contrib in preprint.node._contributors:
                 # make a PreprintContributor that points to the pp instead of the node
-                    # primary_identifier_name = 'user__guids___id'
-                    #
-                    # read = models.BooleanField(default=False)
-                    # write = models.BooleanField(default=False)
-                    # admin = models.BooleanField(default=False)
-                    # visible = models.BooleanField(default=False)
-                    # user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
                 new_contrib = PreprintContributor.objects.create()
                 new_contrib.primary_identifier_name = contrib.primary_identifier_name
                 new_contrib.read = contrib.read
@@ -35,8 +30,8 @@ def divorce_preprints_from_nodes(apps, schema_editor):
                 new_contrib.preprint = preprint
                 new_contrib.save()
                 preprint._contributors.add(new_contrib)
-            # will existing nodes attached to preprints still by accessible?
-
+            # will existing nodes attached to preprints still by accessible? A: yes!
+            preprint.save()
 
 
 class Migration(migrations.Migration):
