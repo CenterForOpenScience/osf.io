@@ -83,71 +83,36 @@
 <div style="width: 100%;">
     <div class="gridWrapper">
         <div style="width:auto;" class="tb-table">
-            <div class="tb-row-titles">
+            <div class="tb-row-titles" id="meetingFiltering">
                 <div class="tb-th" data-tb-th-col="0" style="width: 49%;">
                     <span class="m-r-sm">Title</span>
-                    % if sort == 'title':
-                        <a href=${"?page=1" + query_params['q'] + '&sort=title'}><i class="fa fa-chevron-up asc-button m-r-xs fg-file-links "></i></a>
-                    % else:
-                        <a href=${"?page=1" + query_params['q'] + '&sort=title'}><i class="fa fa-chevron-up asc-button m-r-xs tb-sort-inactive"></i></a>
-                    % endif
-                    % if sort == '-title':
-                        <a href=${"?page=1" + query_params['q'] + '&sort=-title'}><i class="fa fa-chevron-down desc-btn fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" + query_params['q'] + '&sort=-title'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
-                    % endif
+                    <span data-bind="foreach: titleFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
                 </div>
                 <div class="tb-th" data-tb-th-col="1" style="width: 9%">
                     <span class="m-r-sm">Author</span>
-                    % if sort == 'author':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=author'}><i class="fa fa-chevron-up asc-btn m-r-xs fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=author'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
-                    % endif
-                    % if sort == '-author':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-author'}><i class="fa fa-chevron-down desc-btn fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-author'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
-                    % endif
+                    <span data-bind="foreach: authorFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
                 </div>
                 <div class="tb-th" data-tb-th-col="2" style="width: 11%">
                     <span class="m-r-sm">Category</span>
-                    % if sort == 'category':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=category'}><i class="fa fa-chevron-up asc-btn m-r-xs fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=category'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
-                    % endif
-                    % if sort == '-category':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-category'}><i class="fa fa-chevron-down desc-btn fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-category'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
-                    % endif
+                    <span data-bind="foreach: categoryFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
                 </div>
                 <div class="tb-th" data-tb-th-col="3" style="width: 14%">
                     <span class="m-r-sm">Date Created</span>
-                    % if sort == 'created':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=created'}><i class="fa fa-chevron-up asc-btn m-r-xs fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=created'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
-                    % endif
-                    % if sort == '-created':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-created'}><i class="fa fa-chevron-down desc-btn fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-created'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
-                    % endif
+                    <span data-bind="foreach: createdFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
                 </div>
                 <div class="tb-th" data-tb-th-col="4" style="width: 13%">
                     <span class="m-r-sm">Downloads</span>
-                    % if sort == 'downloads':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=downloads'}><i class="fa fa-chevron-up asc-btn m-r-xs fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=downloads'}><i class="fa fa-chevron-up asc-btn m-r-xs tb-sort-inactive"></i></a>
-                    % endif
-                    % if sort == '-downloads':
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-downloads'}><i class="fa fa-chevron-down desc-btn fg-file-links"></i></a>
-                    % else:
-                        <a href=${"?page=1" +  query_params['q'] + '&sort=-downloads'}><i class="fa fa-chevron-down desc-btn tb-sort-inactive"></i></a>
-                    % endif
+                    <span data-bind="foreach: downloadsFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
                 </div>
             </div>
         </div>

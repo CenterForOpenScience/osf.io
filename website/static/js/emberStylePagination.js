@@ -57,8 +57,8 @@ var PaginationViewModel = function(currentPageNumber, totalPages, q, sort, hasPr
      *
      * @param {integer} currentPageNumber: current page of results being displayed
      * @param {integer} totalPages: total number of pages available
-     * @param {string} q: query param, already pre-formatted for linking (&q=substance, for example)
-     * @param {string} sort: query param, already pre-formatted for linking (&sort=title, for example)
+     * @param {string} q: query param
+     * @param {string} sort: query param
      * @param {boolean} hasPrevious: is there a previous page?
      * @param {boolean} hasNext: is there a next page?
      * @returns {array} pagination array of dictionaries for each page visible
@@ -90,7 +90,7 @@ var PaginationViewModel = function(currentPageNumber, totalPages, q, sort, hasPr
             if (pageNum === '»') {
                 pageNum = currentPageNumber + 1;
             }
-            href = "?page=" + pageNum + q + sort;
+            href = "?page=" + pageNum + "&q=" + q + "&sort=" + sort;
         }
         self.pagination.push({
             isCurrent: isCurrent,

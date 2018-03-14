@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import OuterRef, Count, Value, Case, When, Subquery, CharField
 from django.db.models.functions import Length, Substr, Coalesce
 from django_bulk_update.helper import bulk_update
-from django.core.paginator import Paginator, EmptyPage
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
@@ -25,7 +25,7 @@ from website.mails import send_mail
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
-SUBMISSIONS_PER_PAGE = 50
+SUBMISSIONS_PER_PAGE = 25
 
 @no_auto_transaction
 def meeting_hook():
@@ -218,7 +218,7 @@ def filter_and_sort_conference_data(nodes, conf):
             """, [format_q, format_q]
         )
         # Turns the raw queryset back into a queryset - we still need to sort and paginate it.
-        nodes = nodes.filter(id__in=(x.id for x in raw_queryset))
+        nodes = nodes.filter(id__in=[node.id for node in raw_queryset])
 
     if 'title' in sort or 'created' in sort:
         nodes = nodes.order_by(sort)
@@ -233,13 +233,15 @@ def filter_and_sort_conference_data(nodes, conf):
         })
         nodes = nodes.extra(order_by=[sort])
     elif 'category' in sort:
+        category_1 = conf.field_names['submission1'] or 'poster'
+        category_2 = conf.field_names['submission2'] or 'talk'
         tag_subqs = Tag.objects.filter(
             abstractnode_tagged=OuterRef('pk'),
-            name=conf.field_names['submission1']).values_list('name', flat=True)
+            name=category_1).values_list('name', flat=True)
         nodes = nodes.annotate(sub_one_count=Count(Subquery(tag_subqs))).annotate(
             sub_name=Case(
-                When(sub_one_count=1, then=Value(conf.field_names['submission1'])),
-                default=Value(conf.field_names['submission2']),
+                When(sub_one_count=1, then=Value(category_1)),
+                default=Value(category_2),
                 output_field=CharField()
             )
         ).order_by('-sub_name' if '-' in sort else 'sub_name')
@@ -276,6 +278,8 @@ def paginated_conference_data(meeting, conf, meetings_page=1):
     paginator = Paginator(nodes, SUBMISSIONS_PER_PAGE)
     try:
         selected_nodes = paginator.page(meetings_page)
+    except PageNotAnInteger:
+        selected_nodes = paginator.page(1)
     except EmptyPage:
         selected_nodes = paginator.page(paginator.num_pages)
 
@@ -331,18 +335,6 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
-def get_meetings_page():
-    """
-    Returns requested page number, fetched from query param.
-    If none, returns 1 by default.
-    """
-    if request.args.get('page', None):
-        try:
-            return int(request.args.get('page'))
-        except ValueError:
-            return 1
-    return 1
-
 def conference_results(meeting, **kwargs):
     """Return the data for the grid view for a conference.
 
@@ -353,7 +345,7 @@ def conference_results(meeting, **kwargs):
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
-    data, current_page = paginated_conference_data(meeting, conf, meetings_page=get_meetings_page())
+    data, current_page = paginated_conference_data(meeting, conf, meetings_page=request.args.get('page', 1))
     return {
         'data': data,
         'label': meeting,
@@ -364,25 +356,7 @@ def conference_results(meeting, **kwargs):
         'total_pages': current_page.paginator.num_pages,
         'page': current_page,
         'q': request.args.get('q', ''),
-        'sort': request.args.get('sort', ''),
-        'query_params': build_conference_query_params()
-    }
-
-def build_conference_query_params():
-    """
-    Return a dictionary of current query params used for conference_results
-
-    These are used to build links on the conference_results page to ensure
-    query params are retained while paginating, sorting, and filtering.
-    """
-    q = request.args.get('q', '')
-    page = get_meetings_page()
-    sort = request.args.get('sort', '')
-    # Order of query params will be page, q, sort
-    return {
-        'page': '?page={}'.format(page),
-        'q': '&q={}'.format(q.replace(' ', '+')),
-        'sort': '&sort={}'.format(sort)
+        'sort': request.args.get('sort', '')
     }
 
 def conference_submissions(**kwargs):
