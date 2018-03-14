@@ -5,7 +5,7 @@ features added to the OSF specifically to support this initiative in the future.
 
 Other resources that are a part of the Prereg Challenge:
 
-* website/static/js/pages/prereg-landing-page.js
+* website/static/js/pages/reg-landing-page.js
 * website/static/css/prereg.css
 """
 
