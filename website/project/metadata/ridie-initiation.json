@@ -130,15 +130,6 @@
             "required": true
         }, {
             "qid": "q12",
-            "nav": "Email",
-            "type": "string",
-            "format": "text",
-            "title": "Email",
-            "description": "",
-            "help": "",
-            "required": true
-        }, {
-            "qid": "q13",
             "nav": "Is there a Second PI?",
             "type": "choose",
             "format": "singleselect",
@@ -150,7 +141,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q14",
+            "qid": "q13",
             "nav": "Name of Second PI",
             "type": "string",
             "format": "text",
@@ -159,7 +150,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q15",
+            "qid": "q14",
             "nav": "Affiliation",
             "type": "string",
             "format": "text",
@@ -168,16 +159,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q16",
-            "nav": "Email",
-            "type": "string",
-            "format": "text",
-            "title": "Email",
-            "description": "",
-            "help": "",
-            "required": false
-        }, {
-            "qid": "q17",
+            "qid": "q15",
             "nav": "Name of Funder",
             "type": "string",
             "format": "text",
@@ -186,7 +168,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q18",
+            "qid": "q16",
             "nav": "Study Sponsor Location",
             "type": "string",
             "format": "text",
@@ -195,7 +177,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q19",
+            "qid": "q17",
             "nav": "Funding Proposal",
             "type": "object",
             "title": "Funding Proposal",
@@ -211,7 +193,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q20",
+            "qid": "q18",
             "nav": "Name of Partner Institution",
             "type": "string",
             "format": "text",
@@ -220,7 +202,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q21",
+            "qid": "q19",
             "nav": "Type of Organization",
             "type": "choose",
             "format": "singleselect",
@@ -238,7 +220,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q22",
+            "qid": "q20",
             "nav": "Website",
             "type": "string",
             "format": "text",
@@ -247,7 +229,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q23",
+            "qid": "q21",
             "nav": "Location",
             "type": "string",
             "format": "text",
@@ -263,7 +245,7 @@
         "title": "Intervention",
         "description": "",
         "questions": [{
-            "qid": "q24",
+            "qid": "q22",
             "nav": "Intervention",
             "type": "string",
             "format": "textarea",
@@ -272,7 +254,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q25",
+            "qid": "q23",
             "nav": "Private Intervention Details",
             "type": "string",
             "format": "textarea",
@@ -281,7 +263,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q26",
+            "qid": "q24",
             "nav": "Treatment Arms",
             "type": "choose",
             "format": "singleselect",
@@ -294,12 +276,40 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q27",
+            "qid": "q25",
             "nav": "Name of Organization",
             "type": "string",
             "format": "text",
             "title": "Name of Organization",
             "description": "Who is carrying out the intervention or program? (Provide the name of the organization.)",
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q26",
+            "nav": "Type of Organization",
+            "type": "choose",
+            "format": "singleselect",
+            "title": "Type of Organization",
+            "description": "What type of organization is this?",
+            "options": [
+                "Public Sector, e.g. Government Agency or Ministry",
+                "Foreign or Multilateral Aid Agency",
+                "NGO (International)",
+                "NGO (local)/Community Based Organization/Other civil society organization",
+                "Research Institution/University",
+                "Private for profit organization",
+                "Public-Private partnership",
+                "Other"
+            ],
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q27",
+            "nav": "Name of Organization",
+            "type": "string",
+            "format": "text",
+            "title": "Name of Organization",
+            "description": "Who is funding the intervention or program? (If multiple organizations are involved in funding, provide the name of the primary funder.)",
             "help": "",
             "required": true
         }, {
@@ -321,36 +331,8 @@
             ],
             "help": "",
             "required": true
-        }, {
-            "qid": "q29",
-            "nav": "Name of Organization",
-            "type": "string",
-            "format": "text",
-            "title": "Name of Organization",
-            "description": "Who is funding the intervention or program? (If multiple organizations are involved in funding, provide the name of the primary funder.)",
-            "help": "",
-            "required": true
-        }, {
-            "qid": "q30",
-            "nav": "Type of Organization",
-            "type": "choose",
-            "format": "singleselect",
-            "title": "Type of Organization",
-            "description": "What type of organization is this?",
-            "options": [
-                "Public Sector, e.g. Government Agency or Ministry",
-                "Foreign or Multilateral Aid Agency",
-                "NGO (International)",
-                "NGO (local)/Community Based Organization/Other civil society organization",
-                "Research Institution/University",
-                "Private for profit organization",
-                "Public-Private partnership",
-                "Other"
-            ],
-            "help": "",
-            "required": true
         },  {
-            "qid": "q31",
+            "qid": "q29",
             "nav": "Intervention Timeline",
             "type": "choose",
             "format": "singleselect",
@@ -363,7 +345,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q32",
+            "qid": "q30",
             "nav": "Start Date",
             "type": "string",
             "format": "text",
@@ -372,7 +354,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q33",
+            "qid": "q31",
             "nav": "End Date",
             "type": "string",
             "format": "text",
@@ -389,11 +371,39 @@
         "title": "Evaluation Method",
         "description": "",
         "questions": [{
-            "qid": "q34",
+            "qid": "q32",
             "nav": "Primary (or First) Evaluation Method",
             "type": "choose",
             "format": "singleselect",
             "title": "Primary (or First) Evaluation Method",
+            "description": "What is the main methodological approach you will use to estimate the causal impacts of the intervention or program? (If more than one, enter the first here. You will have the opportunity to enter a second method later.) Where more than one approach is planned, please indicate the main approach.",
+            "options":[
+                "Randomized control trial",
+                "Regression discontinuity",
+                "Matching",
+                "Difference in difference/fixed effects",
+                "Natural experiment",
+                "Instrumental variables",
+                "Regression with controls",
+                "Other (specify)"
+            ],
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q33",
+            "nav": "Other Method",
+            "type": "string",
+            "format": "text",
+            "title": "Other Method",
+            "description": "If you selected \"Other\" above, please describe your method that was not listed in the choices. Otherwise, skip this step and move to the next question. ",
+            "help": "",
+            "required": false
+        }, {
+            "qid": "q34",
+            "nav": "Additional Evaluation Method (If Any)",
+            "type": "choose",
+            "format": "singleselect",
+            "title": "Additional Evaluation Method (If Any)",
             "description": "What is the main methodological approach you will use to estimate the causal impacts of the intervention or program? (If more than one, enter the first here. You will have the opportunity to enter a second method later.) Where more than one approach is planned, please indicate the main approach.",
             "options":[
                 "Randomized control trial",
@@ -418,34 +428,6 @@
             "required": false
         }, {
             "qid": "q36",
-            "nav": "Additional Evaluation Method (If Any)",
-            "type": "choose",
-            "format": "singleselect",
-            "title": "Additional Evaluation Method (If Any)",
-            "description": "What is the main methodological approach you will use to estimate the causal impacts of the intervention or program? (If more than one, enter the first here. You will have the opportunity to enter a second method later.) Where more than one approach is planned, please indicate the main approach.",
-            "options":[
-                "Randomized control trial",
-                "Regression discontinuity",
-                "Matching",
-                "Difference in difference/fixed effects",
-                "Natural experiment",
-                "Instrumental variables",
-                "Regression with controls",
-                "Other (specify)"
-            ],
-            "help": "",
-            "required": true
-        }, {
-            "qid": "q37",
-            "nav": "Other Method",
-            "type": "string",
-            "format": "text",
-            "title": "Other Method",
-            "description": "If you selected \"Other\" above, please describe your method that was not listed in the choices. Otherwise, skip this step and move to the next question. ",
-            "help": "",
-            "required": false
-        }, {
-            "qid": "q38",
             "nav": "Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
@@ -454,7 +436,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q39",
+            "qid": "q37",
             "nav": "Private Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
@@ -463,7 +445,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q40",
+            "qid": "q38",
             "nav": "Outcomes (Endpoints)",
             "type": "string",
             "format": "textarea",
@@ -472,7 +454,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q41",
+            "qid": "q39",
             "nav": "Measurement",
             "type": "string",
             "format": "textarea",
@@ -481,7 +463,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q42",
+            "qid": "q40",
             "nav": "Unit of Analysis",
             "type": "string",
             "format": "text",
@@ -490,7 +472,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q43",
+            "qid": "q41",
             "nav": "Hypotheses",
             "type": "string",
             "format": "textarea",
@@ -499,7 +481,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q44",
+            "qid": "q42",
             "nav": "Unit of Intervention or Assignment",
             "type": "string",
             "format": "text",
@@ -508,7 +490,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q45",
+            "qid": "q43",
             "nav": "Number of Clusters in Sample",
             "type": "string",
             "format": "text",
@@ -517,7 +499,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q46",
+            "qid": "q44",
             "nav": "Number of Individuals in Sample",
             "type": "string",
             "format": "text",
@@ -526,7 +508,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q47",
+            "qid": "q45",
             "nav": "Size of Treatment, Control, or Comparison Subsamples",
             "type": "string",
             "format": "text",
@@ -535,7 +517,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q48",
+            "qid": "q46",
             "nav": "Analysis Plan",
             "type": "object",
             "title": "Analysis Plan",
@@ -551,7 +533,7 @@
             ],
             "required": false
         }, {
-            "qid": "q49",
+            "qid": "q47",
             "nav": "Other Documents",
             "type": "object",
             "title": "Other Documents",
@@ -574,7 +556,7 @@
         "title": "Data",
         "description": "",
         "questions": [{
-            "qid": "q50",
+            "qid": "q48",
             "nav": "Description",
             "type": "string",
             "format": "textarea",
@@ -583,7 +565,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q51",
+            "qid": "q49",
             "nav": "Data Collection Status",
             "type": "choose",
             "format": "singleselect",
@@ -596,7 +578,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q52",
+            "qid": "q50",
             "nav": "Survey Name",
             "type": "string",
             "format": "text",
@@ -605,7 +587,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q53",
+            "qid": "q51",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -619,7 +601,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q54",
+            "qid": "q52",
             "nav": "Data Access",
             "type": "choose",
             "format": "singleselect",
@@ -632,7 +614,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q55",
+            "qid": "q53",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -645,7 +627,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q56",
+            "qid": "q54",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
@@ -654,7 +636,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q57",
+            "qid": "q55",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -668,7 +650,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q58",
+            "qid": "q56",
             "nav": "Participation or Assignment Information",
             "type": "choose",
             "format": "singleselect",
@@ -681,7 +663,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q59",
+            "qid": "q57",
             "nav": "Description",
             "type": "string",
             "format": "textarea",
@@ -690,7 +672,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q60",
+            "qid": "q58",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -703,7 +685,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q61",
+            "qid": "q59",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -717,7 +699,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q62",
+            "qid": "q60",
             "nav": "Data Access",
             "type": "string",
             "format": "textarea",
@@ -730,7 +712,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q63",
+            "qid": "q61",
             "nav": "Data Obtainment Status",
             "type": "choose",
             "format": "singleselect",
@@ -743,7 +725,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q64",
+            "qid": "q62",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
@@ -752,7 +734,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q65",
+            "qid": "q63",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -766,7 +748,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q66",
+            "qid": "q64",
             "nav": "Data Analysis Status",
             "type": "choose",
             "format": "singleselect",
@@ -780,7 +762,7 @@
             "required": true
         },
             {
-            "qid": "q67",
+            "qid": "q65",
             "nav": "Upload Study Materials",
             "type": "object",
             "title": "Upload Study Materials",
@@ -796,7 +778,7 @@
             ],
             "required": false
         }, {
-            "qid": "q68",
+            "qid": "q66",
             "nav": "Links",
             "type": "string",
             "format": "text",
@@ -805,7 +787,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q69",
+            "qid": "q67",
             "nav": "Links Description",
             "type": "string",
             "format": "text",
@@ -814,7 +796,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q70",
+            "qid": "q68",
             "nav": "Registration Category",
             "type": "string",
             "format": "textarea",
@@ -823,7 +805,7 @@
             "help": "",
             "required": true
         },{
-            "qid": "q71",
+            "qid": "q69",
             "nav": "Registration Category Comments",
             "type": "string",
             "format": "textarea",
