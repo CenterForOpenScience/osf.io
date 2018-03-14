@@ -319,10 +319,13 @@ def create_waterbutler_log(payload, **kwargs):
             if payload['action'] in ('download_file', 'download_zip'):
                 node = AbstractNode.load(payload['metadata']['nid'])
                 if not node.is_contributor(user):
+                    url = furl.furl(payload['request_metadata']['request']['url'])
+                    version = url.args.get('version') or url.args.get('revision')
+                    path = payload['metadata']['path'].lstrip('/')
                     if payload['action_meta']['is_mfr_render']:
-                        update_analytics(node, payload['metadata']['path'].lstrip('/'), payload['metadata'].get('version'), 'view')
+                        update_analytics(node, path, version, 'view')
                     else:
-                        update_analytics(node, payload['metadata']['path'].lstrip('/'), payload['metadata'].get('version'), 'download')
+                        update_analytics(node, path, version, 'download')
 
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
