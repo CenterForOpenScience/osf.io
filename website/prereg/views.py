@@ -13,4 +13,4 @@ from website.registries import views
 
 def prereg_landing_page(**kwargs):
     """Landing page for the prereg challenge"""
-    return views._view_registeries_landing_page('prereg', **kwargs)
+    return views._view_registries_landing_page('prereg', **kwargs)

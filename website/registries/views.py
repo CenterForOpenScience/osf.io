@@ -5,7 +5,7 @@ from framework.utils import iso8601format
 from website.registries import utils
 
 
-def _view_registeries_landing_page(campaign=None, **kwargs):
+def _view_registries_landing_page(campaign=None, **kwargs):
     """Landing page for the various registrations"""
     auth = kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
     is_logged_in = kwargs['auth'].logged_in
@@ -30,7 +30,7 @@ def _view_registeries_landing_page(campaign=None, **kwargs):
 
 
 def registered_reports_landing(**kwargs):
-    return _view_registeries_landing_page('registered_report', **kwargs)
+    return _view_registries_landing_page('registered_report', **kwargs)
 
 
 @decorators.must_be_logged_in
