@@ -187,6 +187,8 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
+    self.availableCountries = ko.observableArray(['France', 'Germany', 'Spain']);
+
     var extra = self.data.extra;
     if (self.data.extra && !$.isArray(self.data.extra)) {
         extra = [self.data.extra];

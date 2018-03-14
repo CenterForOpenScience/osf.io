@@ -50,8 +50,8 @@
         }, {
             "qid": "q5",
             "nav": "Location(s)",
-            "type": "string",
-            "format": "text",
+            "type": "choose",
+            "format": "dropdown",
             "title": "Location(s)",
             "description": "Where is the intervention or study occurring? (You may select multiple countries.)",
             "help": "",
@@ -231,8 +231,8 @@
         }, {
             "qid": "q21",
             "nav": "Location",
-            "type": "string",
-            "format": "text",
+            "type": "choose",
+            "format": "dropdown",
             "title": "Location",
             "description": "Indicate the country where your research partner is located.",
             "help": "",
