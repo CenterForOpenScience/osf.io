@@ -717,7 +717,7 @@ def persistent_file_download(auth, **kwargs):
         return auth_redirect
 
     query_params = request.args.to_dict()
-    query_params.setdefault('version', file.versions.first().identifier)
+    query_params.setdefault(file.version_identifier, file.versions.first().identifier)
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
@@ -810,7 +810,7 @@ def is_pre_reg_checkout(node, file_node):
         return False
     if checkout_user in node.contributors:
         return False
-    if checkout_user.has_perm('osf.prereg_view'):
+    if checkout_user.has_perm('osf.view_prereg'):
         return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
     return False
 

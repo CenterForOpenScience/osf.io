@@ -165,6 +165,7 @@ class NodeSerializer(JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
+    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
