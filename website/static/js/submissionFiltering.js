@@ -14,7 +14,7 @@ var buildFilteringCSS = function(filter, currentSort, ascending) {
     var directionCSS = ascending ? 'fa-chevron-up asc-button m-r-xs ' : 'fa-chevron-down desc-button ';
     var filterCSS = currentSort === filter ? 'fg-file-links' : 'tb-sort-inactive';
     return directionCSS + filterCSS;
-}
+};
 
 var buildFilters = function(filterName, q, currentSort) {
     /**
@@ -29,12 +29,12 @@ var buildFilters = function(filterName, q, currentSort) {
     var filterNames = [filterName, '-' + filterName];
     for (var i = 0; i <= 1; i++) {
         filters.push({
-            href: "?page=1" + "&q=" + q + "&sort=" + filterNames[i],
+            href: '?page=1' + '&q=' + q + '&sort=' + filterNames[i],
             filterCSS: buildFilteringCSS(filterNames[i], currentSort, !i)
         });
     }
     return filters;
-}
+};
 
 var FilteringViewModel = function(q, currentSort) {
     /**
@@ -51,11 +51,11 @@ var FilteringViewModel = function(q, currentSort) {
     self.categoryFilters = buildFilters('category', q, currentSort);
     self.createdFilters = buildFilters('created', q, currentSort);
     self.downloadsFilters = buildFilters('downloads', q, currentSort);
-}
+};
 
 var Filtering = function(selector, q, sort) {
     this.viewModel = new FilteringViewModel(q, sort);
     $osf.applyBindings(this.viewModel, selector);
-}
+};
 
 module.exports = Filtering;

@@ -37,7 +37,7 @@ var buildPaginationArray = function(currentPageNumber, totalPages) {
     }
     // Now flatten the start, middle, and end lists into one! This is your pagination array.
     return [].concat(start, middle, end);
-}
+};
 
 var pageIsDisabled = function(pageNum, hasPrevious, hasNext) {
     /**
@@ -50,7 +50,8 @@ var pageIsDisabled = function(pageNum, hasPrevious, hasNext) {
      * @returns {boolean} whether page should be disabled
      **/
     return pageNum === '...' || ((pageNum === '«' && !hasPrevious) || (pageNum === '»' && !hasNext));
-}
+};
+
 var PaginationViewModel = function(currentPageNumber, totalPages, q, sort, hasPrevious, hasNext) {
     /**
      * Returns an array of dictionaries for building pagination
@@ -78,11 +79,11 @@ var PaginationViewModel = function(currentPageNumber, totalPages, q, sort, hasPr
     pagination.push('»');
 
     self.pagination = [];
-    for (var i = 0; i <= pagination.length - 1; i++) {
-        var pageNum = pagination[i];
+    for (var j = 0; j <= pagination.length - 1; j++) {
+        var pageNum = pagination[j];
         var isCurrent = pageNum === currentPageNumber;
         var isDisabled = pageIsDisabled(pageNum, hasPrevious, hasNext);
-        var href = "";
+        var href = '';
         if (!isCurrent && !isDisabled) {
             if (pageNum === '«') {
                 pageNum = currentPageNumber - 1;
@@ -90,21 +91,21 @@ var PaginationViewModel = function(currentPageNumber, totalPages, q, sort, hasPr
             if (pageNum === '»') {
                 pageNum = currentPageNumber + 1;
             }
-            href = "?page=" + pageNum + "&q=" + q + "&sort=" + sort;
+            href = '?page=' + pageNum + '&q=' + q + '&sort=' + sort;
         }
         self.pagination.push({
             isCurrent: isCurrent,
             isDisabled: isDisabled,
             href: href,
-            page: pagination[i],
+            page: pagination[j],
         });
     }
-}
+};
 
 var Pagination = function(selector, currentPageNumber, totalPages, q, sort, hasPrevious, hasNext) {
     this.viewModel = new PaginationViewModel(currentPageNumber, totalPages, q, sort, hasPrevious, hasNext);
     $osf.applyBindings(this.viewModel, selector);
     window.pagination = this.viewModel;
-}
+};
 
 module.exports = Pagination;
