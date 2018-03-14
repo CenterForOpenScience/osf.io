@@ -807,8 +807,8 @@
         }, {
             "qid": "q69",
             "nav": "Registration Category",
-            "type": "string",
-            "format": "textarea",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Registration Category",
             "description": "Based on the information you have provided, we have classified your registration as follows.",
             "options": [
