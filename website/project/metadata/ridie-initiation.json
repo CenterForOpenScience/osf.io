@@ -203,10 +203,10 @@
             "required": false
         }, {
             "qid": "q19",
-            "nav": "Type of Organization",
+            "nav": "Type of Partner Institution",
             "type": "choose",
             "format": "singleselect",
-            "title": "Type of Organization",
+            "title": "Type of Partner Institution",
             "description": "What type of institution is your research partner? ",
             "options": [
                 "Research institute/University",
@@ -264,6 +264,15 @@
             "required": false
         }, {
             "qid": "q24",
+            "nav": "Theory of Change",
+            "type": "string",
+            "format": "text",
+            "title": "Theory of Change",
+            "description": "Describe the key aspects of the intervention’s theory of change, emphasizing the mechanisms the impact evaluation will focus on.",
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q25",
             "nav": "Treatment Arms",
             "type": "choose",
             "format": "singleselect",
@@ -276,20 +285,20 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q25",
-            "nav": "Name of Organization",
+            "qid": "q26",
+            "nav": "Name of Implementing Agency",
             "type": "string",
             "format": "text",
-            "title": "Name of Organization",
+            "title": "Name of Implementing Agency",
             "description": "Who is carrying out the intervention or program? (Provide the name of the organization.)",
             "help": "",
             "required": true
         }, {
-            "qid": "q26",
-            "nav": "Type of Organization",
+            "qid": "q27",
+            "nav": "Type of Implementing Agency",
             "type": "choose",
             "format": "singleselect",
-            "title": "Type of Organization",
+            "title": "Type of Implementing Agency",
             "description": "What type of organization is this?",
             "options": [
                 "Public Sector, e.g. Government Agency or Ministry",
@@ -304,20 +313,20 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q27",
-            "nav": "Name of Organization",
+            "qid": "q28",
+            "nav": "Name of Program Funder",
             "type": "string",
             "format": "text",
-            "title": "Name of Organization",
+            "title": "Name of Program Funder",
             "description": "Who is funding the intervention or program? (If multiple organizations are involved in funding, provide the name of the primary funder.)",
             "help": "",
             "required": true
         }, {
-            "qid": "q28",
-            "nav": "Type of Organization",
+            "qid": "q29",
+            "nav": "Type of Program Funder",
             "type": "choose",
             "format": "singleselect",
-            "title": "Type of Organization",
+            "title": "Type of Program Funder",
             "description": "What type of organization is this?",
             "options": [
                 "Public Sector, e.g. Government Agency or Ministry",
@@ -332,11 +341,11 @@
             "help": "",
             "required": true
         },  {
-            "qid": "q29",
+            "qid": "q30",
             "nav": "Intervention Timeline",
             "type": "choose",
             "format": "singleselect",
-            "title": "Type of Organization",
+            "title": "Intervention Timeline",
             "description": "What type of organization is this? <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#InterventionTimelineId_Section\">See help text for more information.</a>",
             "options": [
                 "Yes",
@@ -345,7 +354,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q30",
+            "qid": "q31",
             "nav": "Start Date",
             "type": "string",
             "format": "text",
@@ -354,7 +363,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q31",
+            "qid": "q32",
             "nav": "End Date",
             "type": "string",
             "format": "text",
@@ -371,7 +380,7 @@
         "title": "Evaluation Method",
         "description": "",
         "questions": [{
-            "qid": "q32",
+            "qid": "q33",
             "nav": "Primary (or First) Evaluation Method",
             "type": "choose",
             "format": "singleselect",
@@ -390,7 +399,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q33",
+            "qid": "q34",
             "nav": "Other Method",
             "type": "string",
             "format": "text",
@@ -399,7 +408,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q34",
+            "qid": "q35",
             "nav": "Additional Evaluation Method (If Any)",
             "type": "choose",
             "format": "singleselect",
@@ -416,9 +425,9 @@
                 "Other (specify)"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q35",
+            "qid": "q36",
             "nav": "Other Method",
             "type": "string",
             "format": "text",
@@ -427,16 +436,16 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q36",
+            "qid": "q37",
             "nav": "Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
             "title": "Details of Evaluation Approach",
-            "description": "Please provide details of your methodological approach(es). Describe your study design. The field will be public as soon as the trial is registered. Limit this description to those aspects of your study that you want to have public before the study is over.",
+            "description": "Please provide details of your methodological approach(es).",
             "help": "",
             "required": true
         }, {
-            "qid": "q37",
+            "qid": "q38",
             "nav": "Private Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
@@ -445,16 +454,16 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q38",
+            "qid": "q39",
             "nav": "Outcomes (Endpoints)",
             "type": "string",
             "format": "textarea",
             "title": "Outcomes (Endpoints)",
-            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See examples for more details.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Outcomes_Section\">See help text for definitions.</a>",
+            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Outcomes_Section\">See help text for definitions.</a>",
             "help": "",
             "required": true
         }, {
-            "qid": "q39",
+            "qid": "q40",
             "nav": "Measurement",
             "type": "string",
             "format": "textarea",
@@ -463,7 +472,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q40",
+            "qid": "q41",
             "nav": "Unit of Analysis",
             "type": "string",
             "format": "text",
@@ -472,7 +481,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q41",
+            "qid": "q42",
             "nav": "Hypotheses",
             "type": "string",
             "format": "textarea",
@@ -481,7 +490,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q42",
+            "qid": "q43",
             "nav": "Unit of Intervention or Assignment",
             "type": "string",
             "format": "text",
@@ -490,7 +499,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q43",
+            "qid": "q44",
             "nav": "Number of Clusters in Sample",
             "type": "string",
             "format": "text",
@@ -499,7 +508,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q44",
+            "qid": "q45",
             "nav": "Number of Individuals in Sample",
             "type": "string",
             "format": "text",
@@ -508,7 +517,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q45",
+            "qid": "q46",
             "nav": "Size of Treatment, Control, or Comparison Subsamples",
             "type": "string",
             "format": "text",
@@ -517,7 +526,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q46",
+            "qid": "q47",
             "nav": "Analysis Plan",
             "type": "object",
             "title": "Analysis Plan",
@@ -533,7 +542,7 @@
             ],
             "required": false
         }, {
-            "qid": "q47",
+            "qid": "q48",
             "nav": "Other Documents",
             "type": "object",
             "title": "Other Documents",
@@ -556,16 +565,16 @@
         "title": "Data",
         "description": "",
         "questions": [{
-            "qid": "q48",
-            "nav": "Description",
+            "qid": "q49",
+            "nav": "Outcomes Data Description",
             "type": "string",
             "format": "textarea",
-            "title": "Description",
-            "description": "Briefly describe the data set that will be used to measure outcomes. (For example, this could be a household survey, school or health facility survey, administrative data, etc. If there is more than one such data source, please describe the most important one.) Include only data that contain the outcomes of interest.  Do not report auxiliary data that does not contain outcomes, like data on Census tracts or districts that may be part of your analysis but does not by itself contain the outcome of interest.",
+            "title": "Outcomes Data Description",
+            "description": "Briefly describe the data set that will be used to measure outcomes. (For example, this could be a household survey, school or health facility survey, administrative data, etc. If there is more than one such data source, please describe the most important one.) ",
             "help": "",
             "required": true
         }, {
-            "qid": "q49",
+            "qid": "q50",
             "nav": "Data Collection Status",
             "type": "choose",
             "format": "singleselect",
@@ -578,7 +587,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q50",
+            "qid": "q51",
             "nav": "Survey Name",
             "type": "string",
             "format": "text",
@@ -587,7 +596,7 @@
             "help": "",
             "required": false
         }, {
-            "qid": "q51",
+            "qid": "q52",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -599,22 +608,22 @@
                 "Not sure"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q52",
+            "qid": "q53",
             "nav": "Data Access",
             "type": "choose",
             "format": "singleselect",
             "title": "Data Access",
-            "description": "Is this a restricted access data set? Examples for \"minimal restrictions\" include data that is freely available or can be downloaded after registering on a website; or data that is available from colleagues. Examples for \"formal process\" includes applications that are reviewed and approved. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#OutcomesDataAccessId_Section\">See help text for more informaiton.</a>",
+            "description": "Is this a restricted access data set? If Restricted, skip to Data Approval Process. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#OutcomesDataAccessId_Section\">See help text for more informaiton.</a>",
             "options": [
                 "Not restricted - access with no requirements or minimal requirements (e.g. web registration)",
                 "Restricted  -- Access requires a formal  approval process"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q53",
+            "qid": "q54",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -625,18 +634,18 @@
                 "No"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q54",
+            "qid": "q55",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
             "title": "Data Approval Process",
-            "description": "Briefly describe the approval process.",
+            "description": "Briefly describe the approval process. Leave blank if no data approval process.",
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q55",
+            "qid": "q56",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -648,14 +657,14 @@
                 "No"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q56",
-            "nav": "Participation or Assignment Information",
+            "qid": "q57",
+            "nav": "Treatment Assignment Data Participation or Assignment Information",
             "type": "choose",
             "format": "singleselect",
-            "title": "Participation or Assignment Informations",
-            "description": "Does (or will) the above outcomes data also contain information on the treatment assignment or program participation, i.e., which units received the intervention or participated in the program?",
+            "title": "Treatment Assignment Data Participation or Assignment Information",
+            "description": "Does (or will) the above outcomes data also contain information on the treatment assignment or program participation, i.e., which units received the intervention or participated in the program? If the answer to this question is Yes, skip to Study Materials",
             "options": [
                 "Yes",
                 "No"
@@ -663,16 +672,16 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q57",
-            "nav": "Description",
+            "qid": "q58",
+            "nav": "Treatment Assignment Data Description",
             "type": "string",
             "format": "textarea",
-            "title": "Description",
+            "title": "Treatment Assignment Data Description",
             "description": "What kind of data will you use for information on treatment assignment or program participation, i.e., which units received the intervention or participated in the program? Examples include administrative data, household survey, etc. (In some cases, there may be no specific data set. For example, data might simply be common knowledge that a program was implemented in a particular village. This type of information can be treated as a data set.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataDescription_Section\">See help text for more informaiton.</a>",
             "help": "",
             "required": true
         }, {
-            "qid": "q58",
+            "qid": "q59",
             "nav": "Data Status",
             "type": "choose",
             "format": "singleselect",
@@ -683,9 +692,9 @@
                 "No"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q59",
+            "qid": "q60",
             "nav": "Previous Use of the Data",
             "type": "choose",
             "format": "singleselect",
@@ -697,22 +706,22 @@
                 "Not Sure"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q60",
+            "qid": "q61",
             "nav": "Data Access",
             "type": "string",
             "format": "textarea",
             "title": "Data Access",
-            "description": "Is this a restricted access data set? Examples for \"minimal restrictions\" include data that is freely available or can be downloaded after registering on a website; or data that is available from colleagues. Examples for \"formal process\" includes applications that are reviewed and approved. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataAccessId_Section\">See help text for more informaiton.</a>",
+            "description": "Is this a restricted access data set? <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataAccessId_Section\">See help text for more informaiton.</a>",
             "options": [
                 "Not restricted - access with no requirements or minimal requirements (e.g. web registration)",
                 "Restricted  -- Access requires a formal  approval process"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q61",
+            "qid": "q62",
             "nav": "Data Obtainment Status",
             "type": "choose",
             "format": "singleselect",
@@ -723,18 +732,18 @@
                 "No"
             ],
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q62",
+            "qid": "q63",
             "nav": "Data Approval Process",
             "type": "string",
             "format": "textarea",
             "title": "Data Approval Process",
-            "description": "Briefly describe the approval process.",
+            "description": "Briefly describe the approval process. Leave blank if no data approval process.",
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q63",
+            "qid": "q64",
             "nav": "Approval Status",
             "type": "choose",
             "format": "singleselect",
@@ -748,7 +757,7 @@
             "help": "",
             "required": true
         }, {
-            "qid": "q64",
+            "qid": "q65",
             "nav": "Data Analysis Status",
             "type": "choose",
             "format": "singleselect",
@@ -759,10 +768,10 @@
                 "No"
             ],
             "help": "",
-            "required": true
+            "required": false
         },
             {
-            "qid": "q65",
+            "qid": "q66",
             "nav": "Upload Study Materials",
             "type": "object",
             "title": "Upload Study Materials",
@@ -778,34 +787,40 @@
             ],
             "required": false
         }, {
-            "qid": "q66",
-            "nav": "Links",
+            "qid": "q67",
+            "nav": "Upload Study Materials Links",
             "type": "string",
             "format": "text",
-            "title": "Links",
+            "title": "Upload Study Materials Links",
             "description": "",
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q67",
+            "qid": "q68",
             "nav": "Links Description",
             "type": "string",
             "format": "text",
             "title": "Links Description",
             "description": "",
             "help": "",
-            "required": true
+            "required": false
         }, {
-            "qid": "q68",
+            "qid": "q69",
             "nav": "Registration Category",
             "type": "string",
             "format": "textarea",
             "title": "Registration Category",
             "description": "Based on the information you have provided, we have classified your registration as follows.",
+            "options": [
+                "Category 1:  Data measuring the impacts have yet to be been collected.",
+                "Category 2:  The data exist, but these data have not yet been obtained or analyzed by the study researchers.",
+                "Category 3:  The data have been obtained by the researchers, but analysis has not started.",
+                "Category 4:  Analysis has already begun."
+            ],
             "help": "",
             "required": true
         },{
-            "qid": "q69",
+            "qid": "q70",
             "nav": "Registration Category Comments",
             "type": "string",
             "format": "textarea",
