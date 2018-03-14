@@ -1,9 +1,13 @@
 import pytz
 
 from django.apps import apps
+from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db import models, transaction
+from guardian.shortcuts import assign_perm
+from guardian.shortcuts import get_perms
+from guardian.shortcuts import remove_perm
 from include import IncludeQuerySet
 
 from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
@@ -603,3 +607,58 @@ class ReviewProviderMixin(models.Model):
             # TODO: remove notification subscription
             pass
         return _group.user_set.remove(user)
+
+
+class GuardianMixin(models.Model):
+    """ Helper for managing object-level permissions with django-guardian
+    Expects:
+      - Permissions to be defined in class Meta->permissions
+      - Groups to be defined in self.groups
+      - Group naming scheme to:
+        * Be defined in self.group_format
+        * Use `self` and `group` as format params. E.g: model_{self.id}_{group}
+    """
+    class Meta:
+        abstract = True
+
+    @property
+    def groups(self):
+        raise NotImplementedError()
+
+    @property
+    def group_format(self):
+        raise NotImplementedError()
+
+    @property
+    def perms_list(self):
+        # Django expects permissions to be specified in an N-ple of 2-ples
+        return [p[0] for p in self._meta.permissions]
+
+    @property
+    def group_names(self):
+        return [self.format_group(name) for name in self.groups_dict]
+
+    @property
+    def group_objects(self):
+        # TODO: consider subclassing Group if this becomes inefficient
+        return Group.objects.filter(name__in=self.group_names)
+
+    def format_group(self, name):
+        if name not in self.groups:
+            raise ValueError('Invalid group: "{}"'.format(name))
+        return self.group_format.format(self=self, group=name)
+
+    def get_group(self, name):
+        return Group.objects.get(name=self.format_group(name))
+
+    def update_group_permissions(self):
+        for group_name, group_permissions in self.groups.items():
+            group, created = Group.objects.get_or_create(name=self.format_group(group_name))
+            to_remove = set(get_perms(group, self)).difference(group_permissions)
+            for p in to_remove:
+                remove_perm(p, group, self)
+            for p in group_permissions:
+                assign_perm(p, group, self)
+
+    def get_permissions(self, user):
+        return list(set(get_perms(user, self)) & set(self.perms_list))
