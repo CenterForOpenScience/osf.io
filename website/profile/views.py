@@ -26,6 +26,7 @@ from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, Qu
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
@@ -241,6 +242,7 @@ def profile_view_id_json(uid, auth):
     return _profile_view(user, is_profile)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_profile_page')
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -255,6 +257,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_page')
 def user_profile(auth, **kwargs):
     user = auth.user
     return {

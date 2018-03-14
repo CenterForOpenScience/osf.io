@@ -21,6 +21,7 @@ from osf_tests.factories import (
     PrivateLinkFactory,
     PreprintFactory,
     IdentifierFactory,
+    InstitutionFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -294,8 +295,19 @@ class TestNodeDetail:
 class NodeCRUDTestCase:
 
     @pytest.fixture()
-    def user_two(self):
-        return AuthUserFactory()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def institution_two(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user_two(self, institution_one, institution_two):
+        auth_user = AuthUserFactory()
+        auth_user.affiliated_institutions.add(institution_one)
+        auth_user.affiliated_institutions.add(institution_two)
+        return auth_user
 
     @pytest.fixture()
     def title(self):
@@ -355,19 +367,53 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def make_node_payload(self):
-        def payload(node, attributes):
-            return {
+        def payload(node, attributes, relationships=None):
+
+            payload_data = {
                 'data': {
                     'id': node._id,
                     'type': 'nodes',
                     'attributes': attributes,
                 }
             }
+
+            if relationships:
+                payload_data['data']['relationships'] = relationships
+
+            return payload_data
         return payload
 
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
+                                     institution_one, institution_two):
+        project_private.add_contributor(
+            user_two,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(project_private.creator)
+        )
+        affiliated_institutions = {
+            'affiliated_institutions':
+                {'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    },
+                    {
+                        'type': 'institutions',
+                        'id': institution_two._id
+                    },
+                ]
+                }
+        }
+        payload = make_node_payload(project_private, {'public': False}, relationships=affiliated_institutions)
+        res = app.patch_json_api(url_private, payload, auth=user_two.auth, expect_errors=False)
+        assert res.status_code == 200
+        institutions = project_private.affiliated_institutions.all()
+        assert institution_one in institutions
+        assert institution_two in institutions
 
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(

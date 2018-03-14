@@ -20,6 +20,16 @@ class JSONAPIParser(JSONParser):
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
 
+    @staticmethod
+    def get_relationship(data, related_resource):
+        target_type = data.get('type')
+        if not target_type:
+            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
+                                   detail=NO_TYPE_ERROR)
+
+        id = data.get('id')
+        return {'id': id, 'target_type': target_type}
+
     # Overrides JSONParser
     def flatten_relationships(self, relationships):
         """
@@ -39,12 +49,10 @@ class JSONAPIParser(JSONParser):
         if not data:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
 
-        target_type = data.get('type')
-        if not target_type:
-            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)}, detail=NO_TYPE_ERROR)
-
-        id = data.get('id')
-        return {'id': id, 'target_type': target_type}
+        if isinstance(data, list):
+            return [self.get_relationship(item, related_resource) for item in data]
+        else:
+            return self.get_relationship(data, related_resource)
 
     def flatten_data(self, resource_object, parser_context, is_list):
         """
@@ -89,7 +97,17 @@ class JSONAPIParser(JSONParser):
 
         if relationships:
             relationships = self.flatten_relationships(relationships)
-            parsed.update(relationships)
+            if isinstance(relationships, list):
+                relationship_values = []
+                relationship_key = None
+                for relationship in relationships:
+                    for key, value in relationship.iteritems():
+                        relationship_values.append(value)
+                        relationship_key = key
+                relationship = {relationship_key: relationship_values}
+                parsed.update(relationship)
+            else:
+                parsed.update(relationships)
 
         return parsed
 
@@ -210,8 +228,14 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
         rel = {}
         for resource in relationships:
             ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
-            if ret.get('target_type') and ret.get('id'):
-                rel[resource] = ret['id']
+            if isinstance(ret, list):
+                rel = []
+                for item in ret:
+                    if item.get('target_type') and item.get('id'):
+                        rel.append({resource: item['id']})
+            else:
+                if ret.get('target_type') and ret.get('id'):
+                    rel[resource] = ret['id']
         return rel
 
 
