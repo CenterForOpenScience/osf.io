@@ -71,7 +71,7 @@
 
 <script type="text/html" id="object">
   <span data-bind="foreach: $data.properties">
-    <p class="help-block breaklines f-w-xl" data-bind="text: $data.description"></p>
+    <p class="help-block breaklines f-w-xl" data-bind="html: $data.description"></p>
     <div data-bind="template: {data: $root.context($data, $root), name: $data.type}"></div>
     <hr />
   </span>
