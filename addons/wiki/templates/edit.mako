@@ -167,6 +167,11 @@
                                 <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
+                              <div id="aceLoadingBall" class="ball-scale ball-scale-blue absolute-center">
+                                  <div></div>
+                                  <div></div>
+                                  <div></div>
+                              </div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
@@ -245,6 +250,7 @@
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
+
 
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">

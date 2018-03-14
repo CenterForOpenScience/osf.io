@@ -14,6 +14,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
+from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from api.base.utils import rapply
@@ -245,6 +246,7 @@ def project_before_template(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_registration
+@ember_flag_is_active('ember_project_registrations_page')
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
@@ -252,6 +254,7 @@ def node_registrations(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_retracted_registration
+@ember_flag_is_active('ember_project_forks_page')
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_forks=True)
 
@@ -260,6 +263,7 @@ def node_forks(auth, node, **kwargs):
 @must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
+@ember_flag_is_active('ember_project_settings_page')
 def node_setting(auth, node, **kwargs):
 
     auth.user.update_affiliated_institutions_by_email_domain()
@@ -370,6 +374,7 @@ def node_choose_addons(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_have_permission(READ)
+@ember_flag_is_active('ember_project_contributors_page')
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
@@ -396,6 +401,7 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
@@ -488,6 +494,7 @@ def project_reorder_components(node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
+@ember_flag_is_active('ember_project_analytics_page')
 def project_statistics(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['node']['keenio_read_key'] = node.keenio_read_key

@@ -50,6 +50,7 @@ from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
+from website.ember_osf_web.decorators import ember_flag_is_active
 
 
 def get_globals():
@@ -212,6 +213,7 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
+@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -342,8 +344,7 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
-
+        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -411,6 +412,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -453,9 +465,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
@@ -953,7 +968,7 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {'shareUrl': settings.SHARE_URL},
+            search_views.search_view,
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(

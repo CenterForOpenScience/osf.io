@@ -40,7 +40,7 @@ var entry = {
     'statistics-page': staticPath('js/pages/statistics-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
+    'reg-landing-page': staticPath('js/pages/reg-landing-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
