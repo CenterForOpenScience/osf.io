@@ -234,8 +234,8 @@ def filter_and_sort_conference_data(nodes, conf):
         })
         nodes = nodes.extra(order_by=[sort])
     elif 'category' in sort:
-        category_1 = conf.field_names['submission1'] or 'poster'
-        category_2 = conf.field_names['submission2'] or 'talk'
+        category_1 = conf.field_names.get('submission1', 'poster')
+        category_2 = conf.field_names.get('submission2', 'talk')
         tag_subqs = Tag.objects.filter(
             abstractnode_tagged=OuterRef('pk'),
             name=category_1).values_list('name', flat=True)
