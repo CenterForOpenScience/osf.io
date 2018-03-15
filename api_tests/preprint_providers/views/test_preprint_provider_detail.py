@@ -27,8 +27,17 @@ class TestPreprintProviderExists:
         return '/{}preprint_providers/fake/'.format(API_BASE)
 
     @pytest.fixture()
+    def fake_url_generalized(self):
+        return '/{}providers/preprints/fake/'.format(API_BASE)
+
+    @pytest.fixture()
     def provider_url(self, preprint_provider):
         return '/{}preprint_providers/{}/'.format(
+            API_BASE, preprint_provider._id)
+
+    @pytest.fixture()
+    def provider_url_generalized(self, preprint_provider):
+        return '/{}providers/preprints/{}/'.format(
             API_BASE, preprint_provider._id)
 
     def test_preprint_provider_exists(self, app, provider_url, fake_url):
@@ -63,6 +72,39 @@ class TestPreprintProviderExists:
             expect_errors=True)
         assert taxonomies_res.status_code == 404
 
+    def test_preprint_provider_exists_for_generalized_endpoint(self, app, provider_url_generalized, fake_url_generalized):
+        detail_res = app.get(provider_url_generalized)
+        assert detail_res.status_code == 200
+
+        licenses_res = app.get('{}licenses/'.format(provider_url_generalized))
+        assert licenses_res.status_code == 200
+
+        preprints_res = app.get('{}preprints/'.format(provider_url_generalized))
+        assert preprints_res.status_code == 200
+
+        taxonomies_res = app.get('{}taxonomies/'.format(provider_url_generalized))
+        assert taxonomies_res.status_code == 200
+
+    #   test_preprint_provider_does_not_exist_returns_404
+        detail_res = app.get(fake_url_generalized, expect_errors=True)
+        assert detail_res.status_code == 404
+
+        licenses_res = app.get(
+            '{}licenses/'.format(fake_url_generalized),
+            expect_errors=True)
+        assert licenses_res.status_code == 404
+
+        preprints_res = app.get(
+            '{}preprints/'.format(fake_url_generalized),
+            expect_errors=True)
+        assert preprints_res.status_code == 404
+
+        taxonomies_res = app.get(
+            '{}taxonomies/'.format(fake_url_generalized),
+            expect_errors=True)
+        assert taxonomies_res.status_code == 404
+
+
     def test_has_highlighted_subjects_flag(
             self, app, preprint_provider,
             preprint_provider_two, provider_url):
@@ -77,6 +119,26 @@ class TestPreprintProviderExists:
         assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is True
 
         url_provider_two = '/{}preprint_providers/{}/'.format(
+            API_BASE, preprint_provider_two._id)
+        res = app.get(url_provider_two)
+        assert res.status_code == 200
+        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
+        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is False
+
+    def test_has_highlighted_subjects_flag_for_generalized_endpoint(
+            self, app, preprint_provider,
+            preprint_provider_two, provider_url_generalized):
+        SubjectFactory(
+            provider=preprint_provider,
+            text='A', highlighted=True)
+        SubjectFactory(provider=preprint_provider_two, text='B')
+
+        res = app.get(provider_url_generalized)
+        assert res.status_code == 200
+        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
+        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is True
+
+        url_provider_two = '/{}providers/preprints/{}/'.format(
             API_BASE, preprint_provider_two._id)
         res = app.get(url_provider_two)
         assert res.status_code == 200
@@ -115,6 +177,11 @@ class TestPreprintProviderUpdate:
     @pytest.fixture()
     def url(self, preprint_provider):
         return '/{}preprint_providers/{}/'.format(
+            API_BASE, preprint_provider._id)
+
+    @pytest.fixture()
+    def url_generalized(self, preprint_provider):
+        return '/{}providers/preprints/{}/'.format(
             API_BASE, preprint_provider._id)
 
     def test_update_reviews_settings(
@@ -186,6 +253,83 @@ class TestPreprintProviderUpdate:
         )
         res = app.patch_json_api(
             url, another_payload,
+            auth=admin.auth, expect_errors=True)
+        assert res.status_code == 409
+
+        preprint_provider.refresh_from_db()
+        assert preprint_provider.reviews_workflow == 'pre-moderation'
+        assert not preprint_provider.reviews_comments_private
+        assert not preprint_provider.reviews_comments_anonymous
+
+    def test_update_reviews_settings_for_generalized_endpoint(
+            self, app, preprint_provider, url_generalized, admin, moderator):
+        payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='pre-moderation',
+            reviews_comments_private=False,
+            reviews_comments_anonymous=False
+        )
+
+        # Unauthorized user can't set up moderation
+        res = app.patch_json_api(url_generalized, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # Random user can't set up moderation
+        some_rando = AuthUserFactory()
+        res = app.patch_json_api(
+            url_generalized, payload, auth=some_rando.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        # Moderator can't set up moderation
+        res = app.patch_json_api(
+            url_generalized, payload, auth=moderator.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        # Admin must include all settings
+        partial_payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='pre-moderation',
+            reviews_comments_private=False,
+        )
+        res = app.patch_json_api(
+            url_generalized, partial_payload,
+            auth=admin.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        partial_payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_comments_private=False,
+            reviews_comments_anonymous=False,
+        )
+        res = app.patch_json_api(
+            url_generalized, partial_payload,
+            auth=admin.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # Admin can set up moderation
+        res = app.patch_json_api(url_generalized, payload, auth=admin.auth)
+        assert res.status_code == 200
+        preprint_provider.refresh_from_db()
+        assert preprint_provider.reviews_workflow == 'pre-moderation'
+        assert not preprint_provider.reviews_comments_private
+        assert not preprint_provider.reviews_comments_anonymous
+
+        # ...but only once
+        res = app.patch_json_api(
+            url_generalized, payload, auth=admin.auth,
+            expect_errors=True)
+        assert res.status_code == 409
+
+        another_payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='post-moderation',
+            reviews_comments_private=True,
+            reviews_comments_anonymous=True
+        )
+        res = app.patch_json_api(
+            url_generalized, another_payload,
             auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
 

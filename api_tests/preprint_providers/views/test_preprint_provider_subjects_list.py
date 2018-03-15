@@ -1,387 +1,725 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
 
-from tests.base import ApiTestCase
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 
-class TestPreprintProviderSubjects(ApiTestCase):
-    def create_subject_rules(self):
-        '''
-        Subject Hierarchy
-        +-----------------------------+
-        |                             |
-        |      +-------->B+----->F    |
-        |      |                      |
-        |  A+----------->C            |
-        |      |                      |
-        |      +-------->D+----->G    |
-        |                             |
-        |  H+------>I+----->J         |
-        |            |                |
-        |            +----->K         |
-        |                             |
-        |  L+------>M+----->N         |
-        |            |                |
-        |            +------->E       |
-        |                             |
-        |  O                          |
-        +-----------------------------+
-        '''
-        self.subA = SubjectFactory(text='A')
-        self.subB = SubjectFactory(text='B', parent=self.subA)
-        self.subC = SubjectFactory(text='C', parent=self.subA)
-        self.subD = SubjectFactory(text='D', parent=self.subA)
-        self.subF = SubjectFactory(text='F', parent=self.subB)
-        self.subG = SubjectFactory(text='G', parent=self.subD)
-        self.subH = SubjectFactory(text='H')
-        self.subI = SubjectFactory(text='I', parent=self.subH)
-        self.subJ = SubjectFactory(text='J', parent=self.subI)
-        self.subK = SubjectFactory(text='K', parent=self.subI)
-        self.subL = SubjectFactory(text='L')
-        self.subM = SubjectFactory(text='M', parent=self.subL)
-        self.subE = SubjectFactory(text='E', parent=self.subM)
-        self.subN = SubjectFactory(text='N', parent=self.subM)
-        self.subO = SubjectFactory(text='O')
-        rules = [
-            ([self.subA._id, self.subB._id], False),
-            ([self.subA._id, self.subD._id], True),
-            ([self.subH._id, self.subI._id, self.subJ._id], True),
-            ([self.subL._id], True)
+@pytest.mark.django_db
+class TestPreprintProviderSubjects:
+
+    @pytest.fixture(autouse=True)
+    def subA(self):
+        return SubjectFactory(text='A')
+
+    @pytest.fixture(autouse=True)
+    def subB(self, subA):
+        return SubjectFactory(text='B', parent=subA)
+
+    @pytest.fixture(autouse=True)
+    def subC(self, subA):
+        return SubjectFactory(text='C', parent=subA)
+
+    @pytest.fixture(autouse=True)
+    def subD(self, subA):
+        return SubjectFactory(text='D', parent=subA)
+
+    @pytest.fixture(autouse=True)
+    def subF(self, subB):
+        return SubjectFactory(text='F', parent=subB)
+
+    @pytest.fixture(autouse=True)
+    def subG(self, subD):
+        return SubjectFactory(text='G', parent=subD)
+
+    @pytest.fixture(autouse=True)
+    def subH(self):
+        return SubjectFactory(text='H')
+
+    @pytest.fixture(autouse=True)
+    def subI(self, subH):
+        return SubjectFactory(text='I', parent=subH)
+
+    @pytest.fixture(autouse=True)
+    def subJ(self, subI):
+        return SubjectFactory(text='J', parent=subI)
+
+    @pytest.fixture(autouse=True)
+    def subK(self, subI):
+        return SubjectFactory(text='K', parent=subI)
+
+    @pytest.fixture(autouse=True)
+    def subL(self):
+        return SubjectFactory(text='L')
+
+    @pytest.fixture(autouse=True)
+    def subM(self, subL):
+        return SubjectFactory(text='M', parent=subL)
+
+    @pytest.fixture(autouse=True)
+    def subM(self, subL):
+        return SubjectFactory(text='M', parent=subL)
+
+    @pytest.fixture(autouse=True)
+    def subE(self, subM):
+        return SubjectFactory(text='E', parent=subM)
+
+    @pytest.fixture(autouse=True)
+    def subN(self, subM):
+        return SubjectFactory(text='N', parent=subM)
+
+    @pytest.fixture(autouse=True)
+    def subO(self):
+        return SubjectFactory(text='O')
+
+    @pytest.fixture()
+    def rules(self, subA, subB, subD, subH, subI, subJ, subL):
+        return [
+            ([subA._id, subB._id], False),
+            ([subA._id, subD._id], True),
+            ([subH._id, subI._id, subJ._id], True),
+            ([subL._id], True)
         ]
         #  This should allow: A, B, D, G, H, I, J, L, M, N and E
         #  This should not allow: C, F, K, O
-        return rules
 
-    def setUp(self):
-        super(TestPreprintProviderSubjects, self).setUp()
-        self.lawless_preprint_provider = PreprintProviderFactory()
-        self.ruled_preprint_provider = PreprintProviderFactory()
-        self.ruled_preprint_provider.subjects_acceptable = self.create_subject_rules()
-        self.ruled_preprint_provider.save()
-        self.lawless_url = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, self.lawless_preprint_provider._id)
-        self.ruled_url = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, self.ruled_preprint_provider._id)
+    @pytest.fixture()
+    def lawless_preprint_provider(self):
+        return PreprintProviderFactory()
 
-    def test_max_page_size(self):
+    @pytest.fixture()
+    def ruled_preprint_provider(self, rules):
+        provider = PreprintProviderFactory()
+        provider.subjects_acceptable = rules
+        provider.save()
+        return provider
+
+    @pytest.fixture()
+    def lawless_url(self, lawless_preprint_provider):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, lawless_preprint_provider._id)
+
+    @pytest.fixture()
+    def lawless_url_generalized(self, lawless_preprint_provider):
+        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, lawless_preprint_provider._id)
+
+    @pytest.fixture()
+    def ruled_url(self, ruled_preprint_provider):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, ruled_preprint_provider._id)
+
+    @pytest.fixture()
+    def ruled_url_generalized(self, ruled_preprint_provider):
+        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, ruled_preprint_provider._id)
+
+    def test_max_page_size(self, app, lawless_preprint_provider):
         base_url = '/{}preprint_providers/{}/taxonomies/'.format(
-            API_BASE, self.lawless_preprint_provider._id)
+            API_BASE, lawless_preprint_provider._id)
 
-        res = self.app.get(base_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['per_page'], 10)
+        base_url_generalized = base_url = '/{}preprint_providers/{}/taxonomies/'.format(
+            API_BASE, lawless_preprint_provider._id)
 
-        res = self.app.get(base_url + '?page[size]=150')
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['per_page'], 150)
+        res = app.get(base_url)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 10
 
-        res = self.app.get(base_url + '?page[size]=2018')
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['per_page'], 1000)
+        res = app.get(base_url + '?page[size]=150')
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 150
 
-    def test_no_rules_grabs_all(self):
-        res = self.app.get(self.lawless_url)
+        res = app.get(base_url + '?page[size]=2018')
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 1000
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 15)
+        res = app.get(base_url_generalized)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 10
 
-    def test_rules_only_grab_acceptable_subjects(self):
-        res = self.app.get(self.ruled_url)
+        res = app.get(base_url_generalized + '?page[size]=150')
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 150
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 11)
+        res = app.get(base_url_generalized + '?page[size]=2018')
+        assert res.status_code == 200
+        assert res.json['links']['meta']['per_page'] == 1000
 
-    def test_no_rules_with_null_parent_filter(self):
-        res = self.app.get(self.lawless_url + 'filter[parents]=null')
+    def test_no_rules_grabs_all(self, app, lawless_url, lawless_url_generalized):
+        res = app.get(lawless_url)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 4)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 15
 
-    def test_rules_enforced_with_null_parent_filter(self):
-        res = self.app.get(self.ruled_url + 'filter[parents]=null')
+        res = app.get(lawless_url_generalized)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 3)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 15
+
+    def test_rules_only_grab_acceptable_subjects(self, app, ruled_url, ruled_url_generalized):
+        res = app.get(ruled_url)
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 11
+
+        res = app.get(ruled_url_generalized)
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 11
+
+    def test_no_rules_with_null_parent_filter(self, app, lawless_url, lawless_url_generalized):
+        res = app.get(lawless_url + 'filter[parents]=null')
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 4
+
+        res = app.get(lawless_url_generalized + 'filter[parents]=null')
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 4
+
+    def test_rules_enforced_with_null_parent_filter(self, app, ruled_url, ruled_url_generalized):
+        res = app.get(ruled_url + 'filter[parents]=null')
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
         texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('A', texts)
-        assert_in('H', texts)
-        assert_in('L', texts)
-        assert_not_in('O', texts)
+        assert 'A' in texts
+        assert 'H' in texts
+        assert 'L' in texts
+        assert 'O' not in texts
 
-    def test_no_rules_with_parents_filter(self):
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parents]={}'.format(
-                self.subB._id))
+        res = app.get(ruled_url_generalized + 'filter[parents]=null')
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['data'][0]['attributes']['text'], 'F')
-
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parents]={}'.format(
-                self.subI._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parents]={}'.format(
-                self.subM._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-
-    def test_rules_enforced_with_parents_filter(self):
-        res = self.app.get(
-            self.ruled_url +
-            'filter[parents]={}'.format(
-                self.subB._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 0)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
         texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_not_in('F', texts)
+        assert 'A' in texts
+        assert 'H' in texts
+        assert 'L' in texts
+        assert 'O' not in texts
 
-        res = self.app.get(
-            self.ruled_url +
+    def test_no_rules_with_parents_filter(self, app, lawless_url, lawless_url_generalized, subB, subI, subM):
+        res = app.get(
+            lawless_url +
             'filter[parents]={}'.format(
-                self.subI._id))
+                subB._id))
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('J', texts)
-        assert_not_in('K', texts)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert res.json['data'][0]['attributes']['text'] == 'F'
 
-        res = self.app.get(
-            self.ruled_url +
+        res = app.get(
+            lawless_url +
             'filter[parents]={}'.format(
-                self.subM._id))
+                subI._id))
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-        texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('N', texts)
-        assert_in('E', texts)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
 
-    def test_no_rules_with_parent_filter(self):
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parent]={}'.format(
-                self.subB._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['data'][0]['attributes']['text'], 'F')
-
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parent]={}'.format(
-                self.subI._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-
-        res = self.app.get(
-            self.lawless_url +
-            'filter[parent]={}'.format(
-                self.subM._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-
-    def test_rules_enforced_with_parent_filter(self):
-        res = self.app.get(
-            self.ruled_url +
-            'filter[parent]={}'.format(
-                self.subB._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 0)
-        texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_not_in('F', texts)
-
-        res = self.app.get(
-            self.ruled_url +
-            'filter[parent]={}'.format(
-                self.subI._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('J', texts)
-        assert_not_in('K', texts)
-
-        res = self.app.get(
-            self.ruled_url +
-            'filter[parent]={}'.format(
-                self.subM._id))
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
-        texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('N', texts)
-        assert_in('E', texts)
-
-    def test_no_rules_with_grandparent_filter(self):
-        res = self.app.get(
-            self.lawless_url +
+        res = app.get(
+            lawless_url +
             'filter[parents]={}'.format(
-                self.subA._id))
+                subM._id))
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 3)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
 
-    def test_rules_enforced_with_grandparent_filter(self):
-        res = self.app.get(
-            self.ruled_url +
+        res = app.get(
+            lawless_url_generalized +
             'filter[parents]={}'.format(
-                self.subA._id))
+                subB._id))
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert res.json['data'][0]['attributes']['text'] == 'F'
+
+        res = app.get(
+            lawless_url_generalized +
+            'filter[parents]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+
+        res = app.get(
+            lawless_url_generalized +
+            'filter[parents]={}'.format(
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+
+    def test_rules_enforced_with_parents_filter(self, app, ruled_url, ruled_url_generalized, subB, subI, subM):
+        res = app.get(
+            ruled_url +
+            'filter[parents]={}'.format(
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 0
         texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('B', texts)
-        assert_in('D', texts)
-        assert_not_in('C', texts)
+        assert 'F' not in texts
 
+        res = app.get(
+            ruled_url +
+            'filter[parents]={}'.format(
+                subI._id))
 
-class TestPreprintProviderSpecificSubjects(ApiTestCase):
-    def setUp(self):
-        super(TestPreprintProviderSpecificSubjects, self).setUp()
-        self.provider_1 = PreprintProviderFactory()
-        self.provider_2 = PreprintProviderFactory()
-        self.root_subject_1 = SubjectFactory(
-            text='R1', provider=self.provider_1)
-        self.parent_subject_1 = SubjectFactory(
-            text='P1', provider=self.provider_1, parent=self.root_subject_1)
-        self.child_subject_1 = SubjectFactory(
-            text='C1', provider=self.provider_1, parent=self.parent_subject_1)
-        self.root_subject_2 = SubjectFactory(
-            text='R2', provider=self.provider_2)
-        self.parent_subject_2 = SubjectFactory(
-            text='P2', provider=self.provider_2, parent=self.root_subject_2)
-        self.child_subject_2 = SubjectFactory(
-            text='C2', provider=self.provider_2, parent=self.parent_subject_2)
-        self.url_1 = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, self.provider_1._id)
-        self.url_2 = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, self.provider_2._id)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'J' in texts
+        assert 'K' not in texts
 
-    def test_mapped_subjects_are_not_shared_list(self):
-        res_1 = self.app.get(self.url_1)
-        res_2 = self.app.get(self.url_2)
+        res = app.get(
+            ruled_url +
+            'filter[parents]={}'.format(
+                subM._id))
 
-        assert_equal(res_1.status_code, 200)
-        assert_equal(res_2.status_code, 200)
-        assert_equal(res_1.json['links']['meta']['total'], 3)
-        assert_equal(res_2.json['links']['meta']['total'], 3)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'N' in texts
+        assert 'E' in texts
 
-        assert_equal(
-            len(set([d['attributes']['text'] for d in res_1.json['data']]) &
-                set([d['attributes']['text'] for d in res_2.json['data']])),
-            0
-        )
-        assert_equal(
-            len(set([d['attributes']['text'] for d in res_1.json['data']]) |
-                set([d['attributes']['text'] for d in res_2.json['data']])),
-            6
-        )
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parents]={}'.format(
+                subB._id))
 
-    def test_mapped_subjects_are_not_shared_filter(self):
-        res_1 = self.app.get(
-            self.url_1 +
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 0
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'F' not in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parents]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'J' in texts
+        assert 'K' not in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parents]={}'.format(
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'N' in texts
+        assert 'E' in texts
+
+    def test_no_rules_with_parent_filter(self, app, lawless_url, lawless_url_generalized, subB, subI, subM):
+        res = app.get(
+            lawless_url +
             'filter[parent]={}'.format(
-                self.root_subject_1._id))
-        res_2 = self.app.get(
-            self.url_2 +
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert res.json['data'][0]['attributes']['text'] == 'F'
+
+        res = app.get(
+            lawless_url +
             'filter[parent]={}'.format(
-                self.root_subject_2._id))
+                subI._id))
 
-        assert_equal(res_1.status_code, 200)
-        assert_equal(res_2.status_code, 200)
-        assert_equal(res_1.json['links']['meta']['total'], 1)
-        assert_equal(res_2.json['links']['meta']['total'], 1)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
 
-        assert_equal(
-            len(set([d['attributes']['text'] for d in res_1.json['data']]) &
-                set([d['attributes']['text'] for d in res_2.json['data']])),
-            0
-        )
-        assert_equal(
-            len(set([d['attributes']['text'] for d in res_1.json['data']]) |
-                set([d['attributes']['text'] for d in res_2.json['data']])),
-            2
-        )
-
-    def test_mapped_subjects_filter_wrong_provider(self):
-        res_1 = self.app.get(
-            self.url_1 +
+        res = app.get(
+            lawless_url +
             'filter[parent]={}'.format(
-                self.root_subject_2))
-        res_2 = self.app.get(
-            self.url_2 +
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+
+        res = app.get(
+            lawless_url_generalized +
             'filter[parent]={}'.format(
-                self.root_subject_1))
+                subB._id))
 
-        assert_equal(res_1.status_code, 200)
-        assert_equal(res_2.status_code, 200)
-        assert_equal(res_1.json['links']['meta']['total'], 0)
-        assert_equal(res_2.json['links']['meta']['total'], 0)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert res.json['data'][0]['attributes']['text'] == 'F'
+
+        res = app.get(
+            lawless_url_generalized +
+            'filter[parent]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+
+        res = app.get(
+            lawless_url_generalized +
+            'filter[parent]={}'.format(
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+
+    def test_rules_enforced_with_parent_filter(self, app, ruled_url, ruled_url_generalized, subB, subI, subM):
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 0
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'F' not in texts
+
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'J' in texts
+        assert 'K' not in texts
+
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'N' in texts
+        assert 'E' in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parent]={}'.format(
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 0
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'F' not in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parent]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'J' in texts
+        assert 'K' not in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parent]={}'.format(
+                subM._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'N' in texts
+        assert 'E' in texts
+
+    def test_no_rules_with_grandparent_filter(self, app, lawless_url, lawless_url_generalized, subA):
+        res = app.get(
+            lawless_url +
+            'filter[parents]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+
+        res = app.get(
+            lawless_url_generalized +
+            'filter[parents]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+
+    def test_rules_enforced_with_grandparent_filter(self, app, ruled_url, ruled_url_generalized, subA):
+        res = app.get(
+            ruled_url +
+            'filter[parents]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'B' in texts
+        assert 'D' in texts
+        assert 'C' not in texts
+
+        res = app.get(
+            ruled_url_generalized +
+            'filter[parents]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'B' in texts
+        assert 'D' in texts
+        assert 'C' not in texts
 
 
-class TestPreprintProviderHighlightedSubjects(ApiTestCase):
-    def setUp(self):
-        super(TestPreprintProviderHighlightedSubjects, self).setUp()
-        self.provider = PreprintProviderFactory()
-        self.subj_a = SubjectFactory(provider=self.provider, text='A')
-        self.subj_aa = SubjectFactory(
-            provider=self.provider,
-            text='AA',
-            parent=self.subj_a,
-            highlighted=True)
-        self.url = '/{}preprint_providers/{}/taxonomies/highlighted/'.format(
-            API_BASE, self.provider._id)
+@pytest.mark.django_db
+class TestPreprintProviderSpecificSubjects:
 
-    def test_mapped_subjects_filter_wrong_provider(self):
-        res = self.app.get(self.url)
+    @pytest.fixture(autouse=True)
+    def provider_1(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture(autouse=True)
+    def provider_2(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture(autouse=True)
+    def root_subject_1(self, provider_1):
+        return SubjectFactory(text='R1', provider=provider_1)
+
+    @pytest.fixture(autouse=True)
+    def parent_subject_1(self, provider_1, root_subject_1):
+        return SubjectFactory(text='P1', provider=provider_1, parent=root_subject_1)
+
+    @pytest.fixture(autouse=True)
+    def child_subject_1(self, provider_1, parent_subject_1):
+        return SubjectFactory(text='C1', provider=provider_1, parent=parent_subject_1)
+
+    @pytest.fixture(autouse=True)
+    def root_subject_2(self, provider_2):
+        return SubjectFactory(text='R2', provider=provider_2)
+
+    @pytest.fixture(autouse=True)
+    def parent_subject_2(self, provider_2, root_subject_2):
+        return SubjectFactory(text='P2', provider=provider_2, parent=root_subject_2)
+
+    @pytest.fixture(autouse=True)
+    def child_subject_2(self, provider_2, parent_subject_2):
+        return SubjectFactory(text='C2', provider=provider_2, parent=parent_subject_2)
+
+    @pytest.fixture()
+    def url_1(self, provider_1):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_1_generalized(self, provider_1):
+        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_2(self, provider_2):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+
+    @pytest.fixture()
+    def url_2_generalized(self, provider_2):
+        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+
+    def test_mapped_subjects_are_not_shared_list(self, app, url_1, url_2, url_1_generalized, url_2_generalized):
+        res_1 = app.get(url_1)
+        res_2 = app.get(url_2)
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 3
+        assert res_2.json['links']['meta']['total'] == 3
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 0
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 6
+
+        res_1 = app.get(url_1_generalized)
+        res_2 = app.get(url_2_generalized)
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 3
+        assert res_2.json['links']['meta']['total'] == 3
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 0
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 6
+
+    def test_mapped_subjects_are_not_shared_filter(self, app, url_1, url_2, url_1_generalized, url_2_generalized, root_subject_1, root_subject_2):
+        res_1 = app.get(
+            url_1 +
+            'filter[parent]={}'.format(
+                root_subject_1._id))
+        res_2 = app.get(
+            url_2 +
+            'filter[parent]={}'.format(
+                root_subject_2._id))
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 1
+        assert res_2.json['links']['meta']['total'] == 1
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 0
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 2
+
+        res_1 = app.get(
+            url_1_generalized +
+            'filter[parent]={}'.format(
+                root_subject_1._id))
+        res_2 = app.get(
+            url_2_generalized +
+            'filter[parent]={}'.format(
+                root_subject_2._id))
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 1
+        assert res_2.json['links']['meta']['total'] == 1
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 0
+
+        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+               == 2
+
+    def test_mapped_subjects_filter_wrong_provider(self, app, url_1, url_2, url_1_generalized, url_2_generalized, root_subject_1, root_subject_2):
+        res_1 = app.get(
+            url_1 +
+            'filter[parent]={}'.format(
+                root_subject_2))
+        res_2 = app.get(
+            url_2 +
+            'filter[parent]={}'.format(
+                root_subject_1))
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 0
+        assert res_2.json['links']['meta']['total'] == 0
+
+        res_1 = app.get(
+            url_1_generalized +
+            'filter[parent]={}'.format(
+                root_subject_2))
+        res_2 = app.get(
+            url_2_generalized +
+            'filter[parent]={}'.format(
+                root_subject_1))
+
+        assert res_1.status_code == 200
+        assert res_2.status_code == 200
+        assert res_1.json['links']['meta']['total'] == 0
+        assert res_2.json['links']['meta']['total'] == 0
+
+
+@pytest.mark.django_db
+class TestPreprintProviderHighlightedSubjects:
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def subj_a(self, provider):
+        return SubjectFactory(provider=provider, text='A')
+
+    @pytest.fixture()
+    def subj_aa(self, provider, subj_a):
+        return SubjectFactory(provider=provider, text='AA', parent=subj_a, highlighted=True)
+
+    @pytest.fixture()
+    def url(self, provider):
+        return '/{}preprint_providers/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+
+    @pytest.fixture()
+    def url_generalized(self, provider):
+        return '/{}providers/preprints/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+
+    def test_mapped_subjects_filter_wrong_provider(self, app, url, url_generalized, subj_aa):
+        res = app.get(url)
 
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == self.subj_aa._id
+        assert res.json['data'][0]['id'] == subj_aa._id
+
+        res = app.get(url_generalized)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == subj_aa._id
 
 
-class TestCustomTaxonomy(ApiTestCase):
-    def setUp(self):
-        super(TestCustomTaxonomy, self).setUp()
-        self.osf_provider = PreprintProviderFactory(
-            _id='osf', share_title='bepress')
-        self.asdf_provider = PreprintProviderFactory(
-            _id='asdf', share_title='ASDF')
-        bepress_subj = SubjectFactory(
-            text='BePress Text',
-            provider=self.osf_provider)
-        other_subj = SubjectFactory(
-            text='Other Text',
-            bepress_subject=bepress_subj,
-            provider=self.asdf_provider)
-        self.url = '/{}preprint_providers/{}/taxonomies/'
+@pytest.mark.django_db
+class TestCustomTaxonomy:
 
-    def test_taxonomy_share_title(self):
-        bepress_res = self.app.get(
-            self.url.format(
+    @pytest.fixture()
+    def osf_provider(self):
+        return PreprintProviderFactory(_id='osf', share_title='bepress')
+
+    @pytest.fixture()
+    def asdf_provider(self):
+        return PreprintProviderFactory(_id='asdf', share_title='ASDF')
+
+    @pytest.fixture()
+    def bepress_subj(self, osf_provider):
+        return SubjectFactory(text='BePress Text', provider=osf_provider)
+
+    @pytest.fixture()
+    def other_subj(self, bepress_subj, asdf_provider):
+        return SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=asdf_provider)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprint_providers/{}/taxonomies/'
+
+    @pytest.fixture()
+    def url_generalized(self):
+        return '/{}providers/preprints/{}/taxonomies/'
+
+    def test_taxonomy_share_title(self, app, url, url_generalized, osf_provider, asdf_provider, bepress_subj, other_subj):
+        bepress_res = app.get(
+            url.format(
                 API_BASE,
-                self.osf_provider._id))
-        asdf_res = self.app.get(
-            self.url.format(
+                osf_provider._id))
+        asdf_res = app.get(
+            url.format(
                 API_BASE,
-                self.asdf_provider._id))
+                asdf_provider._id))
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
-        assert bepress_res.json['data'][0]['attributes']['share_title'] == self.osf_provider.share_title
-        assert asdf_res.json['data'][0]['attributes']['share_title'] == self.asdf_provider.share_title
+        assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+        bepress_res = app.get(
+            url_generalized.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url_generalized.format(
+                API_BASE,
+                asdf_provider._id))
+
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title

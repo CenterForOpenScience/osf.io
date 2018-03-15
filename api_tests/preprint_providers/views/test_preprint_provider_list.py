@@ -15,6 +15,10 @@ class TestPreprintProviderList:
         return '/{}preprint_providers/?version=2.2&'.format(API_BASE)
 
     @pytest.fixture()
+    def url_generalized(self):
+        return '/{}providers/preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
     def user(self):
         return AuthUserFactory()
 
@@ -60,5 +64,34 @@ class TestPreprintProviderList:
             provider_one, provider_two):
         res = app.get('{}filter[{}]={}'.format(
             url, filter_type, filter_value))
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+
+    def test_preprint_provider_list_for_generalized_endpoint(
+            self, app, url_generalized, user, provider_one, provider_two):
+        # Test length and not auth
+        res = app.get(url_generalized)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+        # Test length and auth
+        res = app.get(url_generalized, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    @pytest.mark.parametrize('filter_type,filter_value', [
+        ('allow_submissions', True),
+        ('description', 'spots%20not%20dots'),
+        ('domain', 'https://www.spotarxiv.com'),
+        ('domain_redirect_enabled', True),
+        ('id', 'spot'),
+        ('name', 'Spotarxiv'),
+        ('share_publish_type', 'Thesis'),
+    ])
+    def test_preprint_provider_list_filtering_for_generalized_endpoint(
+            self, filter_type, filter_value, app, url_generalized,
+            provider_one, provider_two):
+        res = app.get('{}filter[{}]={}'.format(
+            url_generalized, filter_type, filter_value))
         assert res.status_code == 200
         assert len(res.json['data']) == 1
