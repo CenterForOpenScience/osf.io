@@ -24,13 +24,13 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
 #    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
-#  emberosf-sync:
-#    src: '../ember-osf/'
-#    sync_strategy: 'native_osx'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+  emberosf-sync:
+    src: '../ember-osf/'
+    sync_strategy: 'native_osx'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
 #  ember_osf_web-sync:
 #    src: '../ember-osf-web'
@@ -40,13 +40,13 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-#  preprints-sync:
-#    src: '../ember-osf-preprints'
-#    sync_strategy: 'native_osx'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+  preprints-sync:
+    src: '../ember-osf-preprints'
+    sync_strategy: 'native_osx'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
 #  registries-sync:
 #    src: '../ember-osf-registries'
