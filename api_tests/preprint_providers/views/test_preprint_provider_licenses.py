@@ -54,7 +54,7 @@ class TestPreprintProviderLicenses:
         res = app.get(url)
 
         assert res.status_code == 200
-        assert  res.json['links']['meta']['total'] == len(licenses)
+        assert res.json['links']['meta']['total'] == len(licenses)
         assert license2._id == res.json['data'][0]['id']
 
     def test_prerint_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license1, license2, license3, url):
@@ -103,7 +103,7 @@ class TestPreprintProviderLicenses:
         res = app.get(url_generalized)
 
         assert res.status_code == 200
-        assert  res.json['links']['meta']['total'] == len(licenses)
+        assert res.json['links']['meta']['total'] == len(licenses)
         assert license2._id == res.json['data'][0]['id']
 
     def test_prerint_provider_has_acceptable_licenses_but_no_default_for_generalized_endpoint(self, app, provider, licenses, license1, license2, license3, url_generalized):

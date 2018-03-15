@@ -7,7 +7,27 @@ from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 @pytest.mark.django_db
 class TestPreprintProviderSubjects:
-
+    '''
+    Subject Hierarchy
+    +-----------------------------+
+    |                             |
+    |      +-------->B+----->F    |
+    |      |                      |
+    |  A+----------->C            |
+    |      |                      |
+    |      +-------->D+----->G    |
+    |                             |
+    |  H+------>I+----->J         |
+    |            |                |
+    |            +----->K         |
+    |                             |
+    |  L+------>M+----->N         |
+    |            |                |
+    |            +------->E       |
+    |                             |
+    |  O                          |
+    +-----------------------------+
+    '''
     @pytest.fixture(autouse=True)
     def subA(self):
         return SubjectFactory(text='A')
@@ -51,10 +71,6 @@ class TestPreprintProviderSubjects:
     @pytest.fixture(autouse=True)
     def subL(self):
         return SubjectFactory(text='L')
-
-    @pytest.fixture(autouse=True)
-    def subM(self, subL):
-        return SubjectFactory(text='M', parent=subL)
 
     @pytest.fixture(autouse=True)
     def subM(self, subL):

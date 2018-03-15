@@ -104,7 +104,6 @@ class TestPreprintProviderExists:
             expect_errors=True)
         assert taxonomies_res.status_code == 404
 
-
     def test_has_highlighted_subjects_flag(
             self, app, preprint_provider,
             preprint_provider_two, provider_url):

@@ -29,7 +29,7 @@ class ProviderSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
-    
+
     class Meta:
         type_ = 'providers'
 
