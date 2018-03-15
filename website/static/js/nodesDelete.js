@@ -104,14 +104,29 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
     self.nodesChanged = ko.observableArray([]);
-    //state of current nodes
+    self.termForChildren = ko.pureComputed(function() {
+        return self.nodeType === 'project' ? 'components' : 'subcomponents';
+    });
     self.nodesState = ko.observableArray();
     self.hasPreprints = ko.observable(false);
     self.preprintMessage = ko.computed(function() {
-        return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>. ' +
-        (self.hasPreprints() ? ('This '+ self.nodeType + ' also has child components that contain <strong>preprints</strong>. ') : '') +
-        'Deleting this ' + self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong> in its child components.' +
-        ' This action is irreversible.';
+        if (self.isPreprint && self.hasPreprints()) {
+            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>, and one or more\
+               of its ' + self.termForChildren() + ' also contains a <strong>preprint</strong>. Deleting\
+               this ' + self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong>\
+               in its ' + self.termForChildren() + '. This action is irreversible.';
+        }
+
+        if (self.isPreprint && !self.hasPreprints()) {
+            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>. Deleting this ' +
+                self.nodeType + ' will delete your <strong>preprint</strong>. This action is irreversible.';
+        }
+
+        if (!self.isPreprint && self.hasPreprints()) {
+            return '<br><br>This ' + self.nodeType + ' has one or more ' + self.termForChildren() +
+                ' that contain <strong>preprints</strong>. Deleting this ' + self.nodeType + ' will delete all <strong>preprints</strong> in its ' +
+                self.termForChildren() + '. This action is irreversible.';
+        }
     });
 
     self.nodesState.subscribe(function (newValue) {
@@ -144,17 +159,17 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     });
 
     self.message = ko.computed(function () {
-        var message = 'It looks like your ' + self.nodeType + ' has components within it. To delete this ' +
-          self.nodeType + ', you must also delete all child components.';
+        var message = 'This ' + self.nodeType + ' contains ' + self.termForChildren() + '. To delete this ' +
+          self.nodeType + ', you must also delete all ' + self.termForChildren() + '.';
 
-        var confirm_message = 'The following ' + (self.nodeType === 'project' ? 'project and ' : '') + 'components will be deleted.';
+        var confirm_message = ' The following ' + (self.nodeType === 'project' ? 'project and ' : '') + self.termForChildren() + ' will be deleted.';
 
         if (self.page() === self.CONFIRM) {
             return confirm_message;
         }
 
         return {
-            select: message + ((self.isPreprint || self.hasPreprints()) ? self.preprintMessage() : ''),
+            select: message + ((self.isPreprint || self.hasPreprints()) ? self.preprintMessage() : ' This action is irreversible.'),
             confirm: confirm_message
         }[self.page()];
     });
