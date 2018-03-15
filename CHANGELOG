@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.135.0 (2018-03-15)
+====================
+
+- Display file metadata for addon files deleted outside of the OSF.
+- Add decorator for feature-flagging EmbOSF routes.
+- Add footer to OSF landing page foor logged out users.
+- Make loading indicators consistent.
+- Show DOIs on withdrawn registrations.
+- Make support email configurable in settings.
+- Install bootstrap with npm and add it to vendor bundle.
+- Improve opt out links in notification emails.
+- Don't allow force checking in files that are checked out by Prereg reviewers.
+- API: Add ?info query parameter to get metadata about folders.
+- API: Require "id" and "type" for POST and PATCH requests to preprint endpoints.
+- API: Fix embedding identifiers in preprint list.
+- API: Add download links to file versions.
+- API: Performance improvements to node updates.
+
 0.134.0 (2018-02-28)
 ====================
 

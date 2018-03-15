@@ -31,12 +31,14 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
+from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
-                        NodeLog, DraftRegistration, MetaSchema)
+                        NodeLog, DraftRegistration, MetaSchema,
+                        Guid)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
@@ -55,8 +57,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'FILE_GONE_ACTOR_UNKNOWN': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -67,8 +68,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'DONT_KNOW': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -76,8 +76,7 @@ It was deleted on {deleted_on}.
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>
-</div>''',
+</p>''',
                   'BLAME_PROVIDER': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -89,15 +88,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>
-</div>''',
+</p>''',
                   'FILE_SUSPENDED': u'''
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.
-</div>'''}
+This content has been removed.'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -534,9 +531,9 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
-        if file_node.suspended:
+        if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None:
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
@@ -564,10 +561,14 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
+    error_msg = ''.join([
+        ERROR_MESSAGES[error_type].format(**format_params),
+        format_last_known_metadata(auth, node, file_node, error_type)
+    ])
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
     ret.update({
-        'error': ERROR_MESSAGES[error_type].format(**format_params),
+        'error': error_msg,
         'urls': {
             'render': None,
             'sharejs': None,
@@ -649,16 +650,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         # Rollback the insertion of the file_node
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
-            redirect_file_node = BaseFileNode.load(path)
+            file_node = BaseFileNode.load(path)
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if redirect_file_node and redirect_file_node.provider == 'osfstorage' and not redirect_file_node.is_deleted:
+            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    redirect_file_node.node.web_url_for('addon_view_or_download_file', path=redirect_file_node._id, provider=redirect_file_node.provider)
+                    file_node.node.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
-            raise HTTPError(httplib.NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
     else:
         transaction.savepoint_commit(savepoint_id)
@@ -695,6 +692,39 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
+
+
+@collect_auth
+def persistent_file_download(auth, **kwargs):
+    id_or_guid = kwargs.get('fid_or_guid')
+    file = BaseFileNode.active.filter(_id=id_or_guid).first()
+    if not file:
+        guid = Guid.load(id_or_guid)
+        if guid:
+            file = guid.referent
+        else:
+            raise HTTPError(httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.'
+            })
+    if not file.is_file:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Downloading folders is not permitted.'
+        })
+
+    auth_redirect = check_contributor_auth(file.node, auth,
+                                           include_public=True,
+                                           include_view_only_anon=True)
+    if auth_redirect:
+        return auth_redirect
+
+    query_params = request.args.to_dict()
+
+    return redirect(
+        file.generate_waterbutler_url(**query_params),
+        code=httplib.FOUND
+    )
+
 
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
@@ -781,7 +811,7 @@ def is_pre_reg_checkout(node, file_node):
         return False
     if checkout_user in node.contributors:
         return False
-    if checkout_user.has_perm('osf.prereg_view'):
+    if checkout_user.has_perm('osf.view_prereg'):
         return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
     return False
 

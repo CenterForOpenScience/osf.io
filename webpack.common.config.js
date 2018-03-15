@@ -85,6 +85,7 @@ var entry = {
         'mithril',
         // Main CSS files that get loaded above the fold
         nodePath('select2/select2.css'),
+        nodePath('bootstrap/dist/css/bootstrap.css'),
         '@centerforopenscience/osf-style',
         staticPath('css/style.css'),
     ],
@@ -139,7 +140,7 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
-        'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
+        'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
         'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),

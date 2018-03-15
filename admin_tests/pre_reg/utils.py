@@ -1,9 +1,17 @@
 from osf.models import DraftRegistration, MetaSchema
+from admin.pre_reg.views import get_metadata_files
 
 
 def draft_reg_util():
     DraftRegistration.objects.all().delete()
     return MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+
+
+def checkin_files(draft):
+    if draft.approval_id:
+        for item in get_metadata_files(draft):
+            item.checkout = None
+            item.save()
 
 
 SCHEMA_DATA = {
