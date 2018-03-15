@@ -77,10 +77,11 @@ $(function(){
     }
 
     // Existing Draft Registrations
+    var draftRegistrationsUrl;
     if(campaignShort){
-        var draftRegistrationsUrl = '/api/v1/' + campaignShort + '/draft_registrations/';
+        draftRegistrationsUrl = '/api/v1/' + campaignShort + '/draft_registrations/';
     }else {
-        var draftRegistrationsUrl = '/api/v1/draft_registrations/';
+        draftRegistrationsUrl = '/api/v1/draft_registrations/';
     }
     $.getJSON(draftRegistrationsUrl).then(function(response){
         if (response.draftRegistrations.length) {
