@@ -564,8 +564,8 @@ class PreprintFactory(DjangoModelFactory):
         creator = kwargs.pop('creator', None) or UserFactory()
         project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
-        instance = target_class(node=project, provider=provider)
-
+        title = kwargs.pop('title', None) or "Untitled"
+        instance = target_class(node=project, provider=provider, title=title)
         return instance
 
     @classmethod
@@ -579,6 +579,8 @@ class PreprintFactory(DjangoModelFactory):
 
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
+        title = kwargs.pop('title', None) or "Untitled"
+        description = kwargs.pop('description', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
@@ -611,6 +613,7 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
+        # import pdb; pdb.set_trace()
 
         if finish:
             auth = Auth(user)
@@ -630,7 +633,6 @@ class PreprintFactory(DjangoModelFactory):
 
         if not instance.is_published:
             instance.node._has_abandoned_preprint = True
-
         instance.node.save()
         instance.save()
         return instance
