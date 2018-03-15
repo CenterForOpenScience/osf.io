@@ -395,8 +395,10 @@ class FileVersionSerializer(JSONAPISerializer):
 
 def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
+    # Add '' to the path to ensure thare's a trailing slash
+    # The trailing slash avoids a 301
     url = furl.furl(settings.DOMAIN).set(
-        path=('download', guid._id if guid else obj._id,),
+        path=('download', guid._id if guid else obj._id, ''),
     )
 
     if version:
@@ -404,5 +406,4 @@ def get_file_download_link(obj, version=None, view_only=None):
 
     if view_only:
         url.args['view_only'] = view_only
-
     return url.url
