@@ -7,17 +7,17 @@ from rest_framework.exceptions import NotFound
 from api.base.utils import get_user_auth
 from osf.models import AbstractNode, Collection, CollectedGuidMetadata
 
-class CreatorOrAdminOrPublic(permissions.BasePermission):
+class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, CollectedGuidMetadata):
             obj = obj.collection
+        auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             if obj.is_public:
                 return True
-        auth = get_user_auth(request)
-        # TODO [IN-152]: Use django-guardian. For now, only creators
-        return obj.creator == auth.user
+            return auth.user and auth.user.has_perm('read_collection', obj)
+        return auth.user and auth.user.has_perm('write_collection', obj)
 
 class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
@@ -27,7 +27,7 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
             return request.method in permissions.SAFE_METHODS
         return True
 
-class CreatorOrAdminOrPublicForPointers(permissions.BasePermission):
+class CollectionWriteOrPublicForPointers(permissions.BasePermission):
     # Adapted from ContributorOrPublicForPointers
     # Will only work for refs that point to AbstractNodes/Collections
     def has_object_permission(self, request, view, obj):
@@ -36,24 +36,24 @@ class CreatorOrAdminOrPublicForPointers(permissions.BasePermission):
         collection = Collection.load(request.parser_context['kwargs']['node_id'])
         pointer_node = collection.collectedguidmetadata_set.get(guid___id=request.parser_context['kwargs']['node_link_id']).guid.referent
         if request.method in permissions.SAFE_METHODS:
-            has_collection_auth = collection.creator == auth.user
+            has_collection_auth = auth.user and auth.user.has_perm('read_collection', collection)
             if isinstance(pointer_node, AbstractNode):
                 has_pointer_auth = pointer_node.can_view(auth)
             elif isinstance(pointer_node, Collection):
-                has_pointer_auth = pointer_node.creator == auth.user
+                has_pointer_auth = auth.user and auth.user.has_perm('read_collection', pointer_node)
             public = pointer_node.is_public
             has_auth = public or (has_collection_auth and has_pointer_auth)
             return has_auth
         else:
-            return collection.creator == auth.user
+            return auth.user and auth.user.has_perm('write_collection', collection)
 
-class CreatorOrAdminOrPublicForRelationshipPointers(permissions.BasePermission):
+class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission):
     # Adapted from ContributorOrPublicForRelationshipPointers
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
         collection = obj['self']
-        has_collection_auth = collection.creator == auth.user
+        has_collection_auth = auth.user and auth.user.has_perm('write_collection', collection)
 
         if request.method in permissions.SAFE_METHODS:
             if collection.is_public:

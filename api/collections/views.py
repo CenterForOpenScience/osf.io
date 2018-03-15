@@ -1,3 +1,4 @@
+from guardian.core import ObjectPermissionChecker
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -13,9 +14,9 @@ from api.base.views import LinkedRegistrationsRelationship
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.permissions import (
-    CreatorOrAdminOrPublic,
-    CreatorOrAdminOrPublicForPointers,
-    CreatorOrAdminOrPublicForRelationshipPointers,
+    CollectionWriteOrPublic,
+    CollectionWriteOrPublicForPointers,
+    CollectionWriteOrPublicForRelationshipPointers,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
@@ -116,7 +117,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        CreatorOrAdminOrPublic
+        CollectionWriteOrPublic,
     )
 
     required_read_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ]
@@ -142,9 +143,9 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             auth = get_user_auth(self.request)
             collection_ids = [coll['id'] for coll in self.request.data]
             collections = Collection.objects.filter(guids___id__in=collection_ids)
+            checker = ObjectPermissionChecker(auth.user)
             for collection in collections:
-                if not auth.user == collection.creator:
-                    # TODO [IN-152]: Use django-guardian for "edit" perms. Limit to creators for now
+                if not checker.has_perm('write_collection', collection):
                     raise PermissionDenied
             return collections
         else:
@@ -173,9 +174,9 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
         """User must have admin permissions to delete collections."""
+        checker = ObjectPermissionChecker(user)
         for collection in resource_list:
-            if not user == collection.creator:
-                # TODO [IN-152]: Use django-guardian for "admin" perms. Limit to creators for now
+            if not checker.has_perm('admin_collection', collection):
                 return False
         return True
 
@@ -256,7 +257,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CreatorOrAdminOrPublic,
+        CollectionWriteOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -326,7 +327,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CreatorOrAdminOrPublic,
+        CollectionWriteOrPublic,
         base_permissions.TokenHasScope,
     )
     serializer_class = NodeSerializer
@@ -415,7 +416,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CreatorOrAdminOrPublic,
+        CollectionWriteOrPublic,
         ReadOnlyIfCollectedRegistration,
         base_permissions.TokenHasScope,
     )
@@ -492,7 +493,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CreatorOrAdminOrPublic,
+        CollectionWriteOrPublic,
         ReadOnlyIfCollectedRegistration,
         base_permissions.TokenHasScope,
     )
@@ -563,7 +564,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     #This Request/Response
     """
     permission_classes = (
-        CreatorOrAdminOrPublicForPointers,
+        CollectionWriteOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfCollectedRegistration,
@@ -665,7 +666,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     corresponding node_id in the request.
     """
     permission_classes = (
-        CreatorOrAdminOrPublicForRelationshipPointers,
+        CollectionWriteOrPublicForRelationshipPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfCollectedRegistration,
@@ -762,7 +763,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     corresponding node_id in the request.
     """
     permission_classes = (
-        CreatorOrAdminOrPublicForRelationshipPointers,
+        CollectionWriteOrPublicForRelationshipPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfCollectedRegistration,
