@@ -20,7 +20,7 @@ generic_location = {
     'object': '1615307',
 }
 
-generic_storage_settings = {
+generic_waterbutler_settings = {
     'storage': {
         'provider': 'glowcloud',
         'container': 'osf_storage',
@@ -28,7 +28,7 @@ generic_storage_settings = {
     }
 }
 
-generic_storage_credentials = {
+generic_waterbutler_credentials = {
     'storage': {
         'region': 'PartsUnknown',
         'username': 'mankind',
@@ -58,5 +58,7 @@ class RegionFactory(DjangoModelFactory):
         model = Region
 
     name = Sequence(lambda n: 'Region {0}'.format(n))
-    storage_credentials = generic_storage_credentials
-    storage_settings = generic_storage_settings
+    _id = Sequence(lambda n: 'us_east_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'

@@ -552,21 +552,18 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
-    def test_storage_region_wb_url_from_creators_defaults(self):
+    def test_region_wb_url_from_creators_defaults(self):
         user = UserFactory()
         region = factories.RegionFactory()
-        wb_url = 'http://123.456.test.woo'
 
         user_settings = user.get_addon('osfstorage')
-        user_settings.default_waterbutler_url = wb_url
-        user_settings.default_storage_region = region
+        user_settings.default_region = region
         user_settings.save()
 
         project = ProjectFactory(creator=user)
         node_settings = project.get_addon('osfstorage')
 
-        assert node_settings.storage_region == region
-        assert node_settings.waterbutler_url == wb_url
+        assert node_settings.region == region
 
 
 @pytest.mark.django_db
