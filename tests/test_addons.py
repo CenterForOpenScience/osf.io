@@ -332,10 +332,12 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_non_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
+        request_url = 'http://localhost:7777/v1/resources/test1/providers/osfstorage/testfile?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
                                          action_meta={'is_mfr_render': False},
+                                         request_metadata={'request': {'url': request_url}},
                                          action=action,
                                          auth={'id': self.user_non_contrib._id})
             nlogs = self.node.logs.count()
@@ -373,9 +375,12 @@ class TestAddonLogs(OsfTestCase):
 
     def test_action_download_mfr_views_non_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
+        request_url = 'http://localhost:7777/v1/resources/test1/providers/osfstorage/testfile?version=1'
+
         payload = self.build_payload(metadata={'path': '/testfile',
                                                'nid': self.node._id},
                                      action='download_file',
+                                     request_metadata={'request': {'url': request_url}},
                                      action_meta={'is_mfr_render': True},
                                      auth={'id': self.user_non_contrib._id})
         nlogs = self.node.logs.count()
