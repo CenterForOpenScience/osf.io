@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 
 from osf.models import OSFUser
 from addons.osfstorage.models import Region, UserSettings as OsfStorageUserSettings
-from addons.osfstorage.settings import DEFAULT_STORAGE_REGION_NAME
+from addons.osfstorage.settings import DEFAULT_REGION_NAME
 from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__file__)
@@ -18,16 +18,17 @@ logger = logging.getLogger(__file__)
 osfstorage_config = apps.get_app_config('addons_osfstorage')
 
 
-def add_osfstorage_addon(state, *args):
+def add_osfstorage_addon(*args):
 
     default_region, created = Region.objects.get_or_create(
-        name=DEFAULT_STORAGE_REGION_NAME,
-        storage_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
-        storage_settings=osfstorage_config.WATERBUTLER_SETTINGS
+        name=DEFAULT_REGION_NAME,
+        waterbutler_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
+        waterbutler_settings=osfstorage_config.WATERBUTLER_SETTINGS,
+        waterbutler_url=WATERBUTLER_URL
     )
 
     if created:
-        logger.info('Created default region: {}'.format(DEFAULT_STORAGE_REGION_NAME))
+        logger.info('Created default region: {}'.format(DEFAULT_REGION_NAME))
 
     total_users = OSFUser.objects.all().count()
     users_done = 0
@@ -39,8 +40,7 @@ def add_osfstorage_addon(state, *args):
         for user in page:
             new_user_settings = OsfStorageUserSettings(
                 owner=user,
-                default_storage_region=default_region,
-                default_waterbutler_url=WATERBUTLER_URL
+                default_region=default_region
             )
             user_settings_to_update.append(new_user_settings)
             users_done += 1
@@ -55,7 +55,7 @@ def remove_osfstorage_addon(*args):
     OsfStorageUserSettings = osfstorage_config.user_settings
 
     region = Region.objects.filter(
-        name=DEFAULT_STORAGE_REGION_NAME
+        name=DEFAULT_REGION_NAME
     )
 
     if region:
@@ -67,7 +67,7 @@ def remove_osfstorage_addon(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0082_merge_20180213_1502'),
+        ('osf', '0084_merge_20180308_1821'),
     ]
 
     operations = [

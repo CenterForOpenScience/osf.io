@@ -27,7 +27,7 @@ from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
 from addons.osfstorage.models import Region
-from addons.osfstorage.settings import DEFAULT_STORAGE_REGION_NAME
+from addons.osfstorage.settings import DEFAULT_REGION_NAME
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
@@ -580,11 +580,10 @@ class TestOSFUser:
 
     def test_has_osfstorage_usersettings(self, user):
         addon = user.get_addon('osfstorage')
-        default_region = Region.objects.get(name=DEFAULT_STORAGE_REGION_NAME)
+        default_region = Region.objects.get(name=DEFAULT_REGION_NAME)
 
         assert addon
-        assert addon.default_storage_region == default_region
-        assert addon.default_waterbutler_url == settings.WATERBUTLER_URL
+        assert addon.default_region == default_region
 
 class TestProjectsInCommon:
 
