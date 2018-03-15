@@ -27,6 +27,11 @@ class ProviderSerializer(JSONAPISerializer):
     facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+    
+    class Meta:
+        type_ = 'providers'
 
 class PreprintProviderSerializer(ProviderSerializer):
     filterable_fields = frozenset([
@@ -121,9 +126,6 @@ class PreprintProviderSerializer(ProviderSerializer):
             'provider_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
-
-    def get_absolute_url(self, obj):
-        return obj.absolute_api_v2_url
 
     def get_external_url(self, obj):
         return obj.external_url
