@@ -810,7 +810,7 @@
             "type": "choose",
             "format": "singleselect",
             "title": "Registration Category",
-            "description": "Based on the information you have provided, we have classified your registration as follows.",
+            "description": "Based on the information you have provided, we have classified your registration as follows. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#RegistrationCategory_Section\">For help in choosing the Registration Category.</a>",
             "options": [
                 "Category 1:  Data measuring the impacts have yet to be been collected.",
                 "Category 2:  The data exist, but these data have not yet been obtained or analyzed by the study researchers.",
