@@ -14,7 +14,9 @@ from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
 from osf.models import OSFUser, AbstractNode
+from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query
@@ -71,6 +73,9 @@ def search_search(**kwargs):
     results['time'] = round(time.time() - tick, 2)
     return results
 
+@ember_flag_is_active('ember_search_page')
+def search_view():
+    return {'shareUrl': settings.SHARE_URL},
 
 def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query
