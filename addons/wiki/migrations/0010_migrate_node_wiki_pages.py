@@ -195,8 +195,15 @@ def migrate_node_wiki_pages(state, schema):
         - For the most recent version of the WikiPage, repoint comments to the new WikiPage
         - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
     """
-    # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
-    nodes_with_wikis = AbstractNode.objects.exclude(wiki_pages_versions={}).include(None).include('contributor__user')
+    nodes_with_wikis = (
+        AbstractNode.objects
+        .exclude(wiki_pages_versions={})
+        .exclude(type='osf.collection')
+        .exclude(type='osf.quickfilesnode')
+        # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
+        .include(None)
+        .include('contributor__user')
+    )
     if nodes_with_wikis:
         create_wiki_pages(nodes_with_wikis)
         create_wiki_versions(nodes_with_wikis)
