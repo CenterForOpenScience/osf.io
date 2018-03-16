@@ -28,7 +28,11 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from addons.wiki.utils import to_mongo_key
-from osf.exceptions import ValidationValueError
+from osf.exceptions import (
+    InvalidTagError, NodeStateError,
+    TagNotFoundError, UserNotAffiliatedError,
+    ValidationValueError
+)
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.identifiers import Identifier, IdentifierMixin
@@ -51,8 +55,7 @@ from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
-from website.exceptions import (InvalidTagError, NodeStateError,
-                                TagNotFoundError, UserNotAffiliatedError)
+
 from website.project.licenses import set_license
 from website.mails import mails
 from website.project import signals as project_signals
