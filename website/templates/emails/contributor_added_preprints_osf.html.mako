@@ -20,7 +20,7 @@
     <br>
     Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
-    Questions? Email contact@osf.io<br>
+    Questions? Email ${osf_contact_email}<br>
 
 </tr>
 </%def>

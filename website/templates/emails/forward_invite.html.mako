@@ -30,7 +30,7 @@
     <br>
     The OSF Team<br>
     <br>
-    Want more information? Visit https://osf.io/ or https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science. Questions? Email contact@osf.io.<br>
+    Want more information? Visit https://osf.io/ or https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science. Questions? Email ${osf_contact_email}.<br>
 
 </tr>
 </%def>

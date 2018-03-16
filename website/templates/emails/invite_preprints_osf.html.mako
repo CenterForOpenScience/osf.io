@@ -18,7 +18,7 @@
     <br>
     (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
     <br>
-    If you are not ${fullname} or you are erroneously being associated with "${node.title}" then email contact@osf.io with the subject line "Claiming Error" to report the problem.<br>
+    If you are not ${fullname} or you are erroneously being associated with "${node.title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
     <br>
     Sincerely,<br>
     <br>
@@ -26,7 +26,7 @@
     <br>
     Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
-    Questions? Email contact@osf.io<br>
+    Questions? Email ${osf_contact_email}<br>
 
 </tr>
 </%def>
