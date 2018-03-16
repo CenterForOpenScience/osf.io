@@ -15,8 +15,8 @@ def populate_provider_notification_subscriptions(*args):
         helper = GroupHelper(provider)
         provider_admins = helper.get_group('admin').user_set.all()
         provider_moderators = helper.get_group('moderator').user_set.all()
-        instance, created = NotificationSubscription.objects.get_or_create(_id='{provider_id}_preprints_submitted_for_review'.format(provider_id=provider._id),
-                                                                           event_name='preprints_submitted_for_review',
+        instance, created = NotificationSubscription.objects.get_or_create(_id='{provider_id}_new_pending_submissions'.format(provider_id=provider._id),
+                                                                           event_name='new_pending_submissions',
                                                                            provider=provider)
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default

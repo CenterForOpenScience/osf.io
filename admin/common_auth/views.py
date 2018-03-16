@@ -82,7 +82,7 @@ class RegisterUser(PermissionRequiredMixin, FormView):
             if group_type == 'reviews':
                 provider_id = split[1]
                 provider = PreprintProvider.load(provider_id)
-                provider.notification_subscriptions.get(event_name='preprints_submitted_for_review').add_user_to_subscription(osf_user, 'email_transactional')
+                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
             if group == prereg_admin_group:
                 administer_permission = Permission.objects.get(codename='administer_prereg')
                 osf_user.user_permissions.add(administer_permission)

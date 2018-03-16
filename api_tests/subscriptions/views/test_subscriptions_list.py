@@ -37,7 +37,7 @@ class TestSubscriptionList:
         # There should only be 4 notifications: users' global, node's comments, node's file updates and provider's preprint added.
         assert len(notification_ids) == 4
         assert '{}_global'.format(user._id) in notification_ids
-        assert '{}_preprints_submitted_for_review'.format(provider._id) in notification_ids
+        assert '{}_new_pending_submissions'.format(provider._id) in notification_ids
         assert '{}_comments'.format(node._id) in notification_ids
         assert '{}_file_updated'.format(node._id) in notification_ids
 

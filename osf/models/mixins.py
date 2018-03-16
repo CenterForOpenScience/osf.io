@@ -594,7 +594,7 @@ class ReviewProviderMixin(models.Model):
     def add_to_group(self, user, group):
         from api.preprint_providers.permissions import GroupHelper
         # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_preprints_submitted_for_review'.format(self._id))
+        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
         user_id = user.id
         is_subscriber = notification.none.filter(id=user_id).exists() \
                         or notification.email_digest.filter(id=user_id).exists() \
@@ -611,7 +611,7 @@ class ReviewProviderMixin(models.Model):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_preprints_submitted_for_review'.format(self._id))
+            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
             notification.remove_user_from_subscription(user, save=True)
 
         return _group.user_set.remove(user)

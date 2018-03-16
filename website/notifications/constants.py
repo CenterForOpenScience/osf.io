@@ -15,7 +15,7 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
 }
 
 PROVIDER_SUBSCRIPTIONS_AVAILABLE = {
-    'preprints_submitted_for_review': 'New preprint submissions for moderators to review.'
+    'new_pending_submissions': 'New preprint submissions for moderators to review.'
 }
 
 # Note: the python value None mean inherit from parent
