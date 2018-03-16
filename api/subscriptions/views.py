@@ -14,8 +14,8 @@ from osf.models import NotificationSubscription
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    view_name = 'user-subscription-list'
-    view_category = 'subscriptions'
+    view_name = 'notification-subscription-list'
+    view_category = 'notification-subscriptions'
     serializer_class = SubscriptionSerializer
     model_class = NotificationSubscription
     permission_classes = (
@@ -35,8 +35,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    view_name = 'user-subscription-detail'
-    view_category = 'subscriptions'
+    view_name = 'notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     serializer_class = SubscriptionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,

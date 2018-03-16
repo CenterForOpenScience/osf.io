@@ -14,6 +14,10 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
     'global_reviews': 'Preprint submissions updated'
 }
 
+PROVIDER_SUBSCRIPTIONS_AVAILABLE = {
+    'preprints_submitted_for_review': 'New preprint submissions for moderators to review.'
+}
+
 # Note: the python value None mean inherit from parent
 NOTIFICATION_TYPES = {
     'email_transactional': 'Email when a change occurs',

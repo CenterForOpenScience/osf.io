@@ -180,7 +180,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
         NotificationSubscription.objects.get_or_create(
-            _id='{provider_id}_preprints_added'.format(provider_id=instance._id),
-            event_name='preprints_added',
+            _id='{provider_id}_preprints_submitted_for_review'.format(provider_id=instance._id),
+            event_name='preprints_submitted_for_review',
             provider=instance
         )
