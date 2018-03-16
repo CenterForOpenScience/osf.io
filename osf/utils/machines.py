@@ -176,6 +176,7 @@ class RequestMachine(BaseMachine):
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
                 admin=admin,
+                mime_type='html',
                 **context
             )
 
@@ -193,6 +194,7 @@ class RequestMachine(BaseMachine):
             mails.send_mail(
                 self.machineable.creator.username,
                 mails.ACCESS_REQUEST_DENIED,
+                mimetype='html',
                 **context
             )
         else:
