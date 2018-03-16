@@ -7,7 +7,7 @@
     <br>
     The primary email address for your OSF account has been changed to ${new_address}.<br>
     <br>
-    If you did not request this action, let us know at contact@cos.io.<br>
+    If you did not request this action, let us know at ${osf_contact_email}.<br>
     <br>
     Sincerely yours,<br>
     <br>

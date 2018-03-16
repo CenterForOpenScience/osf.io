@@ -11,7 +11,7 @@
     <br>
     https://osf.io/settings/account/<br>
     <br>
-    If you need additional help or have questions, let us know at contact@cos.io.<br>
+    If you need additional help or have questions, let us know at .<br>
     <br>
     Sincerely yours,<br>
     <br>
