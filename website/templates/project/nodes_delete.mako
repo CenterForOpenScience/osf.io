@@ -59,7 +59,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p data-bind="text:warning">
+                                <p data-bind="html:warning">
                                 <p data-bind="css: {'text-danger' : (!canDelete() && atMaxLength())}">
                                     Type the following to continue: <strong data-bind="text: confirmationString"></strong>
                                 </p>

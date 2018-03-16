@@ -154,7 +154,7 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.pageTitle = ko.computed(function () {
         return {
             select: 'Delete ' + self.nodeType,
-            confirm: 'Delete ' + (self.nodeType === 'project' ? 'project and ' : '') + 'components'
+            confirm: 'Delete ' + self.nodeType + ' and ' + self.termForChildren()
         }[self.page()];
     });
 
@@ -162,11 +162,7 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
         var message = 'This ' + self.nodeType + ' contains ' + self.termForChildren() + '. To delete this ' +
           self.nodeType + ', you must also delete all ' + self.termForChildren() + '.';
 
-        var confirm_message = ' The following ' + (self.nodeType === 'project' ? 'project and ' : '') + self.termForChildren() + ' will be deleted.';
-
-        if (self.page() === self.CONFIRM) {
-            return confirm_message;
-        }
+        var confirm_message = ' The following ' + self.nodeType + ' and ' + self.termForChildren() + ' will be deleted.';
 
         return {
             select: message + ((self.isPreprint || self.hasPreprints()) ? self.preprintMessage() : ' This action is irreversible.'),
@@ -176,7 +172,8 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
 
     self.warning = ko.computed(function () {
         return 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
-          self.nodeType + ' data and this process is IRREVERSIBLE.';
+          self.nodeType + ' data and this process is IRREVERSIBLE. Deleted '+ self.nodeType +  ' and ' +
+          self.termForChildren() + ' will no longer be available to other contributors on the ' + self.nodeType + '.';
     });
 };
 
