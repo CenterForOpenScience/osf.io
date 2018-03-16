@@ -39,7 +39,7 @@ class SubscriptionSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'user-subscription'
+        type_ = 'subscription'
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
