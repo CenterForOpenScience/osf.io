@@ -17,7 +17,7 @@
 <div id="newPrereg${size}" class="prereg-new-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p class="prereg-text-left">Please provide a title for your project: </p>
   <input type="text" class="new-project-title form-control" placeholder="Title">
-  <button type="submit" id="newProject${size}" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
+  <button type="submit" id="newProject${size}" class="btn btn-primary pull-right m-t-sm">Continue</button>
 </div>
 </%def>
 
@@ -25,7 +25,7 @@
 <div id="existingDraft${size}" class="prereg-existing-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none; width: 100%;">
   <p class="prereg-text-left">Go to an existing preregistration:</p>
     <input id="regDraftSearch${size}" class="form-control"></input>
-    <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary disabled pull-right">Preregister</a></div>
+    <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary m-t-sm disabled pull-right">Preregister</a></div>
 </div>
 </%def>
 
@@ -34,7 +34,7 @@
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p class="prereg-text-left">Preregister an existing project:</p>
   <input id="projectSearch${size}" class="form-control" ></input>
-  <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary disabled pull-right">Preregister</a></div>
+  <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary disabled m-t-sm pull-right">Preregister</a></div>
 </div>
 </%def>
 
@@ -130,7 +130,7 @@
             </td>
             %endif
             %if has_projects:
-            <td class="col-sm-${ num_cols } reg-button-contents">
+            <td class="col-sm-${ num_cols } reg-landing-page-button-contents">
               <div class="reg-landing-page-action">
                 ${existingProject()}
               </div>
