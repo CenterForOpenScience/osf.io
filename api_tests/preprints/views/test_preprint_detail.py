@@ -19,12 +19,12 @@ from website.settings import EZID_FORMAT, DOI_NAMESPACE
 
 
 def build_preprint_update_payload(
-        node_id,
-        attributes=None,
-        relationships=None):
+        node_id, attributes=None, relationships=None,
+        jsonapi_type='preprints'):
     payload = {
         'data': {
             'id': node_id,
+            'type': jsonapi_type,
             'attributes': attributes,
             'relationships': relationships
         }
@@ -149,6 +149,13 @@ class TestPreprintDetail:
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
             expected_doi)
         assert res.json['data']['attributes']['preprint_doi_created'] is not None
+
+    def test_preprint_embed_identifiers(self, app, user, preprint, url):
+        embed_url = url + '?embed=identifiers'
+        res = app.get(embed_url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url) in link
 
 
 @pytest.mark.django_db
@@ -292,6 +299,39 @@ class TestPreprintUpdate:
         log = preprint.node.logs.latest()
         assert log.action == 'preprint_file_updated'
         assert log.params.get('preprint') == preprint._id
+
+    def test_update_preprints_with_none_type(self, app, user, preprint, url):
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'type': None,
+                'attributes': None,
+                'relationship': None
+            }
+        }
+
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
+
+    def test_update_preprints_with_no_type(self, app, user, preprint, url):
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'attributes': None,
+                'relationship': None
+            }
+        }
+
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
+
+    def test_update_preprints_with_wrong_type(self, app, user, preprint, url):
+        update_file_payload = build_preprint_update_payload(preprint._id, jsonapi_type='Nonsense')
+
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 409
 
     def test_new_primary_not_in_node(self, app, user, preprint, url):
         project = ProjectFactory()
@@ -617,7 +657,8 @@ class TestPreprintUpdateLicense:
     def make_payload(self):
         def payload(
                 node_id, license_id=None, license_year=None,
-                copyright_holders=None):
+                copyright_holders=None, jsonapi_type='preprints'
+        ):
             attributes = {}
 
             if license_year and copyright_holders:
@@ -643,6 +684,7 @@ class TestPreprintUpdateLicense:
             return {
                 'data': {
                     'id': node_id,
+                    'type': jsonapi_type,
                     'attributes': attributes,
                     'relationships': {
                         'license': {
@@ -656,6 +698,7 @@ class TestPreprintUpdateLicense:
             } if license_id else {
                 'data': {
                     'id': node_id,
+                    'type': jsonapi_type,
                     'attributes': attributes
                 }
             }

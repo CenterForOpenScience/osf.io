@@ -165,10 +165,17 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if (
-                self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.get_permissions(
-                user)) \
-                or permissions.WRITE not in self.node.get_permissions(user):
+        if self.is_checked_out and self.checkout != user:
+            # Allow project admins to force check in
+            if self.node.has_permission(user, permissions.ADMIN):
+                # But don't allow force check in for prereg admin checked out files
+                if self.checkout.has_perm('osf.view_prereg') and self.node.draft_registrations_active.filter(
+                        registration_schema__name='Prereg Challenge').exists():
+                    raise exceptions.FileNodeCheckedOutError()
+            else:
+                raise exceptions.FileNodeCheckedOutError()
+
+        if not self.node.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
@@ -203,6 +210,31 @@ class OsfStorageFileNode(BaseFileNode):
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
+
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
