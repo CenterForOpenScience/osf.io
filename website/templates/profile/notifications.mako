@@ -56,7 +56,9 @@
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
                             <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
                         </div>
                     </div>

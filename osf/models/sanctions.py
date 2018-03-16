@@ -396,6 +396,10 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         return self.state == self.COMPLETED
 
     @property
+    def is_deleted(self):
+        return self._get_registration().is_deleted
+
+    @property
     def embargo_end_date(self):
         if self.state == self.APPROVED:
             return self.end_date

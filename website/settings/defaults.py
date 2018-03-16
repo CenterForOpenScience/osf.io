@@ -134,6 +134,8 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'contact@osf.io'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'

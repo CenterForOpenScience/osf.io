@@ -150,6 +150,9 @@ class TestFileView:
         assert attributes['extra']['hashes']['md5'] is None
         assert attributes['extra']['hashes']['sha256'] is None
         assert attributes['tags'] == []
+        # make sure download link has a trailing slash
+        # so that downloads don't 301
+        assert res.json['data']['links']['download'].endswith('/')
 
     def test_file_has_rel_link_to_owning_project(
             self, app, user, file_url, node):

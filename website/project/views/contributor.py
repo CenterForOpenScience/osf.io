@@ -408,6 +408,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         claim_url=claim_url,
         fullname=unclaimed_record['name'],
         can_change_preferences=False,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
     unclaimed_record['last_sent'] = get_timestamp()
     unclaimed_user.save()
@@ -420,6 +421,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         referrer=referrer,
         node=node,
         can_change_preferences=False,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
 
@@ -500,6 +502,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                 fullname=unclaimed_record['name'],
                 node=node,
                 can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
@@ -516,7 +519,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         fullname=unclaimed_record['name'],
         branded_service=preprint_provider,
         can_change_preferences=False,
-        logo=logo if logo else settings.OSF_LOGO
+        logo=logo if logo else settings.OSF_LOGO,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
     return to_addr
@@ -571,6 +575,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             branded_service=preprint_provider,
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -775,6 +780,7 @@ def claim_user_form(auth, **kwargs):
         'email': claimer_email if claimer_email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request() else form,
+        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
 
 

@@ -260,5 +260,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             user=auth.user,
             node=self.node,
             preprint=self,
-            logo=logo
+            logo=logo,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
         )

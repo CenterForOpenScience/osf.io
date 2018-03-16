@@ -14,10 +14,10 @@ from website.project.model import NodeUpdateError
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
+from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
-                                  JSONAPIListField, ShowIfVersion, VersionedDateTimeField,)
+                                  ShowIfVersion, VersionedDateTimeField, ValuesListField)
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
 
@@ -34,7 +34,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
+    tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '

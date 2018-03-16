@@ -1873,7 +1873,8 @@ class TestAddingContributorViews(OsfTestCase):
             all_global_subscriptions_none=False,
             branded_service=None,
             can_change_preferences=False,
-            logo=settings.OSF_LOGO
+            logo=settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
@@ -2131,7 +2132,8 @@ class TestUserInviteViews(OsfTestCase):
             node=project,
             branded_service=None,
             can_change_preferences=False,
-            logo=settings.OSF_LOGO
+            logo=settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
