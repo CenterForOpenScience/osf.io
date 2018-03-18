@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
+from addons.base import exceptions
 from django.db import models
 from framework.exceptions import HTTPError
 from pyzotero import zotero, zotero_errors
@@ -105,7 +106,7 @@ class Zotero(CitationsOauthProvider):
             else:
                 raise err
 
-    def _fetch_libraries(self, limit, start):
+    def _fetch_libraries(self, limit=None, start=None):
         """
         Retrieves the Zotero library data to which the current library_id and api_key has access
         """
@@ -216,3 +217,44 @@ class NodeSettings(BaseCitationsNodeSettings):
         """Clears selected folder and selected library configuration"""
         self.list_id = None
         self.library_id = None
+
+    def v2_serialization(self, kind, id, name, path):
+        return {
+            'addon': 'zotero',
+            'kind': kind,
+            'id': id,
+            'name': name,
+            'path': path
+        }
+
+    def get_folders(self, folder_id=None, **kwargs):
+        """
+        Returns top-level Zotero folders (which are actual libraries - your personal
+        library along with any group libraries. If library is specified (folder_id),
+        then folders are retrieved from that library.
+
+        If folder_id specified (which here is the library id), return folders attached to this library.
+        """
+        if self.has_auth:
+            try:
+                if folder_id:
+                    # When folder_id (library_id) specified, retrieve second tier - folders inside group library
+                    sub_folders = self.api._get_folders(library_id=folder_id)
+                    serialized = []
+                    for folder in sub_folders:
+                        data = folder['data']
+                        serialized.append(self.v2_serialization('folder', data['key'], data['name'], folder_id + '/' + data['key']))
+                else:
+                    # Retrieve top-tier (libraries)
+                    libraries = self.api._fetch_libraries()
+                    serialized = []
+                    for library in libraries[:-1]:
+                        data = library['data']
+                        serialized.append(self.v2_serialization('library', data['id'], data['name'], '/' + str(data['id'])))
+                    # Append personal library as option alongside group libraries
+                    serialized.insert(0, self.v2_serialization('library', 'personal', 'My Library', '/' + 'personal'))
+                return serialized
+            except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised):
+                return []
+        else:
+            raise exceptions.InvalidAuthError()
