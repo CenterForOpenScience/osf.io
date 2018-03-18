@@ -2,9 +2,11 @@
 
 import time
 
+from flask import has_app_context
 import mendeley
 from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
 from django.db import models
+from addons.base import exceptions
 from framework.exceptions import HTTPError
 from mendeley.exception import MendeleyApiException
 from oauthlib.oauth2 import InvalidGrantError
@@ -56,7 +58,7 @@ class Mendeley(CitationsOauthProvider):
             client_secret=self.client_secret,
             redirect_uri=web_url_for('oauth_callback',
                                      service_name='mendeley',
-                                     _absolute=True),
+                                     _absolute=True) if has_app_context() else None,
         )
         credentials = credentials or {
             'access_token': self.account.oauth_key,
@@ -267,3 +269,17 @@ class NodeSettings(BaseCitationsNodeSettings):
     def _fetch_folder_name(self):
         folder = self.api._folder_metadata(self.list_id)
         return folder.name
+
+    def get_folders(self, **kwargs):
+        if self.has_auth:
+            folders = self.api._get_folders()
+            return [{
+                'addon': 'mendeley',
+                'kind': 'folder',
+                'id': folder.json['id'],
+                'name': folder.json['name'],
+                'path': '/'
+
+            } for folder in folders]
+        else:
+            raise exceptions.InvalidAuthError()
