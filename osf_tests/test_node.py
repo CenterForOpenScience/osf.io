@@ -52,7 +52,6 @@ from osf_tests.factories import (
     PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
-    CollectionFactory,
     NodeRelationFactory,
     InstitutionFactory,
     SessionFactory,
@@ -2513,29 +2512,6 @@ class TestPointerMethods:
         with pytest.raises(NodeStateError):
             registration.add_pointer(node, auth=auth)
 
-    def test_get_points_exclude_folders(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        # Project is in a organizer collection
-        folder = CollectionFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
-
-        assert pointer_project in pointed_project.get_points(folders=False)
-        assert folder not in pointed_project.get_points(folders=False)
-        assert folder in pointed_project.get_points(folders=True)
-
-    def test_get_points_exclude_deleted(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True, is_deleted=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        assert pointer_project not in pointed_project.get_points(deleted=False)
-        assert pointer_project in pointed_project.get_points(deleted=True)
-
     def test_add_pointer_already_present(self, node, user, auth):
         node2 = NodeFactory(creator=user)
         node.add_pointer(node2, auth=auth)
@@ -2548,7 +2524,7 @@ class TestPointerMethods:
         node.rm_pointer(node_relation, auth=auth)
         # assert Pointer.load(pointer._id) is None
         # assert len(node.nodes) == 0
-        assert len(node2.get_points()) == 0
+        assert NodeRelation.objects.filter(child=node2, is_node_link=True).count() == 0
         assert (
             node.logs.latest().action == NodeLog.POINTER_REMOVED
         )

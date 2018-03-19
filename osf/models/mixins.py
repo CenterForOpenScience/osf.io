@@ -321,18 +321,6 @@ class NodeLinkMixin(models.Model):
         if self.is_registration:
             raise NodeStateError('Cannot add a node link to a registration')
 
-        # If a folder, prevent more than one pointer to that folder.
-        # This will prevent infinite loops on the project organizer.
-        if node.is_collection and node.linked_from.exists():
-            raise ValueError(
-                'Node link to folder {0} already exists. '
-                'Only one node link to any given folder allowed'.format(node._id)
-            )
-        if node.is_collection and node.is_bookmark_collection:
-            raise ValueError(
-                'Node link to bookmark collection ({0}) not allowed.'.format(node._id)
-            )
-
         # Append node link
         node_relation, created = NodeRelation.objects.get_or_create(
             parent=self,
@@ -413,17 +401,6 @@ class NodeLinkMixin(models.Model):
     def nodes_pointer(self):
         """For v1 compat"""
         return self.linked_nodes
-
-    def get_points(self, folders=False, deleted=False):
-        query = self.linked_from
-
-        if not folders:
-            query = query.exclude(type='osf.collection')
-
-        if not deleted:
-            query = query.exclude(is_deleted=True)
-
-        return list(query.all())
 
     def fork_node_link(self, node_relation, auth, save=True):
         """Replace a linked node with a fork.

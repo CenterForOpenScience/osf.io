@@ -65,6 +65,9 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
+class CollectionProvider(AbstractProvider):
+    pass
+
 class PreprintProvider(AbstractProvider):
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
