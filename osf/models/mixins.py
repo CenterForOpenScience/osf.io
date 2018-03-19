@@ -594,7 +594,14 @@ class ReviewProviderMixin(models.Model):
 
     def add_to_group(self, user, group):
         from api.preprint_providers.permissions import GroupHelper
-        # TODO: Add default notification subscription
+        # Add default notification subscription
+        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -604,8 +611,10 @@ class ReviewProviderMixin(models.Model):
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
-            # TODO: remove notification subscription
-            pass
+            # remove notification subscription
+            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+            notification.remove_user_from_subscription(user, save=True)
+
         return _group.user_set.remove(user)
 
 
