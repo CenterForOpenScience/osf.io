@@ -3,6 +3,7 @@ import abc
 
 import mock
 import pytest
+import mendeley
 from nose.tools import *  # flake8: noqa
 
 from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
@@ -719,6 +720,31 @@ class TestNodeMendeleyAddon(
     AccountFactory = MendeleyAccountFactory
     NodeSettingsFactory = MendeleyNodeSettingsFactory
 
+    @mock.patch('addons.mendeley.models.Mendeley._get_folders')
+    def test_folder_list_GET_expected_behavior(self, mock_folders):
+        mock_folder = mendeley.models.folders.Folder(
+           json = {
+              "created":"2017-10-14T21:17:14.000Z",
+              "id":"fasdkljla-2341-4592-10po-fds0920dks0ds",
+              "modified":"2017-10-14T21:18:00.000Z",
+              "name":"Test Mendeley Folder"
+           },
+           session = 'session'
+        )
+
+        mock_folders.return_value = [mock_folder]
+
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth)
+
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], 'folder')
+        assert_equal(addon_data['name'], 'Test Mendeley Folder')
+        assert_equal(addon_data['path'], '/')
+        assert_equal(
+            addon_data['folder_id'],
+            "fasdkljla-2341-4592-10po-fds0920dks0ds")
 
 class TestNodeZoteroAddon(
         NodeOAuthCitationAddonTestSuiteMixin,
