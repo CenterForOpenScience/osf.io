@@ -2894,9 +2894,9 @@ markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/markdown-it-sanitizer/-/markdown-it-sanitizer-0.3.2.tgz#052cb45504d39737829c83e84e2f18cc1905d9dc"
 
-markdown-it-video@~0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.0.tgz#f537bd6fad6a19336e5567020549f964a40737e8"
+markdown-it-video@~0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.2.tgz#35ba1345655321f47b94dbff328d111f58c75d6d"
 
 markdown-it@~4.1.0:
   version "4.1.2"
