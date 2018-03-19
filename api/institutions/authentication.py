@@ -13,6 +13,7 @@ from framework.auth import get_or_create_user
 
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
+from website.settings import OSF_CONTACT_EMAIL
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -102,7 +103,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
                 mimetype='html',
-                user=user
+                user=user,
+                osf_contact_email=OSF_CONTACT_EMAIL
             )
 
         if not user.is_affiliated_with_institution(institution):

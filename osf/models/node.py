@@ -329,8 +329,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @cached_property
     def parent_node(self):
         try:
-            node_rel = next(parent for parent in self._parents.filter(is_node_link=False))
-        except StopIteration:
+            node_rel = self._parents.filter(is_node_link=False)[0]
+        except IndexError:
             node_rel = None
         if node_rel:
             parent = node_rel.parent
@@ -814,7 +814,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if hasattr(self.contributor_set.all(), '_result_cache'):
+        if getattr(self.contributor_set.all(), '_result_cache', None):
             for contrib in self.contributor_set.all():
                 if contrib.user_id == user.id:
                     return get_contributor_permissions(contrib)
@@ -1076,6 +1076,32 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.save()
             self.update_search()
             return True
+
+    def remove_tags(self, tags, auth, save=True):
+        """
+        Unlike remove_tag, this optimization method assumes that the provided
+        tags are already present on the node.
+        """
+        if not tags:
+            raise InvalidTagError
+
+        for tag in tags:
+            tag_obj = Tag.objects.get(name=tag)
+            self.tags.remove(tag_obj)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        self.update_search()
+        return True
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
@@ -1524,12 +1550,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.keenio_read_key = ''
         else:
             return False
-
-        # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
 
         # After set permissions callback
         if check_addons:
@@ -2947,37 +2967,7 @@ class Node(AbstractNode):
         )
 
 
-class Collection(AbstractNode):
-    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
-
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
-
-    def remove_node(self, auth, date=None):
-        if self.is_bookmark_collection:
-            raise NodeStateError('Bookmark collections may not be deleted.')
-        # Remove all the collections that this is pointing at.
-        for pointed in self.linked_nodes.all():
-            if pointed.is_collection:
-                pointed.remove_node(auth=auth)
-        return super(Collection, self).remove_node(auth=auth, date=date)
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
-
-
 ##### Signal listeners #####
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -2992,7 +2982,6 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
@@ -3014,14 +3003,12 @@ def add_project_created_log(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
@@ -3030,7 +3017,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
                 instance.add_addon(addon.short_name, auth=None, log=False)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 @receiver(post_save, sender='osf.QuickFilesNode')

@@ -1,9 +1,13 @@
 import pytz
 
 from django.apps import apps
+from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db import models, transaction
+from guardian.shortcuts import assign_perm
+from guardian.shortcuts import get_perms
+from guardian.shortcuts import remove_perm
 from include import IncludeQuerySet
 
 from api.providers.workflows import Workflows, PUBLIC_STATES
@@ -72,7 +76,8 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
-        original_node = AbstractNode.load(params.get('node'))
+        original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
+
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
             params=params, node=self, original_node=original_node
@@ -104,10 +109,29 @@ class Taggable(models.Model):
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
         old_tags = set(self.tags.values_list('name', flat=True))
-        for tag in (set(new_tags) - old_tags):
-            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
-        for tag in (old_tags - set(new_tags)):
-            self.remove_tag(tag, auth, save=save)
+        to_add = (set(new_tags) - old_tags)
+        to_remove = (old_tags - set(new_tags))
+        if to_add:
+            self.add_tags(to_add, auth=auth, save=save, log=log, system=system)
+        if to_remove:
+            self.remove_tags(to_remove, auth=auth, save=save)
+
+    def add_tags(self, tags, auth=None, save=True, log=True, system=False):
+        """
+        Optimization method for use with update_tags. Unlike add_tag, already assumes tag is
+        not on the object.
+        """
+        if not system and not auth:
+            raise ValueError('Must provide auth if adding a non-system tag')
+        for tag in tags:
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
+            self.tags.add(tag_instance)
+            # TODO: Logging belongs in on_tag_added hook
+            if log:
+                self.add_tag_log(tag_instance, auth)
+            self.on_tag_added(tag_instance)
+        if save:
+            self.save()
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
@@ -301,18 +325,6 @@ class NodeLinkMixin(models.Model):
         if self.is_registration:
             raise NodeStateError('Cannot add a node link to a registration')
 
-        # If a folder, prevent more than one pointer to that folder.
-        # This will prevent infinite loops on the project organizer.
-        if node.is_collection and node.linked_from.exists():
-            raise ValueError(
-                'Node link to folder {0} already exists. '
-                'Only one node link to any given folder allowed'.format(node._id)
-            )
-        if node.is_collection and node.is_bookmark_collection:
-            raise ValueError(
-                'Node link to bookmark collection ({0}) not allowed.'.format(node._id)
-            )
-
         # Append node link
         node_relation, created = NodeRelation.objects.get_or_create(
             parent=self,
@@ -393,17 +405,6 @@ class NodeLinkMixin(models.Model):
     def nodes_pointer(self):
         """For v1 compat"""
         return self.linked_nodes
-
-    def get_points(self, folders=False, deleted=False):
-        query = self.linked_from
-
-        if not folders:
-            query = query.exclude(type='osf.collection')
-
-        if not deleted:
-            query = query.exclude(is_deleted=True)
-
-        return list(query.all())
 
     def fork_node_link(self, node_relation, auth, save=True):
         """Replace a linked node with a fork.
@@ -606,3 +607,58 @@ class ReviewProviderMixin(models.Model):
             # TODO: remove notification subscription
             pass
         return _group.user_set.remove(user)
+
+
+class GuardianMixin(models.Model):
+    """ Helper for managing object-level permissions with django-guardian
+    Expects:
+      - Permissions to be defined in class Meta->permissions
+      - Groups to be defined in self.groups
+      - Group naming scheme to:
+        * Be defined in self.group_format
+        * Use `self` and `group` as format params. E.g: model_{self.id}_{group}
+    """
+    class Meta:
+        abstract = True
+
+    @property
+    def groups(self):
+        raise NotImplementedError()
+
+    @property
+    def group_format(self):
+        raise NotImplementedError()
+
+    @property
+    def perms_list(self):
+        # Django expects permissions to be specified in an N-ple of 2-ples
+        return [p[0] for p in self._meta.permissions]
+
+    @property
+    def group_names(self):
+        return [self.format_group(name) for name in self.groups_dict]
+
+    @property
+    def group_objects(self):
+        # TODO: consider subclassing Group if this becomes inefficient
+        return Group.objects.filter(name__in=self.group_names)
+
+    def format_group(self, name):
+        if name not in self.groups:
+            raise ValueError('Invalid group: "{}"'.format(name))
+        return self.group_format.format(self=self, group=name)
+
+    def get_group(self, name):
+        return Group.objects.get(name=self.format_group(name))
+
+    def update_group_permissions(self):
+        for group_name, group_permissions in self.groups.items():
+            group, created = Group.objects.get_or_create(name=self.format_group(group_name))
+            to_remove = set(get_perms(group, self)).difference(group_permissions)
+            for p in to_remove:
+                remove_perm(p, group, self)
+            for p in group_permissions:
+                assign_perm(p, group, self)
+
+    def get_permissions(self, user):
+        return list(set(get_perms(user, self)) & set(self.perms_list))
