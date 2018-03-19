@@ -4,6 +4,8 @@ import time
 import httplib
 import functools
 
+from urlparse import urlparse
+
 from flask import request
 
 from framework.auth import cas
@@ -70,12 +72,12 @@ def email_required(func):
     def wrapped(*args, **kwargs):
         auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
         if auth.logged_in:
+            from website.util import web_url_for, api_url_for
             auth.user.update_date_last_access()
-            if auth.user.have_email:
+            if auth.user.have_email or urlparse(request.path).path == urlparse(api_url_for('resend_confirmation')).path:
                 setup_groups(auth)
                 return func(*args, **kwargs)
             else:
-                from website.util import web_url_for
                 return redirect(web_url_for('user_account_email'))
         else:
             return func(*args, **kwargs)
@@ -94,12 +96,12 @@ def must_be_logged_in(func):
         auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
         kwargs['auth'] = auth
         if auth.logged_in:
+            from website.util import web_url_for, api_url_for
             auth.user.update_date_last_access()
-            if auth.user.have_email:
+            if auth.user.have_email or urlparse(request.path).path == urlparse(api_url_for('resend_confirmation')).path:
                 setup_groups(auth)
                 return func(*args, **kwargs)
             else:
-                from website.util import web_url_for
                 return redirect(web_url_for('user_account_email'))
         else:
             return redirect(cas.get_login_url(request.url))
