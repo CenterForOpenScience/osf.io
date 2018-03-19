@@ -2,6 +2,7 @@ import logging
 
 from django.db import migrations
 from django.apps import apps
+from django.contrib.auth.models import Group
 
 from api.preprint_providers.permissions import GroupHelper
 
@@ -13,8 +14,12 @@ PreprintProvider = apps.get_model('osf', 'PreprintProvider')
 def populate_provider_notification_subscriptions(*args):
     for provider in PreprintProvider.objects.all():
         helper = GroupHelper(provider)
-        provider_admins = helper.get_group('admin').user_set.all()
-        provider_moderators = helper.get_group('moderator').user_set.all()
+        try:
+            provider_admins = helper.get_group('admin').user_set.all()
+            provider_moderators = helper.get_group('moderator').user_set.all()
+        except Group.DoesNotExist:
+            logger.warn('Unable to find groups for provider "{}", assuming there are no subscriptions to create.'.format(provider._id))
+            continue
         instance, created = NotificationSubscription.objects.get_or_create(_id='{provider_id}_new_pending_submissions'.format(provider_id=provider._id),
                                                                            event_name='new_pending_submissions',
                                                                            provider=provider)
