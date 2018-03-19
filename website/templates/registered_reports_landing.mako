@@ -102,7 +102,7 @@
             </td>
             %else:
             <td class="col-sm-${ num_cols } reg-landing-page-button-col">
-              <a href="${domain}login/?campaign=osf-registries&next=${domain}rr">
+              <a href="${domain}login/?campaign=osf-registered-reports&next=${domain}rr">
                 <div class="reg-landing-page-button m-b-md p-md osf-box-lt p-md box-round">Create a Registered Report</div>
               </a>
             </td>
