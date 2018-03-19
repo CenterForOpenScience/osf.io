@@ -6,6 +6,7 @@ from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.db.models import OuterRef, Exists, Q
 from flask import request
 import mailchimp
 
@@ -22,7 +23,11 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.models import (
+    ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode,
+    Contributor, Registration
+)
+
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -214,6 +219,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
 
     if profile:
         profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
+        contrib_query = Contributor.objects.filter(node=OuterRef('pk'), user__id=profile.id, read=True)
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
@@ -222,7 +228,9 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
-                'has_quickfiles': profile_quickfilesnode.files.filter(type='osf.osfstoragefile').exists()
+                'has_quickfiles': profile_quickfilesnode.files.filter(type='osf.osfstoragefile').exists(),
+                'has_registrations': Registration.objects.annotate(contrib=Exists(contrib_query)).filter(Q(contrib=True) | Q(is_public=True)).exists(),
+                'has_preprints': '',
             },
         }
         return ret
