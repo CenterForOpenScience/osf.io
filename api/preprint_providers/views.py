@@ -262,7 +262,7 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
             When(groups=admin_group, then=Value('admin')),
             default=Value('moderator'),
             output_field=CharField()
-        ))
+        )).order_by('fullname')
 
     def get_queryset(self):
         return self.get_queryset_from_request()
