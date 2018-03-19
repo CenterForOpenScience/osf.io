@@ -65,8 +65,10 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
             url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?meta=',
             beforeSend: $osf.setXHRAuthorization,
         }).done(function (response) {
-            fileNames = response.data.map(file => file.attributes.name);
-            if (!!path) {
+            fileNames = response.data.map(function(file) {
+                return file.attributes.name;
+            });
+            if (path) {
                 var newName;
                 $.each(files, function (i, file) {
                     if (fileNames.indexOf(file.name) !== -1) {
