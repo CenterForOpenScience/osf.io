@@ -4,9 +4,11 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
 from django.utils.functional import cached_property
 from django.utils import timezone
+from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
 
 from osf.models.base import BaseModel, GuidMixin
+from osf.models.mixins import GuardianMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
@@ -29,8 +31,22 @@ class CollectedGuidMetadata(BaseModel):
     def _id(self):
         return self.guid._id
 
-class Collection(GuidMixin, BaseModel):
+class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
+
+    groups = {
+        'read': ('read_collection', ),
+        'write': ('read_collection', 'write_collection', ),
+        'admin': ('read_collection', 'write_collection', 'admin_collection', )
+    }
+    group_format = 'collections_{self.id}_{group}'
+
+    class Meta:
+        permissions = (
+            ('read_collection', 'Read Collection'),
+            ('write_collection', 'Write Collection'),
+            ('admin_collection', 'Admin Collection'),
+        )
 
     provider = models.ForeignKey('AbstractProvider', blank=True, null=True, on_delete=models.CASCADE)
     creator = models.ForeignKey('OSFUser')
@@ -91,6 +107,9 @@ class Collection(GuidMixin, BaseModel):
         if first_save:
             # Set defaults for M2M
             self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
+            # Set up initial permissions
+            self.update_group_permissions()
+            self.get_group('admin').user_set.add(self.creator)
         return ret
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
@@ -153,3 +172,11 @@ class Collection(GuidMixin, BaseModel):
             raise NodeStateError('Bookmark collections may not be deleted.')
         self.deleted = timezone.now()
         self.save()
+
+
+class CollectionUserObjectPermission(UserObjectPermissionBase):
+    content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
+
+
+class CollectionGroupObjectPermission(GroupObjectPermissionBase):
+    content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
