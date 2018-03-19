@@ -272,14 +272,17 @@ class NodeSettings(BaseCitationsNodeSettings):
 
     def get_folders(self, **kwargs):
         if self.has_auth:
-            folders = self.api._get_folders()
-            return [{
-                'addon': 'mendeley',
-                'kind': 'folder',
-                'id': folder.json['id'],
-                'name': folder.json['name'],
-                'path': '/'
+            try:
+                folders = self.api._get_folders()
+                return [{
+                    'addon': 'mendeley',
+                    'kind': 'folder',
+                    'id': folder.json['id'],
+                    'name': folder.json['name'],
+                    'path': '/'
 
-            } for folder in folders]
+                } for folder in folders]
+            except MendeleyApiException:
+                return []
         else:
             raise exceptions.InvalidAuthError()
