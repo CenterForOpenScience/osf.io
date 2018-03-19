@@ -8,6 +8,8 @@ from osf_tests.factories import (
     SubjectFactory,
 )
 
+
+@pytest.mark.django_db
 class TestPreprintProviderExistsMixin:
     # Regression for https://openscience.atlassian.net/browse/OSF-7621
 
