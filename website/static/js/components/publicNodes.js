@@ -19,22 +19,26 @@ var _buildUrl = function(page, user, nodeType) {
         'page[size]': PROJECTS_PAGE_SIZE,
         'page': page || 1,
         'embed': ['contributors'],
-        'filter[public]': 'true',
-        'version': '2.2',
-        'fields[nodes]': nodeFieldSet.join(','),
+        // 'filter[public]': 'true',
+        'version': '2.5',
+        // 'fields[nodes]': nodeFieldSet.join(','),
         'fields[users]': userFieldSet.join(',')
     };
 
-    if (nodeType === 'projects') {
-        query['filter[parent]'] = 'null';
+    var urlToReturn = $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
+    if (nodeType === 'preprints') {
+        urlToReturn = $osf.apiV2Url('users/' + user +  '/preprints/', { query: query});
     }
     else {
-        query['filter[parent][ne]'] = 'null';
-        query.embed.push('parent');
+        query['filter[parent]'] = 'null';
+        query['fields[nodes]'] = nodeFieldSet.join(',');
+        query['fields[public]'] = 'true';
+        if (nodeType === 'registrations'){
+            urlToReturn = $osf.apiV2Url('users/' + user +  '/registrations/', { query: query});
+        }
     }
 
-    var urlToReturn = $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
-    return $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
+    return urlToReturn;
 };
 
 var _getNextItems = function(ctrl, url, updatePagination) {
@@ -133,23 +137,18 @@ var PublicNode = {
         self.nodeType = options.nodeType;
 
         self.icon =  iconmap.projectComponentIcons[self.node.attributes.category];
-        self.parent = self.nodeType === 'components' && self.node.embeds.parent.data ? self.node.embeds.parent.data.attributes : null;
     },
 
     view: function(ctrl)  {
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
-                    m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;'}, [
+                    m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;', width: '100%'}, [
                         m('span.project-statuses-lg'),
                         m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
                         m('a', {'href': ctrl.node.links.html}, $osf.decodeText(ctrl.node.attributes.title))
                     ])
                 ]),
-                ctrl.nodeType === 'components' ? m('div', {style: 'padding-bottom: 10px;'}, [
-                    ctrl.parent ? $osf.decodeText(ctrl.parent.title) + ' / ': m('em', '-- private project -- / '),
-                    m('b', $osf.decodeText(ctrl.node.attributes.title))
-                ]) : '',
                 m('div.project-authors', {}, _formatContributors(ctrl.node)),
             ])
         ]);
@@ -179,7 +178,6 @@ var PublicNodes = {
     },
 
     view : function (ctrl) {
-
         var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
 
         return m('ul.list-group m-md', [

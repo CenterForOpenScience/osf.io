@@ -402,21 +402,21 @@ services:
       - .docker-compose.sharejs.env
     stdin_open: true
 
-#  beat:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_beat
-#    depends_on:
-#      - postgres
-#      - rabbitmq
-#    environment:
-#      C_FORCE_ROOT: 1
-#      DJANGO_SETTINGS_MODULE: api.base.settings
-#    env_file:
-#      - .docker-compose.env
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7
-#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
-#      - osf_node_modules_vol:/code/node_modules
+  beat:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke celery_beat
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      C_FORCE_ROOT: 1
+      DJANGO_SETTINGS_MODULE: api.base.settings
+    env_file:
+      - .docker-compose.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
 
   worker:
     image: quay.io/centerforopenscience/osf:develop

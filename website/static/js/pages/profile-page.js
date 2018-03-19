@@ -20,13 +20,12 @@ new profile.Schools('#schools', ctx.schoolsUrls, ['view'], false);
 
 $(document).ready(function () {
     m.mount(document.getElementById('publicProjects'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'projects'}));
-    // m.mount(document.getElementById('publicComponents'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'components'}));
 
     if(ctx.user.has_preprints){
-        m.mount(document.getElementById('quickFiles'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'preprints'}));
+        m.mount(document.getElementById('preprints'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'preprints'}));
     }
     if(ctx.user.has_registrations){
-        m.mount(document.getElementById('quickFiles'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'registrations'}));
+        m.mount(document.getElementById('publicRegistrations'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'registrations'}));
     }
     if(ctx.user.has_quickfiles) {
         m.mount(document.getElementById('quickFiles'), m.component(quickFiles.QuickFiles, {user: ctx.user}));
