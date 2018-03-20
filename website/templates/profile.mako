@@ -101,22 +101,41 @@
 </div>
 <hr />
 <div class="row">
+<div class="col-sm-6">
 
-    <div class="col-sm-6">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-              <h3 class="panel-title" >Public projects</h3>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                      <h3 class="panel-title" >Public projects</h3>
+                    </div>
+                    <div class="panel-body clearfix" id="publicProjects">
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body clearfix" id="publicProjects">
-                <div class="ball-pulse ball-scale-blue text-center">
-                  <div></div>
-                  <div></div>
-                  <div></div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Registrations</h3>
+                    </div>
+                    <div class="panel-body clearfix" id="publicRegistrations">
+                      <div class="ball-pulse ball-scale-blue text-center">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                      </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
@@ -131,39 +150,22 @@
             </div>
         </div>
     </div>
-
-
-     % if user['has_quickfiles']:
-        <div class="col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Quick files</h3>
-                </div>
-                <div class="panel-body clearfix" id="quickFiles">
-                  <div class="ball-pulse ball-scale-blue text-center">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                </div>
-            </div>
-        </div>
-    % endif
-
+    % if user['has_quickfiles']:
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-              <h3 class="panel-title" >Registrations</h3>
+                <h3 class="panel-title">Quick files</h3>
             </div>
-            <div class="panel-body clearfix" id="publicRegistrations">
-                <div class="ball-pulse ball-scale-blue text-center">
-                  <div></div>
-                  <div></div>
-                  <div></div>
-                </div>
+            <div class="panel-body clearfix" id="quickFiles">
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
     </div>
+    % endif
 
 
 </div><!-- end row -->
