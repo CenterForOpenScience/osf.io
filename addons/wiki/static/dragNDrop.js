@@ -143,9 +143,10 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
         editor.container.style.opacity = 1;
         editor.renderer.setStyle('disabled', false);
     };
+    editor.enable();
 
     editor.disable = function() {
-        $('#aceLoadingBall').css('display', 'block');
+        $('#aceLoadingBall').css('display', 'inherit');
         editor.container.style.pointerEvents = 'none';
         editor.container.style.opacity = 0.1;
         editor.renderer.setStyle('disabled', true);

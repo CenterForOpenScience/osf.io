@@ -483,7 +483,7 @@ function handleCancel(tb, provider, mode, item){
 function displayConflict(tb, item, folder, cb) {
 
     if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
-        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
         return;
     }
 
@@ -513,7 +513,7 @@ function checkConflictsRename(tb, item, name, cb) {
     var parent = item.parent();
 
     if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
-        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
         return;
     }
 
