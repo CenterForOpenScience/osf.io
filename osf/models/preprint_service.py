@@ -835,6 +835,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             if not admins.count() > 1:
                 # has only one admin
                 admin = admins.first()
+                import ipdb; ipdb.set_trace()
                 if admin.user == user and ADMIN not in permissions:
                     raise NodeStateError('{} is the only admin.'.format(user.fullname))
             if not self.preprintcontributor_set.filter(user=user).exists():
@@ -1019,7 +1020,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     return get_contributor_permissions(contrib)
         try:
             contrib = user.preprintcontributor_set.get(node=self)
-        except Contributor.DoesNotExist:
+        except PreprintContributor.DoesNotExist:
             return []
         return get_contributor_permissions(contrib)
 
@@ -1061,3 +1062,79 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
             self.save()
+
+
+    def set_permissions(self, user, permissions, validate=True, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if isinstance(user, PreprintContributor):
+            user = user.user
+
+        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
+                                 reduce_permissions(permissions) != ADMIN):
+            admin_contribs = PreprintContributor.objects.filter(node=self, admin=True)
+            if admin_contribs.count() <= 1:
+                raise NodeStateError('Must have at least one registered admin contributor')
+
+        contrib_obj = PreprintContributor.objects.get(node=self, user=user)
+
+        for permission_level in [READ, WRITE, ADMIN]:
+            if permission_level in permissions:
+                setattr(contrib_obj, permission_level, True)
+            else:
+                setattr(contrib_obj, permission_level, False)
+        contrib_obj.save()
+        if save:
+            self.save()
+
+    def get_visible(self, user):
+        try:
+            contributor = self.preprintcontributor_set.get(user=user)
+        except PreprintContributor.DoesNotExist:
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        return contributor.visible
+
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
+        if not self.is_contributor(user):
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        if visible and not PreprintContributor.objects.filter(node=self, user=user, visible=True).exists():
+            PreprintContributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+        elif not visible and PreprintContributor.objects.filter(node=self, user=user, visible=True).exists():
+            if PreprintContributor.objects.filter(node=self, visible=True).count() == 1:
+                raise ValueError('Must have at least one visible contributor')
+            PreprintContributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+        else:
+             return
+        # message = (
+        #     NodeLog.MADE_CONTRIBUTOR_VISIBLE
+        #     if visible
+        #     else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        # )
+        # if log:
+        #     self.add_log(
+        #         message,
+        #         params={
+        #             'parent': self.parent_id,
+        #             'node': self._id,
+        #             'contributors': [user._id],
+        #         },
+        #         auth=auth,
+        #         save=False,
+        #     )
+        if save:
+            self.save()
+
+
+    @property
+    def visible_contributors(self):
+        return OSFUser.objects.filter(
+            contributor__node=self,
+            contributor__visible=True
+        ).order_by('contributor___order')
+
+    # visible_contributor_ids was moved to this property
+    @property
+    def visible_contributor_ids(self):
+        return self.preprintcontributor_set.filter(visible=True) \
+            .order_by('_order') \
+            .values_list('user__guids___id', flat=True)
