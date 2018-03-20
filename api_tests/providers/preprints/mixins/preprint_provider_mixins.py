@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 
 
 @pytest.mark.django_db
-class TestPreprintProviderExistsMixin(object):
+class PreprintProviderExistsMixin(object):
     # Regression for https://openscience.atlassian.net/browse/OSF-7621
 
     @pytest.fixture()
@@ -89,7 +89,7 @@ class TestPreprintProviderExistsMixin(object):
 
 
 @pytest.mark.django_db
-class TestPreprintProviderSubjectsMixin(object):
+class PreprintProviderSubjectsMixin(object):
     '''
     Subject Hierarchy
     +-----------------------------+

@@ -2,15 +2,14 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api.providers.permissions import GroupHelper
-from api_tests.providers.preprints.mixins.preprint_provider_mixins import TestPreprintProviderExistsMixin
+from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderExistsMixin
 from osf_tests.factories import (
     PreprintProviderFactory,
     AuthUserFactory,
 )
 
 
-@pytest.mark.django_db
-class TestPreprintProviderExistsForDeprecatedEndpoint(TestPreprintProviderExistsMixin):
+class TestPreprintProviderExistsForDeprecatedEndpoint(PreprintProviderExistsMixin):
     @pytest.fixture()
     def fake_url(self):
         return '/{}preprint_providers/fake/'.format(API_BASE)
@@ -34,8 +33,7 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(TestPreprintProviderExists
         return '{}preprints/'.format(fake_url)
 
 
-@pytest.mark.django_db
-class TestPreprintProviderExists(TestPreprintProviderExistsMixin):
+class TestPreprintProviderExists(PreprintProviderExistsMixin):
     @pytest.fixture()
     def fake_url(self):
         return '/{}providers/preprints/fake/'.format(API_BASE)

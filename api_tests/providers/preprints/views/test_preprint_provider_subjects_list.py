@@ -1,12 +1,12 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.providers.preprints.mixins.preprint_provider_mixins import TestPreprintProviderSubjectsMixin, TestPreprintProviderSpecificSubjectsMixin
+from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderSubjectsMixin, TestPreprintProviderSpecificSubjectsMixin
 
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 
-class TestPreprintProviderSubjectsForDeprecatedEndpoint(TestPreprintProviderSubjectsMixin):
+class TestPreprintProviderSubjectsForDeprecatedEndpoint(PreprintProviderSubjectsMixin):
     @pytest.fixture()
     def lawless_url(self, lawless_preprint_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
@@ -23,7 +23,7 @@ class TestPreprintProviderSubjectsForDeprecatedEndpoint(TestPreprintProviderSubj
             API_BASE, lawless_preprint_provider._id)
 
 
-class TestPreprintProviderSubjects(TestPreprintProviderSubjectsMixin):
+class TestPreprintProviderSubjects(PreprintProviderSubjectsMixin):
     @pytest.fixture()
     def lawless_url(self, lawless_preprint_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
