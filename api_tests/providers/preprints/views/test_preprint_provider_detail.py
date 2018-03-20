@@ -10,7 +10,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestPreprintProviderExistsMixin:
+class TestPreprintProviderExistsMixin(object):
     # Regression for https://openscience.atlassian.net/browse/OSF-7621
 
     @pytest.fixture()

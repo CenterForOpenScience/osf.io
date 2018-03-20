@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 @pytest.mark.django_db
-class TestPreprintProviderSubjectsMixin:
+class TestPreprintProviderSubjectsMixin(object):
     '''
     Subject Hierarchy
     +-----------------------------+
