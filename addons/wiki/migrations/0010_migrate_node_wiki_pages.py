@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import gc
 import logging
 import progressbar
-from django.db import migrations
+from django.db import connection, migrations
 from django.db.models import Q
 from osf.utils.migrations import disable_auto_now_add_fields
 from django.contrib.contenttypes.models import ContentType
@@ -81,16 +81,85 @@ def migrate_guid_referent(guid, desired_referent, content_type_id):
     guid.object_id = desired_referent.id
     return guid
 
-def create_wiki_page(node, node_wiki, page_name):
-    wp = WikiPage(
-        page_name=page_name,
-        user_id=node_wiki.user_id,
-        node=node,
-        created=node_wiki.date,
-        modified=node_wiki.modified,
-    )
-    wp.update_modified = False
-    return wp
+# def create_wiki_page(node, node_wiki, page_name):
+#     wp = WikiPage(
+#         page_name=page_name,
+#         user_id=node_wiki.user_id,
+#         node=node,
+#         created=node_wiki.date,
+#             modified=node_wiki.modified,
+#     )
+#     wp.update_modified = False
+#     return wp
+
+
+def create_wiki_pages_sql(state, schema):
+    logger.info('Starting migration of WikiPages [SQL]:')
+    wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
+    nodewikipage_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TEMPORARY TABLE temp_wikipages
+            (
+              node_id INTEGER,
+              user_id INTEGER,
+              page_name_key TEXT,
+              page_name_guid TEXT,
+              page_name_display TEXT,
+              created TIMESTAMP,
+              modified TIMESTAMP
+            )
+            ON COMMIT DROP;
+
+            -- Flatten out the wiki_page_versions json keys
+            INSERT INTO temp_wikipages (node_id, page_name_key)
+            SELECT
+              oan.id AS node_id
+              , jsonb_object_keys(oan.wiki_pages_versions) as page_name_key
+            FROM osf_abstractnode AS oan;
+
+            -- Retrieve the latest guid for the json key
+            UPDATE temp_wikipages AS twp
+            SET
+              page_name_guid = (
+                  SELECT trim(v::text, '"')
+                  FROM osf_abstractnode ioan
+                    , jsonb_array_elements(oan.wiki_pages_versions->twp.page_name_key) WITH ORDINALITY v(v, rn)
+                  WHERE ioan.id = oan.id
+                  ORDER BY v.rn DESC
+                  LIMIT 1
+              )
+            FROM osf_abstractnode AS oan
+            WHERE oan.id = twp.node_id;
+
+            -- Remove any json keys that reference empty arrays (bad data? e.g. abstract_node id=232092)
+            DELETE FROM temp_wikipages AS twp
+            WHERE twp.page_name_guid IS NULL;
+
+            -- Retrieve nodewikipage fields for the wiki page guid
+            UPDATE temp_wikipages AS twp
+            SET
+              user_id = anwp.user_id
+              , page_name_display = anwp.page_name
+              , created = anwp.created
+              , modified = anwp.modified
+            FROM osf_guid AS og INNER JOIN addons_wiki_nodewikipage AS anwp ON (og.object_id = anwp.id AND og.content_type_id = %s)
+            WHERE og._id = twp.page_name_guid;
+
+            -- Populate the wikipage table
+            INSERT INTO addons_wiki_wikipage (node_id, user_id, content_type_pk, page_name, created, modified)
+            SELECT
+              twp.node_id
+              , twp.user_id
+              , %s
+              , twp.page_name_display
+              , twp.created
+              , twp.modified
+            FROM temp_wikipages AS twp;
+            """, [nodewikipage_content_type_id, wikipage_content_type_id]
+        )
+    logger.info('Finished migration of WikiPages [SQL]:')
 
 def create_wiki_version(node_wiki, wiki_page):
     wv = WikiVersion(
@@ -104,7 +173,7 @@ def create_wiki_version(node_wiki, wiki_page):
     wv.update_modified = False
     return wv
 
-def create_guids():
+def create_guids(state, schema):
     global WIKI_PAGE_GUIDS
     content_type = ContentType.objects.get_for_model(WikiPage)
     progress_bar = progressbar.ProgressBar(maxval=WikiPage.objects.count()).start()
@@ -118,35 +187,34 @@ def create_guids():
     logger.info('WikiPage guids created.')
     return
 
-def create_wiki_pages(nodes):
-    wiki_pages = []
-    progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
-    logger.info('Starting migration of WikiPages:')
-    for i, node in enumerate(nodes, 1):
-        progress_bar.update(i)
-        for wiki_key, version_list in node.wiki_pages_versions.iteritems():
-            if version_list:
-                node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).only('user_id', 'date', 'modified').include(None)[0]
-                latest_page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
-                wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
-        if len(wiki_pages) >= 1000:
-            with disable_auto_now_add_fields(models=[WikiPage]):
-                WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
-                wiki_pages = []
-            gc.collect()
-    progress_bar.finish()
-    # Create the remaining wiki pages that weren't created in the loop above
-    with disable_auto_now_add_fields(models=[WikiPage]):
-        WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
-    logger.info('WikiPages saved.')
-    create_guids()
-    return
+# def create_wiki_pages(nodes):
+#     wiki_pages = []
+#     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
+#     logger.info('Starting migration of WikiPages:')
+#     for i, node in enumerate(nodes, 1):
+#         progress_bar.update(i)
+#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
+#             if version_list:
+#                 node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).only('user_id', 'date', 'modified').include(None)[0]
+#                 latest_page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
+#                 wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
+#         if len(wiki_pages) >= 1000:
+#             with disable_auto_now_add_fields(models=[WikiPage]):
+#                 WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
+#                 wiki_pages = []
+#             gc.collect()
+#     progress_bar.finish()
+#     # Create the remaining wiki pages that weren't created in the loop above
+#     with disable_auto_now_add_fields(models=[WikiPage]):
+#         WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
+#     logger.info('WikiPages saved.')
+#     return
 
 def create_wiki_versions(nodes):
     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     wiki_versions_pending = []
     guids_pending = []
-    progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
+    progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
     logger.info('Starting migration of WikiVersions:')
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
@@ -182,32 +250,35 @@ def create_wiki_versions(nodes):
     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
     return
 
-def migrate_node_wiki_pages(state, schema):
-    """
-    For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding
-    to each WikiPage.
-        - Loads all nodes with wikis on them.
-        - For each node, loops through all the keys in wiki_pages_versions.
-        - Creates all wiki pages and then bulk creates them, for speed.
-        - For all wiki pages that were just created, create and save a guid (since bulk_create doesn't call save method)
-        - Loops through all nodes again, creating a WikiVersion for every guid for all wiki pages on a node.
-        - Repoints guids from old wiki to new WikiPage
-        - For the most recent version of the WikiPage, repoint comments to the new WikiPage
-        - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
-    """
-    nodes_with_wikis = (
-        AbstractNode.objects
-        .exclude(wiki_pages_versions={})
-        .exclude(type='osf.collection')
-        .exclude(type='osf.quickfilesnode')
-        # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
-        .include(None)
-        .include('contributor__user')
-    )
-    if nodes_with_wikis:
-        create_wiki_pages(nodes_with_wikis)
-        create_wiki_versions(nodes_with_wikis)
-    return
+# def migrate_node_wiki_pages(state, schema):
+#     """
+#     For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding
+#     to each WikiPage.
+#         - Loads all nodes with wikis on them.
+#         - For each node, loops through all the keys in wiki_pages_versions.
+#         - Creates all wiki pages and then bulk creates them, for speed.
+#         - For all wiki pages that were just created, create and save a guid (since bulk_create doesn't call save method)
+#         - Loops through all nodes again, creating a WikiVersion for every guid for all wiki pages on a node.
+#         - Repoints guids from old wiki to new WikiPage
+#         - For the most recent version of the WikiPage, repoint comments to the new WikiPage
+#         - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
+#     """
+#     nodes_with_wikis = (
+#         AbstractNode.objects
+#         .exclude(wiki_pages_versions={})
+#         .exclude(type='osf.collection')
+#         .exclude(type='osf.quickfilesnode')
+#         # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
+#         .include(None)
+#         .include('contributor__user')
+#     )
+#     for nodes in grouper(100, nodes_with_wikis):
+#         create_wiki_pages(nodes)
+#
+#     create_guids()
+#
+#     for nodes in grouper(100, nodes_with_wikis):
+#         create_wiki_versions(nodes)
 
 
 class Migration(migrations.Migration):
@@ -217,5 +288,22 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_node_wiki_pages, reverse_func)
+        migrations.RunPython(create_wiki_pages_sql, reverse_func),
+        migrations.RunPython(create_guids, reverse_func)
+        # migrations.RunPython(create_wiki_versions_sql, reverse_func),
     ]
+
+
+# # Iterate an iterator by chunks (of n) in Python?
+# # source: https://stackoverflow.com/a/8991553
+# import itertools
+# def grouper(n, iterable):
+#     if hasattr(iterable, 'iterator'):
+#         it = iterable.iterator()
+#     else:
+#         it = iter(iterable)
+#     while True:
+#        chunk = tuple(itertools.islice(it, n))
+#        if not chunk:
+#            return
+#        yield chunk
