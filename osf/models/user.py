@@ -1338,10 +1338,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :param str email: The given email address.
         :returns: The added record
         """
-        if not node.can_edit(user=referrer):
-            raise PermissionsError(
-                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
-            )
+        if not node.is_preprint:
+            if not node.can_edit(user=referrer):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+                )
+        else:
+            if not self.has_perm('ADMIN', node):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to preprint {0}'.format(
+                        node._primary_key)
+                )
         project_id = str(node._id)
         referrer_id = str(referrer._id)
         if email:
