@@ -50,7 +50,7 @@
     "markdown-it-imsize": "git://github.com/cos-forks/markdown-it-imsize.git#v2.0.1.cos1",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
-    "markdown-it-video": "~0.4.0",
+    "markdown-it-video": "~0.6.2",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",
     "moment": "^2.14.1",
