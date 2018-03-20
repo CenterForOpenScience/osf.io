@@ -116,41 +116,24 @@
             </div>
         </div>
     </div>
-    % if user['has_preprints']:
-        <div class="col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Preprints</h3>
-                </div>
-                <div class="panel-body clearfix" id="preprints">
-                  <div class="ball-pulse ball-scale-blue text-center">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                </div>
+
+    <div class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Preprints</h3>
+            </div>
+            <div class="panel-body clearfix" id="preprints">
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
-    % endif
+    </div>
 
-     % if user['has_registrations']:
-        <div class="col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix">
-                  <h3 class="panel-title" >Registrations</h3>
-                </div>
-                <div class="panel-body clearfix" id="publicRegistrations">
-                    <div class="ball-pulse ball-scale-blue text-center">
-                      <div></div>
-                      <div></div>
-                      <div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    % endif
 
-    % if user['has_quickfiles']:
+     % if user['has_quickfiles']:
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
@@ -166,6 +149,23 @@
             </div>
         </div>
     % endif
+
+    <div class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+              <h3 class="panel-title" >Registrations</h3>
+            </div>
+            <div class="panel-body clearfix" id="publicRegistrations">
+                <div class="ball-pulse ball-scale-blue text-center">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 </div><!-- end row -->
 
 <%include file="include/profile/social.mako" />

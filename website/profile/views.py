@@ -219,7 +219,6 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
 
     if profile:
         profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
-        preprint_query = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
         profile_user_data = profile_utils.serialize_user(
             profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts
         )
@@ -231,10 +230,6 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
                 'has_quickfiles': profile_quickfilesnode.files.filter(type='osf.osfstoragefile').exists(),
-                'has_registrations': Registration.objects.filter(_contributors=profile, is_deleted=False, is_public=True).exists(),
-                'has_preprints': PreprintService.objects.filter(
-                    node___contributors__guids___id=profile._id
-                ).annotate(default=Exists(preprint_query)).exists(),
             },
         }
         return ret
