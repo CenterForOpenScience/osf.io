@@ -74,13 +74,13 @@ body, html {
 }
 
 @media (max-width: 767px) {
-    .prereg-button {
+    .reg-landing-page-button {
         line-height: 30px;
     }
 }
 
  @media (min-width: 992px) {
-    div[class^='col']:first-of-type .prereg-button {
+    div[class^='col']:first-of-type .reg-landing-page-button {
         line-height: 30px;
     }
 }
