@@ -126,3 +126,16 @@ class TestPreprintProviderModeratorList:
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
         assert 'email' not in res.json['data']['attributes']
         assert mock_mail.call_count == 1
+
+    def test_list_moderators_alphabetically(self, app, url, admin, moderator, provider):
+        admin.fullname = 'Alice Alisdottir'
+        moderator.fullname = 'Bob Bobsson'
+        new_mod = AuthUserFactory(fullname='Cheryl Cherylsdottir')
+        GroupHelper(provider).get_group('moderator').user_set.add(new_mod)
+        admin.save()
+        moderator.save()
+        res = app.get(url, auth=admin.auth)
+        assert len(res.json['data']) == 3
+        assert res.json['data'][0]['id'] == admin._id
+        assert res.json['data'][1]['id'] == moderator._id
+        assert res.json['data'][2]['id'] == new_mod._id
