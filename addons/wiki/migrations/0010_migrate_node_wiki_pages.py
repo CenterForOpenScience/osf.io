@@ -105,7 +105,8 @@ def create_wiki_pages_sql(state, schema):
               node_id INTEGER,
               user_id INTEGER,
               page_name_key TEXT,
-              page_name_guid TEXT,
+              latest_page_name_guid TEXT,
+              first_page_name_guid TEXT,
               page_name_display TEXT,
               created TIMESTAMP,
               modified TIMESTAMP
@@ -122,7 +123,7 @@ def create_wiki_pages_sql(state, schema):
             -- Retrieve the latest guid for the json key
             UPDATE temp_wikipages AS twp
             SET
-              page_name_guid = (
+              latest_page_name_guid = (
                   SELECT trim(v::text, '"')
                   FROM osf_abstractnode ioan
                     , jsonb_array_elements(oan.wiki_pages_versions->twp.page_name_key) WITH ORDINALITY v(v, rn)
@@ -133,19 +134,39 @@ def create_wiki_pages_sql(state, schema):
             FROM osf_abstractnode AS oan
             WHERE oan.id = twp.node_id;
 
+            -- Retrieve the first guid for the json key
+            UPDATE temp_wikipages AS twp
+            SET
+              first_page_name_guid = (
+                  SELECT trim(v::text, '"')
+                  FROM osf_abstractnode ioan
+                    , jsonb_array_elements(oan.wiki_pages_versions->twp.page_name_key) WITH ORDINALITY v(v, rn)
+                  WHERE ioan.id = oan.id
+                  ORDER BY v.rn ASC
+                  LIMIT 1
+              )
+            FROM osf_abstractnode AS oan
+            WHERE oan.id = twp.node_id;
+
             -- Remove any json keys that reference empty arrays (bad data? e.g. abstract_node id=232092)
             DELETE FROM temp_wikipages AS twp
-            WHERE twp.page_name_guid IS NULL;
+            WHERE twp.latest_page_name_guid IS NULL;
 
-            -- Retrieve nodewikipage fields for the wiki page guid
+            -- Retrieve page_name nodewikipage field for the latest wiki page guid
+            UPDATE temp_wikipages AS twp
+            SET
+              page_name_display = anwp.page_name
+            FROM osf_guid AS og INNER JOIN addons_wiki_nodewikipage AS anwp ON (og.object_id = anwp.id AND og.content_type_id = %s)
+            WHERE og._id = twp.latest_page_name_guid;
+
+            -- Retrieve user_id, created, and modified nodewikipage field for the first wiki page guid
             UPDATE temp_wikipages AS twp
             SET
               user_id = anwp.user_id
-              , page_name_display = anwp.page_name
               , created = anwp.created
               , modified = anwp.modified
             FROM osf_guid AS og INNER JOIN addons_wiki_nodewikipage AS anwp ON (og.object_id = anwp.id AND og.content_type_id = %s)
-            WHERE og._id = twp.page_name_guid;
+            WHERE og._id = twp.first_page_name_guid;
 
             -- Populate the wikipage table
             INSERT INTO addons_wiki_wikipage (node_id, user_id, content_type_pk, page_name, created, modified)
@@ -157,7 +178,7 @@ def create_wiki_pages_sql(state, schema):
               , twp.created
               , twp.modified
             FROM temp_wikipages AS twp;
-            """, [nodewikipage_content_type_id, wikipage_content_type_id]
+            """, [nodewikipage_content_type_id, nodewikipage_content_type_id, wikipage_content_type_id]
         )
     logger.info('Finished migration of WikiPages [SQL]:')
 
