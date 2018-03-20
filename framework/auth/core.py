@@ -177,7 +177,15 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        from osf.models import ApiOAuth2PersonalToken
+        from framework.auth.cas import parse_auth_header
+
+        header_token = request.headers.get('Authorization', None)
+        if header_token and 'bearer' in header_token.lower():
+            token = ApiOAuth2PersonalToken.objects.filter(token_id=parse_auth_header(header_token))
+            user = token.get().owner if token else None
+        else:
+            user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
         return cls(
             user=user,
