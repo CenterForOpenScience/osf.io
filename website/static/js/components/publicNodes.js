@@ -19,9 +19,7 @@ var _buildUrl = function(page, user, nodeType) {
         'page[size]': PROJECTS_PAGE_SIZE,
         'page': page || 1,
         'embed': ['contributors'],
-        // 'filter[public]': 'true',
         'version': '2.5',
-        // 'fields[nodes]': nodeFieldSet.join(','),
         'fields[users]': userFieldSet.join(',')
     };
 

@@ -6,7 +6,6 @@ from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.db.models import OuterRef, Exists, Q
 from flask import request
 import mailchimp
 
@@ -25,7 +24,6 @@ from framework.utils import throttle_period_expired
 
 from osf.models import (
     ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode,
-    Contributor, Registration, PreprintService, Node
 )
 
 from website import mails
