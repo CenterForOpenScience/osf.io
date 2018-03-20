@@ -15,6 +15,32 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             [
                 """
+                -- Ensure Permissions exist. Somehow, edge cases exist where the previous migration does not add them
+                INSERT INTO auth_permission (id, name, content_type_id, codename)
+                    SELECT nextval('auth_permission_id_seq'), 'Read Collection', CT.id, 'read_collection'
+                    FROM django_content_type CT
+                    WHERE CT.app_label = 'osf' AND CT.model = 'collection'
+                        AND NOT EXISTS (
+                            SELECT *
+                            FROM auth_permission
+                            WHERE codename = 'read_collection');
+                INSERT INTO auth_permission (id, name, content_type_id, codename)
+                    SELECT nextval('auth_permission_id_seq'), 'Write Collection', CT.id, 'write_collection'
+                    FROM django_content_type CT
+                    WHERE CT.app_label = 'osf' AND CT.model = 'collection'
+                        AND NOT EXISTS (
+                            SELECT *
+                            FROM auth_permission
+                            WHERE codename = 'write_collection');
+                INSERT INTO auth_permission (id, name, content_type_id, codename)
+                    SELECT nextval('auth_permission_id_seq'), 'Admin Collection', CT.id, 'admin_collection'
+                    FROM django_content_type CT
+                    WHERE CT.app_label = 'osf' AND CT.model = 'collection'
+                        AND NOT EXISTS (
+                            SELECT *
+                            FROM auth_permission
+                            WHERE codename = 'admin_collection');
+                """, """
                 -- Create collection groups - Read/Write/Admin
                 INSERT INTO auth_group (id, name)
                     SELECT nextval('auth_group_id_seq'), 'collections_' || C.id || '_read'

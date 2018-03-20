@@ -2,92 +2,11 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api.providers.permissions import GroupHelper
+from api_tests.providers.preprints.mixins.preprint_provider_mixins import TestPreprintProviderExistsMixin
 from osf_tests.factories import (
     PreprintProviderFactory,
     AuthUserFactory,
-    SubjectFactory,
 )
-
-
-@pytest.mark.django_db
-class TestPreprintProviderExistsMixin(object):
-    # Regression for https://openscience.atlassian.net/browse/OSF-7621
-
-    @pytest.fixture()
-    def fake_url(self):
-        raise NotImplementedError
-
-    @pytest.fixture()
-    def provider_url(self):
-        raise NotImplementedError
-
-    @pytest.fixture()
-    def provider_preprints_list_url(self):
-        raise NotImplementedError
-
-    @pytest.fixture()
-    def provider_preprints_list_url_fake(self):
-        raise NotImplementedError
-
-    @pytest.fixture()
-    def preprint_provider(self):
-        return PreprintProviderFactory()
-
-    @pytest.fixture()
-    def preprint_provider_two(self):
-        return PreprintProviderFactory()
-
-    def test_preprint_provider_exists(self, app, provider_url, fake_url, provider_preprints_list_url, provider_preprints_list_url_fake):
-        detail_res = app.get(provider_url)
-        assert detail_res.status_code == 200
-
-        licenses_res = app.get('{}licenses/'.format(provider_url))
-        assert licenses_res.status_code == 200
-
-        preprints_res = app.get(provider_preprints_list_url)
-        assert preprints_res.status_code == 200
-
-        taxonomies_res = app.get('{}taxonomies/'.format(provider_url))
-        assert taxonomies_res.status_code == 200
-
-        #   test_preprint_provider_does_not_exist_returns_404
-        detail_res = app.get(fake_url, expect_errors=True)
-        assert detail_res.status_code == 404
-
-        licenses_res = app.get(
-            '{}licenses/'.format(fake_url),
-            expect_errors=True)
-        assert licenses_res.status_code == 404
-
-        preprints_res = app.get(
-            provider_preprints_list_url_fake,
-            expect_errors=True)
-        assert preprints_res.status_code == 404
-
-        taxonomies_res = app.get(
-            '{}taxonomies/'.format(fake_url),
-            expect_errors=True)
-        assert taxonomies_res.status_code == 404
-
-    def test_has_highlighted_subjects_flag(
-            self, app, preprint_provider,
-            preprint_provider_two, provider_url):
-        SubjectFactory(
-            provider=preprint_provider,
-            text='A', highlighted=True)
-        SubjectFactory(provider=preprint_provider_two, text='B')
-
-        res = app.get(provider_url)
-        assert res.status_code == 200
-        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
-        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is True
-
-        url_provider_two = '/{}preprint_providers/{}/'.format(
-            API_BASE, preprint_provider_two._id)
-        res = app.get(url_provider_two)
-        assert res.status_code == 200
-        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
-        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is False
 
 
 @pytest.mark.django_db
@@ -102,12 +21,17 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(TestPreprintProviderExists
             API_BASE, preprint_provider._id)
 
     @pytest.fixture()
+    def provider_url_two(self, preprint_provider_two):
+        return '/{}preprint_providers/{}/'.format(
+            API_BASE, preprint_provider_two._id)
+
+    @pytest.fixture()
     def provider_preprints_list_url(self, preprint_provider):
         return '/{}preprint_providers/{}/preprints/'.format(API_BASE, preprint_provider._id)
 
     @pytest.fixture()
     def provider_preprints_list_url_fake(self, fake_url):
-        return '/{}preprints/'.format(fake_url)
+        return '{}preprints/'.format(fake_url)
 
 
 @pytest.mark.django_db
@@ -122,12 +46,17 @@ class TestPreprintProviderExists(TestPreprintProviderExistsMixin):
             API_BASE, preprint_provider._id)
 
     @pytest.fixture()
+    def provider_url_two(self, preprint_provider_two):
+        return '/{}providers/preprints/{}/'.format(
+            API_BASE, preprint_provider_two._id)
+
+    @pytest.fixture()
     def provider_preprints_list_url(self, preprint_provider):
         return '/{}providers/preprints/{}/submissions/'.format(API_BASE, preprint_provider._id)
 
     @pytest.fixture()
     def provider_preprints_list_url_fake(self, fake_url):
-        return '/{}submissions/'.format(fake_url)
+        return '{}submissions/'.format(fake_url)
 
 
 @pytest.mark.django_db

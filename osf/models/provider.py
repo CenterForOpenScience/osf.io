@@ -13,6 +13,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.subject import Subject
+from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 from website import settings
@@ -177,3 +178,12 @@ def rules_to_subjects(rules):
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         GroupHelper(instance).update_provider_auth_groups()
+
+@receiver(post_save, sender=PreprintProvider)
+def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
+    if created:
+        NotificationSubscription.objects.get_or_create(
+            _id='{provider_id}_new_pending_submissions'.format(provider_id=instance._id),
+            event_name='new_pending_submissions',
+            provider=instance
+        )
