@@ -12,6 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from addons.wiki.models import WikiPage, NodeWikiPage, WikiVersion
 from osf.models import Comment, Guid, AbstractNode
 from bulk_update.helper import bulk_update
+from osf.models.base import generate_object_id
 
 logger = logging.getLogger(__name__)
 
@@ -231,6 +232,94 @@ def create_guids(state, schema):
 #     logger.info('WikiPages saved.')
 #     return
 
+def create_wiki_versions_sql(state, schema):
+    logger.info('Starting migration of WikiVersions [SQL]:')
+    wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
+    nodewikipage_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
+    wikiversion_content_type_id = ContentType.objects.get_for_model(WikiVersion).id
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TEMPORARY TABLE temp_wikiversions
+            (
+              node_id INTEGER,
+              user_id INTEGER,
+              page_name_key TEXT,
+              wiki_page_id INTEGER,
+              content TEXT,
+              identifier INTEGER,
+              created TIMESTAMP,
+              modified TIMESTAMP,
+              nwp_guid TEXT,
+              latest_page_name_guid TEXT,
+              page_name_display TEXT
+            )
+            ON COMMIT DROP;
+
+            -- Flatten out the wiki_page_versions arrays for each key
+            INSERT INTO temp_wikiversions (node_id, page_name_key, nwp_guid, content, user_id, modified, identifier, created)
+            SELECT
+              oan.id as node_id,
+              wiki_pages_versions.key,
+              trim(nwp_guid::text, '"') as node_wiki_page_guid,
+              nwp.content,
+              nwp.user_id,
+              nwp.modified,
+              nwp.version as identifier,
+              nwp.date as created
+            FROM osf_abstractnode as oan,
+              jsonb_each(oan.wiki_pages_versions) as wiki_pages_versions,
+              jsonb_array_elements(wiki_pages_versions->wiki_pages_versions.key) as nwp_guid
+            INNER JOIN addons_wiki_nodewikipage as nwp ON nwp.former_guid = trim(nwp_guid::text, '"');
+
+            -- Retrieve the latest guid for the json key
+            UPDATE temp_wikiversions AS twp
+            SET
+              latest_page_name_guid = (
+                  SELECT trim(v::text, '"')
+                  FROM osf_abstractnode ioan
+                    , jsonb_array_elements(oan.wiki_pages_versions->twp.page_name_key) WITH ORDINALITY v(v, rn)
+                  WHERE ioan.id = oan.id
+                  ORDER BY v.rn DESC
+                  LIMIT 1
+              )
+            FROM osf_abstractnode AS oan
+            WHERE oan.id = twp.node_id;
+
+
+            -- Retrieve page_name nodewikipage field for the latest wiki page guid
+            UPDATE temp_wikiversions AS twb
+            SET
+              page_name_display = anwp.page_name
+            FROM osf_guid AS og INNER JOIN addons_wiki_nodewikipage AS anwp ON (og.object_id = anwp.id AND og.content_type_id = %s)
+            WHERE og._id = twb.latest_page_name_guid;
+
+            -- Retrieve user_id, created, and modified nodewikipage field for the first wiki page guid
+            UPDATE temp_wikiversions AS twc
+            SET
+                wiki_page_id = (
+                    SELECT awp.id
+                    FROM addons_wiki_wikipage as awp
+                    WHERE (awp.node_id = twc.node_id
+                        AND awp.page_name = twc.page_name_display)
+                    LIMIT 1
+                );
+
+            -- Populate the wiki_version table
+            INSERT INTO addons_wiki_wikiversion (user_id, wiki_page_id, content, identifier, created, modified, _id)
+            SELECT
+              twv.user_id
+              , twv.wiki_page_id
+              , twv.content
+              , twv.identifier
+              , twv.created
+              , twv.modified
+              , _id field needs to be built here
+            FROM temp_wikiversions AS twv;
+            """, [nodewikipage_content_type_id]
+        )
+    logger.info('Finished migration of WikiVersions [SQL]:')
+
 def create_wiki_versions(nodes):
     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     wiki_versions_pending = []
@@ -310,8 +399,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(create_wiki_pages_sql, reverse_func),
-        migrations.RunPython(create_guids, reverse_func)
-        # migrations.RunPython(create_wiki_versions_sql, reverse_func),
+        migrations.RunPython(create_guids, reverse_func),
+        migrations.RunPython(create_wiki_versions_sql, reverse_func),
     ]
 
 
