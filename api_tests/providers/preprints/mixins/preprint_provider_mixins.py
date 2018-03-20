@@ -383,7 +383,7 @@ class PreprintProviderSubjectsMixin(object):
 
 
 @pytest.mark.django_db
-class TestPreprintProviderSpecificSubjectsMixin:
+class PreprintProviderSpecificSubjectsMixin(object):
 
     @pytest.fixture(autouse=True)
     def provider_1(self):

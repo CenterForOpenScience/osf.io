@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderSubjectsMixin, TestPreprintProviderSpecificSubjectsMixin
+from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderSubjectsMixin, PreprintProviderSpecificSubjectsMixin
 
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
@@ -40,7 +40,7 @@ class TestPreprintProviderSubjects(PreprintProviderSubjectsMixin):
             API_BASE, lawless_preprint_provider._id)
 
 
-class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(TestPreprintProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(PreprintProviderSpecificSubjectsMixin):
     @pytest.fixture()
     def url_1(self, provider_1):
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
@@ -50,7 +50,7 @@ class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(TestPreprintProv
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
-class TestPreprintProviderSpecificSubjects(TestPreprintProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificSubjects(PreprintProviderSpecificSubjectsMixin):
     @pytest.fixture()
     def url_1(self, provider_1):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
