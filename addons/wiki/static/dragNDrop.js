@@ -137,14 +137,14 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
         var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
         return {row: row, column: column};
     };
-    element.enable = function() {
+    editor.enable = function() {
         $('#aceLoadingBall').css('display', 'none');
         editor.container.style.pointerEvents = 'initial';
         editor.container.style.opacity = 1;
         editor.renderer.setStyle('disabled', false);
     };
 
-    element.disable = function() {
+    editor.disable = function() {
         $('#aceLoadingBall').css('display', 'block');
         editor.container.style.pointerEvents = 'none';
         editor.container.style.opacity = 0.1;
