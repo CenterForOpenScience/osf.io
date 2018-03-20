@@ -9,9 +9,6 @@ var getExtension = function(filename) {
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var imageFolder = 'Wiki images';
 
-var editor = ace.edit('editor');
-
-
 var autoIncrementFileName = function(name, nameList) {
     var num = 1;
     var newName;
@@ -33,19 +30,6 @@ var autoIncrementFileName = function(name, nameList) {
     return newName;
 };
 
-editor.enable = function() {
-    $('#aceLoadingBall').css('display', 'none');
-    editor.container.style.pointerEvents = 'initial';
-    editor.container.style.opacity = 1;
-    editor.renderer.setStyle('disabled', false);
-};
-
-editor.disable = function() {
-    $('#aceLoadingBall').css('display', 'block');
-    editor.container.style.pointerEvents = 'none';
-    editor.container.style.opacity = 0.1;
-    editor.renderer.setStyle('disabled', true);
-};
 
 var localFileHandler = function(files, cm, init, fixupInputArea) {
     var multiple = files.length > 1;
@@ -152,6 +136,19 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
         var row = Math.floor(y/height) < editor.session.getScreenLength() ? Math.floor(y/height) : editor.session.getScreenLength() - 1;
         var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
         return {row: row, column: column};
+    };
+    element.enable = function() {
+        $('#aceLoadingBall').css('display', 'none');
+        editor.container.style.pointerEvents = 'initial';
+        editor.container.style.opacity = 1;
+        editor.renderer.setStyle('disabled', false);
+    };
+
+    element.disable = function() {
+        $('#aceLoadingBall').css('display', 'block');
+        editor.container.style.pointerEvents = 'none';
+        editor.container.style.opacity = 0.1;
+        editor.renderer.setStyle('disabled', true);
     };
 
     editor.marker = {};
