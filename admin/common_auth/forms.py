@@ -21,8 +21,9 @@ class UserRegistrationForm(forms.Form):
 
     osf_id = forms.CharField(required=True, max_length=5, min_length=5)
 
+    # TODO: Moving to guardian, find a better way to distinguish "admin-like" groups from object permission groups
     group_perms = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
+        queryset=Group.objects.exclude(name__startswith='collections_'),
         required=False,
         widget=forms.CheckboxSelectMultiple
     )
