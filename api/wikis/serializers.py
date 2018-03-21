@@ -7,8 +7,8 @@ from api.base.exceptions import Conflict
 from addons.wiki.exceptions import (
     NameInvalidError,
     NameMaximumLengthError,
-    PageCannotRenameError,
     PageConflictError,
+    WikiError,
 )
 from api.base.serializers import (
     JSONAPISerializer,
@@ -115,13 +115,12 @@ class NodeWikiSerializer(WikiSerializer):
 
         try:
             instance = instance.node.rename_node_wiki(instance.page_name, new_page_name, auth)
-        except (
-            NameInvalidError, NameMaximumLengthError,
-            PageCannotRenameError
-        ) as err:
-            raise ValidationError(err.message)
         except PageConflictError as err:
-            raise Conflict(err.message)
+            raise Conflict(err.args[0])
+        except WikiError as err:
+            if err.args:
+                raise ValidationError(err.args[0])
+            raise ValidationError
         return instance
 
     def create(self, validated_data):
@@ -138,7 +137,7 @@ class NodeWikiSerializer(WikiSerializer):
         except (
             NameInvalidError, NameMaximumLengthError
         ) as err:
-            raise ValidationError(err.message)
+            raise ValidationError(err.args[0])
 
         return wiki_page
 
