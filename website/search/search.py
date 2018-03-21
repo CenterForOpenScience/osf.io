@@ -90,6 +90,11 @@ def update_institution(institution, index=None):
     search_engine.update_institution(institution, index=index)
 
 @requires_search
+def update_collection_object(cgm, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_cgm(cgm, index=index)
+
+@requires_search
 def delete_all():
     search_engine.delete_all()
 

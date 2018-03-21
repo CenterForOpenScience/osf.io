@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -13,6 +15,8 @@ from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
+
+logger = logging.getLogger(__name__)
 
 class CollectedGuidMetadata(BaseModel):
     primary_identifier_name = 'guid___id'
@@ -30,6 +34,17 @@ class CollectedGuidMetadata(BaseModel):
     @cached_property
     def _id(self):
         return self.guid._id
+
+    def save(self, *args, **kwargs):
+        from website.search.search import update_cgm
+        from website.search.exceptions import SearchUnavailableError
+
+        try:
+            update_cgm(self)
+        except SearchUnavailableError as e:
+            logger.exception(e)
+
+        return super(CollectedGuidMetadata, self).save(*args, **kwargs)
 
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()

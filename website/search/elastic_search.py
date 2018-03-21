@@ -25,6 +25,7 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models import CollectedGuidMetadata
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -46,6 +47,7 @@ ALIASES = {
     'file': 'Files',
     'institution': 'Institutions',
     'preprint': 'Preprints',
+    'collectionObject': 'Collection Objects',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -56,6 +58,7 @@ DOC_TYPE_TO_MODEL = {
     'file': BaseFileNode,
     'institution': Institution,
     'preprint': AbstractNode,
+    'collectionObject': CollectedGuidMetadata,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -581,6 +584,26 @@ def update_institution(institution, index=None):
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
 @requires_search
+def update_cgm(cgm, index=None):
+    index = index or INDEX
+    id_ = cgm._id
+    if cgm.guid.deleted:
+        client().delete(index=index, doc_type='collectionObject', id=id_, refresh=True, ignore=[404])
+    else:
+        collection_object_doc = {
+            'id': cgm._id,
+            'abstract': cgm.guid.referent.get('description', ''),
+            'collectedType': cgm.collected_type,
+            'contributors': cgm.guid.referent.get('contributors', []),
+            'status': cgm.status,
+            'subjects': cgm.guid.referent.get('subjects', []),
+            'title': cgm.guid.referent.title,
+            'url': cgm.guid.referent.get('url'),
+        }
+
+        client().index(index=index, doc_type='collectionObject', body=collection_object_doc, id=id_, refresh=True)
+
+@requires_search
 def delete_all():
     delete_index(INDEX)
 
@@ -596,7 +619,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collection_object']
     project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
