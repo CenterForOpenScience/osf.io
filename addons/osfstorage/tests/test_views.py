@@ -28,7 +28,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -1070,3 +1070,12 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
+
+        # Test token as auth
+        url = base_url.format(file.get_guid()._id)
+        token = ApiOAuth2PersonalTokenFactory(owner=self.user)
+        headers = {
+            'Authorization': str('Bearer {}'.format(token.token_id))
+        }
+        redirect = self.app.get(url, headers=headers)
+        assert redirect.status_code == 302
