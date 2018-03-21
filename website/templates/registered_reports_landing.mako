@@ -151,5 +151,6 @@
 <%include file="components/autocomplete.mako"/>
 <script type="text/javascript">
   window.contextVars = window.contextVars || {};
+  window.contextVars.campaign = ${campaign_short | sjson};
 </script>
 </%def>
