@@ -42,14 +42,14 @@ def reverse_func(state, schema):
                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
                     guid.save()
                     nwp = guid.referent
-                move_comment_target(Guid.load(wp._id), wp, nwp)
+                move_comment_target(Guid.load(wp._id), nwp)
                 update_comments_viewed_timestamp(node, wp, nwp)
     progress_bar.finish()
     WikiVersion.objects.all().delete()
     WikiPage.objects.all().delete()
     logger.info('NodeWikiPages restored and WikiVersions and WikiPages removed.')
 
-def move_comment_target(current_guid, current_target, desired_target):
+def move_comment_target(current_guid, desired_target):
     """Move the comment's target from the current target to the desired target"""
     desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]
     if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
@@ -183,17 +183,17 @@ def create_wiki_pages_sql(state, schema):
         )
     logger.info('Finished migration of WikiPages [SQL]:')
 
-def create_wiki_version(node_wiki, wiki_page):
-    wv = WikiVersion(
-        wiki_page=wiki_page,
-        user_id=node_wiki.user_id,
-        created=node_wiki.date,
-        modified=node_wiki.modified,
-        content=node_wiki.content,
-        identifier=node_wiki.version,
-    )
-    wv.update_modified = False
-    return wv
+# def create_wiki_version(node_wiki, wiki_page):
+#     wv = WikiVersion(
+#         wiki_page=wiki_page,
+#         user_id=node_wiki.user_id,
+#         created=node_wiki.date,
+#         modified=node_wiki.modified,
+#         content=node_wiki.content,
+#         identifier=node_wiki.version,
+#     )
+#     wv.update_modified = False
+#     return wv
 
 def create_guids(state, schema):
     global WIKI_PAGE_GUIDS
@@ -340,12 +340,21 @@ def create_wiki_versions_sql(state, schema):
         )
     logger.info('Finished migration of WikiVersions [SQL]:')
 
-def create_wiki_versions(nodes):
+def repoint_node_wiki_page_guids(state, schema):
     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     wiki_versions_pending = []
     guids_pending = []
+    nodes = (
+            AbstractNode.objects
+            .exclude(wiki_pages_versions={})
+            .exclude(type='osf.collection')
+            .exclude(type='osf.quickfilesnode')
+            # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
+            .include(None)
+            .include('contributor__user')
+        )
     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
-    logger.info('Starting migration of WikiVersions:')
+    logger.info('Starting the repointing of wiki comments, comments_viewed_timestamps, and Node Wiki guids:')
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
@@ -356,29 +365,62 @@ def create_wiki_versions(nodes):
                 wiki_page = node.wikis.get(page_name=page_name)
                 for index, version in enumerate(version_list):
                     if index:
-                        node_wiki = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
-                    wiki_versions_pending.append(create_wiki_version(node_wiki, wiki_page))
+                        node_wiki_guid = version
                     current_guid = Guid.load(version)
                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
-                move_comment_target(current_guid, node_wiki_guid, wiki_page)
-                update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
-        if len(wiki_versions_pending) >= 1000:
-            with disable_auto_now_add_fields(models=[WikiVersion]):
-                WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
-                wiki_versions_pending = []
-                gc.collect()
+                    # Was previously only repointing last nwp guid, but there is staging data where previously
+                    # versions attached to comments/comments_viewed_timestamps.
+                    move_comment_target(current_guid, wiki_page)
+                    update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
         if len(guids_pending) > 1000:
             bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
             guids_pending = []
             gc.collect()
     progress_bar.finish()
-    # Create the remaining wiki pages that weren't created in the loop above
-    with disable_auto_now_add_fields(models=[WikiVersion]):
-        WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
+    # Create the remaining guids that weren't created in the loop above
     bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
-    logger.info('WikiVersions saved.')
     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
     return
+
+# def create_wiki_versions(nodes):
+#     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
+#     wiki_versions_pending = []
+#     guids_pending = []
+#     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
+#     logger.info('Starting migration of WikiVersions:')
+#     for i, node in enumerate(nodes, 1):
+#         progress_bar.update(i)
+#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
+#             if version_list:
+#                 node_wiki_guid = version_list[0]
+#                 node_wiki = NodeWikiPage.objects.filter(former_guid=node_wiki_guid).include(None)[0]
+#                 page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
+#                 wiki_page = node.wikis.get(page_name=page_name)
+#                 for index, version in enumerate(version_list):
+#                     if index:
+#                         node_wiki = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
+#                     wiki_versions_pending.append(create_wiki_version(node_wiki, wiki_page))
+#                     current_guid = Guid.load(version)
+#                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
+#                 move_comment_target(current_guid, wiki_page)
+#                 update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
+#         if len(wiki_versions_pending) >= 1000:
+#             with disable_auto_now_add_fields(models=[WikiVersion]):
+#                 WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
+#                 wiki_versions_pending = []
+#                 gc.collect()
+#         if len(guids_pending) > 1000:
+#             bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
+#             guids_pending = []
+#             gc.collect()
+#     progress_bar.finish()
+#     # Create the remaining wiki pages that weren't created in the loop above
+#     with disable_auto_now_add_fields(models=[WikiVersion]):
+#         WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
+#     bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
+#     logger.info('WikiVersions saved.')
+#     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
+#     return
 
 # def migrate_node_wiki_pages(state, schema):
 #     """
@@ -421,6 +463,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(create_wiki_pages_sql, reverse_func),
         migrations.RunPython(create_guids, reverse_func),
         migrations.RunPython(create_wiki_versions_sql, reverse_func),
+        # migrations.RunPython(repoint_node_wiki_page_guids, reverse_func)
     ]
 
 
