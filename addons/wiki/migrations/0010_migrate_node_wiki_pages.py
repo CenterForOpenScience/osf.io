@@ -305,6 +305,26 @@ def create_wiki_versions_sql(state, schema):
                     LIMIT 1
                 );
 
+            -- Borrowed from https://gist.github.com/jamarparris/6100413
+            CREATE OR REPLACE FUNCTION generate_object_id() RETURNS varchar AS $$
+            DECLARE
+                time_component bigint;
+                machine_id bigint := FLOOR(random() * 16777215);
+                process_id bigint;
+                seq_id bigint := FLOOR(random() * 16777215);
+                result varchar:= '';
+            BEGIN
+                SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp())) INTO time_component;
+                SELECT pg_backend_pid() INTO process_id;
+
+                result := result || lpad(to_hex(time_component), 8, '0');
+                result := result || lpad(to_hex(machine_id), 6, '0');
+                result := result || lpad(to_hex(process_id), 4, '0');
+                result := result || lpad(to_hex(seq_id), 6, '0');
+                RETURN result;
+            END;
+            $$ LANGUAGE PLPGSQL;
+
             -- Populate the wiki_version table
             INSERT INTO addons_wiki_wikiversion (user_id, wiki_page_id, content, identifier, created, modified, _id)
             SELECT
@@ -314,7 +334,7 @@ def create_wiki_versions_sql(state, schema):
               , twv.identifier
               , twv.created
               , twv.modified
-              , _id field needs to be built here
+              , generate_object_id()
             FROM temp_wikiversions AS twv;
             """, [nodewikipage_content_type_id]
         )
