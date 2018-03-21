@@ -78,10 +78,15 @@ def get_current_user_id():
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
-    from osf.models import OSFUser
+    from osf.models import OSFUser, ApiOAuth2PersonalToken
+    from framework.auth.cas import parse_auth_header
     current_user_id = get_current_user_id()
+    header_token = request.headers.get('Authorization', None)
     if current_user_id:
         return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
+    elif header_token and 'bearer' in header_token.lower():
+        token = ApiOAuth2PersonalToken.objects.filter(token_id=parse_auth_header(header_token))
+        return token.get().owner if token else None
     else:
         return None
 
