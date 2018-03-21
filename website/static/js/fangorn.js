@@ -1228,7 +1228,7 @@ function _removeEvent (event, items, col) {
         var detail;
         if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
             detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
-                ' image embedded in your wiki(s).');
+                ' image embedded in your wiki(s). ');
         } else {
             detail = '';
         }
@@ -1283,7 +1283,7 @@ function _removeEvent (event, items, col) {
                         }
                         if(n.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
                             return m('p.text-danger', m('b', n.data.name), ' may be linked to' +
-                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s).');
+                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s). ');
                         } else {
                             return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                         }
