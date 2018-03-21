@@ -2,7 +2,6 @@ import django
 django.setup()
 
 from django.db.models import Q
-import pytz
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timedelta
@@ -27,10 +26,10 @@ class FileSummary(SummaryAnalytics):
         from addons.osfstorage.models import OsfStorageFile
 
         # Convert to a datetime at midnight for queries and the timestamp
-        timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
+        timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
         query_datetime = timestamp_datetime + timedelta(days=1)
 
-        file_qs = OsfStorageFile.objects.filter()
+        file_qs = OsfStorageFile.objects
 
         public_query = Q(node__is_public=True)
         private_query = Q(node__is_public=False)
