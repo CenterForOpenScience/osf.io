@@ -3,8 +3,9 @@ import pytz
 from django.apps import apps
 from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
 from django.db import models, transaction
+from django.utils import timezone
+from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
@@ -12,12 +13,16 @@ from include import IncludeQuerySet
 
 from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
+from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
+from osf.models.subject import Subject
 from osf.models.tag import Tag
+from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, RequestMachine
+from osf.utils.permissions import ADMIN
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 from website.exceptions import NodeStateError
 from website import settings
@@ -671,3 +676,58 @@ class GuardianMixin(models.Model):
 
     def get_permissions(self, user):
         return list(set(get_perms(user, self)) & set(self.perms_list))
+
+
+class TaxonomizableMixin(models.Model):
+
+    class Meta:
+        abstract = True
+
+    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='%(class)ss')
+
+    @cached_property
+    def subject_hierarchy(self):
+        return [
+            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
+        ]
+
+    def set_subjects(self, new_subjects, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of hierarchies received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[list[Subject._id]] new_subjects: List of subject hierarchies to be validated and flattened
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        if getattr(self, 'is_registration', False):
+            raise PermissionsError('Registrations may not be modified.')
+        if getattr(self, 'is_collection', False):
+            raise NodeStateError('Collections may not have subjects')
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can change subjects.')
+
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj_list in new_subjects:
+            subj_hierarchy = []
+            for s in subj_list:
+                subj_hierarchy.append(s)
+            if subj_hierarchy:
+                validate_subject_hierarchy(subj_hierarchy)
+                for s_id in subj_hierarchy:
+                    self.subjects.add(Subject.load(s_id))
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_log(
+                action=NodeLog.SUBJECTS_UPDATED,
+                params={
+                    'subjects': list(self.subjects.values('_id', 'text')),
+                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+                },
+                auth=auth,
+                save=False,
+            )
+
+        self.save(old_subjects=old_subjects)
