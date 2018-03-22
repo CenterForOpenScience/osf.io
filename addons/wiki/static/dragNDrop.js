@@ -62,7 +62,6 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                     name = newName ? newName : file.name;
                     if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
                         $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
-                        editor.enable();
                     } else {
                         var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
                         $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
