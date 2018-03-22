@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
+import json
 import mock
 import datetime
 
@@ -1089,7 +1090,7 @@ class TestFileViews(StorageTestCase):
             responses.Response(
                 responses.GET,
                 '{}/oauth2/profile'.format(cas_base_url),
-                body='{{"id": "{}"}}'.format(self.user._id),
+                body=json.dumps({'id': '{}'.format(self.user._id)}),
                 status=200,
             )
         )
