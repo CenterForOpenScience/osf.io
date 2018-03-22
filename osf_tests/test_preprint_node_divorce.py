@@ -584,11 +584,11 @@ class TestPermissionMethods:
     def test_add_permission_already_granted(self, preprint):
         user = UserFactory()
         PreprintContributor.objects.create(
-            preprint=preprint, user=user,
-            read=True, write=True, admin=True
+            preprint=preprint, user=user
         )
+        preprint.set_permissions(user, 'admin', validate=False)
         with pytest.raises(ValueError):
-            preprint.add_permission(user, permissions.ADMIN)
+            preprint.add_permission(user, 'admin')
 
     def test_contributor_can_edit(self, preprint, auth):
         contributor = UserFactory()
