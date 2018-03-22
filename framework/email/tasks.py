@@ -54,7 +54,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             ttls=ttls,
             login=login,
             username=username,
-            password=password
+            password=password,
         )
 
 
@@ -96,8 +96,7 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
         mail.set_subject(subject)
         if mimetype == 'html':
             mail.set_html(message)
-        else:
-            mail.set_text(message)
+
         if categories:
             mail.set_categories(categories)
         if attachment_name and attachment_content:
