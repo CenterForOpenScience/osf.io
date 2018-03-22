@@ -41,8 +41,8 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
     var promises = [];
     var editor = ace.edit('editor');
     editor.disable();
-    getOrCreateWikiImagesFolder().fail(function() {
-        notUploaded(multiple);
+    getOrCreateWikiImagesFolder().fail(function(response) {
+        notUploaded(response, multiple);
         editor.enable();
     }).done(function(path) {
         $.ajax({ // Check to makes sure we don't overwrite a file with the same name.
@@ -76,7 +76,6 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                                 data: file,
                             }).done(function (response) {
                                 urls.splice(i, 0, response.data.links.download + '?mode=render');
-                                editor.enable();
                             }).fail(function (response) {
                                 notUploaded(response, false, cm, init, fixupInputArea, path, file);
                             })
@@ -88,10 +87,13 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                         cm.doLinkOrImage(init, null, true, url, multiple, num + i);
                     });
                     fixupInputArea();
+                    editor.enable();
                 });
             } else {
                 notUploaded(null, multiple);
             }
+        }).fail(function (response) {
+            notUploaded(response, false, cm, init, fixupInputArea, path);
         });
     });
 };
@@ -285,6 +287,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
 
 var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, file) {
     var files = multiple ? 'Files' : 'File';
+    var editor = ace.edit('editor');
     if (response.status === 403) {
         $osf.growl('Error', 'File not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
