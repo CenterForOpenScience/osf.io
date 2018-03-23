@@ -25,8 +25,7 @@ $(document).ready(function () {
 
     m.mount(document.getElementById('publicRegistrations'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'registrations'}));
 
-    if(ctx.user.has_quickfiles) {
-        m.mount(document.getElementById('quickFiles'), m.component(quickFiles.QuickFiles, {user: ctx.user}));
-    }
+    m.mount(document.getElementById('quickFiles'), m.component(quickFiles.QuickFiles, {user: ctx.user}));
+
 });
 

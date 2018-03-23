@@ -150,7 +150,6 @@
             </div>
         </div>
     </div>
-    % if user['has_quickfiles']:
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
@@ -165,7 +164,6 @@
             </div>
         </div>
     </div>
-    % endif
 
 
 </div><!-- end row -->
