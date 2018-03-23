@@ -139,17 +139,15 @@ var PublicNode = {
 
     view: function(ctrl)  {
 
-        var icon = ctrl.icon;
-        if(ctrl.nodeType === 'preprints'){
-            icon = 'fa fa-file-o'
-        }
-
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
                     m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;', width: '100%'}, [
                         m('span.project-statuses-lg'),
-                        m('span', {class: icon, style: 'padding-right: 5px;'}, ''),
+                        m('span', {
+                            class: ctrl.nodeType === 'preprints' ? 'fa fa-file-o' : ctrl.icon,
+                            style: 'padding-right: 5px;'
+                        }, ''),
                         m('a', {'href': ctrl.node.links.html}, $osf.decodeText(ctrl.node.attributes.title))
                     ])
                 ]),
@@ -184,6 +182,7 @@ var PublicNodes = {
     view : function (ctrl) {
         var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         var nodeInfo = ctrl.nodeType ==='preprints' ? ctrl.nodeType : 'public '+ ctrl.nodeType ;
+
         var helpText = 'make your project public';
         var helpUrl = 'http://help.osf.io/m/gettingstarted/l/524048-control-your-privacy-settings';
         if (ctrl.nodeType === 'preprints'){
