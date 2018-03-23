@@ -1,6 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.base.settings import REST_FRAMEWORK
 from api.providers.permissions import GroupHelper
 from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderExistsMixin
 from osf_tests.factories import (
@@ -31,6 +32,12 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(PreprintProviderExistsMixi
     @pytest.fixture()
     def provider_preprints_list_url_fake(self, fake_url):
         return '{}preprints/'.format(fake_url)
+
+    @pytest.mark.skipif('2.8' not in REST_FRAMEWORK['ALLOWED_VERSIONS'], reason='New API version required to test full deprecation')
+    def test_version_deprecation(self, app, provider_url):
+        res = app.get('{}?version=2.8'.format(provider_url), expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'This route has been deprecated. It was last available in version 2.7'
 
 
 class TestPreprintProviderExists(PreprintProviderExistsMixin):

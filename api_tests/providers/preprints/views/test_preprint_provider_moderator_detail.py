@@ -155,11 +155,19 @@ class TestPreprintProviderModeratorDetail:
         assert res.status_code == 403
 
         res = app.delete_json_api(url.format(moderator._id), auth=moderator.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body
 
     def test_admin_delete_moderator(self, app, url, moderator, admin, provider):
         res = app.delete_json_api(url.format(moderator._id), auth=admin.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body
 
     def test_admin_delete_admin(self, app, url, moderator, admin, provider):
         # Make mod an admin
@@ -170,4 +178,8 @@ class TestPreprintProviderModeratorDetail:
 
         # Admin delete admin
         res = app.delete_json_api(url.format(moderator._id), auth=admin.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body
