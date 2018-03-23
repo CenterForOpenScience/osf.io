@@ -52,8 +52,8 @@ class CollectedGuidMetadata(BaseModel):
             logger.exception(e)
 
     def save(self, *args, **kwargs):
+        ret = super(CollectedGuidMetadata, self).save(*args, **kwargs)
         self.update_index()
-        return super(CollectedGuidMetadata, self).save(*args, **kwargs)
 
     def delete(self):
         self.remove_from_index()

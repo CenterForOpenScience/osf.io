@@ -435,9 +435,16 @@ def serialize_cgm(cgm):
         'id': cgm._id,
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
-        'contributors': getattr(obj, 'contributors', []),
+        'contributors': [
+            {
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+            }
+            for x in obj._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
+        ],
         'status': cgm.status,
-        'subjects': getattr(obj, 'subjects', []),
+        # 'subjects': obj.get_subjects(),
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
     }
@@ -618,7 +625,7 @@ def update_institution(institution, index=None):
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_cgm_async(self, cgm_id, index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
-    cgm = CollectedGuidMetadata.load(cgm_id)
+    cgm = CollectedGuidMetadata.objects.get(guid___id=cgm_id)
     try:
         update_cgm(cgm, index=index)
     except Exception as exc:
