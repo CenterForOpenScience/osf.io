@@ -138,12 +138,18 @@ var PublicNode = {
     },
 
     view: function(ctrl)  {
+
+        var icon = ctrl.icon;
+        if(ctrl.nodeType === 'preprints'){
+            icon = 'fa fa-file-o'
+        }
+
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
                     m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;', width: '100%'}, [
                         m('span.project-statuses-lg'),
-                        m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
+                        m('span', {class: icon, style: 'padding-right: 5px;'}, ''),
                         m('a', {'href': ctrl.node.links.html}, $osf.decodeText(ctrl.node.attributes.title))
                     ])
                 ]),
@@ -177,11 +183,22 @@ var PublicNodes = {
 
     view : function (ctrl) {
         var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
+        var nodeInfo = ctrl.nodeType ==='preprints' ? ctrl.nodeType : 'public '+ ctrl.nodeType ;
+        var helpText = 'make your project public';
+        var helpUrl = 'http://help.osf.io/m/gettingstarted/l/524048-control-your-privacy-settings';
+        if (ctrl.nodeType === 'preprints'){
+            helpText = 'share a preprint';
+            helpUrl = 'http://help.osf.io/m/preprints/l/627729-share-a-preprint';
+        }
+        else if (ctrl.nodeType === 'registrations'){
+            helpText = 'register a project';
+            helpUrl = 'http://help.osf.io/m/registrations/l/524205-register-your-project';
+        }
 
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
-                'Unable to retrieve public ' + ctrl.nodeType + ' at this time. Please refresh the page or contact ',
+                'Unable to retrieve ' + nodeInfo + ' at this time. Please refresh the page or contact ',
                 m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
@@ -195,14 +212,14 @@ var PublicNodes = {
                     return m.component(PublicNode, {nodeType: ctrl.nodeType, node: node});
                 }) : ctrl.isProfile ?
                     m('div.help-block', {}, [
-                        'You have no public ' + ctrl.nodeType + '.',
+                        'You have no ' + nodeInfo + '.',
                         m('p', {}, [
-                            'Find out how to make your ' + ctrl.nodeType + ' ',
-                            m('a', {'href': 'http://help.osf.io/m/gettingstarted/l/524048-control-your-privacy-settings', 'target': '_blank'}, 'public'),
+                            'Find out how to ',
+                            m('a', {'href': helpUrl, 'target': '_blank'}, helpText),
                             '.'
                         ])
                     ])
-                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.')
+                : m('div.help-block', {}, 'This user has no ' + nodeInfo + '.')
 
             ]
         ]);

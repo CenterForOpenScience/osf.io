@@ -130,8 +130,15 @@ var QuickFiles = {
                 ctrl.quickFiles().length !== 0 ? ctrl.quickFiles().map(function(file) {
                     return m.component(QuickFile, {file: file});
                 }) : ctrl.isProfile ?
-                    m('div.help-block', {}, 'You have no public quickfiles')
-                : m('div.help-block', {}, 'This user has no public quickfiles.')
+                    m('div.help-block', {}, [
+                        'You have no quickfiles.',
+                        m('p', {}, [
+                            'Find out how to ',
+                            m('a', {'href': 'http://help.osf.io/m/quickfiles/l/841097-upload-quick-files', 'target': '_blank'}, 'share a Quick File'),
+                            '.'
+                        ])
+                    ])
+                : m('div.help-block', {}, 'This user has no quickfiles.')
             ]
         ]);
     }
