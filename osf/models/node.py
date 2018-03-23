@@ -42,6 +42,7 @@ from osf.models.private_link import PrivateLink
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
+from osf.models.collection import CollectedGuidMetadata
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -430,6 +431,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_quickfiles(self):
         return False
+
+    @property
+    def is_collected(self):
+        """is part of a collection"""
+        return CollectedGuidMetadata.objects.filter(guid_id=self.id).exists()
 
     @property
     def is_original(self):
@@ -1545,9 +1551,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
+            elif self.is_collected:
+                pass
             else:
                 self.is_public = False
                 self.keenio_read_key = ''
+        elif permissions == 'public' and not self.is_public:
+            if self.is_collected:
+                pass
         else:
             return False
 

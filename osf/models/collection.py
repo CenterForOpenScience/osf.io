@@ -15,6 +15,7 @@ from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
+from website.search.exceptions import SearchUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +36,28 @@ class CollectedGuidMetadata(BaseModel):
     def _id(self):
         return self.guid._id
 
-    def save(self, *args, **kwargs):
+    def update_index(self):
         from website.search.search import update_cgm
-        from website.search.exceptions import SearchUnavailableError
+        if self.collection.is_public:
+            try:
+                update_cgm(self)
+            except SearchUnavailableError as e:
+                logger.exception(e)
 
+    def remove_from_index(self):
+        from website.search.search import delete_cgm
         try:
-            update_cgm(self)
+            delete_cgm(self)
         except SearchUnavailableError as e:
             logger.exception(e)
 
+    def save(self, *args, **kwargs):
+        self.update_index()
         return super(CollectedGuidMetadata, self).save(*args, **kwargs)
+
+    def delete(self):
+        self.remove_from_index()
+        return super(CollectedGuidMetadata, self).delete()
 
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
@@ -110,6 +123,22 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
     def linked_registrations_related_url(self):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
+    @classmethod
+    def bulk_update_search(cls, cgms, index=None):
+        from website import search
+        try:
+            search.search.bulk_update_cgm(cgms, index=index)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+
+    @classmethod
+    def bulk_delete_search(cls, cgms, index=None):
+        from website import search
+        try:
+            search.search.bulk_update_cgm(cgms, op='delete', index=index)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+
     def save(self, *args, **kwargs):
         first_save = self.id is None
         if self.is_bookmark_collection:
@@ -125,6 +154,18 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             # Set up initial permissions
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)
+
+        if 'is_public' in kwargs:
+            is_public = kwargs.get('is_public')
+            if not is_public and self.is_public:
+                # Remove all collection submissions from ES index
+                cgms = list(self.collectedguidmetadata_set.all())
+                self.bulk_delete_search(cgms)
+
+            elif is_public and not self.is_public:
+                # Add all collection submissions back to ES index
+                cgms = list(self.collectedguidmetadata_set.all())
+                self.bulk_update_search(cgms)
         return ret
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
@@ -185,7 +226,13 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             # Not really the right exception to raise, but it's for back-compatibility
             # TODO: Use a more correct exception and catch it in the necessary places
             raise NodeStateError('Bookmark collections may not be deleted.')
+
         self.deleted = timezone.now()
+
+        cgms = list(self.collectedguidmetadata_set.all())
+        if cgms:
+            self.bulk_delete_search(cgms)
+
         self.save()
 
 

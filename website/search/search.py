@@ -90,9 +90,28 @@ def update_institution(institution, index=None):
     search_engine.update_institution(institution, index=index)
 
 @requires_search
-def update_collection_object(cgm, index=None):
+def update_cgm(cgm, index=None, async=True):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_cgm(cgm, index=index)
+    if not cgm.collection.is_public:
+        return
+    if async:
+        cgm_id = cgm._id
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_cgm_async.s(cgm_id, index=index))
+        else:
+            search_engine.update_cgm_async(cgm_id, index=index)
+    else:
+        search_engine.update_cgm(cgm, index=index)
+
+@requires_search
+def delete_cgm(cgm, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.delete_cgm(cgm, index=index)
+
+@requires_search
+def bulk_update_cgm(cgms, op='update', index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.bulk_update_cgm(cgms, op=op, index=index)
 
 @requires_search
 def delete_all():

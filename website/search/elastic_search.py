@@ -47,7 +47,7 @@ ALIASES = {
     'file': 'Files',
     'institution': 'Institutions',
     'preprint': 'Preprints',
-    'collectionObject': 'Collection Objects',
+    'collectionSubmission': 'Collection Submissions',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -58,7 +58,7 @@ DOC_TYPE_TO_MODEL = {
     'file': BaseFileNode,
     'institution': Institution,
     'preprint': AbstractNode,
-    'collectionObject': CollectedGuidMetadata,
+    'collectionSubmission': CollectedGuidMetadata,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -429,6 +429,37 @@ def bulk_update_nodes(serialize, nodes, index=None):
     if actions:
         return helpers.bulk(client(), actions)
 
+def serialize_cgm(cgm):
+    obj = cgm.guid.referent
+    collection_submission_doc = {
+        'id': cgm._id,
+        'abstract': getattr(obj, 'description', ''),
+        'collectedType': getattr(cgm, 'collected_type'),
+        'contributors': getattr(obj, 'contributors', []),
+        'status': cgm.status,
+        'subjects': getattr(obj, 'subjects', []),
+        'title': getattr(obj, 'title'),
+        'url': getattr(obj, 'url'),
+    }
+    return collection_submission_doc
+
+
+def bulk_update_cgm(cgms, op='update', index=None):
+    index = index or INDEX
+    actions = ({
+        '_op_type': op,
+        '_index': index,
+        '_id': cgm._id,
+        '_type': 'collection_submission',
+        'doc': serialize_cgm(cgm),
+        'doc_as_upsert': True,
+    } for cgm in cgms if cgm.collection.is_public)
+    if actions:
+        try:
+            helpers.bulk(client(), actions)
+        except helpers.BulkIndexError as e:
+            raise exceptions.BulkUpdateError(e.errors)
+
 def serialize_contributors(node):
     return {
         'contributors': [
@@ -583,25 +614,26 @@ def update_institution(institution, index=None):
 
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_cgm_async(self, cgm_id, index=None):
+    CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+    cgm = CollectedGuidMetadata.load(cgm_id)
+    try:
+        update_cgm(cgm, index=index)
+    except Exception as exc:
+        self.retry(exc=exc)
+
 @requires_search
 def update_cgm(cgm, index=None):
     index = index or INDEX
-    id_ = cgm._id
-    if cgm.guid.deleted:
-        client().delete(index=index, doc_type='collectionObject', id=id_, refresh=True, ignore=[404])
-    else:
-        collection_object_doc = {
-            'id': cgm._id,
-            'abstract': cgm.guid.referent.get('description', ''),
-            'collectedType': cgm.collected_type,
-            'contributors': cgm.guid.referent.get('contributors', []),
-            'status': cgm.status,
-            'subjects': cgm.guid.referent.get('subjects', []),
-            'title': cgm.guid.referent.title,
-            'url': cgm.guid.referent.get('url'),
-        }
+    collection_submission_doc = serialize_cgm(cgm)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
 
-        client().index(index=index, doc_type='collectionObject', body=collection_object_doc, id=id_, refresh=True)
+@requires_search
+def delete_cgm(cgm, index=None):
+    index = index or INDEX
+    client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
 
 @requires_search
 def delete_all():
@@ -619,7 +651,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collection_object']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collection_submission']
     project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
