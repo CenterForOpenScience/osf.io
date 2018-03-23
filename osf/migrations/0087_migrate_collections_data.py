@@ -123,7 +123,7 @@ class Migration(migrations.Migration):
                     WHERE id IN (
                         SELECT id
                         FROM osf_guid
-                        WHERE content_type_id = (SELECT FROM django_content_type WHERE app_label = 'osf' and model = 'collection')
+                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'collection')
                             AND object_id IN (SELECT id FROM osf_collection)
                     );
                 """, """
