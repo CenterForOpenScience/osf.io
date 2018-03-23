@@ -6,12 +6,15 @@ import math
 import os
 import requests
 import urllib
+import waffle
+import json
 
 from django.apps import apps
 from django.db.models import Count
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
+from framework.sessions import session
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
@@ -144,6 +147,15 @@ def index():
 
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
+        if waffle.switch_is_active('ember_dashboard'):
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True)
+                resp = Response(stream_with_context(resp.iter_content()), resp.status_code)
+            else:
+                resp = send_from_directory(ember_osf_web_dir, 'index.html')
+            resp.set_cookie('status', json.dumps(session.data.get('status')))
+            return resp
+
         all_institutions = (
             Institution.objects.filter(
                 is_deleted=False,
