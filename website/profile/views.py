@@ -23,7 +23,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf.models import (
-    ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode,
+    ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser,
 )
 
 from website import mails
