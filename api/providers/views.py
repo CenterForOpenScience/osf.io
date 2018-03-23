@@ -1,4 +1,3 @@
-
 from django.db.models import Case, CharField, Q, Value, When
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
@@ -13,12 +12,12 @@ from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
+from api.preprints.permissions import PreprintPublishedOrAdmin
+from api.preprints.serializers import PreprintSerializer
+from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
+from api.providers.serializers import PreprintProviderSerializer, ModeratorSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
-from api.preprint_providers.serializers import PreprintProviderSerializer, ModeratorSerializer
-from api.preprint_providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
-from api.preprints.serializers import PreprintSerializer
-from api.preprints.permissions import PreprintPublishedOrAdmin
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
 

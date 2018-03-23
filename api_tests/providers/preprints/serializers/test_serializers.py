@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from api.preprint_providers.serializers import PreprintProviderSerializer
+from api.providers.serializers import PreprintProviderSerializer
 from osf_tests.factories import PreprintProviderFactory
 from tests.base import DbTestCase
 from tests.utils import make_drf_request_with_version

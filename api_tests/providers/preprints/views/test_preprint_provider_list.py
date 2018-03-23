@@ -10,9 +10,10 @@ from osf_tests.factories import (
 @pytest.mark.django_db
 class TestPreprintProviderList:
 
-    @pytest.fixture()
-    def url(self):
-        return '/{}preprint_providers/?version=2.2&'.format(API_BASE)
+    @pytest.fixture(params=['/{}preprint_providers/?version=2.2&', '/{}providers/preprints/?version=2.2&'])
+    def url(self, request):
+        url = (request.param)
+        return url.format(API_BASE)
 
     @pytest.fixture()
     def user(self):

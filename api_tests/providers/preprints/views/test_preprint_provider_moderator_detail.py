@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -17,9 +17,10 @@ class TestPreprintProviderModeratorDetail:
         GroupHelper(pp).update_provider_auth_groups()
         return pp
 
-    @pytest.fixture()
-    def url(self, provider):
-        return '/{}preprint_providers/{}/moderators/{{}}/'.format(API_BASE, provider._id)
+    @pytest.fixture(params=['/{}preprint_providers/{}/moderators/{{}}/', '/{}providers/preprints/{}/moderators/{{}}/'])
+    def url(self, provider, request):
+        url = request.param
+        return url.format(API_BASE, provider._id)
 
     @pytest.fixture()
     def admin(self, provider):
