@@ -15,6 +15,9 @@ from website.settings import DOMAIN
 
 class ProviderSerializer(JSONAPISerializer):
 
+    class Meta:
+        type_ = 'providers'
+
     name = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     id = ser.CharField(read_only=True, max_length=200, source='_id')
@@ -30,10 +33,12 @@ class ProviderSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
-    class Meta:
-        type_ = 'providers'
 
 class PreprintProviderSerializer(ProviderSerializer):
+
+    class Meta:
+        type_ = 'preprint_providers'
+
     filterable_fields = frozenset([
         'allow_submissions',
         'description',
@@ -149,9 +154,6 @@ class PreprintProviderSerializer(ProviderSerializer):
         instance.reviews_comments_anonymous = validated_data['reviews_comments_anonymous']
         instance.save()
         return instance
-
-    class Meta:
-        type_ = 'preprint_providers'
 
 
 class ModeratorSerializer(JSONAPISerializer):
