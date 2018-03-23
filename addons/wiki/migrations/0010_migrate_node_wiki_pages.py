@@ -233,9 +233,10 @@ def create_guids(state, schema):
 #     logger.info('WikiPages saved.')
 #     return
 
-def create_wiki_versions_sql(state, schema):
+def create_wiki_versions_and_repoint_comments_sql(state, schema):
     logger.info('Starting migration of WikiVersions [SQL]:')
     nodewikipage_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
+    wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -335,7 +336,51 @@ def create_wiki_versions_sql(state, schema):
               , twv.modified
               , generate_object_id()
             FROM temp_wikiversions AS twv;
-            """, [nodewikipage_content_type_id]
+
+            -- Migrate Comments on NodeWikiPages to point to WikiPages
+
+            -- Create temporary view to store mapping of NodeWikiPage's Guid.pk => WikiPage.id
+            CREATE VIEW nwp_guids_to_wp_id AS (
+                SELECT
+                osf_guid.id as nwp_guid_id,
+                twv.wiki_page_id
+                FROM osf_guid
+                INNER JOIN temp_wikiversions twv ON (osf_guid._id = twv.nwp_guid)
+                WHERE osf_guid._id = twv.nwp_guid
+            );
+
+            -- Use above view to construct a mapping between NodeWikiPage GUID pk => WikiPage GUID pk
+            CREATE VIEW nwp_guids_to_wiki_page_guids as (
+                SELECT
+                nwp_guids_to_wp_id.nwp_guid_id as nwp_guid_id,
+                osf_guid.id as wiki_page_guid_id
+                FROM osf_guid
+                INNER JOIN nwp_guids_to_wp_id ON (osf_guid.object_id = nwp_guids_to_wp_id.wiki_page_id)
+                WHERE osf_guid.object_id = nwp_guids_to_wp_id.wiki_page_id AND osf_guid.content_type_id = %s
+            );
+
+            -- Change Comment.root_target from NodeWikiPages to their corresponding WikiPage
+            UPDATE osf_comment
+            SET
+            root_target_id = (
+                SELECT nwp_guids_to_wiki_page_guids.wiki_page_guid_id
+                FROM nwp_guids_to_wiki_page_guids
+                WHERE osf_comment.root_target_id = nwp_guids_to_wiki_page_guids.nwp_guid_id
+                LIMIT 1
+            )
+            WHERE root_target_id IN (SELECT nwp_guid_id FROM nwp_guids_to_wiki_page_guids);
+
+            -- Change Comment.target from NodeWikiPages to their corresponding WikiPage
+            UPDATE osf_comment
+            SET
+            target_id = (
+                SELECT nwp_guids_to_wiki_page_guids.wiki_page_guid_id
+                FROM nwp_guids_to_wiki_page_guids
+                WHERE osf_comment.target_id = nwp_guids_to_wiki_page_guids.nwp_guid_id
+                LIMIT 1
+            )
+            WHERE target_id IN (SELECT nwp_guid_id FROM nwp_guids_to_wiki_page_guids);
+            """, [nodewikipage_content_type_id, wikipage_content_type_id]
         )
     logger.info('Finished migration of WikiVersions [SQL]:')
 
@@ -532,8 +577,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(create_wiki_pages_sql, reverse_func),
         migrations.RunPython(create_guids, reverse_func),
-        migrations.RunPython(create_wiki_versions_sql, reverse_func),
-        # migrating comments should go here
+        migrations.RunPython(create_wiki_versions_and_repoint_comments_sql, reverse_func),
         # migrating comments_viewed_timestamp should go here
         migrations.RunPython(migrate_guid_referent_sql, reverse_func)
         # migrations.RunPython(repoint_node_wiki_page_guids, reverse_func)
