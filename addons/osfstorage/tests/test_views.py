@@ -1,12 +1,15 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
+import json
 import mock
 import datetime
 
 import pytest
+import responses
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
+from website import settings
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth
@@ -18,6 +21,7 @@ from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
+from framework.auth import cas
 from website.util import rubeus
 
 from osf.models import Tag, QuickFilesNode
@@ -28,7 +32,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -1070,3 +1074,34 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
+
+    @responses.activate
+    @mock.patch('framework.auth.cas.get_client')
+    def test_download_file_with_token(self, mock_get_client):
+        cas_base_url = 'http://accounts.test.test'
+        client = cas.CasClient(cas_base_url)
+
+        mock_get_client.return_value = client
+
+        base_url = '/download/{}/'
+        file = create_test_file(node=self.node, user=self.user)
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                '{}/oauth2/profile'.format(cas_base_url),
+                body=json.dumps({'id': '{}'.format(self.user._id)}),
+                status=200,
+            )
+        )
+
+        download_url = base_url.format(file.get_guid()._id)
+        token = ApiOAuth2PersonalTokenFactory(owner=self.user)
+        headers = {
+            'Authorization': str('Bearer {}'.format(token.token_id))
+        }
+        redirect = self.app.get(download_url, headers=headers)
+
+        assert mock_get_client.called
+        assert settings.WATERBUTLER_URL in redirect.location
+        assert redirect.status_code == 302
