@@ -84,6 +84,16 @@ def get_campaigns():
                 }
             })
 
+            newest_campaigns.update({
+                'osf-registered-reports': {
+                    'system_tag': 'osf_registered_reports',
+                    'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
+                    'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
+                    'login_type': 'proxy',
+                    'provider': 'osf',
+                }
+            })
+
             CAMPAIGNS = newest_campaigns
             CAMPAIGNS_LAST_REFRESHED = timezone.now()
 

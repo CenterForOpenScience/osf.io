@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.136.0 (2018-03-23)
+====================
+
+- Add registered reports landing page (/registeredreports/).
+- Drag-and-drop images into the wiki.
+- Embed OSF files in the wiki using `@[osf](GUID)`.
+- Fixes for sitemap script.
+
 0.135.0 (2018-03-15)
 ====================
 
