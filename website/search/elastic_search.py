@@ -444,7 +444,7 @@ def serialize_cgm(cgm):
             .values('fullname', 'guids___id', 'is_active')
         ],
         'status': cgm.status,
-        # 'subjects': obj.get_subjects(),
+        'subjects': list(obj.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
     }
@@ -623,24 +623,22 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_cgm_async(self, cgm_id, index=None):
+def update_cgm_async(self, cgm_id, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
     cgm = CollectedGuidMetadata.objects.get(guid___id=cgm_id)
     try:
-        update_cgm(cgm, index=index)
+        update_cgm(cgm, op=op, index=index)
     except Exception as exc:
         self.retry(exc=exc)
 
 @requires_search
-def update_cgm(cgm, index=None):
+def update_cgm(cgm, op='update', index=None):
     index = index or INDEX
+    if op == 'delete':
+        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        return
     collection_submission_doc = serialize_cgm(cgm)
     client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
-
-@requires_search
-def delete_cgm(cgm, index=None):
-    index = index or INDEX
-    client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
 
 @requires_search
 def delete_all():

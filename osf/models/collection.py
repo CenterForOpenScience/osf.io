@@ -45,19 +45,19 @@ class CollectedGuidMetadata(BaseModel):
                 logger.exception(e)
 
     def remove_from_index(self):
-        from website.search.search import delete_cgm
+        from website.search.search import update_cgm
         try:
-            delete_cgm(self)
+            update_cgm(self, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
 
     def save(self, *args, **kwargs):
-        ret = super(CollectedGuidMetadata, self).save(*args, **kwargs)
+        super(CollectedGuidMetadata, self).save(*args, **kwargs)
         self.update_index()
 
     def delete(self):
+        super(CollectedGuidMetadata, self).delete()
         self.remove_from_index()
-        return super(CollectedGuidMetadata, self).delete()
 
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
