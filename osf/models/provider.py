@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from dirtyfields import DirtyFieldsMixin
 
-from api.preprint_providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
+from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
@@ -141,7 +141,7 @@ class PreprintProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/preprint_providers/{}/'.format(self._id)
+        path = '/providers/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):

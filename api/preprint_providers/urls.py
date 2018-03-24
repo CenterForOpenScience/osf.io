@@ -1,7 +1,7 @@
 
 from django.conf.urls import url
 
-from api.preprint_providers import views
+from api.providers import views
 
 app_name = 'osf'
 

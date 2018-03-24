@@ -4,16 +4,40 @@ from rest_framework.exceptions import ValidationError
 
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField
-from api.preprint_providers.permissions import GROUPS
-from api.preprint_providers.workflows import Workflows
+from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, ShowIfVersion
+from api.providers.permissions import GROUPS
+from api.providers.workflows import Workflows
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from website import mails
 from website.settings import DOMAIN
 
 
-class PreprintProviderSerializer(JSONAPISerializer):
+class ProviderSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'providers'
+
+    name = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    id = ser.CharField(read_only=True, max_length=200, source='_id')
+    advisory_board = ser.CharField(read_only=True)
+    example = ser.CharField(read_only=True, allow_null=True)
+    domain = ser.CharField(read_only=True, allow_null=False)
+    domain_redirect_enabled = ser.BooleanField(read_only=True)
+    footer_links = ser.CharField(read_only=True)
+    email_support = ser.CharField(read_only=True, allow_null=True)
+    facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
+    allow_submissions = ser.BooleanField(read_only=True)
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class PreprintProviderSerializer(ProviderSerializer):
+
+    class Meta:
+        type_ = 'preprint_providers'
 
     filterable_fields = frozenset([
         'allow_submissions',
@@ -27,55 +51,43 @@ class PreprintProviderSerializer(JSONAPISerializer):
         'permissions',
     ])
 
-    name = ser.CharField(read_only=True)
-    description = ser.CharField(read_only=True)
-    id = ser.CharField(read_only=True, max_length=200, source='_id')
-    advisory_board = ser.CharField(read_only=True)
-    example = ser.CharField(read_only=True, allow_null=True)
-    domain = ser.CharField(read_only=True, allow_null=False)
-    domain_redirect_enabled = ser.BooleanField(read_only=True)
-    footer_links = ser.CharField(read_only=True)
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
-    email_support = ser.CharField(read_only=True, allow_null=True)
     preprint_word = ser.CharField(read_only=True, allow_null=True)
-    allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
-    facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
+    permissions = ser.SerializerMethodField()
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
     reviews_comments_private = ser.BooleanField()
     reviews_comments_anonymous = ser.BooleanField()
 
-    permissions = ser.SerializerMethodField()
-
-    preprints = ReviewableCountsRelationshipField(
-        related_view='preprint_providers:preprints-list',
-        related_view_kwargs={'provider_id': '<_id>'}
-    )
-
-    taxonomies = RelationshipField(
-        related_view='preprint_providers:taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'}
-    )
-
-    highlighted_taxonomies = RelationshipField(
-        related_view='preprint_providers:highlighted-taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
-    )
-
-    licenses_acceptable = RelationshipField(
-        related_view='preprint_providers:license-list',
-        related_view_kwargs={'provider_id': '<_id>'}
-    )
-
     links = LinksField({
         'self': 'get_absolute_url',
         'preprints': 'get_preprints_url',
         'external_url': 'get_external_url'
     })
+
+    preprints = ReviewableCountsRelationshipField(
+        related_view='providers:preprints-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    taxonomies = RelationshipField(
+        related_view='providers:taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    highlighted_taxonomies = RelationshipField(
+        related_view='providers:highlighted-taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
+    )
+
+    licenses_acceptable = RelationshipField(
+        related_view='providers:license-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
 
     # Deprecated fields
     header_text = ShowIfVersion(
@@ -111,17 +123,11 @@ class PreprintProviderSerializer(JSONAPISerializer):
         min_version='2.0', max_version='2.4'
     )
 
-    class Meta:
-        type_ = 'preprint_providers'
-
     def get_has_highlighted_subjects(self, obj):
         return obj.has_highlighted_subjects
 
-    def get_absolute_url(self, obj):
-        return obj.absolute_api_v2_url
-
     def get_preprints_url(self, obj):
-        return absolute_reverse('preprint_providers:preprints-list', kwargs={
+        return absolute_reverse('providers:preprints-list', kwargs={
             'provider_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
@@ -148,6 +154,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
         instance.reviews_comments_anonymous = validated_data['reviews_comments_anonymous']
         instance.save()
         return instance
+
 
 class ModeratorSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
