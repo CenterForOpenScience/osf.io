@@ -623,11 +623,17 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_cgm_async(self, cgm_id, op='update', index=None):
+def update_cgm_async(self, cgm_id, collection_id, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
-    cgm = CollectedGuidMetadata.objects.get(guid___id=cgm_id)
     try:
-        update_cgm(cgm, op=op, index=index)
+        cgm = CollectedGuidMetadata.objects.get(Q(guid___id=cgm_id) & Q(collection_id=collection_id))
+    except CollectedGuidMetadata.DoesNotExist:
+        logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
+        return
+
+    try:
+        if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+            update_cgm(cgm, op=op, index=index)
     except Exception as exc:
         self.retry(exc=exc)
 

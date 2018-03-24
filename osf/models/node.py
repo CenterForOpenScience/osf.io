@@ -435,7 +435,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_collected(self):
         """is part of a collection"""
-        return CollectedGuidMetadata.objects.filter(guid_id=self.id).exists()
+        return CollectedGuidMetadata.objects.filter(guid___id=self._id).exists()
 
     @property
     def is_original(self):
