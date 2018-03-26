@@ -22,20 +22,18 @@ def divorce_preprints_from_nodes(apps, schema_editor):
             # preprint.description = preprint.node.description
             # preprint.creator = preprint.node.creator
             # use bulk create
-            for contrib in preprint.node._contributors:
+            for contrib in preprint.node.contributor_set.all():
                 # make a PreprintContributor that points to the pp instead of the node
-                new_contrib = PreprintContributor.objects.create()
-                new_contrib.primary_identifier_name = contrib.primary_identifier_name
-                new_contrib.read = contrib.read
-                new_contrib.write = contrib.write
-                new_contrib.admin = contrib.admin
-                new_contrib.visible = contrib.visible
-                new_contrib.user = contrib.user
-                new_contrib.preprint = preprint
+                new_contrib = PreprintContributor.objects.create(
+                    preprint=preprint,
+                    user=contrib.user,
+                    read=contrib.read,
+                    write=contrib.write,
+                    admin=contrib.admin,
+                    visible=contrib.visible
+                )
+
                 new_contrib.save()
-                preprint._contributors.add(new_contrib)
-            # will existing nodes attached to preprints still by accessible? A: yes!
-            preprint.save()
 
 
 class Migration(migrations.Migration):
