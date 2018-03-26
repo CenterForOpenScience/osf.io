@@ -41,7 +41,7 @@ def reverse_func(state, schema):
                     guid.save()
                     nwp = guid.referent
                 move_comment_target(Guid.load(wp._id), nwp)
-                update_comments_viewed_timestamp(node, wp, nwp)
+                update_comments_viewed_timestamp(node, wp._id, nwp)
     progress_bar.finish()
     WikiVersion.objects.all().delete()
     WikiPage.objects.all().delete()
