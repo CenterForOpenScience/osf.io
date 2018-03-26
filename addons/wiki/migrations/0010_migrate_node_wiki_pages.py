@@ -6,9 +6,11 @@ import time
 import logging
 import progressbar
 from django.db import connection, migrations
+from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
-from addons.wiki.models import WikiPage, NodeWikiPage
-from osf.models import Guid
+from bulk_update.helper import bulk_update
+from addons.wiki.models import WikiPage, NodeWikiPage, WikiVersion
+from osf.models import Comment, Guid, AbstractNode
 
 logger = logging.getLogger(__name__)
 
@@ -19,81 +21,72 @@ logger = logging.getLogger(__name__)
 # }
 WIKI_PAGE_GUIDS = {}
 
-# def reverse_func(state, schema):
-#     """
-#     Reverses NodeWikiPage migration. Repoints guids back to each NodeWikiPage,
-#     repoints comment_targets, comments_viewed_timestamps, and deletes all WikiVersions and WikiPages
-#     """
-#     nwp_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
-#
-#     nodes = AbstractNode.objects.exclude(wiki_pages_versions={})
-#     progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
-#     for i, node in enumerate(nodes, 1):
-#         progress_bar.update(i)
-#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
-#             if version_list:
-#                 for index, version in enumerate(version_list):
-#                     nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
-#                     wp = WikiPage.load(version)
-#                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
-#                     guid.save()
-#                     nwp = guid.referent
-#                 move_comment_target(Guid.load(wp._id), nwp)
-#                 update_comments_viewed_timestamp(node, wp, nwp)
-#     progress_bar.finish()
-#     WikiVersion.objects.all().delete()
-#     WikiPage.objects.all().delete()
-#     logger.info('NodeWikiPages restored and WikiVersions and WikiPages removed.')
-
 def reverse_func(state, schema):
-    # Needs to be reworked, now that individual components have been split into functions
-    # running SQL?
-    pass
+    """
+    Reverses NodeWikiPage migration. Repoints guids back to each NodeWikiPage,
+    repoints comment_targets, comments_viewed_timestamps, and deletes all WikiVersions and WikiPages
+    """
+    nwp_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
 
-# def move_comment_target(current_guid, desired_target):
-#     """Move the comment's target from the current target to the desired target"""
-#     desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]
-#     if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
-#         Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
-#         Comment.objects.filter(target=current_guid).update(target_id=desired_target_guid_id)
-#     return
+    nodes = AbstractNode.objects.exclude(wiki_pages_versions={})
+    progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
+    for i, node in enumerate(nodes, 1):
+        progress_bar.update(i)
+        for wiki_key, version_list in node.wiki_pages_versions.iteritems():
+            if version_list:
+                for index, version in enumerate(version_list):
+                    nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
+                    wp = WikiPage.load(version)
+                    guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
+                    guid.save()
+                    nwp = guid.referent
+                move_comment_target(Guid.load(wp._id), nwp)
+                update_comments_viewed_timestamp(node, wp, nwp)
+    progress_bar.finish()
+    WikiVersion.objects.all().delete()
+    WikiPage.objects.all().delete()
+    logger.info('NodeWikiPages restored and WikiVersions and WikiPages removed.')
 
-# def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
-#     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
-#     users_pending_save = []
-#     # We iterate over .contributor_set instead of .contributors in order
-#     # to take advantage of .include('contributor__user')
-#     for contrib in node.contributor_set.all():
-#         user = contrib.user
-#         if user.comments_viewed_timestamp.get(current_wiki_guid, None):
-#             timestamp = user.comments_viewed_timestamp[current_wiki_guid]
-#             user.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
-#             del user.comments_viewed_timestamp[current_wiki_guid]
-#             users_pending_save.append(user)
-#     if users_pending_save:
-#         bulk_update(users_pending_save, update_fields=['comments_viewed_timestamp'])
-#     return users_pending_save
 
-# def migrate_guid_referent(guid, desired_referent, content_type_id):
-#     """
-#     Point the guid towards the desired_referent.
-#     Pointing the NodeWikiPage guid towards the WikiPage will still allow links to work.
-#     """
-#     guid.content_type_id = content_type_id
-#     guid.object_id = desired_referent.id
-#     return guid
+def move_comment_target(current_guid, desired_target):
+    """Move the comment's target from the current target to the desired target"""
+    desired_target_guid_id = Guid.load(desired_target.former_guid).id
+    if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
+        Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
+        Comment.objects.filter(target=current_guid).update(target_id=desired_target_guid_id)
+    return
 
-# def create_wiki_page(node, node_wiki, page_name):
-#     wp = WikiPage(
-#         page_name=page_name,
-#         user_id=node_wiki.user_id,
-#         node=node,
-#         created=node_wiki.date,
-#             modified=node_wiki.modified,
-#     )
-#     wp.update_modified = False
-#     return wp
+def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
+    """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
+    users_pending_save = []
+    # We iterate over .contributor_set instead of .contributors in order
+    # to take advantage of .include('contributor__user')
+    for contrib in node.contributor_set.all():
+        user = contrib.user
+        if user.comments_viewed_timestamp.get(current_wiki_guid, None):
+            timestamp = user.comments_viewed_timestamp[current_wiki_guid]
+            user.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
+            del user.comments_viewed_timestamp[current_wiki_guid]
+            users_pending_save.append(user)
+    if users_pending_save:
+        bulk_update(users_pending_save, update_fields=['comments_viewed_timestamp'])
+    return users_pending_save
 
+def migrate_guid_referent(guid, desired_referent, content_type_id):
+    """
+    Point the guid towards the desired_referent.
+    Pointing the NodeWikiPage guid towards the WikiPage will still allow links to work.
+    """
+    guid.content_type_id = content_type_id
+    guid.object_id = desired_referent.id
+    return guid
+
+def migrate_node_wiki_pages(state, schema):
+    create_wiki_pages_sql(state, schema)
+    create_guids(state, schema)
+    create_wiki_versions_and_repoint_comments_sql(state, schema)
+    migrate_comments_viewed_timestamp_sql(state, schema)
+    migrate_guid_referent_sql(state, schema)
 
 def create_wiki_pages_sql(state, schema):
     then = time.time()
@@ -186,18 +179,6 @@ def create_wiki_pages_sql(state, schema):
     now = time.time()
     logger.info('Finished migration of WikiPages [SQL]: {:.5} seconds'.format(now - then))
 
-# def create_wiki_version(node_wiki, wiki_page):
-#     wv = WikiVersion(
-#         wiki_page=wiki_page,
-#         user_id=node_wiki.user_id,
-#         created=node_wiki.date,
-#         modified=node_wiki.modified,
-#         content=node_wiki.content,
-#         identifier=node_wiki.version,
-#     )
-#     wv.update_modified = False
-#     return wv
-
 def create_guids(state, schema):
     global WIKI_PAGE_GUIDS
     then = time.time()
@@ -213,29 +194,6 @@ def create_guids(state, schema):
     now = time.time()
     logger.info('WikiPage guids created: {:.5} seconds'.format(now - then))
     return
-
-# def create_wiki_pages(nodes):
-#     wiki_pages = []
-#     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
-#     logger.info('Starting migration of WikiPages:')
-#     for i, node in enumerate(nodes, 1):
-#         progress_bar.update(i)
-#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
-#             if version_list:
-#                 node_wiki = NodeWikiPage.objects.filter(former_guid=version_list[0]).only('user_id', 'date', 'modified').include(None)[0]
-#                 latest_page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
-#                 wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
-#         if len(wiki_pages) >= 1000:
-#             with disable_auto_now_add_fields(models=[WikiPage]):
-#                 WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
-#                 wiki_pages = []
-#             gc.collect()
-#     progress_bar.finish()
-#     # Create the remaining wiki pages that weren't created in the loop above
-#     with disable_auto_now_add_fields(models=[WikiPage]):
-#         WikiPage.objects.bulk_create(wiki_pages, batch_size=1000)
-#     logger.info('WikiPages saved.')
-#     return
 
 def create_wiki_versions_and_repoint_comments_sql(state, schema):
     then = time.time()
@@ -411,7 +369,7 @@ def migrate_comments_viewed_timestamp_sql(state, schema):
             -- Obsolete NodeWikiPage guids in comments_viewed_timestamp need to be replaced with
             -- corresponding new WikiPage guid
             -- Table has node_id, user_id, nwp_guid (old NodeWikiPage guid) and wp_guid (WikiPage guid)
-            CREATE OR REPLACE FUNCTION update_comments_viewed_timestamp()
+            CREATE OR REPLACE FUNCTION update_comments_viewed_timestamp_sql()
               RETURNS SETOF varchar AS
             $func$
             DECLARE
@@ -455,7 +413,7 @@ def migrate_comments_viewed_timestamp_sql(state, schema):
             END
             $func$ LANGUAGE plpgsql;
 
-            SELECT update_comments_viewed_timestamp();
+            SELECT update_comments_viewed_timestamp_sql();
             """, [wikipage_content_type_id]
         )
     now = time.time()
@@ -534,118 +492,6 @@ def migrate_guid_referent_sql(state, schema):
     now = time.time()
     logger.info('Finished repointing Node Wiki Page guids to Wiki Pages [SQL]: {:.5} seconds'.format(now - then))
 
-# def repoint_node_wiki_page_guids(state, schema):
-#     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
-#     wiki_versions_pending = []
-#     guids_pending = []
-#     nodes = (
-#             AbstractNode.objects
-#             .exclude(wiki_pages_versions={})
-#             .exclude(type='osf.collection')
-#             .exclude(type='osf.quickfilesnode')
-#             # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
-#             .include(None)
-#             .include('contributor__user')
-#         )
-#     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
-#     logger.info('Starting the repointing of wiki comments, comments_viewed_timestamps, and Node Wiki guids:')
-#     for i, node in enumerate(nodes, 1):
-#         progress_bar.update(i)
-#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
-#             if version_list:
-#                 node_wiki_guid = version_list[0]
-#                 node_wiki = NodeWikiPage.objects.filter(former_guid=node_wiki_guid).include(None)[0]
-#                 page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
-#                 wiki_page = node.wikis.get(page_name=page_name)
-#                 for index, version in enumerate(version_list):
-#                     if index:
-#                         node_wiki_guid = version
-#                     current_guid = Guid.load(version)
-#                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
-#                     # Was previously only repointing last nwp guid, but there is staging data where previously
-#                     # versions attached to comments/comments_viewed_timestamps.
-#                     move_comment_target(current_guid, wiki_page)
-#                     update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
-#         if len(guids_pending) > 1000:
-#             bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
-#             guids_pending = []
-#             gc.collect()
-#     progress_bar.finish()
-#     # Create the remaining guids that weren't created in the loop above
-#     bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
-#     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
-#     return
-
-# def create_wiki_versions(nodes):
-#     wp_content_type_id = ContentType.objects.get_for_model(WikiPage).id
-#     wiki_versions_pending = []
-#     guids_pending = []
-#     progress_bar = progressbar.ProgressBar(maxval=len(nodes)).start()
-#     logger.info('Starting migration of WikiVersions:')
-#     for i, node in enumerate(nodes, 1):
-#         progress_bar.update(i)
-#         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
-#             if version_list:
-#                 node_wiki_guid = version_list[0]
-#                 node_wiki = NodeWikiPage.objects.filter(former_guid=node_wiki_guid).include(None)[0]
-#                 page_name = NodeWikiPage.objects.filter(former_guid=version_list[-1]).values_list('page_name', flat=True).include(None)[0]
-#                 wiki_page = node.wikis.get(page_name=page_name)
-#                 for index, version in enumerate(version_list):
-#                     if index:
-#                         node_wiki = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
-#                     wiki_versions_pending.append(create_wiki_version(node_wiki, wiki_page))
-#                     current_guid = Guid.load(version)
-#                     guids_pending.append(migrate_guid_referent(current_guid, wiki_page, wp_content_type_id))
-#                 move_comment_target(current_guid, wiki_page)
-#                 update_comments_viewed_timestamp(node, node_wiki_guid, wiki_page)
-#         if len(wiki_versions_pending) >= 1000:
-#             with disable_auto_now_add_fields(models=[WikiVersion]):
-#                 WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
-#                 wiki_versions_pending = []
-#                 gc.collect()
-#         if len(guids_pending) > 1000:
-#             bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
-#             guids_pending = []
-#             gc.collect()
-#     progress_bar.finish()
-#     # Create the remaining wiki pages that weren't created in the loop above
-#     with disable_auto_now_add_fields(models=[WikiVersion]):
-#         WikiVersion.objects.bulk_create(wiki_versions_pending, batch_size=1000)
-#     bulk_update(guids_pending, update_fields=['content_type_id', 'object_id'], batch_size=100)
-#     logger.info('WikiVersions saved.')
-#     logger.info('Repointed NodeWikiPage guids to corresponding WikiPage')
-#     return
-
-# def migrate_node_wiki_pages(state, schema):
-#     """
-#     For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding
-#     to each WikiPage.
-#         - Loads all nodes with wikis on them.
-#         - For each node, loops through all the keys in wiki_pages_versions.
-#         - Creates all wiki pages and then bulk creates them, for speed.
-#         - For all wiki pages that were just created, create and save a guid (since bulk_create doesn't call save method)
-#         - Loops through all nodes again, creating a WikiVersion for every guid for all wiki pages on a node.
-#         - Repoints guids from old wiki to new WikiPage
-#         - For the most recent version of the WikiPage, repoint comments to the new WikiPage
-#         - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
-#     """
-#     nodes_with_wikis = (
-#         AbstractNode.objects
-#         .exclude(wiki_pages_versions={})
-#         .exclude(type='osf.collection')
-#         .exclude(type='osf.quickfilesnode')
-#         # .include(None) removes GUID prefetching--we don't need that. But we do prefetch contributors
-#         .include(None)
-#         .include('contributor__user')
-#     )
-#     for nodes in grouper(100, nodes_with_wikis):
-#         create_wiki_pages(nodes)
-#
-#     create_guids()
-#
-#     for nodes in grouper(100, nodes_with_wikis):
-#         create_wiki_versions(nodes)
-
 
 class Migration(migrations.Migration):
 
@@ -654,24 +500,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_wiki_pages_sql, reverse_func),
-        migrations.RunPython(create_guids, reverse_func),
-        migrations.RunPython(create_wiki_versions_and_repoint_comments_sql, reverse_func),
-        migrations.RunPython(migrate_comments_viewed_timestamp_sql, reverse_func),
-        migrations.RunPython(migrate_guid_referent_sql, reverse_func)
+        migrations.RunPython(migrate_node_wiki_pages, reverse_func),
     ]
-
-
-# # Iterate an iterator by chunks (of n) in Python?
-# # source: https://stackoverflow.com/a/8991553
-# import itertools
-# def grouper(n, iterable):
-#     if hasattr(iterable, 'iterator'):
-#         it = iterable.iterator()
-#     else:
-#         it = iter(iterable)
-#     while True:
-#        chunk = tuple(itertools.islice(it, n))
-#        if not chunk:
-#            return
-#        yield chunk
