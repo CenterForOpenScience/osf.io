@@ -49,7 +49,10 @@ def reverse_func(state, schema):
 
 
 def move_comment_target(current_guid, desired_target):
-    """Move the comment's target from the current target to the desired target"""
+    """
+    Move the comment's target from the current target to the desired target
+    Specifically for repointing WikiPage comments -> NodeWikiPage comments
+    """
     desired_target_guid_id = Guid.load(desired_target.former_guid).id
     if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
         Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
