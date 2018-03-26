@@ -5,11 +5,9 @@ from __future__ import unicode_literals
 import logging
 import progressbar
 from django.db import connection, migrations
-from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from addons.wiki.models import WikiPage, NodeWikiPage
-from osf.models import Comment, Guid
-from bulk_update.helper import bulk_update
+from osf.models import Guid
 
 logger = logging.getLogger(__name__)
 
@@ -50,29 +48,30 @@ def reverse_func(state, schema):
     # Needs to be reworked, now that individual components have been split into functions
     # running SQL?
     pass
-def move_comment_target(current_guid, desired_target):
-    """Move the comment's target from the current target to the desired target"""
-    desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]
-    if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
-        Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
-        Comment.objects.filter(target=current_guid).update(target_id=desired_target_guid_id)
-    return
 
-def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
-    """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
-    users_pending_save = []
-    # We iterate over .contributor_set instead of .contributors in order
-    # to take advantage of .include('contributor__user')
-    for contrib in node.contributor_set.all():
-        user = contrib.user
-        if user.comments_viewed_timestamp.get(current_wiki_guid, None):
-            timestamp = user.comments_viewed_timestamp[current_wiki_guid]
-            user.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
-            del user.comments_viewed_timestamp[current_wiki_guid]
-            users_pending_save.append(user)
-    if users_pending_save:
-        bulk_update(users_pending_save, update_fields=['comments_viewed_timestamp'])
-    return users_pending_save
+# def move_comment_target(current_guid, desired_target):
+#     """Move the comment's target from the current target to the desired target"""
+#     desired_target_guid_id = WIKI_PAGE_GUIDS[desired_target.id]
+#     if Comment.objects.filter(Q(root_target=current_guid) | Q(target=current_guid)).exists():
+#         Comment.objects.filter(root_target=current_guid).update(root_target_id=desired_target_guid_id)
+#         Comment.objects.filter(target=current_guid).update(target_id=desired_target_guid_id)
+#     return
+
+# def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_object):
+#     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
+#     users_pending_save = []
+#     # We iterate over .contributor_set instead of .contributors in order
+#     # to take advantage of .include('contributor__user')
+#     for contrib in node.contributor_set.all():
+#         user = contrib.user
+#         if user.comments_viewed_timestamp.get(current_wiki_guid, None):
+#             timestamp = user.comments_viewed_timestamp[current_wiki_guid]
+#             user.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
+#             del user.comments_viewed_timestamp[current_wiki_guid]
+#             users_pending_save.append(user)
+#     if users_pending_save:
+#         bulk_update(users_pending_save, update_fields=['comments_viewed_timestamp'])
+#     return users_pending_save
 
 # def migrate_guid_referent(guid, desired_referent, content_type_id):
 #     """
@@ -384,6 +383,72 @@ def create_wiki_versions_and_repoint_comments_sql(state, schema):
         )
     logger.info('Finished migration of WikiVersions [SQL]:')
 
+def migrate_comments_viewed_timestamp(state, schema):
+    logger.info('Starting migration of user comments_viewed_timestamp:')
+    wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE FUNCTION key_exists(json_field json, dictionary_key text)
+            RETURNS boolean AS $$
+            BEGIN
+                RETURN (json_field->dictionary_key) IS NOT NULL;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            -- Defining a temporary table that has every update that needs to happen to users.
+            -- Obsolete NodeWikiPage guids in comments_viewed_timestamp need to be replaced with
+            -- corresponding new WikiPage guid
+            -- Table has node_id, user_id, nwp_guid (old NodeWikiPage guid) and wp_guid (WikiPage guid)
+            CREATE OR REPLACE FUNCTION update_comments_viewed_timestamp()
+              RETURNS SETOF varchar AS
+            $func$
+            DECLARE
+              rec record;
+            BEGIN
+              FOR rec IN
+                SELECT
+                  oan.id as node_id,
+                  osf_contributor.user_id as user_id,
+                  (SELECT U0._id
+                   FROM osf_guid AS U0
+                   WHERE U0.object_id=wp.id AND U0.content_type_id = %s) AS wp_guid,
+                  nwp_guid
+                FROM osf_abstractnode as oan
+                -- Joins contributor to node on contributor.node_id
+                JOIN osf_contributor ON (oan.id = osf_contributor.node_id)
+                JOIN osf_osfuser ON (osf_osfuser.id = user_id)
+                -- Joins each of the wiki page key/version list from wiki_pages_versions
+                LEFT JOIN LATERAL jsonb_each(oan.wiki_pages_versions) AS wiki_pages_versions ON TRUE
+                -- Adds the last NWP id
+                LEFT JOIN LATERAL cast(
+                 (
+                     SELECT trim(v::text, '"')
+                     FROM osf_abstractnode ioan, jsonb_array_elements(wiki_pages_versions->wiki_pages_versions.key) WITH ORDINALITY v(v, rn)
+                     WHERE ioan.id = oan.id
+                     ORDER BY v.rn DESC
+                     LIMIT 1
+                 ) AS text) AS nwp_guid ON TRUE
+                -- Joins the wiki page object, by finding the wiki page object on the node that has a page name similar to the key stored on wiki-pages versions
+                -- Should work most of the time, there is some bad data though
+                JOIN addons_wiki_wikipage AS wp ON (wp.node_id = oan.id) AND UPPER(wp.page_name::text) LIKE UPPER(wiki_pages_versions.key::text)
+                WHERE oan.wiki_pages_versions != '{}' AND osf_osfuser.comments_viewed_timestamp != '{}' AND key_exists(osf_osfuser.comments_viewed_timestamp::json, nwp_guid)
+
+              LOOP
+                -- Loops through every row in temporary table above, and deletes old nwp_guid key and replaces with wp_guid key.
+                -- Looping instead of joining to osf_user table because temporary table above has multiple rows with the same user
+                UPDATE osf_osfuser
+                SET comments_viewed_timestamp = comments_viewed_timestamp - rec.nwp_guid || jsonb_build_object(rec.wp_guid, comments_viewed_timestamp->rec.nwp_guid)
+                WHERE osf_osfuser.id = rec.user_id;
+              END LOOP;
+            END
+            $func$ LANGUAGE plpgsql;
+
+            SELECT update_comments_viewed_timestamp();
+            """, [wikipage_content_type_id]
+        )
+    logger.info('Finished migration of comments_viewed_timestamp [SQL]:')
+
 def migrate_guid_referent_sql(state, schema):
     logger.info('Starting migration of Node Wiki Page guids, repointing them to Wiki Page guids [SQL]:')
     wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
@@ -578,9 +643,8 @@ class Migration(migrations.Migration):
         migrations.RunPython(create_wiki_pages_sql, reverse_func),
         migrations.RunPython(create_guids, reverse_func),
         migrations.RunPython(create_wiki_versions_and_repoint_comments_sql, reverse_func),
-        # migrating comments_viewed_timestamp should go here
+        migrations.RunPython(migrate_comments_viewed_timestamp, reverse_func),
         migrations.RunPython(migrate_guid_referent_sql, reverse_func)
-        # migrations.RunPython(repoint_node_wiki_page_guids, reverse_func)
     ]
 
 
