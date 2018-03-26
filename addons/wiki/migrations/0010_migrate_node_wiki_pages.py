@@ -383,8 +383,8 @@ def create_wiki_versions_and_repoint_comments_sql(state, schema):
         )
     logger.info('Finished migration of WikiVersions [SQL]:')
 
-def migrate_comments_viewed_timestamp(state, schema):
-    logger.info('Starting migration of user comments_viewed_timestamp:')
+def migrate_comments_viewed_timestamp_sql(state, schema):
+    logger.info('Starting migration of user comments_viewed_timestamp [SQL]:')
     wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
     with connection.cursor() as cursor:
         cursor.execute(
@@ -643,7 +643,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(create_wiki_pages_sql, reverse_func),
         migrations.RunPython(create_guids, reverse_func),
         migrations.RunPython(create_wiki_versions_and_repoint_comments_sql, reverse_func),
-        migrations.RunPython(migrate_comments_viewed_timestamp, reverse_func),
+        migrations.RunPython(migrate_comments_viewed_timestamp_sql, reverse_func),
         migrations.RunPython(migrate_guid_referent_sql, reverse_func)
     ]
 
