@@ -44,7 +44,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
     def project_three(self, user):
         return ProjectFactory(creator=user)
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/submissions/?version=2.2&'])
+    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
     def url(self, provider_one, request):
         url = request.param
         return url.format(
@@ -115,7 +115,7 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
     def provider(self):
         return PreprintProviderFactory(reviews_workflow='post-moderation')
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/', '/{}providers/preprints/{}/submissions/'])
+    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/', '/{}providers/preprints/{}/preprints/'])
     def url(self, provider, request):
         url = request.param
         return url.format(
@@ -175,7 +175,7 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
             save=True)
         return project_public
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/submissions/?version=2.2&'])
+    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
     def url(self, provider_one, request):
         url = request.param
         return url.format(
@@ -235,7 +235,7 @@ class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin):
     def provider(self):
         return PreprintProviderFactory()
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/submissions/?version=2.2&'])
+    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
     def url(self, provider, request):
         url = request.param
         return url.format(

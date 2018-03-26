@@ -3,34 +3,36 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api.base.settings import REST_FRAMEWORK
 from api.providers.permissions import GroupHelper
-from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderExistsMixin
+from api_tests.providers.mixins import ProviderExistsMixin
 from osf_tests.factories import (
     PreprintProviderFactory,
     AuthUserFactory,
 )
 
 
-class TestPreprintProviderExistsForDeprecatedEndpoint(PreprintProviderExistsMixin):
+class TestPreprintProviderExistsForDeprecatedEndpoint(ProviderExistsMixin):
+    provider_class = PreprintProviderFactory
+
     @pytest.fixture()
     def fake_url(self):
         return '/{}preprint_providers/fake/'.format(API_BASE)
 
     @pytest.fixture()
-    def provider_url(self, preprint_provider):
+    def provider_url(self, provider):
         return '/{}preprint_providers/{}/'.format(
-            API_BASE, preprint_provider._id)
+            API_BASE, provider._id)
 
     @pytest.fixture()
-    def provider_url_two(self, preprint_provider_two):
+    def provider_url_two(self, provider_two):
         return '/{}preprint_providers/{}/'.format(
-            API_BASE, preprint_provider_two._id)
+            API_BASE, provider_two._id)
 
     @pytest.fixture()
-    def provider_preprints_list_url(self, preprint_provider):
-        return '/{}preprint_providers/{}/preprints/'.format(API_BASE, preprint_provider._id)
+    def provider_list_url(self, provider):
+        return '/{}preprint_providers/{}/preprints/'.format(API_BASE, provider._id)
 
     @pytest.fixture()
-    def provider_preprints_list_url_fake(self, fake_url):
+    def provider_list_url_fake(self, fake_url):
         return '{}preprints/'.format(fake_url)
 
     @pytest.mark.skipif('2.8' not in REST_FRAMEWORK['ALLOWED_VERSIONS'], reason='New API version required to test full deprecation')
@@ -40,28 +42,30 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(PreprintProviderExistsMixi
         assert res.json['errors'][0]['detail'] == 'This route has been deprecated. It was last available in version 2.7'
 
 
-class TestPreprintProviderExists(PreprintProviderExistsMixin):
+class TestPreprintProviderExists(ProviderExistsMixin):
+    provider_class = PreprintProviderFactory
+
     @pytest.fixture()
     def fake_url(self):
         return '/{}providers/preprints/fake/'.format(API_BASE)
 
     @pytest.fixture()
-    def provider_url(self, preprint_provider):
+    def provider_url(self, provider):
         return '/{}providers/preprints/{}/'.format(
-            API_BASE, preprint_provider._id)
+            API_BASE, provider._id)
 
     @pytest.fixture()
-    def provider_url_two(self, preprint_provider_two):
+    def provider_url_two(self, provider_two):
         return '/{}providers/preprints/{}/'.format(
-            API_BASE, preprint_provider_two._id)
+            API_BASE, provider_two._id)
 
     @pytest.fixture()
-    def provider_preprints_list_url(self, preprint_provider):
-        return '/{}providers/preprints/{}/submissions/'.format(API_BASE, preprint_provider._id)
+    def provider_list_url(self, provider):
+        return '/{}providers/preprints/{}/preprints/'.format(API_BASE, provider._id)
 
     @pytest.fixture()
-    def provider_preprints_list_url_fake(self, fake_url):
-        return '{}submissions/'.format(fake_url)
+    def provider_list_url_fake(self, fake_url):
+        return '{}preprints/'.format(fake_url)
 
 
 @pytest.mark.django_db
@@ -78,31 +82,31 @@ class TestPreprintProviderUpdate:
         return payload
 
     @pytest.fixture()
-    def preprint_provider(self):
+    def provider(self):
         return PreprintProviderFactory()
 
     @pytest.fixture()
-    def admin(self, preprint_provider):
+    def admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(preprint_provider).get_group('admin'))
+        user.groups.add(GroupHelper(provider).get_group('admin'))
         return user
 
     @pytest.fixture()
-    def moderator(self, preprint_provider):
+    def moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(preprint_provider).get_group('moderator'))
+        user.groups.add(GroupHelper(provider).get_group('moderator'))
         return user
 
     @pytest.fixture(params=['/{}preprint_providers/{}/', '/{}providers/preprints/{}/'])
-    def url(self, preprint_provider, request):
+    def url(self, provider, request):
         url = request.param
         return url.format(
-            API_BASE, preprint_provider._id)
+            API_BASE, provider._id)
 
     def test_update_reviews_settings(
-            self, app, preprint_provider, url, admin, moderator):
+            self, app, provider, url, admin, moderator):
         payload = self.settings_payload(
-            preprint_provider.id,
+            provider.id,
             reviews_workflow='pre-moderation',
             reviews_comments_private=False,
             reviews_comments_anonymous=False
@@ -127,7 +131,7 @@ class TestPreprintProviderUpdate:
 
         # Admin must include all settings
         partial_payload = self.settings_payload(
-            preprint_provider.id,
+            provider.id,
             reviews_workflow='pre-moderation',
             reviews_comments_private=False,
         )
@@ -137,7 +141,7 @@ class TestPreprintProviderUpdate:
         assert res.status_code == 400
 
         partial_payload = self.settings_payload(
-            preprint_provider.id,
+            provider.id,
             reviews_comments_private=False,
             reviews_comments_anonymous=False,
         )
@@ -149,10 +153,10 @@ class TestPreprintProviderUpdate:
         # Admin can set up moderation
         res = app.patch_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
-        preprint_provider.refresh_from_db()
-        assert preprint_provider.reviews_workflow == 'pre-moderation'
-        assert not preprint_provider.reviews_comments_private
-        assert not preprint_provider.reviews_comments_anonymous
+        provider.refresh_from_db()
+        assert provider.reviews_workflow == 'pre-moderation'
+        assert not provider.reviews_comments_private
+        assert not provider.reviews_comments_anonymous
 
         # ...but only once
         res = app.patch_json_api(
@@ -161,7 +165,7 @@ class TestPreprintProviderUpdate:
         assert res.status_code == 409
 
         another_payload = self.settings_payload(
-            preprint_provider.id,
+            provider.id,
             reviews_workflow='post-moderation',
             reviews_comments_private=True,
             reviews_comments_anonymous=True
@@ -171,7 +175,7 @@ class TestPreprintProviderUpdate:
             auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
 
-        preprint_provider.refresh_from_db()
-        assert preprint_provider.reviews_workflow == 'pre-moderation'
-        assert not preprint_provider.reviews_comments_private
-        assert not preprint_provider.reviews_comments_anonymous
+        provider.refresh_from_db()
+        assert provider.reviews_workflow == 'pre-moderation'
+        assert not provider.reviews_comments_private
+        assert not provider.reviews_comments_anonymous

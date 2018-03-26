@@ -1,10 +1,13 @@
 import pytest
-from osf_tests.factories import SubjectFactory, PreprintProviderFactory
-from api.base.settings.defaults import API_BASE
+from osf_tests.factories import SubjectFactory
 
+class ProviderMixinBase(object):
+    @property
+    def provider_class(self):
+        raise NotImplementedError
 
 @pytest.mark.django_db
-class PreprintProviderExistsMixin(object):
+class ProviderExistsMixin(ProviderMixinBase):
     # Regression for https://openscience.atlassian.net/browse/OSF-7621
 
     @pytest.fixture()
@@ -20,30 +23,30 @@ class PreprintProviderExistsMixin(object):
         raise NotImplementedError
 
     @pytest.fixture()
-    def provider_preprints_list_url(self):
+    def provider_list_url(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def provider_preprints_list_url_fake(self):
+    def provider_list_url_fake(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def preprint_provider(self):
-        return PreprintProviderFactory()
+    def provider(self):
+        return self.provider_class()
 
     @pytest.fixture()
-    def preprint_provider_two(self):
-        return PreprintProviderFactory()
+    def provider_two(self):
+        return self.provider_class()
 
-    def test_preprint_provider_exists(self, app, provider_url, fake_url, provider_preprints_list_url, provider_preprints_list_url_fake):
+    def test_provider_exists(self, app, provider_url, fake_url, provider_list_url, provider_list_url_fake):
         detail_res = app.get(provider_url)
         assert detail_res.status_code == 200
 
         licenses_res = app.get('{}licenses/'.format(provider_url))
         assert licenses_res.status_code == 200
 
-        preprints_res = app.get(provider_preprints_list_url)
-        assert preprints_res.status_code == 200
+        res = app.get(provider_list_url)
+        assert res.status_code == 200
 
         taxonomies_res = app.get('{}taxonomies/'.format(provider_url))
         assert taxonomies_res.status_code == 200
@@ -57,10 +60,10 @@ class PreprintProviderExistsMixin(object):
             expect_errors=True)
         assert licenses_res.status_code == 404
 
-        preprints_res = app.get(
-            provider_preprints_list_url_fake,
+        res = app.get(
+            provider_list_url_fake,
             expect_errors=True)
-        assert preprints_res.status_code == 404
+        assert res.status_code == 404
 
         taxonomies_res = app.get(
             '{}taxonomies/'.format(fake_url),
@@ -68,20 +71,18 @@ class PreprintProviderExistsMixin(object):
         assert taxonomies_res.status_code == 404
 
     def test_has_highlighted_subjects_flag(
-            self, app, preprint_provider,
-            preprint_provider_two, provider_url, provider_url_two):
+            self, app, provider,
+            provider_two, provider_url, provider_url_two):
         SubjectFactory(
-            provider=preprint_provider,
+            provider=provider,
             text='A', highlighted=True)
-        SubjectFactory(provider=preprint_provider_two, text='B')
+        SubjectFactory(provider=provider_two, text='B')
 
         res = app.get(provider_url)
         assert res.status_code == 200
         res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
         assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is True
 
-        provider_url_two = '/{}preprint_providers/{}/'.format(
-            API_BASE, preprint_provider_two._id)
         res = app.get(provider_url_two)
         assert res.status_code == 200
         res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
@@ -89,7 +90,7 @@ class PreprintProviderExistsMixin(object):
 
 
 @pytest.mark.django_db
-class PreprintProviderSubjectsMixin(object):
+class ProviderSubjectsMixin(ProviderMixinBase):
     '''
     Subject Hierarchy
     +-----------------------------+
@@ -183,12 +184,12 @@ class PreprintProviderSubjectsMixin(object):
         #  This should not allow: C, F, K, O
 
     @pytest.fixture()
-    def lawless_preprint_provider(self):
-        return PreprintProviderFactory()
+    def lawless_provider(self):
+        return self.provider_class()
 
     @pytest.fixture()
-    def ruled_preprint_provider(self, rules):
-        provider = PreprintProviderFactory()
+    def ruled_provider(self, rules):
+        provider = self.provider_class()
         provider.subjects_acceptable = rules
         provider.save()
         return provider
@@ -205,7 +206,7 @@ class PreprintProviderSubjectsMixin(object):
     def base_url(self):
         raise NotImplementedError
 
-    def test_max_page_size(self, app, lawless_preprint_provider, base_url):
+    def test_max_page_size(self, app, lawless_provider, base_url):
         res = app.get(base_url)
         assert res.status_code == 200
         assert res.json['links']['meta']['per_page'] == 10
@@ -383,15 +384,15 @@ class PreprintProviderSubjectsMixin(object):
 
 
 @pytest.mark.django_db
-class PreprintProviderSpecificSubjectsMixin(object):
+class ProviderSpecificSubjectsMixin(ProviderMixinBase):
 
     @pytest.fixture(autouse=True)
     def provider_1(self):
-        return PreprintProviderFactory()
+        return self.provider_class()
 
     @pytest.fixture(autouse=True)
     def provider_2(self):
-        return PreprintProviderFactory()
+        return self.provider_class()
 
     @pytest.fixture(autouse=True)
     def root_subject_1(self, provider_1):

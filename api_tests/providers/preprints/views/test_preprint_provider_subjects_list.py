@@ -1,46 +1,52 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.providers.preprints.mixins.preprint_provider_mixins import PreprintProviderSubjectsMixin, PreprintProviderSpecificSubjectsMixin
+from api_tests.providers.mixins import ProviderSubjectsMixin, ProviderSpecificSubjectsMixin
 
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 
-class TestPreprintProviderSubjectsForDeprecatedEndpoint(PreprintProviderSubjectsMixin):
-    @pytest.fixture()
-    def lawless_url(self, lawless_preprint_provider):
-        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, lawless_preprint_provider._id)
+class TestPreprintProviderSubjectsForDeprecatedEndpoint(ProviderSubjectsMixin):
+    provider_class = PreprintProviderFactory
 
     @pytest.fixture()
-    def ruled_url(self, ruled_preprint_provider):
-        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, ruled_preprint_provider._id)
+    def lawless_url(self, lawless_provider):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, lawless_provider._id)
 
     @pytest.fixture()
-    def base_url(self, lawless_preprint_provider):
+    def ruled_url(self, ruled_provider):
+        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(
+            API_BASE, ruled_provider._id)
+
+    @pytest.fixture()
+    def base_url(self, lawless_provider):
         return '/{}preprint_providers/{}/taxonomies/'.format(
-            API_BASE, lawless_preprint_provider._id)
+            API_BASE, lawless_provider._id)
 
 
-class TestPreprintProviderSubjects(PreprintProviderSubjectsMixin):
+class TestPreprintProviderSubjects(ProviderSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
     @pytest.fixture()
-    def lawless_url(self, lawless_preprint_provider):
+    def lawless_url(self, lawless_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, lawless_preprint_provider._id)
+            API_BASE, lawless_provider._id)
 
     @pytest.fixture()
-    def ruled_url(self, ruled_preprint_provider):
+    def ruled_url(self, ruled_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(
-            API_BASE, ruled_preprint_provider._id)
+            API_BASE, ruled_provider._id)
 
     @pytest.fixture()
-    def base_url(self, lawless_preprint_provider):
+    def base_url(self, lawless_provider):
         return '/{}providers/preprints/{}/taxonomies/'.format(
-            API_BASE, lawless_preprint_provider._id)
+            API_BASE, lawless_provider._id)
 
 
-class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(PreprintProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(ProviderSpecificSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
     @pytest.fixture()
     def url_1(self, provider_1):
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
@@ -50,7 +56,9 @@ class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(PreprintProvider
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
-class TestPreprintProviderSpecificSubjects(PreprintProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
     @pytest.fixture()
     def url_1(self, provider_1):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
