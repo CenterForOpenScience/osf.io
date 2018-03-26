@@ -30,9 +30,49 @@ class ProviderSerializer(JSONAPISerializer):
     facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
 
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'external_url': 'get_external_url'
+    })
+
+    taxonomies = RelationshipField(
+        related_view='providers:taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    highlighted_taxonomies = RelationshipField(
+        related_view='providers:highlighted-taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
+    )
+
+    licenses_acceptable = RelationshipField(
+        related_view='providers:license-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    def get_has_highlighted_subjects(self, obj):
+        return obj.has_highlighted_subjects
+
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
+    def get_external_url(self, obj):
+        return obj.external_url
+
+
+class CollectionProviderSerializer(ProviderSerializer):
+    class Meta:
+        type_ = 'collection_providers'
+
+    filterable_fields = frozenset([
+        'allow_submissions',
+        'description',
+        'domain',
+        'domain_redirect_enabled',
+        'id',
+        'name',
+    ])
 
 class PreprintProviderSerializer(ProviderSerializer):
 
@@ -73,33 +113,11 @@ class PreprintProviderSerializer(ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'}
     )
 
-    taxonomies = RelationshipField(
-        related_view='providers:taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'}
-    )
-
-    highlighted_taxonomies = RelationshipField(
-        related_view='providers:highlighted-taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
-    )
-
-    licenses_acceptable = RelationshipField(
-        related_view='providers:license-list',
-        related_view_kwargs={'provider_id': '<_id>'}
-    )
-
-    def get_has_highlighted_subjects(self, obj):
-        return obj.has_highlighted_subjects
-
     def get_preprints_url(self, obj):
         return absolute_reverse('providers:preprints-list', kwargs={
             'provider_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
-
-    def get_external_url(self, obj):
-        return obj.external_url
 
     def get_permissions(self, obj):
         auth = get_user_auth(self.context['request'])

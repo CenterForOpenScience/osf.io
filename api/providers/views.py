@@ -15,16 +15,14 @@ from api.licenses.views import LicenseList
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
-from api.providers.serializers import PreprintProviderSerializer, ModeratorSerializer
+from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
+from osf.models import AbstractNode, CollectionProvider, OSFUser, Subject, PreprintProvider
 
 
-class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
-    """
+class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -32,21 +30,33 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
-    model_class = PreprintProvider
 
     pagination_class = MaxSizePagination
-    serializer_class = PreprintProviderSerializer
-    view_category = 'preprint_providers'
-    view_name = 'preprint_providers-list'
-
     ordering = ('name', )
 
     def get_default_queryset(self):
-        return PreprintProvider.objects.all()
+        return self.model_class.objects.all()
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class CollectionProviderList(GenericProviderList):
+    model_class = CollectionProvider
+    serializer_class = CollectionProviderSerializer
+    view_category = 'collection-providers'
+    view_name = 'collection-providers-list'
+
+
+class PreprintProviderList(GenericProviderList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
+    """
+
+    model_class = PreprintProvider
+    serializer_class = PreprintProviderSerializer
+    view_category = 'preprint-providers'
+    view_name = 'preprint-providers-list'
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permissions':
@@ -66,7 +76,28 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
         return super(PreprintProviderList, self).build_query_from_field(field_name, operation)
 
 
-class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+class GenericProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.PROVIDERS_WRITE]
+
+    def get_object(self):
+        provider = get_object_or_error(self.model_class, self.kwargs['provider_id'], self.request, display_name=self.model_class.__name__)
+        self.check_object_permissions(self.request, provider)
+        return provider
+
+class CollectionProviderDetail(GenericProviderDetail):
+    model_class = CollectionProvider
+    serializer_class = CollectionProviderSerializer
+    view_category = 'collection-providers'
+    view_name = 'collection-provider-detail'
+
+
+class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
@@ -74,24 +105,125 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         base_permissions.TokenHasScope,
         CanSetUpProvider,
     )
-
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.PROVIDERS_WRITE]
     model_class = PreprintProvider
-
     serializer_class = PreprintProviderSerializer
-    view_category = 'preprint_providers'
-    view_name = 'preprint_provider-detail'
-
-    def get_object(self):
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        self.check_object_permissions(self.request, provider)
-        return provider
+    view_category = 'preprint-providers'
+    view_name = 'preprint-provider-detail'
 
     def perform_update(self, serializer):
         if serializer.instance.is_reviewed:
             raise Conflict('Reviews settings may be set only once. Contact support@osf.io if you need to update them.')
         super(PreprintProviderDetail, self).perform_update(serializer)
+
+
+class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+    pagination_class = IncreasedPageSizePagination
+    view_name = 'taxonomy-list'
+
+    ordering = ('-id',)
+
+    def is_valid_subject(self, allows_children, allowed_parents, sub):
+        # TODO: Delet this when all PreprintProviders have a mapping
+        if sub._id in allowed_parents:
+            return True
+        if sub.parent:
+            if sub.parent._id in allows_children:
+                return True
+            if sub.parent.parent:
+                if sub.parent.parent._id in allows_children:
+                    return True
+        return False
+
+    def get_queryset(self):
+        parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
+        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        if parent:
+            if parent == 'null':
+                return provider.top_level_subjects
+            if provider.subjects.exists():
+                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
+            else:
+                # TODO: Delet this when all PreprintProviders have a mapping
+                #  Calculate this here to only have to do it once.
+                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
+                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
+                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+        return optimize_subject_query(provider.all_subjects)
+
+
+class CollectionProviderTaxonomies(GenericProviderTaxonomies):
+    view_category = 'collection-providers'
+    _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
+
+
+class PreprintProviderTaxonomies(GenericProviderTaxonomies):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
+    """
+    view_category = 'preprint-providers'
+    _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+
+
+class GenericProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_name = 'highlighted-taxonomy-list'
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+
+    def get_queryset(self):
+        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
+
+
+class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
+    view_category = 'collection-providers'
+    _model_class = CollectionProvider
+
+
+class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
+    view_category = 'preprint-providers'
+    _model_class = PreprintProvider
+
+
+class GenericProviderLicenseList(LicenseList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
+    """
+    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
+
+    def get_queryset(self):
+        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        if not provider.licenses_acceptable.count():
+            if not provider.default_license:
+                return super(GenericProviderLicenseList, self).get_queryset()
+            return [provider.default_license] + [license for license in super(GenericProviderLicenseList, self).get_queryset() if license != provider.default_license]
+        if not provider.default_license:
+            return provider.licenses_acceptable.get_queryset()
+        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
+
+
+class CollectionProviderLicenseList(GenericProviderLicenseList):
+    view_category = 'collection-providers'
+    _model_class = CollectionProvider
+
+
+class PreprintProviderLicenseList(GenericProviderLicenseList):
+    view_category = 'preprint-providers'
+    _model_class = PreprintProvider
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
@@ -111,7 +243,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'preprint_providers'
+    view_category = 'preprint-providers'
     view_name = 'preprints-list'
 
     def get_default_queryset(self):
@@ -141,89 +273,9 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
                 }
         return context
 
-
-class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    view_category = 'preprint_providers'
-    view_name = 'taxonomy-list'
-
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = TaxonomySerializer
-    pagination_class = IncreasedPageSizePagination
-
-    ordering = ('-id',)
-
-    def is_valid_subject(self, allows_children, allowed_parents, sub):
-        # TODO: Delet this when all PreprintProviders have a mapping
-        if sub._id in allowed_parents:
-            return True
-        if sub.parent:
-            if sub.parent._id in allows_children:
-                return True
-            if sub.parent.parent:
-                if sub.parent.parent._id in allows_children:
-                    return True
-        return False
-
-    def get_queryset(self):
-        parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        if parent:
-            if parent == 'null':
-                return provider.top_level_subjects
-            if provider.subjects.exists():
-                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
-            else:
-                # TODO: Delet this when all PreprintProviders have a mapping
-                #  Calculate this here to only have to do it once.
-                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
-                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
-        return optimize_subject_query(provider.all_subjects)
-
-
-class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    view_category = 'preprint_providers'
-    view_name = 'highlighted-taxonomy-list'
-
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = TaxonomySerializer
-
-    def get_queryset(self):
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
-
-
-class PreprintProviderLicenseList(LicenseList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
-    """
-    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
-    view_category = 'preprint_providers'
-
-    def get_queryset(self):
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        if not provider.licenses_acceptable.count():
-            if not provider.default_license:
-                return super(PreprintProviderLicenseList, self).get_queryset()
-            return [provider.default_license] + [license for license in super(PreprintProviderLicenseList, self).get_queryset() if license != provider.default_license]
-        if not provider.default_license:
-            return provider.licenses_acceptable.get_queryset()
-        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
+# TODO: [IN-153]
+#class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListAPIView):
+#    pass
 
 class ModeratorMixin(object):
     model_class = OSFUser

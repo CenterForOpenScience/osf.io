@@ -47,8 +47,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
     @property
     def all_subjects(self):
-        if self.subjects.exists():
-            return self.subjects.all()
+        return self.subjects.all()
 
     @property
     def has_highlighted_subjects(self):
@@ -67,7 +66,14 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
 class CollectionProvider(AbstractProvider):
-    pass
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/providers/collections/{}/'.format(self._id)
+        return api_v2_url(path)
+
 
 class PreprintProvider(AbstractProvider):
 
