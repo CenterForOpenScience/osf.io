@@ -159,7 +159,7 @@ def create_wiki_pages_sql(state, schema):
             UPDATE temp_wikipages AS twp
             SET
               user_id = anwp.user_id
-              , created = anwp.created
+              , created = anwp.date
               , modified = anwp.modified
             FROM osf_guid AS og INNER JOIN addons_wiki_nodewikipage AS anwp ON (og.object_id = anwp.id AND og.content_type_id = %s)
             WHERE og._id = twp.first_page_name_guid;
