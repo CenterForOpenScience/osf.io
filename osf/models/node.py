@@ -4,6 +4,7 @@ import logging
 import re
 import urlparse
 import warnings
+import markupsafe
 
 import bson
 from django.db.models import Q
@@ -1411,7 +1412,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if message:
                 # Because addons can return HTML strings, addons are responsible
                 # for markupsafe-escaping any messages returned
-                status.push_status_message(message, kind='info', trust=True)
+                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                    'addon': markupsafe.escape(addon.config.full_name),
+                    'category': markupsafe.escape(self.category_display),
+                    'title': markupsafe.escape(self.title),
+                    'user': markupsafe.escape(contributor.fullname)
+                })
 
         if log:
             self.add_log(

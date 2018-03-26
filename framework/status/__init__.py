@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from framework.sessions import session
 
-Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
+Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust', 'id', 'extra'])  # trust=True displays msg as raw HTML
 
 #: Status_type => bootstrap css class
 TYPE_MAP = {
@@ -17,7 +17,7 @@ TYPE_MAP = {
     'default': 'default',
 }
 
-def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False):
+def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False, id=None, extra=None):
     """
     Push a status message that will be displayed as a banner on the next page loaded by the user.
 
@@ -46,11 +46,15 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
             raise
     if not statuses:
         statuses = []
+    if not extra:
+        extra = {}
     css_class = TYPE_MAP.get(kind, 'warning')
     statuses.append(Status(message=message,
                            jumbotron=jumbotron,
                            css_class=css_class,
                            dismissible=dismissible,
+                           id=id,
+                           extra=extra,
                            trust=trust))
     session.data['status'] = statuses
     session.save()
