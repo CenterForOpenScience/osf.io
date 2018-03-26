@@ -588,6 +588,14 @@ class PreprintFactory(DjangoModelFactory):
         instance.machine_state = kwargs.pop('machine_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
+        if not instance.is_contributor(user):
+            instance.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+            )
+            instance.save()
+
         if not instance.node.is_contributor(user):
             instance.node.add_contributor(
                 contributor=user,
@@ -617,7 +625,9 @@ class PreprintFactory(DjangoModelFactory):
 
         if finish:
             auth = Auth(user)
-
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(auth)
             instance.set_primary_file(preprint_file, auth=auth, save=True)
             instance.set_subjects(subjects, auth=auth)
             if license_details:
