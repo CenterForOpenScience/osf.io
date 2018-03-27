@@ -854,3 +854,13 @@ table.add-links {
 .comment-box {
     padding-bottom: 25px;
 }
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
+}

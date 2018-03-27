@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import itertools
 import os
 import urlparse
 
@@ -204,22 +203,19 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             valid_credentials = False
             owner = self.user_settings.owner
             connection = GitHubClient(external_account=self.external_account)
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
+
             valid_credentials = True
             try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
                 repo_names = [
                     '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
+                    for repo in connection.repos()
                 ]
             except GitHubError:
                 repo_names = []
                 valid_credentials = False
             if owner == user:
-                ret.update({'repo_names': repo_names})
+                repo_names_sorted = sorted(list(repo_names))
+                ret.update({'repo_names': repo_names_sorted})
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',

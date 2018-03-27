@@ -16,6 +16,7 @@ var Cookie = require('js-cookie');
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
+var AlertManager = require('js/alertsManager');
 var Raven = require('raven-js');
 var moment = require('moment');
 var KeenTracker = require('js/keen');
@@ -213,6 +214,12 @@ $(function() {
     if (__ENABLE_DEV_MODE_CONTROLS) {
         new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
     }
+
+    var alertsSelector = '.dismissible-alerts';
+    if ($(alertsSelector).length > 0 && window.contextVars.currentUser) {
+        new AlertManager(alertsSelector);
+    }
+
     if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
         if (!(/PhantomJS/.test(navigator.userAgent))){
