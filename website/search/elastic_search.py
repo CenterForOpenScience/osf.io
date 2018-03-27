@@ -445,9 +445,9 @@ def serialize_cgm(cgm):
             }
             for x in obj._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('fullname', 'guids___id', 'is_active')
-        ],
+        ] if hasattr(obj, '_contributors') else [],
         'status': cgm.status,
-        'subjects': list(obj.subjects.values_list('text', flat=True)),
+        'subjects': list(obj.subjects.values_list('text', flat=True)) if hasattr(obj, 'subjects') else [],
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
         'category': 'collection',

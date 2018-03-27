@@ -16,7 +16,13 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
+from osf.models import (
+    Retraction,
+    NodeLicense,
+    Tag,
+    QuickFilesNode,
+    CollectedGuidMetadata,
+)
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -218,6 +224,23 @@ class TestCollectionsSearch(OsfTestCase):
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
+
+    def test_removed_submission_are_removed_from_index(self):
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.save()
+        assert_true(self.node_one.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 1)
+
+        self.collection_public.remove_object(self.node_one)
+        self.collection_public.save()
+
+        assert_false(self.node_one.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
 
 
 class TestUserUpdate(OsfTestCase):

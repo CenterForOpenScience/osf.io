@@ -56,10 +56,6 @@ class CollectedGuidMetadata(BaseModel):
         super(CollectedGuidMetadata, self).save(*args, **kwargs)
         self.update_index()
 
-    def delete(self):
-        super(CollectedGuidMetadata, self).delete()
-        self.remove_from_index()
-
 class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
 
@@ -124,6 +120,10 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def linked_registrations_related_url(self):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
+    @property
+    def is_collected(self):
+        return CollectedGuidMetadata.objects.filter(guid___id=self._id).exists()
+
     @classmethod
     def bulk_update_search(cls, cgms, op='update', index=None):
         from website import search
@@ -144,14 +144,13 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         ret = super(Collection, self).save(*args, **kwargs)
 
         if 'is_public' in saved_fields:
+            cgms = list(self.collectedguidmetadata_set.all())
+
             if self.is_public:
                 # Add all collection submissions back to ES index
-                cgms = list(self.collectedguidmetadata_set.all())
                 self.bulk_update_search(cgms)
-
             else:
                 # Remove all collection submissions from ES index
-                cgms = list(self.collectedguidmetadata_set.all())
                 self.bulk_update_search(cgms, op='delete')
 
         if first_save:
@@ -206,11 +205,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         """
         if isinstance(obj, CollectedGuidMetadata):
             if obj.collection == self:
+                obj.remove_from_index()
                 self.collectedguidmetadata_set.filter(id=obj.id).delete()
                 return
         else:
-            if self.collectedguidmetadata_set.filter(guid=obj.guids.first()).exists():
-                self.collectedguidmetadata_set.filter(guid=obj.guids.first()).delete()
+            cgm = self.collectedguidmetadata_set.get(guid=obj.guids.first())
+            if cgm:
+                cgm.remove_from_index()
+                cgm.delete()
                 return
         raise ValueError('Node link does not belong to the requested node.')
 
@@ -225,7 +227,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         self.deleted = timezone.now()
 
         cgms = list(self.collectedguidmetadata_set.all())
-        if cgms:
+        if cgms and self.is_public:
             self.bulk_update_search(cgms, op='delete')
 
         self.save()
