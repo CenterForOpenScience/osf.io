@@ -1,25 +1,17 @@
-import datetime
-
-from osf_tests.factories import PreprintFactory, PreprintProviderFactory, UserFactory, ProjectFactory, AuthUserFactory
-from osf.models import PreprintService
+from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory, AuthUserFactory, NodeFactory
 from osf.models.contributor import PreprintContributor
 import mock
 import pytest
-import pytz
-import requests
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from api_tests.utils import disconnected_from_listeners
 from osf.exceptions import ValidationError, NodeStateError
-from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
-from website.project.signals import contributor_added, contributor_removed, after_create_registration
+from .utils import capture_signals
+from website.project.signals import contributor_added, contributor_removed
 from osf.utils import permissions
-from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
-                                      DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
-                                      WRITE, expand_permissions,
-                                      reduce_permissions)
-
-import datetime
+from osf.utils.permissions import (
+    ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS, READ, WRITE
+)
 
 pytestmark = pytest.mark.django_db
 

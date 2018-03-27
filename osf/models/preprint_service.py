@@ -26,9 +26,7 @@ from website import settings, mails
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
-from osf.exceptions import ValidationError
-
-from framework.auth.core import Auth, get_user
+from framework.auth.core import get_user
 from website.project import signals as project_signals
 from osf.exceptions import (
     PreprintStateError, ValidationValueError, InvalidTagError, TagNotFoundError
@@ -1046,10 +1044,3 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             contributor__node=self,
             contributor__visible=True
         ).order_by('contributor___order')
-
-    # visible_contributor_ids was moved to this property
-    @property
-    def visible_contributor_ids(self):
-        return self.preprintcontributor_set.filter(visible=True) \
-            .order_by('_order') \
-            .values_list('user__guids___id', flat=True)
