@@ -565,6 +565,7 @@ class PreprintFactory(DjangoModelFactory):
         project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
         title = kwargs.pop('title', None) or 'Untitled'
+        description = kwargs.pop('description', None) or 'None'
         instance = target_class(node=project, provider=provider, title=title)
         return instance
 
@@ -580,7 +581,7 @@ class PreprintFactory(DjangoModelFactory):
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
         title = kwargs.pop('title', None) or 'Untitled'
-        description = kwargs.pop('description', None)
+        description = kwargs.pop('description', None) or 'None'
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
