@@ -149,9 +149,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
-    def get_permissions(self, user):
-        return get_perms(user, self)
-
     def has_permission(self, user, permission):
         """Check whether user has permission.
         :param User user: User to test
@@ -160,8 +157,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         if not user:
             return False
-        permission_to_check = Permission.objects.get(codename=permission)
-        return user.has_perm(permission_to_check, self)
+        # permission = Permission.objects.get(codename=permission)
+        return user.has_perm(permission, self)
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -425,9 +422,14 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             contributor_obj.visible = visible
 
             # Add default contributor permissions
+            # if not permissions:
+            #     permissions = 'write'
+            # permissions_to_add = Permission.objects.get(codename=permissions)
+            # assign_perm(permissions_to_add, contributor, self)
+            # contributor.save()
             permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
-            assign_perm(permissions, contributor_obj, self)
-            contributor_obj.save()
+            assign_perm(permissions, contributor, self)
+            contributor.save()
 
             # Add contributor to recently added list for user
             if auth is not None:
@@ -1013,17 +1015,16 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             (user and self.has_permission(user, 'write')) or is_api_node
         )
 
-
     def get_permissions(self, user):
         if hasattr(self.preprintcontributor_set.all(), '_result_cache'):
             for contrib in self.preprintcontributor_set.all():
                 if contrib.user_id == user.id:
-                    return get_contributor_permissions(contrib)
+                    return get_perms(contrib, self)
         try:
             contrib = user.preprintcontributor_set.get(preprint=self)
         except PreprintContributor.DoesNotExist:
             return []
-        return get_contributor_permissions(contrib)
+        return get_perms(contrib, self)
 
     # TODO: Remove save parameter
     def add_permission(self, user, permission, save=False):
@@ -1035,11 +1036,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :raises: ValueError if user already has permission
         """
         contributor = user.preprintcontributor_set.get(preprint=self)
-        if not getattr(contributor, permission, False):
+        if not user.has_perm(permission, self):
             permission_to_add = Permission.objects.get(codename=permission)
-            assign_perm(permission_to_add, contributor, self)
+            assign_perm(permission_to_add, user, self)
             contributor.save()
-        elif contributor.has_perm(permission, self):
+        elif user.has_perm(permission, self):
             raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
