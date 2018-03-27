@@ -225,9 +225,9 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
-        defaultText: 'add a tag to enhance discoverability',
+        defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function(tag) {
-            $('#node-tags_tag').attr('data-default', 'add a tag');
+            $('#node-tags_tag').attr('data-default', 'Add a tag');
             window.contextVars.node.tags.push(tag);
             var payload = {
                 data: {

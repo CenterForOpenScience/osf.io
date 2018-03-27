@@ -681,8 +681,13 @@ button.close {
     margin-right: 15px;
 }
 
-div.ball-scale-blue>div {
+div.ball-scale-blue>div, span.ball-scale-blue>div {
     background-color: #BED1E2;
+}
+
+span.ball-pulse-small>div {
+    height: 8px;
+    width: 8px;
 }
 
 /* Make registrations modal scrollable and background hidden

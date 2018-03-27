@@ -4,9 +4,8 @@ from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
                                  RelationshipPostMakesNoChanges)
 from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
-                                  JSONAPIListField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField,
+                                  JSONAPISerializer, LinksField, ValuesListField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer)
@@ -205,8 +204,8 @@ class NodeSerializer(JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
+    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ser.BooleanField(read_only=False, required=False)
-    tags = JSONAPIListField(child=NodeTagField(), required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '

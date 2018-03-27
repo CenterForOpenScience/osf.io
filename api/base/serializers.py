@@ -364,6 +364,19 @@ class JSONAPIListField(ser.ListField):
         return super(JSONAPIListField, self).to_internal_value(data)
 
 
+class ValuesListField(JSONAPIListField):
+    """
+    JSONAPIListField that uses a values_list with flat=True to return just
+    an array of the specified field (attr_name) for optimization purposes.
+    """
+    def __init__(self, **kwargs):
+        self.attr_name = kwargs.pop('attr_name')
+        super(ValuesListField, self).__init__(**kwargs)
+
+    def to_representation(self, val):
+        return val.values_list(self.attr_name, flat=True)
+
+
 class AuthorizedCharField(ser.CharField):
     """
     Passes auth of the logged-in user to the object's method

@@ -108,6 +108,7 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
@@ -126,6 +127,7 @@ def get_globals():
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
@@ -411,6 +413,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -453,9 +466,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
@@ -1181,6 +1197,12 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            '/download/<fid_or_guid>/',
+            'get',
+            addon_views.persistent_file_download,
+            json_renderer,
         ),
         Rule(
             [

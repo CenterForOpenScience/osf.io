@@ -283,6 +283,13 @@ class TestNodeDetail:
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_node_list_embed_identifier_link(self, app, user, project_public, url_public):
+        url = url_public + '?embed=identifiers'
+        res = app.get(url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url_public) in link
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

@@ -186,9 +186,13 @@ class BaseFileSerializer(JSONAPISerializer):
         'move': WaterbutlerLink(),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
-        'download': WaterbutlerLink(must_be_file=True),
+        'download': 'get_download_link',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def get_download_link(self, obj):
+        if obj.is_file:
+            return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
 
     class Meta:
         type_ = 'files'
@@ -358,7 +362,8 @@ class FileVersionSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
-        'html': 'absolute_url'
+        'html': 'absolute_url',
+        'download': 'get_download_link',
     })
 
     class Meta:
@@ -372,7 +377,7 @@ class FileVersionSerializer(JSONAPISerializer):
         })
 
     def absolute_url(self, obj):
-        fobj = self.context['view'].get_file()
+        fobj = self.context['file']
         return furl.furl(settings.DOMAIN).set(
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
@@ -380,3 +385,25 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.self_url(obj)
+
+    def get_download_link(self, obj):
+        return get_file_download_link(
+            self.context['file'], version=obj.identifier,
+            view_only=self.context['request'].query_params.get('view_only')
+        )
+
+
+def get_file_download_link(obj, version=None, view_only=None):
+    guid = obj.get_guid()
+    # Add '' to the path to ensure thare's a trailing slash
+    # The trailing slash avoids a 301
+    url = furl.furl(settings.DOMAIN).set(
+        path=('download', guid._id if guid else obj._id, ''),
+    )
+
+    if version:
+        url.args[obj.version_identifier] = version
+
+    if view_only:
+        url.args['view_only'] = view_only
+    return url.url
