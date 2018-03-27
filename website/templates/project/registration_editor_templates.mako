@@ -53,12 +53,6 @@
   </div>
 </script>
 
-<script type="text/html" id="dropdown">
-  <div class="col-md-12" >
-      <select class='form-control' data-bind="options: $parent.availableCountries, value: value"></select>
-  </div>
-</script>
-
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p data-bind="if: !Boolean(option.tooltip)">
