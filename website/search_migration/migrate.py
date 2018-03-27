@@ -16,11 +16,11 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, CollectedGuidMetadata
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
-from website.search.search import update_institution
+from website.search.search import update_institution, bulk_update_cgm
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,13 @@ def migrate_users(index, delete, increment=10000):
             es_args={'raise_on_error': False})  # ignore 404s
         logger.info('{} users marked deleted'.format(total_users))
 
+def migrate_collected_guid_metadata(index, delete):
+    cgms = CollectedGuidMetadata.objects.all()
+    if delete:
+        bulk_update_cgm(cgms, op='delete', index=index)
+    else:
+        bulk_update_cgm(cgms, index=index)
+
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
         update_institution(inst, index)
@@ -159,6 +166,7 @@ def migrate(delete, remove=False, index=None, app=None):
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
+    migrate_collected_guid_metadata(new_index, delete=delete)
 
     set_up_alias(index, new_index)
 

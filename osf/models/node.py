@@ -1551,14 +1551,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
-            elif self.is_collected:
-                pass
             else:
                 self.is_public = False
                 self.keenio_read_key = ''
-        elif permissions == 'public' and not self.is_public:
-            if self.is_collected:
-                pass
         else:
             return False
 
@@ -2372,6 +2367,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if isinstance(v, basestring)
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+
+        if 'is_public' in saved_fields and self.is_collected:
+            from website.search.search import update_cgm
+
+            if self.is_public:
+                update_cgm(self._id)
+            else:
+                update_cgm(self._id, op='delete')
 
         if self.preprint_file:
             # avoid circular imports

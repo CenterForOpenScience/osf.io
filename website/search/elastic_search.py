@@ -249,8 +249,11 @@ def format_results(results):
             result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
+        elif result.get('category') == 'collection':
+            pass
         elif not result.get('category'):
             continue
+
         ret.append(result)
     return ret
 
@@ -447,23 +450,25 @@ def serialize_cgm(cgm):
         'subjects': list(obj.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
+        'category': 'collection',
     }
     return collection_submission_doc
 
-
+@requires_search
 def bulk_update_cgm(cgms, op='update', index=None):
     index = index or INDEX
     actions = ({
         '_op_type': op,
         '_index': index,
         '_id': cgm._id,
-        '_type': 'collection_submission',
+        '_type': 'collectionSubmission',
         'doc': serialize_cgm(cgm),
         'doc_as_upsert': True,
-    } for cgm in cgms if cgm.collection.is_public)
+    } for cgm in cgms)
+
     if actions:
         try:
-            helpers.bulk(client(), actions)
+            success, failed = helpers.bulk(client(), actions, refresh=True)
         except helpers.BulkIndexError as e:
             raise exceptions.BulkUpdateError(e.errors)
 
@@ -623,19 +628,26 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_cgm_async(self, cgm_id, collection_id, op='update', index=None):
+def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
     try:
-        cgm = CollectedGuidMetadata.objects.get(Q(guid___id=cgm_id) & Q(collection_id=collection_id))
+        if collection_id:
+            cgm = CollectedGuidMetadata.objects.get(Q(guid___id=cgm_id) & Q(collection_id=collection_id))
+            try:
+                if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+                    update_cgm(cgm, op=op, index=index)
+            except Exception as exc:
+                self.retry(exc=exc)
+        else:
+            cgms = list(CollectedGuidMetadata.objects.filter(Q(guid___id=cgm_id)))
+            for cgm in cgms:
+                try:
+                    update_cgm(cgm, op=op, index=index)
+                except Exception as exc:
+                    self.retry(exc=exc)
     except CollectedGuidMetadata.DoesNotExist:
-        logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
+        logger.exception('Could not find object with <_id {}> in collection'.format(cgm_id))
         return
-
-    try:
-        if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
-            update_cgm(cgm, op=op, index=index)
-    except Exception as exc:
-        self.retry(exc=exc)
 
 @requires_search
 def update_cgm(cgm, op='update', index=None):
@@ -662,7 +674,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collection_submission']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
     project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 

@@ -33,6 +33,10 @@ def query(term):
     results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
 
+def query_collections(term):
+    results = search.search(build_query(term), index=elastic_search.INDEX, doc_type='collectionSubmission')
+    return results
+
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
@@ -61,6 +65,159 @@ def retry_assertion(interval=0.3, retries=3):
                     raise e
         return wrapped
     return test_wrapper
+
+class TestCollectionsSearch(OsfTestCase):
+    def setUp(self):
+        super(TestCollectionsSearch, self).setUp()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
+
+        self.user = factories.UserFactory(fullname='Salif Keita')
+        self.node_private = factories.NodeFactory(creator=self.user, title='Salif Keita: Madan', is_public=False)
+        self.node_public = factories.NodeFactory(creator=self.user, title='Salif Keita: Yamore', is_public=True)
+        self.node_one = factories.NodeFactory(creator=self.user, title='Salif Keita: Mandjou', is_public=True)
+        self.node_two = factories.NodeFactory(creator=self.user, title='Salif Keita: Tekere', is_public=True)
+        self.collection_one = factories.CollectionFactory(title='Life of Salif Keita', creator=self.user, is_public=True)
+        self.collection_public = factories.CollectionFactory(title='Best of Salif Keita', creator=self.user, is_public=True)
+        self.collection_private = factories.CollectionFactory(title='Commentary: Best of Salif Keita', creator=self.user, is_public = False)
+
+    def test_only_public_collections_submissions_are_searchable(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        assert_false(self.node_one.is_collected)
+        assert_false(self.node_public.is_collected)
+
+        self.collection_one.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+
+        assert_true(self.node_one.is_collected)
+        assert_true(self.node_public.is_collected)
+
+        self.collection_one.save()
+        self.collection_public.save()
+
+        assert_true(self.node_one.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 2)
+
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.collection_private.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 2)
+
+
+    def test_private_submissions_are_not_searchable(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_private, self.user)
+        self.collection_public.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+    def test_submissions_turned_private_are_deleted_from_index(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_one.collect_object(self.node_one, self.user)
+        self.collection_public.save()
+        self.collection_one.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 1)
+
+        self.node_one.is_public = False
+        self.node_one.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+    def test_submissions_turned_public_are_added_to_index(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_private, self.user)
+        self.collection_public.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.node_private.is_public = True
+        self.node_private.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 1)
+
+    def test_submissions_of_collection_turned_public_are_added_to_index(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        assert_false(self.node_one.is_collected)
+        assert_false(self.node_two.is_collected)
+        assert_false(self.node_public.is_collected)
+
+        self.collection_private.collect_object(self.node_one, self.user)
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.collection_private.collect_object(self.node_public, self.user)
+        self.collection_private.save()
+
+        assert_true(self.node_one.is_collected)
+        assert_true(self.node_two.is_collected)
+        assert_true(self.node_public.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_private.is_public = True
+        self.collection_private.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 3)
+
+    def test_submissions_of_collection_turned_private_are_removed_from_index(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.collection_public.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 3)
+
+        self.collection_public.is_public = False
+        self.collection_public.save()
+
+        assert_false(self.collection_public.is_public)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+    def test_delete_collection_turned_public_submissions_are_removed_from_index(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.collection_public.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 3)
+
+        self.collection_public.delete()
+        self.collection_public.save()
+
+        assert_true(self.collection_public.deleted)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
 
 
 class TestUserUpdate(OsfTestCase):

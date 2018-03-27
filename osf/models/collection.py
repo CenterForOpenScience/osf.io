@@ -1,5 +1,6 @@
 import logging
 
+from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -40,14 +41,14 @@ class CollectedGuidMetadata(BaseModel):
         from website.search.search import update_cgm
         if self.collection.is_public:
             try:
-                update_cgm(self)
+                update_cgm(self._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
                 logger.exception(e)
 
     def remove_from_index(self):
         from website.search.search import update_cgm
         try:
-            update_cgm(self, op='delete')
+            update_cgm(self._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
 
@@ -59,7 +60,7 @@ class CollectedGuidMetadata(BaseModel):
         super(CollectedGuidMetadata, self).delete()
         self.remove_from_index()
 
-class Collection(GuidMixin, BaseModel, GuardianMixin):
+class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
 
     groups = {
@@ -124,18 +125,10 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
     @classmethod
-    def bulk_update_search(cls, cgms, index=None):
+    def bulk_update_search(cls, cgms, op='update', index=None):
         from website import search
         try:
-            search.search.bulk_update_cgm(cgms, index=index)
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-
-    @classmethod
-    def bulk_delete_search(cls, cgms, index=None):
-        from website import search
-        try:
-            search.search.bulk_update_cgm(cgms, op='delete', index=index)
+            search.search.bulk_update_cgm(cgms, op=op, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 
@@ -147,7 +140,20 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             if self.title != 'Bookmarks':
                 # Bookmark collections are always named 'Bookmarks'
                 self.title = 'Bookmarks'
+        saved_fields = self.get_dirty_fields() or []
         ret = super(Collection, self).save(*args, **kwargs)
+
+        if 'is_public' in saved_fields:
+            if self.is_public:
+                # Add all collection submissions back to ES index
+                cgms = list(self.collectedguidmetadata_set.all())
+                self.bulk_update_search(cgms)
+
+            else:
+                # Remove all collection submissions from ES index
+                cgms = list(self.collectedguidmetadata_set.all())
+                self.bulk_update_search(cgms, op='delete')
+
         if first_save:
             # Set defaults for M2M
             self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
@@ -155,17 +161,6 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)
 
-        if 'is_public' in kwargs:
-            is_public = kwargs.get('is_public')
-            if not is_public and self.is_public:
-                # Remove all collection submissions from ES index
-                cgms = list(self.collectedguidmetadata_set.all())
-                self.bulk_delete_search(cgms)
-
-            elif is_public and not self.is_public:
-                # Add all collection submissions back to ES index
-                cgms = list(self.collectedguidmetadata_set.all())
-                self.bulk_update_search(cgms)
         return ret
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
@@ -231,7 +226,7 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
 
         cgms = list(self.collectedguidmetadata_set.all())
         if cgms:
-            self.bulk_delete_search(cgms)
+            self.bulk_update_search(cgms, op='delete')
 
         self.save()
 
