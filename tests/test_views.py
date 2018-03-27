@@ -1436,13 +1436,13 @@ class TestUserProfile(OsfTestCase):
 
         assert_in('Quick files', res.body)
 
-    def test_user_with_no_quickfiles(self):
+    def test_user_with_no_quickfiles_quickfiles_still_show_up(self):
         assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
 
         url = web_url_for('profile_view_id', uid=self.user._primary_key)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_not_in('Quick files', res.body)
+        assert_in('Quick files', res.body)
 
 
 class TestUserProfileApplicationsPage(OsfTestCase):
