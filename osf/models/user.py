@@ -849,7 +849,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
                 mimetype='plain',
-                user=self
+                user=self,
+                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
 
@@ -1054,7 +1055,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise PermissionsError("Can't remove primary email")
         if self.emails.filter(address=email):
             self.emails.filter(address=email).delete()
-            signals.user_email_removed.send(self, email=email)
+            signals.user_email_removed.send(self, email=email, osf_contact_email=website_settings.OSF_CONTACT_EMAIL)
 
     def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.

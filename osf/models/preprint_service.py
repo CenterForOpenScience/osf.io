@@ -319,7 +319,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             email_template,
             user=auth.user,
             node=self.node,
-            preprint=self
+            preprint=self,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS

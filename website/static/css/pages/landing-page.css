@@ -154,6 +154,10 @@ font-weight: bold;
   border-top: 1px solid #D9E8F4;
 }
 
+.footer {
+    margin-top: -25px; /* Override footer margin for this page only */
+}
+
 /* Knockout Validation Styles */
 
 .customMessage { color: #ed9c28; }

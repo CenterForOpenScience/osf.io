@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField,
+    JSONAPISerializer, IDField, TypeField,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -71,6 +71,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
+    type = TypeField()
     subjects = ser.SerializerMethodField()
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
