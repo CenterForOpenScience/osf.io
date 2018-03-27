@@ -588,6 +588,8 @@ class PreprintFactory(DjangoModelFactory):
         instance.machine_state = kwargs.pop('machine_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
+        instance.save()
+
         if not instance.is_contributor(user):
             instance.add_contributor(
                 contributor=user,

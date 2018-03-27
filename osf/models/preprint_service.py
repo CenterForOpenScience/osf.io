@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import Permission
 from guardian.shortcuts import assign_perm, remove_perm, get_perms
 
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
@@ -159,7 +160,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         if not user:
             return False
-        return user.has_perm(permission, self)
+        permission_to_check = Permission.objects.get(codename=permission)
+        return user.has_perm(permission_to_check, self)
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -893,7 +895,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
-            permissions = expand_permissions(permission)
+            permissions = Permission.objects.get(codename=permission)
             admins = self.preprintcontributor_set.filter(admin=True)
             if not admins.count() > 1:
                 # has only one admin
@@ -1034,7 +1036,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         contributor = user.preprintcontributor_set.get(preprint=self)
         if not getattr(contributor, permission, False):
-            permission_to_add = expand_permissions(permission)
+            permission_to_add = Permission.objects.get(codename=permission)
             assign_perm(permission_to_add, contributor, self)
             contributor.save()
         elif contributor.has_perm(permission, self):
@@ -1053,7 +1055,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         contributor = user.preprintcontributor_set.get(preprint=self)
         if contributor.has_perm(permission, self):
-            permission_to_remove = expand_permissions(permission)
+            permission_to_remove = Permission.objects.get(codename=permission)
             remove_perm(permission_to_remove, contributor, self)
             contributor.save()
         else:
