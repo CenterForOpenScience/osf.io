@@ -566,7 +566,7 @@ class PreprintFactory(DjangoModelFactory):
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'
-        instance = target_class(node=project, provider=provider, title=title)
+        instance = target_class(node=project, provider=provider, title=title, description=description)
         return instance
 
     @classmethod
