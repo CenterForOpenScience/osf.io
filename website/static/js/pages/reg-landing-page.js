@@ -7,9 +7,18 @@ require('js/components/autocomplete');
 require('js/projectsSelect.js');
 
 $(function(){
-    var campaignShort = window.contextVars.campaign || 'prereg';
-    $('.prereg-button-qtoggle').qToggle();
-    $('.prereg-button-qtoggle').click(function(){
+    $('#newProject, #newProjectXS').attr('disabled',true);
+    $('.new-project-title').keyup(function() {
+        if ($(this).val().length !== 0) {
+            $('#newProject, #newProjectXS').attr('disabled', false);
+        } else {
+            $('#newProject, #newProjectXS').attr('disabled',true);
+        }
+    });
+
+    var campaignShort = window.contextVars.campaign || '';
+    $('.reg-button-qtoggle').qToggle();
+    $('.reg-button-qtoggle').click(function(){
         var target = $(this).attr('data-qToggle-target');
         var input = $(target).find('input').first().focus();
     });
@@ -72,12 +81,17 @@ $(function(){
     collectProjects(nodeLink);
 
     function onSelectRegistrations (event, data) {
-        $('#existingPrereg .regDraftButton').removeClass('disabled').attr('href', data.url);
-        $('#existingPreregXS .regDraftButton').removeClass('disabled').attr('href', data.url);
+        $('#existingDraft .regDraftButton').removeClass('disabled').attr('href', data.url);
+        $('#existingDraftXS .regDraftButton').removeClass('disabled').attr('href', data.url);
     }
 
     // Existing Draft Registrations
-    var draftRegistrationsUrl = '/api/v1/' + campaignShort + '/draft_registrations/';
+    var draftRegistrationsUrl;
+    if(campaignShort){
+        draftRegistrationsUrl = '/api/v1/' + campaignShort + '/draft_registrations/';
+    }else {
+        draftRegistrationsUrl = '/api/v1/draft_registrations/';
+    }
     $.getJSON(draftRegistrationsUrl).then(function(response){
         if (response.draftRegistrations.length) {
             $('#regDraftSearch').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});

@@ -230,35 +230,11 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            response = None
             _inject_nodes(kwargs)
-            node = kwargs['node']
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-            user = kwargs['auth'].user
 
-            key = request.args.get('view_only', '').strip('/')
-            #if not login user check if the key is valid or the other privilege
-
-            kwargs['auth'].private_key = key
-            if not include_view_only_anon:
-                from osf.models import PrivateLink
-                try:
-                    link_anon = PrivateLink.objects.filter(key=key).values_list('anonymous', flat=True).get()
-                except PrivateLink.DoesNotExist:
-                    link_anon = None
-
-            if not node.is_public or not include_public:
-                if not include_view_only_anon and link_anon:
-                    if not check_can_access(node=node, user=user):
-                        raise HTTPError(http.UNAUTHORIZED)
-                elif key not in node.private_link_keys_active:
-                    if not check_can_access(node=node, user=user, key=key):
-                        redirect_url = check_key_expired(key=key, node=node, url=request.url)
-                        if request.headers.get('Content-Type') == 'application/json':
-                            raise HTTPError(http.UNAUTHORIZED)
-                        else:
-                            response = redirect(cas.get_login_url(redirect_url))
+            response = check_contributor_auth(kwargs['node'], kwargs['auth'], include_public, include_view_only_anon)
 
             return response or func(*args, **kwargs)
 
@@ -421,3 +397,31 @@ def http_error_if_disk_saving_mode(func):
             )
         return func(*args, **kwargs)
     return wrapper
+
+def check_contributor_auth(node, auth, include_public, include_view_only_anon):
+    response = None
+
+    user = auth.user
+
+    auth.private_key = request.args.get('view_only', '').strip('/')
+
+    if not include_view_only_anon:
+        from osf.models import PrivateLink
+        try:
+            link_anon = PrivateLink.objects.filter(key=auth.private_key).values_list('anonymous', flat=True).get()
+        except PrivateLink.DoesNotExist:
+            link_anon = None
+
+    if not node.is_public or not include_public:
+        if not include_view_only_anon and link_anon:
+            if not check_can_access(node=node, user=user):
+                raise HTTPError(http.UNAUTHORIZED)
+        elif auth.private_key not in node.private_link_keys_active:
+            if not check_can_access(node=node, user=user, key=auth.private_key):
+                redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
+                if request.headers.get('Content-Type') == 'application/json':
+                    raise HTTPError(http.UNAUTHORIZED)
+                else:
+                    response = redirect(cas.get_login_url(redirect_url))
+
+    return response

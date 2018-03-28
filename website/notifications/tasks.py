@@ -7,7 +7,7 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from osf.models import OSFUser
+from osf.models import OSFUser, AbstractNode
 from osf.models import NotificationDigest
 from website import mails
 from website.notifications.utils import NotificationsDict
@@ -31,9 +31,15 @@ def send_users_email(send_type):
         sorted_messages = group_by_node(info)
         if sorted_messages:
             if not user.is_disabled:
+                # If there's only one node in digest we can show it's preferences link in the template.
+                notification_nodes = sorted_messages['children'].keys()
+                node = AbstractNode.load(notification_nodes[0]) if len(
+                    notification_nodes) == 1 else None
                 mails.send_mail(
                     to_addr=user.username,
                     mimetype='html',
+                    can_change_node_preferences=bool(node),
+                    node=node,
                     mail=mails.DIGEST,
                     name=user.fullname,
                     message=sorted_messages,

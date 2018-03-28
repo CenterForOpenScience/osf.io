@@ -52,10 +52,10 @@ from osf_tests.factories import (
     PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
-    CollectionFactory,
     NodeRelationFactory,
     InstitutionFactory,
     SessionFactory,
+    SubjectFactory,
     TagFactory,
 )
 from .factories import get_default_metaschema
@@ -79,6 +79,10 @@ def project(user):
 @pytest.fixture()
 def auth(user):
     return Auth(user)
+
+@pytest.fixture()
+def subject():
+    return SubjectFactory()
 
 
 class TestParentNode:
@@ -1620,6 +1624,31 @@ class TestPermissions:
         assert project.has_permission(project.creator, 'dance') is False
 
 
+class TestNodeSubjects:
+
+    @pytest.fixture()
+    def write_contrib(self, project):
+        write_contrib = AuthUserFactory()
+        project.add_contributor(write_contrib, auth=Auth(project.creator), permissions=(READ, WRITE))
+        project.save()
+        return write_contrib
+
+    def test_nonadmin_cannot_set_subjects(self, project, subject, write_contrib):
+        initial_subjects = list(project.subjects.all())
+        with pytest.raises(PermissionsError):
+            project.set_subjects([[subject._id]], auth=Auth(write_contrib))
+
+        project.reload()
+        assert initial_subjects == list(project.subjects.all())
+
+    def test_admin_can_set_subjects(self, project, subject):
+        initial_subjects = list(project.subjects.all())
+        project.set_subjects([[subject._id]], auth=Auth(project.creator))
+
+        project.reload()
+        assert initial_subjects != list(project.subjects.all())
+
+
 class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth):
@@ -1638,6 +1667,16 @@ class TestRegisterNode:
                 data=None
             )
         assert err.value.message == 'Cannot register deleted node.'
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_copies_subjects(self, mock_signal, subject):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.set_subjects([[subject._id]], auth=Auth(user))
+        node.save()
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_makes_private_registration(self, mock_signal):
@@ -2513,29 +2552,6 @@ class TestPointerMethods:
         with pytest.raises(NodeStateError):
             registration.add_pointer(node, auth=auth)
 
-    def test_get_points_exclude_folders(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        # Project is in a organizer collection
-        folder = CollectionFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
-
-        assert pointer_project in pointed_project.get_points(folders=False)
-        assert folder not in pointed_project.get_points(folders=False)
-        assert folder in pointed_project.get_points(folders=True)
-
-    def test_get_points_exclude_deleted(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True, is_deleted=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        assert pointer_project not in pointed_project.get_points(deleted=False)
-        assert pointer_project in pointed_project.get_points(deleted=True)
-
     def test_add_pointer_already_present(self, node, user, auth):
         node2 = NodeFactory(creator=user)
         node.add_pointer(node2, auth=auth)
@@ -2548,7 +2564,7 @@ class TestPointerMethods:
         node.rm_pointer(node_relation, auth=auth)
         # assert Pointer.load(pointer._id) is None
         # assert len(node.nodes) == 0
-        assert len(node2.get_points()) == 0
+        assert NodeRelation.objects.filter(child=node2, is_node_link=True).count() == 0
         assert (
             node.logs.latest().action == NodeLog.POINTER_REMOVED
         )
@@ -2658,6 +2674,11 @@ class TestForkNode:
             list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
         )
 
+        # Test that subjects were copied correctly
+        assert(
+            list(original.subjects.all()) == list(fork.subjects.all())
+        )
+
         # Test that add-ons were copied correctly
         assert(
             original.get_addon_names() ==
@@ -2676,7 +2697,7 @@ class TestForkNode:
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, project, user, auth, request_context):
+    def test_fork_recursion(self, mock_push_status_message, project, user, subject, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
@@ -2693,6 +2714,9 @@ class TestForkNode:
         project.add_addon('dropbox', auth)
         component.add_addon('dropbox', auth)
         subproject.add_addon('dropbox', auth)
+
+        # Add subject to test copying
+        project.set_subjects([[subject._id]], auth)
 
         # Log time
         fork_date = timezone.now()

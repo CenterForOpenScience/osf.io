@@ -35,6 +35,13 @@ class GithubFolder(GithubFileNode, Folder):
 class GithubFile(GithubFileNode, File):
     version_identifier = 'ref'
 
+    @property
+    def _hashes(self):
+        try:
+            return {'fileSha': self.history[-1]['extra']['hashes']['git']}
+        except (IndexError, KeyError):
+            return None
+
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
         return super(GithubFile, self).touch(auth_header, revision=revision, **kwargs)

@@ -27,6 +27,7 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
@@ -252,6 +253,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@ember_flag_is_active('ember_create_draft_registration_page')
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -289,6 +291,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@ember_flag_is_active('ember_edit_draft_registration_page')
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor
