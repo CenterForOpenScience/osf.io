@@ -586,23 +586,6 @@ class PreprintFactory(DjangoModelFactory):
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
         user = kwargs.pop('creator', None) or instance.node.creator
-        instance.save()
-
-        if not instance.is_contributor(user):
-            instance.add_contributor(
-                contributor=user,
-                permission='admin',
-                log=False,
-            )
-            instance.save()
-
-        if not instance.node.is_contributor(user):
-            instance.node.add_contributor(
-                contributor=user,
-                permissions=permissions.CREATOR_PERMISSIONS,
-                log=False,
-                save=True
-            )
 
         preprint_file = OsfStorageFile.create(
             node=instance.node,
@@ -625,9 +608,15 @@ class PreprintFactory(DjangoModelFactory):
 
         if finish:
             auth = Auth(user)
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(auth)
+
+            if not instance.is_contributor(user):
+                instance.add_contributor(
+                    contributor=user,
+                    permission='admin',
+                    log=False,
+                )
+                instance.save()
+
             instance.set_primary_file(preprint_file, auth=auth, save=True)
             instance.set_subjects(subjects, auth=auth)
             if license_details:
