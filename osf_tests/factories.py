@@ -590,7 +590,6 @@ class PreprintFactory(DjangoModelFactory):
         instance.title = title
         instance.description = description
         user = kwargs.pop('creator', None) or instance.node.creator
-        instance.save()
 
         if not instance.is_contributor(user):
             instance.add_contributor(
