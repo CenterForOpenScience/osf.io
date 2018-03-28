@@ -113,6 +113,7 @@ from osf.utils.permissions import ADMIN, PERMISSIONS
 from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
+from website.project import signals as project_signals
 
 
 class NodeMixin(object):
@@ -286,6 +287,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         nodes.update(is_deleted=True, deleted_date=date)
         if nodes.filter(is_public=True).exists():
             AbstractNode.bulk_update_search(resource_object_list)
+        for node in nodes:
+            project_signals.node_deleted.send(node)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
