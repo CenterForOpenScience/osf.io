@@ -2964,6 +2964,19 @@ class Node(AbstractNode):
         )
 
 
+def remove_addons(auth, resource_object_list):
+    for config in AbstractNode.ADDONS_AVAILABLE:
+        try:
+            settings_model = config.node_settings
+        except LookupError:
+            settings_model = None
+
+        if settings_model:
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list)
+            for addon in addon_list:
+                addon.after_delete(auth.user)
+
+
 ##### Signal listeners #####
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.QuickFilesNode')
