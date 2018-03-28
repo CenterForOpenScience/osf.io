@@ -2,6 +2,17 @@
 Changelog
 *********
 
+0.137.0 (2018-03-27)
+====================
+
+- API endpoints to support moderator management
+- API endpoints for NotificationSubscriptions
+- Create Collection, CollectedGuidMetadata models
+- Use django-guardian for Collections
+- Add Subjects to AbstractNodes
+- Generalize PreprintProvider branding as AbstractProvider (TypedModel)
+- Add 'works' as a choice for preprint_word
+
 0.136.0 (2018-03-23)
 ====================
 

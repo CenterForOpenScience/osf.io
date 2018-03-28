@@ -34,7 +34,7 @@ from osf.models.contributor import (Contributor, RecentlyAddedContributor,
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
-                               NodeLinkMixin, Taggable)
+                               NodeLinkMixin, Taggable, TaxonomizableMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
@@ -181,7 +181,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin, CommentableMixin, SpamMixin,
+                   NodeLinkMixin, CommentableMixin, SpamMixin, TaxonomizableMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -1705,6 +1705,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_schema.add(schema)
         registered.copy_contributors_from(self)
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
+        registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
@@ -1895,6 +1896,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+        forked.subjects.add(*self.subjects.values_list('pk', flat=True))
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
@@ -2326,6 +2328,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
+        if 'old_subjects' in kwargs.keys():
+            # TODO: send this data to SHARE
+            kwargs.pop('old_subjects')
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2967,37 +2972,7 @@ class Node(AbstractNode):
         )
 
 
-class Collection(AbstractNode):
-    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
-
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
-
-    def remove_node(self, auth, date=None):
-        if self.is_bookmark_collection:
-            raise NodeStateError('Bookmark collections may not be deleted.')
-        # Remove all the collections that this is pointing at.
-        for pointed in self.linked_nodes.all():
-            if pointed.is_collection:
-                pointed.remove_node(auth=auth)
-        return super(Collection, self).remove_node(auth=auth, date=date)
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
-
-
 ##### Signal listeners #####
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -3012,7 +2987,6 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
@@ -3034,14 +3008,12 @@ def add_project_created_log(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
@@ -3050,7 +3022,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
                 instance.add_addon(addon.short_name, auth=None, log=False)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 @receiver(post_save, sender='osf.QuickFilesNode')

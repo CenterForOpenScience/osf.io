@@ -172,7 +172,7 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
+    return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
 
 @must_be_logged_in
 @ember_flag_is_active('ember_dashboard_page')

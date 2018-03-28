@@ -160,6 +160,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
+            'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
             'preprint_word': 'preprint'
@@ -179,6 +180,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
+            'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
@@ -224,7 +226,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
     def test_post(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
-        nt.assert_equal(content_dict['model'], 'osf.preprintprovider')
+        nt.assert_equal(content_dict['fields']['type'], 'osf.preprintprovider')
         nt.assert_equal(content_dict['fields']['name'], self.preprint_provider.name)
         nt.assert_equal(res.__getitem__('content-type'), 'text/json')
 

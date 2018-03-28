@@ -1171,6 +1171,7 @@ class JSONAPISerializer(BaseAPISerializer):
     according to JSON API spec. Relational fields must set json_api_link=True flag.
     Self/html links must be nested under "links".
     """
+    writeable_method_fields = frozenset([])
 
     # Don't serialize relationships that use these views
     # when viewing thru an anonymous VOL
@@ -1204,6 +1205,15 @@ class JSONAPISerializer(BaseAPISerializer):
             return '<esi:include src="{}"/>'.format(esi_url)
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
+
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for writeable SMFs is expected to happen in the model
+        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        for field in self.writeable_method_fields:
+            if field in self.initial_data:
+                _validated_data[field] = self.initial_data[field]
+        return _validated_data
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):

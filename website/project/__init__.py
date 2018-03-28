@@ -52,7 +52,7 @@ def new_bookmark_collection(user):
     existing_bookmark_collections = Collection.objects.filter(
         is_bookmark_collection=True,
         creator=user,
-        is_deleted=False
+        deleted__isnull=True
     ).exists()
 
     if existing_bookmark_collections:
