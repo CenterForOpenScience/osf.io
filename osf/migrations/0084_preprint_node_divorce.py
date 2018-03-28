@@ -18,12 +18,13 @@ def divorce_preprints_from_nodes(apps, schema_editor):
             preprint.save()
     for preprint in Preprint.objects.all():
         if preprint.node:
-            # preprint.title = preprint.node.title
-            # preprint.description = preprint.node.description
-            # preprint.creator = preprint.node.creator
             # use bulk create
             for contrib in preprint.node.contributor_set.all():
                 # make a PreprintContributor that points to the pp instead of the node
+                # because there's a throughtable, relations are designated
+                # solely on the through model, and adds on the related models
+                # are not required.
+
                 new_contrib = PreprintContributor.objects.create(
                     preprint=preprint,
                     user=contrib.user,

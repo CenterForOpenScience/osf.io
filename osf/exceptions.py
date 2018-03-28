@@ -8,7 +8,6 @@ ValidationError = DjangoValidationError
 ValidationValueError = DjangoValidationError
 ValidationTypeError = DjangoValidationError
 
-
 class TokenError(Exception):
     pass
 

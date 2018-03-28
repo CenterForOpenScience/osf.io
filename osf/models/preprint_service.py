@@ -64,6 +64,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     _contributors = models.ManyToManyField(OSFUser,
                                            through=PreprintContributor,
                                            related_name='preprints')
+
     groups = {
         'read': ('read_preprint',),
         'write': ('read_preprint', 'write_preprint',),
@@ -324,6 +325,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS
+
 
     # visible_contributor_ids was moved to this property
     @property
@@ -761,6 +763,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         return (each.user for each in self.get_group('admin').user_set)
 
+
     # TODO: Optimize me
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
@@ -906,6 +909,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.set_visible(user, visible, auth=auth)
             # self.save_node_preprints()  # TODO: decide what to do with this
 
+
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -963,12 +967,75 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.save()
         return None
 
+    # def remove_node(self, auth, date=None):
+    #     """Marks a node as deleted.
+    #
+    #     TODO: Call a hook on addons
+    #     Adds a log to the parent node if applicable
+    #
+    #     :param auth: an instance of :class:`Auth`.
+    #     :param date: Date node was removed
+    #     :type date: `datetime.datetime` or `None`
+    #     """
+    #     # TODO: rename "date" param - it's shadowing a global
+    #     if not self.can_edit(auth):
+    #         raise PermissionsError(
+    #             '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+    #         )
+    #
+    #     if Node.objects.get_children(self, active=True):
+    #         raise NodeStateError('Any child components must be deleted prior to deleting this project.')
+    #
+    #     # After delete callback
+    #     for addon in self.get_addons():
+    #         message = addon.after_delete(self, auth.user)
+    #         if message:
+    #             status.push_status_message(message, kind='info', trust=False)
+    #
+    #     log_date = date or timezone.now()
+    #
+    #     # Add log to parent
+    #     if self.parent_node:
+    #         self.parent_node.add_log(
+    #             NodeLog.NODE_REMOVED,
+    #             params={
+    #                 'project': self._primary_key,
+    #             },
+    #             auth=auth,
+    #             log_date=log_date,
+    #             save=True,
+    #         )
+    #     else:
+    #         self.add_log(
+    #             NodeLog.PROJECT_DELETED,
+    #             params={
+    #                 'project': self._primary_key,
+    #             },
+    #             auth=auth,
+    #             log_date=log_date,
+    #             save=True,
+    #         )
+    #
+    #     self.is_deleted = True
+    #     self.deleted_date = date
+    #     self.save()
+    #
+    #     project_signals.node_deleted.send(self)
+    #
+    #     return True
+
+
     def can_view(self, auth):
-        if not auth and not self.is_published:
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return auth.private_link.nodes.filter(pk=self.pk).exists()
+
+        if not auth and not self.is_public:
             return False
 
-        return (self.is_published or
-                (auth.user and self.has_permission(auth.user, 'read')))
+        return (self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read')) or
+                auth.private_key in self.private_link_keys_active or
+                self.is_admin_parent(auth.user))
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1000,6 +1067,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+
         if not self.has_permission(user, permission):
             self.get_group(permission).user_set.add(user)
         elif self.has_permission(user, permission):
