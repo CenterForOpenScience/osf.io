@@ -604,7 +604,6 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
-        # import pdb; pdb.set_trace()
 
         if finish:
             auth = Auth(user)
