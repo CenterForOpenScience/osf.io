@@ -234,17 +234,6 @@ CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
     subject='Your access request to an OSF project has been approved.'
 )
-PREPRINT_CONFIRMATION_DEFAULT = Mail(
-    'preprint_confirmation_default',
-    subject="You've shared a preprint on OSF preprints"
-)
-PREPRINT_CONFIRMATION_BRANDED = lambda provider: Mail(
-    'preprint_confirmation_branded',
-    subject="You've shared {} {} on {}".format(
-        get_english_article(provider.preprint_word),
-        provider.preprint_word, provider.name
-    )
-)
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
