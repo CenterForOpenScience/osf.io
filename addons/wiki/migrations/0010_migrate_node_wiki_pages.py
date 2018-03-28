@@ -36,10 +36,12 @@ def reverse_func(state, schema):
             if version_list:
                 for index, version in enumerate(version_list):
                     nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
+                    # All NodeWikiPages associated with a certain wiki key on a node point to the same WikiPage.
                     wp = WikiPage.load(version)
                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
                     guid.save()
                     nwp = guid.referent
+                # Moved only for last item in wiki_pages_versions array for every page_name, NWP->WP is a many-to-one mapping. NWP->WV is a one-to-one mapping.
                 move_comment_target(Guid.load(wp._id), nwp)
                 update_comments_viewed_timestamp(node, wp._id, nwp)
     progress_bar.finish()
