@@ -594,7 +594,7 @@ class PreprintFactory(DjangoModelFactory):
         if not instance.is_contributor(user):
             instance.add_contributor(
                 contributor=user,
-                permissions='admin',
+                permission='admin',
                 log=False,
             )
             instance.save()
