@@ -29,7 +29,7 @@ def reverse_func(state, schema):
     nwp_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
 
     nodes = AbstractNode.objects.exclude(wiki_pages_versions={})
-    progress_bar = progressbar.ProgressBar(maxval=nodes.count()).start()
+    progress_bar = progressbar.ProgressBar(maxval=nodes.count() or 100).start()
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
@@ -188,7 +188,7 @@ def create_guids(state, schema):
     global WIKI_PAGE_GUIDS
     then = time.time()
     content_type = ContentType.objects.get_for_model(WikiPage)
-    progress_bar = progressbar.ProgressBar(maxval=WikiPage.objects.count()).start()
+    progress_bar = progressbar.ProgressBar(maxval=WikiPage.objects.count() or 100).start()
     logger.info('Creating new guids for all WikiPages:')
     for i, wiki_page_id in enumerate(WikiPage.objects.values_list('id', flat=True), 1):
         # looping instead of bulk_create, so _id's are not the same
