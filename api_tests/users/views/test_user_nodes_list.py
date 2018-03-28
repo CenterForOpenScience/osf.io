@@ -1,5 +1,7 @@
 import pytest
 
+from django.utils.timezone import now
+
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from osf_tests.factories import (
@@ -60,7 +62,7 @@ class TestUserNodes:
             title='Deleted Project User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def folder(self):
@@ -72,7 +74,7 @@ class TestUserNodes:
             title='Deleted Folder User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def bookmark_collection(self, user_one):

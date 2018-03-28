@@ -29,7 +29,7 @@ from osf.utils.sanitize import strip_html
 from website import settings, mails, language
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError
-from osf.models.preprint_provider import PreprintProvider
+from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 
 @block_bing_preview

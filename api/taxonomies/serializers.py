@@ -15,6 +15,28 @@ class TaxonomyField(ser.Field):
     def to_internal_value(self, subject_id):
         return subject_id
 
+
+class TaxonomizableSerializerMixin(ser.Serializer):
+    """ Mixin for Taxonomizable objects
+
+    Note: subclasses will need to update `filterable_fields` and `update`
+    to handle subjects correctly.
+    """
+    writeable_method_fields = frozenset([
+        'subjects'
+    ])
+
+    subjects = ser.SerializerMethodField()
+
+    def get_subjects(self, obj):
+        from api.taxonomies.serializers import TaxonomyField
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
+
+
 class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'text',

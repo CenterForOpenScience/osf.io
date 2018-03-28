@@ -194,6 +194,10 @@ CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
     subject='Open Science Framework Account Verification, OSF Registries'
 )
+CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
+    'confirm_moderation',
+    subject='Open Science Framework Account Verification, {}'.format(provider.name)
+)
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
@@ -221,6 +225,10 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
+)
+MODERATOR_ADDED = lambda provider: Mail(
+    'moderator_added',
+    subject='You have been added as a moderator for {}'.format(provider.name)
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
