@@ -74,7 +74,7 @@ class TestValidProject(OsfTestCase):
 
     def test_collection_guid_not_found(self):
         collection = CollectionFactory()
-        collection.add_pointer(self.project, self.auth)
+        collection.collect_object(self.project, self.auth.user)
         with assert_raises(HTTPError) as exc_info:
             valid_project_helper(pid=collection._id, nid=collection._id)
         assert_equal(exc_info.exception.code, 404)

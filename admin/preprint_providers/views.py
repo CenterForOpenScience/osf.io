@@ -18,7 +18,7 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
-from osf.models.preprint_provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects
 from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False

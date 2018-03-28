@@ -16,7 +16,7 @@ $(function() {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
-        defaultText: 'add a tag to enhance discoverability',
+        defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function (tag) {
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });

@@ -53,7 +53,9 @@
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
       <div data-bind="visible: loadingDrafts" class="spinner-loading-wrapper">
-        <div class="logo-spin logo-lg"></div>
+        <div class="ball-scale ball-scale-blue">
+          <div></div>
+        </div>
       </div>
       <form id="newDraftRegistrationForm" method="POST" style="display:none">
         <!-- ko if: selectedSchema() -->

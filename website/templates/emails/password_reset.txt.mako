@@ -6,7 +6,7 @@ If you did not request this action or you believe an unauthorized person has acc
 
 https://osf.io/settings/account/
 
-If you need additional help or have questions, let us know at contact@cos.io.
+If you need additional help or have questions, let us know at ${osf_contact_email}.
 
 Sincerely yours,
 

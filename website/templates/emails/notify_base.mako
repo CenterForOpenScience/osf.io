@@ -21,10 +21,7 @@
                                 <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                     <tr>
                                         <td style="border-collapse: collapse;">
-                                            <img src="https://osf.io/static/img/cos-white2.png" alt="COS logo" width="36" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
-                                        </td>
-                                        <td style="border-collapse: collapse;">
-                                            <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left; color:white;">Open Science Framework</h2>
+                                            <img src="https://osf.io/static/img/osf_logo.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                         </td>
                                     </tr>
                                 </table>
@@ -46,7 +43,12 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a>. </p>
+                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
+                                % if context.get('can_change_node_preferences', False) and node:
+                                    this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
+                                % endif
+                                your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
+                            </p>
                         </td>
                     </tr>
                 </tbody>
