@@ -24,11 +24,12 @@ def determine_comments_that_should_be_repointed():
     comments_count_target = 0
     for node in AbstractNode.objects.exclude(wiki_pages_versions={}):
         for key, version_list in node.wiki_pages_versions.iteritems():
-            nwp_guid  = Guid.load(version_list[-1])
-            comments_count_root_target += Comment.objects.filter(Q(root_target=nwp_guid)).count()
-            comments_count_target += Comment.objects.filter(Q(target=nwp_guid)).count()
+            for version in version_list:
+                nwp_guid = Guid.load(version)
+                comments_count_root_target += Comment.objects.filter(Q(root_target=nwp_guid)).count()
+                comments_count_target += Comment.objects.filter(Q(target=nwp_guid)).count()
     print "Comments with root targets as NWP that should be repointed: {}".format(comments_count_root_target)
-    print "Comments with NWP targets that should be repointed".format(comments_count_target)
+    print "Comments with NWP targets that should be repointed: {}".format(comments_count_target)
     return comments_count_root_target, comments_count_target
 
 def determine_comments_viewed_timestamps_that_should_change():
