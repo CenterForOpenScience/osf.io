@@ -2890,13 +2890,17 @@ markdown-it-ins-del@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/markdown-it-ins-del/-/markdown-it-ins-del-0.1.1.tgz#8b421d8e788ee84a1d572eb3fcc0028ce431c9ea"
 
+"markdown-it-mfr@git://github.com/johnetordoff/markdown-it-mfr.git#develop":
+  version "0.0.1"
+  resolved "git://github.com/johnetordoff/markdown-it-mfr.git#4ad2cbe05d3fbc0d38fa8c138d7ddc7a4da8dc1a"
+
 markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/markdown-it-sanitizer/-/markdown-it-sanitizer-0.3.2.tgz#052cb45504d39737829c83e84e2f18cc1905d9dc"
 
-markdown-it-video@~0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.2.tgz#35ba1345655321f47b94dbff328d111f58c75d6d"
+markdown-it-video@~0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.5.1.tgz#2dd84e806690eb06ce6b03f96106f548a9c52b50"
 
 markdown-it@~4.1.0:
   version "4.1.2"
