@@ -143,7 +143,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         saved_fields = self.get_dirty_fields() or []
         ret = super(Collection, self).save(*args, **kwargs)
 
-        if 'is_public' in saved_fields:
+        if 'is_public' in saved_fields and not first_save:
             cgms = list(self.collectedguidmetadata_set.all())
 
             if self.is_public:
