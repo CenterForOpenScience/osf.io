@@ -93,6 +93,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
                 file.get_guid(create=True)
         return file
 
+
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_versions).
     """
@@ -112,7 +113,13 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_file().versions.all()
+        self.file = self.get_file()
+        return self.file.versions.all()
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['file'] = self.file
+        return context
 
 
 def node_from_version(request, view, obj):
@@ -138,10 +145,15 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        file = self.get_file()
-        maybe_version = file.get_version(self.kwargs[self.version_lookup_url_kwarg])
+        self.file = self.get_file()
+        maybe_version = self.file.get_version(self.kwargs[self.version_lookup_url_kwarg])
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
         return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['file'] = self.file
+        return context

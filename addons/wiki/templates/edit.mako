@@ -47,7 +47,9 @@
                 </div>
                 <div id="grid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
@@ -165,6 +167,9 @@
                                 <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
+                              <div id="aceLoadingBall" class="ball-scale ball-scale-blue absolute-center">
+                                  <div></div>
+                              </div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
@@ -244,6 +249,7 @@
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
 
+
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -261,7 +267,9 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="spinner-loading-wrapper">
-                <div class="logo-spin logo-xl"></div>
+                <div class="ball-scale ball-scale-blue">
+                    <div></div>
+                </div>
                  <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
             </div>
         </div>
@@ -402,5 +410,7 @@ ${parent.javascript_bottom()}
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
+<link href="${mfr_url}/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="${mfr_url}/static/js/mfr.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>

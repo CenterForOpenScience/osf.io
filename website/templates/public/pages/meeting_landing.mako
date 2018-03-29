@@ -46,7 +46,7 @@
                     <div class="collapse" id="osf-meeting-register">
                         <div class="m-lg osf-box-lt p-md text-left">
                             <p>OSF Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
-                                <p class="text-center"><strong> Email us at <a href="mailto:contact@cos.io">contact@cos.io</a> </strong></p>
+                                <p class="text-center"><strong> Email us at <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> </strong></p>
                              <p>We'll review and add your conference within one business day.</p>
                         </div>
                     </div>
@@ -106,7 +106,9 @@
 
                             <div id="submissions-grid">
                                 <div id="allMeetingsLoader" class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
+                                    <div class="ball-scale ball-scale-blue">
+                                        <div></div>
+                                    </div>
                                     <p class="m-t-sm fg-load-message"> Loading submissions...</p>
                                 </div>
                             </div>
