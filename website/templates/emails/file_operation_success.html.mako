@@ -1,4 +1,7 @@
 <!doctype html>
+<%!
+    from website import settings
+%>
 <html class="no-js" lang="">
 <head>
     <meta charset="utf-8">
@@ -19,7 +22,11 @@
                             <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                 <tr>
                                     <td style="border-collapse: collapse;">
-                                        <img src="https://osf.io/static/img/${logo}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                        % if context.get('logo', settings.OSF_LOGO) not in settings.OSF_LOGO_LIST:
+                                            <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/${settings.OSF_ASSETS_COMMIT_HASH}/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                        %else:
+                                            <img src="https://osf.io/static/img/${context.get('logo', settings.OSF_LOGO)}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                        % endif
                                     </td>
                                 </tr>
                             </table>
