@@ -2972,7 +2972,7 @@ def remove_addons(auth, resource_object_list):
             settings_model = None
 
         if settings_model:
-            addon_list = settings_model.objects.filter(owner__in=resource_object_list)
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
             for addon in addon_list:
                 addon.after_delete(auth.user)
 
