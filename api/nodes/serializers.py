@@ -221,6 +221,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
+    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -385,6 +386,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
+
+    def get_current_user_is_contributor(self, obj):
+        user = self.context['request'].user
+        user = None if user.is_anonymous else user
+        return obj.is_contributor(user)
 
     class Meta:
         type_ = 'nodes'
