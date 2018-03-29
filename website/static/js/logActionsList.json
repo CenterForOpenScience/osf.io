@@ -77,6 +77,7 @@
     "preprint_initiated": "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints",
     "preprint_file_updated": "${user} updated the primary file of this ${preprint} on ${preprint_provider} Preprints",
     "preprint_license_updated": "${user} updated the license of this ${preprint} on ${preprint_provider} Preprints ${license}",
+    "subjects_updated": "${user} updated the subjects on ${node} to ${subjects}",
     "view_only_link_added": "${user} created ${anonymous_link} view-only link to ${node}",
     "view_only_link_removed": "${user} removed ${anonymous_link} view-only link to ${node}"
 }

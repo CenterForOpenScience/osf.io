@@ -225,10 +225,8 @@ class TestODMTitleSearch(OsfTestCase):
         self.project_two = factories.ProjectFactory(creator=self.user_two, title='bar')
         self.public_project = factories.ProjectFactory(creator=self.user_two, is_public=True, title='baz')
         self.registration_project = factories.RegistrationFactory(creator=self.user, title='qux')
-        self.folder = factories.CollectionFactory(creator=self.user, title='quux', category='project')
+        self.folder = factories.CollectionFactory(creator=self.user, title='quux')
         self.dashboard = find_bookmark_collection(self.user)
-        self.dashboard.category = 'project'
-        self.dashboard.save()
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
@@ -303,7 +301,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 200)
+        assert len(res.json) == 0
         res = self.app.get(self.url,
                            {
                                'term': self.folder.title,
@@ -329,4 +328,5 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)

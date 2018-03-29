@@ -315,29 +315,25 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
         _, count = get_basic_counters(page)
 
         return count or 0
+
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
 
     def get_view_count(self, version=None):
-        """Pull the mfr view count from the pagecounter collection
-        Limit to version if specified.
-        """
-        parts = ['view', self.node._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
-
-        return count or 0
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
@@ -502,6 +498,27 @@ class File(models.Model):
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
 
+    @property
+    def last_known_metadata(self):
+        try:
+            last_history = self._history[-1]
+        except IndexError:
+            size = None
+        else:
+            size = last_history.get('size', None)
+        return {
+            'path': self._materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.last_touched
+        }
+
+    @property
+    def _hashes(self):
+        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        Returns dict or None
+        """
+        return None
 
 class Folder(models.Model):
 
@@ -595,6 +612,30 @@ class TrashedFile(TrashedFileNode):
     def kind(self):
         return 'file'
 
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
 
 class TrashedFolder(TrashedFileNode):
     @property

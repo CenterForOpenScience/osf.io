@@ -332,7 +332,7 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_non_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
-        request_url = 'http://localhost:7777/v1/resources/test1/providers/osfstorage/testfile?version=1'
+        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
@@ -375,7 +375,7 @@ class TestAddonLogs(OsfTestCase):
 
     def test_action_download_mfr_views_non_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
-        request_url = 'http://localhost:7777/v1/resources/test1/providers/osfstorage/testfile?version=1'
+        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
 
         payload = self.build_payload(metadata={'path': '/testfile',
                                                'nid': self.node._id},

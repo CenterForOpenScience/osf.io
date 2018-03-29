@@ -186,7 +186,7 @@
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
-                    <span data-bind="if: hasDoi()" class="scripted">
+                <span data-bind="if: hasDoi()" class="scripted">
                   <p>
                     <span data-bind="text:identifier"></span>:
                   DOI <span data-bind="text: doi"></span>
@@ -347,7 +347,9 @@
             %endif
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
                              <p class="m-t-sm fg-load-message"> Loading files...  </p>
                         </div>
                     </div>
@@ -432,7 +434,9 @@
             <div class="panel-body">
                 <div id="logFeed">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>
