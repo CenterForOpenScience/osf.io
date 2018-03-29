@@ -20,6 +20,7 @@ def use_ember_app(**kwargs):
         resp = Response(stream_with_context(resp.iter_content()), resp.status_code)
     else:
         resp = send_from_directory(ember_osf_web_dir, 'index.html')
-    status = [{'id': stat[5] if stat[5] else stat[0], 'class': stat[2], 'jumbo': stat[1], 'dismiss': stat[3], 'extra': stat[6]} for stat in session.data.get('status')]
-    resp.set_cookie('status', json.dumps(status))
+    if session.data.get('status'):
+        status = [{'id': stat[5] if stat[5] else stat[0], 'class': stat[2], 'jumbo': stat[1], 'dismiss': stat[3], 'extra': stat[6]} for stat in session.data['status']]
+        resp.set_cookie('status', json.dumps(status))
     return resp
