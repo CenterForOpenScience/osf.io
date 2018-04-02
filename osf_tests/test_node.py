@@ -35,7 +35,6 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
 from framework.auth.core import Auth
 
@@ -59,7 +58,7 @@ from osf_tests.factories import (
     TagFactory,
 )
 from .factories import get_default_metaschema
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
 
 pytestmark = pytest.mark.django_db
@@ -2852,26 +2851,34 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.wiki_pages_versions == {}
-        assert fork.wiki_pages_current == {}
+        assert fork.get_wiki_pages_latest().exists() is False
+        assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
     def test_forking_clones_project_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user, is_public=True)
         # TODO: Unmock when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            wiki = NodeWikiFactory(node=project)
-            current_wiki = NodeWikiFactory(node=project, version=2)
+            wiki_page = WikiFactory(
+                user=user,
+                node=project,
+            )
+            wiki = WikiVersionFactory(
+                wiki_page=wiki_page,
+            )
+            current_wiki = WikiVersionFactory(wiki_page=wiki_page, identifier=2)
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
-        assert registration_wiki_current.node == fork
-        assert registration_wiki_current._id != current_wiki._id
+        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        assert fork_wiki_current.wiki_page.node == fork
+        assert fork_wiki_current._id != current_wiki._id
+        assert fork_wiki_current.identifier == 2
 
-        registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
-        assert registration_wiki_version.node == fork
-        assert registration_wiki_version._id != wiki._id
+        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        assert fork_wiki_version.wiki_page.node == fork
+        assert fork_wiki_version._id != wiki._id
+        assert fork_wiki_version.identifier == 1
 
 class TestContributorOrdering:
 
@@ -3787,10 +3794,13 @@ class TestTemplateNode:
         new = project.use_as_template(
             auth=auth
         )
-        assert 'template' in project.wiki_pages_current
-        assert 'template' in project.wiki_pages_versions
-        assert new.wiki_pages_current == {}
-        assert new.wiki_pages_versions == {}
+        assert project.get_wiki_page('template').page_name == 'template'
+        latest_version = project.get_wiki_version('template')
+        assert latest_version.identifier == 1
+        assert latest_version.is_current is True
+
+        assert new.get_wiki_page('template') is None
+        assert new.get_wiki_version('template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)
