@@ -6,6 +6,7 @@ from rest_framework import permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
 from api.base.permissions import TokenHasScope
+from api.base.pagination import MaxSizePagination
 from api.waffle.serializers import WaffleSerializer
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -59,6 +60,7 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = WaffleSerializer
     view_category = 'waffle'
     view_name = 'waffle-list'
+    pagination_class = MaxSizePagination
 
     # overrides ListAPIView
     def get_queryset(self):

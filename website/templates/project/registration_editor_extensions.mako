@@ -16,7 +16,9 @@
   </div>
   <div data-bind="attr: {id: $data.uid}, osfUploader"><!-- TODO: osfUploader attribute may not connect to anything? -->
     <div class="spinner-loading-wrapper">
-      <div class="logo-spin logo-lg"></div>
+      <div class="ball-scale ball-scale-blue">
+          <div></div>
+      </div>
       <p class="m-t-sm fg-load-message"> Loading files...  </p>
     </div>
   </div>
@@ -43,8 +45,12 @@
   <span data-bind="visible: showUploader">
     <div data-bind="attr: {id: $data.uid}, osfUploader">
       <div class="container">
-	<p class="m-t-sm fg-load-message">
-          <span class="logo-spin logo-sm"></span>  Loading files...
+	      <p class="m-t-sm fg-load-message">
+          <span class="ball-pulse ball-scale-blue">
+              <div></div>
+              <div></div>
+              <div></div>
+          </span>  Loading files...
         </p>
       </div>
     </div>

@@ -4,7 +4,7 @@ from django.views.generic import ListView, UpdateView
 
 from admin.subjects.forms import SubjectForm
 from osf.models.subject import Subject
-from osf.models.preprint_provider import PreprintProvider
+from osf.models.provider import PreprintProvider
 
 
 class SubjectListView(PermissionRequiredMixin, ListView):

@@ -22,6 +22,7 @@
         <div class="text-center m-t-lg">
             <h3>OSF Registries</h3><hr>
             <p>Please login to the Open Science Framework or create a free account to continue.</p>
+        </div>
     %endif
 
     %if campaign == "osf-preprints":
@@ -52,6 +53,13 @@
                         </tr>
                     </table>
                 %elif campaign == "osf-registries":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3>Create a free OSF account</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "osf-registered-reports":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>

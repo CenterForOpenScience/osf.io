@@ -5,6 +5,7 @@ import urlparse
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
+from django.utils.timezone import now
 
 from osf.utils.sanitize import strip_html
 from osf.models import QuickFilesNode
@@ -165,7 +166,7 @@ class TestUserRoutesNodeRoutes:
             title='Deleted Project User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def project_public_user_two(self, user_two):
@@ -191,7 +192,7 @@ class TestUserRoutesNodeRoutes:
             title='Deleted Folder User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def bookmark_collection(self, user_one):

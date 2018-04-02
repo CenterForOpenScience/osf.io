@@ -392,14 +392,19 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
-    def get_user_logs_since_workshop(user, workshop_date):
+    def get_num_logs_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return NodeLog.objects.filter(user=user, date__gt=query_date)
+        return NodeLog.objects.filter(user=user, date__gt=query_date).count()
 
     @staticmethod
-    def get_user_nodes_since_workshop(user, workshop_date):
+    def get_num_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, created__gt=query_date)
+        return Node.objects.filter(creator=user, created__gt=query_date).count()
+
+    @staticmethod
+    def get_user_latest_log(user, workshop_date):
+        query_date = workshop_date + timedelta(days=1)
+        return NodeLog.objects.filter(user=user, date__gt=query_date).latest('date')
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -442,12 +447,12 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
                 user = user_by_email
 
             workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
-            nodes = self.get_user_nodes_since_workshop(user, workshop_date)
-            user_logs = self.get_user_logs_since_workshop(user, workshop_date)
-            last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''
+            nodes = self.get_num_nodes_since_workshop(user, workshop_date)
+            user_logs = self.get_num_logs_since_workshop(user, workshop_date)
+            last_log_date = self.get_user_latest_log(user, workshop_date).date.strftime('%m/%d/%y') if user_logs else ''
 
             row.extend([
-                user.pk, len(user_logs), len(nodes), last_log_date
+                user._id, user_logs, nodes, last_log_date
             ])
             result.append(row)
 

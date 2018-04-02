@@ -187,6 +187,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     model_class = apps.get_model('osf.AbstractNode')
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
@@ -955,7 +957,21 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
+        if 'info' in self.request.query_params and path.endswith('/'):
+            fobj = self.fetch_from_waterbutler()
+
+            if isinstance(fobj, list):
+                node = self.get_node(check_object_permissions=False)
+                base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
+                return base_class.objects.filter(node=node, _path=path)
+            elif isinstance(fobj, OsfStorageFolder):
+                return BaseFileNode.objects.filter(id=fobj.id)
+            else:
+                raise NotFound
+        else:
+            return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
@@ -1732,6 +1748,9 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
+
+    view_category = 'nodes'
+    view_name = 'identifier-list'
 
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
