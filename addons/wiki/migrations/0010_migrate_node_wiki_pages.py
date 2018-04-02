@@ -311,7 +311,7 @@ def create_wiki_versions_and_repoint_comments_sql(state, schema):
             -- Migrate Comments on NodeWikiPages to point to WikiPages
 
             -- Create temporary view to store mapping of NodeWikiPage's Guid.pk => WikiPage.id
-            CREATE VIEW nwp_guids_to_wp_id AS (
+            CREATE OR REPLACE TEMPORARY VIEW nwp_guids_to_wp_id AS (
                 SELECT
                 osf_guid.id as nwp_guid_id,
                 twv.wiki_page_id
@@ -321,7 +321,7 @@ def create_wiki_versions_and_repoint_comments_sql(state, schema):
             );
 
             -- Use above view to construct a mapping between NodeWikiPage GUID pk => WikiPage GUID pk
-            CREATE VIEW nwp_guids_to_wiki_page_guids as (
+            CREATE OR REPLACE TEMPORARY VIEW nwp_guids_to_wiki_page_guids as (
                 SELECT
                 nwp_guids_to_wp_id.nwp_guid_id as nwp_guid_id,
                 osf_guid.id as wiki_page_guid_id
