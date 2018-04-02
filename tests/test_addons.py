@@ -637,6 +637,32 @@ class TestAddonFileViews(OsfTestCase):
         ret.versions.add(version)
         return ret
 
+    def get_uppercased_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
+    def get_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
@@ -679,7 +705,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
 
-    def test_action_download_redirects_to_download(self):
+    def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
@@ -688,6 +714,28 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version=''))
+
+    def test_action_download_redirects_to_download_with_path(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
+
+    def test_action_download_redirects_to_download_with_path_uppercase(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
 
     def test_action_download_redirects_to_download_with_version(self):
         file_node = self.get_test_file()
