@@ -226,7 +226,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
     @pytest.fixture()
     def project_private_dict(self, user):
         project_private = ProjectFactory(is_public=False, creator=user)
-        wiki_page_private = WikiFactory(node=project_private, user=user)
+        wiki_page_private = WikiFactory(node=project_private, user=user, page_name='Charmander')
         comment_private = CommentFactory(
             node=project_private, user=user, target=Guid.load(
                 wiki_page_private._id), page='wiki')

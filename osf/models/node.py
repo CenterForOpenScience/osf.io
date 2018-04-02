@@ -2777,6 +2777,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         self.save()
 
+        return wiki_page, new_version
+
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
         """Rename the node's wiki page with new name.
@@ -2835,8 +2837,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=True,
         )
 
-    def delete_node_wiki(self, name, auth):
-        page = self.get_wiki_page(name)
+        return page
+
+    def delete_node_wiki(self, name_or_page, auth):
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+        page = name_or_page
+        if not isinstance(name_or_page, WikiPage):
+            page = self.get_wiki_page(name_or_page)
+        if page.page_name.lower() == 'home':
+            raise ValidationError('The home wiki page cannot be deleted.')
         page.deleted = timezone.now()
         page.save()
 
@@ -2845,7 +2854,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': name,
+                'page': page.page_name,
                 'page_id': page._primary_key,
             },
             auth=auth,

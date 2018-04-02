@@ -314,18 +314,18 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        self.wiki_page = self.project.get_wiki_page('home')
+        self.project.update_node_wiki('not home', 'Hello world', self.auth)
+        self.wiki_page = self.project.get_wiki_page('not home')
 
     def test_delete_log(self):
         # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
+        self.project.delete_node_wiki('not home', self.auth)
         # Deletion is logged
         assert self.project.logs.latest().action == 'wiki_deleted'
 
     def test_delete_log_specifics(self):
-        page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.auth)
+        page = self.project.get_wiki_page('not home')
+        self.project.delete_node_wiki('not home', self.auth)
         log = self.project.logs.latest()
         assert 'wiki_deleted' == log.action
         assert page._primary_key == log.params['page_id']
@@ -336,23 +336,23 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Delete wiki
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.project.delete_node_wiki('home', self.auth)
+            self.project.delete_node_wiki('not home', self.auth)
         # Number of versions is still correct
         self.wiki_page.reload()
         assert self.wiki_page.deleted == mock_now
         assert self.wiki_page.current_version_number == 1
         # get_wiki_page only returns non-deleted wikis
-        assert self.project.get_wiki_page('home') is None
+        assert self.project.get_wiki_page('not home') is None
 
     def test_wiki_delete(self):
-        page = self.project.get_wiki_page('home')
+        page = self.project.get_wiki_page('not home')
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.project.delete_node_wiki('home', self.auth)
+            self.project.delete_node_wiki('not home', self.auth)
         # page was deleted
         page.reload()
         assert page.deleted == mock_now
-        assert self.project.get_wiki_page('home') is None
+        assert self.project.get_wiki_page('not home') is None
 
         log = self.project.logs.latest()
 
@@ -363,10 +363,10 @@ class TestDeleteNodeWiki(OsfTestCase):
 
     def test_deleted_versions(self):
         # Update wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
-        assert self.project.get_wiki_version('home', 2).content == 'Hola mundo'
+        self.project.update_node_wiki('not home', 'Hola mundo', self.auth)
+        assert self.project.get_wiki_version('not home', 2).content == 'Hola mundo'
         # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
+        self.project.delete_node_wiki('not home', self.auth)
         # Check versions
-        assert self.project.get_wiki_version('home', 2) == None
-        assert self.project.get_wiki_version('home', 1) == None
+        assert self.project.get_wiki_version('not home', 2) == None
+        assert self.project.get_wiki_version('not home', 1) == None

@@ -1412,7 +1412,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         return ret
 
 
-class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
+class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_wikis_list).
     """
 
@@ -1424,7 +1424,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
     serializer_class = NodeWikiSerializer
 
     view_category = 'nodes'
@@ -1437,6 +1437,9 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        return serializer.save(node=self.get_node())
 
 
 class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):

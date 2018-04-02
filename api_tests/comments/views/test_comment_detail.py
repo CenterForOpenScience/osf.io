@@ -882,6 +882,7 @@ class TestWikiCommentDetailView(CommentDetailMixin):
             wiki = WikiFactory(
                 user=user,
                 node=private_project,
+                page_name='not home'
             )
             return wiki
 

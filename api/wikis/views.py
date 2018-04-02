@@ -1,15 +1,22 @@
+from django.core import exceptions as django_exceptions
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError, MethodNotAllowed
 from rest_framework.views import Response
 
 from framework.auth.oauth_scopes import CoreScopes
-from website.files.exceptions import VersionNotFoundError
+
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import Gone
+from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
 from api.base.renderers import PlainTextRenderer
-from api.wikis.permissions import ContributorOrPublic, ExcludeWithdrawals, ContributorOrPublicWikiVersion, ExcludeWithdrawalsWikiVersion
+from api.wikis.permissions import (
+    ContributorOrPublic,
+    ExcludeWithdrawals,
+    ContributorOrPublicWikiVersion,
+    ExcludeWithdrawalsWikiVersion,
+)
 from api.wikis.serializers import (
     WikiSerializer,
     WikiVersionSerializer,
@@ -17,6 +24,8 @@ from api.wikis.serializers import (
     RegistrationWikiDetailSerializer,
 )
 from addons.wiki.models import WikiPage
+
+from website.files.exceptions import VersionNotFoundError
 
 
 class WikiMixin(object):
@@ -35,6 +44,9 @@ class WikiMixin(object):
 
         if wiki.deleted:
             raise Gone
+
+        if wiki.node.is_registration and self.request.method not in drf_permissions.SAFE_METHODS:
+            raise MethodNotAllowed(method=self.request.method)
 
         if check_permissions:
             # May raise a permission denied
@@ -55,8 +67,8 @@ class WikiMixin(object):
             raise NotFound
 
 
-class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
-    """Details about a specific wiki. *Read-only*.
+class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMixin):
+    """Details about a specific wiki.
 
     ###Permissions
 
@@ -116,7 +128,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
 
     serializer_class = NodeWikiDetailSerializer
     view_category = 'wikis'
@@ -130,6 +142,15 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_wiki()
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        wiki_page = self.get_object()
+        try:
+            wiki_page.node.delete_node_wiki(wiki_page, auth)
+        except django_exceptions.ValidationError as err:
+            raise ValidationError(err.message)
 
 
 class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
@@ -157,7 +178,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         return Response(wiki.get_version().content)
 
 
-class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
+class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
     """
     View for rendering all versions of a particular WikiPage
     """
@@ -173,10 +194,13 @@ class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
     serializer_class = WikiVersionSerializer
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
 
     def get_queryset(self):
         return self.get_wiki().get_versions()
+
+    def perform_create(self, serializer):
+        serializer.save(content=self.request.data.get('content'))
 
 
 class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
