@@ -2762,8 +2762,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.all()[0]).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.all()[0]).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
@@ -2866,8 +2866,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             del self.wiki_pages_versions[key]
 
         Comment = apps.get_model('osf.Comment')
-        if Comment.objects.filter(root_target=page.guids.all()[0]).exists():
-            Comment.objects.filter(root_target=page.guids.all()[0]).update(root_target=None)
+        if Comment.objects.filter(root_target=page.guids.first()).exists():
+            Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
