@@ -14,12 +14,6 @@ from osf.models import Comment, Guid, AbstractNode
 
 logger = logging.getLogger(__name__)
 
-# Cache of WikiPage id => guid, of the form
-# {
-#     <id>: <guid_pk>
-#
-# }
-WIKI_PAGE_GUIDS = {}
 
 def reverse_func(state, schema):
     """
@@ -185,7 +179,6 @@ def create_wiki_pages_sql(state, schema):
     logger.info('Finished migration of WikiPages [SQL]: {:.5} seconds'.format(now - then))
 
 def create_guids(state, schema):
-    global WIKI_PAGE_GUIDS
     then = time.time()
     content_type = ContentType.objects.get_for_model(WikiPage)
     progress_bar = progressbar.ProgressBar(maxval=WikiPage.objects.count() or 100).start()
@@ -193,8 +186,7 @@ def create_guids(state, schema):
     for i, wiki_page_id in enumerate(WikiPage.objects.values_list('id', flat=True), 1):
         # looping instead of bulk_create, so _id's are not the same
         progress_bar.update(i)
-        guid = Guid.objects.create(object_id=wiki_page_id, content_type_id=content_type.id)
-        WIKI_PAGE_GUIDS[wiki_page_id] = guid.id
+        Guid.objects.create(object_id=wiki_page_id, content_type_id=content_type.id)
     progress_bar.finish()
     now = time.time()
     logger.info('WikiPage guids created: {:.5} seconds'.format(now - then))
