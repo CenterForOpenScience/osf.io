@@ -5,6 +5,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
+from django.apps import apps
 from django.db import models
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
@@ -385,6 +386,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 child.delete(user=user, save=save, deleted_on=deleted_on)
         else:
             self.recast(TrashedFile._typedmodels_type)
+
+        Comment = apps.get_model('osf.Comment')
+        if Comment.objects.filter(root_target=self.guids.all()[0]).exists():
+            Comment.objects.filter(root_target=self.guids.all()[0]).update(root_target=None)
 
         if save:
             self.save()

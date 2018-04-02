@@ -1253,14 +1253,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
             operation['value'] = Guid.load(operation['value'])
 
     def get_queryset(self):
-        comments = self.get_queryset_from_request()
-        for comment in comments:
-            # Deleted root targets still appear as tuples in the database,
-            # but need to be None in order for the query to be correct.
-            if comment.root_target.referent.is_deleted:
-                comment.root_target = None
-                comment.save()
-        return comments
+        return self.get_queryset_from_request()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

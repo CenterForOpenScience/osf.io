@@ -36,12 +36,6 @@ class CommentMixin(object):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
 
-        # Deleted root targets still appear as tuples in the database and are included in
-        # the above query, requiring an additional check
-        if comment.root_target.referent.is_deleted:
-            comment.root_target = None
-            comment.save()
-
         if comment.root_target is None:
             raise NotFound
 
