@@ -11,7 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
@@ -84,7 +84,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get(url, auth=user.auth)
         assert 'reviews_state_counts' not in res.json['meta']
 
-        provider_one.add_moderator(user)
+        provider_one.add_to_group(user, 'moderator')
 
         # moderators can see counts
         res = app.get(url, auth=user.auth)

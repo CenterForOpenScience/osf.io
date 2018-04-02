@@ -16,7 +16,9 @@
   </div>
   <div data-bind="attr: {id: $data.uid}, osfUploader"><!-- TODO: osfUploader attribute may not connect to anything? -->
     <div class="spinner-loading-wrapper">
-      <div class="logo-spin logo-lg"></div>
+      <div class="ball-scale ball-scale-blue">
+          <div></div>
+      </div>
       <p class="m-t-sm fg-load-message"> Loading files...  </p>
     </div>
   </div>
@@ -32,14 +34,23 @@
             <button data-bind="click: $parent.unselectFile"
                     style="margin-left: 5px;"
                     class="btn btn-xs btn-danger fa fa-times"></button>
+            <br />
+            <div data-bind="visible: $parent.descriptionVisible">
+                <p>Description: (optional)</p>
+                <input data-bind="valueUpdate: 'keyup', value: data.descriptionValue" type="text" class="form-control">
+            </div>
         </div>
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
     <div data-bind="attr: {id: $data.uid}, osfUploader">
       <div class="container">
-	<p class="m-t-sm fg-load-message">
-          <span class="logo-spin logo-sm"></span>  Loading files...
+	      <p class="m-t-sm fg-load-message">
+          <span class="ball-pulse ball-scale-blue">
+              <div></div>
+              <div></div>
+              <div></div>
+          </span>  Loading files...
         </p>
       </div>
     </div>

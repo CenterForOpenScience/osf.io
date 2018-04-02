@@ -83,6 +83,8 @@ PREPRINT_PROVIDER_DOMAINS = {
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 PROXY_EMBER_APPS = False
+# http://docs.python-requests.org/en/master/user/advanced/#timeouts
+EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
@@ -132,6 +134,8 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'contact@osf.io'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'

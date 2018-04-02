@@ -6,7 +6,7 @@ from django.utils import timezone
 from website import mails
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
-from website.util.time import throttle_period_expired
+from framework.utils import throttle_period_expired
 
 
 mutex = threading.Lock()
@@ -78,6 +78,16 @@ def get_campaigns():
                 'osf-registries': {
                     'system_tag': 'osf_registries',
                     'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
+                    'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
+                    'login_type': 'proxy',
+                    'provider': 'osf',
+                }
+            })
+
+            newest_campaigns.update({
+                'osf-registered-reports': {
+                    'system_tag': 'osf_registered_reports',
+                    'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',

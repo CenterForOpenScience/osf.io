@@ -540,6 +540,12 @@ var LogPieces = {
         }
     },
 
+    library_name: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('library_name', 'a library', logObject);
+        }
+    },
+
     bucket: {
         view: function(ctrl, logObject) {
             return returnTextParams('bucket', 'a bucket', logObject);
@@ -707,6 +713,16 @@ var LogPieces = {
             var preprint_provider = logObject.attributes.params.preprint_provider;
             if (paramIsReturned(preprint_provider, logObject)) {
                 return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
+        }
+    },
+
+    subjects: {
+        view: function(ctrl, logObject){
+            var subjects = logObject.attributes.params.subjects;
+            if (paramIsReturned(subjects, logObject)) {
+                return m('span', subjects.map(function(item) {return item.text;}).join(', '), '');
             }
             return m('span', '');
         }

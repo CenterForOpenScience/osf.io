@@ -1,9 +1,10 @@
 
-from django.db.models import Q
+from django.db.models import Case, CharField, Q, Value, When
 from guardian.shortcuts import get_objects_for_user
+from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
@@ -14,54 +15,16 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
-from api.preprint_providers.serializers import PreprintProviderSerializer
-from api.preprint_providers.permissions import CanSetUpProvider, PERMISSIONS
+from api.preprint_providers.serializers import PreprintProviderSerializer, ModeratorSerializer
+from api.preprint_providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
 from api.preprints.serializers import PreprintSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, Subject, PreprintProvider
+from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
+
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """
-    Paginated list of verified PreprintProviders available. *Read-only*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name                       type                description
-        =============================================================================================================
-        name                       string              name of the preprint provider
-        logo_path                  string              a path to the preprint provider's static logo
-        banner_path                string              a path to the preprint provider's banner
-        description                string              description of the preprint provider
-        advisory_board             string              HTML for the advisory board/steering committee section
-        email_contact              string              the contact email for the preprint provider
-        email_support              string              the support email for the preprint provider
-        social_facebook            string              the preprint provider's Facebook account
-        social_instagram           string              the preprint provider's Instagram account
-        social_twitter             string              the preprint provider's Twitter account
-        domain                     string              the domain name of the preprint provider
-        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
-        example                    string              an example guid for a preprint created for the preprint provider
-        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
-        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
-        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -105,73 +68,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    """ Details about a given preprint provider. *Writeable*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name                       type                description
-        =============================================================================================================
-        name                       string              name of the preprint provider
-        logo_path                  string              a path to the preprint provider's static logo
-        banner_path                string              a path to the preprint provider's banner
-        description                string              description of the preprint provider
-        advisory_board             string              HTML for the advisory board/steering committee section
-        email_contact              string              the contact email for the preprint provider
-        email_support              string              the support email for the preprint provider
-        social_facebook            string              the preprint provider's Facebook account
-        social_instagram           string              the preprint provider's Instagram account
-        social_twitter             string              the preprint provider's Twitter account
-        domain                     string              the domain name of the preprint provider
-        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
-        example                    string              an example guid for a preprint created for the preprint provider
-        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
-        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
-        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    ##Setting up Moderation
-
-    Set up moderation for a provider by sending a patch request to the ID of the existing provider.
-
-    Currently, the only parameters which may be set are `reviews_workflow`,
-    `reviews_comments_private`, and `reviews_comments_anonymous`. These parameters may be set
-    only once, after which they may be updated only by an OSF Admin.
-
-    If `reviews_workflow` is already non-null, attempting to update the provider will return
-    a `409` Conflict error. If you need to change your provider's moderation settings, contact
-    [support@osf.io](mailto:support@osf.io) for help.
-
-        Method:        PATCH
-        URL:           /preprint_providers/{provider_id}/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": provider_id,
-                            "attributes": {
-                                "reviews_workflow": {workflow},  # Valid workflows: "pre-moderation", "post-moderation"
-                                "reviews_comments_private": {boolean},
-                                "reviews_comments_anonymous": {boolean}
-                            },
-                        }
-                    }
-        Success:       200 OK + provider representation
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -199,45 +96,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
-    """Preprints from a given preprint_provider. *Read Only*
-
-    To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -285,6 +144,8 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -350,6 +211,8 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
 
 class PreprintProviderLicenseList(LicenseList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
+    """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
 
@@ -362,3 +225,77 @@ class PreprintProviderLicenseList(LicenseList):
         if not provider.default_license:
             return provider.licenses_acceptable.get_queryset()
         return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
+
+class ModeratorMixin(object):
+    model_class = OSFUser
+
+    def get_provider(self):
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
+    def get_serializer_context(self, *args, **kwargs):
+        ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
+        ctx.update({'provider': self.get_provider()})
+        return ctx
+
+
+class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+        CanAddModerator,
+    )
+    view_category = 'moderators'
+    view_name = 'provider-moderator-list'
+
+    required_read_scopes = [CoreScopes.MODERATORS_READ]
+    required_write_scopes = [CoreScopes.MODERATORS_WRITE]
+
+    serializer_class = ModeratorSerializer
+
+    def get_default_queryset(self):
+        provider = self.get_provider()
+        group_helper = GroupHelper(provider)
+        admin_group = group_helper.get_group('admin')
+        mod_group = group_helper.get_group('moderator')
+        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
+            When(groups=admin_group, then=Value('admin')),
+            default=Value('moderator'),
+            output_field=CharField()
+        )).order_by('fullname')
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+        CanUpdateModerator,
+        CanDeleteModerator,
+    )
+    view_category = 'moderators'
+    view_name = 'provider-moderator-detail'
+
+    required_read_scopes = [CoreScopes.MODERATORS_READ]
+    required_write_scopes = [CoreScopes.MODERATORS_WRITE]
+
+    serializer_class = ModeratorSerializer
+
+    def get_object(self):
+        provider = self.get_provider()
+        user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
+        try:
+            perm_group = user.groups.filter(name__contains=GROUP_FORMAT.format(provider_id=provider._id, group='')).order_by('name').first().name.split('_')[-1]
+        except AttributeError:
+            # Group doesn't exist -- users not moderator
+            raise NotFound
+        setattr(user, 'permission_group', perm_group)
+        return user
+
+    def perform_destroy(self, instance):
+        try:
+            self.get_provider().remove_from_group(instance, instance.permission_group)
+        except ValueError as e:
+            raise ValidationError(e.message)

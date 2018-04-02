@@ -47,6 +47,30 @@ def disable_auto_now_fields(models=None):
             if hasattr(field, 'auto_now') and not field.auto_now:
                 field.auto_now = True
 
+@contextmanager
+def disable_auto_now_add_fields(models=None):
+    """
+    Context manager to disable auto_now_add field updates.
+    If models=None, updates for all auto_now_add fields on *all* models will be disabled.
+
+    :param list models: Optional list of models for which auto_now_add field updates should be disabled.
+    """
+    if not models:
+        models = apps.get_models()
+
+    changed = []
+    for model in models:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now_add') and field.auto_now_add:
+                field.auto_now_add = False
+                changed.append(field)
+    try:
+        yield
+    finally:
+        for field in changed:
+            if hasattr(field, 'auto_now_add') and not field.auto_now_add:
+                field.auto_now_add = True
+
 def ensure_licenses(*args, **kwargs):
     """Upsert the licenses in our database based on a JSON file.
 

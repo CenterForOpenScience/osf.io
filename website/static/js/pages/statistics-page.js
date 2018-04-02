@@ -23,8 +23,8 @@ $(function(){
 
 keenAnalysis.ready(function(){
     function updateDateRangeDisplay(statsStartDate, statsEndDate) {
-        $('#startDateString').removeClass('logo-spin logo-sm').text(statsStartDate.toLocaleDateString());
-        $('#endDateString').removeClass('logo-spin logo-sm').text(statsEndDate.toLocaleDateString());
+        $('#startDateString').removeClass('ball-pulse ball-pulse-small ball-scale-blue').text(statsStartDate.toLocaleDateString());
+        $('#endDateString').removeClass('ball-pulse ball-pulse-small ball-scale-blue').text(statsEndDate.toLocaleDateString());
     }
 
     function toggleDateRangePickerView() {

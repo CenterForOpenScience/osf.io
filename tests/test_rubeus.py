@@ -16,7 +16,7 @@ from framework.auth import Auth
 from website.util import rubeus
 from website.util.rubeus import sort_by_name
 
-from website.util import sanitize
+from osf.utils import sanitize
 
 class TestRubeus(OsfTestCase):
 

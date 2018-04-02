@@ -9,7 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 @pytest.mark.django_db

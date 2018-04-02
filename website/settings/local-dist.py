@@ -31,6 +31,11 @@ PREPRINT_PROVIDER_DOMAINS = {
 USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {
+    'ember_osf_web': {
+        'url': '/ember_osf_web/',
+        'server': 'http://localhost:4200',
+        'path': '/ember_osf_web/'
+    },
     'preprints': {
         'url': '/preprints/',
         'server': 'http://192.168.168.167:4201/',
@@ -110,3 +115,5 @@ SENDGRID_EMAIL_WHITELIST = []
 
 # support email
 OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'fake-contact@osf.io'

@@ -37,7 +37,7 @@ from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode, NodeLog
+from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -51,8 +51,9 @@ from website.project.views.contributor import (
 )
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
-from website.util import permissions, rubeus
+from website.util import rubeus
 from website.views import index
+from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
 from tests.base import (
@@ -820,6 +821,19 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert_equal(res.status_code, http.OK)
         assert_in('show_wiki_widget', res.json['user'])
+
+    def test_fork_grandcomponents_has_correct_root(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        child = NodeFactory(parent=project, creator=user)
+        grand_child = NodeFactory(parent=child, creator=user)
+        project.save()
+
+        fork = project.fork_node(auth)
+        fork.save()
+        grand_child_fork = fork.nodes[0].nodes[0]
+        assert_equal(grand_child_fork.root, fork)
 
     def test_fork_count_does_not_include_deleted_forks(self):
         user = AuthUserFactory()
@@ -1858,6 +1872,7 @@ class TestAddingContributorViews(OsfTestCase):
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
@@ -2112,7 +2127,8 @@ class TestUserInviteViews(OsfTestCase):
             email=real_email.lower().strip(),
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
-            branded_service=None
+            branded_service=None,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2604,7 +2620,7 @@ class TestPointerViews(OsfTestCase):
 
         # Project is in an organizer collection
         collection = CollectionFactory(creator=pointed_project.creator)
-        collection.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+        collection.collect_object(pointed_project, self.user)
 
         url = pointed_project.api_url_for('get_pointed')
         res = self.app.get(url, auth=self.user.auth)
@@ -4653,6 +4669,20 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
+    def test_deleted_quick_file_gone(self):
+        user = AuthUserFactory()
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+        osfstorage = quickfiles.get_addon('osfstorage')
+        root = osfstorage.get_root()
+        test_file = root.append_file('soon_to_be_deleted.txt')
+        guid = test_file.get_guid(create=True)._id
+        test_file.delete()
+
+        url = web_url_for('resolve_guid', _guid=True, guid=guid)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

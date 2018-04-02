@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from framework.auth import Auth
 
-from website.util import permissions
+from osf.utils import permissions
 from osf.models import MetaSchema
 
 from tests.base import OsfTestCase

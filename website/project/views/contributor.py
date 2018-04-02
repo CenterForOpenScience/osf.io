@@ -16,7 +16,10 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
+from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import AbstractNode, OSFUser, PreprintService
+from osf.utils import sanitize
+from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -24,10 +27,7 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
                                         must_be_contributor_or_public, must_be_contributor)
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
-from website.util import sanitize
 from website.util import web_url_for, is_json_request
-from website.util.permissions import expand_permissions, ADMIN
-from website.util.time import get_timestamp, throttle_period_expired
 from website.exceptions import NodeStateError
 
 
@@ -407,6 +407,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         node=node,
         claim_url=claim_url,
         fullname=unclaimed_record['name'],
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
     unclaimed_record['last_sent'] = get_timestamp()
     unclaimed_user.save()
@@ -418,6 +419,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         fullname=claimer.fullname,
         referrer=referrer,
         node=node,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
 
@@ -491,7 +493,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                 user=unclaimed_user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
-                node=node
+                node=node,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
@@ -506,7 +509,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service=preprint_provider
+        branded_service=preprint_provider,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
     return to_addr
@@ -529,6 +533,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             if not email_template or not preprint_provider:
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+        elif email_template == 'access_request':
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
@@ -550,7 +556,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider
+            branded_service=preprint_provider,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -755,6 +762,7 @@ def claim_user_form(auth, **kwargs):
         'email': claimer_email if claimer_email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request() else form,
+        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
 
 

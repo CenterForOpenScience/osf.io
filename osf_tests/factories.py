@@ -11,13 +11,14 @@ import factory
 import pytz
 from factory.django import DjangoModelFactory
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory
 from waffle.models import Flag, Sample, Switch
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util import permissions
+from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
@@ -275,6 +276,15 @@ class CollectionFactory(DjangoModelFactory):
     is_bookmark_collection = False
     title = factory.Faker('catch_phrase')
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        obj = cls._build(*args, **kwargs)
+        obj.save()
+        # M2M, requires initial save
+        obj.collected_types = collected_types
+        return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
@@ -549,7 +559,7 @@ def sync_set_identifiers(preprint):
         'already_exists': False
     }
     id_dict = parse_identifiers(ezid_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'])
 
 
 class PreprintFactory(DjangoModelFactory):
@@ -817,6 +827,20 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+class ScheduledBannerFactory(DjangoModelFactory):
+    # Banners are set for 24 hours from start_date if no end date is given
+    class Meta:
+        model = models.ScheduledBanner
+
+    name = factory.Faker('name')
+    default_alt_text = factory.Faker('text')
+    mobile_alt_text = factory.Faker('text')
+    default_photo = factory.Faker('file_name')
+    mobile_photo = factory.Faker('file_name')
+    license = factory.Faker('name')
+    color = 'white'
+    start_date = timezone.now()
+    end_date = factory.LazyAttribute(lambda o: o.start_date)
 
 class FlagFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
@@ -843,3 +867,10 @@ class SwitchFactory(DjangoModelFactory):
 
     class Meta:
         model = Switch
+
+
+class NodeRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeRequest
+
+    comment = factory.Faker('text')

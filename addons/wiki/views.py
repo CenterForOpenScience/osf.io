@@ -17,6 +17,7 @@ from addons.wiki import utils as wiki_utils
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -81,7 +82,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.identifier,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': '{} UTC'.format(version.modified.replace(microsecond=0).isoformat().replace('T', ' ')),
+            'date': '{} UTC'.format(version.created.replace(microsecond=0).isoformat().replace('T', ' ')),
         }
         for version in versions
     ]
@@ -354,6 +355,7 @@ def get_node_wiki_permissions(node, auth, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
+@ember_flag_is_active('ember_project_wiki_page')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))

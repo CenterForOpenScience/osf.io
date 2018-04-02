@@ -23,13 +23,13 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf.models import Institution
+from osf.utils import sanitize
 from website import util
 from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
 from website.util import paths
-from website.util import sanitize
 from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -47,8 +47,10 @@ from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
+from website.ember_osf_web.decorators import ember_flag_is_active
 
 
 def get_globals():
@@ -100,11 +102,13 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
+        'api_v2_domain': settings.API_DOMAIN,
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
@@ -123,6 +127,7 @@ def get_globals():
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
@@ -209,6 +214,7 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
+@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -301,6 +307,16 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
+        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            process_rules(app, [
+                Rule(
+                    ember_osf_web_views.routes,
+                    'get',
+                    ember_osf_web_views.use_ember_app,
+                    notemplate
+                )
+            ])
+
     ### Base ###
 
     process_rules(app, [
@@ -329,8 +345,7 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
-
+        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -398,6 +413,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -440,9 +466,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
@@ -821,8 +850,7 @@ def make_url_map(app):
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
-        ),
-
+        )
     ])
 
     # API
@@ -941,7 +969,7 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {'shareUrl': settings.SHARE_URL},
+            search_views.search_view,
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(
@@ -1169,6 +1197,12 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            '/download/<fid_or_guid>/',
+            'get',
+            addon_views.persistent_file_download,
+            json_renderer,
         ),
         Rule(
             [

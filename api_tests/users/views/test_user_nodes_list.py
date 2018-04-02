@@ -1,5 +1,7 @@
 import pytest
 
+from django.utils.timezone import now
+
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from osf_tests.factories import (
@@ -60,7 +62,7 @@ class TestUserNodes:
             title='Deleted Project User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def folder(self):
@@ -72,7 +74,7 @@ class TestUserNodes:
             title='Deleted Folder User One',
             is_public=False,
             creator=user_one,
-            is_deleted=True)
+            deleted=now())
 
     @pytest.fixture()
     def bookmark_collection(self, user_one):
@@ -148,6 +150,26 @@ class TestUserNodes:
         assert folder._id not in ids
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
+
+        url = '/{}users/{}/nodes/?sort=-title'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+
+        assert public_project_user_one._id == ids[0]
+        assert private_project_user_one._id == ids[1]
+
+        url = '/{}users/{}/nodes/?sort=title'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+
+        assert public_project_user_one._id == ids[1]
+        assert private_project_user_one._id == ids[0]
 
 
 @pytest.mark.django_db

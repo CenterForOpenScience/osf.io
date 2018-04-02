@@ -12,28 +12,7 @@ from api.metaschemas.serializers import MetaSchemaSerializer
 
 
 class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
-    """
-     <!--- Copied from MetaSchemaDetail -->
-
-    Metaschemas describe the supplemental questions that accompany a registration.
-    Only active metaschemas are returned at this endpoint.
-
-    ##Metaschema Attributes
-
-    Metaschemas have the "metaschemas" `type`.
-
-        name                type               description
-        ===========================================================================
-        name                string             name of registration schema
-        schema_version      integer            latest version of the schema
-        schema              dictionary         registration schema details
-
-
-    ##Links`
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This request/response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
 
     """
     permission_classes = (
@@ -56,20 +35,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """
-    Metaschemas describe the supplemental questions that accompany a registration.
-
-    ##Metaschema Attributes
-
-    Metaschemas have the "metaschemas" `type`.
-
-         name                type               description
-        ===========================================================================
-        name                string             name of registration schema
-        schema_version      integer            latest version of the schema
-        schema              dictionary         registration schema details
-
-    #This request/response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
 
     """
     permission_classes = (

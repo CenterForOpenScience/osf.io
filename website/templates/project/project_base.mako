@@ -1,5 +1,26 @@
 <%inherit file="../base.mako"/>
 
+<%def name="resource()"><%
+    if context.get('file_id'):
+        prefix = 'file for a '
+    else:
+        prefix = ''
+    if node.get('is_registration', False):
+        return prefix + 'registration'
+    elif node.get('is_preprint', False):
+        return prefix + 'preprint'
+    elif parent_node['exists']:
+        return prefix + 'component'
+    else:
+        return prefix + 'project'
+    %>
+</%def>
+
+<%def name="public()"><%
+    return node.get('is_public', False)
+    %>
+</%def>
+
 <%def name="description_meta()">
     %if node['description']:
         ${sanitize.strip_html(node['description']) + ' '}
@@ -125,6 +146,8 @@
 <% from website import settings %>
 <script src="/static/vendor/citeproc-js/xmldom.js"></script>
 <script src="/static/vendor/citeproc-js/citeproc.js"></script>
+<link href="${mfr_url}/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="${mfr_url}/static/js/mfr.js"></script>
 
 <script>
 

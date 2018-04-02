@@ -359,7 +359,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         # deletion was logged
         assert log.action == 'wiki_deleted'
         # log date is not set to the page's creation date
-        assert log.date > page.modified
+        assert log.date > page.created
 
     def test_deleted_versions(self):
         # Update wiki a second time

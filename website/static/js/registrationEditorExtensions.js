@@ -185,17 +185,25 @@ var Uploader = function(question, pk) {
         question.value(question.formattedFileList());
     });
     self.fileWarn = ko.observable(true);
+    self.descriptionVisible = ko.pureComputed(function() {
+        return (question.fileDescription ? question.fileDescription : false);
+    }, self);
+    self.value = ko.observable('');
+    self.fileLimit = ko.pureComputed(function() {
+        return (question.fileLimit ? question.fileLimit : 5);
+    }, self);
 
-    self.UPLOAD_LANGUAGE = 'You may attach up to 5 files to this question. You may attach files that you already have ' +
+    self.UPLOAD_LANGUAGE = 'You may attach up to ' + self.fileLimit() + ' file(s) to this question. You may attach files that you already have ' +
         'in this OSF project, or upload a new file from your computer. Uploaded files will automatically be added to this project ' +
         'so that they can be registered.';
 
     self.addFile = function(file) {
-        if(self.selectedFiles().length >= 5 && self.fileWarn()) {
+        self.value = ko.observable(file.data.descriptionvalue || '');
+        if(self.selectedFiles().length >= self.fileLimit && self.fileWarn()) {
             self.fileWarn(false);
             bootbox.alert({
                 title: 'Too many files',
-                message: 'You cannot attach more than 5 files to a question.',
+                message: 'You cannot attach more than ' + self.fileLimit() + 'file(s) to a question.',
                 buttons: {
                     ok: {
                         label: 'Close',
@@ -204,7 +212,7 @@ var Uploader = function(question, pk) {
                 }
             }).css({ 'top': '35%' });
             return false;
-        } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
+        } else if(self.selectedFiles().length >= self.fileLimit && !self.fileWarn()) {
             return false;
         }
         if(self.fileAlreadySelected(file))
@@ -219,7 +227,8 @@ var Uploader = function(question, pk) {
             selectedFileName: file.data.name,
             nodeId: file.data.nodeId,
             viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
-            sha256: file.data.extra.hashes.sha256
+            sha256: file.data.extra.hashes.sha256,
+            descriptionValue: self.value()
         });
         return true;
     };
@@ -287,7 +296,14 @@ var Uploader = function(question, pk) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
+                if (!file.data) { // old data may have empty file objects
+                    return; // skip bad files
+                }
+                if(!file.data.descriptionValue){
+                    elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
+                }else{
+                    elem += '<span><a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '  (' + file.data.descriptionValue + ')' + '</span></br>';
+                }
             });
             return $(elem);
         }

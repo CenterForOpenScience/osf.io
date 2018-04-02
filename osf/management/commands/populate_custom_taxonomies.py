@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from osf.models import PreprintProvider, PreprintService, Subject
-from osf.models.preprint_provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
 from website.preprints.tasks import on_preprint_updated
@@ -40,7 +40,7 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
             except Subject.DoesNotExist:
                 raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
             assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
-        included_subjects.exclude(text__in=excludes)
+        included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
     for cust_name, map_dict in customs.iteritems():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)

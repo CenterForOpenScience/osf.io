@@ -22,7 +22,7 @@ from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
-from website.util import get_headers_from_request
+from osf.utils.requests import get_headers_from_request
 
 from .exceptions import (
     NameEmptyError,
@@ -117,7 +117,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     @property
     def rendered_before_update(self):
-        return self.modified < WIKI_CHANGE_DATE
+        return self.created < WIKI_CHANGE_DATE
 
     def get_draft(self, node):
         """
@@ -135,7 +135,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_timestamp /= 1000  # Convert to appropriate units
             sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
 
-            if sharejs_version > 1 and sharejs_date > self.modified:
+            if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']
 
         return self.content
@@ -187,11 +187,16 @@ class WikiPage(GuidMixin, BaseModel):
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
-    deleted = NonNaiveDateTimeField(blank=True, null=True)
+    deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['page_name', 'node'])
+        ]
 
     def save(self, *args, **kwargs):
         rv = super(WikiPage, self).save(*args, **kwargs)
-        if self.node:
+        if self.node and self.node.is_public:
             self.node.update_search()
         return rv
 
@@ -312,6 +317,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
+    former_guid = models.CharField(null=True, blank=True, max_length=100, db_index=True)
 
     @property
     def is_current(self):
@@ -331,7 +337,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def rendered_before_update(self):
-        return self.modified < WIKI_CHANGE_DATE
+        return self.date < WIKI_CHANGE_DATE
 
     # For Comment API compatibility
     @property
@@ -402,7 +408,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
             sharejs_timestamp /= 1000  # Convert to appropriate units
             sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
 
-            if sharejs_version > 1 and sharejs_date > self.modified:
+            if sharejs_version > 1 and sharejs_date > self.date:
                 return doc_item['_data']
 
         return self.content

@@ -985,6 +985,20 @@ class TestSearchFiles(OsfTestCase):
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 1)
 
+    def test_qatest_quickfiles_files_not_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+
+        file = quickfiles_root.append_file('GreenLight.mp3')
+        tag = Tag(name='qatest')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 0)
+
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')

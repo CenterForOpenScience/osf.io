@@ -25,7 +25,7 @@ Keep your research materials and data private, make it accessible to specific ot
 Create a permanent, time-stamped version of your projects and files.  Do this to preregister your design and analysis plan to conduct a confirmatory study, or archive your materials, data, and analysis scripts when publishing a report.<br>
 <br>
 <h4>Make your work citable</h4>
-Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI/ARK.  Citations for public projects are generated automatically so that visitors can give you credit for your research.<br>
+Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI.  Citations for public projects are generated automatically so that visitors can give you credit for your research.<br>
 <br>
 <h4>Measure your impact</h4>
 You can monitor traffic to your public projects and downloads of your public files.<br>
@@ -37,7 +37,7 @@ GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bi
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again.<br>
 <br>
 <br>
-Learn more about the OSF at our <a href="http://help.osf.io">Guides page</a>, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
+Learn more about the OSF at our <a href="http://help.osf.io">Guides page</a>, or email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> with questions for support.<br>
 <br>
 Sincerely,<br>
 <br>
