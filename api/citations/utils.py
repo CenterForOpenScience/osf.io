@@ -39,9 +39,13 @@ def preprint_csl(preprint, node):
     if csl.get('DOI'):
         csl.pop('DOI')
 
-    doi = preprint.article_doi
-    if doi:
-        csl['DOI'] = doi
+    article_doi = preprint.article_doi
+    preprint_doi = preprint.preprint_doi
+
+    if article_doi:
+        csl['DOI'] = article_doi
+    elif preprint_doi and preprint.is_published and preprint.preprint_doi_created:
+        csl['DOI'] = preprint_doi
 
     return csl
 

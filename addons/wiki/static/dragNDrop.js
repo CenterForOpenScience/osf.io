@@ -7,11 +7,9 @@ var getExtension = function(filename) {
     return /(?:\.([^.]+))?$/.exec(filename)[1];
 };
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
+var imageFolder = 'Wiki images';
 
-var editor = ace.edit('editor');
-
-
-var autoIncrementFileName = function(name, response) {
+var autoIncrementFileName = function(name, nameList) {
     var num = 1;
     var newName;
     var ext = getExtension(name);
@@ -19,9 +17,9 @@ var autoIncrementFileName = function(name, response) {
 
     rename:
     while (true) {
-        for (var i = 0; i < response.data.length; i++) {
+        for (var i = 0; i < nameList.length; i++) {
             newName = baseName + '(' + num + ').' + ext;
-            if (response.data[i].attributes.name === newName) {
+            if (nameList[i] === newName) {
                 num += 1;
                 newName = baseName + '(' + num + ').' + ext;
                 continue rename;
@@ -32,69 +30,70 @@ var autoIncrementFileName = function(name, response) {
     return newName;
 };
 
-editor.enable = function() {
-    $('#aceLoadingBall').css('display', 'none');
-    editor.container.style.pointerEvents = 'initial';
-    editor.container.style.opacity = 1;
-    editor.renderer.setStyle('disabled', false);
-};
 
-editor.disable = function() {
-    $('#aceLoadingBall').css('display', 'block');
-    editor.container.style.pointerEvents = 'none';
-    editor.container.style.opacity = 0.1;
-    editor.renderer.setStyle('disabled', true);
-};
-
-var localFileHandler = function(files, cm, init, fixupInputArea, newName) {
+var localFileHandler = function(files, cm, init, fixupInputArea) {
     var multiple = files.length > 1;
     var urls = [];
     var name;
+    var fileNames = [];
     var ext;
     var num = cm.addLinkDef(init) + 1;
     var promises = [];
     var editor = ace.edit('editor');
     editor.disable();
-    getOrCreateWikiImagesFolder().fail(function() {
-        notUploaded(multiple);
+    getOrCreateWikiImagesFolder().fail(function(response) {
+        notUploaded(response, multiple);
         editor.enable();
     }).done(function(path) {
-        if (!!path) {
-            $.each(files, function(i, file) {
-                ext = getExtension(file.name);
-                name = newName ? newName : file.name;
-                if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
-                    $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
-                    editor.enable();
-                } else {
-                    var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
-                    $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
-                    promises.push(
-                        $.ajax({
-                            url: waterbutlerURL,
-                            type: 'PUT',
-                            processData: false,
-                            contentType: false,
-                            beforeSend: $osf.setXHRAuthorization,
-                            data: file,
-                        }).done(function(response) {
-                            urls.splice(i, 0, response.data.links.download + '?mode=render');
-                            editor.enable();
-                        }).fail(function(response) {
-                            notUploaded(response, false, cm, init, fixupInputArea, path, file);
-                        })
-                    );
-                }
+        $.ajax({ // Check to makes sure we don't overwrite a file with the same name.
+            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?meta=',
+            beforeSend: $osf.setXHRAuthorization,
+        }).done(function (response) {
+            fileNames = response.data.map(function(file) {
+                return file.attributes.name;
             });
-            $.when.apply(null, promises).done(function() {
-                $.each(urls, function(i, url) {
-                    cm.doLinkOrImage(init, null, true, url, multiple, num + i);
+            if (path) {
+                var newName;
+                $.each(files, function (i, file) {
+                    if (fileNames.indexOf(file.name) !== -1) {
+                        newName = autoIncrementFileName(file.name, fileNames);
+                    }
+                    ext = getExtension(file.name);
+                    name = newName ? newName : file.name;
+                    if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
+                        $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
+                    } else {
+                        var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
+                        $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
+                        promises.push(
+                            $.ajax({
+                                url: waterbutlerURL,
+                                type: 'PUT',
+                                processData: false,
+                                contentType: false,
+                                beforeSend: $osf.setXHRAuthorization,
+                                data: file,
+                            }).done(function (response) {
+                                urls.splice(i, 0, response.data.links.download + '?mode=render');
+                            }).fail(function (response) {
+                                notUploaded(response, false, cm, init, fixupInputArea, path, file);
+                            })
+                        );
+                    }
                 });
-                fixupInputArea();
-            });
-        } else {
-            notUploaded(null, multiple);
-        }
+                $.when.apply(null, promises).done(function () {
+                    $.each(urls, function (i, url) {
+                        cm.doLinkOrImage(init, null, true, url, multiple, num + i);
+                    });
+                    fixupInputArea();
+                    editor.enable();
+                });
+            } else {
+                notUploaded(null, multiple);
+            }
+        }).fail(function (response) {
+            notUploaded(response, false, cm, init, fixupInputArea, path);
+        });
     });
 };
 
@@ -138,6 +137,20 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
         var row = Math.floor(y/height) < editor.session.getScreenLength() ? Math.floor(y/height) : editor.session.getScreenLength() - 1;
         var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
         return {row: row, column: column};
+    };
+    editor.enable = function() {
+        $('#aceLoadingBall').css('display', 'none');
+        editor.container.style.pointerEvents = 'initial';
+        editor.container.style.opacity = 1;
+        editor.renderer.setStyle('disabled', false);
+    };
+    editor.enable();
+
+    editor.disable = function() {
+        $('#aceLoadingBall').css('display', 'inherit');
+        editor.container.style.pointerEvents = 'none';
+        editor.container.style.opacity = 0.1;
+        editor.renderer.setStyle('disabled', true);
     };
 
     editor.marker = {};
@@ -270,24 +283,14 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
     });
 };
 
-var imageFolder = 'Wiki images';
 
 var notUploaded = function(response, multiple, cm, init, fixupInputArea, path, file) {
     var files = multiple ? 'Files' : 'File';
+    var editor = ace.edit('editor');
     if (response.status === 403) {
         $osf.growl('Error', 'File not uploaded. You do not have permission to upload files to' +
             ' this project.', 'danger');
         editor.enable();
-    } else if (response.status === 409) {
-        // If you drag something with the same name redraw the link, but tell the user what to do in
-        // case they want to update the image with the same name.
-        $.ajax({
-            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path,
-            beforeSend: $osf.setXHRAuthorization,
-        }).then(function(response) {
-            var newName = autoIncrementFileName(file.name, response);
-            localFileHandler([file], cm, init, fixupInputArea, newName);
-        });
     } else {
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +

@@ -2,7 +2,26 @@
 Changelog
 *********
 
-0.135.0 (unreleased)
+0.137.0 (2018-03-27)
+====================
+
+- API endpoints to support moderator management
+- API endpoints for NotificationSubscriptions
+- Create Collection, CollectedGuidMetadata models
+- Use django-guardian for Collections
+- Add Subjects to AbstractNodes
+- Generalize PreprintProvider branding as AbstractProvider (TypedModel)
+- Add 'works' as a choice for preprint_word
+
+0.136.0 (2018-03-23)
+====================
+
+- Add registered reports landing page (/registeredreports/).
+- Drag-and-drop images into the wiki.
+- Embed OSF files in the wiki using `@[osf](GUID)`.
+- Fixes for sitemap script.
+
+0.135.0 (2018-03-15)
 ====================
 
 - Display file metadata for addon files deleted outside of the OSF.

@@ -1109,9 +1109,9 @@ class TestMergingUsers:
 
     def test_bookmark_collection_nodes_arent_merged(self, dupe, master, merge_dupe):
         dashnode = find_bookmark_collection(dupe)
-        assert dashnode in dupe.contributed
+        assert dupe.collection_set.filter(id=dashnode.id).exists()
         merge_dupe()
-        assert dashnode not in master.contributed
+        assert not master.collection_set.filter(id=dashnode.id).exists()
 
     # Note the files are merged, but the actual node stays with the dupe user
     def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):

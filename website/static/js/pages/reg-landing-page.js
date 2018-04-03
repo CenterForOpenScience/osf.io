@@ -7,6 +7,15 @@ require('js/components/autocomplete');
 require('js/projectsSelect.js');
 
 $(function(){
+    $('#newProject, #newProjectXS').attr('disabled',true);
+    $('.new-project-title').keyup(function() {
+        if ($(this).val().length !== 0) {
+            $('#newProject, #newProjectXS').attr('disabled', false);
+        } else {
+            $('#newProject, #newProjectXS').attr('disabled',true);
+        }
+    });
+
     var campaignShort = window.contextVars.campaign || '';
     $('.reg-button-qtoggle').qToggle();
     $('.reg-button-qtoggle').click(function(){

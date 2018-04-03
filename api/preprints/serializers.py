@@ -8,13 +8,13 @@ from api.base.serializers import (
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
-from api.taxonomies.serializers import TaxonomyField
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
     get_license_details,
     NodeTagField
 )
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website import settings
 from website.exceptions import NodeStateError
@@ -56,7 +56,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class PreprintSerializer(JSONAPISerializer):
+class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'date_created',
@@ -72,7 +72,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    subjects = ser.SerializerMethodField()
+
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
@@ -151,13 +151,6 @@ class PreprintSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'preprints'
 
-    def get_subjects(self, obj):
-        return [
-            [
-                TaxonomyField().to_representation(subj) for subj in hier
-            ] for hier in obj.subject_hierarchy
-        ]
-
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
@@ -174,14 +167,6 @@ class PreprintSerializer(JSONAPISerializer):
         else:
             built_identifier = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=obj._id).replace('doi:', '').upper()
             return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
-
-    def run_validation(self, *args, **kwargs):
-        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
-        # Validation for `subjects` happens in the model
-        _validated_data = super(PreprintSerializer, self).run_validation(*args, **kwargs)
-        if 'subjects' in self.initial_data:
-            _validated_data['subjects'] = self.initial_data['subjects']
-        return _validated_data
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

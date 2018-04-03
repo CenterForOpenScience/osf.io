@@ -1,13 +1,11 @@
 from django.db import IntegrityError
 from rest_framework import serializers as ser
-from rest_framework import exceptions
-from framework.exceptions import PermissionsError
 
-from osf.models import AbstractNode, Collection
+from osf.models import AbstractNode, Node, Collection, Registration
 from osf.exceptions import ValidationError
-from api.base.serializers import LinksField, RelationshipField
+from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 
@@ -62,20 +60,12 @@ class CollectionSerializer(JSONAPISerializer):
         })
 
     def get_node_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.node'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        return Node.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_registration_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        return Registration.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def create(self, validated_data):
         node = Collection(**validated_data)
@@ -88,22 +78,20 @@ class CollectionSerializer(JSONAPISerializer):
             raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
 
-    def update(self, node, validated_data):
-        """Update instance with the validated data. Requires
-        the request to be in the serializer context.
+    def update(self, collection, validated_data):
+        """Update instance with the validated data.
         """
-        assert isinstance(node, AbstractNode), 'collection must be an AbstractNode'
-        auth = get_user_auth(self.context['request'])
-
+        assert isinstance(collection, Collection), 'collection must be a Collection'
         if validated_data:
-            try:
-                node.update(validated_data, auth=auth)
-            except ValidationError as e:
-                raise InvalidModelValueError(detail=e.messages[0])
-            except PermissionsError:
-                raise exceptions.PermissionDenied
-
-        return node
+            for key, value in validated_data.iteritems():
+                if key == 'title' and collection.is_bookmark_collection:
+                    raise InvalidModelValueError('Bookmark collections cannot be renamed.')
+                setattr(collection, key, value)
+        try:
+            collection.save()
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
+        return collection
 
 
 class CollectionDetailSerializer(CollectionSerializer):
@@ -114,6 +102,12 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
+    target_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<guid.referent._id>'},
+        always_embed=True
+    )
+
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'collections:node-pointer-detail',
@@ -123,3 +117,75 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
+
+    # Override NodeLinksSerializer
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        collection = self.context['view'].get_collection()
+        target_node_id = validated_data['_id']
+        pointer_node = AbstractNode.load(target_node_id)
+        if not pointer_node:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' not found.'.format(target_node_id)
+            )
+        try:
+            pointer = collection.collect_object(pointer_node, user)
+        except ValidationError:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, collection._id)
+            )
+        return pointer
+
+class CollectedAbstractNodeRelationshipSerializer(object):
+    _abstract_node_subclass = None
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {'data':
+            list(self._abstract_node_subclass.objects.filter(
+                guids__in=obj.guid_links.all(), is_deleted=False
+            )),
+            'self': obj}
+
+    def update(self, instance, validated_data):
+        collection = instance['self']
+        auth = get_user_auth(self.context['request'])
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        for pointer in remove:
+            collection.remove_object(pointer)
+        for node in add:
+            collection.collect_object(node, auth.user)
+
+        return self.make_instance_obj(collection)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        auth = get_user_auth(self.context['request'])
+        collection = instance['self']
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for node in add:
+            try:
+                collection.collect_object(node, auth.user)
+            except ValidationError as e:
+                raise InvalidModelValueError(
+                    source={'pointer': '/data/relationships/node_links/data/id'},
+                    detail='Target Node {} generated error: {}.'.format(node._id, e.message)
+                )
+
+        return self.make_instance_obj(collection)
+
+class CollectedNodeRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedNodesRelationshipSerializer):
+    _abstract_node_subclass = Node
+
+class CollectedRegistrationsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedRegistrationsRelationshipSerializer):
+    _abstract_node_subclass = Registration

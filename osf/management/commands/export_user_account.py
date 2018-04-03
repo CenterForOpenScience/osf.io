@@ -12,7 +12,6 @@ import tempfile
 from django.core import serializers
 from django.core.management.base import BaseCommand
 
-from addons.wiki.models import NodeWikiPage
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from framework.auth.core import Auth
 from osf.models import (
@@ -105,10 +104,9 @@ def export_wikis(node, current_dir):
     """
     wikis_dir = os.path.join(current_dir, 'wikis')
     os.mkdir(wikis_dir)
-    for wiki_name, wiki_id in node.wiki_pages_current.iteritems():
-        wiki = NodeWikiPage.objects.get(guids___id=wiki_id)
+    for wiki in node.get_wiki_pages_latest():
         if wiki.content:
-            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki_name)), 'w', encoding='utf-8') as f:
+            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki.wiki_page.page_name)), 'w', encoding='utf-8') as f:
                 f.write(wiki.content)
 
 def export_node(node, user, current_dir):
@@ -122,7 +120,7 @@ def export_node(node, user, current_dir):
 
     """
     export_metadata(node, current_dir)
-    if node.wiki_pages_current:
+    if node.get_wiki_pages_latest():
         export_wikis(node, current_dir)
     if OsfStorageFileNode.objects.filter(node=node):
         export_files(node, user, current_dir)

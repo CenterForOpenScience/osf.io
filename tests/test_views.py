@@ -2620,7 +2620,7 @@ class TestPointerViews(OsfTestCase):
 
         # Project is in an organizer collection
         collection = CollectionFactory(creator=pointed_project.creator)
-        collection.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+        collection.collect_object(pointed_project, self.user)
 
         url = pointed_project.api_url_for('get_pointed')
         res = self.app.get(url, auth=self.user.auth)
