@@ -727,6 +727,8 @@ def _view_project(node, auth, primary=False,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
+            'is_collected': node.is_collected,
+            'collections': serialize_collections(node.linked_collections) if node.is_collected else [],
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
@@ -829,6 +831,15 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
+
+def serialize_collections(cgms):
+    return [{
+        'title': cgm.collection.title,
+        'url': '/{}/'.format(cgm.collection._id),
+        'status': cgm.status,
+        'type': cgm.collected_type,
+        'is_public': cgm.collection.is_public,
+    } for cgm in cgms if not cgm.collection.deleted]
 
 def serialize_children(child_list, nested, indent=0):
     """

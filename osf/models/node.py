@@ -31,6 +31,7 @@ from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
+from osf.models.collection import CollectedGuidMetadata
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
@@ -434,6 +435,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_original(self):
         return not self.is_registration and not self.is_fork
+
+    @property
+    def is_collected(self):
+        """is included in a collection"""
+        return self.collected_metadata_queryset.exists()
+
+    @property
+    def collected_metadata_queryset(self):
+        return CollectedGuidMetadata.objects.filter(guid=self.guids.first())
+
+    @property
+    def linked_collections(self):
+        if self.is_collected:
+            return list(self.collected_metadata_queryset)
 
     @property
     def is_preprint(self):
