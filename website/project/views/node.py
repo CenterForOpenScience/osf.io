@@ -572,8 +572,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    id = '{}_deleted'.format(node.project_or_component)
-    status.push_status_message(message, kind='success', trust=False, id=id)
+    status.push_status_message(message, kind='success', trust=False)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
