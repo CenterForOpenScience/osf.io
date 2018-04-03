@@ -75,7 +75,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     class Meta:
         unique_together = ('node', 'provider')
         permissions = (
-            ('view_preprintservice', 'Can view preprint service details in the admin app.'),
+            ('osf_admin_view_preprint', 'Can view preprint service details in the admin app.'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),

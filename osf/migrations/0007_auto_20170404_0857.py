@@ -23,7 +23,7 @@ def add_preprintservice_permissions(*args):
     [osf_admin.permissions.add(perm) for perm in get_preprintservice_permissions()]
     osf_admin.save()
 
-    view_preprintservice = Permission.objects.get(codename='view_preprintservice')
+    view_preprintservice = Permission.objects.get(codename='osf_admin_view_preprint')
     read_only = Group.objects.get(name='read_only')
     read_only.permissions.add(view_preprintservice)
     read_only.save()
@@ -34,7 +34,7 @@ def remove_preprintservice_permissions(*args):
     [osf_admin.permissions.remove(perm) for perm in get_preprintservice_permissions()]
     osf_admin.save()
 
-    view_preprintservice = Permission.objects.get(codename='view_preprintservice')
+    view_preprintservice = Permission.objects.get(codename='osf_admin_view_preprint')
     read_only = Group.objects.get(name='read_only')
     read_only.permissions.remove(view_preprintservice)
     read_only.save()

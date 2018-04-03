@@ -5,36 +5,38 @@ from __future__ import unicode_literals
 from django.db import migrations
 from django.db import transaction
 
+
 def divorce_preprints_from_nodes(apps, schema_editor):
     Preprint = apps.get_model('osf', 'PreprintService')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     # tried to use F() function here but F() doesn't support table joins
     # instead, using the following to make this transaction atomic
-    with transaction.atomic():
-        for preprint in Preprint.objects.filter(node__isnull=False):
-            preprint.title = preprint.node.title
-            preprint.description = preprint.node.description
-            preprint.creator = preprint.node.creator
-            preprint.save()
-    for preprint in Preprint.objects.all():
-        if preprint.node:
-            # use bulk create
-            for contrib in preprint.node.contributor_set.all():
-                # make a PreprintContributor that points to the pp instead of the node
-                # because there's a throughtable, relations are designated
-                # solely on the through model, and adds on the related models
-                # are not required.
 
-                new_contrib = PreprintContributor.objects.create(
-                    preprint=preprint,
-                    user=contrib.user,
-                    read=contrib.read,
-                    write=contrib.write,
-                    admin=contrib.admin,
-                    visible=contrib.visible
-                )
+    Preprint.objects.filter(node__isnull=False).select_related(
+        'node', 'node__creator'
+    ).update(title=node.title, description=node.description, creator=node.creator)
+        # preprint.title = preprint.node.title
+        # preprint.description = preprint.node.description
+        # preprint.creator = preprint.node.creator
+        # preprint.save()
+    for preprint in Preprint.objects.filter(node__isnull=False):
+        # use bulk create
+        for contrib in preprint.node.contributor_set.all():
+            # make a PreprintContributor that points to the pp instead of the node
+            # because there's a throughtable, relations are designated
+            # solely on the through model, and adds on the related models
+            # are not required.
 
-                new_contrib.save()
+            new_contrib = PreprintContributor.objects.create(
+                preprint=preprint,
+                user=contrib.user,
+                read=contrib.read,
+                write=contrib.write,
+                admin=contrib.admin,
+                visible=contrib.visible
+            )
+
+            new_contrib.save()
 
 
 class Migration(migrations.Migration):

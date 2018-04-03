@@ -23,7 +23,7 @@ class PreprintFormView(PermissionRequiredMixin, GuidFormView):
     """
     template_name = 'preprints/search.html'
     object_type = 'preprint'
-    permission_required = 'osf.view_preprintservice'
+    permission_required = 'osf.osf_admin_view_preprint'
     raise_exception = True
 
     @property
@@ -38,7 +38,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     """
     template_name = 'preprints/preprint.html'
     context_object_name = 'preprintservice'
-    permission_required = 'osf.view_preprintservice'
+    permission_required = 'osf.osf_admin_view_preprint'
     raise_exception = True
     form_class = ChangeProviderForm
 
@@ -65,7 +65,7 @@ class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
     template_name = 'preprints/reindex_preprint_share.html'
     context_object_name = 'preprintservice'
     object = None
-    permission_required = 'osf.view_preprintservice'
+    permission_required = 'osf.osf_admin_view_preprint'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
