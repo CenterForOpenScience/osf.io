@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -632,7 +632,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -657,7 +657,7 @@ def _view_project(node, auth, primary=False,
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
-        in_bookmark_collection = bookmark_collection.linked_nodes.filter(pk=node.pk).exists()
+        in_bookmark_collection = bookmark_collection.guid_links.filter(_id=node._id).exists()
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
@@ -1173,7 +1173,10 @@ def _add_pointers(node, pointers, auth):
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer, auth, save=False)
+        if isinstance(node, Collection):
+            node.collect_object(pointer, auth.user)
+        else:
+            node.add_pointer(pointer, auth, save=False)
         added = True
 
     if added:
@@ -1192,7 +1195,7 @@ def add_pointer(auth):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = AbstractNode.load(pointer_to_move)
-    to_node = AbstractNode.load(to_node_id)
+    to_node = Guid.load(to_node_id).referent
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
@@ -1306,8 +1309,7 @@ def serialize_pointer(node, auth):
 def get_pointed(auth, node, **kwargs):
     """View that returns the pointers for a project."""
     NodeRelation = apps.get_model('osf.NodeRelation')
-    # exclude folders
     return {'pointed': [
         serialize_pointer(each.parent, auth)
-        for each in NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection')
+        for each in NodeRelation.objects.filter(child=node, is_node_link=True)
     ]}

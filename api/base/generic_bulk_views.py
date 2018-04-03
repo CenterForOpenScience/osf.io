@@ -78,7 +78,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         model_cls = request.parser_context['view'].model_class
 
         requested_ids = [data['id'] for data in request_data]
-        column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else '_id'
+        column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else getattr(model_cls, 'primary_identifier_name', '_id')
         resource_object_list = model_cls.objects.filter(Q(**{'{}__in'.format(column_name): requested_ids}))
 
         for resource in resource_object_list:
@@ -88,12 +88,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if len(resource_object_list) != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
-        if column_name == 'guids___id':
-            resource_object_list = [resource_object_list.get(guids___id=id) for id in requested_ids]
-        else:
-            resource_object_list = [resource_object_list.get(_id=id) for id in requested_ids]
-
-        return resource_object_list
+        return [resource_object_list.get(**{column_name: id}) for id in requested_ids]
 
     def allow_bulk_destroy_resources(self, user, resource_list):
         """

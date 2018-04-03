@@ -375,6 +375,15 @@ class Registration(AbstractNode):
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
+    def delete_node_wiki(self, name_or_page, auth):
+        raise NodeStateError('Registered wiki pages cannot be deleted.')
+
+    def rename_node_wiki(self, name, new_name, auth):
+        raise NodeStateError('Registered wiki pages cannot be renamed.')
+
+    def update_node_wiki(self, name, content, auth):
+        raise NodeStateError('Registered wiki pages cannot be edited.')
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (

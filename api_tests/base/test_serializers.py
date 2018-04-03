@@ -130,7 +130,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'title',
             'type',
             'current_user_can_comment',
-            'preprint']
+            'preprint',
+            'subjects']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations']
 

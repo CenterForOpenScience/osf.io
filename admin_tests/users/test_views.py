@@ -486,8 +486,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        # 1 node created, 1 bookmarks collection created (new user), 1 node log
-        nt.assert_equal(user_logs_since_workshop, 3)
+        # 1 node created, 1 node log
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
         # Test workshop 30 days ago
@@ -497,7 +497,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 3)
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
         # Test workshop a year ago
@@ -507,7 +507,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 3)
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     # Regression test for OSF-8089

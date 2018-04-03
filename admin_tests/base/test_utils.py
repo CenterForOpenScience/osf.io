@@ -10,7 +10,7 @@ from tests.base import AdminTestCase
 from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory
 
 from osf.models import Subject
-from osf.models.preprint_provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects
 from admin.base.utils import get_subject_rules, change_embargo_date
 
 
@@ -158,4 +158,3 @@ class TestNodeChanges(AdminTestCase):
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
 
         # Add a test to check privatizing
-
