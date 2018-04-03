@@ -17,9 +17,12 @@ from api.collections.permissions import (
     CollectionWriteOrPublic,
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
+    CanSubmitToCollectionOrPublic,
+    CanUpdateDeleteCGMOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
+    CollectedMetaSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
@@ -276,6 +279,45 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     def perform_destroy(self, instance):
         collection = self.get_object()
         collection.delete()
+
+class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-list'
+
+    def get_queryset(self):
+        return self.get_collection().collectedguidmetadata_set.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creator=user)
+
+
+class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCGMOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-detail'
+
+    def get_object(self):
+        return self.get_collection().collectedguidmetadata_set.all()
+
+    def perform_destroy(self, instance):
+        collection = self.get_collection()
+        collection.remove_object(instance)
+
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin):
     """List of nodes linked to this node. *Read-only*.

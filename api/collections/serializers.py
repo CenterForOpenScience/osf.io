@@ -1,13 +1,22 @@
 from django.db import IntegrityError
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Registration
+from osf.models import AbstractNode, Node, Collection, Registration, AbstractProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
+
+
+class ProviderRelationshipField(RelationshipField):
+    def get_object(self, provider_id):
+        return AbstractProvider.load(provider_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
 
 
 class CollectionSerializer(JSONAPISerializer):
@@ -24,8 +33,24 @@ class CollectionSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
+    is_promoted = ser.BooleanField(read_only=True, default=False)
+    is_public = ser.BooleanField(read_only=False, default=False)
+    status_choices = ser.ListField(
+        child=ser.CharField(max_length=31),
+        default=list()
+    )
+    collected_type_choices = ser.ListField(
+        child=ser.CharField(max_length=31),
+        default=list()
+    )
 
     links = LinksField({})
+
+    provider = ProviderRelationshipField(
+        related_view='providers:collection-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True
+    )
 
     node_links = RelationshipField(
         related_view='collections:node-pointers',
@@ -99,6 +124,41 @@ class CollectionDetailSerializer(CollectionSerializer):
     Overrides CollectionSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class CollectedMetaSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'collected-metadata'
+
+    id = IDField(source='_id')
+    type = TypeField()
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+    collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<collection._id>'},
+    )
+    guid = RelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+    )
+    collected_type = ser.CharField(required=False)
+    status = ser.CharField(required=False)
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'collected-metadata:collected-metadata-detail',
+            kwargs={
+                'collection_id': obj.collection._id,
+                'cgm_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
 
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):

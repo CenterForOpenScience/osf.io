@@ -12,6 +12,8 @@ from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
+from api.collections.permissions import CanSubmitToCollectionOrPublic
+from api.collections.serializers import CollectedMetaSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
@@ -273,9 +275,26 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
                 }
         return context
 
-# TODO: [IN-153]
-#class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListAPIView):
-#    pass
+class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'provider-collected-metadata-list'
+
+    def get_queryset(self):
+        return self.get_collection().collectedguidmetadata_set.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creator=user)
+
 
 class ModeratorMixin(object):
     model_class = OSFUser

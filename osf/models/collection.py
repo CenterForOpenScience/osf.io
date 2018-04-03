@@ -31,6 +31,18 @@ class CollectedGuidMetadata(BaseModel):
     def _id(self):
         return self.guid._id
 
+    def has_referent_perm(self, auth, perm):
+        # TODO: Normalize permission checking to obviate this helper
+        from osf.models import AbstractNode, BaseFileNode, PreprintService
+        obj = self.guid.referent
+        if isinstance(obj, (AbstractNode, PreprintService)):
+            return obj.has_permission(auth.user, perm)
+        elif isinstance(obj, BaseFileNode):
+            return obj.node and obj.node.has_permission(auth.user, perm)
+        elif isinstance(obj, Collection):
+            return auth.user.has_perms(obj.groups[perm], obj)
+
+
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
 
