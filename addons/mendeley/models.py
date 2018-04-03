@@ -279,7 +279,8 @@ class NodeSettings(BaseCitationsNodeSettings):
                     'kind': 'folder',
                     'id': folder.json['id'],
                     'name': folder.json['name'],
-                    'path': '/'
+                    'path': folder.json.get('parent_id', '/'),
+                    'parent_list_id': folder.json.get('parent_id', None)
 
                 } for folder in folders]
             except MendeleyApiException:

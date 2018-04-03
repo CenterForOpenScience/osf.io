@@ -70,10 +70,10 @@ class Zotero(CitationsOauthProvider):
 
     def _get_folders(self, library_id=None, folder_id=None):
         """
-        Get a list of a user's folders, either from the personal library,
+        Get a list of a user's folders, either from their personal library,
         or a group library, if specified.
 
-        If folder_id is specified, will return the folders within that folder.
+        If folder_id is specified, will return the folders just within that folder.
         """
         client = self._get_library(library_id)
 

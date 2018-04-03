@@ -417,7 +417,7 @@ var FolderPickerViewModel = oop.defclass({
             if (self.libraryFirstLoad()) {
                 // On first load, the personal library was automatically appended to the
                 // response on our end.  We need to remove this from the count.
-                self.numberLibrariesLoaded(self.numberLibrariesLoaded() - 1)
+                self.numberLibrariesLoaded(self.numberLibrariesLoaded() - 1);
                 self.libraryFirstLoad(false);
             }
         }
