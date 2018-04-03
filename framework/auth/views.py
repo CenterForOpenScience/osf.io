@@ -505,7 +505,7 @@ def external_login_confirm_email_get(auth, uid, token):
                 campaign_url = campaigns.campaign_url_for(destination)
             return redirect(campaign_url)
         if new:
-            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
         return redirect(web_url_for('dashboard'))
 
     # token is invalid
@@ -600,9 +600,9 @@ def confirm_email_get(token, auth=None, **kwargs):
 
             # go to home page with push notification
             if auth.user.emails.count() == 1 and len(auth.user.email_verifications) == 0:
-                status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
+                status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
             if token in auth.user.email_verifications:
-                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True, id='alternate_email_error')
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True)
             return redirect(web_url_for('index'))
 
         status.push_status_message(language.MERGE_COMPLETE, kind='success', trust=False)
