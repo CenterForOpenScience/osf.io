@@ -24,10 +24,6 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             # than top-level objects.
             return
 
-        if obj.get('addon', None) == 'zotero' and obj.get('kind', None) == 'folder':
-            # Only return two levels for zotero. Top is library, second is folder
-            return
-
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],

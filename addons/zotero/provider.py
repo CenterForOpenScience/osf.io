@@ -81,8 +81,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         """Returns a list of citations"""
         attached_list_id = self._folder_id(node_addon)
         attached_library_id = getattr(node_addon, 'library_id', None)
-        account_folders = node_addon.api.citation_lists(self._extract_folder, attached_library_id)
-
+        account_folders = node_addon.get_folders(path=attached_library_id)
         # Folders with 'parent_list_id'==None are children of 'All Documents'
         for folder in account_folders:
             if not folder.get('parent_list_id'):

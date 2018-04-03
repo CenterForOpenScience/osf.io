@@ -68,17 +68,27 @@ class Zotero(CitationsOauthProvider):
 
         return self._citations_for_folder(list_id, library_id)
 
-    def _get_folders(self, library_id=None):
+    def _get_folders(self, library_id=None, folder_id=None):
         """
         Get a list of a user's folders, either from the personal library,
-        or a group library, if specified
+        or a group library, if specified.
+
+        If folder_id is specified, will return the folders within that folder.
         """
         client = self._get_library(library_id)
 
         # Note: Pagination is the only way to ensure all of the collections
         #       are retrieved. 100 is the limit per request. This applies
         #       to Mendeley too, though that limit is 500.
-        return client.collections(limit=100)
+        if folder_id:
+            if folder_id == library_id:
+                # Returns library's top-level folders
+                return client.collections_top(limit=100)
+            # Returns subfolders within a specific folder
+            return client.collections_sub(folder_id)
+        else:
+            # No folder is specified, so all folders are returned underneath the library
+            return client.collections(limit=100)
 
     def _get_library(self, library_id):
         """
@@ -218,43 +228,82 @@ class NodeSettings(BaseCitationsNodeSettings):
         self.list_id = None
         self.library_id = None
 
-    def v2_serialization(self, kind, id, name, path):
+    def v2_serialization(self, kind, id, name, path, parent=None):
         return {
             'addon': 'zotero',
             'kind': kind,
             'id': id,
             'name': name,
-            'path': path
+            'path': path,
+            'parent_list_id': parent
         }
 
-    def get_folders(self, folder_id=None, **kwargs):
+    def get_folders(self, path=None, folder_id=None, **kwargs):
         """
-        Returns top-level Zotero folders (which are actual libraries - your personal
-        library along with any group libraries. If library is specified (folder_id),
-        then folders are retrieved from that library.
+        Returns Zotero folders at any level.
+        Top level are group/personal libraries.  Secondary levels are folders within those libraries.
+        If path (also known as library id) is specified, then folders are returned from that specific library.
 
-        If folder_id specified (which here is the library id), return folders attached to this library.
+        If no path(library) specified, then all libraries are returned.
         """
         if self.has_auth:
-            try:
-                if folder_id:
-                    # When folder_id (library_id) specified, retrieve second tier - folders inside group library
-                    sub_folders = self.api._get_folders(library_id=folder_id)
-                    serialized = []
-                    for folder in sub_folders:
-                        data = folder['data']
-                        serialized.append(self.v2_serialization('folder', data['key'], data['name'], folder_id + '/' + data['key']))
-                else:
-                    # Retrieve top-tier (libraries)
-                    libraries = self.api._fetch_libraries()
-                    serialized = []
-                    for library in libraries[:-1]:
-                        data = library['data']
-                        serialized.append(self.v2_serialization('library', data['id'], data['name'], '/' + str(data['id'])))
-                    # Append personal library as option alongside group libraries
-                    serialized.insert(0, self.v2_serialization('library', 'personal', 'My Library', '/' + 'personal'))
-                return serialized
-            except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised):
-                return []
+            if path:
+                return self.get_sub_folders(path, folder_id)
+            else:
+                return self.get_top_level_folders(**kwargs)
         else:
             raise exceptions.InvalidAuthError()
+
+    def get_top_level_folders(self, **kwargs):
+        """
+        Returns serialized group libraries - your personal library along with any group libraries.
+
+        This is the top-tier of "folders" in Zotero.
+
+        You can use kwargs to refine what data is returned -  how to limit the number of group libraries,
+        whether to return the personal library alongside group_libraries, or append the total library count.
+        """
+        try:
+            # These kwargs are passed in from ZoteroViews > library_list
+            limit = kwargs.get('limit', None)
+            start = kwargs.get('start', None)
+            return_count = kwargs.get('return_count', 'false')
+            append_personal = kwargs.get('append_personal', 'true')
+            # Fetch group libraries
+            libraries = self.api._fetch_libraries(limit=limit, start=start)
+        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound):
+            return []
+
+        # Serialize libraries
+        serialized = []
+        for library in libraries[:-1]:
+            data = library['data']
+            serialized.append(self.v2_serialization('library', data['id'], data['name'], str(data['id'])))
+
+        if return_count == 'true':
+            # Return total number of libraries as last item in list
+            serialized.append(libraries[-1])
+
+        if append_personal == 'true':
+            # Append personal library as option alongside group libraries
+            serialized.insert(0, self.v2_serialization('library', 'personal', 'My Library', 'personal'))
+        return serialized
+
+    def get_sub_folders(self, library_id, folder_id=None):
+        """
+        Returns serialized folders underneath a specific library/group - these are the lower tiers of folders in Zotero.
+
+        If no folder_id is specified, all folders in a flat manner are returned for the group library.
+        If a folder_id is specified, only the subfolders within that folder are returned.
+        """
+        try:
+            sub_folders = self.api._get_folders(library_id=library_id, folder_id=folder_id)
+        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound):
+            return []
+
+        serialized = []
+        for folder in sub_folders:
+            data = folder['data']
+            path = folder['library']['id'] if folder['library']['type'] == 'group' else 'personal'
+            serialized.append(self.v2_serialization('folder', data['key'], data['name'], path, data['parentCollection']))
+        return serialized
