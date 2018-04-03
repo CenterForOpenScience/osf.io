@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 import unicodedata
 import lxml.etree
 import lxml.builder
@@ -13,6 +15,16 @@ E = lxml.builder.ElementMaker(nsmap={
     'xsi': XSI},
 )
 DOI_URL_PREFIX = 'https://dx.doi.org/'
+
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
+CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
+CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
+CROSSREF_SCHEMA_VERSION = '4.4.1'
+JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
+
+CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
+CROSSREF_DEPOSITOR_EMAIL = 'crossref@osf.io'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
@@ -91,6 +103,109 @@ def format_creators(preprint):
 
 def format_subjects(preprint):
     return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
+
+
+def format_contributors_crossref(element, preprint):
+    contributors = []
+    for index, contributor in enumerate(preprint.node.visible_contributors):
+        if index == 0:
+            sequence = 'first'
+        else:
+            sequence = 'additional'
+
+        person = element.person_name(sequence=sequence, contributor_role='author')
+        contributor_given_plus_middle = remove_control_characters(
+            ' '.join([contributor.given_name, contributor.middle_names]).strip()
+        )
+        person.append(element.given_name(contributor_given_plus_middle))
+        person.append(element.surname(remove_control_characters(contributor.family_name)))
+        if contributor.suffix:
+            person.append(element.suffix(remove_control_characters(contributor.suffix)))
+
+        contributors.append(person)
+
+    return contributors
+
+
+def format_date_crossref(element, date):
+    elements = [
+        element.month(date.strftime('%m')),
+        element.day(date.strftime('%d')),
+        element.year(date.strftime('%Y'))
+    ]
+    return elements
+
+
+def crossref_metadata_for_preprint(preprint, pretty_print=False):
+    """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
+
+    :param preprint -- the preprint
+    """
+    element = lxml.builder.ElementMaker(nsmap={
+        None: CROSSREF_NAMESPACE,
+        'xsi': XSI},
+    )
+
+    head = element.head(
+        element.doi_batch_id(preprint._id),  # TODO -- CrossRef has said they don't care about this field, is this OK?
+        element.timestamp('{}'.format(int(time.time()))),
+        element.depositor(
+            element.depositor_name(CROSSREF_DEPOSITOR_NAME),
+            element.email_address(CROSSREF_DEPOSITOR_EMAIL)
+        ),
+        element.registrant(preprint.provider.name)  # TODO - confirm provider name is desired
+    )
+
+    posted_content = element.posted_content(
+        element.group_title(preprint.provider._id),
+        element.contributors(*format_contributors_crossref(element, preprint)),
+        element.titles(element.title(preprint.node.title)),
+        element.posted_date(*format_date_crossref(element, preprint.date_published)),
+        element.item_number('osf.io/{}'.format(preprint._id)),
+        type='preprint'
+    )
+
+    if preprint.node.description:
+        posted_content.append(element.abstract(element.p(preprint.node.description), xmlns=JATS_NAMESPACE))
+
+    if preprint.license and preprint.license.node_license.url:
+        posted_content.append(
+            element.program(
+                element.license_ref(preprint.license.node_license.url, start_date=preprint.date_published.strftime('%Y-%m-%d')),
+                xmlns=CROSSREF_ACCESS_INDICATORS
+            )
+        )
+
+    if preprint.node.preprint_article_doi:
+        posted_content.append(
+            element.program(
+                element.related_item(
+                    element.intra_work_relation(
+                        preprint.node.preprint_article_doi,
+                        **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
+                    ),
+                    xmlns=CROSSREF_RELATIONS
+                )
+            )
+        )
+
+    doi_data = [
+        element.doi(
+            settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=preprint._id)  # TODO - use proper CrossRef DOI handle
+        ),
+        element.resource(settings.DOMAIN + preprint._id)
+    ]
+    posted_content.append(element.doi_data(*doi_data))
+
+    root = element.doi_batch(
+        head,
+        element.body(posted_content),
+        version=CROSSREF_SCHEMA_VERSION
+    )
+
+    # set xsi:schemaLocation
+    root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
+    return lxml.etree.tostring(root, pretty_print=pretty_print)
 
 
 # This function is OSF specific.
