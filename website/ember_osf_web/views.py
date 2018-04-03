@@ -21,6 +21,6 @@ def use_ember_app(**kwargs):
     else:
         resp = send_from_directory(ember_osf_web_dir, 'index.html')
     if session.data.get('status'):
-        status = [{'id': stat[5] if stat[5] else stat[0], 'class': stat[2], 'jumbo': stat[1], 'dismiss': stat[3], 'extra': stat[6]} for stat in session.data['status']]
+        status = [{'id': stat.id if stat.id else stat.message, 'class': stat.css_class, 'jumbo': stat.jumbotron, 'dismiss': stat.dismissible, 'extra': stat.extra} for stat in session.data['status']]
         resp.set_cookie('status', json.dumps(status))
     return resp
