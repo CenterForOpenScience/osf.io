@@ -435,10 +435,11 @@ def subscribe_user_to_notifications(node, user):
     :param user: User to subscribe to notifications
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    if node.__class__.__name__ == 'Node' and node.is_collection:
+    Node = apps.get_model('osf.Node')
+    if isinstance(node, Node) and node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
-    if node.__class__.__name__ == 'Node' and node.is_deleted:
+    if isinstance(node, Node) and node.is_deleted:
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE

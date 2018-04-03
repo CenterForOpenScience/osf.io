@@ -153,7 +153,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         """
         if not user:
             return False
-        return user in self.get_group(permission).user_set
+        return self.get_group(permission).filter(user_id=user.id).exists()
 
     def set_permissions(self, user, permission, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -326,7 +326,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS
 
-
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
@@ -452,12 +451,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email)
             # self.update_search()  # TODO: uncomment this
-            # self.save_node_preprints()  # TODO: decide what to do with this
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -633,7 +627,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         contrib_obj.user = new
         contrib_obj.save()
         for group_name in self.group_names:
-            if old in self.get_group(group_name).user_set:
+            if self.get_group(group_name).user_set.filter(user=old).exists():
                 self.get_group(group_name).user_set.remove(old)
                 self.get_group(group_name).user_set.add(new)
 
@@ -641,7 +635,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
-        # self.save_node_preprints()  # TODO: decide what to do with this
         return True
 
     def remove_contributor(self, contributor, auth, log=True):
@@ -655,8 +648,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             contributor = contributor.user
 
         # remove unclaimed record if necessary
-        if self._primary_key in contributor.unclaimed_records:
-            del contributor.unclaimed_records[self._primary_key]
+        if self._id in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._id]
             contributor.save()
 
         # If user is the only visible contributor, return False
@@ -792,7 +785,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                         'User {0} not in contributors'.format(user.fullname)
                     )
                 permission = user_dict['permission']
-                if user not in self.get_group(permission).user_set:
+                if not self.get_group(permission).filter(user_id=user.id).exists():
                     # Validate later
                     self.set_permissions(user, permission, validate=False, save=False)
                     permissions_changed[user._id] = permission
@@ -887,7 +880,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 raise ValueError(
                     'User {0} not in contributors'.format(user.fullname)
                 )
-            if user not in self.get_group(permission).user_set:
+            if not self.get_group(permission).filter(user_id=user.id).exists():
                 self.set_permissions(user, permission, save=save)
                 permissions_changed = {
                     user._id: permission
@@ -1020,7 +1013,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        if user in self.get_group(permission).user_set:
+        if self.get_group(permission).filter(user_id=user.id).exists():
             self.get_group(permission).user_set.remove(user)
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
