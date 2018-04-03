@@ -61,6 +61,9 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
 
 def pop_status_messages(level=0):
     messages = session.data.get('status')
+    for message in messages or []:
+        if len(message) == 5:
+            message += [None, None]  # Make sure all status's have enough arguments
     session.status_prev = messages
     if 'status' in session.data:
         del session.data['status']
