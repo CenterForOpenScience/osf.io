@@ -457,7 +457,7 @@ def subscribe_user_to_notifications(node, user):
             # If no subscription for component and creator is the user, do not create subscription
             # If no subscription exists for the component, this means that it should adopt its
             # parent's settings
-            if not(node.__class__.__name__ == 'Node' and node and node.parent_node and not subscription and node.creator == user):
+            if not(isinstance(node, Node) and node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
                     # Need to save here in order to access m2m fields

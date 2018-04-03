@@ -163,7 +163,6 @@ class PreprintService(
         if save:
             self.save()
 
-<<<<<<< HEAD
     def get_subjects(self):
         ret = []
         for subj_list in self.subject_hierarchy:
@@ -192,8 +191,6 @@ class PreprintService(
 
         self.save(old_subjects=old_subjects)
 
-=======
->>>>>>> 6a2f565f191d880f4de8b227ba959b46f4310b73
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.has_permission(auth.user, 'admin'):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
