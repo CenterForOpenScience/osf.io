@@ -279,10 +279,12 @@
     <div class="row">
         % if collection['is_public'] or (not collection['is_public'] and user['is_contributor']):
         <div class="col-xs-6">
-            <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>&nbsp;
-                <span class="fa toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata-content${i}"></span>
+            <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+            % if any([collection['type'], collection['status']]):
+              &nbsp;<span id="metadata${i}-toggle" class="fa toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            % endif
             </div>
-            <div id="metadata-content${i}" class="collapse">
+            <div id="metadata${i}" class="collection-details collapse">
                 <dl class="dl-horizontal dl-collection">
 
                 % if collection['type']:
