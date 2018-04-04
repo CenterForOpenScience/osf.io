@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from rest_framework import exceptions
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 from addons.wiki.models import WikiPage, WikiVersion
-from osf.models import AbstractNode
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -46,19 +44,4 @@ class ExcludeWithdrawalsWikiVersion(permissions.BasePermission):
         node = obj.wiki_page.node
         if node and node.is_retracted:
             return False
-        return True
-
-
-class IsEnabled(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (WikiPage, WikiVersion, AbstractNode)), 'obj must be a WikiPage, WikiVersion, or AbstractNode, got {}'.format(obj)
-        if isinstance(obj, WikiPage):
-            node = obj.node
-        elif isinstance(obj, WikiVersion):
-            node = obj.wiki_page.node
-        else:
-            node = obj
-        if node.addons_wiki_node_settings.deleted:
-            raise exceptions.NotFound(detail='The wiki for this node has been disabled.')
         return True

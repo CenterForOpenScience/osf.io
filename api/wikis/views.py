@@ -16,7 +16,6 @@ from api.wikis.permissions import (
     ExcludeWithdrawals,
     ContributorOrPublicWikiVersion,
     ExcludeWithdrawalsWikiVersion,
-    IsEnabled,
 )
 from api.wikis.serializers import (
     WikiSerializer,
@@ -42,6 +41,9 @@ class WikiMixin(object):
         wiki = WikiPage.load(pk)
         if not wiki:
             raise NotFound
+
+        if wiki.node.addons_wiki_node_settings.deleted:
+            raise NotFound(detail='The wiki for this node has been disabled.')
 
         if wiki.deleted:
             raise Gone
@@ -125,8 +127,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals,
-        IsEnabled
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -162,8 +163,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals,
-        IsEnabled
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -190,8 +190,7 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals,
-        IsEnabled
+        ExcludeWithdrawals
     )
     view_category = 'wikis'
     view_name = 'wiki-versions'
@@ -215,8 +214,7 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion,
-        IsEnabled
+        ExcludeWithdrawalsWikiVersion
     )
 
     serializer_class = WikiVersionSerializer
@@ -241,8 +239,7 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion,
-        IsEnabled
+        ExcludeWithdrawalsWikiVersion
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]

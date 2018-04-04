@@ -99,7 +99,6 @@ from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSer
 from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
-from api.wikis.permissions import IsEnabled
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
@@ -1421,8 +1420,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals,
-        IsEnabled
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -1435,7 +1433,10 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
     ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
-        return self.get_node().wikis.filter(deleted__isnull=True)
+        node = self.get_node()
+        if node.addons_wiki_node_settings.deleted:
+            raise NotFound(detail='The wiki for this node has been disabled.')
+        return node.wikis.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
