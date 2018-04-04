@@ -545,6 +545,7 @@ class TestWikiUpdate(WikiCRUDTestCase):
                     'id': wiki_public._id,
                     'type': 'wikis',
                     'attributes': {
+                        'name': 'new page name',
                         'content': 'brave new wiki'
                     }
                 }
