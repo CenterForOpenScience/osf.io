@@ -99,6 +99,7 @@ from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSer
 from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
+from api.wikis.permissions import IsEnabled
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
@@ -1420,7 +1421,8 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        IsEnabled
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]

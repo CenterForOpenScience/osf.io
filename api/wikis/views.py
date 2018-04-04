@@ -16,6 +16,7 @@ from api.wikis.permissions import (
     ExcludeWithdrawals,
     ContributorOrPublicWikiVersion,
     ExcludeWithdrawalsWikiVersion,
+    IsEnabled,
 )
 from api.wikis.serializers import (
     WikiSerializer,
@@ -124,7 +125,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        IsEnabled
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -160,7 +162,8 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        IsEnabled
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -187,7 +190,8 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        IsEnabled
     )
     view_category = 'wikis'
     view_name = 'wiki-versions'
@@ -211,7 +215,8 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
+        IsEnabled
     )
 
     serializer_class = WikiVersionSerializer
@@ -236,7 +241,8 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
+        IsEnabled
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
