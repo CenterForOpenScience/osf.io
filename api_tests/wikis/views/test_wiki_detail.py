@@ -16,6 +16,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 
 from osf.models import Guid
+from osf.utils import permissions
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
@@ -24,7 +25,6 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from tests.base import ApiWikiTestCase, fake
-from website.util import permissions
 
 
 def make_rename_payload(wiki_page):
