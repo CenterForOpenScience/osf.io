@@ -13,6 +13,7 @@ from addons.wiki.tests.factories import (
 )
 
 from api.base.settings.defaults import API_BASE
+from framework.auth.core import Auth
 
 from osf.models import Guid
 from osf_tests.factories import (
@@ -453,6 +454,12 @@ class TestWikiDetailView(ApiWikiTestCase):
         assert_in(
             expected_comments_relationship_url,
             res.json['data']['relationships']['comments']['links']['related']['href'])
+
+    def test_do_not_return_disabled_wiki(self):
+        self._set_up_public_project_with_wiki_page()
+        self.public_project.delete_addon('wiki', auth=Auth(self.user))
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert res.status_code == 404
 
 
 @pytest.mark.django_db

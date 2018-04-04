@@ -4,6 +4,7 @@ import pytest
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
+from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -200,6 +201,11 @@ class TestWikiVersionList:
         assert len(node_relationships) == 1
         assert public_registration.get_wiki_page('home')._id in node_relationships[0]
 
+    def test_do_not_return_disabled_wiki(self, app, user, public_url, public_project):
+        public_project.delete_addon('wiki', auth=Auth(user))
+        res = app.get(public_url, expect_errors=True)
+        assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestWikiVersionCreate(WikiCRUDTestCase):
@@ -336,3 +342,30 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             expect_errors=True
         )
         assert res.status_code == 405
+
+    def test_do_not_update_disabled_public_wiki_page(
+        self, app, user_creator, wiki_public,
+        project_public, url_wiki_versions_public
+    ):
+        project_public.delete_addon('wiki', auth=Auth(user_creator))
+        new_content = fake.text()
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            update_payload(wiki_public, new_content),
+            auth=user_creator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 404
+
+    def test_update_wiki_page_if_publicly_editable_non_contrib(
+        self, app, user_creator, user_non_contributor,
+        project_public, url_wiki_versions_public, wiki_public
+    ):
+        project_public.addons_wiki_node_settings.set_editing(True, auth=Auth(user_creator))
+        new_content = fake.text()
+        res = app.post_json_api(
+            url_wiki_versions_public,
+            update_payload(wiki_public, new_content),
+            auth=user_non_contributor.auth
+        )
+        assert res.status_code == 201

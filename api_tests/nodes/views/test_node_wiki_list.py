@@ -6,6 +6,7 @@ from rest_framework import exceptions
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
+from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -166,6 +167,11 @@ class TestNodeWikiList:
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    def test_do_not_return_disabled_wiki(self, app, user, public_url, public_project):
+        public_project.delete_addon('wiki', auth=Auth(user))
+        res = app.get(public_url, expect_errors=True)
+        assert res.status_code == 404
 
     def test_relationship_links(
             self, app, user, public_project, private_project,
@@ -397,3 +403,21 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         # test_do_not_create_wiki_on_embargoed_registration
         res = app.post_json_api(url_registration_private, create_wiki_payload(fake.word()), auth=user_creator.auth, expect_errors=True)
         assert res.status_code == 405
+
+    def test_do_not_create_wiki_page_if_disabled(
+        self, app, user_creator,
+        project_public, url_node_public, wiki_public
+    ):
+        project_public.delete_addon('wiki', auth=Auth(user_creator))
+        page_name = fake.word()
+        res = app.post_json_api(url_node_public, create_wiki_payload(page_name), auth=user_creator.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_do_not_create_wiki_page_if_publicly_editable_non_contrib(
+        self, app, user_creator, user_non_contributor,
+        project_public, url_node_public, wiki_public
+    ):
+        project_public.addons_wiki_node_settings.set_editing(True, auth=Auth(user_creator))
+        page_name = fake.word()
+        res = app.post_json_api(url_node_public, create_wiki_payload(page_name), auth=user_non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
