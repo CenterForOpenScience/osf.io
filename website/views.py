@@ -327,8 +327,8 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
 
-        if isinstance(referent, Node) and suffix:
-            page = suffix.strip('/')
+        if isinstance(referent, Node) and not referent.is_registration and suffix:
+            page = suffix.strip('/').split('/')[0]
             if waffle.flag_is_active(request, 'ember_project_{}_page'.format(page)):
                 use_ember_app()
 
