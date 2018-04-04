@@ -281,7 +281,7 @@
         <div class="col-xs-6">
             <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
             % if any([collection['type'], collection['status']]):
-              &nbsp;<span id="metadata${i}-toggle" class="fa toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
             % endif
             </div>
             <div id="metadata${i}" class="collection-details collapse">

@@ -876,3 +876,8 @@ dl.dl-collection {
     margin-left: 23px;
     font-weight: normal;
 }
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
