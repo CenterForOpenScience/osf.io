@@ -2,7 +2,7 @@ class MockFolder(dict, object):
 
     def __init__(self):
         self.name = 'Fake Folder'
-        self.json = {'id': 'Fake Key', 'parent_id': 'cba321'}
+        self.json = {'id': 'Fake Key', 'parent_id': 'cba321', 'name': 'Fake Folder'}
         self['data'] = {'name': 'Fake Folder', 'key': 'Fake Key', 'parentCollection': False}
         self['library'] = {'type': 'personal', 'id': '34241'}
         self['name'] = 'Fake Folder'

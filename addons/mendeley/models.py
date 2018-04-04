@@ -270,19 +270,30 @@ class NodeSettings(BaseCitationsNodeSettings):
         folder = self.api._folder_metadata(self.list_id)
         return folder.name
 
-    def get_folders(self, **kwargs):
+    def get_folders(self, show_root=False, **kwargs):
         if self.has_auth:
             try:
                 folders = self.api._get_folders()
-                return [{
+                serialized_root_folder = {
+                    'name': 'All Documents',
+                    'provider_list_id': None,
+                    'id': 'ROOT',
+                    'parent_list_id': '__',
+                    'kind': 'folder',
+                    'addon': 'mendeley'
+                }
+                serialized_folders = [{
                     'addon': 'mendeley',
                     'kind': 'folder',
                     'id': folder.json['id'],
                     'name': folder.json['name'],
                     'path': folder.json.get('parent_id', '/'),
-                    'parent_list_id': folder.json.get('parent_id', None)
-
+                    'parent_list_id': folder.json.get('parent_id', None),
+                    'provider_list_id': folder.json['id']
                 } for folder in folders]
+                if show_root:
+                    serialized_folders.insert(0, serialized_root_folder)
+                return serialized_folders
             except MendeleyApiException:
                 return []
         else:
