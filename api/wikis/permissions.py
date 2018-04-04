@@ -60,5 +60,5 @@ class IsEnabled(permissions.BasePermission):
         else:
             node = obj
         if node.addons_wiki_node_settings.deleted:
-            raise exceptions.NotFound(detail="The wiki for this node has been disabled.")
+            raise exceptions.NotFound(detail='The wiki for this node has been disabled.')
         return True
