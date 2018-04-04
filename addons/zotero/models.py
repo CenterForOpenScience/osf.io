@@ -41,22 +41,6 @@ class Zotero(CitationsOauthProvider):
             ),
         }
 
-    def citation_lists(self, extract_folder, library_id=None):
-        """
-        List of CitationList objects, derived from Mendeley folders
-
-        Modified to add library_id to arguments, because folders are going
-        to be loaded from library (either personal library or one of group libraries)
-        """
-        # TODO: Verify OAuth access to each folder
-        all_documents = self.serializer.serialized_root_folder
-
-        serialized_folders = [
-            extract_folder(each)
-            for each in self._get_folders(library_id)
-        ]
-        return [all_documents] + serialized_folders
-
     def get_list(self, list_id=None, library_id=None):
         """Get a single CitationList
         :param str list_id: ID for a folder. Optional.
@@ -228,14 +212,15 @@ class NodeSettings(BaseCitationsNodeSettings):
         self.list_id = None
         self.library_id = None
 
-    def v2_serialization(self, kind, id, name, path, parent=None):
+    def v2_serialization(self, kind, id, name, path, parent=None, provider_list_id=None):
         return {
             'addon': 'zotero',
             'kind': kind,
             'id': id,
             'name': name,
             'path': path,
-            'parent_list_id': parent
+            'parent_list_id': parent,
+            'provider_list_id': provider_list_id or id
         }
 
     def get_folders(self, path=None, folder_id=None, **kwargs):
@@ -306,4 +291,9 @@ class NodeSettings(BaseCitationsNodeSettings):
             data = folder['data']
             path = folder['library']['id'] if folder['library']['type'] == 'group' else 'personal'
             serialized.append(self.v2_serialization('folder', data['key'], data['name'], path, data['parentCollection']))
-        return serialized
+
+        if folder_id:
+            return serialized
+        else:
+            all_documents = self.v2_serialization('folder', 'ROOT', 'All Documents', library_id, '__', None)
+            return [all_documents] + serialized

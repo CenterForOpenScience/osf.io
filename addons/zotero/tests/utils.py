@@ -20,12 +20,21 @@ class ZoteroTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 mock_responses = {
     'folders': [
         {
+            'library': {
+                'type': 'user',
+                'id': '56789'
+            },
             'data': {
                 "key": "4901a8f5-9840-49bf-8a17-bdb3d5900417",
                 "name": "subfolder",
+                "parentCollection": False
             },
         },
         {
+            'library': {
+                'type': 'user',
+                'id': '12345'
+            },
             'data': {
                 "key": "a6b12ebf-bd07-4f4e-ad73-f9704555f032",
                 "name": "subfolder2",
@@ -33,6 +42,10 @@ mock_responses = {
             },
         },
         {
+            'library': {
+                'type': 'user',
+                'id': 'abcde'
+            },
             'data': {
                 "key": "e843da05-8818-47c2-8c37-41eebfc4fe3f",
                 "name": "subfolder3",

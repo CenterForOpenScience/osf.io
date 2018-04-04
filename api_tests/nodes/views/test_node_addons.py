@@ -787,7 +787,7 @@ class TestNodeZoteroAddon(
         addon_data = res.json['data'][0]['attributes']
         assert_equal(addon_data['kind'], self._mock_folder_result['kind'])
         assert_equal(addon_data['name'], 'My Library')
-        assert_equal(addon_data['path'], '/personal')
+        assert_equal(addon_data['path'], 'personal')
         assert_equal(
             addon_data['folder_id'],
             'personal')
@@ -802,7 +802,7 @@ class TestNodeZoteroAddon(
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'/18497322',
+        return {u'path': u'18497322',
                 u'kind': u'library',
                 u'name': u'Group Library I',
                 u'provider': u'zotero',
@@ -826,20 +826,21 @@ class TestNodeZoteroAddon(
            "data":{
               "version":14,
               "name":"Test Folder",
-              "key":"FSCFSLREF"
+              "key":"FSCFSLREF",
+              "parentCollection": "False"
            }
         }
 
         mock_folders.return_value = [mock_folder]
 
         res = self.app.get(
-            self.folder_url + '?id=18497322',
+            self.folder_url + '?id=18497322&path=18497322',
             auth=self.user.auth)
 
         addon_data = res.json['data'][0]['attributes']
         assert_equal(addon_data['kind'], 'folder')
         assert_equal(addon_data['name'], 'Test Folder')
-        assert_equal(addon_data['path'], '18497322/FSCFSLREF')
+        assert_equal(addon_data['path'], '18497322')
         assert_equal(
             addon_data['folder_id'],
             'FSCFSLREF')
