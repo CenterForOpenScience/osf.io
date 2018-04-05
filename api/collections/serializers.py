@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from osf.models import AbstractNode, Node, Collection, Registration, AbstractProvider
@@ -8,6 +9,9 @@ from api.base.serializers import JSONAPISerializer, IDField, TypeField, Versione
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from framework.exceptions import PermissionsError
+from website.exceptions import NodeStateError
 
 
 class ProviderRelationshipField(RelationshipField):
@@ -126,11 +130,17 @@ class CollectionDetailSerializer(CollectionSerializer):
     id = IDField(source='_id', required=True)
 
 
-class CollectedMetaSerializer(JSONAPISerializer):
+class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
         type_ = 'collected-metadata'
 
+    filterable_fields = frozenset([
+        'id',
+        'date_created',
+        'date_modified',
+        'subjects'
+    ])
     id = IDField(source='_id')
     type = TypeField()
 
@@ -159,6 +169,35 @@ class CollectedMetaSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
+
+    def update(self, obj, validated_data):
+        if validated_data and 'subjects' in validated_data:
+            auth = get_user_auth(self.context['request'])
+            subjects = validated_data.pop('subjects', None)
+            try:
+                obj.set_subjects(subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=e.message)
+            except ValueError as e:
+                raise exceptions.ValidationError(detail=e.message)
+            except NodeStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
+        return super(CollectedMetaSerializer, self).update(obj, validated_data)
+
+    def create(self, validated_data):
+        subjects = validated_data.pop('subjects', None)
+        obj = super(CollectedMetaSerializer, self).create(validated_data)
+        if subjects:
+            auth = get_user_auth(self.context['request'])
+            try:
+                obj.set_subjects(subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=e.message)
+            except ValueError as e:
+                raise exceptions.ValidationError(detail=e.message)
+            except NodeStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
+        return obj
 
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):

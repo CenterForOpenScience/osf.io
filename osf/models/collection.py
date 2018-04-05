@@ -8,13 +8,13 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
 
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.mixins import GuardianMixin
+from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 
-class CollectedGuidMetadata(BaseModel):
+class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
     class Meta:
