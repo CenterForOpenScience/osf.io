@@ -119,7 +119,7 @@
                             </div>
                             <!-- /ko -->
                             % if node["is_public"]:
-                                <div class="btn btn-block in-actions-panel" id="shareButtonsPopover">Share</div>
+                                <div class="btn btn-block" id="shareButtonsPopover">Share</div>
                             % endif
                             % if node['access_requests_enabled'] and not user['is_contributor']:
                                 <div>

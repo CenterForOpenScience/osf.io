@@ -343,4 +343,14 @@ $(document).ready(function () {
         });
     }
 
+    // Close the other actions panel if not clicking inside the panel
+    $(document).click(function (event) {
+        var elementClicked = $(event.target);
+        var _opened = $('#otherActions').hasClass('collapse in');
+        var shouldClose = _opened && !(elementClicked.hasClass('in-actions-panel') || elementClicked.is('#sharePopoverBtn'));
+        if (shouldClose) {
+            $('#otherActionsButton').click();
+        }
+    });
+
 });
