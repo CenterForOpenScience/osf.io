@@ -215,20 +215,22 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         recipient = self.node.creator
         event_type = utils.find_subscription_type('global_reviews')
         user_subscriptions = get_user_subscriptions(recipient, event_type)
+        context = {
+            'domain': settings.DOMAIN,
+            'reviewable': self,
+            'workflow': self.provider.reviews_workflow,
+            'provider_url': self.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.provider._id),
+            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+            'no_future_emails': user_subscriptions['none'],
+            'is_creator': True,
+            'provider_name': self.provider.name,
+        }
+
         mails.send_mail(
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
             user=recipient,
-            **{
-                'domain': settings.DOMAIN,
-                'reviewable': self,
-                'workflow': self.provider.reviews_workflow,
-                'provider_url': self.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.provider._id),
-                'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
-                'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
-                'no_future_emails': user_subscriptions['none'],
-                'is_creator': True,
-                'provider_name': self.provider.name,
-            }
+            **context
         )
