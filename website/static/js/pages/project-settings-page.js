@@ -129,17 +129,22 @@ $(document).ready(function() {
 });
 
 
-var subscribeViewModel = function(viewModel, messageObservable, observableName, updateUrl, objectToUpdate) {
+var subscribeViewModel = function(viewModel, options) {
+    /**
+     * @param {Object} options: Options including `messageObservable`, `name` (the name of the setting),
+     *                          `updateUrl` (endpoint used to make the update request), and `objectToUpdate`
+     **/
     viewModel.enabled.subscribe(function(newValue) {
         var self = this;
-        // debugger;
-        $osf.postJSON(ctx.node.urls.api + updateUrl, {[objectToUpdate]:newValue}
+        var payload = {};
+        payload[options.objectToUpdate] = newValue;
+        $osf.postJSON(ctx.node.urls.api + options.updateUrl, payload
         ).done(function(response) {
             if (newValue) {
-                viewModel[messageObservable](observableName + ' Enabled');
+                viewModel[options.messageObservable](options.name + ' Enabled');
             }
             else {
-                viewModel[messageObservable](observableName + ' Disabled');
+                viewModel[options.messageObservable](options.name + ' Disabled');
             }
             //Give user time to see message before reload.
             setTimeout(function(){window.location.reload();}, 1500);
@@ -147,7 +152,7 @@ var subscribeViewModel = function(viewModel, messageObservable, observableName, 
             $osf.growl('Error', 'Unable to update wiki');
             Raven.captureMessage('Could not update wiki.', {
                 extra: {
-                    url: ctx.node.urls.api + updateUrl, status: status, error: error
+                    url: ctx.node.urls.api + options.updateUrl, status: status, error: error
                 }
             });
             setTimeout(function(){window.location.reload();}, 1500);
@@ -162,7 +167,12 @@ var WikiSettingsViewModel = {
     wikiMessage: ko.observable('')
 };
 
-subscribeViewModel(WikiSettingsViewModel, 'wikiMessage', 'Wiki', 'settings/addons/', 'wiki');
+subscribeViewModel(WikiSettingsViewModel, {
+    messageObservable: 'wikiMessage',
+    name: 'Wiki',
+    updateUrl: 'settings/addons/',
+    objectToUpdate:'wiki'
+});
 
 if ($('#selectWikiForm').length) {
     $osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
@@ -173,7 +183,12 @@ var RequestAccessSettingsViewModel = {
     requestAccessMessage: ko.observable('')
 };
 
-subscribeViewModel(RequestAccessSettingsViewModel, 'requestAccessMessage', 'Request Access', 'settings/requests/', 'accessRequestsEnabled');
+subscribeViewModel(RequestAccessSettingsViewModel, {
+    messageObservable: 'requestAccessMessage',
+    name: 'Request Access',
+    updateUrl: 'settings/requests/',
+    objectToUpdate: 'accessRequestsEnabled'
+});
 
 if ($('#enableRequestAccessForm').length) {
     $osf.applyBindings(RequestAccessSettingsViewModel, '#enableRequestAccessForm');

@@ -126,13 +126,9 @@ var AccessRequestsViewModel = function(accessRequests, user, isRegistration, tab
         permissionMap: self.permissionMap
     };
 
-    self.init = function() {
-        self.accessRequests(self.original().map(function(item) {
-            return new AccessRequestModel(item, self.user(), isRegistration, false, self.options);
-        }));
-    };
-
-    self.init();
+    self.accessRequests(self.original().map(function(item) {
+        return new AccessRequestModel(item, self.user(), isRegistration, false, self.options);
+    }));
 
     self.serialize = function(accessRequest) {
         return accessRequest.serialize();

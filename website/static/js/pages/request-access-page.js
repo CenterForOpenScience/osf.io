@@ -7,7 +7,7 @@ var RequestAccessViewModel = require('js/requestAccess');
 var ctx = window.contextVars;
 
 
-$(window).on('load', function() {
+$(document).ready(function() {
     var viewModel = new RequestAccessViewModel(ctx.currentUserRequestState, ctx.nodeId);
     $osf.applyBindings(viewModel, '#requestAccessPrivateScope');
 });

@@ -200,7 +200,7 @@ def check_can_access(node, user, key=None, api_node=None):
             access_request = node.requests.filter(creator=user).exclude(machine_state='accepted')
             data = {
                 'node': {
-                    'id': node._primary_key
+                    'id': node._id
                 },
                 'user': {
                     'access_request_state': access_request.get().machine_state if access_request else None
