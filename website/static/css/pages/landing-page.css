@@ -2,3 +2,10 @@
 .footer {
     margin-top: -25px; /* Override footer margin for this page only */
 }
+
+
+/* Knockout Validation Styles */
+
+.customMessage { color: #ed9c28; }
+
+.spaced-buttons { margin-top: 10px; }
