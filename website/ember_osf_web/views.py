@@ -2,6 +2,7 @@
 import os
 import json
 import requests
+from website import settings
 from framework.status import pop_status_messages
 from flask import send_from_directory, Response, stream_with_context
 
@@ -25,7 +26,7 @@ def use_ember_app(**kwargs):
     if messages:
         try:
             status = [{'id': stat[5] if stat[5] else stat[0], 'class': stat[2], 'jumbo': stat[1], 'dismiss': stat[3], 'extra': stat[6]} for stat in messages]
-            resp.set_cookie('status', json.dumps(status))
+            resp.set_cookie(settings.COOKIE_NAME + '_status', json.dumps(status))
         except IndexError:
             # Ignoring the error as it will only occur when statuses were created prior to merging the changes that add
             # extra and id, (patch to prevent breaking the app meanwhile)
