@@ -13,7 +13,7 @@ from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectedMetaSerializer
+from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCreateSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
@@ -21,7 +21,7 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, OSFUser, Subject, PreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, OSFUser, Subject, PreprintProvider
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -275,7 +275,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
                 }
         return context
 
-class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListAPIView):
+class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanSubmitToCollectionOrPublic,
@@ -284,16 +284,32 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
+    model_class = CollectedGuidMetadata
     serializer_class = CollectedMetaSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collected-metadata-list'
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectedMetaCreateSerializer
+        else:
+            return CollectedMetaSerializer
+
+    def get_default_queryset(self):
+        provider = get_object_or_error(CollectionProvider, self.kwargs['provider_id'], self.request, display_name='CollectionProvider')
+        if provider and provider.primary_collection:
+            return provider.primary_collection.collectedguidmetadata_set.all()
+        return CollectedGuidMetadata.objects.none()
+
     def get_queryset(self):
-        return self.get_collection().collectedguidmetadata_set.all()
+        return self.get_queryset_from_request()
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(creator=user)
+        provider = get_object_or_error(CollectionProvider, self.kwargs['provider_id'], self.request, display_name='CollectionProvider')
+        if provider and provider.primary_collection:
+            return serializer.save(creator=user, collection=provider.primary_collection)
+        raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
 
 
 class ModeratorMixin(object):

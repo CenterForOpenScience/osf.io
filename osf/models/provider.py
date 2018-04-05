@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.apps import apps
 from django.contrib.postgres import fields
 from django.contrib.auth.models import Group
 from typedmodels.models import TypedModel
@@ -9,6 +10,7 @@ from django.dispatch import receiver
 from dirtyfields import DirtyFieldsMixin
 
 from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
+from framework import sentry
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
@@ -16,6 +18,7 @@ from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
+from osf.utils.requests import get_request_and_user_id
 from website import settings
 from website.util import api_v2_url
 
@@ -66,6 +69,9 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
 class CollectionProvider(AbstractProvider):
+    primary_collection = models.ForeignKey('Collection', related_name='+',
+                                           null=True, blank=True, on_delete=models.SET_NULL)
+
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
@@ -193,3 +199,24 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
             event_name='new_pending_submissions',
             provider=instance
         )
+
+@receiver(post_save, sender=CollectionProvider)
+def create_primary_collection_for_provider(sender, instance, created, **kwargs):
+    if created:
+        Collection = apps.get_model('osf.Collection')
+        OSFUser = apps.get_model('osf.OSFUser')
+        _, user_id = get_request_and_user_id()
+        user = OSFUser.load(user_id)
+        if user:
+            c, created = Collection.objects.get_or_create(
+                title='{}\'s Primary Collection'.format(instance.name),
+                creator=user,
+                provider=instance,
+                is_promoted=True,
+                is_public=True
+            )
+            instance.primary_collection = c
+            instance.save()
+        else:
+            # A user is required for Collections / Groups
+            sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))
