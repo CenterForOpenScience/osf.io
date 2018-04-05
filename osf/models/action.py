@@ -37,5 +37,9 @@ class ReviewAction(BaseAction):
 
 class NodeRequestAction(BaseAction):
     target = models.ForeignKey('NodeRequest', related_name='actions', on_delete=models.CASCADE)
-    permissions = models.CharField(max_length=5, choices=permissions.PermissionChoices.choices(), default=permissions.READ)
+    permissions = models.CharField(
+        max_length=5,
+        choices=[(permission, permission.title()) for permission in permissions.PERMISSIONS],
+        default=permissions.READ
+    )
     visible = models.BooleanField(default=True)
