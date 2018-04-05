@@ -306,7 +306,7 @@ LOG_ACTION_MAP = {
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
