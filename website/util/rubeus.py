@@ -4,7 +4,7 @@ formatted hgrid list/folders.
 """
 import logging
 
-import hurry.filesize
+import bitmath
 from django.utils import timezone
 
 from framework import sentry
@@ -33,7 +33,7 @@ DEFAULT_PERMISSIONS = {
 }
 
 def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
+    return bitmath.filesize.size(size, system=bitmath.filesize.alternative)
 
 
 def default_urls(node_api, short_name):
