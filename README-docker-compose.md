@@ -79,6 +79,8 @@
 
     `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
+    `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
+
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 
