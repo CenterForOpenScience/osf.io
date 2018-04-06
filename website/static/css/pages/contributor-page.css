@@ -56,7 +56,8 @@ select.input-sm {
 }
 
 #manageContributorsTable th:first-child.sortable,
-#adminContributorsTable th:first-child.sortable {
+#adminContributorsTable th:first-child.sortable,
+#manageAccessRequestsTable th:first-child {
     width: 87px;
     text-indent: 20px;
 }
@@ -69,16 +70,13 @@ th.remove {
     width: 94px;
 }
 
-th.access-permissions {
-    width: 200px;
-}
 
 .filters {
   margin-top: 24px;
 }
 
-.request-accept-button {
-    margin-right: 10px;
+.add-remove {
+    width: 120px;  /* makes last column fixed-width so that contributors and request access tables are aligned */
 }
 
 @media screen and (max-width: 991px) {
@@ -102,6 +100,7 @@ th.access-permissions {
     color: #333333;
     cursor: pointer;
     font-size: 1.5em;
+    float: right;
   }
 }
 
@@ -155,7 +154,7 @@ th.access-permissions {
   }
   .remove-or-reject {
     padding-top: 4px;
-    color: #343333;
+    color: #333333;
     cursor: pointer;
     float: right;
     font-size: 1.5em;

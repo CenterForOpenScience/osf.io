@@ -242,7 +242,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th class="add-remove-header"></th>
+            <th></th>
         </tr>
     </thead>
     <tbody data-bind="template: {
@@ -315,7 +315,7 @@
                 />
             </div>
         </td>
-        <td data-bind="css: {'add-remove': contributor.expanded()  && $root.collapsed()}">
+        <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
                         <span href="#removeContributor"
@@ -340,6 +340,7 @@
         <td data-bind="attr: {class: accessRequest.expanded() ? 'expanded' : null,
                        role: $root.collapsed() ? 'button' : null},
                        click: $root.collapsed() ? toggleExpand : null">
+            <span class="fa fa-fw">&nbsp;</span>
             <img data-bind="attr: {src: accessRequest.user.profile_image_url}" />
             <span data-bind="attr: {class: accessRequest.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">
@@ -371,7 +372,7 @@
                 />
             </div>
         </td>
-        <td data-bind="css: {'add-remove': accessRequest.expanded()  && $root.collapsed()}">
+        <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <button class="btn btn-success btn-sm m-l-md request-accept-button"
                        data-bind="click: function() {respondToAccessRequest('accept')}"
