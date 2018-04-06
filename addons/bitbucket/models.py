@@ -11,7 +11,6 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from addons.bitbucket.api import BitbucketClient
 from addons.bitbucket.serializer import BitbucketSerializer
 from addons.bitbucket import settings as bitbucket_settings
-from addons.bitbucket.exceptions import NotFoundError
 from framework.auth import Auth
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
