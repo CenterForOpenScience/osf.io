@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.138.0 (2018-04-05)
+====================
+
+- Normalize the wiki page and wiki version models. Adds the WikiPage and WikiVersion models.
+Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_current.
+- API: Add wiki write functionality.
+
 0.137.0 (2018-03-27)
 ====================
 

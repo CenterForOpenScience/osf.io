@@ -273,7 +273,7 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis'] or []),
+        'n_wikis': len(result['wikis']),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
         'preprint_url': result.get('preprint_url'),
@@ -334,8 +334,6 @@ def update_user_async(self, user_id, index=None):
         self.retry(exc)
 
 def serialize_node(node, category):
-    NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
-
     elastic_document = {}
     parent_id = node.parent_id
 
@@ -378,9 +376,9 @@ def serialize_node(node, category):
         'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
-        for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
+        for wiki in node.get_wiki_pages_latest():
             # '.' is not allowed in field names in ES2
-            elastic_document['wikis'][wiki.page_name.replace('.', ' ')] = wiki.raw_text(node)
+            elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
 
     return elastic_document
 

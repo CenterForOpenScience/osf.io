@@ -2,7 +2,7 @@ from django.utils import timezone
 import mock
 import pytest
 
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from osf.models import Guid
@@ -373,7 +373,10 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def wiki(self, user, private_project):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=private_project, user=user)
+            return WikiFactory(
+                user=user,
+                node=private_project,
+            )
 
     @pytest.fixture()
     def comment(self, user, contributor, private_project, wiki):
@@ -407,7 +410,10 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_wiki(self, user, public_project):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=public_project, user=user)
+            return WikiFactory(
+                user=user,
+                node=public_project,
+            )
 
     @pytest.fixture()
     def public_comment(self, user, contributor, public_project, public_wiki):
