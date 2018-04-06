@@ -633,7 +633,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki

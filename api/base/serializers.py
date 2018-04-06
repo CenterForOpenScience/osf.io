@@ -450,9 +450,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     Field can handle nested attributes: ::
 
-        wiki_home = RelationshipField(
-            related_view='wiki:wiki-detail',
-            related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+        node = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<wiki_page.node._id>'}
         )
 
     Field can handle a filter_key, which operates as the source field (but
