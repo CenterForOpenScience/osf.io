@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from dirtyfields import DirtyFieldsMixin
 
-from api.preprint_providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
+from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
@@ -47,8 +47,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
     @property
     def all_subjects(self):
-        if self.subjects.exists():
-            return self.subjects.all()
+        return self.subjects.all()
 
     @property
     def has_highlighted_subjects(self):
@@ -67,7 +66,14 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
 class CollectionProvider(AbstractProvider):
-    pass
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/providers/collections/{}/'.format(self._id)
+        return api_v2_url(path)
+
 
 class PreprintProvider(AbstractProvider):
 
@@ -141,7 +147,7 @@ class PreprintProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/preprint_providers/{}/'.format(self._id)
+        path = '/providers/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):
