@@ -315,10 +315,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.user_settings is None:
             return messages
 
-        repo = self.fetch_repo()
-        if repo:
+        repo_data = self.fetch_repo()
+        if repo_data:
             node_permissions = 'public' if node.is_public else 'private'
-            repo_permissions = 'private' if repo['is_private'] else 'public'
+            repo_permissions = 'private' if repo_data['is_private'] else 'public'
             if repo_permissions != node_permissions:
                 message = (
                     'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
