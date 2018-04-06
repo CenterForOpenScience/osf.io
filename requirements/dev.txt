@@ -11,7 +11,7 @@ nose
 factory-boy==2.7.0
 webtest-plus==0.3.3
 mock==1.0.1
-fake-factory==0.5.4
+faker==0.8.12
 schema==0.3.1
 responses==0.8.1
 
