@@ -306,7 +306,7 @@ LOG_ACTION_MAP = {
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
@@ -670,7 +670,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format) != extension:
+        if format and '.{}'.format(format.lower()) != extension.lower():
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))

@@ -21,7 +21,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from osf.models import AbstractNode, Comment, BaseFileNode
-from addons.wiki.models import NodeWikiPage
+from addons.wiki.models import WikiPage
 
 
 class CommentMixin(object):
@@ -68,10 +68,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
 
         if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
-        elif isinstance(comment.target.referent, (NodeWikiPage,
-                                                  BaseFileNode)):
+        elif isinstance(comment.target.referent, (WikiPage,
+                                                 BaseFileNode)):
             comment_node = comment.target.referent.node
-
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
 

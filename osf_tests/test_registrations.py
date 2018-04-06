@@ -6,14 +6,13 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
 from osf.utils.permissions import READ, WRITE, ADMIN
-from addons.wiki.models import NodeWikiPage
 
 from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -273,25 +272,36 @@ class TestRegisterNode:
         )
 
     def test_registration_of_project_with_no_wiki_pages(self, registration):
-        assert registration.wiki_pages_versions == {}
-        assert registration.wiki_pages_current == {}
+        assert registration.get_wiki_pages_latest().exists() is False
+        assert registration.wikis.all().exists() is False
         assert registration.wiki_private_uuids == {}
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_registration_clones_project_wiki_pages(self, mock_signal, project, user):
         project = factories.ProjectFactory(creator=user, is_public=True)
-        wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2)
+        wiki_page = WikiFactory(
+            user=user,
+            node=project,
+        )
+        wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+        )
+        current_wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+            identifier=2
+        )
         registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
         assert registration.wiki_private_uuids == {}
 
-        registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
-        assert registration_wiki_current.node == registration
+        registration_wiki_current = registration.get_wiki_version(current_wiki.wiki_page.page_name)
+        assert registration_wiki_current.wiki_page.node == registration
         assert registration_wiki_current._id != current_wiki._id
+        assert registration_wiki_current.identifier == 2
 
-        registration_wiki_version = NodeWikiPage.load(registration.wiki_pages_versions[wiki.page_name][0])
-        assert registration_wiki_version.node == registration
+        registration_wiki_version = registration.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        assert registration_wiki_version.wiki_page.node == registration
         assert registration_wiki_version._id != wiki._id
+        assert registration_wiki_version.identifier == 1
 
     def test_legacy_private_registrations_can_be_made_public(self, registration, auth):
         registration.is_public = False

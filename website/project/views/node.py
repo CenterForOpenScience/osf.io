@@ -572,7 +572,8 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, kind='success', trust=False)
+    id = '{}_deleted'.format(node.project_or_component)
+    status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
@@ -632,7 +633,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
