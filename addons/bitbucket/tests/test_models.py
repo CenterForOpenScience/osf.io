@@ -140,7 +140,6 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_make_public(self, mock_repo):
-        mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
         assert_is(result, None)
