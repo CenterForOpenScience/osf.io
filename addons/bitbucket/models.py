@@ -190,11 +190,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def is_private(self):
-        connection = BitbucketClient(access_token=self.api.fetch_access_token())
-        return connection.repo(user=self.user, repo=self.repo)['is_private']
+        repo = self.fetch_repo()
+        if repo:
+            return repo['is_private']
+        return None
 
-    @property
-    def fetched_repo(self):
+    def fetch_repo(self):
         connection = BitbucketClient(access_token=self.api.fetch_access_token())
         return connection.repo(user=self.user, repo=self.repo)
 
@@ -314,9 +315,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.user_settings is None:
             return messages
 
-        if self.fetched_repo:
+        repo = self.fetch_repo()
+        if repo:
             node_permissions = 'public' if node.is_public else 'private'
-            repo_permissions = 'private' if self.is_private else 'public'
+            repo_permissions = 'private' if repo['is_private'] else 'public'
             if repo_permissions != node_permissions:
                 message = (
                     'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
@@ -430,11 +432,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return clone
 
     def before_make_public(self, node):
-        try:
-            is_private = self.is_private
-        except NotFoundError:
-            return None
-        if is_private:
+
+        if self.is_private:
             return (
                 'This {cat} is connected to a private Bitbucket repository. Users '
                 '(other than contributors) will not be able to see the '
