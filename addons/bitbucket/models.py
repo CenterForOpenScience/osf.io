@@ -11,6 +11,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from addons.bitbucket.api import BitbucketClient
 from addons.bitbucket.serializer import BitbucketSerializer
 from addons.bitbucket import settings as bitbucket_settings
+from addons.bitbucket.exceptions import NotFoundError
 from framework.auth import Auth
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
@@ -431,8 +432,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return clone
 
     def before_make_public(self, node):
+        try:
+            is_private = self.is_private
+        except NotFoundError:
+            return None
 
-        if self.is_private:
+        if is_private:
             return (
                 'This {cat} is connected to a private Bitbucket repository. Users '
                 '(other than contributors) will not be able to see the '
