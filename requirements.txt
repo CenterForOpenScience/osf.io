@@ -82,7 +82,7 @@ sendgrid-django==2.0.0
 
 # Analytics requirements
 keen==0.5.1
-python-geoip-geolite2==2015.0303
+python-geoip-geolite2-yplan==2017.404
 
 # OSF models
 django-typed-models==0.7.0
