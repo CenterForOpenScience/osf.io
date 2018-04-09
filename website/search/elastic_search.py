@@ -432,27 +432,29 @@ def bulk_update_nodes(serialize, nodes, index=None):
     if actions:
         return helpers.bulk(client(), actions)
 
+def serialize_cgm_contributor(contrib):
+    return {
+        'fullname': contrib['fullname'],
+        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+    }
+
 def serialize_cgm(cgm):
     obj = cgm.guid.referent
-    collection_submission_doc = {
+    contributors = []
+    if hasattr(obj, '_contributors'):
+        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
+
+    return {
         'id': cgm._id,
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
-        'contributors': [
-            {
-                'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
-            }
-            for x in obj._contributors.filter(contributor__visible=True).order_by('contributor___order')
-            .values('fullname', 'guids___id', 'is_active')
-        ] if hasattr(obj, '_contributors') else [],
+        'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
         'status': cgm.status,
         'subjects': list(obj.subjects.values_list('text', flat=True)) if hasattr(obj, 'subjects') else [],
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
         'category': 'collection',
     }
-    return collection_submission_doc
 
 @requires_search
 def bulk_update_cgm(cgms, op='update', index=None):
@@ -630,24 +632,28 @@ def update_institution(institution, index=None):
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
-    try:
-        if collection_id:
-            cgm = CollectedGuidMetadata.objects.get(Q(guid___id=cgm_id) & Q(collection_id=collection_id))
-            try:
-                if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
-                    update_cgm(cgm, op=op, index=index)
-            except Exception as exc:
-                self.retry(exc=exc)
+    if collection_id:
+        try:
+            cgm = CollectedGuidMetadata.objects.get(guid___id=cgm_id, collection_id=collection_id)
+        except CollectedGuidMetadata.DoesNotExist:
+            logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
         else:
-            cgms = list(CollectedGuidMetadata.objects.filter(Q(guid___id=cgm_id)))
+            if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+                try:
+                    update_cgm(cgm, op=op, index=index)
+                except Exception as exc:
+                    self.retry(exc=exc)
+    else:
+        try:
+            cgms = CollectedGuidMetadata.objects.filter(guid___id=cgm_id)
+        except CollectedGuidMetadata.DoesNotExist:
+            logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
+        else:
             for cgm in cgms:
                 try:
                     update_cgm(cgm, op=op, index=index)
                 except Exception as exc:
                     self.retry(exc=exc)
-    except CollectedGuidMetadata.DoesNotExist:
-        logger.exception('Could not find object with <_id {}> in collection'.format(cgm_id))
-        return
 
 @requires_search
 def update_cgm(cgm, op='update', index=None):

@@ -38,8 +38,8 @@ class CollectedGuidMetadata(BaseModel):
         return self.guid._id
 
     def update_index(self):
-        from website.search.search import update_cgm
         if self.collection.is_public:
+            from website.search.search import update_cgm
             try:
                 update_cgm(self._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
@@ -143,7 +143,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         saved_fields = self.get_dirty_fields() or []
         ret = super(Collection, self).save(*args, **kwargs)
 
-        if 'is_public' in saved_fields and not first_save:
+        if first_save:
+            # Set defaults for M2M
+            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
+            # Set up initial permissions
+            self.update_group_permissions()
+            self.get_group('admin').user_set.add(self.creator)
+
+        elif 'is_public' in saved_fields:
             cgms = list(self.collectedguidmetadata_set.all())
 
             if self.is_public:
@@ -152,13 +159,6 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             else:
                 # Remove all collection submissions from ES index
                 self.bulk_update_search(cgms, op='delete')
-
-        if first_save:
-            # Set defaults for M2M
-            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
-            # Set up initial permissions
-            self.update_group_permissions()
-            self.get_group('admin').user_set.add(self.creator)
 
         return ret
 
@@ -226,9 +226,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         self.deleted = timezone.now()
 
-        cgms = list(self.collectedguidmetadata_set.all())
-        if cgms and self.is_public:
-            self.bulk_update_search(cgms, op='delete')
+        if self.is_public:
+            self.bulk_update_search(list(self.collectedguidmetadata_set.all()), op='delete')
 
         self.save()
 

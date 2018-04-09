@@ -40,8 +40,7 @@ def query(term):
     return results
 
 def query_collections(term):
-    results = search.search(build_query(term), index=elastic_search.INDEX, doc_type='collectionSubmission')
-    return results
+    return search.search(build_query(term), index=elastic_search.INDEX, doc_type='collectionSubmission')
 
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
@@ -205,7 +204,7 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
-    def test_delete_collection_turned_public_submissions_are_removed_from_index(self):
+    def test_collection_submissions_are_removed_from_index_on_delete(self):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
