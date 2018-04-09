@@ -67,7 +67,7 @@ class Registration(AbstractNode):
 
     @property
     def registered_schema_id(self):
-        if self.registered_schema:
+        if self.registered_schema.exists():
             return self.registered_schema.first()._id
         return None
 
