@@ -303,6 +303,11 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
+DOWNLOAD_ACTIONS = set([
+    'download_file',
+    'download_zip',
+])
+
 
 @must_be_signed
 @no_auto_transaction
@@ -312,7 +317,7 @@ def create_waterbutler_log(payload, **kwargs):
         try:
             auth = payload['auth']
             # Don't log download actions
-            if payload['action'] in ('download_file', 'download_zip'):
+            if payload['action'] in DOWNLOAD_ACTIONS:
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
