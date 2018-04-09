@@ -159,7 +159,7 @@ class MockBox(object):
             ret['path'] = path
         return ret
 
-    def get_folder(*args, **kwargs):
+    def folder(*args, **kwargs):
         return mock_responses['folder']
 
     def get_file_and_metadata(*args, **kwargs):
@@ -174,7 +174,7 @@ class MockBox(object):
             each['path'] = path
         return ret
 
-    def get_user_info(self):
+    def user(self):
         return {'display_name': 'Mr. Box'}
 
 
