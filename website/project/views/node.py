@@ -397,8 +397,10 @@ def configure_comments(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def configure_requests(node, **kwargs):
-    node.access_requests_enabled = request.json.get('accessRequestsEnabled')
+    access_requests_enabled = request.get_json().get('accessRequestsEnabled')
+    node.access_requests_enabled = access_requests_enabled
     node.save()
+    return {'access_requests_enabled': access_requests_enabled}, 200
 
 
 ##############################################################################
