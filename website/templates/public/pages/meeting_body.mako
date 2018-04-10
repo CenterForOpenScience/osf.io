@@ -70,4 +70,75 @@
     </div>
 % endif
 
-<div id="grid" style="width: 100%;"></div>
+<div class="tb-head">
+    <div class="tb-head-filter col-xs-12 col-sm-6 col-sm-offset-6">
+        <form id="meetingsFilter" method="GET">
+            <input type="hidden" name="page" value="1">
+            <input id="filterAttachments" placeholder="Search" value="${ q }" name="q" type="text" style="width:100%;display:inline;" class="pull-right form-control">
+            <input type="hidden" name="sort" value="${ sort }">
+        </form>
+    </div>
+</div>
+
+<div style="width: 100%;">
+    <div class="gridWrapper">
+        <div style="width:auto;" class="tb-table">
+            <div class="tb-row-titles" id="meetingFiltering">
+                <div class="tb-th" data-tb-th-col="0" style="width: 49%;">
+                    <span class="m-r-sm">Title</span>
+                    <span data-bind="foreach: titleFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
+                </div>
+                <div class="tb-th" data-tb-th-col="1" style="width: 9%">
+                    <span class="m-r-sm">Author</span>
+                    <span data-bind="foreach: authorFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
+                </div>
+                <div class="tb-th" data-tb-th-col="2" style="width: 11%">
+                    <span class="m-r-sm">Category</span>
+                    <span data-bind="foreach: categoryFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
+                </div>
+                <div class="tb-th" data-tb-th-col="3" style="width: 14%">
+                    <span class="m-r-sm">Date Created</span>
+                    <span data-bind="foreach: createdFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
+                </div>
+                <div class="tb-th" data-tb-th-col="4" style="width: 13%">
+                    <span class="m-r-sm">Downloads</span>
+                    <span data-bind="foreach: downloadsFilters">
+                        <a data-bind="attr: {href: $data.href}"><i data-bind="css: filterCSS" class="fa"></i></a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+% if not data:
+    <div class="tb-no-results" style="border-left:1px solid #eee; border-right: 1px solid #eee;">
+        No results found for this search term.
+    </div>
+% endif
+
+<div id="grid" style="width:100%; height:500px;">
+    <div class="spinner-loading-wrapper">
+        <div class="ball-scale ball-scale-blue">
+            <div></div>
+        </div>
+    </div>
+</div>
+
+% if page.has_other_pages():
+    <div class="pull-right">
+        <ul id="meetingPagination" class="pagination" data-bind="foreach: pagination">
+            <li class="active" data-bind="if: $data.isCurrent"><span data-bind='text:$data.page'><span class="sr-only">(current)</span></span></li>
+            <li class="disabled" data-bind="if: $data.isDisabled"> <span data-bind='text:$data.page'><span> </li>
+            <li data-bind="if: $data.href"><a data-bind="attr: {href: $data.href}, text:$data.page"></a></li>
+        </ul>
+    </div>
+% endif

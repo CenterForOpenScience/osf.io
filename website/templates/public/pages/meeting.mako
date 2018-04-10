@@ -18,6 +18,12 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
+        window.contextVars.currentPageNumber = ${ current_page_number | sjson, n };
+        window.contextVars.totalPages = ${ total_pages | sjson, n };
+        window.contextVars.q = ${ q | sjson, n };
+        window.contextVars.sort = ${ sort | sjson, n };
+        window.contextVars.hasPrevious = ${page.has_previous() | sjson, n };
+        window.contextVars.hasNext = ${page.has_next() | sjson, n };
         window.contextVars.meetingData = ${ data | sjson, n };
 
         $('#addLink').on('click', function(e) {

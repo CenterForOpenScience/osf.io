@@ -12,37 +12,38 @@ function Meeting(data) {
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
+        hideColumnTitles: true,
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
                     title: 'Title',
                     width: '50%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Author',
                     width : '10%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Category',
                     width : '10%',
                     sortType : 'text',
-                    sort : true
+                    sort : false
                 },
                 {
                     title: 'Date Created',
                     width: '15%',
                     sortType: 'date',
-                    sort: true
+                    sort: false
                 },
                 {
                     title: 'Downloads',
                     width : '15%',
                     sortType : 'number',
-                    sort : true
+                    sort : false
                 },
             ];
         },
@@ -99,8 +100,7 @@ function Meeting(data) {
             up : 'i.fa.fa-chevron-up',
             down : 'i.fa.fa-chevron-down'
         },
-        showFilter : true,     // Gives the option to filter by showing the filter box.
-        filterStyle : { 'float' : 'right', 'width' : '50%'},
+        showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
         hiddenFilterRows : ['tags']
