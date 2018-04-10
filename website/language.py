@@ -102,10 +102,11 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your registration, but the projects that they link to will not be '
-    u'registered. If you wish to register the linked projects, you must fork '
-    u'them from the original project before registering.'
+    u'This {category} contains links to other projects. These links will be '
+    u'copied into your registration, but the projects that they link to will '
+    u'not be registered. If you wish to register the linked projects, they '
+    u'must registered separately. Learn more about <a href="http://help.osf.io'
+    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
