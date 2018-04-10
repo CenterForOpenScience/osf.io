@@ -48,13 +48,6 @@ h6 {
 .icon-group:before {
     content: "\e602";
 }
-.label-green {
-    background-color: #7ab733;
-}
-.label-green[href]:hover,
-.label-green[href]:focus {
-    background-color: #5f8f28;
-}
 
 #home-hero {
     background: #67a3bf;
@@ -349,9 +342,6 @@ h6 {
 .integrations img {
     padding: 20px 20% 0 20%;
 }
-.container-footer {
-    color: #000;
-}
 .feature-1 h3 {
     margin-bottom: 20px;
 }
@@ -364,9 +354,6 @@ h6 {
     left: -34px;
     top: 14px;
     overflow: hidden;
-}
-.feature-2 p {
-    margin-top: 40px;
 }
 .feature-2 .headline {
     margin: 40px 0;
@@ -407,18 +394,7 @@ h6 {
     display: block;
     padding-bottom: 5px;
 }
-.feature-3 .icon {
-    font-size: 300px;
-    color: #315d77;
-}
-.feature-3 a,
-.feature-3 a:hover,
-.feature-3 a:visited {
-    text-decoration: none;
-}
-.feature-3 .icon:hover {
-    color: #386b89;
-}
+
 .feature-4 {
     background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;
@@ -598,9 +574,6 @@ footer {
     }
     .grey-pullout {
         padding-bottom: 90px;
-    }
-    .integrations .mob-clear {
-        clear: left;
     }
 }
 .alert-front {
