@@ -2967,7 +2967,7 @@ class TestPointerViews(OsfTestCase):
         prompts = [
             prompt
             for prompt in res.json['prompts']
-            if 'Links will be copied into your registration' in prompt
+            if 'These links will be copied into your registration,' in prompt
         ]
         assert_equal(len(prompts), 1)
 
