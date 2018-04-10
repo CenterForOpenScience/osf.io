@@ -7,7 +7,7 @@ from flask import request
 from flask import send_from_directory
 from django.core.urlresolvers import reverse
 
-from geoip import geolite2
+from geolite2 import geolite2
 
 from framework import status
 from framework import sentry
@@ -59,7 +59,7 @@ def get_globals():
     """
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
