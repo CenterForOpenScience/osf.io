@@ -180,12 +180,12 @@ class MockBox(object):
 
 @contextmanager
 def patch_client(target, mock_client=None):
-    """Patches a function that returns a BoxClient, returning an instance
+    """Patches a function that returns a Box Client, returning an instance
     of MockBox instead.
 
     Usage: ::
 
-        with patch_client('addons.box.views.BoxClient') as client:
+        with patch_client('addons.box.views.Client') as client:
             # test view that uses the box client.
     """
     with mock.patch(target) as client_getter:
