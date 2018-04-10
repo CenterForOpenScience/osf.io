@@ -83,8 +83,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
+            'continent': (location or {}).get('continent', {}).get('code', None),
+            'country': (location or {}).get('country', {}).get('iso_code', None),
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
