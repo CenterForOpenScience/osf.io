@@ -170,7 +170,7 @@ def conference_submissions_sql(conf):
         cursor.execute(
             """
             SELECT  json_build_object(
-                    'id', osf_abstractnode.id,
+                    'id', ROW_NUMBER() OVER (ORDER BY 1),
                     'title', osf_abstractnode.title,
                     'nodeUrl', '/' || GUID._id || '/',
                     'author', CASE WHEN AUTHOR.family_name != '' THEN AUTHOR.family_name ELSE AUTHOR.fullname END,
