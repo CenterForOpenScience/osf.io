@@ -273,7 +273,12 @@ def conference_submissions_sql(conf):
                            AND UPPER(U0."name" :: TEXT) = UPPER(%s)
                            AND U0."system" = FALSE))
                    AND "osf_abstractnode"."is_deleted" = FALSE
-                   AND "osf_abstractnode"."is_public" = TRUE);
+                   AND "osf_abstractnode"."is_public" = TRUE
+                   AND (SELECT (1) as "contributor_exists"
+                        FROM osf_osfuser
+                        INNER JOIN osf_contributor on osf_osfuser.id = osf_contributor.user_id
+                        WHERE osf_contributor.node_id = osf_abstractnode.id
+                        LIMIT 1) = 1);
 
             """, [submission2_name, conf.name, conference_url, submission1_name, abstract_node_content_type_id, osf_user_content_type_id, conf.endpoint]
         )
