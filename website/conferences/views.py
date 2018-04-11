@@ -175,7 +175,7 @@ def conference_submissions_sql(conf):
                     'nodeUrl', '/' || GUID._id || '/',
                     'author', CASE WHEN AUTHOR.family_name != '' THEN AUTHOR.family_name ELSE AUTHOR.fullname END,
                     'authorUrl', '/' || AUTHOR_GUID._id || '/',
-                    'category', COALESCE(MEETING_CATEGORY.name, %s),
+                    'category', CASE WHEN position(%s in tags_list.tag_list) != 0 THEN %s ELSE %s END,
                     'download', COALESCE(DOWNLOAD_COUNT, 0),
                     'downloadUrl', COALESCE('/project/' || GUID._id || '/files/osfstorage/' || FILE._id || '/?action=download', ''),
                     'dateCreated', osf_abstractnode.created,
@@ -185,19 +185,12 @@ def conference_submissions_sql(conf):
                 )
             FROM osf_abstractnode
               INNER JOIN osf_abstractnode_tags ON (osf_abstractnode.id = osf_abstractnode_tags.abstractnode_id)
-              LEFT JOIN (
-                SELECT osf_tag.name as name, osf_abstractnode_tags.abstractnode_id as node_id
-                FROM osf_tag
-                INNER JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
-                WHERE (osf_tag.system = false
-                       AND osf_tag.name = %s)
-              ) AS MEETING_CATEGORY ON (osf_abstractnode.id = MEETING_CATEGORY.node_id) -- If submission1 is a tag on the node, returns submission1.
-              LEFT JOIN (
-                SELECT osf_abstractnode_tags.abstractnode_id, string_agg(osf_tag.name, ' ') AS tag_list
-                FROM osf_tag
-                RIGHT JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
-                GROUP BY osf_abstractnode_tags.abstractnode_id
-              ) AS TAGS_LIST ON (osf_abstractnode.id = TAGS_LIST.abstractnode_id)  -- Concatenates tag names with space in between
+              LEFT JOIN LATERAL(
+                SELECT string_agg(osf_tag.name, ' ') AS tag_list
+                  FROM osf_tag
+                  INNER JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
+                  WHERE (osf_tag.system = FALSE AND osf_abstractnode_tags.abstractnode_id = osf_abstractnode.id)
+                ) AS TAGS_LIST ON TRUE -- Concatenates tag names with space in between
               LEFT JOIN LATERAL (
                         SELECT osf_osfuser.*
                         FROM osf_osfuser
@@ -246,7 +239,16 @@ def conference_submissions_sql(conf):
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL);
 
-            """, [submission2_name, conf.name, conference_url, submission1_name, abstract_node_content_type_id, osf_user_content_type_id, conf.endpoint]
+            """, [
+                submission1_name,
+                submission1_name,
+                submission2_name,
+                conf.name,
+                conference_url,
+                abstract_node_content_type_id,
+                osf_user_content_type_id,
+                conf.endpoint
+            ]
         )
         rows = cursor.fetchall()
         return [row[0] for row in rows]
