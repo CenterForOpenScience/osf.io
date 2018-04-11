@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from api.preprint_providers.serializers import DeprecatedPreprintProviderSerializer
+from api.preprint_providers.serializers import PreprintProviderSerializer
 from osf_tests.factories import PreprintProviderFactory
 from tests.base import DbTestCase
 from tests.utils import make_drf_request_with_version
 
 
-class TestDeprecatedPreprintProviderSerializer(DbTestCase):
+class TestPreprintProviderSerializer(DbTestCase):
 
     def setUp(self):
-        super(TestDeprecatedPreprintProviderSerializer, self).setUp()
+        super(TestPreprintProviderSerializer, self).setUp()
         self.preprint_provider = PreprintProviderFactory()
 
     def test_preprint_provider_serialization_v2(self):
         req = make_drf_request_with_version(version='2.0')
-        result = DeprecatedPreprintProviderSerializer(
+        result = PreprintProviderSerializer(
             self.preprint_provider,
             context={'request': req}
         ).data
@@ -38,7 +38,7 @@ class TestDeprecatedPreprintProviderSerializer(DbTestCase):
 
     def test_preprint_provider_serialization_v24(self):
         req = make_drf_request_with_version(version='2.4')
-        result = DeprecatedPreprintProviderSerializer(
+        result = PreprintProviderSerializer(
             self.preprint_provider,
             context={'request': req}
         ).data
@@ -59,7 +59,7 @@ class TestDeprecatedPreprintProviderSerializer(DbTestCase):
 
     def test_preprint_provider_serialization_v25(self):
         req = make_drf_request_with_version(version='2.5')
-        result = DeprecatedPreprintProviderSerializer(
+        result = PreprintProviderSerializer(
             self.preprint_provider,
             context={'request': req}
         ).data

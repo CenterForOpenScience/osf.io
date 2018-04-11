@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )

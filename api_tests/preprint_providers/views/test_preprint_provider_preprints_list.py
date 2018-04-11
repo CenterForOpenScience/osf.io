@@ -44,10 +44,9 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
     def project_three(self, user):
         return ProjectFactory(creator=user)
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
-    def url(self, provider_one, request):
-        url = request.param
-        return url.format(
+    @pytest.fixture()
+    def url(self, provider_one):
+        return '/{}preprint_providers/{}/preprints/?version=2.2&'.format(
             API_BASE, provider_one._id)
 
     def test_provider_filter_equals_returns_multiple(
@@ -115,10 +114,9 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
     def provider(self):
         return PreprintProviderFactory(reviews_workflow='post-moderation')
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/', '/{}providers/preprints/{}/preprints/'])
-    def url(self, provider, request):
-        url = request.param
-        return url.format(
+    @pytest.fixture()
+    def url(self, provider):
+        return '/{}preprint_providers/{}/preprints/'.format(
             API_BASE, provider._id)
 
     @pytest.fixture()
@@ -147,7 +145,8 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
         return AuthUserFactory()
 
 
-class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
+class TestPreprintProviderPreprintIsPublishedList(
+        PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def user_admin_contrib(self):
@@ -175,10 +174,9 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
             save=True)
         return project_public
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
-    def url(self, provider_one, request):
-        url = request.param
-        return url.format(
+    @pytest.fixture()
+    def url(self, provider_one):
+        return '/{}preprint_providers/{}/preprints/?version=2.2&'.format(
             API_BASE, provider_one._id)
 
     @pytest.fixture()
@@ -235,8 +233,7 @@ class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin):
     def provider(self):
         return PreprintProviderFactory()
 
-    @pytest.fixture(params=['/{}preprint_providers/{}/preprints/?version=2.2&', '/{}providers/preprints/{}/preprints/?version=2.2&'])
-    def url(self, provider, request):
-        url = request.param
-        return url.format(
+    @pytest.fixture()
+    def url(self, provider):
+        return '/{}preprint_providers/{}/preprints/?version=2.2&'.format(
             API_BASE, provider._id)
