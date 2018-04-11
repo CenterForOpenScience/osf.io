@@ -7,7 +7,6 @@ from django.db import transaction, connection
 from django_bulk_update.helper import bulk_update
 from django.contrib.contenttypes.models import ContentType
 
-from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
@@ -145,42 +144,6 @@ def add_poster_by_email(conference, message):
     )
     if node_created and user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)
-
-## TODO DELETE
-def _render_conference_node(node, idx, conf):
-    record = OsfStorageFile.objects.filter(node=node).first()
-
-    if not record:
-        download_url = ''
-        download_count = 0
-    else:
-        download_count = record.get_download_count()
-        download_url = node.web_url_for(
-            'addon_view_or_download_file',
-            path=record.path.strip('/'),
-            provider='osfstorage',
-            action='download',
-            _absolute=True,
-        )
-
-    author = node.visible_contributors[0]
-    tags = list(node.tags.filter(system=False).values_list('name', flat=True))
-
-    return {
-        'id': idx,
-        'title': node.title,
-        'nodeUrl': node.url,
-        'author': author.family_name if author.family_name else author.fullname,
-        'authorUrl': author.url,
-        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
-        'download': download_count,
-        'downloadUrl': download_url,
-        'dateCreated': node.created.isoformat(),
-        'confName': conf.name,
-        'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
-        'tags': ' '.join(tags)
-    }
-
 
 def conference_data(meeting):
     try:
