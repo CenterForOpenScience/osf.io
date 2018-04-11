@@ -203,6 +203,7 @@ def conference_submissions_sql(conf):
                         FROM osf_osfuser
                           INNER JOIN osf_contributor ON (osf_contributor.user_id = osf_osfuser.id)
                         WHERE (osf_contributor.node_id = osf_abstractnode.id AND osf_contributor.visible = TRUE)
+                        ORDER BY osf_contributor._order ASC
                         LIMIT 1
                         ) AUTHOR ON TRUE  -- Returns first visible contributor
               LEFT JOIN LATERAL (
