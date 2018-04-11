@@ -191,6 +191,12 @@ def conference_data(meeting):
     return conference_submissions_sql(conf)
 
 def conference_submissions_sql(conf):
+    """
+    Serializes all meeting submissions to a conference (returns array of dictionaries)
+
+    :param obj conf: Conference object.
+
+    """
     submission1_name = conf.field_names['submission1']
     submission2_name = conf.field_names['submission2']
     conference_url = web_url_for('conference_results', meeting=conf.endpoint)
@@ -203,16 +209,16 @@ def conference_submissions_sql(conf):
             SELECT  json_build_object(
                     'id', osf_abstractnode.id,
                     'title', osf_abstractnode.title,
-                    'nodeUrl', '/' || guid._id || '/',
+                    'nodeUrl', '/' || GUID._id || '/',
                     'author', CASE WHEN AUTHOR.family_name != '' THEN AUTHOR.family_name ELSE AUTHOR.fullname END,
-                    'authorUrl', '/' || author_guid._id || '/',
-                    'category', COALESCE(meeting_category.name, %s),
+                    'authorUrl', '/' || AUTHOR_GUID._id || '/',
+                    'category', COALESCE(MEETING_CATEGORY.name, %s),
                     'download', COALESCE(DOWNLOAD_COUNT, 0),
-                    'downloadUrl', COALESCE('/project/' || guid._id || '/files/osfstorage/' || FILE._id || '/?action=download', ''),
+                    'downloadUrl', COALESCE('/project/' || GUID._id || '/files/osfstorage/' || FILE._id || '/?action=download', ''),
                     'dateCreated', osf_abstractnode.created,
                     'confName', %s,
                     'confUrl', %s,
-                    'tags', tags_list.tag_list
+                    'tags', TAGS_LIST.tag_list
                 )
             FROM osf_abstractnode
               INNER JOIN "osf_abstractnode_tags" ON ("osf_abstractnode"."id" = "osf_abstractnode_tags"."abstractnode_id")
@@ -222,33 +228,33 @@ def conference_submissions_sql(conf):
                 INNER JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
                 WHERE (osf_tag.system = false
                        AND osf_tag.name = %s)
-              ) AS meeting_category ON (osf_abstractnode.id = meeting_category.node_id)
+              ) AS MEETING_CATEGORY ON (osf_abstractnode.id = MEETING_CATEGORY.node_id) -- If submission1 is a tag on the node, returns submission1.
               LEFT JOIN (
                 SELECT osf_abstractnode_tags.abstractnode_id, string_agg(osf_tag.name, ' ') AS tag_list
                 FROM osf_tag
                 RIGHT JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
                 GROUP BY osf_abstractnode_tags.abstractnode_id
-              ) AS tags_list ON (osf_abstractnode.id = tags_list.abstractnode_id)
+              ) AS TAGS_LIST ON (osf_abstractnode.id = TAGS_LIST.abstractnode_id)  -- Concatenates tag names with space in between
               LEFT JOIN LATERAL (
                         SELECT osf_osfuser.*
                         FROM osf_osfuser
                           INNER JOIN osf_contributor ON (osf_contributor.user_id = osf_osfuser.id)
                         WHERE (osf_contributor.node_id = osf_abstractnode.id AND osf_contributor.visible = TRUE)
                         LIMIT 1
-                        ) AUTHOR ON TRUE
+                        ) AUTHOR ON TRUE  -- Returns first visible contributor
               LEFT JOIN LATERAL (
                 SELECT osf_guid._id
                 FROM osf_guid
                 WHERE (osf_guid.object_id = osf_abstractnode.id AND osf_guid.content_type_id = %s) -- Content type for AbstractNode
                 ORDER BY osf_guid.created DESC
-                LIMIT 1
+                LIMIT 1   -- Returns node guid
               ) GUID ON TRUE
               LEFT JOIN LATERAL (
                 SELECT osf_guid._id
                 FROM osf_guid
                 WHERE (osf_guid.object_id = AUTHOR.id AND osf_guid.content_type_id = %s)  -- Content type for OSFUser
                 LIMIT 1
-              ) AUTHOR_GUID ON TRUE
+              ) AUTHOR_GUID ON TRUE   -- Returns author_guid
               LEFT JOIN LATERAL (
                 SELECT osf_basefilenode.*
                 FROM osf_basefilenode
@@ -257,7 +263,7 @@ def conference_submissions_sql(conf):
                   AND osf_basefilenode.provider = 'osfstorage'
                   AND osf_basefilenode.node_id = osf_abstractnode.id
                 )
-                LIMIT 1
+                LIMIT 1   -- Joins file
               ) FILE ON TRUE
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
@@ -274,11 +280,7 @@ def conference_submissions_sql(conf):
                            AND U0."system" = FALSE))
                    AND "osf_abstractnode"."is_deleted" = FALSE
                    AND "osf_abstractnode"."is_public" = TRUE
-                   AND (SELECT (1) as "contributor_exists"
-                        FROM osf_osfuser
-                        INNER JOIN osf_contributor on osf_osfuser.id = osf_contributor.user_id
-                        WHERE osf_contributor.node_id = osf_abstractnode.id
-                        LIMIT 1) = 1);
+                   AND AUTHOR_GUID IS NOT NULL);
 
             """, [submission2_name, conf.name, conference_url, submission1_name, abstract_node_content_type_id, osf_user_content_type_id, conf.endpoint]
         )
