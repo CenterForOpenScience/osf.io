@@ -184,7 +184,7 @@ def conference_submissions_sql(conf):
                     'tags', TAGS_LIST.tag_list
                 )
             FROM osf_abstractnode
-              INNER JOIN "osf_abstractnode_tags" ON ("osf_abstractnode"."id" = "osf_abstractnode_tags"."abstractnode_id")
+              INNER JOIN osf_abstractnode_tags ON (osf_abstractnode.id = osf_abstractnode_tags.abstractnode_id)
               LEFT JOIN (
                 SELECT osf_tag.name as name, osf_abstractnode_tags.abstractnode_id as node_id
                 FROM osf_tag
@@ -236,14 +236,14 @@ def conference_submissions_sql(conf):
                 LIMIT 1
               ) DOWNLOAD_COUNT ON TRUE
             -- Get all the nodes for a specific meeting
-            WHERE ("osf_abstractnode_tags"."tag_id" IN
-                   (SELECT U0."id" AS Col1
-                    FROM "osf_tag" U0
-                    WHERE (U0."system" = FALSE
-                           AND UPPER(U0."name" :: TEXT) = UPPER(%s)
-                           AND U0."system" = FALSE))
-                   AND "osf_abstractnode"."is_deleted" = FALSE
-                   AND "osf_abstractnode"."is_public" = TRUE
+            WHERE (osf_abstractnode_tags.tag_id IN
+                   (SELECT U0.id AS Col1
+                    FROM osf_tag U0
+                    WHERE (U0.system = FALSE
+                           AND UPPER(U0.name :: TEXT) = UPPER(%s)
+                           AND U0.system = FALSE))
+                   AND osf_abstractnode.is_deleted = FALSE
+                   AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL);
 
             """, [submission2_name, conf.name, conference_url, submission1_name, abstract_node_content_type_id, osf_user_content_type_id, conf.endpoint]
