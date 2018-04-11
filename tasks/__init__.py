@@ -320,7 +320,7 @@ API_TESTS1 = [
     'api_tests/licenses',
     'api_tests/logs',
     'api_tests/metaschemas',
-    'api_tests/providers',
+    'api_tests/preprint_providers',
     'api_tests/preprints',
     'api_tests/registrations',
     'api_tests/users',

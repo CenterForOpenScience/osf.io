@@ -28,7 +28,7 @@ from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMB
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from api.providers.permissions import GroupHelper
+from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))

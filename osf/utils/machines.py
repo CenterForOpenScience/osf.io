@@ -1,7 +1,7 @@
 from django.utils import timezone
 from transitions import Machine
 
-from api.providers.workflows import Workflows
+from api.preprint_providers.workflows import Workflows
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
