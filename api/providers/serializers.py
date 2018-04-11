@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField
+from api.base.serializers import JSONAPISerializer, IDField, LinksField, TypeField, TypedRelationshipField
 from api.providers.permissions import GROUPS
 from api.providers.workflows import Workflows
 from osf.models.user import Email, OSFUser
@@ -35,18 +35,18 @@ class ProviderSerializer(JSONAPISerializer):
         'external_url': 'get_external_url'
     })
 
-    taxonomies = RelationshipField(
+    taxonomies = TypedRelationshipField(
         related_view='providers:taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
 
-    highlighted_taxonomies = RelationshipField(
+    highlighted_taxonomies = TypedRelationshipField(
         related_view='providers:highlighted-taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'},
         related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
     )
 
-    licenses_acceptable = RelationshipField(
+    licenses_acceptable = TypedRelationshipField(
         related_view='providers:license-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
@@ -63,7 +63,7 @@ class ProviderSerializer(JSONAPISerializer):
 
 class CollectionProviderSerializer(ProviderSerializer):
     class Meta:
-        type_ = 'collection_providers'
+        type_ = 'collection-providers'
 
     filterable_fields = frozenset([
         'allow_submissions',
@@ -77,7 +77,7 @@ class CollectionProviderSerializer(ProviderSerializer):
 class PreprintProviderSerializer(ProviderSerializer):
 
     class Meta:
-        type_ = 'preprint_providers'
+        type_ = 'preprint-providers'
 
     filterable_fields = frozenset([
         'allow_submissions',
@@ -109,12 +109,12 @@ class PreprintProviderSerializer(ProviderSerializer):
     })
 
     preprints = ReviewableCountsRelationshipField(
-        related_view='providers:preprints-list',
+        related_view='providers:preprint-providers:preprints-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
 
     def get_preprints_url(self, obj):
-        return absolute_reverse('providers:preprints-list', kwargs={
+        return absolute_reverse('providers:preprint-providers:preprints-list', kwargs={
             'provider_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })

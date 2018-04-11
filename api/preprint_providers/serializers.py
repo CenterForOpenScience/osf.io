@@ -4,6 +4,8 @@ from api.base.serializers import ShowIfVersion
 from api.providers.serializers import PreprintProviderSerializer
 
 class DeprecatedPreprintProviderSerializer(PreprintProviderSerializer):
+    class Meta:
+        type_ = 'preprint_providers'
 
     # Deprecated fields
     header_text = ShowIfVersion(

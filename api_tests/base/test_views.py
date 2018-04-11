@@ -34,7 +34,12 @@ VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
-        VIEW_CLASSES.append(patt.callback.cls)
+        if hasattr(patt, 'url_patterns'):
+            # Namespaced list of patterns
+            for subpatt in patt.url_patterns:
+                VIEW_CLASSES.append(subpatt.callback.cls)
+        else:
+            VIEW_CLASSES.append(patt.callback.cls)
 
 
 class TestApiBaseViews(ApiTestCase):

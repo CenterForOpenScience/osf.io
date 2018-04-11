@@ -117,7 +117,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     provider = PreprintProviderRelationshipField(
-        related_view='providers:preprint-provider-detail',
+        related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
     )

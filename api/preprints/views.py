@@ -317,7 +317,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('providers:preprint-provider-detail', kwargs={
+                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
                     'provider_id': target.provider._id,
                     'version': self.request.parser_context['kwargs']['version']
                 })
