@@ -672,6 +672,14 @@ class TrashedFolder(TrashedFileNode):
         return tf
 
 
+class FileVersionUserMetadata(BaseModel):
+    user = models.ForeignKey('OSFUser')
+    file_version = models.ForeignKey('FileVersion')
+
+    class Meta:
+        unique_together = ('user', 'file_version')
+
+
 class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
@@ -695,6 +703,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
 
     includable_objects = IncludeManager()
 
