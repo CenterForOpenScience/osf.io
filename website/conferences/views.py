@@ -238,7 +238,7 @@ def conference_submissions_sql(conf):
                    AND osf_abstractnode.is_deleted = FALSE
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL)
-            ORDER BY DOWNLOAD_COUNT;
+            ORDER BY DOWNLOAD_COUNT DESC NULLS LAST;
 
             """, [
                 submission1_name,
