@@ -175,18 +175,18 @@ def conference_submissions_sql(conf):
                     'nodeUrl', '/' || GUID._id || '/',
                     'author', CASE WHEN AUTHOR.family_name != '' THEN AUTHOR.family_name ELSE AUTHOR.fullname END,
                     'authorUrl', '/' || AUTHOR_GUID._id || '/',
-                    'category', CASE WHEN position(%s in tags_list.tag_list) != 0 THEN %s ELSE %s END,
+                    'category', CASE WHEN %s = ANY(TAGS_LIST.tag_list) THEN %s ELSE %s END,
                     'download', COALESCE(DOWNLOAD_COUNT, 0),
                     'downloadUrl', COALESCE('/project/' || GUID._id || '/files/osfstorage/' || FILE._id || '/?action=download', ''),
                     'dateCreated', osf_abstractnode.created,
                     'confName', %s,
                     'confUrl', %s,
-                    'tags', TAGS_LIST.tag_list
+                    'tags', array_to_string(TAGS_LIST.tag_list, ' ')
                 )
             FROM osf_abstractnode
               INNER JOIN osf_abstractnode_tags ON (osf_abstractnode.id = osf_abstractnode_tags.abstractnode_id)
               LEFT JOIN LATERAL(
-                SELECT string_agg(osf_tag.name, ' ') AS tag_list
+                SELECT array_agg(osf_tag.name) AS tag_list
                   FROM osf_tag
                   INNER JOIN osf_abstractnode_tags ON (osf_tag.id = osf_abstractnode_tags.tag_id)
                   WHERE (osf_tag.system = FALSE AND osf_abstractnode_tags.abstractnode_id = osf_abstractnode.id)
@@ -237,7 +237,8 @@ def conference_submissions_sql(conf):
                            AND U0.system = FALSE))
                    AND osf_abstractnode.is_deleted = FALSE
                    AND osf_abstractnode.is_public = TRUE
-                   AND AUTHOR_GUID IS NOT NULL);
+                   AND AUTHOR_GUID IS NOT NULL)
+            ORDER BY DOWNLOAD_COUNT;
 
             """, [
                 submission1_name,
