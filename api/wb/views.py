@@ -20,7 +20,6 @@ class FileMetadataView(APIView):
     view_category = 'wb'
     node_lookup_url_kwarg = 'node_id'
 
-    # Overrides CreateAPIView
     def get_object(self):
         return self.get_node(self.kwargs[self.node_lookup_url_kwarg])
 
