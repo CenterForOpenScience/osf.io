@@ -58,6 +58,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
                 "version": "2",
                 "downloads": "1",
                 "checkout": "...",
+                "latestVersionSeen": "...",
                 "modified": "a date",
                 "modified_utc": "a date in utc",
 
@@ -165,6 +166,8 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
+    user_id = request.args.get('user_id')
+    user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''
@@ -184,6 +187,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
+                        , 'latestVersionSeen', SEEN_LATEST_VERSION.case
                     )
                 ELSE
                     json_build_object(
@@ -220,9 +224,42 @@ def osfstorage_get_children(file_node, **kwargs):
                 WHERE P._id = 'download:' || %s || ':' || F._id
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
+            LEFT JOIN LATERAL (
+              SELECT EXISTS(
+                SELECT (1) FROM osf_fileversion
+                INNER JOIN osf_basefilenode_versions ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
+                INNER JOIN osf_fileversionusermetadata ON (osf_fileversion.id = osf_fileversionusermetadata.file_version_id)
+                INNER JOIN osf_osfuser ON (osf_fileversionusermetadata.user_id = osf_osfuser.id)
+                INNER JOIN osf_guid ON (osf_osfuser.id = osf_guid.object_id AND (osf_guid.content_type_id = %s))
+                WHERE (osf_basefilenode_versions.basefilenode_id = F.id AND osf_guid._id = %s)
+                LIMIT 1
+              )
+            ) SEEN_FILE ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT CASE WHEN SEEN_FILE.exists
+                THEN
+                    CASE WHEN EXISTS(
+                        SELECT (1) FROM osf_osfuser
+                        INNER JOIN osf_fileversionusermetadata ON (osf_osfuser.id = osf_fileversionusermetadata.user_id)
+                        INNER JOIN osf_guid ON (
+                            osf_osfuser.id = osf_guid.object_id AND (osf_guid.content_type_id = %s)
+                        ) WHERE (
+                            osf_fileversionusermetadata.file_version_id = LATEST_VERSION.fileversion_id
+                            AND osf_guid._id = %s AND osf_guid._id IS NOT NULL
+                        ) LIMIT 1
+                    )
+                    THEN
+                      TRUE
+                    ELSE
+                      FALSE
+                    END
+                ELSE
+                  NULL
+                END
+            ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
+        ''', [user_content_type_id, file_node.node._id, user_content_type_id, user_id, user_content_type_id, user_id, file_node.id])
 
         return cursor.fetchone()[0] or []
 
