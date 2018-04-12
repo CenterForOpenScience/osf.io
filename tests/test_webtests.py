@@ -30,6 +30,7 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
+from addons.wiki.models import WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
@@ -243,7 +244,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
         project.update_node_wiki('WöRlÐé', 'new content', Auth(self.user))
-        wv = project.get_wiki_version(non_ascii)
+        wv = WikiVersion.objects.get_for_node(project, non_ascii)
         assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):

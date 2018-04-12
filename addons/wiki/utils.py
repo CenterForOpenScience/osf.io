@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from addons.wiki import settings as wiki_settings
+from addons.wiki.models import WikiVersion
 from addons.wiki.exceptions import InvalidVersionError
 
 # MongoDB forbids field names that begin with "$" or contain ".". These
@@ -228,7 +229,7 @@ def serialize_wiki_settings(user, nodes):
 
 def serialize_wiki_widget(node):
     wiki = node.get_addon('wiki')
-    wiki_version = node.get_wiki_version('home')
+    wiki_version = WikiVersion.objects.get_for_node(node, 'home')
 
     # Show "Read more" link if there are multiple pages or has > 400 characters
     more = node.wikis.filter(deleted__isnull=True).count() >= 2

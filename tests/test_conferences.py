@@ -15,6 +15,7 @@ from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
+from addons.wiki.models import WikiVersion
 from website import settings
 from website.conferences import views
 from website.conferences import utils, message
@@ -588,7 +589,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_version('home').content, body)
+        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
@@ -677,7 +678,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_version('home').content, body)
+        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])

@@ -1,5 +1,6 @@
 import sys
 
+from addons.wiki.models import WikiPage, WikiVersion
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError, MethodNotAllowed, NotFound
 
@@ -132,7 +133,7 @@ class NodeWikiSerializer(WikiSerializer):
         if node.addons_wiki_node_settings.deleted:
             raise NotFound(detail='The wiki for this node has been disabled.')
 
-        if node.get_wiki_page(name=name):
+        if WikiPage.objects.get_for_node(node, name):
             raise Conflict("A wiki page with the name '{}' already exists.".format(name))
 
         try:

@@ -85,7 +85,31 @@ def build_wiki_url(node, label, base, end):
     return '/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
 
 
+class WikiVersionNodeManager(models.Manager):
+
+    def get_for_node(self, node, name=None, version=None, id=None):
+        if name:
+            wiki_page = WikiPage.objects.get_for_node(node, name)
+            if not wiki_page:
+                return None
+
+            if version == 'previous':
+                version = wiki_page.current_version_number - 1
+            elif version == 'current' or version is None:
+                version = wiki_page.current_version_number
+            elif not ((isinstance(version, int) or version.isdigit())):
+                return None
+
+            try:
+                return wiki_page.get_version(version=version)
+            except WikiVersion.DoesNotExist:
+                return None
+        return WikiVersion.load(id)
+
+
 class WikiVersion(ObjectIDMixin, BaseModel):
+    objects = WikiVersionNodeManager()
+
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     wiki_page = models.ForeignKey('WikiPage', null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
     content = models.TextField(default='', blank=True)
@@ -182,8 +206,21 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+class WikiPageNodeManager(models.Manager):
+
+    def get_for_node(self, node, name=None, id=None):
+        if name:
+            try:
+                name = (name or '').strip()
+                return WikiPage.objects.get(page_name__iexact=name, deleted__isnull=True, node=node)
+            except WikiPage.DoesNotExist:
+                return None
+        return WikiPage.load(id)
+
 
 class WikiPage(GuidMixin, BaseModel):
+    objects = WikiPageNodeManager()
+
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')

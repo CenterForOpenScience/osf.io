@@ -49,6 +49,7 @@ from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
+from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 
@@ -633,7 +634,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_version('home', None)
+    wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
