@@ -1,6 +1,6 @@
 import sys
 
-from addons.wiki.models import WikiPage, WikiVersion
+from addons.wiki.models import WikiPage
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError, MethodNotAllowed, NotFound
 
@@ -115,7 +115,7 @@ class NodeWikiSerializer(WikiSerializer):
         validated_data.pop('content', None)
 
         try:
-            instance = instance.node.rename_node_wiki(instance.page_name, new_page_name, auth)
+            instance = instance.rename(new_page_name, auth)
         except PageConflictError as err:
             raise Conflict(err.args[0])
         except WikiError as err:
@@ -137,7 +137,7 @@ class NodeWikiSerializer(WikiSerializer):
             raise Conflict("A wiki page with the name '{}' already exists.".format(name))
 
         try:
-            wiki_page, _ = node.update_node_wiki(name=name, content=content, auth=auth)
+            wiki_page = WikiPage.objects.create_for_node(node, name, content, auth)
         except (
             NameInvalidError, NameMaximumLengthError
         ) as err:
@@ -228,7 +228,7 @@ class WikiVersionSerializer(JSONAPISerializer):
         auth = Auth(self.context['request'].user)
         wiki_page = self.context['view'].get_wiki()
         content = validated_data.get('content', '')
-        _, new_version = wiki_page.node.update_node_wiki(name=wiki_page.page_name, content=content, auth=auth)
+        new_version = wiki_page.update(auth.user, content)
         return new_version
 
     class Meta:

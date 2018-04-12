@@ -164,7 +164,8 @@ def project_wiki_delete(auth, wname, **kwargs):
 
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
-    node.delete_node_wiki(wiki_name, auth)
+
+    wiki_page.delete(auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
     return {}
 
@@ -300,15 +301,15 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         wiki_name = 'home'
 
     if wiki_version:
-        # Only update node wiki if content has changed
+        # Only update wiki if content has changed
         if form_wiki_content != wiki_version.content:
-            node.update_node_wiki(wiki_version.wiki_page.page_name, form_wiki_content, auth)
+            wiki_version.wiki_page.update(auth.user, form_wiki_content)
             ret = {'status': 'success'}
         else:
             ret = {'status': 'unmodified'}
     else:
-        # update_node_wiki will create a new wiki page because a page
-        node.update_node_wiki(wiki_name, form_wiki_content, auth)
+        # Create a wiki
+        WikiPage.objects.create_for_node(node, wiki_name, form_wiki_content, auth)
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
@@ -403,9 +404,13 @@ def project_wiki_rename(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
     new_wiki_name = request.get_json().get('value', None)
+    wiki_page = WikiPage.objects.get_for_node(node, wiki_name)
+
+    if not wiki_page:
+        raise WIKI_PAGE_NOT_FOUND_ERROR
 
     try:
-        node.rename_node_wiki(wiki_name, new_wiki_name, auth)
+        wiki_page.rename(new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
     except NameInvalidError as error:
@@ -445,7 +450,7 @@ def project_wiki_validate_name(wname, auth, node, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     else:
-        node.update_node_wiki(wiki_name, '', auth)
+        WikiPage.objects.create_for_node(node, wiki_name, '', auth)
     return {'message': wiki_name}
 
 @must_be_valid_project

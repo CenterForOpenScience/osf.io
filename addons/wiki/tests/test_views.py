@@ -30,8 +30,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        self.wiki_page = WikiPage.objects.get_for_node(self.project, 'home')
+        self.wiki_page = WikiPage.objects.create_for_node(self.project, 'home', 'Hello world', self.auth)
 
     def test_default_wiki(self):
         # There is no default wiki
@@ -39,17 +38,23 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert WikiVersion.objects.get_for_node(project1, 'home') is None
 
     def test_default_is_current(self):
-        assert WikiVersion.objects.get_for_node(self.project, 'home').is_current is True
-        self.project.update_node_wiki('home', 'Hello world 2', self.auth)
-        assert WikiVersion.objects.get_for_node(self.project, 'home').is_current is True
-        self.project.update_node_wiki('home', 'Hello world 3', self.auth)
-        assert WikiVersion.objects.get_for_node(self.project, 'home').is_current is True
+        wv = WikiVersion.objects.get_for_node(self.project, 'home')
+        assert wv.is_current is True
+        self.wiki_page.update(self.user, 'Hello world 2')
+        wv = WikiVersion.objects.get_for_node(self.project, 'home')
+        assert wv.is_current == True
+        assert wv.identifier == 2
+
+        self.wiki_page.update(self.user, 'Hello world 3')
+        wv = WikiVersion.objects.get_for_node(self.project, 'home')
+        assert wv.is_current == True
+        assert wv.identifier == 3
 
     def test_wiki_content(self):
         # Wiki has correct content
         assert WikiVersion.objects.get_for_node(self.project, 'home').content == 'Hello world'
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
+        self.wiki_page.update(self.user, 'Hola mundo')
         # Both versions have the expected content
         assert WikiVersion.objects.get_for_node(self.project, 'home', 2).content == 'Hola mundo'
         assert WikiVersion.objects.get_for_node(self.project, 'home', 1).content == 'Hello world'
@@ -58,7 +63,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Wiki is current
         assert WikiVersion.objects.get_for_node(self.project, 'home', 1).is_current is True
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
+        self.wiki_page.update(self.user, 'Hola mundo')
         # New version is current, old version is not
         assert WikiVersion.objects.get_for_node(self.project, 'home', 2).is_current is True
         assert WikiVersion.objects.get_for_node(self.project, 'home', 1).is_current is False
@@ -67,7 +72,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Updates are logged
         assert self.project.logs.latest().action == 'wiki_updated'
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
+        self.wiki_page.update(self.user, 'Hola mundo')
         # There are two update logs
         assert self.project.logs.filter(action='wiki_updated').count() == 2
 
@@ -81,7 +86,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert self.wiki_page.current_version_number == 1
         # Update wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
+        self.wiki_page.update(self.user, 'Hello world')
         # Number of versions is correct
         assert self.wiki_page.current_version_number == 2
         # Versions are different
@@ -89,11 +94,11 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert versions[0]._id != versions[1]._id
 
     def test_update_two_node_wikis(self):
-        # user updates a second wiki for the same node
-        self.project.update_node_wiki('second', 'Hola mundo', self.auth)
+        # user creates a second wiki for the same node
+        second_wiki = WikiPage.objects.create_for_node(self.project, 'second', 'Hola mundo', self.auth)
         # each wiki only has one version
         assert self.wiki_page.current_version_number == 1
-        assert WikiPage.objects.get_for_node(self.project, 'second').current_version_number == 1
+        assert second_wiki.current_version_number == 1
         # There are 2 logs saved
         assert self.project.logs.filter(action='wiki_updated').count() == 2
         # Each wiki has the expected content
@@ -104,7 +109,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
         with pytest.raises(NameInvalidError):
-            self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
+            WikiPage.objects.create_for_node(self.project, invalid_name, 'more valid content', self.auth)
 
     def test_update_wiki_updates_comments_and_user_comments_viewed_timestamp(self):
         project = ProjectFactory(creator=self.user, is_public=True)
@@ -123,7 +128,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert wiki_page._id in self.user.comments_viewed_timestamp
 
         # user updates the wiki
-        project.update_node_wiki('test', 'Updating wiki', self.auth)
+        wiki_page.update(self.user, 'Updating wiki')
         comment.reload()
         self.user.reload()
         assert wiki_page._id in self.user.comments_viewed_timestamp
@@ -158,7 +163,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert wiki_page._id in contributor.comments_viewed_timestamp
 
         # user updates the wiki
-        project.update_node_wiki('test', 'Updating wiki', self.auth)
+        wiki_page.update(self.user, 'Updating wiki')
         comment.reload()
         contributor.reload()
 
@@ -173,7 +178,7 @@ class TestUpdateNodeWiki(OsfTestCase):
             wiki_content += '1234567890'
         assert len(wiki_content) == 397
         project = ProjectFactory(creator=self.user)
-        project.update_node_wiki('home', wiki_content, self.auth)
+        WikiPage.objects.create_for_node(project, 'home', wiki_content, self.auth)
         res = serialize_wiki_widget(project)
         assert not res['more']
 
@@ -183,7 +188,7 @@ class TestUpdateNodeWiki(OsfTestCase):
             wiki_content += 'a'
         assert len(wiki_content) == 1000
         project = ProjectFactory(creator=self.user)
-        project.update_node_wiki('home', wiki_content, self.auth)
+        WikiPage.objects.create_for_node(project, 'home', wiki_content, self.auth)
         res = serialize_wiki_widget(project)
         assert res['more']
 
@@ -197,62 +202,53 @@ class TestRenameNodeWiki(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
-        # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        self.wiki_page = WikiPage.objects.get_for_node(self.project, 'home')
-
-    def test_rename_name_not_found(self):
-        for invalid_name in [None, '', '   ', 'Unknown Name']:
-            with pytest.raises(PageNotFoundError):
-                self.project.rename_node_wiki(invalid_name, None, auth=self.auth)
+        # user updates a wiki
+        self.wiki_page = WikiPage.objects.create_for_node(self.project, 'home', 'Hello world', self.auth)
+        self.name = 'Second wiki'
+        self.second_wiki = WikiPage.objects.create_for_node(self.project, self.name, 'some content', self.auth)
 
     def test_rename_new_name_invalid_none_or_blank(self):
         name = 'New Page'
-        self.project.update_node_wiki(name, 'new content', self.auth)
         for invalid_name in [None, '', '   ']:
             with pytest.raises(ValidationError):
-                self.project.rename_node_wiki(name, invalid_name, auth=self.auth)
+                self.second_wiki.rename(invalid_name, self.auth)
 
     def test_rename_new_name_invalid_special_characters(self):
-        old_name = 'old name'
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
-        self.project.update_node_wiki(old_name, 'some content', self.auth)
         with pytest.raises(NameInvalidError):
-            self.project.rename_node_wiki(old_name, invalid_name, self.auth)
+            self.second_wiki.rename(invalid_name, self.auth)
 
     def test_rename_name_maximum_length(self):
-        old_name = 'short name'
         new_name = 'a' * 101
-        self.project.update_node_wiki(old_name, 'some content', self.auth)
         with pytest.raises(NameMaximumLengthError):
-            self.project.rename_node_wiki(old_name, new_name, self.auth)
+            self.second_wiki.rename(new_name, self.auth)
 
     def test_rename_cannot_rename(self):
-        for args in [('home', 'New Home'), ('HOME', 'New Home')]:
-            with pytest.raises(PageCannotRenameError):
-                self.project.rename_node_wiki(*args, auth=self.auth)
+        with pytest.raises(PageCannotRenameError):
+            wp = WikiPage.objects.get_for_node(self.project, 'home')
+            wp.rename('New Home', self.auth)
+
+        with pytest.raises(PageCannotRenameError):
+            wp = WikiPage.objects.get_for_node(self.project, 'HOME')
+            wp.rename('New Home', self.auth)
 
     def test_rename_page_not_found(self):
-        for args in [('abc123', 'New Home'), (u'ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
-            with pytest.raises(PageNotFoundError):
-                self.project.rename_node_wiki(*args, auth=self.auth)
+        wp = WikiPage.objects.get_for_node(self.project, 'abc123')
+        wp = WikiPage.objects.get_for_node(self.project, u'ˆ•¶£˙˙®¬™∆˙')
 
     def test_rename_page(self):
-        old_name = 'new page'
         new_name = 'New pAGE'
-        self.project.update_node_wiki(old_name, 'new content', self.auth)
-        self.project.rename_node_wiki(old_name, new_name, self.auth)
+        self.second_wiki.rename(new_name, self.auth)
         page = WikiVersion.objects.get_for_node(self.project, new_name)
-        assert old_name != page.wiki_page.page_name
+        assert self.name != page.wiki_page.page_name
         assert new_name == page.wiki_page.page_name
         assert self.project.logs.latest().action == 'wiki_renamed'
 
     def test_rename_page_case_sensitive(self):
         old_name = 'new page'
         new_name = 'New pAGE'
-        self.project.update_node_wiki(old_name, 'new content', self.auth)
-        self.project.rename_node_wiki(old_name, new_name, self.auth)
+        self.second_wiki.rename(new_name, self.auth)
         new_page = WikiVersion.objects.get_for_node(self.project, new_name)
         assert new_name == new_page.wiki_page.page_name
         assert self.project.logs.latest().action == 'wiki_renamed'
@@ -263,46 +259,48 @@ class TestRenameNodeWiki(OsfTestCase):
         old_content = 'old content'
         new_content = 'new content'
         # create the old page and delete it
-        self.project.update_node_wiki(old_name, old_content, self.auth)
-        old_page = WikiVersion.objects.get_for_node(self.project, old_name)
-        assert WikiPage.objects.get_for_node(self.project, 'old_name').deleted is None
-        self.project.delete_node_wiki(old_name, self.auth)
+        old_page = WikiPage.objects.create_for_node(self.project, old_name, old_content, self.auth)
+        old_version = old_page.get_version()
+        assert WikiPage.objects.get_for_node(self.project, old_name).deleted is None
+        old_page.delete(self.auth)
         assert WikiPage.objects.get_for_node(self.project, 'old_name') is None
         # create the new page and rename it
-        self.project.update_node_wiki(new_name, new_content, self.auth)
-        self.project.rename_node_wiki(new_name, old_name, self.auth)
+        new_page = WikiPage.objects.create_for_node(self.project, new_name, new_content, self.auth)
+        new_version = new_page.get_version()
+        new_page.rename(old_name, self.auth)
         new_page = WikiVersion.objects.get_for_node(self.project, old_name)
         # renaming over an existing deleted page just creates a new page with
         # the same name as the deleted page. Page names just need to be unique
         # among non-deleted wikis.
-        assert old_content == old_page.content
-        assert new_content == new_page.content
+        assert old_content == old_version.content
+        assert new_content == new_version.content
         assert self.project.logs.latest().action == 'wiki_renamed'
 
     def test_rename_page_conflict(self):
         existing_name = 'existing page'
         new_name = 'new page'
-        self.project.update_node_wiki(existing_name, 'old content', self.auth)
+        old_page = WikiPage.objects.create_for_node(self.project, existing_name, 'some content', self.auth)
         assert WikiPage.objects.get_for_node(self.project, existing_name).page_name == existing_name
-        self.project.update_node_wiki(new_name, 'new content', self.auth)
+        new_page = WikiPage.objects.create_for_node(self.project, new_name, 'new content', self.auth)
         assert WikiPage.objects.get_for_node(self.project, new_name).page_name == new_name
         with pytest.raises(PageConflictError):
-            self.project.rename_node_wiki(new_name, existing_name, self.auth)
+            new_page.rename(existing_name, self.auth)
 
     def test_rename_log(self):
         # Rename wiki
-        self.project.update_node_wiki('wiki', 'content', self.auth)
-        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
+        wp = WikiPage.objects.create_for_node(self.project, 'wiki', 'content', self.auth)
+        wp.rename('renamed_wiki', self.auth)
+
         # Rename is logged
         assert self.project.logs.latest().action == 'wiki_renamed'
 
     def test_rename_log_specifics(self):
-        self.project.update_node_wiki('wiki', 'content', self.auth)
-        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
-        page = WikiPage.objects.get_for_node(self.project, 'renamed_wiki')
+        wp = WikiPage.objects.create_for_node(self.project, 'wiki', 'content', self.auth)
+        wp.rename('renamed_wiki', self.auth)
+
         log = self.project.logs.latest()
         assert 'wiki_renamed' == log.action
-        assert page._primary_key == log.params['page_id']
+        assert wp._primary_key == log.params['page_id']
 
 
 class TestDeleteNodeWiki(OsfTestCase):
@@ -315,21 +313,19 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('not home', 'Hello world', self.auth)
-        self.wiki_page = WikiPage.objects.get_for_node(self.project, 'not home')
+        self.wiki_page = WikiPage.objects.create_for_node(self.project, 'not home', 'Hello world', self.auth)
 
     def test_delete_log(self):
         # Delete wiki
-        self.project.delete_node_wiki('not home', self.auth)
+        self.wiki_page.delete(self.auth)
         # Deletion is logged
         assert self.project.logs.latest().action == 'wiki_deleted'
 
     def test_delete_log_specifics(self):
-        page = WikiPage.objects.get_for_node(self.project, 'not home')
-        self.project.delete_node_wiki('not home', self.auth)
+        self.wiki_page.delete(self.auth)
         log = self.project.logs.latest()
         assert 'wiki_deleted' == log.action
-        assert page._primary_key == log.params['page_id']
+        assert self.wiki_page._primary_key == log.params['page_id']
 
     def test_wiki_versions(self):
         # Number of versions is correct
@@ -337,7 +333,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Delete wiki
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.project.delete_node_wiki('not home', self.auth)
+            self.wiki_page.delete(self.auth)
         # Number of versions is still correct
         self.wiki_page.reload()
         assert self.wiki_page.deleted == mock_now
@@ -346,13 +342,12 @@ class TestDeleteNodeWiki(OsfTestCase):
         assert WikiPage.objects.get_for_node(self.project, 'not home') is None
 
     def test_wiki_delete(self):
-        page = WikiPage.objects.get_for_node(self.project, 'not home')
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.project.delete_node_wiki('not home', self.auth)
+            self.wiki_page.delete(self.auth)
         # page was deleted
-        page.reload()
-        assert page.deleted == mock_now
+        self.wiki_page.reload()
+        assert self.wiki_page.deleted == mock_now
         assert WikiPage.objects.get_for_node(self.project, 'not home') is None
 
         log = self.project.logs.latest()
@@ -360,14 +355,14 @@ class TestDeleteNodeWiki(OsfTestCase):
         # deletion was logged
         assert log.action == 'wiki_deleted'
         # log date is not set to the page's creation date
-        assert log.date > page.created
+        assert log.date > self.wiki_page.created
 
     def test_deleted_versions(self):
         # Update wiki a second time
-        self.project.update_node_wiki('not home', 'Hola mundo', self.auth)
+        self.wiki_page.update(self.user, 'Hola mundo')
         assert WikiVersion.objects.get_for_node(self.project, 'not home', 2).content == 'Hola mundo'
         # Delete wiki
-        self.project.delete_node_wiki('not home', self.auth)
+        self.wiki_page.delete(self.auth)
         # Check versions
         assert WikiVersion.objects.get_for_node(self.project, 'not home', 2) == None
         assert WikiVersion.objects.get_for_node(self.project, 'not home', 1) == None

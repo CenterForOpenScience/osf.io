@@ -3,7 +3,7 @@ import mock
 import pytest
 from framework.auth import Auth
 
-from addons.wiki.models import WikiVersion
+from addons.wiki.models import WikiPage, WikiVersion
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiWikiTestCase
@@ -70,8 +70,8 @@ class TestWikiVersionContentView(ApiWikiTestCase):
     def test_older_versions_content_can_be_accessed(self):
         self._set_up_private_project_with_wiki_page()
         # Create a second version
-        wiki_page, wiki_version = self.private_project.create_or_update_node_wiki(self.private_wiki.wiki_page.page_name, 'Second draft of wiki', Auth(self.user))
-
+        wiki_version = self.private_wiki.wiki_page.update(self.user, 'Second draft of wiki')
+        wiki_page = wiki_version.wiki_page
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')

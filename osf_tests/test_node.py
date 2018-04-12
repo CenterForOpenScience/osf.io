@@ -3789,10 +3789,7 @@ class TestTemplateNode:
                 )
 
     def test_template_wiki_pages_not_copied(self, project, auth):
-        project.update_node_wiki(
-            'template', 'lol',
-            auth=auth
-        )
+        WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
         new = project.use_as_template(
             auth=auth
         )
@@ -3801,7 +3798,7 @@ class TestTemplateNode:
         assert latest_version.identifier == 1
         assert latest_version.is_current is True
 
-        assert WikiPage.objects.get_for_node(node, 'template') is None
+        assert WikiPage.objects.get_for_node(new, 'template') is None
         assert WikiVersion.objects.get_for_node(new, 'template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):

@@ -5,6 +5,9 @@ import logging
 
 import markdown
 import pytz
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from framework.auth.core import Auth
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
 from bleach import Cleaner
@@ -19,6 +22,10 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import settings
 from addons.wiki import utils as wiki_utils
+from addons.wiki.exceptions import (
+    PageCannotRenameError,
+    PageConflictError,
+)
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
@@ -208,6 +215,19 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
 class WikiPageNodeManager(models.Manager):
 
+    def create_for_node(self, node, name, content, auth):
+        existing_wiki_page = WikiPage.objects.get_for_node(node, name)
+        if existing_wiki_page:
+            raise NodeStateError('Wiki Page already exists.')
+
+        wiki_page = WikiPage.objects.create(
+            node=node,
+            page_name=name,
+            user=auth.user
+        )
+        wiki_page.create_version(auth.user, content)
+        return wiki_page
+
     def get_for_node(self, node, name=None, id=None):
         if name:
             try:
@@ -236,6 +256,9 @@ class WikiPage(GuidMixin, BaseModel):
         if self.node and self.node.is_public:
             self.node.update_search()
         return rv
+
+    def update(self, user, content):
+        return self.create_version(user, content)
 
     def update_active_sharejs(self, node):
         """
@@ -269,6 +292,20 @@ class WikiPage(GuidMixin, BaseModel):
     def create_version(self, user, content):
         version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
         version.save()
+
+        self.node.add_log(
+            action=NodeLog.WIKI_UPDATED,
+            params={
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'page': self.page_name,
+                'page_id': self._primary_key,
+                'version': version.identifier,
+            },
+            auth=Auth(user),
+            log_date=version.created,
+            save=True
+        )
         return version
 
     def get_version(self, version=None):
@@ -281,11 +318,6 @@ class WikiPage(GuidMixin, BaseModel):
 
     def get_versions(self):
         return self.versions.all().order_by('-created')
-
-    def rename(self, new_name, save=True):
-        self.page_name = new_name
-        if save:
-            self.save()
 
     @property
     def root_target_page(self):
@@ -345,6 +377,73 @@ class WikiPage(GuidMixin, BaseModel):
     def absolute_api_v2_url(self):
         path = '/wikis/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def rename(self, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information includin g user, API key.
+
+        """
+        new_name = (new_name or '').strip()
+        existing_wiki_page = WikiPage.objects.get_for_node(self.node, new_name)
+        key = wiki_utils.to_mongo_key(self.page_name)
+        new_key = wiki_utils.to_mongo_key(new_name)
+
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page')
+        if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        old_name = self.page_name
+        self.page_name = new_name
+
+        # TODO: merge historical records like update (prevents log breaks)
+        # transfer the old page versions/current keys to the new name.
+        if key != new_key:
+            if key in self.node.wiki_private_uuids:
+                self.node.wiki_private_uuids[new_key] = self.node.wiki_private_uuids[key]
+                del self.node.wiki_private_uuids[key]
+
+        self.node.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'page': self.page_name,
+                'page_id': self._primary_key,
+                'old_page': old_name,
+                'version': self.current_version_number,
+            },
+            auth=auth,
+            save=True,
+        )
+        self.save()
+        return self
+
+    def delete(self, auth):
+        if self.page_name.lower() == 'home':
+            raise ValidationError('The home wiki page cannot be deleted.')
+        self.deleted = timezone.now()
+
+        self.node.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'page': self.page_name,
+                'page_id': self._primary_key,
+            },
+            auth=auth,
+            save=True,
+        )
+        return self.save()
 
 
 class NodeWikiPage(GuidMixin, BaseModel):

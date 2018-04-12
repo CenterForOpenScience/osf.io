@@ -47,6 +47,12 @@ class TestWikiViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
+        self.home_wiki = WikiPage.objects.create_for_node(self.project, 'home', 'Version 1', Auth(self.user))
+        self.home_wiki.update(self.user, 'Version 2')
+        self.funpage_wiki = WikiPage.objects.create_for_node(self.project, 'funpage', 'Version 1', Auth(self.user))
+
+        self.second_project = ProjectFactory(is_public=True, creator=self.user)
+        self.sec_wiki = WikiPage.objects.create_for_node(self.second_project, 'home', '', Auth(self.user))
 
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
@@ -62,8 +68,6 @@ class TestWikiViews(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_wiki_deleted_404_with_no_write_permission(self, mock_sharejs):
-        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
-        self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='funpage')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
@@ -73,9 +77,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_wiki_url_with_path_get_returns_200(self):
-        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
-        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
-        self.project.save()
+        self.funpage_wiki.update(self.user, 'Version 2')
 
         url = self.project.web_url_for(
             'project_wiki_view',
@@ -85,9 +87,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self):
-        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
-        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
-        self.project.save()
+        self.funpage_wiki.update(self.user, 'Version 2')
 
         url = self.project.web_url_for(
             'project_wiki_view',
@@ -136,8 +136,7 @@ class TestWikiViews(OsfTestCase):
     @mock.patch('addons.wiki.models.WikiVersion.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_content_rendered_before_update(self, mock_rendered_before_update):
         content = 'Some content'
-        self.project.update_node_wiki('somerandomid', content, Auth(self.user))
-        self.project.save()
+        WikiPage.objects.create_for_node(self.project, 'somerandomid', content, Auth(self.user))
 
         mock_rendered_before_update.return_value = True
         url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
@@ -155,11 +154,6 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_project_wiki_edit_post(self):
-        self.project.update_node_wiki(
-            'home',
-            content='old content',
-            auth=Auth(self.project.creator)
-        )
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
         res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
@@ -241,9 +235,6 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_project_wiki_view_scope(self):
-        self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
-        self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
-        self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', view=2)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -255,16 +246,11 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_project_wiki_compare_returns_200(self):
-        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
-        self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='home') + '?compare'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_project_wiki_compare_scope(self):
-        self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
-        self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
-        self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=2)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -299,7 +285,7 @@ class TestWikiViews(OsfTestCase):
         assert_is_not_none(WikiPage.objects.get_for_node(self.project, 'newpage'))
 
     def test_wiki_validate_name_collision_doesnt_clear(self):
-        self.project.update_node_wiki('oldpage', 'some text', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, 'oldpage', 'some text', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_validate_name', wname='oldpage', auth=self.consolidate_auth)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
@@ -316,7 +302,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        wiki = WikiPage.objects.get_for_node(self.project, 'CaPsLoCk')
         assert_equal(WikiPage.objects.get_for_node(self.project, 'CaPsLoCk').page_name, 'CaPsLoCk')
 
     def test_project_wiki_validate_name_display_correct_capitalization(self):
@@ -329,8 +315,8 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CAPSLOCK')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
-        url = self.project.api_url_for('project_wiki_validate_name', wname='capslock')
+        wiki = WikiPage.objects.get_for_node(self.project, 'CaPsLoCk')
+        wiki.update(self.user, 'hello')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
@@ -346,7 +332,7 @@ class TestWikiViews(OsfTestCase):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
         text = u'你好'
-        self.project.update_node_wiki('home', text, Auth(self.user))
+        self.home_wiki.update(self.user, text)
 
         # can view wiki preview from project dashboard
         url = self.project.web_url_for('view_project')
@@ -370,8 +356,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_id_url_get_returns_302_and_resolves(self):
         name = 'page by id'
-        self.project.update_node_wiki(name, 'some content', Auth(self.project.creator))
-        page = WikiPage.objects.get_for_node(self.project, name)
+        page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
         page_url = self.project.web_url_for('project_wiki_view', wname=page.page_name, _guid=True)
         url = self.project.web_url_for('project_wiki_id_page', wid=page._primary_key, _guid=True)
         res = self.app.get(url)
@@ -393,21 +378,23 @@ class TestWikiViews(OsfTestCase):
         assert_in('Home', page_name_elem.text)
 
     def test_wiki_widget_no_content(self):
-        res = serialize_wiki_widget(self.project)
+        project = ProjectFactory(is_public=True, creator=self.user)
+        res = serialize_wiki_widget(project)
         assert_is_none(res['wiki_content'])
 
     def test_wiki_widget_short_content_no_cutoff(self):
         short_content = 'a' * 150
-        self.project.update_node_wiki('home', short_content, Auth(self.user))
-        res = serialize_wiki_widget(self.project)
+
+        self.sec_wiki.update(self.user, short_content)
+        res = serialize_wiki_widget(self.second_project)
         assert_in(short_content, res['wiki_content'])
         assert_not_in('...', res['wiki_content'])
         assert_false(res['more'])
 
     def test_wiki_widget_long_content_cutoff(self):
         long_content = 'a' * 600
-        self.project.update_node_wiki('home', long_content, Auth(self.user))
-        res = serialize_wiki_widget(self.project)
+        self.sec_wiki.update(self.user, long_content)
+        res = serialize_wiki_widget(self.second_project)
         assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
         assert_in('...', res['wiki_content'])
         assert_true(res['more'])
@@ -415,16 +402,16 @@ class TestWikiViews(OsfTestCase):
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
         project = ProjectFactory(is_public=True, creator=self.user)
         short_content = 'a' * 150
-        project.update_node_wiki('home', short_content, Auth(self.user))
-        project.update_node_wiki('andanotherone', short_content, Auth(self.user))
-        res = serialize_wiki_widget(project)
+        self.sec_wiki.update(self.user, short_content)
+        WikiPage.objects.create_for_node(self.second_project, 'andanotherone', short_content, Auth(self.user))
+        res = serialize_wiki_widget(self.second_project)
         assert_true(res['more'])
 
     @mock.patch('addons.wiki.models.WikiVersion.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_widget_rendered_before_update(self, mock_rendered_before_update):
         # New pages use js renderer
         mock_rendered_before_update.return_value = False
-        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        self.home_wiki.update(self.user, 'updated_content')
         res = serialize_wiki_widget(self.project)
         assert_false(res['rendered_before_update'])
 
@@ -470,7 +457,7 @@ class TestViewHelpers(OsfTestCase):
         super(TestViewHelpers, self).setUp()
         self.project = ProjectFactory()
         self.wname = 'New page'
-        self.project.update_node_wiki(self.wname, 'some content', Auth(self.project.creator))
+        wiki = WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.project.creator))
 
     def test_get_wiki_web_urls(self):
         urls = views._get_wiki_web_urls(self.project, self.wname)
@@ -494,14 +481,13 @@ class TestWikiDelete(OsfTestCase):
         super(TestWikiDelete, self).setUp()
 
         creator = AuthUserFactory()
+        self.user = creator
 
         self.project = ProjectFactory(is_public=True, creator=creator)
         self.consolidate_auth = Auth(user=self.project.creator)
         self.auth = creator.auth
-        self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidate_auth)
-        self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
-        self.elephant_wiki = WikiPage.objects.get_for_node(self.project, 'Elephants')
-        self.lion_wiki = WikiPage.objects.get_for_node(self.project, 'Lions')
+        self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
+        self.lion_wiki = WikiPage.objects.create_for_node(self.project, 'Lions', 'Hello Lions', self.consolidate_auth)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete(self, mock_shrejs):
@@ -527,8 +513,7 @@ class TestWikiDelete(OsfTestCase):
         # TODO: Need to understand why calling update_node_wiki with failure causes transaction rollback issue later
         # with assert_raises(NameInvalidError):
         #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidate_auth)
-        self.project.update_node_wiki(SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidate_auth)
-        self.special_characters_wiki = WikiPage.objects.get_for_node(self.project, SPECIAL_CHARACTERS_ALLOWED)
+        self.special_characters_wiki = WikiPage.objects.create_for_node(self.project, SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidate_auth)
         assert_equal(self.special_characters_wiki.page_name, SPECIAL_CHARACTERS_ALLOWED)
         url = self.project.api_url_for(
             'project_wiki_delete',
@@ -547,25 +532,23 @@ class TestWikiDelete(OsfTestCase):
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_wiki_versions_do_not_reappear_after_delete(self, mock_sharejs):
         # Creates a wiki page
-        self.project.update_node_wiki('Hippos', 'Hello hippos', self.consolidate_auth)
-        # Edits it two times
-        wiki_page = WikiPage.objects.get_for_node(self.project, 'Hippos')
+        wiki_page = WikiPage.objects.create_for_node(self.project, 'Hippos', 'Hello hippos', self.consolidate_auth)
+        # Edits the wiki
         assert_equal(wiki_page.deleted, None)
         assert_equal(wiki_page.current_version_number, 1)
-        self.project.update_node_wiki('Hippos', 'Hello hippopotamus', self.consolidate_auth)
+        wiki_page.update(self.user, 'Hello hippopotamus')
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
         # Deletes the wiki page
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.project.delete_node_wiki('Hippos', self.consolidate_auth)
+            wiki_page.delete(self.consolidate_auth)
         wiki_page.reload()
         assert_equal(wiki_page.deleted, mock_now)
         # Creates new wiki with same name as deleted wiki
-        self.project.update_node_wiki('Hippos', 'Hello again hippos', self.consolidate_auth)
-        wiki_page = WikiPage.objects.get_for_node(self.project, 'Hippos')
+        wiki_page = WikiPage.objects.create_for_node(self.project, 'Hippos', 'Hello again hippos', self.consolidate_auth)
         assert_equal(wiki_page.current_version_number, 1)
-        self.project.update_node_wiki('Hippos', 'Hello again hippopotamus', self.consolidate_auth)
+        wiki_page.update(self.user, 'Hello again hippopotamus')
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
 
@@ -579,14 +562,11 @@ class TestWikiRename(OsfTestCase):
         self.project = ProjectFactory(is_public=True, creator=creator)
         self.consolidate_auth = Auth(user=self.project.creator)
         self.auth = creator.auth
-        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
-
+        self.wiki = WikiPage.objects.create_for_node(self.project, 'home', 'Hello world', self.consolidate_auth)
         self.page_name = 'page2'
-        self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
-        self.project.save()
+        self.page = WikiPage.objects.create_for_node(self.project, self.page_name, 'content', self.consolidate_auth)
+        self.version = self.page.get_version()
 
-        self.page =  WikiVersion.objects.get_for_node(self.project, self.page_name)
-        self.wiki = WikiPage.objects.get_for_node(self.project, 'home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
             wname=self.page_name,
@@ -606,9 +586,9 @@ class TestWikiRename(OsfTestCase):
 
         new_wiki =  WikiVersion.objects.get_for_node(self.project, new_name)
         assert_true(new_wiki)
-        assert_equal(new_wiki.wiki_page._primary_key, self.page.wiki_page._primary_key)
-        assert_equal(new_wiki.content, self.page.content)
-        assert_equal(new_wiki.identifier, self.page.identifier)
+        assert_equal(new_wiki.wiki_page._primary_key, self.page._primary_key)
+        assert_equal(new_wiki.content, self.version.content)
+        assert_equal(new_wiki.identifier, self.version.identifier)
 
     def test_rename_wiki_page_invalid(self, new_name=u'invalid/name'):
         res = self.app.put_json(
@@ -625,7 +605,7 @@ class TestWikiRename(OsfTestCase):
         assert_true(old_wiki)
 
     def test_rename_wiki_page_duplicate(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, 'away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
         res = self.app.put_json(
             self.url,
@@ -645,7 +625,7 @@ class TestWikiRename(OsfTestCase):
         user = AuthUserFactory()
         # A fresh project where the 'home' wiki page has no content
         project = ProjectFactory(creator=user)
-        project.update_node_wiki('Hello', 'hello world', Auth(user=user))
+        WikiPage.objects.create_for_node(project, 'Hello', 'hello world', Auth(user=user))
         url = project.api_url_for('project_wiki_rename', wname='Hello')
         res = self.app.put_json(url, {'value': 'home'}, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
@@ -659,7 +639,7 @@ class TestWikiRename(OsfTestCase):
         # attempt to rename 'page2' from setup to different case of 'away'.
         old_name = 'away'
         new_name = 'AwAy'
-        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
         res = self.app.put_json(
             self.url,
             {'value': new_name},
@@ -672,7 +652,7 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_same_name_different_casing(self, mock_sharejs):
         old_name = 'away'
         new_name = 'AWAY'
-        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_rename', wname=old_name)
         res = self.app.put_json(
             url,
@@ -689,12 +669,10 @@ class TestWikiRename(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_can_rename_to_a_deleted_page(self, mock_sharejs):
-        self.project.delete_node_wiki(self.page_name, self.consolidate_auth)
-        self.project.save()
+        self.page.delete(self.consolidate_auth)
 
         # Creates a new page
-        self.project.update_node_wiki('page3', 'moarcontent', self.consolidate_auth)
-        self.project.save()
+        WikiPage.objects.create_for_node(self.project, 'page3', 'moarcontent', self.consolidate_auth)
 
         # Renames the wiki to the deleted page
         url = self.project.api_url_for('project_wiki_rename', wname='page3')
@@ -786,8 +764,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(private_uuid, self.project.wiki_private_uuids.get(self.wkey))
 
     def test_uuid_not_visible_without_write_permission(self):
-        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
-        self.project.save()
+        WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
 
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -806,8 +783,7 @@ class TestWikiUuid(OsfTestCase):
         assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
 
     def test_uuid_not_generated_without_write_permission(self):
-        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
-        self.project.save()
+        WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
 
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -871,7 +847,7 @@ class TestWikiUuid(OsfTestCase):
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_migration_does_not_affect_forks(self, mock_sharejs):
         original_uuid = generate_private_uuid(self.project, self.wname)
-        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
+        WikiPage.objects.create_for_node(self.project, self.wname, 'Hello world', Auth(self.user))
         fork = self.project.fork_node(Auth(self.user))
         assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
@@ -885,7 +861,7 @@ class TestWikiUuid(OsfTestCase):
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
 
         # Create wiki page
-        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
+        WikiPage.objects.create_for_node(self.project, self.wname, 'Hello world', Auth(self.user))
 
         # Visit wiki edit page
         edit_url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -917,8 +893,7 @@ class TestWikiUuid(OsfTestCase):
         assert_is_none(self.project.wiki_private_uuids.get(new_wkey))
 
         # Create wiki page
-        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
-        wiki_page = WikiPage.objects.get_for_node(self.project, self.wname)
+        wiki_page = WikiPage.objects.create_for_node(self.project, self.wname, 'Hello world', Auth(self.user))
 
         # Visit wiki edit page
         original_edit_url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -967,8 +942,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.sharejs_uuid = get_sharejs_uuid(self.project, self.wname)
 
         # Create wiki page
-        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
-        self.wiki_page = WikiPage.objects.get_for_node(self.project, self.wname)
+        self.wiki_page = WikiPage.objects.create_for_node(self.project, self.wname, 'Hello world', Auth(self.user))
 
         # Insert mongo data for current project/wiki
         self.db = share_db()
@@ -1006,7 +980,8 @@ class TestWikiShareJSMongo(OsfTestCase):
         share_uuid = generate_private_uuid(self.project, wname)
         sharejs_uuid = get_sharejs_uuid(self.project, wname)
 
-        self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
+        self.wiki_page.update(self.user, 'Hello world')
+
         migrate_uuid(self.project, wname)
 
         assert_not_equal(share_uuid, self.project.wiki_private_uuids.get(wkey))
@@ -1326,10 +1301,8 @@ class TestWikiMenu(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_project_wiki_pages_contributor(self):
-        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
-        self.project.update_node_wiki('zoo', 'koala', self.consolidate_auth)
-        home_page = WikiPage.objects.get_for_node(self.project, 'home')
-        zoo_page = WikiPage.objects.get_for_node(self.project, 'zoo')
+        home_page = WikiPage.objects.create_for_node(self.project, 'home', 'content here', self.consolidate_auth)
+        zoo_page = WikiPage.objects.create_for_node(self.project, 'zoo', 'koala', self.consolidate_auth)
         data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
         expected = [
             {
@@ -1350,8 +1323,8 @@ class TestWikiMenu(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_project_wiki_pages_no_content_non_contributor(self):
-        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
-        self.project.update_node_wiki('zoo', '', self.consolidate_auth)
+        home_page = WikiPage.objects.create_for_node(self.project, 'home', 'content here', self.consolidate_auth)
+        zoo_page = WikiPage.objects.create_for_node(self.project, 'zoo', '', self.consolidate_auth)
         home_page = WikiVersion.objects.get_for_node(self.project, 'home')
         data = views.format_project_wiki_pages(self.project, auth=Auth(self.non_contributor))
         expected = [
@@ -1366,9 +1339,8 @@ class TestWikiMenu(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_component_wiki_pages_contributor(self):
-        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
-        self.component.update_node_wiki('zoo', 'koala', self.consolidate_auth)
-        zoo_page = WikiPage.objects.get_for_node(self.component, 'zoo')
+        home_page = WikiPage.objects.create_for_node(self.component, 'home', 'content here', self.consolidate_auth)
+        zoo_page = WikiPage.objects.create_for_node(self.component, 'zoo', 'koala', self.consolidate_auth)
         expected = [
             {
                 'page': {
@@ -1405,8 +1377,8 @@ class TestWikiMenu(OsfTestCase):
         assert_equal(data, expected)
 
     def test_project_wiki_grid_data(self):
-        self.project.update_node_wiki('home', 'project content', self.consolidate_auth)
-        self.component.update_node_wiki('home', 'component content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, 'home', 'project content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.component, 'home', 'component content', self.consolidate_auth)
         data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
         expected = [
             {

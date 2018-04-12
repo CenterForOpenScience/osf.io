@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from addons.wiki import settings as wiki_settings
-from addons.wiki.models import WikiVersion
 from addons.wiki.exceptions import InvalidVersionError
 
 # MongoDB forbids field names that begin with "$" or contain ".". These
@@ -228,6 +227,8 @@ def serialize_wiki_settings(user, nodes):
 
 
 def serialize_wiki_widget(node):
+    from addons.wiki.models import WikiVersion
+
     wiki = node.get_addon('wiki')
     wiki_version = WikiVersion.objects.get_for_node(node, 'home')
 

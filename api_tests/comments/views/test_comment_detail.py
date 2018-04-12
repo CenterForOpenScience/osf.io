@@ -1049,6 +1049,6 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def test_comment_detail_for_deleted_wiki_is_not_returned(
             self, app, user, wiki, private_url, private_project):
         # Delete commented wiki page
-        private_project.delete_node_wiki(wiki.page_name, core.Auth(user))
+        wiki.delete(core.Auth(user))
         res = app.get(private_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404

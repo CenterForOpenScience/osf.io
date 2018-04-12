@@ -2,10 +2,11 @@
 import requests
 
 from framework.auth import Auth
-
+from addons.wiki.models import WikiPage
 from website import settings
 from osf.models import MailRecord
 from api.base.utils import waterbutler_api_url_for
+from website.exceptions import NodeStateError
 
 
 def record_message(message, nodes_created, users_created):
@@ -25,8 +26,12 @@ def provision_node(conference, message, node, user):
     :param User user:
     """
     auth = Auth(user=user)
+    try:
+        wiki = WikiPage.objects.create_for_node(node, 'home', message.text, auth)
+    except NodeStateError:
+        wiki = WikiPage.objects.get_for_node(node, 'home')
+        wiki.update(user, message.text)
 
-    node.update_node_wiki('home', message.text, auth)
     if conference.admins.exists():
         node.add_contributors(prepare_contributors(conference.admins.all()), log=False)
 

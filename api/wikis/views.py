@@ -151,7 +151,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         auth = get_user_auth(self.request)
         wiki_page = self.get_object()
         try:
-            wiki_page.node.delete_node_wiki(wiki_page, auth)
+            wiki_page.delete(auth)
         except django_exceptions.ValidationError as err:
             raise ValidationError(err.message)
 

@@ -17,6 +17,7 @@ from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
+from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -275,7 +276,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
+                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -306,7 +307,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
+                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -474,9 +475,7 @@ class TestPublicNodes(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.project.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                WikiPage.objects.create_for_node(self.project, key, value, self.consolidate_auth)
             docs = query(value)['results']
             assert_equal(len(docs), 1)
 
@@ -484,11 +483,10 @@ class TestPublicNodes(OsfTestCase):
         # Add wiki text to page, then delete, then verify that project is not
         # found when searching for wiki text.
         wiki_content = 'Hammer to fall'
-        self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth,
-        )
+        wp = WikiPage.objects.create_for_node(self.project, 'home', wiki_content, self.consolidate_auth)
+
         with run_celery_tasks():
-            self.project.update_node_wiki('home', '', self.consolidate_auth)
+            wp.update(self.user, '')
 
         docs = query(wiki_content)['results']
         assert_equal(len(docs), 0)
