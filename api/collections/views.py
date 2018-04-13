@@ -23,6 +23,7 @@ from api.collections.permissions import (
 )
 from api.collections.serializers import (
     CollectedMetaSerializer,
+    CollectedMetaCreateSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
@@ -280,7 +281,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         collection = self.get_object()
         collection.delete()
 
-class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin):
+class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanSubmitToCollectionOrPublic,
@@ -289,16 +290,27 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
+    model_class = CollectedGuidMetadata
     serializer_class = CollectedMetaSerializer
     view_category = 'collected-metadata'
     view_name = 'collected-metadata-list'
 
-    def get_queryset(self):
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectedMetaCreateSerializer
+        else:
+            return CollectedMetaSerializer
+
+    def get_default_queryset(self):
         return self.get_collection().collectedguidmetadata_set.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(creator=user)
+        collection = self.get_collection()
+        serializer.save(creator=user, collection=collection)
 
 
 class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
@@ -307,16 +319,32 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         CanUpdateDeleteCGMOrPublic,
         base_permissions.TokenHasScope,
     )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
     serializer_class = CollectedMetaSerializer
     view_category = 'collected-metadata'
     view_name = 'collected-metadata-detail'
 
+    # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_collection().collectedguidmetadata_set.all()
+        cgm = get_object_or_error(
+            CollectedGuidMetadata,
+            self.kwargs['cgm_id'],
+            self.request,
+            'submission'
+        )
+        # May raise a permission denied
+        self.check_object_permissions(self.request, cgm)
+        return cgm
 
     def perform_destroy(self, instance):
-        collection = self.get_collection()
+        # Skip collection permission check -- perms class checks when getting CGM
+        collection = self.get_collection(check_object_permissions=False)
         collection.remove_object(instance)
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin):

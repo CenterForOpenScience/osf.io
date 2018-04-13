@@ -5,7 +5,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 
 from api.base.utils import get_user_auth
-from osf.models import AbstractNode, Collection, CollectedGuidMetadata
+from osf.models import AbstractNode, Collection, CollectedGuidMetadata, CollectionProvider
 from osf.utils.permissions import WRITE
 
 class CollectionWriteOrPublic(permissions.BasePermission):
@@ -30,9 +30,14 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
 
 class CanSubmitToCollectionOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (CollectedGuidMetadata, Collection)), 'obj must be a Collection or CollectedGuidMetadata, got {}'.format(obj)
+        assert isinstance(obj, (CollectedGuidMetadata, Collection, CollectionProvider)), 'obj must be a Collection or CollectedGuidMetadata, got {}'.format(obj)
         if isinstance(obj, CollectedGuidMetadata):
             obj = obj.collection
+        elif isinstance(obj, CollectionProvider):
+            obj = obj.primary_collection
+            if not obj:
+                # Views either return empty QS or raise error in this case, let them handle it
+                return True
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or auth.user and auth.user.has_perm('read_collection', obj)
@@ -45,7 +50,7 @@ class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
         collection = obj.collection
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or auth.user and auth.user.has_perm('read_collection', collection)
+            return collection.is_public or auth.user and auth.user.has_perm('read_collection', collection)
         elif request.method in ['PUT', 'PATCH']:
             return obj.has_referent_perm(auth, WRITE) or auth.user.has_perm('write_collection', collection)
         elif request.method == 'DELETE':

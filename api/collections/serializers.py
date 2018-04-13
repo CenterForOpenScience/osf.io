@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Registration, AbstractProvider
+from osf.models import AbstractNode, Node, Collection, CollectedGuidMetadata, Guid, Registration, AbstractProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
@@ -11,6 +11,7 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
+from osf.utils.permissions import WRITE
 from website.exceptions import NodeStateError
 
 
@@ -21,6 +22,14 @@ class ProviderRelationshipField(RelationshipField):
     def to_internal_value(self, data):
         provider = self.get_object(data)
         return {'provider': provider}
+
+class GuidRelationshipField(RelationshipField):
+    def get_object(self, _id):
+        return Guid.load(_id)
+
+    def to_internal_value(self, data):
+        guid = self.get_object(data)
+        return {'guid': guid}
 
 
 class CollectionSerializer(JSONAPISerializer):
@@ -137,11 +146,13 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     filterable_fields = frozenset([
         'id',
+        'collected_type',
         'date_created',
         'date_modified',
-        'subjects'
+        'subjects',
+        'status',
     ])
-    id = IDField(source='_id')
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
 
     creator = RelationshipField(
@@ -178,24 +189,47 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
                 raise exceptions.PermissionDenied(detail=e.message)
-            except ValueError as e:
+            except (ValueError, NodeStateError) as e:
                 raise exceptions.ValidationError(detail=e.message)
-            except NodeStateError as e:
-                raise exceptions.ValidationError(detail=e.message)
-        return super(CollectedMetaSerializer, self).update(obj, validated_data)
+        if 'status' in validated_data:
+            obj.status = validated_data.pop('status')
+        if 'collected_type' in validated_data:
+            obj.collected_type = validated_data.pop('collected_type')
+        obj.save()
+        return obj
+
+class CollectedMetaCreateSerializer(CollectedMetaSerializer):
+    # Makes guid writeable only on create
+    guid = GuidRelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+        read_only=False,
+        required=True,
+    )
 
     def create(self, validated_data):
         subjects = validated_data.pop('subjects', None)
-        obj = super(CollectedMetaSerializer, self).create(validated_data)
+        collection = validated_data.pop('collection', None)
+        creator = validated_data.pop('creator', None)
+        guid = validated_data.pop('guid')
+        if not collection:
+            raise exceptions.ValidationError('"collection" must be specified.')
+        if not creator:
+            raise exceptions.ValidationError('"creator" must be specified.')
+        if not (creator.has_perm('write_collection', collection) or CollectedGuidMetadata._has_referent_perm(guid, creator, WRITE)):
+            raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        try:
+            obj = collection.collect_object(guid.referent, creator, **validated_data)
+        except ValidationError as e:
+            raise InvalidModelValueError(e.message)
         if subjects:
             auth = get_user_auth(self.context['request'])
             try:
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
                 raise exceptions.PermissionDenied(detail=e.message)
-            except ValueError as e:
-                raise exceptions.ValidationError(detail=e.message)
-            except NodeStateError as e:
+            except (ValueError, NodeStateError) as e:
                 raise exceptions.ValidationError(detail=e.message)
         return obj
 

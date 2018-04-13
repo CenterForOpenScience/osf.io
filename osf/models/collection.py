@@ -31,17 +31,24 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     def _id(self):
         return self.guid._id
 
-    def has_referent_perm(self, auth, perm):
+    @classmethod
+    def _has_referent_perm(cls, guid, user, perm):
         # TODO: Normalize permission checking to obviate this helper
         from osf.models import AbstractNode, BaseFileNode, PreprintService
-        obj = self.guid.referent
+        obj = guid.referent
         if isinstance(obj, (AbstractNode, PreprintService)):
-            return obj.has_permission(auth.user, perm)
+            return obj.has_permission(user, perm)
         elif isinstance(obj, BaseFileNode):
-            return obj.node and obj.node.has_permission(auth.user, perm)
+            return obj.node and obj.node.has_permission(user, perm)
         elif isinstance(obj, Collection):
-            return auth.user.has_perms(obj.groups[perm], obj)
+            return user.has_perms(obj.groups[perm], obj)
 
+    def has_referent_perm(self, auth, perm):
+        return self.__class__._has_referent_perm(self.guid, auth.user, perm)
+
+    def save(self, *args, **kwargs):
+        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
+        return super(CollectedGuidMetadata, self).save(*args, **kwargs)
 
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
