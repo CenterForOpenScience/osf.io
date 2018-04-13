@@ -5,7 +5,10 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
+
+import xml.etree.ElementTree as ET
+from datacite import DataCiteMDSClient, errors
+from website.identifiers.metadata import build_datacite_metadata, datacite_metadata_for_preprint
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +62,7 @@ def merge_dicts(*dicts):
 def get_doi_and_metadata_for_object(target_object):
     from osf.models import PreprintService
 
-    metadata_function = datacite_metadata_for_node
+    metadata_function = build_datacite_metadata
     if isinstance(target_object, PreprintService):
         metadata_function = datacite_metadata_for_preprint
 
@@ -108,6 +111,38 @@ def request_identifiers_from_ezid(target_object):
             'already_exists': already_exists,
             'only_doi': only_doi
         }
+def get_datacite_client():
+    return DataCiteMDSClient(
+        url=settings.DATACITE_URL,
+        username=settings.DATACITE_USERNAME,
+        password=settings.DATACITE_PASSWORD,
+        prefix=settings.DATACITE_PREFIX,
+    )
+
+
+def request_identifiers_from_datacite(target_object):
+
+        metadata = build_datacite_metadata(target_object)
+
+        # Initialize the MDS client.
+        client = get_datacite_client()
+
+        # Set metadata for DOI
+        client.metadata_post(metadata)
+
+        doi = settings.DATACITE_FORMAT.format(namespace=settings.DATACITE_DOI_NAMESPACE,
+                                              guid=target_object._id)
+
+        try:
+            client.doi_post(doi, target_object.absolute_url)
+        except errors.DataCiteServerError:  # This hangs if uncaught.
+            raise HTTPError(code=503, message='Datacite is unavailable.')
+
+        resp = client.metadata_get(doi)
+        root = ET.fromstring(resp)
+        doi = root[0].text
+        ark = root.findall('{http://datacite.org/schema/kernel-4}relatedIdentifiers')[0]._children[0].text
+        return doi, ark
 
 
 def parse_identifiers(ezid_response):

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import unicodedata
+import datetime
 import lxml.etree
 import lxml.builder
+from datacite import schema40
 
 from website import settings
 
@@ -46,6 +48,62 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
     # set xsi:schemaLocation
     root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)
+
+
+def build_datacite_metadata(target_object):
+    """Return the formatted datacite metadata XML as a string.
+    """
+    from api.base.utils import absolute_reverse
+
+    doi = settings.DATACITE_FORMAT.format(namespace=settings.DATACITE_DOI_NAMESPACE,
+                                          guid=target_object._id)
+    ark = '{ark}osf.io/{guid}'.format(ark=settings.ARK_NAMESPACE, guid=target_object._id)
+    data = {
+        'identifier': {
+            'identifier': doi,
+            'identifierType': 'DOI',
+        },
+        'relatedIdentifiers': [{
+            'relatedIdentifier': ark,
+            'relatedIdentifierType': 'ARK',
+            'relationType': 'Documents'
+        }],
+        'creators': [
+            {'creatorName': user.fullname,
+             'givenName': user.given_name,
+             'familyName': user.family_name} for user in target_object.contributors
+        ],
+        'titles': [
+            {'title': target_object.title}
+        ],
+        'publisher': 'Open Science Framework',
+        'publicationYear': str(datetime.datetime.now().year),
+        'resourceType': {
+            'resourceTypeGeneral': 'Dataset'
+        }
+    }
+
+    if target_object.description:
+        data['descriptions'] = [{
+            'descriptionType': 'Abstract',
+            'description': target_object.description
+        }]
+
+    if target_object.node_license:
+        link = absolute_reverse('licenses:license-detail', kwargs={
+            'license_id': target_object.node_license.node_license._id,
+            'version': 'v2'
+        })
+        data['rightsList'] = [{
+            'rights': target_object.node_license.name,
+            'rightsURI': link
+        }]
+
+    # Validate dictionary
+    assert schema40.validate(data)
+
+    # Generate DataCite XML from dictionary.
+    return schema40.tostring(data)
 
 
 def format_contributor(contributor):
@@ -95,6 +153,41 @@ def format_subjects(preprint):
 
 # This function is OSF specific.
 def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
+    """Return the datacite metadata XML document for a given preprint as a string.
+
+    :param preprint -- the preprint
+    :param str doi
+    """
+    # NOTE: If you change *ANYTHING* here be 100% certain that the
+    # changes you make are also made to the SHARE serialization code.
+    # If the data sent out is not EXCATLY the same all the data will get jumbled up in SHARE.
+    # And then search results will be wrong and broken. And it will be your fault. And you'll have caused many sleepless nights.
+    # Don't be that person.
+    root = E.resource(
+        E.resourceType('Preprint', resourceTypeGeneral='Text'),
+        E.identifier(doi, identifierType='DOI'),
+        E.subjects(*format_subjects(preprint)),
+        E.creators(*format_creators(preprint)),
+        E.titles(E.title(remove_control_characters(preprint.node.title))),
+        E.publisher(preprint.provider.name),
+        E.publicationYear(str(getattr(preprint.date_published, 'year'))),
+        E.dates(E.date(preprint.modified.isoformat(), dateType='Updated')),
+        E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
+        E.descriptions(E.description(remove_control_characters(preprint.node.description), descriptionType='Abstract')),
+    )
+
+    if preprint.license:
+        root.append(E.rightsList(E.rights(preprint.license.name)))
+
+    if preprint.article_doi:
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+    # set xsi:schemaLocation
+    root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
+    return lxml.etree.tostring(root, pretty_print=pretty_print)
+
+
+# This function is OSF specific.
+def ezid_metadata_for_preprint(preprint, doi, pretty_print=False):
     """Return the datacite metadata XML document for a given preprint as a string.
 
     :param preprint -- the preprint

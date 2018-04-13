@@ -964,9 +964,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_set_node_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user, project_public,
+    @mock.patch('website.identifiers.tasks.update_datacite_metadata_on_change.s')
+    def test_set_node_private_updates_datacite(
+            self, mock_update_datacite_metadata, app, user, project_public,
             url_public, make_node_payload):
 
         IdentifierFactory(referent=project_public, category='doi')
@@ -979,7 +979,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_ezid_metadata.assert_called_with(
+        mock_update_datacite_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
     @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')

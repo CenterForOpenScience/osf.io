@@ -346,6 +346,16 @@ EZID_PASSWORD = None
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
+# For creating DOIs through the Datacite service
+DATACITE_DOI_NAMESPACE = '10.5072/FK2'
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_PREFIX = '10.17605'
+DATACITE_URL = 'https://mds.datacite.org'
+
+# Format for DOIs
+DATACITE_FORMAT = '{namespace}osf.io/{guid}'
+
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
 
