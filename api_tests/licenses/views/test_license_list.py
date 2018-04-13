@@ -8,7 +8,7 @@ from osf.models.licenses import NodeLicense
 class TestLicenseList:
 
     def test_license_list(self, app):
-        licenses = NodeLicense.objects.all()
+        licenses = NodeLicense.objects.exclude(license_id='CCBYNCND').exclude(license_id='CCBYSA40')
         license_node = licenses[0]
         url_licenses = '/{}licenses/'.format(API_BASE)
         res_licenses = app.get(url_licenses)

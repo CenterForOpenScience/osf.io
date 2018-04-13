@@ -58,7 +58,7 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ('name', )  # default ordering
 
     def get_default_queryset(self):
-        return NodeLicense.objects.all().exclude(license_id='CCBYNCND').exclude(license_id='CCBYSA40')
+        return NodeLicense.objects.exclude(license_id='CCBYNCND').exclude(license_id='CCBYSA40')
 
     def get_queryset(self):
         return self.get_queryset_from_request()
