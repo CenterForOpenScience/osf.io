@@ -43,7 +43,7 @@ class FileMetadataView(APIView):
         }
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class
+        serializer = self.serializer_class(data=request.data, context=self.get_serializer_context())
         if serializer.is_valid():
             source = serializer.validated_data.pop('source')
             destination = serializer.validated_data.pop('destination')
