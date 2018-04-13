@@ -217,7 +217,7 @@ class PreprintProviderLicenseList(LicenseList):
     view_category = 'preprint_providers'
 
     def get_default_queryset(self):
-        return NodeLicense.objects.all()
+        return NodeLicense.objects.preprint_licenses()
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
