@@ -289,6 +289,15 @@ class CollectionFactory(DjangoModelFactory):
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
 
+
+class CollectionProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.CollectionProvider
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
