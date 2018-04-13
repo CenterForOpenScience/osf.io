@@ -2963,10 +2963,12 @@ class TestNodeBulkDelete:
     def test_bulk_delete_project_with_component(
             self, app, user_one,
             public_project_parent,
+            public_project_one,
             public_component, url):
+
         new_payload = {'data': [
             {'id': public_project_parent._id, 'type': 'nodes'},
-            {'id': public_component._id, 'type': 'nodes'}
+            {'id': public_project_one._id, 'type': 'nodes'}
         ]}
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth,
@@ -2974,8 +2976,8 @@ class TestNodeBulkDelete:
         assert res.status_code == 400
 
         new_payload = {'data': [
-            {'id': public_component._id, 'type': 'nodes'},
-            {'id': public_project_parent._id, 'type': 'nodes'}
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_component._id, 'type': 'nodes'}
         ]}
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth, bulk=True)
