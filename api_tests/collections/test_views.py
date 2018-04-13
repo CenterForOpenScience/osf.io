@@ -11,6 +11,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     ProjectFactory,
     AuthUserFactory,
+    SubjectFactory,
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
@@ -3550,3 +3551,351 @@ class TestCollectionLinkedNodes:
             auth=None, expect_errors=True
         )
         assert res.status_code == 401
+
+
+@pytest.mark.django_db
+class TestCollectedMetaList:
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_one(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def project_two(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def project_three(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def project_four(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def subject_one(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
+        c = CollectionFactory(creator=user_one)
+        c.collect_object(project_one, user_one)
+        c.collect_object(project_two, user_one, status='two')
+        c.collect_object(project_three, user_one)
+        return c
+
+    @pytest.fixture()
+    def collection_with_one_cgm(self, user_one, project_one):
+        c = CollectionFactory(creator=user_one)
+        c.collect_object(project_one, user_one)
+        return c
+
+    @pytest.fixture()
+    def collection_with_zero_cgm(self, user_one):
+        return CollectionFactory(creator=user_one)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}collections/{{}}/collected_metadata/'.format(API_BASE)
+
+    @pytest.fixture()
+    def payload(self):
+        def make_collection_payload(**attributes):
+            return {
+                'data': {
+                    'type': 'collected-metadata',
+                    'attributes': attributes,
+                }
+            }
+        return make_collection_payload
+
+    def test_no_permissions(self, app, collection_with_three_cgm, collection_with_one_cgm, user_two, project_four, url, payload):
+        # Private
+        res = app.get(url.format(collection_with_three_cgm._id), expect_errors=True)
+        assert res.status_code == 401
+
+        res = app.get(url.format(collection_with_three_cgm._id), auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(creator=user_two._id, guid=project_four._id, status='asdf'),
+            expect_errors=True)
+        assert res.status_code == 401
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(creator=user_two._id, guid=project_four._id, status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        # Public
+        collection_with_three_cgm.is_public = True
+        collection_with_three_cgm.save()
+        res = app.get(url.format(collection_with_three_cgm._id), expect_errors=True)
+        assert len(res.json['data']) == 3
+        assert res.status_code == 200
+
+        res = app.get(url.format(collection_with_three_cgm._id), auth=user_two.auth, expect_errors=True)
+        assert len(res.json['data']) == 3
+        assert res.status_code == 200
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(creator=user_two._id, guid=project_four._id, status='asdf'),
+            expect_errors=True)
+        assert res.status_code == 401
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(creator=user_two._id, guid=project_four._id, status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        project_five = ProjectFactory(creator=user_two)  # has_referent_perm
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(creator=user_two._id, guid=project_five._id, status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    def test_with_permissions(self, app, collection_with_three_cgm, collection_with_one_cgm, collection_with_zero_cgm, user_one, user_two, project_four, url, payload, subject_one):
+        res = app.get(url.format(collection_with_three_cgm._id), auth=user_one.auth)
+        assert len(res.json['data']) == 3
+        assert res.status_code == 200
+
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(guid=project_four._id, status='asdf', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
+        assert res.status_code == 201
+
+        res = app.get(url.format(collection_with_three_cgm._id), auth=user_one.auth)
+        assert len(res.json['data']) == 4
+        assert res.status_code == 200
+
+        res = app.get(url.format(collection_with_one_cgm._id), auth=user_one.auth)
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
+
+        res = app.get(url.format(collection_with_zero_cgm._id), auth=user_one.auth)
+        assert len(res.json['data']) == 0
+        assert res.status_code == 200
+
+    def test_filters(self, app, collection_with_one_cgm, collection_with_three_cgm, project_two, project_four, user_one, subject_one, url, payload):
+        res = app.get('{}?filter[id]={}'.format(url.format(collection_with_three_cgm._id), project_two._id), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        res = app.get('{}?filter[status]=two'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+
+        # Sanity
+        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_cgm._id), subject_one._id), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+
+        # Add one with a subject to filter for it
+        res = app.post_json_api(
+            url.format(collection_with_three_cgm._id),
+            payload(guid=project_four._id, collected_type='asdf', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
+        assert res.status_code == 201
+
+        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_cgm._id), subject_one._id), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+
+
+@pytest.mark.django_db
+class TestCollectedMetaDetail:
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_one(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def subject_one(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def collection(self, user_one):
+        return CollectionFactory(creator=user_one)
+
+    @pytest.fixture()
+    def cgm(self, user_one, collection, project_one, subject_one):
+        cgm = collection.collect_object(project_one, user_one, status='one', collected_type='asdf')
+        cgm.set_subjects([[subject_one._id]], Auth(collection.creator))
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection, cgm):
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm._id)
+
+    @pytest.fixture()
+    def payload(self):
+        def make_collection_payload(**attributes):
+            return {
+                'data': {
+                    'type': 'collected-metadata',
+                    'attributes': attributes,
+                }
+            }
+        return make_collection_payload
+
+    def test_no_permissions(self, app, user_two, project_one, collection, cgm, url, payload):
+        # Private
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            expect_errors=True)
+        assert res.status_code == 401
+        cgm.reload()
+        assert cgm.status != 'asdf'
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+        cgm.reload()
+        assert cgm.status != 'asdf'
+
+        # Public
+        collection.is_public = True
+        collection.save()
+        res = app.get(url)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == cgm._id
+
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == cgm._id
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            expect_errors=True)
+        assert res.status_code == 401
+        cgm.reload()
+        assert cgm.status != 'asdf'
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+        cgm.reload()
+        assert cgm.status != 'asdf'
+
+        res = app.delete_json_api(
+            url,
+            auth=user_two.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        project_one.add_contributor(user_two, save=True)  # has_referent_perms
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            auth=user_two.auth)
+        assert res.status_code == 200
+        cgm.reload()
+        assert cgm.status == 'asdf'
+
+        res = app.delete_json_api(
+            url,
+            auth=user_two.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        res = app.patch_json_api(
+            url,
+            payload(status='asdf'),
+            auth=user_one.auth)
+        assert res.status_code == 200
+        cgm.reload()
+        assert cgm.status == 'asdf'
+
+        # Public
+        collection.is_public = True
+        collection.save()
+
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == cgm._id
+
+        res = app.patch_json_api(
+            url,
+            payload(status='fdsa'),
+            auth=user_one.auth)
+        assert res.status_code == 200
+        cgm.reload()
+        assert cgm.status == 'fdsa'
+
+        res = app.delete_json_api(
+            url,
+            auth=user_one.auth
+        )
+        assert res.status_code == 204
+
+    def test_cannot_update_restricted_fields(self, app, collection, cgm, user_one, user_two, url, payload, project_one):
+        collection_two = CollectionFactory(creator=user_one)
+        guid_two = ProjectFactory(creator=user_one).guids.first()
+
+        res = app.patch_json_api(
+            url,
+            payload(guid=guid_two._id),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        res = app.patch_json_api(
+            url,
+            payload(collection=collection_two._id),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        res = app.patch_json_api(
+            url,
+            payload(creator=user_two._id),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        cgm.reload()
+        assert cgm.creator == user_one
+        assert cgm.collection == collection
+        assert cgm.guid == project_one.guids.first()
