@@ -27,7 +27,7 @@ from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
-from osf.models import Session, MetaSchema
+from osf.models import Session, MetaSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
@@ -211,6 +211,14 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
+        quickfiles = QuickFilesNode.objects.get_for_user(self.user)
+        materialized_path = 'pizza'
+        url = quickfiles.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': 'abc123', 'materialized': materialized_path, 'kind': 'file'}, provider='osfstorage')
+        resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        assert resp.status_code == 200
+
     def test_add_log_missing_args(self):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
@@ -337,7 +345,7 @@ class TestAddonLogs(OsfTestCase):
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
                                          action_meta={'is_mfr_render': False},
-                                         request_metadata={'request': {'url': request_url}},
+                                         request_meta={'url': request_url},
                                          action=action,
                                          auth={'id': self.user_non_contrib._id})
             nlogs = self.node.logs.count()
@@ -380,7 +388,7 @@ class TestAddonLogs(OsfTestCase):
         payload = self.build_payload(metadata={'path': '/testfile',
                                                'nid': self.node._id},
                                      action='download_file',
-                                     request_metadata={'request': {'url': request_url}},
+                                     request_meta={'url': request_url},
                                      action_meta={'is_mfr_render': True},
                                      auth={'id': self.user_non_contrib._id})
         nlogs = self.node.logs.count()
@@ -719,6 +727,32 @@ class TestAddonFileViews(OsfTestCase):
         ret.versions.add(version)
         return ret
 
+    def get_uppercased_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
+    def get_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
@@ -761,7 +795,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
 
-    def test_action_download_redirects_to_download(self):
+    def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
@@ -770,6 +804,28 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version=''))
+
+    def test_action_download_redirects_to_download_with_path(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
+
+    def test_action_download_redirects_to_download_with_path_uppercase(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
 
     def test_action_download_redirects_to_download_with_version(self):
         file_node = self.get_test_file()

@@ -191,7 +191,7 @@ def make_drf_request(*args, **kwargs):
     return Request(http_request, *args, **kwargs)
 
 def make_drf_request_with_version(version='2.0', *args, **kwargs):
-    req = make_drf_request()
+    req = make_drf_request(*args, **kwargs)
     req.parser_context['kwargs'] = {'version': 'v2'}
     req.version = version
     return req
