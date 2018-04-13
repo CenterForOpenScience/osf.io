@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
 from osf.models import AbstractNode
@@ -30,8 +30,8 @@ class FileMetadataView(APIView):
             self.request,
             display_name='node'
         )
-        if node.is_registration:
-            raise NotFound
+        if node.is_registration and not node.archiving:
+            raise ValidationError('Registrations cannot be changed.')
         return node
 
     def get_serializer_context(self):
@@ -43,7 +43,7 @@ class FileMetadataView(APIView):
         }
 
     def post(self, request, *args, **kwargs):
-        serializer = WaterbutlerMetadataSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = self.serializer_class
         if serializer.is_valid():
             source = serializer.validated_data.pop('source')
             destination = serializer.validated_data.pop('destination')

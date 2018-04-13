@@ -160,7 +160,7 @@ class TestMove():
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert 'Cannot move file as it is the primary file of preprint.' in res._app_iter[0]
+        assert res.json['errors'][0]['detail'] == 'Cannot move file as it is the primary file of preprint.'
 
     def test_move_file_out_of_node(self, app, user, move_url, root_node, node, node_two, node_two_root_node, folder):
         # project having a preprint should not block other moves
