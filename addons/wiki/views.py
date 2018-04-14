@@ -96,7 +96,7 @@ def _get_wiki_pages_latest(node):
             'wiki_id': page.wiki_page._primary_key,
             'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node)
         }
-        for page in node.get_wiki_pages_latest().order_by(F('name'))
+        for page in WikiPage.objects.get_wiki_pages_latest(node).order_by(F('name'))
     ]
 
 def _get_wiki_api_urls(node, name, additional_urls=None):

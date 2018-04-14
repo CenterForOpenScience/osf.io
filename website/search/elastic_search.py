@@ -25,6 +25,7 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from addons.wiki.models import WikiPage
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -371,7 +372,7 @@ def serialize_node(node, category):
         'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
-        for wiki in node.get_wiki_pages_latest():
+        for wiki in WikiPage.objects.get_wiki_pages_latest(node):
             # '.' is not allowed in field names in ES2
             elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
 

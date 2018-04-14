@@ -7,6 +7,7 @@ import ssl
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
+from django.apps import apps
 
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
@@ -176,6 +177,8 @@ def serialize_wiki_settings(user, nodes):
     :param nodes: list of parent project nodes
     :return: treebeard-formatted data
     """
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+
     items = []
 
     for node in nodes:
@@ -183,7 +186,7 @@ def serialize_wiki_settings(user, nodes):
 
         can_read = node.has_permission(user, 'read')
         is_admin = node.has_permission(user, 'admin')
-        include_wiki_settings = node.include_wiki_settings(user)
+        include_wiki_settings = WikiPage.include_wiki_settings(node)
 
         if not include_wiki_settings:
             continue

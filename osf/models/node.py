@@ -16,8 +16,6 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
 from django.db.models.signals import post_save
-from django.db.models.expressions import F
-from django.db.models.aggregates import Max
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -2379,13 +2377,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             super(AbstractNode, self).save()
 
     def _get_spam_content(self, saved_fields):
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
         content = []
         for field in spam_fields:
             if field == 'wiki_pages_latest':
                 newest_wiki_page = None
-                for wiki_page in self.get_wiki_pages_latest():
+                for wiki_page in WikiPage.objects.get_wiki_pages_latest(self):
                     if not newest_wiki_page:
                         newest_wiki_page = wiki_page
                     elif wiki_page.created > newest_wiki_page.created:
@@ -2686,28 +2686,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         project_signals.node_deleted.send(self)
 
         return True
-
-    def admin_public_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin') and
-            self.is_public
-        )
-
-    def admin_of_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin')
-        )
-
-    def include_wiki_settings(self, user):
-        """Check if node meets requirements to make publicly editable."""
-        return self.get_descendants_recursive()
-
-    def get_wiki_pages_latest(self):
-        WikiVersion = apps.get_model('addons_wiki.WikiVersion')
-        wiki_page_ids = self.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
-        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids)
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)

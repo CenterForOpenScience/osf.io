@@ -6,6 +6,7 @@ from addons.wiki.models import WikiVersion
 from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
+from addons.wiki.models import WikiPage
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 from website import settings
@@ -287,7 +288,7 @@ class TestRegisterNode:
         )
 
     def test_registration_of_project_with_no_wiki_pages(self, registration):
-        assert registration.get_wiki_pages_latest().exists() is False
+        assert WikiPage.objects.get_wiki_pages_latest(registration).exists() is False
         assert registration.wikis.all().exists() is False
         assert registration.wiki_private_uuids == {}
 

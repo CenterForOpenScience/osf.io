@@ -2853,7 +2853,7 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.get_wiki_pages_latest().exists() is False
+        assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 

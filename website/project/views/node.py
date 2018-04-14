@@ -38,6 +38,7 @@ from website.project.model import has_anonymous_link, NodeUpdateError, validate_
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -271,7 +272,7 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['include_wiki_settings'] = WikiPage.include_wiki_settings(node)
     ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
