@@ -186,7 +186,7 @@ def serialize_wiki_settings(user, nodes):
 
         can_read = node.has_permission(user, 'read')
         is_admin = node.has_permission(user, 'admin')
-        include_wiki_settings = WikiPage.include_wiki_settings(node)
+        include_wiki_settings = WikiPage.objects.include_wiki_settings(node)
 
         if not include_wiki_settings:
             continue

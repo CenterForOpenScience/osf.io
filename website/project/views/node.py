@@ -272,7 +272,7 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    ret['include_wiki_settings'] = WikiPage.include_wiki_settings(node)
+    ret['include_wiki_settings'] = WikiPage.objects.include_wiki_settings(node)
     ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
