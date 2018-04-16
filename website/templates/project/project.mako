@@ -95,47 +95,45 @@
                                     </li>
                                     %endif
                                 </ul>
-                            </div>
-                    </div>
+                            </div> <!-- end .dropdown -->
+                        </div><!-- end .btn-group -->
                     <div class="btn-group">
-                        <button class="btn btn-default disabled" data-toggle="collapse" data-target="#otherActions" id="otherActionsButton">
-                            <i class="fa fa-ellipsis-h"></i>
-                        </button>
-                    </div>
-                    <div class="collapse pull-right" id="otherActions">
-                        <div class="panel in-actions-panel" id="otherActionsPanel">
-                            <!-- ko if: canBeOrganized -->
-                            <div>
-                                <!-- ko ifnot: inDashboard -->
-                                   <button class="btn btn-block pull-left in-actions-panel" id="addDashboardFolder" data-bind="click: addToDashboard">
-                                       Bookmark
-                                   </button>
-                                <!-- /ko -->
-                                <!-- ko if: inDashboard -->
-                                   <button class="btn btn-block in-actions-panel" id="removeDashboardFolder" data-bind="click: removeFromDashboard">
-                                       Remove from bookmarks
-                                   </button>
-                                <!-- /ko -->
-                            </div>
-                            <!-- /ko -->
-                            % if node["is_public"]:
-                                <div class="btn btn-block" id="shareButtonsPopover">Share</div>
-                            % endif
-                            % if node['access_requests_enabled'] and not user['is_contributor']:
-                                <div>
-                                %if user_name:
-                                    <button class="btn btn-block in-actions-panel" data-bind="click: requestAccess.requestProjectAccess,
-                                                    text: requestAccess.requestAccessButton,
-                                                    css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
-                                                    tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
-                                    </button>
-                                %else:
-                                    <a role="button" class="btn btn-block in-actions-panel" href="${login_url}" >Login to request access</a>
+                        <div class="generic-dropdown dropdown pull-right">
+                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" data-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li data-bind="visible: canBeOrganized()" class="keep-open">
+                                    <a role="button" href="#" id="addDashboardFolder" data-bind="visible: !inDashboard(), click: addToDashboard">
+                                        Bookmark
+                                    </a>
+                                    <a role="button" href="#" id="removeDashboardFolder" data-bind="visible: inDashboard(), click: removeFromDashboard">
+                                        Remove from bookmarks
+                                    </a>
+                                </li>
+                                % if node['is_public']:
+                                    <li class="keep-open" id="shareButtonsPopover">
+                                        <a href="#" role="button">
+                                            Share
+                                        </a>
+                                    </li>
                                 %endif
-                                </div>
-                            % endif
-                        </div>
-                    </div>
+                                % if node['access_requests_enabled'] and not user['is_contributor']:
+                                    <li class="keep-open">
+                                    %if user_name:
+                                        <a role="button" href="#" data-bind="click: requestAccess.requestProjectAccess,
+                                                        text: requestAccess.requestAccessButton,
+                                                        css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
+                                                        tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
+                                        </a>
+                                    %else:
+                                        <a role="button" class="btn btn-block" href="${login_url}" >Login to request access</a>
+                                    %endif
+                                    </li>
+                                % endif
+                            </ul>
+                        </div><!-- end .dropdown -->
+                    </div><!-- end .btn-group -->
                 </div>
             </div>
         </div>

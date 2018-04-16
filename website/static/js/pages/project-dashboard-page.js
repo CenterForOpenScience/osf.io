@@ -102,6 +102,13 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+    // Allows dropdown elements to persist after being clicked
+    // Used for the "Share" button in the more actions menu
+    $('.dropdown').on('click', 'li', function (evt) {
+        var target = $(evt.target);
+        // If the clicked element has .keep-open, don't allow the event to propagate
+        return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
+    });
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
@@ -342,15 +349,4 @@ $(document).ready(function () {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }
-
-    // Close the other actions panel if not clicking inside the panel
-    $(document).click(function (event) {
-        var elementClicked = $(event.target);
-        var _opened = $('#otherActions').hasClass('collapse in');
-        var shouldClose = _opened && !(elementClicked.hasClass('in-actions-panel') || elementClicked.is('#sharePopoverBtn'));
-        if (shouldClose) {
-            $('#otherActionsButton').click();
-        }
-    });
-
 });
