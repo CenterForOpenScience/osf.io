@@ -28,9 +28,8 @@ class TestNodeSettings(unittest.TestCase):
 
     def tearDown(self):
         super(TestNodeSettings, self).tearDown()
-        self.node_settings.remove()
-        self.node.remove()
-        self.user.remove()
+        self.node.delete()
+        self.user.delete()
 
     def test_set_services(self):
         self.node_settings.set_services([('jh1', 'https://jh1.test/')])

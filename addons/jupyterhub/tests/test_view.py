@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 from addons.jupyterhub.tests.utils import JupyterhubAddonTestCase
 from website.util import api_url_for
