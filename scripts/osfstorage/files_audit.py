@@ -10,7 +10,6 @@ Note: Must have par2 installed to run
 
 from __future__ import division
 
-import gc
 import os
 import math
 import hashlib
@@ -18,6 +17,7 @@ import logging
 
 import pyrax
 
+from django.db import transaction
 from botocore.utils import calculate_tree_hash
 from pyrax.exceptions import NoSuchObject
 
@@ -37,6 +37,7 @@ GLACIER_SINGLE_OPERATION_THRESHOLD = 100 * (1024 * 1024)  # 100MB
 
 class Context(object):
     def __init__(self):
+        self.dry_run = True
         self.container_primary = None
         self.container_parity = None
         self.vault = None
@@ -49,22 +50,15 @@ logging.getLogger('boto3').setLevel(logging.CRITICAL)
 logging.getLogger('botocore').setLevel(logging.INFO)
 
 
-def delete_temp_file(ctx, version):
-    path = os.path.join(ctx.audit_temp_path, version.location['object'])
-    try:
-        os.remove(path)
-    except OSError:
-        pass
+def download_from_cloudfiles(ctx, version, path):
+    file_path = os.path.join(path, version.location['object'])
+    if os.path.exists(file_path):
+        # We cannot assume the file is valid and not from a previous failure.
+        os.remove(file_path)
 
-
-def download_from_cloudfiles(ctx, version):
-    path = os.path.join(ctx.audit_temp_path, version.location['object'])
-    if os.path.exists(path):
-        # we cannot assume the file is valid and not from a previous failure.
-        delete_temp_file(ctx, version)
     try:
         obj = ctx.container_primary.get_object(version.location['object'])
-        with open(path, 'wb') as fp:
+        with open(file_path, 'wb') as fp:
             hasher = hashlib.sha256()
             fetcher = obj.fetch(chunk_size=262144000)  # 256mb chunks
             while True:
@@ -76,7 +70,7 @@ def download_from_cloudfiles(ctx, version):
                 fp.write(chunk)
         if hasher.hexdigest() != version.metadata['sha256']:
             raise Exception('SHA256 mismatch, cannot continue')
-        return path
+        return file_path
     except NoSuchObject as err:
         logger.error('*** FILE NOT FOUND ***')
         logger.error('Exception:')
@@ -114,16 +108,16 @@ def glacier_sync_multipart_upload(ctx, version, file_path, file_size):
     return response['archiveId']
 
 
-def ensure_glacier(ctx, version, dry_run):
+def ensure_glacier(ctx, version, path):
     if version.metadata.get('archive'):
         return
 
     logger.warn('Glacier archive for version {0} not found'.format(version._id))
 
-    if dry_run:
+    if ctx.dry_run:
         return
 
-    file_path = download_from_cloudfiles(ctx, version)
+    file_path = download_from_cloudfiles(ctx, version, path)
     if file_path:
         file_size = os.path.getsize(file_path)
         if file_size > GLACIER_SINGLE_OPERATION_THRESHOLD:
@@ -136,64 +130,87 @@ def ensure_glacier(ctx, version, dry_run):
                     body=fp,
                 )
                 archive_id = archive.id
-        version.metadata['archive'] = archive_id
-        version.save()
+        with transaction.atomic():
+            txn_version = FileVersion.objects.filter(_id=version._id).select_for_update().get()
+            metadata = {
+                'archive': archive_id,
+                'vault': ctx.vault.name,
+            }
+            txn_version.update_metadata(metadata)
+            txn_version.save()
+        os.remove(file_path)
 
 
-def check_parity_files(ctx, version):
-    index = list(ctx.container_parity.list_all(prefix='{0}.par2'.format(version.location['object'])))
-    vols = list(ctx.container_parity.list_all(prefix='{0}.vol'.format(version.location['object'])))
-    return len(index) == 1 and len(vols) >= 1
-
-
-def ensure_parity(ctx, version, dry_run):
-    if check_parity_files(ctx, version):
+def ensure_parity(ctx, version, path):
+    if version.metadata.get('parity'):
         return
+
     logger.warn('Parity files for version {0} not found'.format(version._id))
-    if dry_run:
+
+    if ctx.dry_run:
         return
-    file_path = download_from_cloudfiles(ctx, version)
+
+    file_path = download_from_cloudfiles(ctx, version, path)
     if file_path:
-        parity_paths = storage_utils.create_parity_files(file_path)
-        for parity_path in parity_paths:
-            ctx.container_parity.create(parity_path)
-            os.remove(parity_path)
-        if not check_parity_files(ctx, version):
-            logger.error('Parity files for version {0} not found after update'.format(version._id))
+        results = storage_utils.create_parity_files(file_path, redundancy=storage_settings.PARITY_REDUNDANCY)
+        for parity_file_path in [r[0] for r in results]:
+            ctx.container_parity.create(parity_file_path)
+            os.remove(parity_file_path)
+        with transaction.atomic():
+            txn_version = FileVersion.objects.filter(_id=version._id).select_for_update().get()
+            metadata = {
+                'parity': {
+                    'redundancy': storage_settings.PARITY_REDUNDANCY,
+                    'files': [
+                        {'name': os.path.split(r[0])[1], 'sha256': r[1]} for r in results
+                    ]
+                }
+            }
+            txn_version.update_metadata(metadata)
+            txn_version.save()
+        os.remove(file_path)
 
 
-def ensure_backups(ctx, version, dry_run):
-    ensure_glacier(ctx, version, dry_run)
-    ensure_parity(ctx, version, dry_run)
-    delete_temp_file(ctx, version)
+def audit_parity(ctx, num_of_workers, worker_id):
+    targets = FileVersion.objects.filter(location__has_key='object', metadata__parity__isnull=True, size__gt=0)
 
+    path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id), 'parity')
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
 
-def glacier_targets():
-    return FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True, size__gt=0)
-
-
-def parity_targets():
-    # TODO: Add metadata.parity information from wb so we do not need to check remote services
-    return FileVersion.objects.filter(location__has_key='object', size__gt=0)
-        # & metadata__parity__isnull=True
-
-
-def audit(ctx, targets, num_of_workers, worker_id, dry_run):
-    maxval = math.ceil(targets.count() / num_of_workers)
-    target_iterator = targets.iterator()
-    idx = 0
-    last_progress = -1
-    for version in target_iterator:
+    est_max = math.ceil(targets.count() / num_of_workers)
+    progress = scripts_utils.Progress(precision=0)
+    progress.start(est_max, 'Parity {}'.format(worker_id))
+    for version in targets.iterator():
         if hash(version._id) % num_of_workers == worker_id:
             if version.size == 0:
                 continue
-            ensure_backups(ctx, version, dry_run)
-            idx += 1
-            progress = int(idx / maxval * 100)
-            if last_progress < 100 and last_progress < progress:
-                logger.info(str(progress) + '%')
-                last_progress = progress
-                gc.collect()
+            ensure_parity(ctx, version, path)
+            progress.increment()
+    progress.stop()
+
+
+def audit_glacier(ctx, num_of_workers, worker_id):
+    targets = FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True, size__gt=0)
+
+    path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id), 'glacier')
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+
+    est_max = math.ceil(targets.count() / num_of_workers)
+    progress = scripts_utils.Progress(precision=0)
+    progress.start(est_max, 'Glacier {}'.format(worker_id))
+    for version in targets.iterator():
+        if hash(version._id) % num_of_workers == worker_id:
+            if version.size == 0:
+                continue
+            ensure_glacier(ctx, version, path)
+            progress.increment()
+    progress.stop()
 
 
 @celery_app.task(name='scripts.osfstorage.files_audit')
@@ -202,6 +219,7 @@ def main(num_of_workers=0, worker_id=0, glacier=True, parity=True, dry_run=True)
     init_app(set_backends=True, routes=False)
 
     ctx = Context()
+    ctx.dry_run = dry_run
 
     try:
         # Authenticate to Rackspace
@@ -221,25 +239,18 @@ def main(num_of_workers=0, worker_id=0, glacier=True, parity=True, dry_run=True)
         )
 
         # Log to file
-        if not dry_run:
+        if not ctx.dry_run:
             scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
 
-        ctx.audit_temp_path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id))
-        if not dry_run:
-            try:
-                os.makedirs(ctx.audit_temp_path)
-            except OSError:
-                pass
-
         if glacier:
-            logger.info('glacier audit start')
-            audit(ctx, glacier_targets(), num_of_workers, worker_id, dry_run)
-            logger.info('glacier audit complete')
+            logger.info('files_audit: glacier audit start')
+            audit_glacier(ctx, num_of_workers, worker_id)
+            logger.info('files_audit: glacier audit complete')
 
         if parity:
-            logger.info('parity audit start')
-            audit(ctx, parity_targets(), num_of_workers, worker_id, dry_run)
-            logger.info('parity audit complete')
+            logger.info('files_audit: parity audit start')
+            audit_parity(ctx, num_of_workers, worker_id)
+            logger.info('files_audit: parity audit complete')
 
     except Exception as err:
         logger.error('=== Unexpected Error ===')

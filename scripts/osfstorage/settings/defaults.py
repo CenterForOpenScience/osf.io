@@ -6,6 +6,7 @@ REGION = 'changeme'
 
 PRIMARY_CONTAINER_NAME = 'primary_container'
 PARITY_CONTAINER_NAME = 'parity_container'
+PARITY_REDUNDANCY = 5
 
 # https://boto3.readthedocs.io/en/latest/reference/services/glacier.html#vault
 GLACIER_VAULT_ACCOUNT_ID = '-'
