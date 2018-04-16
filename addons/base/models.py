@@ -789,9 +789,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             )
 
             if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
+                url = node.web_url_for('node_addons')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Add-ons</a></u> page.'
                 ).format(url=url)
             #
             return message
