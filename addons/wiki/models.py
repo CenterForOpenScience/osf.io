@@ -261,7 +261,8 @@ class WikiPageNodeManager(models.Manager):
             page_name=name,
             user=auth.user
         )
-        wiki_page.create_version(auth.user, content)
+        # Creates a WikiVersion object
+        wiki_page.update(auth.user, content)
         return wiki_page
 
     def get_for_node(self, node, name=None, id=None):
@@ -301,6 +302,12 @@ class WikiPage(GuidMixin, BaseModel):
         return rv
 
     def update(self, user, content):
+        """
+        Updates the wiki with the provided content by creating a new version
+
+        :param user: The user that is updating the wiki
+        :param content: Latest content for wiki
+        """
         return self.create_version(user, content)
 
     def update_active_sharejs(self, node):
@@ -422,12 +429,11 @@ class WikiPage(GuidMixin, BaseModel):
         return api_v2_url(path)
 
     def rename(self, new_name, auth):
-        """Rename the node's wiki page with new name.
+        """
+        Rename the wiki page with the new_name. Logs this information to the wiki's node.
 
-        :param name: A string, the page's name, e.g. ``"My Page"``.
         :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
-        :param auth: All the auth information includin g user, API key.
-
+        :param auth: All the auth information including user, API key.
         """
         new_name = (new_name or '').strip()
         existing_wiki_page = WikiPage.objects.get_for_node(self.node, new_name)
@@ -471,6 +477,12 @@ class WikiPage(GuidMixin, BaseModel):
         return self
 
     def delete(self, auth):
+        """
+        Marks the wiki as deleted by setting the deleted field to the current datetime.
+        Logs this information to the wiki's node.
+
+        :param auth: All the auth information including user, API key.
+        """
         if self.page_name.lower() == 'home':
             raise ValidationError('The home wiki page cannot be deleted.')
         self.deleted = timezone.now()
