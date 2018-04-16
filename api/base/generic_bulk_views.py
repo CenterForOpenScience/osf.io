@@ -85,7 +85,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             if getattr(resource, 'is_deleted', None):
                 raise Gone
 
-        if len(resource_object_list) != len(request_data):
+        if resource_object_list.count() != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return [resource_object_list.get(**{column_name: id}) for id in requested_ids]

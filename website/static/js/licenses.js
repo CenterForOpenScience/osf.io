@@ -20,7 +20,7 @@ var licenseGroups = [
     DEFAULT_LICENSE,
     {
         name: 'Content:',
-        licenses: [licenses.CC0, licenses.CCBY, licenses.CCBYNCND, licenses.CCBYSA40]
+        licenses: [licenses.CC0, licenses.CCBY]
     },
     {
         name: 'Code - Permissive:',
