@@ -23,13 +23,16 @@ def serialize_node_license_record(node_license_record):
 
 
 class NodeLicenseManager(models.Manager):
+    PREPRINT_ONLY_LICENSES = {
+        'CCBYNCND',
+        'CCBYSA40',
+    }
 
     def preprint_licenses(self):
-        return NodeLicense.objects.all()
+        return self.all()
 
     def project_licenses(self):
-        # We are not allowing these two licenses on projects - just preprints
-        return NodeLicense.objects.exclude(license_id='CCBYNCND').exclude(license_id='CCBYSA40')
+        return self.exclude(license_id__in=self.PREPRINT_ONLY_LICENSES)
 
 
 class NodeLicense(ObjectIDMixin, BaseModel):
