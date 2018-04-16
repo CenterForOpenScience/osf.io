@@ -37,6 +37,7 @@ PROVIDERS = {
     'bitbucket': 'Bitbucket',
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',
+    's3': 'Amazon S3',
+    'cloudfiles': 'Cloud Files',
     'onedrive': 'Microsoft OneDrive',
-    's3': 'Amazon S3'
 }

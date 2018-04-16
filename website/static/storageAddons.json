@@ -43,6 +43,10 @@
         "fullName": "Amazon S3",
         "externalView": false
     },
+    "cloudfiles": {
+        "fullName": "Cloud Files",
+        "externalView": false
+    },
     "onedrive": {
         "fullName": "OneDrive",
         "externalView": true

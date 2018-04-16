@@ -381,7 +381,41 @@
                 "status": "partial",
                 "text": "Bitbucket content will be registered, but version history will not be copied to the registration."
             }
+        },
+        "Cloud Files": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a Cloud Files container public or private. The OSF does not alter the permissions of linked Cloud Files containers."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "The Cloud Files add-on supports file versions if versioning is enabled for your Cloud Files container."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Cloud Files."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Cloud Files."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "OSF keeps track of changes you make to your Cloud Files content through OSF, but not for changes made using Cloud Files directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Cloud Files authorization unless the user forking the project is the same user who authorized the Cloud Files add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Cloud Files content will be registered, but version history will not be copied to the registration, unless done in seperate container."
+            }
         }
     },
-    "disclaimers": ["This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.", "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."]
+    "disclaimers": [
+        "This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.",
+        "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."
+    ]
 }
+

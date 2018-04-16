@@ -1,0 +1,11 @@
+{
+    "cloudfiles_container_linked" : "A user linked a Cloud Files container to a project",
+    "cloudfiles_container_unlinked" : "A user unselected a Cloud Files container in a project",
+    "cloudfiles_file_added" : "A user added a file to a Cloud Files container in a project",
+    "cloudfiles_file_removed" : "A user removed a file in a Cloud Files container in a project",
+    "cloudfiles_file_updated" : "A user updated a file in a Cloud Files container in a project",
+    "cloudfiles_folder_created" : "A user created a folder in a Cloud Files in a project",
+    "cloudfiles_node_authorized" : "A user authorized the Cloud Files add-on for a project",
+    "cloudfiles_node_deauthorized" : "A user deauthorized the Cloud Files add-on for a project",
+    "cloudfiles_node_deauthorized_no_user" : "Cloud Files add-on for a project deauthorized"
+}

@@ -1,0 +1,11 @@
+{
+  "cloudfiles_container_linked" : "${user} linked the Cloud Files container ${container} to ${node}",
+  "cloudfiles_container_unlinked" : "${user} unselected the Cloud Files container ${container} in ${node}",
+  "cloudfiles_file_added" : "${user} added file ${path} to Cloud Files container ${container} in ${node}",
+  "cloudfiles_file_removed" : "${user} removed ${path} in Cloud Files container ${container} in ${node}",
+  "cloudfiles_file_updated" : "${user} updated file ${path} in Cloud Files container ${container} in ${node}",
+  "cloudfiles_folder_created" : "${user} created folder ${path} in Cloud Files container ${container} in ${node}",
+  "cloudfiles_node_authorized" : "${user} authorized the Cloud Files addon for ${node}",
+  "cloudfiles_node_deauthorized" : "${user} deauthorized the Cloud Files addon for ${node}",
+  "cloudfiles_node_deauthorized_no_user" : "Cloud Files addon for ${node} deauthorized"
+}

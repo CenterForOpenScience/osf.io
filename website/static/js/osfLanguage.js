@@ -83,6 +83,11 @@ module.exports = {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },
+        cloudfiles:{
+            authError: 'Could not connect to Cloud Files at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
