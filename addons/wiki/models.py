@@ -22,7 +22,6 @@ from osf.models import NodeLog, OSFUser
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
-from website import settings
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
@@ -31,6 +30,7 @@ from addons.wiki.exceptions import (
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
+from website import settings
 from osf.utils.requests import get_headers_from_request
 
 from .exceptions import (
@@ -179,10 +179,10 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             self.wiki_page.node.update_search()
         self.wiki_page.modified = self.created
         self.wiki_page.save()
-        self.spam_check()
+        self.check_spam()
         return rv
 
-    def spam_check(self):
+    def _get_user_and_request_headers(self):
         request, user_id = get_request_and_user_id()
         request_headers = {}
         if not isinstance(request, DummyRequest):
@@ -192,7 +192,42 @@ class WikiVersion(ObjectIDMixin, BaseModel):
                 if isinstance(v, basestring)
             }
         user = OSFUser.load(user_id)
-        return self.wiki_page.node.check_spam(user, ['wiki_pages_latest'], request_headers)
+        return user, request_headers
+
+    def check_spam(self):
+        user, request_headers = self._get_user_and_request_headers()
+        node = self.wiki_page.node
+
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(node)
+        if not content:
+            return
+        is_spam = node.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            node._id, node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', node.spam_pro_tip
+        ))
+        if is_spam:
+            node._check_spam_user(user)
+        return is_spam
+
+    def _get_spam_content(self, node):
+        content = []
+        content.append(self.raw_text(node).encode('utf-8'))
+        if not content:
+            return None
+        return ' '.join(content)
 
     def clone_version(self, wiki_page, user):
         """Clone a node wiki page.

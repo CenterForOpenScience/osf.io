@@ -2375,23 +2375,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             super(AbstractNode, self).save()
 
     def _get_spam_content(self, saved_fields):
-        WikiPage = apps.get_model('addons_wiki.WikiPage')
-
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
         content = []
         for field in spam_fields:
-            if field == 'wiki_pages_latest':
-                newest_wiki_page = None
-                for wiki_page in WikiPage.objects.get_wiki_pages_latest(self):
-                    if not newest_wiki_page:
-                        newest_wiki_page = wiki_page
-                    elif wiki_page.created > newest_wiki_page.created:
-                        newest_wiki_page = wiki_page
-                if newest_wiki_page:
-                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
-            else:
-                content.append((getattr(self, field, None) or '').encode('utf-8'))
+            content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
         return ' '.join(content)
