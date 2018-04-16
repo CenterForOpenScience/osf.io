@@ -106,6 +106,10 @@ class TestGetMetadataHook(HookTestCase):
         res_date_modified = parse_datetime(res_data.pop('modified'))
         res_date_created = parse_datetime(res_data.pop('created'))
 
+        # latestVersionSeen should not be present in record.serialize, because it has to do
+        # with the user making the request itself, which isn't important when serializing the record
+        expected_data['latestVersionSeen'] = None
+
         assert_equal(res_date_modified, expected_date_modified)
         assert_equal(res_date_created, expected_date_created)
         assert_equal(res_data, expected_data)
