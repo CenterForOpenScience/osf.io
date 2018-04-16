@@ -1,5 +1,6 @@
 {
     "name": "RIDIE Registration - Study Initiation",
+    "active": false,
     "config": {
 	"hasFiles": true,
         "requiresApproval": false,
