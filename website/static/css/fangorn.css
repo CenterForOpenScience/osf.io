@@ -79,14 +79,6 @@
 .title-text {
     cursor: default;
 }
-
-.latest-version-unseen {
-    font-size: 0.5em !important;
-    position: absolute;
-    padding-top: 6px;
-    color: #337ab7;
-}
-
 .fg-file-links  {
     cursor: pointer !important;
     color: #333333;
