@@ -63,6 +63,20 @@ def test_factory(user, project):
     )
 
 
+class TestRegistration:
+
+    def test_registered_schema_id(self):
+        reg = factories.RegistrationFactory()
+        assert reg.registered_schema_id == reg.registered_schema.get()._id
+
+    # Regression test for https://openscience.atlassian.net/browse/PLAT-776
+    # Some very old registrations on prod don't have a schema
+    def test_registered_schema_id_with_no_schema(self):
+        reg = factories.RegistrationFactory()
+        reg.registered_schema.clear()
+        assert reg.registered_schema_id is None
+
+
 # copied from tests/test_models.py
 class TestRegisterNode:
 

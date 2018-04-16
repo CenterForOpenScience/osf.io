@@ -79,6 +79,8 @@
 
     `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
+    `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
+
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 
@@ -266,7 +268,7 @@ You should run the `web` and/or `api` container (depending on which codebase the
 $ docker-compose kill web
 
 # Run a web container. App logs and breakpoints will show up here.
-$ docker-compose run --service-ports web
+$ docker-compose run --rm --service-ports web
 ```
 
 **IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
