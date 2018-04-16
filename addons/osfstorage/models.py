@@ -508,7 +508,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 'osfstorage_get_metadata',
                 _absolute=True,
                 _internal=True
-            )
+            ),
+            'region': Region.objects.get(id=self.region_id).name
         })
 
     def serialize_waterbutler_credentials(self):
