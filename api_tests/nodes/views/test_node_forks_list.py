@@ -191,6 +191,20 @@ class TestNodeForksList:
         # confirm registration of fork does not show up in public data
         assert len(res.json['data']) == 0
 
+    def test_forks_list_does_not_show_deleted_forks(
+            self, app, user, public_fork, public_project_url):
+
+        # confirm user can see the fork
+        res = app.get(public_project_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
+        public_fork.is_deleted = True
+        public_fork.save()
+
+        # confirm fork no longer shows on public project's forks list
+        res = app.get(public_project_url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
 
 @pytest.mark.django_db
 class TestNodeForkCreate:
