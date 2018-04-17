@@ -578,9 +578,9 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     try:
         if not is_merge or not check_select_for_update():
-            user = OSFUser.objects.get(guids___id=kwargs['uid'])
+            user = OSFUser.objects.get(guids___id=kwargs['uid'], guids___id__isnull=False)
         else:
-            user = OSFUser.objects.filter(guids___id=kwargs['uid']).select_for_update().get()
+            user = OSFUser.objects.filter(guids___id=kwargs['uid'], guids___id__isnull=False).select_for_update().get()
     except OSFUser.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
 

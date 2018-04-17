@@ -608,7 +608,7 @@ class Retraction(EmailApprovableSanction):
             registration = Registration.objects.select_related(
                 'registered_from'
             ).get(
-                guids___id=node_id
+                guids___id=node_id, guids___id__isnull=False
             ) if node_id else self.registrations.first()
 
             return {
