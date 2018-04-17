@@ -38,6 +38,7 @@ var entry = {
     'register-page': staticPath('js/pages/register-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'statistics-page': staticPath('js/pages/statistics-page.js'),
+    'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'reg-landing-page': staticPath('js/pages/reg-landing-page.js'),

@@ -95,31 +95,45 @@
                                     </li>
                                     %endif
                                 </ul>
-                            </div>
-                    </div>
-                    <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none;" data-bind="visible: true">
-
-                        <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
-                        <!-- /ko -->
-                        <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-minus"></i>
-                           </a>
-                        <!-- /ko -->
-
-                    </div>
-                    <!-- /ko -->
-                    % if node["is_public"]:
-                        <div class="btn-group" id="shareButtonsPopover"></div>
-                    % endif
+                            </div> <!-- end .dropdown -->
+                        </div><!-- end .btn-group -->
+                    <div class="btn-group">
+                        <div class="generic-dropdown dropdown pull-right">
+                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" data-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li data-bind="visible: canBeOrganized()" class="keep-open">
+                                    <a role="button" href="#" id="addDashboardFolder" data-bind="visible: !inDashboard(), click: addToDashboard">
+                                        Bookmark
+                                    </a>
+                                    <a role="button" href="#" id="removeDashboardFolder" data-bind="visible: inDashboard(), click: removeFromDashboard">
+                                        Remove from bookmarks
+                                    </a>
+                                </li>
+                                % if node['is_public']:
+                                    <li class="keep-open" id="shareButtonsPopover">
+                                        <a href="#" role="button">
+                                            Share
+                                        </a>
+                                    </li>
+                                %endif
+                                % if node['access_requests_enabled'] and not user['is_contributor']:
+                                    <li class="keep-open">
+                                    %if user_name:
+                                        <a role="button" href="#" data-bind="click: requestAccess.requestProjectAccess,
+                                                        text: requestAccess.requestAccessButton,
+                                                        css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
+                                                        tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
+                                        </a>
+                                    %else:
+                                        <a role="button" class="btn btn-block" href="${login_url}" >Login to request access</a>
+                                    %endif
+                                    </li>
+                                % endif
+                            </ul>
+                        </div><!-- end .dropdown -->
+                    </div><!-- end .btn-group -->
                 </div>
             </div>
         </div>
@@ -516,7 +530,8 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
-        customCitations: ${ custom_citations | sjson, n }
+        customCitations: ${ custom_citations | sjson, n },
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
     });
 </script>
 

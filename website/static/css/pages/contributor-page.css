@@ -56,7 +56,8 @@ select.input-sm {
 }
 
 #manageContributorsTable th:first-child.sortable,
-#adminContributorsTable th:first-child.sortable {
+#adminContributorsTable th:first-child.sortable,
+#manageAccessRequestsTable th:first-child {
     width: 87px;
     text-indent: 20px;
 }
@@ -69,8 +70,13 @@ th.remove {
     width: 94px;
 }
 
+
 .filters {
   margin-top: 24px;
+}
+
+.add-remove {
+    width: 120px;  /* makes last column fixed-width so that contributors and request access tables are aligned */
 }
 
 @media screen and (max-width: 991px) {
@@ -88,6 +94,13 @@ th.remove {
   }
   .btn-group-justified-vertical > .btn-group .btn {
     width: 100%;
+  }
+  .remove-or-reject {
+    padding-top: 4px;
+    color: #333333;
+    cursor: pointer;
+    font-size: 1.5em;
+    float: right;
   }
 }
 
@@ -138,5 +151,12 @@ th.remove {
   .btn-group-justified-vertical > .btn-group:last-child:not(:first-child) > .btn:first-child {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
+  }
+  .remove-or-reject {
+    padding-top: 4px;
+    color: #333333;
+    cursor: pointer;
+    float: right;
+    font-size: 1.5em;
   }
 }

@@ -33,7 +33,7 @@ from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
@@ -250,6 +250,19 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
+
+    def test_check_can_access_invalid_access_requests_enabled(self):
+        noncontrib = AuthUserFactory()
+        assert self.project.access_requests_enabled
+        with assert_raises(TemplateHTTPError):
+            check_can_access(self.project, noncontrib)
+
+    def test_check_can_access_invalid_access_requests_disabled(self):
+        noncontrib = AuthUserFactory()
+        self.project.access_requests_enabled = False
+        self.project.save()
+        with assert_raises(HTTPError):
+            check_can_access(self.project, noncontrib)
 
 
 class TestProjectViews(OsfTestCase):
@@ -1874,6 +1887,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
+            mimetype='plain',
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
