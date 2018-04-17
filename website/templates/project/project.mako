@@ -111,6 +111,13 @@
                                         Remove from bookmarks
                                     </a>
                                 </li>
+                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                    <li>
+                                        <a href="${node['url']}settings/#createVolsAnchor">
+                                            Create view-only link
+                                        </a>
+                                    </li>
+                                % endif ## End create view-only link
                                 % if node['is_public']:
                                     <li class="keep-open" id="shareButtonsPopover">
                                         <a href="#" role="button">
