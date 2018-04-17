@@ -70,4 +70,11 @@
     </div>
 % endif
 
-<div id="grid" style="width: 100%;"></div>
+<div id="grid" style="width: 100%;">
+    <div class="spinner-loading-wrapper">
+       <div class="ball-scale ball-scale-blue">
+           <div></div>
+       </div>
+       <p class="m-t-sm fg-load-message"> Loading submissions... </p>
+    </div>
+</div>
