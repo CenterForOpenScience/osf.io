@@ -142,3 +142,33 @@ class PageCounter(BaseModel):
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)
+
+
+class UsageData(BaseModel):
+    primary_identifier_name = '_id'
+    update_date = DateTimeAwareJSONField(default=dict)
+
+
+class FileDownloadCounts(UsageData):
+    number_downloads_total = models.PositiveIntegerField(default=0)
+    number_downloads_unique = models.PositiveIntegerField(default=0)
+
+    @classmethod
+    def set_download_counts(cls, number_downloads_total, number_downloads_unique, update_date):
+        if cls.number_downloads_total > number_downloads_total:
+            raise ValueError('The imported total download counts is not correct.')
+        if cls.number_downloads_unique > number_downloads_unique:
+            raise ValueError('The imported unique download counts is not correct.')
+        if cls.update_date > update_date:
+            raise ValueError('The update_date is not correct.')
+        cls.number_downloads_total = number_downloads_total
+        cls.number_downloads_unique = number_downloads_unique
+        cls.update_date = update_date
+
+    @classmethod
+    def update(cls, number_downloads_total, number_downloads_unique, update_date):
+        if cls.update_date > update_date:
+            raise ValueError('The download counts has been recently updated on {}.'.format(cls.update_date))
+        cls.number_downloads_total += number_downloads_total
+        cls.number_downloads_unique += number_downloads_unique
+        cls.update_date = update_date

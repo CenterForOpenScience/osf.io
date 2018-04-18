@@ -419,6 +419,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
+        'scripts.analytics.keen_download_number'
     }
 
     high_pri_modules = {
@@ -483,6 +484,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
+        'scripts.analytics.keen_download_number',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
@@ -590,6 +592,10 @@ class CeleryConfig:
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
                 'kwargs': {'yesterday': True}
+            },
+            'keen_download_number': {
+                'task': 'scripts.analytics.keen_download_number',
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
