@@ -46,8 +46,8 @@ def divorce_preprints_from_nodes(apps, schema_editor):
             else:
                 read.append(contrib.user)
         preprint.get_group('admin').user_set.add(admin)
-        preprint.get_group('write').user_set.add(admin)
-        preprint.get_group('read').user_set.add(admin)
+        preprint.get_group('write').user_set.add(write)
+        preprint.get_group('read').user_set.add(read)
         preprint.save()
 
     batch_size = 1000
