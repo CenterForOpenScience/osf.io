@@ -59,7 +59,6 @@ from osf_tests.factories import (
     SubjectFactory,
     TagFactory,
     CollectionFactory,
-    BookmarkCollectionFactory,
     CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
