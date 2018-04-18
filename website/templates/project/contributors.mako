@@ -138,6 +138,23 @@
         ${buttonGroup()}
     </div>
 
+    % if 'admin' in user['permissions'] and access_requests:
+    <div id="manageAccessRequests">
+        <h3> Requests for access</h3>
+        <p class="m-b-xs">The following users have requested access to this project.</p>
+        <table  id="manageAccessRequestsTable"
+        class="table responsive-table responsive-table-xxs"
+        data-bind="template: {
+            name: 'accessRequestsTable',
+            afterRender: afterRender,
+            options: {
+                containment: '#manageAccessRequests'
+            }
+            }">
+        </table>
+    </div>
+    % endif
+
     % if 'admin' in user['permissions']:
         <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
@@ -198,6 +215,41 @@
         }">
     </tbody>
     <!-- /ko -->
+</script>
+
+<script id="accessRequestsTable" type="text/html">
+    <thead>
+        <tr>
+            <th class="responsive-table-hide">Name</th>
+            <th></th>
+            <th class="access-permissions">
+                Permissions
+                <i class="fa fa-question-circle permission-info"
+                    data-toggle="popover"
+                    data-title="Permission Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="biblio-contrib">
+                Bibliographic Contributor
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Bibliographic Contributor Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody data-bind="template: {
+        name: 'accessRequestRow',
+        foreach: $root.accessRequests,
+        as: 'accessRequest',
+    }">
 </script>
 
 <script id="contribRow" type="text/html">
@@ -263,18 +315,70 @@
                 />
             </div>
         </td>
-        <td>
+        <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
-                        <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
-                           data-bind="click: remove"
-                           data-toggle="modal">Remove</button>
+                        <span href="#removeContributor"
+                           data-bind="click: remove, class: {}, visible: !$root.collapsed()"
+                           data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                        <button href="#removeContributor" class="btn btn-default btn-sm m-l-md"
+                           data-bind="click: remove, visible: $root.collapsed()"
+                           data-toggle="modal"><i class="fa fa-times"></i> Remove</button>
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
                            data-bind="click: addParentAdmin"
                         ><i class="fa fa-plus"></i> Add</button>
                 <!-- /ko -->
+            </div>
+        </td>
+    </tr>
+</script>
+
+<script id="accessRequestRow" type="text/html">
+    <tr>
+        <td data-bind="attr: {class: accessRequest.expanded() ? 'expanded' : null,
+                       role: $root.collapsed() ? 'button' : null},
+                       click: $root.collapsed() ? toggleExpand : null">
+            <span class="fa fa-fw">&nbsp;</span>
+            <img data-bind="attr: {src: accessRequest.user.profile_image_url}" />
+            <span data-bind="attr: {class: accessRequest.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
+            <div class="card-header">
+                <a data-bind="text: accessRequest.user.shortname, attr:{href: profileUrl}"></a>
+                <span data-bind="text: accessRequest.permissionText()"></span>
+            </div>
+        </td>
+        <td class="table-only">
+            <a data-bind="text: accessRequest.user.shortname, attr:{href: accessRequest.profileUrl}"></a>
+        </td>
+        <td class="permissions">
+            <div class="header" data-bind="visible: accessRequest.expanded() && $root.collapsed()"></div>
+                <div class="td-content" data-bind="visible: !$root.collapsed() ||  accessRequest.expanded()">
+                <select class="form-control input-sm" data-bind="
+                    options: $parents[0].permissionList,
+                    value: permission,
+                    optionsText: optionsText.bind(permission)"
+                >
+                </select>
+                <span data-bind="text: permissionText()"></span>
+            </div>
+        </td>
+        <td>
+            <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
+                <input
+                    type="checkbox" class="biblio"
+                    data-bind="checked: visible"
+                />
+            </div>
+        </td>
+        <td data-bind="css: {'add-remove': !$root.collapsed()}">
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
+                <button class="btn btn-success btn-sm m-l-md request-accept-button"
+                       data-bind="click: function() {respondToAccessRequest('accept')}"
+                ><i class="fa fa-plus"></i> Add</button>
+                <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>
             </div>
         </td>
     </tr>
@@ -301,6 +405,7 @@
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
+      window.contextVars.accessRequests = ${ access_requests | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {

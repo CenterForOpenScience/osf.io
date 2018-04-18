@@ -459,13 +459,18 @@ class WebRenderer(Renderer):
         if error.redirect_url is not None:
             return redirect(error.redirect_url)
 
+        # Check for custom error template
+        error_template = self.error_template
+        if getattr(error, 'template', None):
+            error_template = error.template
+
         # Render error page
         # todo: use message / data from exception in error page
         error_data = error.to_data()
         return self.render(
             error_data,
             None,
-            template_name=self.error_template
+            template_name=error_template
         ), error.code
 
     def render_element(self, element, data):
