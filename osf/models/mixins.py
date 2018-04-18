@@ -505,14 +505,14 @@ class MachineableMixin(models.Model):
         """
         return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
 
-    def run_accept(self, user, comment):
+    def run_accept(self, user, comment, **kwargs):
         """Run the 'accept' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment)
+        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
