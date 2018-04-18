@@ -117,7 +117,7 @@ var makeButtons = function(item, col, buttons) {
                         class: button.css,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'data-clipboard-target': item.data.csl ? item.data.csl.id : button.clipboard,
+                        'data-clipboard-target': item.data.csl ? '[id*="' + item.data.csl.id + '"]' : button.clipboard,
                         config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {
