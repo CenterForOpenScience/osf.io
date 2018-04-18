@@ -18,6 +18,8 @@ from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from website.views import find_bookmark_collection
+
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
@@ -56,6 +58,9 @@ from osf_tests.factories import (
     SessionFactory,
     SubjectFactory,
     TagFactory,
+    CollectionFactory,
+    BookmarkCollectionFactory,
+    CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
@@ -4177,3 +4182,19 @@ class TestPreprintProperties:
         published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
         PreprintFactory(project=node, is_published=False, filename='file2.txt')
         assert node.preprint_url == published.url
+
+class TestCollectionProperties:
+
+    def test_collection_properties(self, node):
+        user = AuthUserFactory()
+        provider = CollectionProviderFactory()
+        collection_one = CollectionFactory(creator=user, provider=provider)
+        collection_two = CollectionFactory(creator=user, provider=provider)
+        bookmark_collection = find_bookmark_collection(user)
+        assert not node.is_collected
+        collection_one.collect_object(node, user)
+        collection_two.collect_object(node, user)
+        bookmark_collection.collect_object(node, user)
+        assert node.is_collected
+        assert node.cgm_queryset.count() == 2
+        assert len(node.cgms) == 2
