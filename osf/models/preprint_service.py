@@ -219,7 +219,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             'domain': settings.DOMAIN,
             'reviewable': self,
             'workflow': self.provider.reviews_workflow,
-            'provider_url': self.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.provider._id),
+            'provider_url': '{domain}preprints/{provider_id}'.format(
+                            domain=self.provider.domain or settings.DOMAIN,
+                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
             'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
             'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
             'no_future_emails': user_subscriptions['none'],
