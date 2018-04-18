@@ -687,10 +687,9 @@ class TaxonomizableMixin(models.Model):
 
     @cached_property
     def subject_hierarchy(self):
-        subjects = self.subjects.all()
-        if subjects.count():
+        if self.subjects.exists():
             return [
-                s.object_hierarchy for s in self.subjects.exclude(children__in=subjects).select_related('parent')
+                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
             ]
         return []
 
