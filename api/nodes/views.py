@@ -108,9 +108,11 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
 from website import mails
 from website.exceptions import NodeStateError
+from website.project import signals as project_signals
 
 
 class NodeMixin(object):
@@ -264,6 +266,30 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                 skipped.append({'id': resource._id, 'type': object_type})
 
         return {'skipped': skipped, 'allowed': allowed}
+
+    # Overrides BulkDestroyModelMixin
+    def perform_bulk_destroy(self, resource_object_list):
+
+        auth = get_user_auth(self.request)
+        date = timezone.now()
+        id_list = [x.id for x in resource_object_list]
+
+        if NodeRelation.objects.filter(
+            parent__in=resource_object_list
+        ).exclude(child__in=resource_object_list, is_node_link=False).exists():
+            raise ValidationError('Any child components must be deleted prior to deleting this project.')
+
+        remove_addons(auth, resource_object_list)
+
+        for node in resource_object_list:
+            node.add_remove_node_log(auth=auth, date=date)
+
+        nodes = AbstractNode.objects.filter(id__in=id_list)
+        nodes.update(is_deleted=True, deleted_date=date)
+        if nodes.filter(is_public=True).exists():
+            AbstractNode.bulk_update_search(resource_object_list)
+        for node in nodes:
+            project_signals.node_deleted.send(node)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):

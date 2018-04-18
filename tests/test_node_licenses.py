@@ -82,7 +82,7 @@ class TestNodeLicenses(OsfTestCase):
         assert_raises(ValidationError, NodeLicense(license_id='foo', name='buz', text='boo').save)
 
     def test_ensure_licenses_updates_existing_licenses(self):
-        assert_equal(ensure_licenses(), (0, 16))
+        assert_equal(ensure_licenses(), (0, 18))
 
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.objects.all().count()

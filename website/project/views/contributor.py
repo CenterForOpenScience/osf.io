@@ -351,7 +351,8 @@ def project_remove_contributor(auth, **kwargs):
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
-                trust=False
+                trust=False,
+                id='remove_self_contrib'
             )
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}

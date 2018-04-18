@@ -214,7 +214,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     ##### Callback overrides #####
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
