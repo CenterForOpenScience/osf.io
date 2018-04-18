@@ -125,7 +125,7 @@
                                         </a>
                                     </li>
                                 %endif
-                                % if node['access_requests_enabled'] and not user['is_contributor']:
+                                % if node['access_requests_enabled'] and not user['is_contributor'] and not node['is_registration']:
                                     <li data-bind="css: {'keep-open': user.username}">
                                         <a role="button" href="#" data-bind="
                                                         visible: user.username,
