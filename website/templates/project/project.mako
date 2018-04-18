@@ -134,7 +134,7 @@
                                                         tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
                                         </a>
                                     %else:
-                                        <a role="button" class="btn btn-block" href="${login_url}" >Login to request access</a>
+                                        <a role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
                                     %endif
                                     </li>
                                 % endif
