@@ -25,6 +25,11 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     version_identifier = 'ref'
 
+    @property
+    def _hashes(self):
+        # figshare API doesn't provide this metadata
+        return None
+
     def update(self, revision, data, user=None, save=True):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
@@ -194,7 +199,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     # Callbacks #
     #############
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

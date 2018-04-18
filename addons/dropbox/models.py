@@ -10,7 +10,7 @@ from django.db import models
 from dropbox.dropbox import Dropbox
 from dropbox.exceptions import ApiError, DropboxException
 from dropbox.files import FolderMetadata
-from dropbox.client import DropboxOAuth2Flow
+from dropbox import DropboxOAuth2Flow, oauth
 from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -34,7 +34,12 @@ class DropboxFolder(DropboxFileNode, Folder):
 
 
 class DropboxFile(DropboxFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'Dropbox content_hash': self._history[-1]['extra']['hashes']['dropbox']}
+        except (IndexError, KeyError):
+            return None
 
 
 class Provider(ExternalProvider):
@@ -78,15 +83,15 @@ class Provider(ExternalProvider):
     def auth_callback(self, user):
         # TODO: consider not using client library during auth flow
         try:
-            access_token, dropbox_user_id, url_state = self.oauth_flow.finish(request.values)
-        except (DropboxOAuth2Flow.NotApprovedException, DropboxOAuth2Flow.BadStateException):
+            access_token = self.oauth_flow.finish(request.values).access_token
+        except (oauth.NotApprovedException, oauth.BadStateException):
             # 1) user cancelled and client library raised exc., or
             # 2) the state was manipulated, possibly due to time.
             # Either way, return and display info about how to properly connect.
             return
-        except (DropboxOAuth2Flow.ProviderException, DropboxOAuth2Flow.CsrfException):
+        except (oauth.ProviderException, oauth.CsrfException):
             raise HTTPError(http.FORBIDDEN)
-        except DropboxOAuth2Flow.BadRequestException:
+        except oauth.BadRequestException:
             raise HTTPError(http.BAD_REQUEST)
 
         self.client = Dropbox(access_token)
@@ -256,7 +261,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return u'<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

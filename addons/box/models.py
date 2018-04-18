@@ -31,7 +31,12 @@ class BoxFolder(BoxFileNode, Folder):
 
 
 class BoxFile(BoxFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'sha1': self._history[-1]['extra']['hashes']['sha1']}
+        except (IndexError, KeyError):
+            return None
 
 
 class Provider(ExternalProvider):
@@ -256,7 +261,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         )
 
     ##### Callback overrides #####
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

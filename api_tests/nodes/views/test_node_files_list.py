@@ -8,6 +8,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
+from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
@@ -283,6 +284,24 @@ class TestNodeFilesList(ApiTestCase):
         # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+
+    @responses.activate
+    def test_returns_folder_metadata_not_children(self):
+        folder = GithubFolder(
+            name='Folder',
+            node=self.project,
+            path='/Folder/'
+        )
+        folder.save()
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], path='/Folder/')
+        self.add_github()
+        url = '/{}nodes/{}/files/github/Folder/'.format(API_BASE, self.project._id)
+        res = self.app.get(url, params={'info': ''}, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['kind'], 'folder')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'Folder')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     @responses.activate

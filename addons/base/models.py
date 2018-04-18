@@ -522,7 +522,7 @@ class BaseNodeSettings(BaseAddonSettings):
         """
         return None, None
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         """
 
         :param Node node:
@@ -938,7 +938,7 @@ class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
         self.clear_auth()
         self.save()
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
 
     def on_delete(self):

@@ -35,7 +35,12 @@ class GoogleDriveFolder(GoogleDriveFileNode, Folder):
 
 
 class GoogleDriveFile(GoogleDriveFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'md5': self._history[-1]['extra']['hashes']['md5']}
+        except (IndexError, KeyError):
+            return None
 
 
 class GoogleDriveProvider(ExternalProvider):
@@ -231,7 +236,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def fetch_access_token(self):
         return self.api.fetch_access_token()
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True, save=True)
 
     def on_delete(self):

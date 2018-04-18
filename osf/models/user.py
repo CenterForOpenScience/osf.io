@@ -664,8 +664,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor
         for node in user.contributed:
-            # Skip bookmark collection node
-            if node.is_bookmark_collection or node.is_quickfiles:
+            # Skip quickfiles
+            if node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -685,11 +685,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             node.save()
 
+        # Skip bookmark collections
+        user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
+
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
 
         # - projects where the user was the creator
-        user.nodes_created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -850,7 +853,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
                 mimetype='plain',
-                user=self
+                user=self,
+                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
 
@@ -1055,7 +1059,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise PermissionsError("Can't remove primary email")
         if self.emails.filter(address=email):
             self.emails.filter(address=email).delete()
-            signals.user_email_removed.send(self, email=email)
+            signals.user_email_removed.send(self, email=email, osf_contact_email=website_settings.OSF_CONTACT_EMAIL)
 
     def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.

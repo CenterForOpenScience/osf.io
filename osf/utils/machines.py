@@ -12,7 +12,7 @@ from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITI
 from website.mails import mails
 from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
 
 class BaseMachine(Machine):
@@ -141,8 +141,8 @@ class ReviewsMachine(BaseMachine):
             'reviewable': self.machineable,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
-            'provider_contact_email': self.machineable.provider.email_contact or 'contact@osf.io',
-            'provider_support_email': self.machineable.provider.email_support or 'support@osf.io',
+            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
         }
 
 class RequestMachine(BaseMachine):

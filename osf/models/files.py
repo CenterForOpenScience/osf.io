@@ -147,6 +147,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         Implemented here so that subclasses may override it or path.
         See OsfStorage or PathFollowingNode.
         """
+        # Files are inaccessible if a node is retracted, so just show
+        # the retraction detail page for files on retractions
+        if self.node.is_registration and self.node.is_retracted:
+            return self.node.web_url_for('view_project')
         return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     @property
@@ -491,6 +495,27 @@ class File(models.Model):
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
 
+    @property
+    def last_known_metadata(self):
+        try:
+            last_history = self._history[-1]
+        except IndexError:
+            size = None
+        else:
+            size = last_history.get('size', None)
+        return {
+            'path': self._materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.last_touched
+        }
+
+    @property
+    def _hashes(self):
+        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        Returns dict or None
+        """
+        return None
 
 class Folder(models.Model):
 
@@ -584,6 +609,30 @@ class TrashedFile(TrashedFileNode):
     def kind(self):
         return 'file'
 
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
 
 class TrashedFolder(TrashedFileNode):
     @property

@@ -108,10 +108,11 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
-from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
+from website.project import signals as project_signals
 
 
 class NodeMixin(object):
@@ -188,6 +189,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     model_class = apps.get_model('osf.AbstractNode')
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
@@ -263,6 +266,30 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                 skipped.append({'id': resource._id, 'type': object_type})
 
         return {'skipped': skipped, 'allowed': allowed}
+
+    # Overrides BulkDestroyModelMixin
+    def perform_bulk_destroy(self, resource_object_list):
+
+        auth = get_user_auth(self.request)
+        date = timezone.now()
+        id_list = [x.id for x in resource_object_list]
+
+        if NodeRelation.objects.filter(
+            parent__in=resource_object_list
+        ).exclude(child__in=resource_object_list, is_node_link=False).exists():
+            raise ValidationError('Any child components must be deleted prior to deleting this project.')
+
+        remove_addons(auth, resource_object_list)
+
+        for node in resource_object_list:
+            node.add_remove_node_log(auth=auth, date=date)
+
+        nodes = AbstractNode.objects.filter(id__in=id_list)
+        nodes.update(is_deleted=True, deleted_date=date)
+        if nodes.filter(is_public=True).exists():
+            AbstractNode.bulk_update_search(resource_object_list)
+        for node in nodes:
+            project_signals.node_deleted.send(node)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -852,7 +879,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.exclude(type='osf.registration').order_by('-forked_date')
+        all_forks = self.get_node().forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -956,7 +983,21 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
+        if 'info' in self.request.query_params and path.endswith('/'):
+            fobj = self.fetch_from_waterbutler()
+
+            if isinstance(fobj, list):
+                node = self.get_node(check_object_permissions=False)
+                base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
+                return base_class.objects.filter(node=node, _path=path)
+            elif isinstance(fobj, OsfStorageFolder):
+                return BaseFileNode.objects.filter(id=fobj.id)
+            else:
+                raise NotFound
+        else:
+            return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
@@ -1241,9 +1282,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
-            if comment.root_target.referent.is_deleted:
-                comment.root_target = None
-                comment.save()
+            if comment.root_target:
+                if hasattr(comment.root_target.referent, 'is_deleted') and comment.root_target.referent.is_deleted:
+                    comment.root_target = None
+                    comment.save()
+                # Temporary while there are both 'is_deleted' and 'deleted' attributes on referents
+                if comment.root_target and hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
+                    comment.root_target = None
+                    comment.save()
         return comments
 
     def get_serializer_class(self):
@@ -1392,7 +1438,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         return ret
 
 
-class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
+class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_wikis_list).
     """
 
@@ -1404,21 +1450,25 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
     serializer_class = NodeWikiSerializer
 
     view_category = 'nodes'
     view_name = 'node-wikis'
 
-    ordering = ('-date', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
-        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return NodeWikiPage.objects.filter(guids___id__in=node_wiki_pages)
+        if node.addons_wiki_node_settings.deleted:
+            raise NotFound(detail='The wiki for this node has been disabled.')
+        return node.wikis.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        return serializer.save(node=self.get_node())
 
 
 class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
@@ -1730,6 +1780,9 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
+
+    view_category = 'nodes'
+    view_name = 'identifier-list'
 
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):

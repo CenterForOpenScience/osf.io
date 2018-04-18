@@ -293,11 +293,20 @@ class ApiWikiTestCase(ApiTestCase):
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        from addons.wiki.tests.factories import NodeWikiFactory
-        # API will only return current wiki pages
+        from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=node, user=user)
+            wiki_page = WikiFactory(node=node, user=user)
+            wiki_version = WikiVersionFactory(wiki_page=wiki_page)
+            return wiki_page
+
+    def _add_project_wiki_version(self, node, user):
+        from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+        # Mock out update_search. TODO: Remove when StoredFileNode is implemented
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=node, user=user)
+            wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user)
+            return wiki_version
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

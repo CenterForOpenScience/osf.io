@@ -364,6 +364,19 @@ class JSONAPIListField(ser.ListField):
         return super(JSONAPIListField, self).to_internal_value(data)
 
 
+class ValuesListField(JSONAPIListField):
+    """
+    JSONAPIListField that uses a values_list with flat=True to return just
+    an array of the specified field (attr_name) for optimization purposes.
+    """
+    def __init__(self, **kwargs):
+        self.attr_name = kwargs.pop('attr_name')
+        super(ValuesListField, self).__init__(**kwargs)
+
+    def to_representation(self, val):
+        return val.values_list(self.attr_name, flat=True)
+
+
 class AuthorizedCharField(ser.CharField):
     """
     Passes auth of the logged-in user to the object's method
@@ -437,9 +450,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     Field can handle nested attributes: ::
 
-        wiki_home = RelationshipField(
-            related_view='wiki:wiki-detail',
-            related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+        node = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<wiki_page.node._id>'}
         )
 
     Field can handle a filter_key, which operates as the source field (but
@@ -700,6 +713,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             filters.append({'field_name': field_name, 'value': value})
         return filters if filters else None
 
+    def to_internal_value(self, data):
+        return data
+
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
         request = self.context.get('request', None)
@@ -768,6 +784,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     return relationship
                 relationship['data'] = {'id': related_id, 'type': related_type}
         return relationship
+
 
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
@@ -1154,6 +1171,7 @@ class JSONAPISerializer(BaseAPISerializer):
     according to JSON API spec. Relational fields must set json_api_link=True flag.
     Self/html links must be nested under "links".
     """
+    writeable_method_fields = frozenset([])
 
     # Don't serialize relationships that use these views
     # when viewing thru an anonymous VOL
@@ -1187,6 +1205,15 @@ class JSONAPISerializer(BaseAPISerializer):
             return '<esi:include src="{}"/>'.format(esi_url)
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
+
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for writeable SMFs is expected to happen in the model
+        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        for field in self.writeable_method_fields:
+            if field in self.initial_data:
+                _validated_data[field] = self.initial_data[field]
+        return _validated_data
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
@@ -1235,21 +1262,33 @@ class JSONAPISerializer(BaseAPISerializer):
 
         for field in fields:
             try:
-                attribute = field.get_attribute(obj)
+                if hasattr(field, 'child_relation'):
+                    attribute = field.child_relation.get_attribute(obj)
+                else:
+                    attribute = field.get_attribute(obj)
             except SkipField:
                 continue
 
-            nested_field = getattr(field, 'field', None)
+            if hasattr(field, 'child_relation'):
+                nested_field = field.child_relation
+            else:
+                nested_field = getattr(field, 'field', None)
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
                 data['attributes'][field.field_name] = None
             else:
                 try:
-                    if hasattr(attribute, 'all'):
-                        representation = field.to_representation(attribute.all())
+                    if hasattr(field, 'child_relation'):
+                        if hasattr(attribute, 'all'):
+                            representation = field.child_relation.to_representation(attribute.all())
+                        else:
+                            representation = field.child_relation.to_representation(attribute)
                     else:
-                        representation = field.to_representation(attribute)
+                        if hasattr(attribute, 'all'):
+                            representation = field.to_representation(attribute.all())
+                        else:
+                            representation = field.to_representation(attribute)
                 except SkipField:
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):

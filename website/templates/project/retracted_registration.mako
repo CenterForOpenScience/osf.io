@@ -44,6 +44,13 @@
                 % else:
                     Not available
                 % endif
+                <span data-bind="if: hasDoi()" class="scripted">
+                  <p>
+                    <span data-bind="text:identifier"></span>:
+                  DOI <span data-bind="text: doi"></span>
+                      <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
+                   </p>
+                </span>
 
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${ node['category'] }</span>

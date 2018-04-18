@@ -6,6 +6,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.validators import validate_subscription_type
 from osf.utils.fields import NonNaiveDateTimeField
 from website.notifications.constants import NOTIFICATION_TYPES
+from website.util import api_v2_url
 
 
 class NotificationSubscription(BaseModel):
@@ -18,7 +19,8 @@ class NotificationSubscription(BaseModel):
                              null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('Node', related_name='notification_subscriptions',
                              null=True, blank=True, on_delete=models.CASCADE)
-
+    provider = models.ForeignKey('AbstractProvider', related_name='notification_subscriptions',
+                                 null=True, blank=True, on_delete=models.CASCADE)
     # Notification types
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
     email_digest = models.ManyToManyField('OSFUser', related_name='+')  # for these
@@ -47,6 +49,11 @@ class NotificationSubscription(BaseModel):
             self.user = value
         elif isinstance(value, Node):
             self.node = value
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/subscriptions/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def add_user_to_subscription(self, user, notification_type, save=True):
         for nt in NOTIFICATION_TYPES:
@@ -82,6 +89,7 @@ class NotificationSubscription(BaseModel):
 
         if save:
             self.save()
+
 
 class NotificationDigest(ObjectIDMixin, BaseModel):
     user = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)

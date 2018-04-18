@@ -25,7 +25,10 @@ class OwncloudFolder(OwncloudFileNode, Folder):
 
 
 class OwncloudFile(OwncloudFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        # ownCloud API doesn't provide this metadata
+        return None
 
 
 class OwnCloudProvider(BasicAuthProviderMixin):
@@ -137,7 +140,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
