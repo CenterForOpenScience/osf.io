@@ -710,7 +710,7 @@ class TaxonomizableMixin(models.Model):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
         elif isinstance(self, CollectedGuidMetadata):
-            if not self.has_referent_perm(auth, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))

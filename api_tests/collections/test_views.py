@@ -3657,7 +3657,7 @@ class TestCollectedMetaList:
             expect_errors=True)
         assert res.status_code == 403
 
-        project_five = ProjectFactory(creator=user_two)  # has_referent_perm
+        project_five = ProjectFactory(creator=user_two)  # has referent perm
 
         res = app.post_json_api(
             url.format(collection_with_three_cgm._id),
@@ -3819,7 +3819,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, save=True)  # has_referent_perms
+        project_one.add_contributor(user_two, save=True)  # has referent perms
 
         res = app.patch_json_api(
             url,

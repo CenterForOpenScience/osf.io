@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, CollectedGuidMetadata, Guid, Registration, AbstractProvider
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, AbstractProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
@@ -217,7 +217,7 @@ class CollectedMetaCreateSerializer(CollectedMetaSerializer):
             raise exceptions.ValidationError('"collection" must be specified.')
         if not creator:
             raise exceptions.ValidationError('"creator" must be specified.')
-        if not (creator.has_perm('write_collection', collection) or CollectedGuidMetadata._has_referent_perm(guid, creator, WRITE)):
+        if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)

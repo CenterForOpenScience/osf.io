@@ -52,7 +52,7 @@ class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return collection.is_public or auth.user and auth.user.has_perm('read_collection', collection)
         elif request.method in ['PUT', 'PATCH']:
-            return obj.has_referent_perm(auth, WRITE) or auth.user.has_perm('write_collection', collection)
+            return obj.guid.referent.has_permission(auth.user, WRITE) or auth.user.has_perm('write_collection', collection)
         elif request.method == 'DELETE':
             # Restricted to collection admins
             return auth.user.has_perm('admin_collection', collection)

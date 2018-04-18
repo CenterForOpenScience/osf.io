@@ -18,7 +18,6 @@ from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
-from osf.utils.requests import get_request_and_user_id
 from website import settings
 from website.util import api_v2_url
 
@@ -204,17 +203,16 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
 def create_primary_collection_for_provider(sender, instance, created, **kwargs):
     if created:
         Collection = apps.get_model('osf.Collection')
-        OSFUser = apps.get_model('osf.OSFUser')
-        _, user_id = get_request_and_user_id()
-        user = OSFUser.load(user_id)
+        user = getattr(instance, '_creator', None)  # Temp attr set in admin view
         if user:
-            c, created = Collection.objects.get_or_create(
-                title='{}\'s Primary Collection'.format(instance.name),
+            c = Collection(
+                title='{}\'s Collection'.format(instance.name),
                 creator=user,
                 provider=instance,
                 is_promoted=True,
                 is_public=True
             )
+            c.save()
             instance.primary_collection = c
             instance.save()
         else:

@@ -9,17 +9,17 @@ from osf_tests.factories import (
     CollectionProviderFactory,
 )
 
-@pytest.fixture()
-def user_one():
-    return AuthUserFactory()
-
 @pytest.mark.django_db
-class TestCollectedMetaList:
+class TestSubmissionList:
+
     @pytest.fixture()
-    def collection_provider(self, primary_collection):
-        cp = CollectionProviderFactory()
+    def user_one(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collection_provider(self, user_one):
+        cp = CollectionProviderFactory(creator=user_one)
         cp.allow_submissions = False
-        cp.primary_collection = primary_collection
         cp.save()
         return cp
 
@@ -51,9 +51,9 @@ class TestCollectedMetaList:
         c.collect_object(project_one, user_one)
         return c
 
-    @pytest.fixture()
-    def primary_collection(self, user_one, project_one):
-        c = CollectionFactory(creator=user_one)
+    @pytest.fixture(autouse=True)
+    def primary_collection(self, collection_provider, user_one, project_one):
+        c = collection_provider.primary_collection
         c.collect_object(project_one, user_one, status='fdsa')
         return c
 
@@ -72,7 +72,7 @@ class TestCollectedMetaList:
             }
         return make_collection_payload
 
-    def test_no_permissions(self, app, collection_provider, collection_with_provider, collection_without_provider, user_one, user_two, project_two, url, payload):
+    def test_no_permissions(self, app, primary_collection, collection_provider, collection_with_provider, collection_without_provider, user_one, user_two, project_two, url, payload):
         # Private
 
         # Sanity Check
@@ -101,8 +101,8 @@ class TestCollectedMetaList:
         # Public, accepting submissions
         collection_provider.allow_submissions = True
         collection_provider.save()
-        collection_provider.primary_collection.is_public = True
-        collection_provider.primary_collection.save()
+        primary_collection.is_public = True
+        primary_collection.save()
         res = app.get(url)
         assert len(res.json['data']) == 1
         assert res.status_code == 200
@@ -125,7 +125,7 @@ class TestCollectedMetaList:
         # Neither collection perms nor project perms
         assert res.status_code == 403
 
-        project_three = ProjectFactory(creator=user_two)  # has_referent_perm
+        project_three = ProjectFactory(creator=user_two)  # has referent perm
 
         res = app.post_json_api(
             url,
@@ -135,9 +135,9 @@ class TestCollectedMetaList:
         assert res.status_code == 201
 
         assert not (collection_with_provider.guid_links.all() | collection_without_provider.guid_links.all()).filter(_id=project_three._id).exists()
-        assert collection_provider.primary_collection.guid_links.filter(_id=project_three._id).exists()
+        assert primary_collection.guid_links.filter(_id=project_three._id).exists()
 
-    def test_with_permissions(self, app, collection_provider, collection_with_provider, collection_without_provider, user_one, user_two, project_two, subject_one, url, payload):
+    def test_with_permissions(self, app, primary_collection, collection_provider, collection_with_provider, collection_without_provider, user_one, user_two, project_two, subject_one, url, payload):
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 1
         assert res.status_code == 200
@@ -148,7 +148,7 @@ class TestCollectedMetaList:
             auth=user_one.auth)
         assert res.status_code == 201
 
-        project_three = ProjectFactory(creator=user_two)  # user_one does not has_referent_perm
+        project_three = ProjectFactory(creator=user_two)  # user_one does not have referent perm
 
         res = app.post_json_api(
             url,
@@ -161,12 +161,12 @@ class TestCollectedMetaList:
         assert res.status_code == 200
 
         assert not (collection_with_provider.guid_links.all() | collection_without_provider.guid_links.all()).filter(_id__in=[project_two._id, project_three._id]).exists()
-        assert collection_provider.primary_collection.guid_links.filter(_id__in=[project_two._id, project_three._id]).count() == 2
+        assert primary_collection.guid_links.filter(_id__in=[project_two._id, project_three._id]).count() == 2
 
-    def test_choice_restrictions(self, app, collection_provider, user_one, project_two, subject_one, url, payload):
-        collection_provider.primary_collection.status_choices = ['one', 'two', 'three']
-        collection_provider.primary_collection.collected_type_choices = ['asdf', 'fdsa']
-        collection_provider.primary_collection.save()
+    def test_choice_restrictions(self, app, primary_collection, collection_provider, user_one, project_two, subject_one, url, payload):
+        primary_collection.status_choices = ['one', 'two', 'three']
+        primary_collection.collected_type_choices = ['asdf', 'fdsa']
+        primary_collection.save()
 
         # Needs collected_type
         res = app.post_json_api(
