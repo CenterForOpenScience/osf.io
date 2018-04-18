@@ -90,12 +90,7 @@ def format_creators(preprint):
 
 
 def format_subjects(preprint):
-    subject_names = set()
-    for subject_list in preprint.get_subjects():
-        for subject in subject_list:
-            subject_names.add(subject['text'])
-
-    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in subject_names]
+    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
 
 
 # This function is OSF specific.

@@ -108,6 +108,7 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
@@ -412,6 +413,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -454,9 +466,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
@@ -1626,6 +1641,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.configure_comments,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
             json_renderer,
         ),
 

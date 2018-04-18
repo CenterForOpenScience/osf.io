@@ -22,6 +22,7 @@ from osf_tests.factories import (
     PreprintFactory,
     IdentifierFactory,
     InstitutionFactory,
+    SubjectFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -95,6 +96,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -106,6 +108,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -117,6 +120,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -128,6 +132,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -152,6 +157,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
@@ -386,6 +392,10 @@ class NodeCRUDTestCase:
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
 
     def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
                                      institution_one, institution_two):
@@ -989,6 +999,43 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert not project_public.is_public
         mock_update_ezid_metadata.assert_called_with(
             target_object._id, status='unavailable')
+
+    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
+        # test_write_contrib_cannot_set_subjects
+        write_contrib = AuthUserFactory()
+        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_non_contrib_cannot_set_subjects
+        non_contrib = AuthUserFactory()
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_admin_can_set_subjects
+        admin_contrib = AuthUserFactory()
+        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        assert project_public.subjects.filter(_id=subject._id).exists()
 
 
 @pytest.mark.django_db

@@ -59,8 +59,8 @@
                 % endif
                 % if summary['primary'] and summary['logged_in'] and summary['is_contributor'] and not summary['is_registration']:
                     <div class="generic-dropdown dropdown pull-right">
-                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
-                            <span class="glyphicon glyphicon-option-horizontal"></span>
+                        <button class="btn btn-default dropdown-toggle dropdown-toggle-sm" type="button" data-toggle="dropdown">
+                            <span class="fa fa-ellipsis-h"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-right">
                             <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>

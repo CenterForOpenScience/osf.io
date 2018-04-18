@@ -46,7 +46,7 @@
                     <div class="collapse" id="osf-meeting-register">
                         <div class="m-lg osf-box-lt p-md text-left">
                             <p>OSF Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
-                                <p class="text-center"><strong> Email us at <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> </strong></p>
+                                <p class="text-center"><strong> Submit this <a href="https://docs.google.com/forms/d/e/1FAIpQLSeBq4CfC5CjTBz49TP2dO9ZIsQc6QAAJFUoUbkS767Le9twLw/viewform">set-up form</a> </strong></p>
                              <p>We'll review and add your conference within one business day.</p>
                         </div>
                     </div>

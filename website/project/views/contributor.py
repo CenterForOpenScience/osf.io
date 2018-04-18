@@ -351,7 +351,8 @@ def project_remove_contributor(auth, **kwargs):
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
-                trust=False
+                trust=False,
+                id='remove_self_contrib'
             )
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}
@@ -537,6 +538,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and \
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
+        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
         preprint_provider = None
         logo = None
         if email_template == 'preprint':
@@ -549,6 +551,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             else:
                 logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
         elif email_template == 'access_request':
+            mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
@@ -568,6 +571,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         mails.send_mail(
             contributor.username,
             email_template,
+            mimetype=mimetype,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',

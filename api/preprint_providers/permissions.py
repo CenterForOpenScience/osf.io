@@ -19,8 +19,9 @@ PERMISSIONS = {
     'edit_review_comments': 'Can edit comments on actions for this provider',
     'view_actions': 'Can view actions on submissions to this provider',
 
-    # TODO Implement adding/removing moderators via API. Currently must be done in OSF Admin
     'add_moderator': 'Can add other users as moderators for this provider',
+    'update_moderator': 'Can elevate or lower other moderators/admins',
+    'remove_moderator': 'Can remove moderators from this provider. Implicitly granted to self',
 
     # TODO Implement editing settings, assign this to admin groups
     'edit_reviews_settings': 'Can edit reviews settings for this provider',
@@ -35,7 +36,7 @@ PERMISSIONS = {
 # Groups created for each provider.
 GROUP_FORMAT = 'reviews_{provider_id}_{group}'
 GROUPS = {
-    'admin': ('set_up_moderation', 'add_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
+    'admin': ('set_up_moderation', 'add_moderator', 'update_moderator', 'remove_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
     'moderator': ('view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
     # 'manager': (),  # TODO "Senior editor"-like role, can add/remove/assign moderators and reviewers
     # 'reviewer': (),  # TODO Implement reviewers
@@ -74,3 +75,30 @@ class CanSetUpProvider(drf_permissions.BasePermission):
             return True
         auth = get_user_auth(request)
         return auth.user.has_perm('set_up_moderation', obj)
+
+class CanAddModerator(drf_permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            return True
+        auth = get_user_auth(request)
+        return auth.user.has_perm('add_moderator', view.get_provider())
+
+class CanDeleteModerator(drf_permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method != 'DELETE':
+            return True
+        auth = get_user_auth(request)
+        provider = view.get_provider()
+        return auth.user.has_perm('remove_moderator', provider) or auth.user._id == view.kwargs.get('moderator_id', '')
+
+class CanUpdateModerator(drf_permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method not in ['PATCH', 'PUT']:
+            return True
+        auth = get_user_auth(request)
+        return auth.user.has_perm('update_moderator', view.get_provider())
+
+class MustBeModerator(drf_permissions.BasePermission):
+    def has_permission(self, request, view):
+        auth = get_user_auth(request)
+        return bool(get_perms(auth.user, view.get_provider()))

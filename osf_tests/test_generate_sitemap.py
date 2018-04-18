@@ -9,7 +9,7 @@ import urlparse
 
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
-                                 PreprintFactory, PreprintProviderFactory, EmbargoFactory)
+                                 PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory)
 from website import settings
 
 
@@ -38,6 +38,10 @@ class TestGenerateSitemap:
     @pytest.fixture(autouse=True)
     def user_admin_project_public(self):
         return AuthUserFactory()
+
+    @pytest.fixture(autouse=True)
+    def user_unconfirmed(self):
+        return UnconfirmedUserFactory()
 
     @pytest.fixture(autouse=True)
     def user_admin_project_private(self):
@@ -116,10 +120,8 @@ class TestGenerateSitemap:
             registration_active.url,
             '/preprints/{}/'.format(preprint_osf._id),
             '/preprints/{}/{}/'.format(provider_other._id, preprint_other._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(preprint_osf.node._id,
-                                                                      preprint_osf.primary_file._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(preprint_other.node._id,
-                                                                      preprint_other.primary_file._id),
+            '/{}/download/?format=pdf'.format(preprint_osf._id),
+            '/{}/download/?format=pdf'.format(preprint_other._id)
         ])
         urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
@@ -138,6 +140,13 @@ class TestGenerateSitemap:
 
         assert len(urls_to_include) == len(urls)
         assert set(urls_to_include) == set(urls)
+
+    def test_unconfirmed_user_not_included(self, create_tmp_directory, user_unconfirmed):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, user_unconfirmed.url) not in urls
 
     def test_collection_link_not_included(self, collection, create_tmp_directory):
 

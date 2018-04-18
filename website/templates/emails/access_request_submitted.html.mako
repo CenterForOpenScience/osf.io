@@ -3,6 +3,9 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!
+        from website import settings
+    %>
     Hello ${admin.fullname},<br>
     <br>
     ${requester.fullname} (${requester.absolute_url}) has requested access to your ${node.project_or_component} "${node.title}" (${node.absolute_url}).<br>
@@ -18,6 +21,7 @@
     Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
+
 
 </tr>
 </%def>
