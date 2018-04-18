@@ -450,9 +450,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     Field can handle nested attributes: ::
 
-        wiki_home = RelationshipField(
-            related_view='wiki:wiki-detail',
-            related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+        node = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<wiki_page.node._id>'}
         )
 
     Field can handle a filter_key, which operates as the source field (but
@@ -784,6 +784,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     return relationship
                 relationship['data'] = {'id': related_id, 'type': related_type}
         return relationship
+
+
+class TypedRelationshipField(RelationshipField):
+    """ Overrides get_url to inject a typed namespace.
+
+        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+    """
+
+    def get_url(self, obj, view_name, request, format):
+        if len(view_name.split(':')) == 2:
+            untyped_view = view_name
+            view_parts = view_name.split(':')
+            try:
+                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
+            except AttributeError:
+                # List Serializer, use the child's type
+                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            self.view_name = view_name = ':'.join(view_parts)
+            for k, v in self.views.items():
+                if v == untyped_view:
+                    self.views[k] = view_name
+        return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
 
 
 class FileCommentRelationshipField(RelationshipField):

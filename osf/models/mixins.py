@@ -11,7 +11,7 @@ from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
 from include import IncludeQuerySet
 
-from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
@@ -469,7 +469,7 @@ class CommentableMixin(object):
     @property
     def root_target_page(self):
         """The page type associated with the object/Comment.root_target.
-        E.g. For a NodeWikiPage, the page name is 'wiki'."""
+        E.g. For a WikiPage, the page name is 'wiki'."""
         raise NotImplementedError
 
     is_deleted = False
@@ -598,7 +598,7 @@ class ReviewProviderMixin(models.Model):
         return counts
 
     def add_to_group(self, user, group):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
         user_id = user.id
@@ -610,7 +610,7 @@ class ReviewProviderMixin(models.Model):
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         _group = GroupHelper(self).get_group(group)
         if group == 'admin':
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
