@@ -126,16 +126,15 @@
                                     </li>
                                 %endif
                                 % if node['access_requests_enabled'] and not user['is_contributor']:
-                                    <li class="keep-open">
-                                    %if user_name:
-                                        <a role="button" href="#" data-bind="click: requestAccess.requestProjectAccess,
+                                    <li data-bind="css: {'keep-open': user.username}">
+                                        <a role="button" href="#" data-bind="
+                                                        visible: user.username,
+                                                        click: requestAccess.requestProjectAccess,
                                                         text: requestAccess.requestAccessButton,
                                                         css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
                                                         tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
                                         </a>
-                                    %else:
-                                        <a role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
-                                    %endif
+                                        <a data-bind="visible: !user.username" role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
                                     </li>
                                 % endif
                             </ul>

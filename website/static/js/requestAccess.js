@@ -8,9 +8,10 @@ var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
 
-var RequestAccessViewModel = function(currentUserRequestState, nodeId) {
+var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
     var self = this;
 
+    self.user = user;
     self.requestAccessButton = ko.observable('Request access');
     self.accessRequestPendingOrDenied = ko.observable(false);
     self.accessRequestTooltip = ko.observable('');
