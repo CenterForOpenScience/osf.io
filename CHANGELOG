@@ -2,6 +2,22 @@
 Changelog
 *********
 
+0.139.0 (2018-04-18)
+====================
+
+- Add CC-BY-NC-ND and CC-BY-SA 4.0 license options for preprint providers.
+- Optimize meetings page.
+- Upgrade Dropbox client version.
+- Add field to PreprintProvider to toggle Hypothesis commenting.
+- Fix using django-waffle with groups.
+- Fix bug that caused project to be unreachable if it had a deleted BitBucket addon.
+- Fix incorrect OSF Meeting instructions.
+- Remove unused fonts and styles from landing page.
+- Hide hierarchy on search results if parent is priate.
+- API: Fix /data/relationships/referent/type for /guids/<registration-id>/?resolve=false endpoint.
+- API: Optimize node delete endpoint.
+- Admin: Fix typos.
+
 0.138.0 (2018-04-05)
 ====================
 

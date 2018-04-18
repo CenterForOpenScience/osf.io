@@ -97,8 +97,12 @@ def get_subject_rules(subjects_selected):
 
 
 def get_nodelicense_choices():
-    return NodeLicense.objects.values_list('id', 'name')
+    return NodeLicense.objects.exclude(license_id='OTHER').values_list('id', 'name')
 
+def get_defaultlicense_choices():
+    no_default = ('', '---------')
+    licenses = NodeLicense.objects.exclude(license_id='OTHER')
+    return [no_default] + [(lic.id, lic.__unicode__) for lic in licenses]
 
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')

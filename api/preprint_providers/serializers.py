@@ -17,6 +17,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
         'allow_submissions',
+        'allow_commenting',
         'description',
         'domain',
         'domain_redirect_enabled',
@@ -40,6 +41,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     email_support = ser.CharField(read_only=True, allow_null=True)
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
+    allow_commenting = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
     facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
 
