@@ -288,7 +288,12 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
-    if not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+    # It has been more than 1 hour since last attempt to change password. Reset the counter for invalid attempts.
+    if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+        user.reset_old_password_invalid_attempts()
+
+    # There have been more than 3 failed attempts and throttle hasn't expired.
+    if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
         push_status_message(
             message='Too many requests. Please wait a while before attempting to change your password.',
             kind='error',
