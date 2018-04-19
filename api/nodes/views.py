@@ -1251,9 +1251,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         if field_name == 'target':
             operation['value'] = Guid.load(operation['value'])
 
-    def get_queryset(self):
-        return self.get_queryset_from_request()
-
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CommentCreateSerializer
