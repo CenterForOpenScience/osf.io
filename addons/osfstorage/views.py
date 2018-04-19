@@ -58,7 +58,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
                 "version": "2",
                 "downloads": "1",
                 "checkout": "...",
-                "latestVersionSeen": "...",
+                "latestVersionSeen": {"userId": "abc12", "seen": true},
                 "modified": "a date",
                 "modified_utc": "a date in utc",
 
@@ -249,9 +249,9 @@ def osfstorage_get_children(file_node, **kwargs):
                         ) LIMIT 1
                     )
                     THEN
-                      TRUE
+                      json_build_object('user', %s, 'seen', TRUE)
                     ELSE
-                      FALSE
+                      json_build_object('user', %s, 'seen', FALSE)
                     END
                 ELSE
                   NULL
@@ -259,7 +259,7 @@ def osfstorage_get_children(file_node, **kwargs):
             ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [user_content_type_id, file_node.node._id, user_content_type_id, user_id, user_content_type_id, user_id, file_node.id])
+        ''', [user_content_type_id, file_node.node._id, user_content_type_id, user_id, user_content_type_id, user_id, user_id, user_id, file_node.id])
 
         return cursor.fetchone()[0] or []
 
