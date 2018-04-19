@@ -52,6 +52,11 @@
     padding-bottom: 10px;
 }
 
+.osf-project-navbar {
+    /* So that the navbar is over menus */
+    z-index: 1001; 
+}
+
 /* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {
@@ -247,4 +252,12 @@ li.addon-categories a{
 #maintenance.alert {
     position: relative;
     top: 45px;
+}
+
+#shareButtonsPopover {
+    text-align: left;
+}
+
+#shareButtonsPopover a {
+    display: block;
 }
