@@ -48,8 +48,14 @@ var ShareButtonsPopover = {
         this.popupShowing = false;
     },
     view: function(ctrl, options) {
+        var selector;
+        if (options.type === 'link') {
+            selector = 'a#sharePopoverBtn[text=Share]';
+        } else {
+            selector = 'a#sharePopoverBtn.btn.btn-default.glyphicon.glyphicon-share';
+        }
         return [
-            m('a#sharePopoverBtn.btn.btn-default.glyphicon.glyphicon-share[href=#][data-toggle=popover]', {
+            m(selector + '[href=#][data-toggle=popover]', {
                 onmousedown: function() {
                     ctrl.showOnClick = !ctrl.popupShowing;
                 },

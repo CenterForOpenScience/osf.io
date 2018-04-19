@@ -4,6 +4,8 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
 
+from osf.utils import permissions
+
 @pytest.mark.django_db
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
@@ -222,3 +224,30 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert initial_state == node_request.machine_state
         assert initial_comment != node_request.comment
         assert mock_mail.call_count == 0
+
+    def test_set_permissions_on_approve(self, app, admin, url, node_request):
+        assert node_request.creator not in node_request.target.contributors
+        payload = self.create_payload(node_request._id, trigger='accept', permissions='admin')
+        res = app.post_json_api(url, payload, auth=admin.auth)
+        assert res.status_code == 201
+        node_request.reload()
+        assert node_request.target.has_permission(node_request.creator, permissions.ADMIN)
+
+    def test_set_visible_on_approve(self, app, admin, url, node_request):
+        assert node_request.creator not in node_request.target.contributors
+        payload = self.create_payload(node_request._id, trigger='accept', visible=False)
+        res = app.post_json_api(url, payload, auth=admin.auth)
+        assert res.status_code == 201
+        node_request.reload()
+        assert node_request.creator in node_request.target.contributors
+        assert not node_request.target.get_visible(node_request.creator)
+
+    def test_accept_request_defaults_to_read_and_visible(self, app, admin, url, node_request):
+        assert node_request.creator not in node_request.target.contributors
+        payload = self.create_payload(node_request._id, trigger='accept')
+        res = app.post_json_api(url, payload, auth=admin.auth)
+        assert res.status_code == 201
+        node_request.reload()
+        assert node_request.creator in node_request.target.contributors
+        assert node_request.target.has_permission(node_request.creator, permissions.READ)
+        assert node_request.target.get_visible(node_request.creator)

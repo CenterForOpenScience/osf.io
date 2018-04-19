@@ -4,14 +4,12 @@ import urlparse
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
-from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
 
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
-from osf.models import NodeLog, Subject
 from osf.models.mixins import ReviewableMixin
-from osf.models.validators import validate_subject_hierarchy
+from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
@@ -22,8 +20,9 @@ from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
+from osf.models.mixins import TaxonomizableMixin
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -36,8 +35,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     original_publication_date = NonNaiveDateTimeField(null=True, blank=True)
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
-
-    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
@@ -77,12 +74,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             return
         return self.node.is_preprint_orphan
 
-    @cached_property
-    def subject_hierarchy(self):
-        return [
-            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
-        ]
-
     @property
     def deep_url(self):
         # Required for GUID routing
@@ -109,34 +100,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)
-
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
-
-    def set_subjects(self, preprint_subjects, auth):
-        if not self.node.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj_list in preprint_subjects:
-            subj_hierarchy = []
-            for s in subj_list:
-                subj_hierarchy.append(s)
-            if subj_hierarchy:
-                validate_subject_hierarchy(subj_hierarchy)
-                for s_id in subj_hierarchy:
-                    self.subjects.add(Subject.load(s_id))
-
-        self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):

@@ -14,6 +14,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
+from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from api.base.utils import rapply
@@ -36,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -245,6 +246,7 @@ def project_before_template(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_registration
+@ember_flag_is_active('ember_project_registrations_page')
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
@@ -252,6 +254,7 @@ def node_registrations(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_retracted_registration
+@ember_flag_is_active('ember_project_forks_page')
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_forks=True)
 
@@ -260,6 +263,7 @@ def node_forks(auth, node, **kwargs):
 @must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
+@ember_flag_is_active('ember_project_settings_page')
 def node_setting(auth, node, **kwargs):
 
     auth.user.update_affiliated_institutions_by_email_domain()
@@ -370,9 +374,11 @@ def node_choose_addons(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_have_permission(READ)
+@ember_flag_is_active('ember_project_contributors_page')
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['access_requests'] = utils.serialize_access_requests(node)
     ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
@@ -388,6 +394,14 @@ def configure_comments(node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     node.save()
 
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def configure_requests(node, **kwargs):
+    access_requests_enabled = request.get_json().get('accessRequestsEnabled')
+    node.access_requests_enabled = access_requests_enabled
+    node.save()
+    return {'access_requests_enabled': access_requests_enabled}, 200
+
 
 ##############################################################################
 # View Project
@@ -396,6 +410,7 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
@@ -412,6 +427,9 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    access_request = node.requests.filter(creator=auth.user).exclude(machine_state='accepted')
+    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
@@ -488,6 +506,7 @@ def project_reorder_components(node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
+@ember_flag_is_active('ember_project_analytics_page')
 def project_statistics(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['node']['keenio_read_key'] = node.keenio_read_key
@@ -565,7 +584,8 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, kind='success', trust=False)
+    id = '{}_deleted'.format(node.project_or_component)
+    status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
@@ -625,7 +645,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -641,6 +661,7 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+
     try:
         contributor = node.contributor_set.get(user=user)
     except Contributor.DoesNotExist:
@@ -650,7 +671,7 @@ def _view_project(node, auth, primary=False,
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
-        in_bookmark_collection = bookmark_collection.linked_nodes.filter(pk=node.pk).exists()
+        in_bookmark_collection = bookmark_collection.guid_links.filter(_id=node._id).exists()
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
@@ -748,7 +769,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -1166,7 +1188,10 @@ def _add_pointers(node, pointers, auth):
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer, auth, save=False)
+        if isinstance(node, Collection):
+            node.collect_object(pointer, auth.user)
+        else:
+            node.add_pointer(pointer, auth, save=False)
         added = True
 
     if added:
@@ -1185,7 +1210,7 @@ def add_pointer(auth):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = AbstractNode.load(pointer_to_move)
-    to_node = AbstractNode.load(to_node_id)
+    to_node = Guid.load(to_node_id).referent
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
@@ -1299,8 +1324,7 @@ def serialize_pointer(node, auth):
 def get_pointed(auth, node, **kwargs):
     """View that returns the pointers for a project."""
     NodeRelation = apps.get_model('osf.NodeRelation')
-    # exclude folders
     return {'pointed': [
         serialize_pointer(each.parent, auth)
-        for each in NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection')
+        for each in NodeRelation.objects.filter(child=node, is_node_link=True)
     ]}

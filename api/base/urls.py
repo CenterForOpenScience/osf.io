@@ -8,11 +8,13 @@ from . import versioning
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
 # Please keep URLs alphabetized for auto-generated documentation
+
 urlpatterns = [
     url(r'^_/',
         include(
             [
                 url(r'^', include('waffle.urls')),
+                url(r'^wb/', include('api.wb.urls', namespace='wb')),
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
             ],
         )
@@ -42,6 +44,7 @@ urlpatterns = [
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
                 url(r'^requests/', include('api.requests.urls', namespace='requests')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
+                url(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),

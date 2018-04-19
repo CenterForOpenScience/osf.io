@@ -39,6 +39,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus
@@ -302,16 +303,21 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
+DOWNLOAD_ACTIONS = set([
+    'download_file',
+    'download_zip',
+])
+
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
             # Don't log download actions
-            if payload['action'] in ('download_file', 'download_zip'):
+            if payload['action'] in DOWNLOAD_ACTIONS:
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
@@ -597,6 +603,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
 @must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
@@ -668,7 +675,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format) != extension:
+        if format and '.{}'.format(format.lower()) != extension.lower():
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
@@ -717,7 +724,6 @@ def persistent_file_download(auth, **kwargs):
         return auth_redirect
 
     query_params = request.args.to_dict()
-    query_params.setdefault(file.version_identifier, file.versions.first().identifier)
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
