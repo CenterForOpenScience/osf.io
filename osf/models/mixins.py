@@ -650,7 +650,7 @@ class GuardianMixin(models.Model):
 
     @property
     def group_names(self):
-        return [self.format_group(name) for name in self.groups_dict]
+        return [self.format_group(name) for name in self.groups]
 
     @property
     def group_objects(self):
@@ -701,12 +701,17 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        PreprintService = apps.get_model('osf.PreprintService')
+        CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
-        if getattr(self, 'is_collection', False):
-            raise NodeStateError('Collections may not have subjects')
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change subjects.')
+        if isinstance(self, (AbstractNode, PreprintService)):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, CollectedGuidMetadata):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
