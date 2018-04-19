@@ -188,7 +188,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     model_class = apps.get_model('osf.AbstractNode')
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
@@ -1250,6 +1249,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'target':
             operation['value'] = Guid.load(operation['value'])
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
