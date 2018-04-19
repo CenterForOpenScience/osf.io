@@ -18,10 +18,12 @@ from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
-from osf.models import NodeLog, OSFUser
+from osf.models import NodeLog
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.requests import get_current_request
+from framework.auth.core import _get_current_user
+from osf.utils.requests import DummyRequest
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
@@ -182,20 +184,16 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         self.check_spam()
         return rv
 
-    def _get_user_and_request_headers(self):
-        request, user_id = get_request_and_user_id()
-        request_headers = {}
+    def check_spam(self):
+        user = _get_current_user()
+        request = get_current_request()
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        user = OSFUser.load(user_id)
-        return user, request_headers
 
-    def check_spam(self):
-        user, request_headers = self._get_user_and_request_headers()
         node = self.wiki_page.node
 
         if not settings.SPAM_CHECK_ENABLED:
