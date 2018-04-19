@@ -44,7 +44,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         super(TestConfigViews, self).setUp()
         self.foldersApiUrl = urlparse.urljoin(API_URL, 'users/{}/collections'
             .format(self.external_account.provider_id))
-        self.documentsApiUrl = urlparse.urljoin(API_URL, 'users/{}/items'
+        self.documentsApiUrl = urlparse.urljoin(API_URL, 'users/{}/items/top'
             .format(self.external_account.provider_id))
 
     def test_widget_view_incomplete_library_set_only(self):
