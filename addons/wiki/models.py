@@ -308,7 +308,23 @@ class WikiPage(GuidMixin, BaseModel):
         :param user: The user that is updating the wiki
         :param content: Latest content for wiki
         """
-        return self.create_version(user, content)
+        version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
+        version.save()
+
+        self.node.add_log(
+            action=NodeLog.WIKI_UPDATED,
+            params={
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'page': self.page_name,
+                'page_id': self._primary_key,
+                'version': version.identifier,
+            },
+            auth=Auth(user),
+            log_date=version.created,
+            save=True
+        )
+        return version
 
     def update_active_sharejs(self, node):
         """
@@ -338,25 +354,6 @@ class WikiPage(GuidMixin, BaseModel):
     @property
     def url(self):
         return u'{}wiki/{}/'.format(self.node.url, self.page_name)
-
-    def create_version(self, user, content):
-        version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
-        version.save()
-
-        self.node.add_log(
-            action=NodeLog.WIKI_UPDATED,
-            params={
-                'project': self.node.parent_id,
-                'node': self.node._primary_key,
-                'page': self.page_name,
-                'page_id': self._primary_key,
-                'version': version.identifier,
-            },
-            auth=Auth(user),
-            log_date=version.created,
-            save=True
-        )
-        return version
 
     def get_version(self, version=None):
         try:
