@@ -226,7 +226,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
             'no_future_emails': user_subscriptions['none'],
             'is_creator': True,
-            'provider_name': self.provider.name,
+            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
         }
 
         mails.send_mail(

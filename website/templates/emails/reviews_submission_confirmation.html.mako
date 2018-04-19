@@ -85,11 +85,11 @@
                     <a href="${provider_url}">${provider_url}</a>
                     to learn more. To learn about the OSF, visit
                     <a href="https://osf.io/">https://osf.io/</a>.
-                    For questions regarding submission criteria, please email ${provider_contact_email}
+                    For questions regarding submission criteria, please email ${provider_contact_email}.
                 </p>
                 <p>
-                Sincerely,<br>
-                ${'Your OSF team' if isOsfSubmission else 'Your {provider} and OSF teams'.format(provider=reviewable.provider.name)}
+                    Sincerely,<br>
+                    ${'Your OSF team' if isOsfSubmission else 'Your {provider} and OSF teams'.format(provider=reviewable.provider.name)}
                 </p>
             </div>
         </td>

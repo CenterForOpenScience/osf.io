@@ -82,7 +82,7 @@
                     <a href="${provider_url}">${provider_url}</a>
                     to learn more. To learn about the OSF, visit
                     <a href="https://osf.io/">https://osf.io/</a>.
-                    For questions regarding submission criteria, please email ${provider_contact_email}
+                    For questions regarding submission criteria, please email ${provider_contact_email}.
                 </p>
                 <p>
                     Sincerely,<br>
