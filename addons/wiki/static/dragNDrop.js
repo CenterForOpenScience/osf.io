@@ -9,6 +9,11 @@ var getExtension = function(filename) {
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var imageFolder = 'Wiki images';
 
+// Stop people from dropping files in the gutter while editor is disabled.
+$('.ace_gutter').bind("dragover", function(e) {
+            e.preventDefault();
+});
+
 var autoIncrementFileName = function(name, nameList) {
     var num = 1;
     var newName;
