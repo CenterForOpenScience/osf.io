@@ -1,7 +1,9 @@
+import time
 import collections
 from rest_framework.parsers import JSONParser
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, NotAuthenticated
 
+from framework.auth import signing
 from api.base.utils import is_bulk_request
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
@@ -246,3 +248,27 @@ class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJS
         if ret.get('target_type') and ret.get('id'):
             return {related_resource: ret['id']}
         return ret
+
+
+class HMACSignedParser(JSONParser):
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        """
+        Parses the incoming bytestream as JSON. Validates the 'signature' in the payload then returns the resulting data.
+        """
+        data = super(HMACSignedParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+
+        try:
+            sig = data['signature']
+            payload = signing.unserialize_payload(data['payload'])
+            exp_time = payload['time']
+        except (KeyError, ValueError):
+            raise JSONAPIException(detail='Invalid Payload')
+
+        if not signing.default_signer.verify_payload(sig, payload):
+            raise NotAuthenticated
+
+        if time.time() > exp_time:
+            raise JSONAPIException(detail='Signature has expired')
+
+        return payload

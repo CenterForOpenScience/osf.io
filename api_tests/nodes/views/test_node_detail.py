@@ -96,6 +96,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -107,6 +108,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -118,6 +120,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -129,6 +132,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -153,6 +157,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)

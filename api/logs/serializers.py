@@ -12,6 +12,7 @@ from api.base.serializers import (
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
 
 
@@ -135,10 +136,15 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if is_anonymized(self.context['request']):
             return contributor_info
 
-        contributor_ids = obj.get('contributors', None)
+        contributor_data = obj.get('contributors', None)
         params_node = obj.get('node', None)
 
-        if contributor_ids:
+        if contributor_data:
+            contributor_ids = [each for each in contributor_data if isinstance(each, basestring)]
+            # Very old logs may contain contributror data with dictionaries for non-registered contributors,
+            # e.g. {'nr_email': 'foo@bar.com', 'nr_name': 'Foo Bar'}
+            non_registered_contributor_data = [each for each in contributor_data if isinstance(each, dict)]
+
             users = (
                 OSFUser.objects.filter(guids___id__in=contributor_ids)
                 .only('fullname', 'given_name',
@@ -160,6 +166,21 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                     'unregistered_name': unregistered_name,
                     'active': user.is_active
                 })
+
+            # Add unregistered contributor data
+            for nr_contrib in non_registered_contributor_data:
+                full_name = nr_contrib.get('nr_name', '')
+                guessed_names = impute_names_model(full_name)
+                contributor_info.append({
+                    'id': None,
+                    'full_name': full_name,
+                    'unregistered_name': full_name,
+                    'given_name': guessed_names['given_name'],
+                    'middle_names': guessed_names['middle_names'],
+                    'family_name': guessed_names['family_name'],
+                    'active': False,
+                })
+
         return contributor_info
 
     def get_preprint_provider(self, obj):

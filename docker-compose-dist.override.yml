@@ -126,7 +126,7 @@ services:
 ##      - emberosf
 ##    command:
 ##      - /bin/bash
-##      - -c 
+##      - -c
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
@@ -170,7 +170,7 @@ services:
 #
 #    command:
 #      - /bin/sh
-#      - -c 
+#      - -c
 #      - |-
 #        npm install
 #        gosu node npm start
