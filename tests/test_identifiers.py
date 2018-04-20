@@ -12,13 +12,31 @@ from osf_tests.factories import RegistrationFactory
 from osf_tests.factories import PreprintFactory, SubjectFactory, PreprintProviderFactory
 from tests.test_addons import assert_urls_equal
 
-import furl
+import pytest
 import lxml.etree
 
 from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers import metadata
 from osf.models import Identifier, Subject, NodeLicense
+
+
+@pytest.fixture
+def datacite_metadata_response():
+    with open('tests/fixtures/datacite_metadata_response.xml', 'r') as fp:
+        return fp.read()
+
+
+class MockDataciteClient(object):
+
+    def metadata_get(self, doi):
+        return datacite_metadata_response()
+
+    def metadata_post(self, metadata):
+        pass
+
+    def doi_post(self, doi, url):
+        pass
 
 
 class TestMetadataGeneration(OsfTestCase):
@@ -208,27 +226,10 @@ class TestIdentifierViews(OsfTestCase):
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
     @responses.activate
-    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_not_exists(self):
-        identifier = self.node._id
-        url = furl.furl('https://ezid.cdlib.org/id')
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
-        url.path.segments.append(doi)
-        responses.add(
-            responses.Response(
-                responses.PUT,
-                url.url,
-                body=to_anvl({
-                    'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
-                        doi=settings.DOI_NAMESPACE,
-                        ark=settings.ARK_NAMESPACE,
-                        ident=identifier,
-                    ),
-                }),
-                status=201,
-            )
-        )
+    @mock.patch('website.settings.DATACITE_USERNAME', 'testfortravisnotreal')
+    @mock.patch('website.settings.DATACITE_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('website.identifiers.utils.get_datacite_client', return_value=MockDataciteClient())
+    def test_create_identifiers_not_exists(self, mock_client):
         res = self.app.post(
             self.node.api_url_for('node_identifiers_post'),
             auth=self.user.auth,
@@ -243,30 +244,8 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_exists(self):
-        identifier = self.node._id
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
-        url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append(doi)
-        responses.add(
-            responses.Response(
-                responses.PUT,
-                url.url,
-                body='identifier already exists',
-                status=400,
-            )
-        )
-
-        responses.add(
-            responses.Response(
-                responses.GET,
-                url.url,
-                body=to_anvl({
-                    'success': doi,
-                }),
-                status=200,
-            )
-        )
+    @mock.patch('website.identifiers.utils.get_datacite_client', return_value=MockDataciteClient())
+    def test_create_identifiers_exists(self, mock_client):
         res = self.app.post(
             self.node.api_url_for('node_identifiers_post'),
             auth=self.user.auth,
