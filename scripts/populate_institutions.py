@@ -50,6 +50,18 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'a2jlab',
+                'name': 'Access to Justice Lab',
+                'description': 'Based within Harvard Law School, the <a href="https://a2jlab.org/">Access to Justice Lab</a> works with court administrators, legal service providers, and other stakeholders in the U.S. legal system to design and implement randomized field experiments evaluating interventions that impact access to justice.',
+                'banner_name': 'a2jlab-banner.png',
+                'logo_name': 'a2jlab-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['a2jlab.org'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'asu',
                 'name': 'Arizona State University',
                 'description': '<a href="https://asu.edu">Arizona State University</a>',
@@ -589,6 +601,18 @@ def main(env):
         ]
     elif env == 'test':
         INSTITUTIONS = [
+            {
+                '_id': 'a2jlab',
+                'name': 'Access to Justice Lab [Test]',
+                'description': 'Based within Harvard Law School, the <a href="https://a2jlab.org/">Access to Justice Lab</a> works with court administrators, legal service providers, and other stakeholders in the U.S. legal system to design and implement randomized field experiments evaluating interventions that impact access to justice.',
+                'banner_name': 'a2jlab-banner.png',
+                'logo_name': 'a2jlab-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['a2jlab.org'],
+                'delegation_protocol': '',
+            },
             {
                 '_id': 'asu',
                 'name': 'Arizona State University [Test]',
