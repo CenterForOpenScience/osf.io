@@ -83,7 +83,7 @@
                     to learn more. To learn about the OSF, visit
                     <a href="https://osf.io/">https://osf.io/</a>.
                     For questions regarding submission criteria, please email ${provider_contact_email}.
-                </p>
+                </p><br>
                 <p>
                     Sincerely,<br>
                     Your ${reviewable.provider.name} and OSF teams
