@@ -4,7 +4,7 @@ from django.db import migrations
 from django.apps import apps
 from django.contrib.auth.models import Group
 
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 
 logger = logging.getLogger(__file__)
 

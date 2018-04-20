@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.apps import apps
 from django.contrib.postgres import fields
 from django.contrib.auth.models import Group
 from typedmodels.models import TypedModel
@@ -8,7 +9,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from dirtyfields import DirtyFieldsMixin
 
-from api.preprint_providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
+from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
+from framework import sentry
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
@@ -47,8 +49,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
     @property
     def all_subjects(self):
-        if self.subjects.exists():
-            return self.subjects.all()
+        return self.subjects.all()
 
     @property
     def has_highlighted_subjects(self):
@@ -67,7 +68,17 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
 class CollectionProvider(AbstractProvider):
-    pass
+    primary_collection = models.ForeignKey('Collection', related_name='+',
+                                           null=True, blank=True, on_delete=models.SET_NULL)
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/providers/collections/{}/'.format(self._id)
+        return api_v2_url(path)
+
 
 class PreprintProvider(AbstractProvider):
 
@@ -141,7 +152,7 @@ class PreprintProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/preprint_providers/{}/'.format(self._id)
+        path = '/providers/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):
@@ -187,3 +198,23 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
             event_name='new_pending_submissions',
             provider=instance
         )
+
+@receiver(post_save, sender=CollectionProvider)
+def create_primary_collection_for_provider(sender, instance, created, **kwargs):
+    if created:
+        Collection = apps.get_model('osf.Collection')
+        user = getattr(instance, '_creator', None)  # Temp attr set in admin view
+        if user:
+            c = Collection(
+                title='{}\'s Collection'.format(instance.name),
+                creator=user,
+                provider=instance,
+                is_promoted=True,
+                is_public=True
+            )
+            c.save()
+            instance.primary_collection = c
+            instance.save()
+        else:
+            # A user is required for Collections / Groups
+            sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))

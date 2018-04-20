@@ -320,7 +320,7 @@ API_TESTS1 = [
     'api_tests/licenses',
     'api_tests/logs',
     'api_tests/metaschemas',
-    'api_tests/preprint_providers',
+    'api_tests/providers',
     'api_tests/preprints',
     'api_tests/registrations',
     'api_tests/users',
@@ -657,7 +657,7 @@ def hotfix(ctx, name, finish=False, push=False):
     if finish:
         ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
-        ctx.run('git push --tags origin master', echo=True)
+        ctx.run('git push --follow-tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
 
 

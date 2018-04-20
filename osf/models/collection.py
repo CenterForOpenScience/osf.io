@@ -11,7 +11,7 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
 
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.mixins import GuardianMixin
+from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
@@ -20,7 +20,7 @@ from website.search.exceptions import SearchUnavailableError
 
 logger = logging.getLogger(__name__)
 
-class CollectedGuidMetadata(BaseModel):
+class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
     class Meta:
@@ -53,8 +53,10 @@ class CollectedGuidMetadata(BaseModel):
             logger.exception(e)
 
     def save(self, *args, **kwargs):
-        super(CollectedGuidMetadata, self).save(*args, **kwargs)
+        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
+        ret = super(CollectedGuidMetadata, self).save(*args, **kwargs)
         self.update_index()
+        return ret
 
 class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
@@ -161,6 +163,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
                 self.bulk_update_search(cgms, op='delete')
 
         return ret
+
+    def has_permission(self, user, perm):
+        return user.has_perms(self.groups[perm], self)
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
         """ Adds object to collection, creates CollectedGuidMetadata reference

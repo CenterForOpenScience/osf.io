@@ -454,9 +454,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -487,9 +485,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)

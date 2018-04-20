@@ -17,7 +17,14 @@ class Migration(migrations.Migration):
                 -- Copy all existing collections into new table, keeping old pks
                 INSERT INTO osf_collection (id, created, modified, content_type_pk, title, is_public, is_promoted,
                 deleted, is_bookmark_collection, creator_id, provider_id, collected_type_choices, status_choices)
-                    SELECT id, created, modified, CT.c_id, title, FALSE, FALSE, deleted_date, is_bookmark_collection,
+                    SELECT id, created, modified, CT.c_id, title, FALSE, FALSE,
+                    CASE WHEN is_deleted IS TRUE
+                      THEN
+                        'epoch' :: TIMESTAMP WITH TIME ZONE
+                      ELSE
+                        NULL :: TIMESTAMP WITH TIME ZONE
+                    END,
+                    is_bookmark_collection,
                         creator_id, NULL, ARRAY[]::text[], ARRAY[]::text[]
                     FROM osf_abstractnode
                     LEFT JOIN LATERAL (
@@ -123,7 +130,7 @@ class Migration(migrations.Migration):
                     WHERE id IN (
                         SELECT id
                         FROM osf_guid
-                        WHERE content_type_id = (SELECT FROM django_content_type WHERE app_label = 'osf' and model = 'collection')
+                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'collection')
                             AND object_id IN (SELECT id FROM osf_collection)
                     );
                 """, """
