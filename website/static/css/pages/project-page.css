@@ -52,11 +52,6 @@
     padding-bottom: 10px;
 }
 
-.osf-project-navbar {
-    /* So that the navbar is over menus */
-    z-index: 1001; 
-}
-
 /* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {

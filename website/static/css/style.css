@@ -675,6 +675,11 @@ span.ball-pulse-small>div {
 }
 
 /* To be added to osf-style: generic dropdown-menu */
+
+.generic-dropdown .dropdown-menu {
+    /* Prevents dropdowns from obscuring navs and subnavs */
+    z-index: 98;
+}
 .generic-dropdown ul.dropdown-menu > li > a {
     color: #000;
 }
