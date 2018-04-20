@@ -439,10 +439,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_collected(self):
         """is included in a collection"""
-        return self.cgm_queryset.exists()
+        return self.collecting_metadata_qs.exists()
 
     @property
-    def cgm_queryset(self):
+    def collecting_metadata_qs(self):
         return CollectedGuidMetadata.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
@@ -450,8 +450,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             collection__is_bookmark_collection=False)
 
     @property
-    def cgms(self):
-        return list(self.cgm_queryset)
+    def collecting_metadata_list(self):
+        return list(self.collecting_metadata_qs)
 
     @property
     def is_preprint(self):

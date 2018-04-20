@@ -4184,8 +4184,11 @@ class TestPreprintProperties:
 
 class TestCollectionProperties:
 
-    def test_collection_properties(self, node):
-        user = AuthUserFactory()
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    def test_collection_properties(self, user, node):
         provider = CollectionProviderFactory()
         collection_one = CollectionFactory(creator=user, provider=provider)
         collection_two = CollectionFactory(creator=user, provider=provider)
@@ -4195,5 +4198,5 @@ class TestCollectionProperties:
         collection_two.collect_object(node, user)
         bookmark_collection.collect_object(node, user)
         assert node.is_collected
-        assert node.cgm_queryset.count() == 2
-        assert len(node.cgms) == 2
+        assert node.collecting_metadata_qs.count() == 2
+        assert len(node.collecting_metadata_list) == 2
