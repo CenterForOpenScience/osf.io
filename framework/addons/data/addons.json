@@ -529,6 +529,36 @@
                 "status": "none",
                 "text": "JupyterHub information will not be registered."
             }
+        },
+        "Nextcloud": {
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Nextcloud authorization unless the user forking the project is the same user who authorized the Nextcloud add-on in the source project being forked."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "OSF keeps track of changes you make to your Nextcloud content through OSF, but not for changes made using Nextcloud directly."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Nextcloud content will be registered, but version history will not be copied to the registration."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Nextcloud."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "Nextcloud files can be viewed/downloaded via OSF, but version history is not supported by the Nextcloud WebDAV API."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Nextcloud."
+            },
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of Nextcloud privacy. The OSF does not alter the permissions of linked Nextcloud folders."
+            }
         }
     },
     "disclaimers": [

@@ -1,0 +1,10 @@
+{
+    "nextcloud_file_added" : "A user added a file to Nextcloud in a project",
+    "nextcloud_file_removed" : "A user removed a file from Nextcloud in a project",
+    "nextcloud_file_updated" : "A user updated a file in Nextcloud in a project",
+    "nextcloud_folder_created" : "A user created a folder in Nextcloud in a project",
+    "nextcloud_folder_selected" : "A user linked a Nextcloud folder in a project",
+    "nextcloud_node_authorized" : "A user authorized the Nextcloud addon for a project",
+    "nextcloud_node_deauthorized" : "A user deauthorized the Nextcloud addon for a project",
+    "nextcloud_node_deauthorized_no_user" : "Nextcloud addon for a project deauthorized"
+}
