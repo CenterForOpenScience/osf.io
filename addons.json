@@ -21,7 +21,8 @@
         "azureblobstorage",
         "weko",
         "jupyterhub",
-        "s3compat"
+        "s3compat",
+        "nextcloud"
     ],
     "addons_default": [
         "osfstorage"
@@ -45,7 +46,8 @@
         "azureblobstorage": "partial",
         "weko": "partial",
         "jupyterhub": "partial",
-        "s3compat": "partial"
+        "s3compat": "partial",
+        "nextcloud": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -64,7 +66,8 @@
         "swift",
         "azureblobstorage",
         "weko",
-        "s3compat"
+        "s3compat",
+        "nextcloud"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -93,7 +96,8 @@
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF.",
         "weko": "WEKO is an application server to share, archive data.",
         "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on an OSF project can be imported to/exported from Jupyter",
-        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to an OSF project to interact with files hosted on S3 Compatible Storage via the OSF."
+        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to an OSF project to interact with files hosted on S3 Compatible Storage via the OSF.",
+        "nextcloud": "Nextcloud is an open source, self-hosted file sync and share app platform. Connect your Nextcloud account to an OSF project to interact with files hosted on Nextcloud via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -113,6 +117,7 @@
         "azureblobstorage": "https://azure.microsoft.com/",
         "weko": "https://weko.at.nii.ac.jp/",
         "jupyterhub": "https://jupyterhub.readthedocs.io/",
-        "s3compat": "https://aws.amazon.com/s3/"
+        "s3compat": "https://aws.amazon.com/s3/",
+        "nextcloud": "https://nextcloud.com/"
     }
 }
