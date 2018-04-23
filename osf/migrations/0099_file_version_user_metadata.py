@@ -11,7 +11,7 @@ import django_extensions.db.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0097_merge_20180416_1533'),
+        ('osf', '0098_merge_20180416_1807'),
     ]
 
     operations = [
