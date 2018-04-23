@@ -13,7 +13,7 @@ Mako==1.0.7
 Markdown==2.6.9
 WTForms==1.0.4
 beautifulsoup4==4.6.0
-celery==4.1.0
+celery==4.2.0rc2
 kombu==4.1.0
 vine==1.1.4
 httplib2==0.10.3

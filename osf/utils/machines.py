@@ -173,7 +173,7 @@ class RequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.admin_contributors:
+        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,

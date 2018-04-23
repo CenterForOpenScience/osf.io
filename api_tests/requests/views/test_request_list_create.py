@@ -3,6 +3,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
+from osf_tests.factories import NodeFactory
 
 @pytest.mark.django_db
 class TestNodeRequestListCreate(NodeRequestTestMixin):
@@ -83,3 +84,15 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         assert mock_mail.call_count == 2
+
+    @mock.patch('website.mails.mails.send_mail')
+    def test_email_not_sent_to_parent_admins_on_submit(self, mock_mail, app, project, noncontrib, url, create_payload, second_admin):
+        component = NodeFactory(parent=project, creator=second_admin)
+        component.is_public = True
+        project.save()
+        url = '/{}nodes/{}/requests/'.format(API_BASE, component._id)
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        assert res.status_code == 201
+        assert component.admin_contributors.count() == 2
+        assert component.contributors.count() == 1
+        assert mock_mail.call_count == 1
