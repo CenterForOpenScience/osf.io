@@ -18,6 +18,7 @@ from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -4188,7 +4189,12 @@ class TestCollectionProperties:
     def user(self):
         return AuthUserFactory()
 
-    def test_collection_properties(self, user, node):
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    def test_collection_project_views(self, user, contrib, node):
+        # test_collection_properties
         provider = CollectionProviderFactory()
         collection_one = CollectionFactory(creator=user, provider=provider)
         collection_two = CollectionFactory(creator=user, provider=provider)
@@ -4200,3 +4206,18 @@ class TestCollectionProperties:
         assert node.is_collected
         assert node.collecting_metadata_qs.count() == 2
         assert len(node.collecting_metadata_list) == 2
+
+        # test_only_user_with_collection_permissions_can_see_collection_summary_on_project_overview
+        node.add_contributor(contributor=contrib, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert not collection_summary
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        assert len(collection_summary) == 2
+
+        collection_public = CollectionFactory(creator=user, provider=provider, is_public=True)
+        collection_public.collect_object(node, user)
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert len(collection_summary) == 1

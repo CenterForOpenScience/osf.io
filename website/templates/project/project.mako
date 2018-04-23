@@ -277,7 +277,6 @@
     <div class="collections-container">
     % for i, collection in enumerate(node['collections'][:5]):
     <div class="row">
-        % if collection['is_public'] or (not collection['is_public'] and user['is_contributor']):
         <div class="col-xs-6">
             <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
             % if any([collection['type'], collection['status']]):
@@ -300,7 +299,6 @@
                 </dl>
             </div>
         </div>
-        % endif
     </div>
     % endfor
     </div>
