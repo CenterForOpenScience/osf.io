@@ -26,7 +26,6 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
 from osf.models import Session, MetaSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
@@ -140,17 +139,8 @@ class TestAddonLogs(OsfTestCase):
     def setUp(self):
         super(TestAddonLogs, self).setUp()
         self.user = AuthUserFactory()
-        self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.file = OsfStorageFileNode.create(
-            node=self.node,
-            path='/testfile',
-            _id='testfile',
-            name='testfile',
-            materialized_path='/testfile'
-        )
-        self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
@@ -315,14 +305,11 @@ class TestAddonLogs(OsfTestCase):
             'github_addon_file_renamed',
         )
 
-    def test_action_downloads_contrib(self):
+    def test_action_downloads(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
         for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.node._id},
-                                         action_meta={'is_mfr_render': False},
-                                         action=action)
+            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
             nlogs = self.node.logs.count()
             res = self.app.put_json(
                 url,
@@ -333,76 +320,7 @@ class TestAddonLogs(OsfTestCase):
             assert_equal(res.status_code, 200)
 
         self.node.reload()
-        assert_equal(self.file.get_download_count(), 0) # contrib don't count as download
         assert_equal(self.node.logs.count(), nlogs)
-
-
-    def test_action_downloads_non_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        download_actions=('download_file', 'download_zip')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.node._id},
-                                         action_meta={'is_mfr_render': False},
-                                         request_meta={'url': request_url},
-                                         action=action,
-                                         auth={'id': self.user_non_contrib._id})
-            nlogs = self.node.logs.count()
-            res = self.app.put_json(
-                url,
-                payload,
-                headers={'Content-Type': 'application/json'},
-                expect_errors=False,
-            )
-            assert_equal(res.status_code, 200)
-
-        self.node.reload()
-        assert_equal(self.file.get_download_count(), 2)
-        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
-
-
-    def test_action_download_mfr_views_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     action_meta={'is_mfr_render': True})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 0) # contribs don't count as views
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
-
-    def test_action_download_mfr_views_non_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     request_meta={'url': request_url},
-                                     action_meta={'is_mfr_render': True},
-                                     auth={'id': self.user_non_contrib._id})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 1)
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()
