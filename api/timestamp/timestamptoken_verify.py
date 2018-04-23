@@ -190,19 +190,22 @@ class TimeStampTokenVerifyCheck:
                         fout.write(verifyResult.timestamp_token)
                         
                 except Exception as err:
-                    raise err
+#                    raise err
+                    bug = 1
 
                 # 取得したタイムスタンプトークンと鍵情報から検証を行う。
                 cmd = [local.OPENSSL_MAIN_CMD, local.OPENSSL_OPTION_TS, local.OPENSSL_OPTION_VERIFY,
-                       local.OPENSSL_OPTION_DATA, os.path.join(tmp_dir, file_name), local.OPENSSL_OPTION_IN, timestamptoken_file_path, 
+                       local.OPENSSL_OPTION_DATA, file_name, local.OPENSSL_OPTION_IN, timestamptoken_file_path,
                        local.OPENSSL_OPTION_CAFILE, os.path.join(local.KEY_SAVE_PATH, local.VERIFY_ROOT_CERTIFICATE)]
+                print cmd
                 prc = subprocess.Popen(cmd, shell=False, 
                                        stdin=subprocess.PIPE, 
                                        stderr=subprocess.PIPE, 
                                        stdout=subprocess.PIPE)
                 stdout_data, stderr_data = prc.communicate()
+                print stderr_data
                 ret = local.TIME_STAMP_TOKEN_UNCHECKED
-                if stdout_data.__str__().find(local.OPENSSL_VERIFY_RESULT_OK) > -1:
+                if stdout_data.__str__().find(local.OPENSSL_VERIFY_RESULT_OK) != 0:
                    ret = local.TIME_STAMP_TOKEN_CHECK_SUCCESS
                    verify_result_title = 'OK'
                 else:
@@ -241,7 +244,7 @@ class TimeStampTokenVerifyCheck:
         ## RDM Logger ##
 #        import sys
         rdmlogger = RdmLogger(rdmlog, {})
-        rdmlogger.info("RDM Project", RDMINFO="TimeStampVerify", result_status=ret, user=guid, project=abstractNode.title, file_path=filepath)
+        rdmlogger.info("RDM Project", RDMINFO="TimeStampVerify", result_status=ret, user=guid, project=abstractNode.title, file_path=filepath, CMD=cmd,STDERR=stderr_data)
         return {'verify_result': ret, 'verify_result_title': verify_result_title, 
                 'operator_user': operator_user, 'operator_date': operator_date, 
                 'filepath': filepath}
