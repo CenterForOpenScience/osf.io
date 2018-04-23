@@ -406,6 +406,11 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     subject='Confirmation of your submission to ${provider_name}'
 )
 
+REVIEWS_SUBMISSION_NOTIFICATION_MODERATORS = Mail(
+    'reviews_submission_notification_moderators',
+    subject='New submission to ${provider_name}'
+)
+
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
     subject='An OSF user has requested access to your ${node.project_or_component}'

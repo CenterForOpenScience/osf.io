@@ -41,3 +41,23 @@ def reviews_submit_notification(self, recipients, context):
             user=recipient,
             **context
         )
+
+# Handle email notifications to notify moderators of new submissions.
+@reviews_signals.reviews_email_submit_moderators_notifications.connect
+def reviews_submit_notification_moderators(self, context):
+    from osf.models import NotificationSubscription
+    from website import settings
+    provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
+    from api.preprint_providers.permissions import GroupHelper
+    for subscriber in provider_subscription.email_transactional.all():
+        context['is_admin'] = GroupHelper(context['reviewable'].provider).get_group('admin').user_set.filter(id=subscriber.id).exists()
+        mails.send_mail(
+            subscriber.username,
+            mails.REVIEWS_SUBMISSION_NOTIFICATION_MODERATORS,
+            mimetype='html',
+            user=subscriber,
+            **context
+        )
+
+    for subscriber in provider_subscription.email_digest.all():
+        pass
