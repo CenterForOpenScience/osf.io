@@ -176,7 +176,7 @@ def robots():
     return send_from_directory(
         settings.STATIC_FOLDER,
         robots_file,
-        mimetype='text/plain'
+        mimetype='html'
     )
 
 def sitemap_file(path):

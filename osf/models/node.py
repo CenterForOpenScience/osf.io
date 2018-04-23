@@ -2441,7 +2441,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     to_addr=user.username,
                     mail=mails.SPAM_USER_BANNED,
                     user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
                 )
             user.save()
 

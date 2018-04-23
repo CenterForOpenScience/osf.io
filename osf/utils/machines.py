@@ -179,6 +179,7 @@ class RequestMachine(BaseMachine):
                 mails.ACCESS_REQUEST_SUBMITTED,
                 admin=admin,
                 mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
 
@@ -197,6 +198,7 @@ class RequestMachine(BaseMachine):
                 self.machineable.creator.username,
                 mails.ACCESS_REQUEST_DENIED,
                 mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
         else:

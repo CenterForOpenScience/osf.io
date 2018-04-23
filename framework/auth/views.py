@@ -180,7 +180,8 @@ def forgot_password_post():
                 mails.send_mail(
                     to_addr=email,
                     mail=mails.FORGOT_PASSWORD,
-                    reset_link=reset_link
+                    reset_link=reset_link,
+                    can_change_preferences=False,
                 )
 
         status.push_status_message(status_message, kind=kind, trust=False)
@@ -555,6 +556,7 @@ def external_login_confirm_email_get(auth, uid, token):
             to_addr=user.username,
             mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
             external_id_provider=provider,
+            can_change_preferences=False,
         )
 
     # redirect to CAS and authenticate the user with the verification key
@@ -730,7 +732,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
 
     campaign = campaigns.campaign_for_user(user)
     branded_preprints_provider = None
-
+    logo = None
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
@@ -751,6 +753,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         mail_template = campaigns.email_template_for_campaign(campaign)
         if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
             branded_preprints_provider = campaigns.get_service_provider(campaign)
+        logo = campaigns.get_campaign_logo(campaign)
     else:
         # Account creation confirmation: from OSF
         mail_template = mails.INITIAL_CONFIRM_EMAIL
@@ -765,7 +768,9 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         merge_target=merge_target,
         external_id_provider=external_id_provider,
         branded_preprints_provider=branded_preprints_provider,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL
+        osf_support_email=settings.OSF_SUPPORT_EMAIL,
+        can_change_preferences=False,
+        logo=logo if logo else settings.OSF_LOGO
     )
 
 

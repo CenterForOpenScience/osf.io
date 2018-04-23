@@ -1891,6 +1891,8 @@ class TestAddingContributorViews(OsfTestCase):
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
@@ -2120,7 +2122,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE_DEFAULT
+            mail=mails.INVITE_DEFAULT,
+            can_change_preferences=False,
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2147,6 +2150,8 @@ class TestUserInviteViews(OsfTestCase):
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
@@ -4340,7 +4345,7 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/robots.txt')
         assert_equal(res.status_code, 200)
         assert_in('User-agent', res)
-        assert_in('text/plain', res.headers['Content-Type'])
+        assert_in('html', res.headers['Content-Type'])
 
     def test_favicon(self):
         res = self.app.get('/favicon.ico')
