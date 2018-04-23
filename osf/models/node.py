@@ -433,13 +433,25 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     @property
-    def is_collected(self):
-        """is part of a collection"""
-        return CollectedGuidMetadata.objects.filter(guid___id=self._id).exists()
-
-    @property
     def is_original(self):
         return not self.is_registration and not self.is_fork
+
+    @property
+    def is_collected(self):
+        """is included in a collection"""
+        return self.collecting_metadata_qs.exists()
+
+    @property
+    def collecting_metadata_qs(self):
+        return CollectedGuidMetadata.objects.filter(
+            guid=self.guids.first(),
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+    @property
+    def collecting_metadata_list(self):
+        return list(self.collecting_metadata_qs)
 
     @property
     def is_preprint(self):
@@ -702,6 +714,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async=True)
+            search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -2366,13 +2379,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if 'is_public' in saved_fields and self.is_collected:
-            from website.search.search import update_cgm
+        if 'is_public' in saved_fields:  # and self.is_collected:
+            from website.search.search import update_collected_metadata
 
             if self.is_public:
-                update_cgm(self._id)
+                update_collected_metadata(self._id)
             else:
-                update_cgm(self._id, op='delete')
+                update_collected_metadata(self._id, op='delete')
 
         if self.preprint_file:
             # avoid circular imports

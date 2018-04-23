@@ -39,16 +39,16 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
 
     def update_index(self):
         if self.collection.is_public:
-            from website.search.search import update_cgm
+            from website.search.search import update_collected_metadata
             try:
-                update_cgm(self._id, collection_id=self.collection.id)
+                update_collected_metadata(self._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
                 logger.exception(e)
 
     def remove_from_index(self):
-        from website.search.search import update_cgm
+        from website.search.search import update_collected_metadata
         try:
-            update_cgm(self._id, collection_id=self.collection.id, op='delete')
+            update_collected_metadata(self._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
 
@@ -130,7 +130,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def bulk_update_search(cls, cgms, op='update', index=None):
         from website import search
         try:
-            search.search.bulk_update_cgm(cgms, op=op, index=index)
+            search.search.bulk_update_collected_metadata(cgms, op=op, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 

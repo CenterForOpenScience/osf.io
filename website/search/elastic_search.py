@@ -448,7 +448,7 @@ def serialize_cgm(cgm):
         'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
         'status': cgm.status,
-        'subjects': list(obj.subjects.values_list('text', flat=True)) if hasattr(obj, 'subjects') else [],
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
         'category': 'collection',

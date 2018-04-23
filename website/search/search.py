@@ -90,7 +90,7 @@ def update_institution(institution, index=None):
     search_engine.update_institution(institution, index=index)
 
 @requires_search
-def update_cgm(cgm_id, collection_id=None, index=None, op='update'):
+def update_collected_metadata(cgm_id, collection_id=None, index=None, op='update'):
     index = index or settings.ELASTIC_INDEX
 
     if settings.USE_CELERY:
@@ -99,7 +99,7 @@ def update_cgm(cgm_id, collection_id=None, index=None, op='update'):
         search_engine.update_cgm_async(cgm_id, collection_id=collection_id, op=op, index=index)
 
 @requires_search
-def bulk_update_cgm(cgms, op='update', index=None):
+def bulk_update_collected_metadata(cgms, op='update', index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.bulk_update_cgm(cgms, op=op, index=index)
 
