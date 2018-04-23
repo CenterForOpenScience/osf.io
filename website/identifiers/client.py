@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import furl
+import requests
+from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
+from website.settings import CROSSREF_DEPOSIT_URL
 
 from . import utils
 
@@ -64,3 +67,41 @@ class EzidClient(BaseClient):
             expects=(200, ),
         )
         return utils.from_anvl(resp.content)
+
+
+class CrossRefClient(BaseClient):
+
+    BASE_URL = CROSSREF_DEPOSIT_URL
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def _make_request(self, method, url, **kwargs):
+        expects = kwargs.pop('expects', None)
+        throws = kwargs.pop('throws', None)
+
+        response = requests.request(method, url, **kwargs)
+        if expects and response.status_code not in expects:
+            raise throws if throws else HTTPError(response.status_code, message=response.content)
+
+        return response
+
+    def _build_url(self, **query):
+        url = furl.furl(self.BASE_URL)
+        url.args.update(query)
+        return url.url
+
+    def create_identifier(self, filename, metadata=None):
+        resp = self._make_request(
+            'POST',
+            self._build_url(
+                operation='doMDUpload',
+                login_id=self.username,
+                login_passwd=self.password,
+                fname='{}.xml'.format(filename)
+            ),
+            files={'file': ('{}.xml'.format(filename), metadata['doi_metadata'])},
+            expects=(200, ),
+        )
+        return resp
