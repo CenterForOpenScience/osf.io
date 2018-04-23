@@ -234,7 +234,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
     # Logs number of times user attempted to change their password where their
     # old password was invalid
-    old_password_invalid_attempts = models.IntegerField(default=0)
+    old_password_invalid_attempts = models.PositiveIntegerField(default=0)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -1248,6 +1248,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         issues = []
         if not self.check_password(raw_old_password):
             self.increment_old_password_invalid_attempts()
+            self.change_password_last_attempt = timezone.now()
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
@@ -1270,11 +1271,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def increment_old_password_invalid_attempts(self):
         self.old_password_invalid_attempts += 1
-        self.save()
 
     def reset_old_password_invalid_attempts(self):
         self.old_password_invalid_attempts = 0
-        self.save()
 
     def profile_image_url(self, size=None):
         """A generalized method for getting a user's profile picture urls.

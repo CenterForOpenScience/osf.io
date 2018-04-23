@@ -288,7 +288,7 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
-    # It has been more than 1 hour since last attempt to change password. Reset the counter for invalid attempts.
+    # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
     if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
         user.reset_old_password_invalid_attempts()
 
@@ -312,7 +312,6 @@ def user_account_password(auth, **kwargs):
     else:
         push_status_message('Password updated successfully.', kind='success', trust=False)
 
-    user.change_password_last_attempt = timezone.now()
     user.save()
 
     return redirect(web_url_for('user_account'))

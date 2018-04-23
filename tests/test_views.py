@@ -1593,32 +1593,32 @@ class TestUserAccount(OsfTestCase):
         }
         res = self.app.post(url, post_data, auth=self.user.auth)
         self.user.reload()
-        assert self.user.change_password_last_attempt is not None
+        assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
         assert_true(200, res.status_code)
         # Make a second request
         res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
-        assert_true(len( mock_push_status_message.mock_calls) == 2)
+        assert_true(len(mock_push_status_message.mock_calls) == 2)
         assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[1][1][0])
         self.user.reload()
-        assert self.user.change_password_last_attempt is not None
+        assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a third request
         res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
-        assert_true(len( mock_push_status_message.mock_calls) == 3)
+        assert_true(len(mock_push_status_message.mock_calls) == 3)
         assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[2][1][0])
         self.user.reload()
-        assert self.user.change_password_last_attempt is not None
+        assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a fourth request
         res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
         assert_true(mock_push_status_message.called)
-        assert_true(len( mock_push_status_message.mock_calls) == 4)
+        assert_true(len(mock_push_status_message.mock_calls) == 4)
         assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[3][1][0])
         self.user.reload()
-        assert self.user.change_password_last_attempt is not None
+        assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
 
     @mock.patch('website.profile.views.push_status_message')

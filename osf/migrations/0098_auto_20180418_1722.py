@@ -21,6 +21,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='osfuser',
             name='old_password_invalid_attempts',
-            field=models.IntegerField(default=0),
+            field=models.PositiveIntegerField(default=0),
         ),
     ]
