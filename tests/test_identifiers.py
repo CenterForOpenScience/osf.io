@@ -18,6 +18,8 @@ import lxml.etree
 from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers import metadata
+from website.identifiers.client import CrossRefClient
+from website.identifiers.utils import build_doi_metadata
 from osf.models import Identifier, Subject, NodeLicense
 
 
@@ -173,8 +175,6 @@ class TestMetadataGeneration(OsfTestCase):
         assert root.find('.//{%s}license_ref' % metadata.CROSSREF_ACCESS_INDICATORS).text == license.url
         assert root.find('.//{%s}abstract/' % metadata.JATS_NAMESPACE).text == preprint.node.description
 
-        import ipdb; ipdb.set_trace()
-
         # TODO - finish this test!
 
 
@@ -229,6 +229,11 @@ class TestIdentifierViews(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
+
+        self.mock_crossref_response = """
+        \n\n\n\n<html>\n<head><title>SUCCESS</title>\n</head>\n<body>\n<h2>SUCCESS</h2>\n<p>
+        Your batch submission was successfully received.</p>\n</body>\n</html>\n
+        """
 
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
@@ -338,3 +343,26 @@ class TestIdentifierViews(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 404)
+
+    @responses.activate
+    @mock.patch('website.settings.CROSSREF_USERNAME', 'thisisatest')
+    @mock.patch('website.settings.CROSSREF_PASSWORD', 'thisisatest')
+    def test_create_identifiers_crossref(self):
+
+        responses.add(
+            responses.Response(
+                responses.POST,
+                settings.CROSSREF_DEPOSIT_URL,
+                body=self.mock_crossref_response,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200
+            )
+        )
+
+        preprint = PreprintFactory(doi=None)
+        doi, preprint_metadata = build_doi_metadata(preprint)
+        client = CrossRefClient(settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
+        res = client.create_identifier(filename=preprint._id, metadata=preprint_metadata)
+
+        assert res.status_code == 200
+        assert 'SUCCESS' in res.content

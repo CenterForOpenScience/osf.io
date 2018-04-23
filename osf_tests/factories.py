@@ -545,6 +545,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    doi_prefix = '10.123test'
 
     class Meta:
         model = models.PreprintProvider
