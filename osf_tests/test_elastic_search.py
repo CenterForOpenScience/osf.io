@@ -228,6 +228,22 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
+    def test_collection_submission_doc_structure(self):
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.save()
+        docs = query_collections('Keita')['results']
+        assert_equal(docs[0]['title'], self.node_one.title)
+        self.node_one.title = 'Keita Royal Family of Mali'
+        self.node_one.save()
+        docs = query_collections('Keita')['results']
+        assert_equal(docs[0]['title'], self.node_one.title)
+        assert_equal(docs[0]['abstract'], self.node_one.description)
+        assert_equal(docs[0]['contributors'][0]['url'], self.user.url)
+        assert_equal(docs[0]['contributors'][0]['fullname'], self.user.fullname)
+        assert_equal(docs[0]['url'], self.node_one.url)
+        assert_equal(docs[0]['id'], self.node_one._id)
+        assert_equal(docs[0]['category'], 'collection')
+
 class TestUserUpdate(OsfTestCase):
 
     def setUp(self):
