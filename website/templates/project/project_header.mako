@@ -90,7 +90,13 @@
                            </a>
                        </li>
                     % endif
-
+                    % if 'admin' in user['permissions']:
+                       <li id="projectNavSecurity">
+                           <a href="${node['url']}security/">
+                              Security
+                           </a>
+                       </li>
+                    % endif
                     </ul>
                 </div>
             </div>

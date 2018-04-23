@@ -71,7 +71,8 @@ class EncryptedTextField(models.TextField):
     """
     prefix = 'jwe:::'
 
-    def get_db_prep_value(self, value, **kwargs):
+    #def get_db_prep_value(self, value, **kwargs):
+    def get_db_prep_value(self, value, connection, prepared=False):
         return encrypt_string(value, prefix=self.prefix)
 
     def to_python(self, value):

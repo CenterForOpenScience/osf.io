@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+<title>RDM Addons</title>
+{% endblock title %}
+
+{% block top_includes %}
+<link rel="stylesheet" href='/static/css/rdm_addons.css'>
+
+{% comment %}
+<link rel="stylesheet" href='/static/css/user-addon-settings.css'>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
+<script src="{{ '/static/public/js/base-page.js'|webpack_asset }}"></script-->
+<script src="{{ '/static/public/js/vendor.js'|webpack_asset }}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+{% endcomment %}
+{% endblock top_includes %}
+
+{% block content %}
+
+    {% if institution.id %}
+        <h2>RDM Addons <small>({{ institution.name }})</small></h2>
+    {% else %}
+        <h2>RDM Addons</h2>
+    {% endif %}
+
+<div id="addonSettings" class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on Accounts</h3></div>
+            <div class="panel-body">
+                <table class="table table-condensed">
+                {% for addon in addon_settings %}
+                    <tr>
+                        <td class="is_allowed">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox"
+                                        data-addon-short-name="{{ addon.addon_short_name }}"
+                                        data-addon-full-name="{{ addon.addon_full_name }}"
+                                        data-institution-id="{{ institution.id }}"
+                                        {% if addon.option.is_allowed %}checked{% endif %}>
+                                </label>
+                            </div>
+                        </td>
+                        <td>{% include addon.institution_settings_template with addon=addon institution=institution %}</td>
+                        <td class="is_forced">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox"
+                                        data-addon-short-name="{{ addon.addon_short_name }}"
+                                        data-institution-id="{{ institution.id }}"
+                                        {% if addon.option.is_forced %}checked{% endif %}> Force to use
+                                </lable>
+                            </div>
+                        </td>
+                    <!--<hr>-->
+                    </tr>
+                {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script type="text/javascript">
+    window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': {{ addon_enabled_settings|safe }} });
+</script>
+<script src="{{ '/static/public/js/rdm-addons-page.js' }}"></script>
+
+{% comment %}
+<script src="{{ '/static/public/js/rdm-addons-page.js'|webpack_asset }}"></script>
+
+<script src="{{ '/static/public/js/rdm-dataverse-cfg.js'|webpack_asset }}"></script>
+{% endcomment %}
+
+{% for js_asset in addons_js %}
+  <script src="{{ js_asset }}"></script>
+{% endfor %}
+
+{% endblock content %}

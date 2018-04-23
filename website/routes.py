@@ -60,6 +60,8 @@ from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
+from website.rdm_addons import views as rdm_addon_views
+from website.rdm_announcement import views as rdm_announcement_views
 
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
@@ -230,6 +232,17 @@ def sitemap_file(path):
         path,
         mimetype=mime
     )
+def firebase():
+    if os.path.exists(os.path.join(settings.STATIC_FOLDER,
+                                   'js/firebase-messaging-sw.js')):
+        firebase_file = 'js/firebase-messaging-sw.js'
+    else:
+        raise HTTPError(http.NOT_FOUND)
+    return send_from_directory(
+        settings.STATIC_FOLDER,
+        firebase_file,
+        mimetype='text/javascript'
+    )
 
 def ember_app(path=None):
     """Serve the contents of the ember application"""
@@ -328,6 +341,7 @@ def make_url_map(app):
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
+        Rule('/firebase-messaging-sw.js', 'get', firebase, json_renderer),
     ])
 
     # Ember Applications
@@ -1038,6 +1052,27 @@ def make_url_map(app):
             json_renderer
         ),
 
+        Rule(
+            '/rdm/addons/',
+            'get',
+            rdm_addon_views.user_addons,
+            json_renderer,
+        ),
+        Rule(
+            '/rdm/addons/import/<addon_name>/',
+            'get',
+            rdm_addon_views.import_admin_account,
+            json_renderer,
+        ),
+
+        # rdm_announcement API routes
+        Rule(
+            '/firebase/usertoken/<uid>/<token>',
+            'post',
+            rdm_announcement_views.update_user_token,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1',)
 
     ### Search ###
@@ -1372,6 +1407,25 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_quickfile,
             json_renderer
+        ), 
+        Rule(
+            [
+                '/project/<pid>/security/',
+                '/project/<pid>/node/<nid>/security/',
+            ],
+            ['get', 'post'],
+            #project_views.security.collect_security_trees,
+            project_views.security.get_init_timestamp_error_data_list,
+            OsfWebRenderer('project/securitys.mako', trust=False),
+        ),
+        Rule(
+            [
+                '/project/<pid>/security/json/',
+                '/project/<pid>/node/<nid>/security/json/',
+            ],
+            ['get', 'post'],
+            project_views.security.collect_security_trees_to_json,
+            json_renderer,
         )
     ])
 
@@ -1744,7 +1798,28 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        )
+        ),
+
+        # Security
+        Rule(
+            [
+                '/project/<pid>/security/timestamp_error_data/',
+                '/project/<pid>/node/<nid>/security/timestamp_error_data/',
+            ],
+            ['get', 'post'],
+            project_views.security.get_timestamp_error_data,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/security/add_timestamp/',
+                '/project/<pid>/node/<nid>/security/add_timestamp/',
+            ],
+            ['get', 'post'],
+            project_views.security.add_timestamp_token,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1')
 
     # Set up static routing for addons and providers

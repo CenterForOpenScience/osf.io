@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/institutions.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}" />
+<style>
+/* custom style sheet */
+table.stat_table {
+    width: auto !important;
+    margin: 10px;
+}
+table.stat-table td.stat-name {
+    font-weight: bold;
+    text-align: left;
+}
+table.stat-table tr {
+    padding: 10px 20px !important;;
+}
+table.stat-table td {
+    text-align: right;
+    padding: 10px 20px;
+}
+div.image_box{
+    margin: auto auto 50px auto;
+}
+</style>
+{% endblock top_includes %}
+
+{% block title %}
+<title>RDM Statistics</title>
+{% endblock title %}
+{% block content %}
+<h2>RDM Statistics</h2>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix"><div><h3 class="panel-title"> Institution </h3></div></div>
+            <div class="panel-body">
+                <table cellspacing="0">
+                    <tr><td>
+                    <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+                    </td>
+                    <td style="padding: 5px;">
+                    <div> {{ institution.name }} </div>
+                    </td></tr>
+                </table>
+                <div> {{ current_date }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for provider_data in provider_data_array %}
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix"><div><h3 class="panel-title"> {{ provider_data.provider }}</h3></div></div>
+            <div class="panel-body">
+                {% for statistic_data in provider_data.statistics_data_array %}
+                    <!-- <div>table and graph etc.{{ data.label }}</div> -->
+                    <div><h4>{{ statistic_data.title }}</h4></div>
+                    <div>
+                        <table class="stat-table table table-striped table-bordered" style="width:auto;">
+                            <tr>
+                                <th class='stat-name'>date</th>
+                                {% for label in statistic_data.label %}
+                                    <th>{{ label }}</th>
+                                {% endfor %}
+                            </tr>
+                            {% for key, val in statistic_data.data.items %}
+                            <tr>
+                                <td class='stat-name'>{{ key }}</td>
+                                {% for value in val %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                    <div class='image_box'><img src="graph/{{ statistic_data.data_type }}_{{ statistic_data.provider }}.png"></div>
+                    <!-- 
+                    <div class='image_box'>
+                        <img src="data:image/png:base64,{{ statistic_data.image_string }}">
+                    </div> -->
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <!-- <input type="button" value="send PDF"> -->
+                    <a role="button" href="{% url 'statistics:report' institution.id %}" class="btn btn-primary">download PDF</a>
+                    <a role="button" href="{% url 'statistics:csv' institution.id %}" class="btn btn-primary">download CSV</a>
+                </div>
+
+        </div>
+    </div>
+</div>
+<!-- 
+<div class="row" id="debug">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h4 class="panel-title"> information panel for debug</h4></div>
+                <div class="panel-body">
+                    <div>
+                    <a role="button" href="{% url 'statistics:mail'  institution.id %}" class="btn btn-primary">send PDF by email</a>
+                    </div>
+                    <div>
+                        <br>
+                    </div>
+                    <div>
+                    <a role="button" href="{% url 'statistics:dummy'  institution.id %}" class="btn btn-primary">create dummy data</a>
+                    </div>
+                    <div>
+                        <br>
+                    </div>
+                    <div>
+                    <a role="button" href="{% url 'statistics:gather' token %}" class="btn btn-primary">gather storage stat info.</a>
+                    </div>
+                    <div>
+                        <br>
+                    </div>
+                    <div>
+                        {{ provider_data_array }}
+                    </div>
+                </div>
+        </div>
+    </div>
+</div> -->
+
+
+<script>
+    $(document).ready(function() {
+        $('#datatables').DataTable({
+            'order': [[1, 'asc']]
+        });
+    });
+</script>
+{% endblock content %}

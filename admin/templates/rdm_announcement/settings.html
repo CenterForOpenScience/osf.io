@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+<title>RDM Announcement - Options</title>
+{% endblock title %}
+{% block content %}
+
+{% if institution_name %}
+  <h2>RDM Announcement - Options <small>({{ institution_name }})</small></h2>
+{% else %}
+  <h2>RDM Announcement - Options</h2>
+{% endif %}
+
+<div class="row">
+    <form class="form-horizontal" method="post" action="{% url 'announcement:update' %}">
+        {% csrf_token %}
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Twitter</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_api_key.name }}" class="col-sm-2 control-label">{{ form.twitter_api_key.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_api_key }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_api_secret.name }}" class="col-sm-2 control-label">{{ form.twitter_api_secret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_api_secret }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_access_token.name }}" class="col-sm-2 control-label">{{ form.twitter_access_token.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_access_token }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_access_token_secret.name }}" class="col-sm-2 control-label">{{ form.twitter_access_token_secret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_access_token_secret }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Facebook</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.facebook_api_key.name }}" class="col-sm-2 control-label">{{ form.facebook_api_key.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.facebook_api_key }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.facebook_api_secret.name }}" class="col-sm-2 control-label">{{ form.facebook_api_secret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.facebook_api_secret }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.facebook_access_token.name }}" class="col-sm-2 control-label">{{ form.facebook_access_token.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.facebook_access_token }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Redmine</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.redmine_api_url.name }}" class="col-sm-2 control-label">{{ form.redmine_api_url.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.redmine_api_url }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.redmine_api_key.name }}" class="col-sm-2 control-label">{{ form.redmine_api_key.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.redmine_api_key }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                {# if perms.rdm.change_rdmannouncementoption #}
+                <input type="submit" class="btn btn-primary" value="Save">
+                <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">Cancel</a>
+                {# endif #}
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock content %}

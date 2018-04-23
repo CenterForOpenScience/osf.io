@@ -122,6 +122,10 @@ from osf.utils.permissions import ADMIN, PERMISSIONS
 from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
+from osf.models import RdmTimestampGrantPattern
+
+import logging
+logger = logging.getLogger(__name__)
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -147,6 +151,11 @@ class NodeMixin(object):
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
         node_id = self.kwargs[self.node_lookup_url_kwarg]
+#        if 'timestampPattern' in self.request.data.keys():
+#            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
+#            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
+#            timestamp_pattern.save() 
+
         if node is None:
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
@@ -199,7 +208,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     model_class = apps.get_model('osf.AbstractNode')
@@ -231,6 +239,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
+            
             return nodes
         else:
             return self.get_queryset_from_request()
@@ -423,7 +432,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         else:
             return NodeContributorsSerializer
 
-    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
+    # overrides ListBulkCreateJSON APIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
         # If bulk request, queryset only contains contributors in request
@@ -469,6 +478,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
+
 
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -1530,6 +1540,13 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     def create(self, *args, **kwargs):
         try:
             ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+            # timestamp_pattern create
+            for data in self.request.data['data']:
+                institution_id = Institution.objects.get(_id=data['id']).id
+                guid=kwargs['node_id']
+                timestampPattern, _ =  RdmTimestampGrantPattern.objects.get_or_create(\
+                                                           institution_id=institution_id, node_guid=guid)
+                timestampPattern.save()
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret

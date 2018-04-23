@@ -24,4 +24,5 @@ class AdminProfile(models.Model):
             ('view_desk', 'Can view details about Desk users'),
             ('delete_preprintrequest', 'Can delete preprints withdrawal requests'),
             ('change_preprintrequest', 'Can update preprints withdrawal requests'),
+            ('view_announcement', 'Can view announcement on the RDM Admin app'),
         )

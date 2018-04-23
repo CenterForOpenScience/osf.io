@@ -1,0 +1,26 @@
+#addonSettings .is_allowed {
+  /*vertical-align: middle;*/
+  width: 30px;
+}
+#addonSettings .is_forced {
+  /*vertical-align: middle;*/
+  text-align: right;
+  width: 120px;
+}
+#addonSettings .table tr td {
+  border-top: 1px solid #eee;
+}
+#addonSettings .table tr:first-child td {
+  border-top: none;
+}
+#addonSettings .panel-body {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+#addonSettings .user-settings-addon-auth {
+  font-size: 13.5px;
+  border-bottom: 2px solid #ddd;
+}
+#addonSettings a {
+  cursor: pointer;
+}

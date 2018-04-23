@@ -9,6 +9,7 @@ from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
+from osf.models.filelog import FileLog  # noqa
 from osf.models.tag import Tag  # noqa
 from osf.models.comment import Comment  # noqa
 from osf.models.conference import Conference, MailRecord  # noqa
@@ -42,3 +43,9 @@ from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa
+from osf.models.rdm_announcement import RdmAnnouncement, RdmAnnouncementOption  # noqa
+from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption  # noqa
+from osf.models.rdm_statistics import RdmStatistics  # noqa
+from osf.models.rdm_file_timestamptoken_verify_result import RdmFileTimestamptokenVerifyResult # noqa
+from osf.models.rdm_user_key import RdmUserKey # noqa
+from osf.models.rdm_timestamp_grant_pattern import RdmTimestampGrantPattern # noqa

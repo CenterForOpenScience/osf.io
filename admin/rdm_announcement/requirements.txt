@@ -1,0 +1,8 @@
+
+# RDM requirements
+tweepy==3.5.0
+pyfcm==1.4.3
+python-redmine==2.0.2
+#facebook-sdk==3.0.0a0
+git+https://github.com/mobolic/facebook-sdk.git#egg=facebook-sdk
+
