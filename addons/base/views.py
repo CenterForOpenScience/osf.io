@@ -885,7 +885,7 @@ def adding_timestamp(auth, node, file_node, version):
                                             file_node._id,
                                             node._id, file_node.provider,
                                             file_node._path,
-                                            file_node.name, tmp_dir)
+                                            tmp_file, tmp_dir)
 
         shutil.rmtree(tmp_dir)
 
