@@ -119,7 +119,7 @@ class PageCounter(BaseModel):
             # if a download counter is being updated, only perform the update
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
-            if page_type in ('download', 'view') and node_info:
+            if page_type == 'download' and node_info:
                 if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return
