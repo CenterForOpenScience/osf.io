@@ -136,7 +136,7 @@ def format_date_crossref(element, date):
     return elements
 
 
-def crossref_metadata_for_preprint(preprint, pretty_print=False):
+def crossref_metadata_for_preprint(preprint, doi, pretty_print=False):
     """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
     :param preprint -- the preprint
@@ -190,9 +190,7 @@ def crossref_metadata_for_preprint(preprint, pretty_print=False):
         )
 
     doi_data = [
-        element.doi(
-            settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=preprint._id)  # TODO - use proper CrossRef DOI handle
-        ),
+        element.doi(doi),
         element.resource(settings.DOMAIN + preprint._id)
     ]
     posted_content.append(element.doi_data(*doi_data))

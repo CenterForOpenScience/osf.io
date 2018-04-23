@@ -349,11 +349,16 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 DOI_NAMESPACE = 'doi:10.5072/FK2'
 ARK_NAMESPACE = 'ark:99999/fk4'
 
-# For creating DOIs and ARKs through the EZID service
+# For creating DOIs and ARKs
 EZID_USERNAME = None
 EZID_PASSWORD = None
+
+CROSSREF_USERNAME = None
+CROSSREF_PASSWORD = None
+CROSSREF_DEPOSIT_URL = None
+
 # Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}osf.io/{guid}'
+DOI_FORMAT = '{namespace}osf.io/{guid}'
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None

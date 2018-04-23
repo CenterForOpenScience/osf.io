@@ -12,7 +12,7 @@ from framework import sentry
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
 from website.identifiers.tasks import update_ezid_metadata_on_change
-from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
+from website.identifiers.utils import request_identifiers, parse_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -172,11 +172,14 @@ def format_preprint(preprint, share_type, old_subjects=None):
     return [node.serialize() for node in visited]
 
 
-def get_and_set_preprint_identifiers(preprint):
-    ezid_response = request_identifiers_from_ezid(preprint)
-    if ezid_response is None:
+@celery_app.task(ignore_results=True)
+def get_and_set_preprint_identifiers(preprint_id):
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
+    doi_client_response = request_identifiers(preprint)
+    if doi_client_response is None:
         return
-    id_dict = parse_identifiers(ezid_response)
+    id_dict = parse_identifiers(doi_client_response)
     preprint.set_identifier_values(doi=id_dict['doi'], save=True)
 
 
