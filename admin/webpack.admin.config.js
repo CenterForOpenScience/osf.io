@@ -11,6 +11,10 @@ var staticAdminPath = function(dir) {
     return path.resolve(adminRoot, dir);
 };
 
+var staticPath = function(dir) {
+    return path.join(websiteRoot, dir);
+};
+
 // Adding bundle tracker to plugins
 var plugins = common.plugins.concat([
     // for using webpack with Django
@@ -36,6 +40,13 @@ var config = Object.assign({}, common, {
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
         'maintenance': staticAdminPath('js/maintenance/maintenance.js'),
+        'rdm-addons-page': staticAdminPath('js/rdm_addons/rdm-addons-page.js'),
+        'rdm-dataverse-cfg': staticAdminPath('js/rdm_addons/dataverse/rdm-cfg.js'),
+        'rdm-s3-cfg': staticAdminPath('js/rdm_addons/s3/rdm-cfg.js'),
+        'rdm-owncloud-cfg': staticAdminPath('js/rdm_addons/owncloud/rdm-cfg.js'),
+        'rdm-figshare-cfg': staticAdminPath('js/rdm_addons/figshare/rdm-cfg.js'),
+        'rdm-timestampsettings-page': staticAdminPath('js/rdm_timestampsettings/rdm-timestampsettings-page.js'),
+        'rdm-keymanagement-page': staticAdminPath('js/rdm_keymanagement/rdm-keymanagement-page.js'),
     },
     plugins: plugins,
     devtool: 'source-map',

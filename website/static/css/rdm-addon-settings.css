@@ -1,0 +1,11 @@
+
+/*
+.addon-title {
+    overflow: auto;
+}*/
+.addon-title br {
+    margin: 1px 0;
+}
+.addon-title .clearfix {
+    clear: both;
+}

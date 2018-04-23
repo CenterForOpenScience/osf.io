@@ -1,0 +1,45 @@
+{% include "util/pagination.html" with items=page status=status %}
+{% if form_action %}
+<form action={{form_action}} method="POST">
+{% endif %}
+<table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>GUID</th>
+            <th>Username</th>
+            <th>Fullname</th>
+            <th>Date confirmed</th>
+            <th>Date disabled</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in remove_key_users %}
+        <tr>
+            <td>
+                {{ user.id }}
+           </td>
+            <td>
+                {{user.username}}
+            </td>
+            <td>
+                {{ user.fullname }}
+            </td>
+            <td>
+                {{ user.date_confirmed }}
+            </td>
+            <td>
+                {{ user.date_disabled }}
+            </td>
+            <td class="is_deleted">
+                <div class="button">
+                    <input type="button" class="btn btn-default"
+                           data-institution-id="{{ institution.id }}"
+                                         data-userid="{{ user.id }}" value="delete">
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<script src="{{ '/static/public/js/rdm-keymanagement-page.js' }}"></script>

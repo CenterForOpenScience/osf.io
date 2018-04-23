@@ -136,3 +136,8 @@ $('.addon-oauth').each(function(index, elem) {
     viewModel.updateAccounts();
 });
 
+/***************
+* RDM addons *
+****************/
+require('./rdm-profile-settings-addons-page.js');
+

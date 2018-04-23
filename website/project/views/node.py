@@ -39,6 +39,7 @@ from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
+from osf.models import RdmTimestampGrantPattern
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
@@ -304,6 +305,11 @@ def node_addons(auth, node, **kwargs):
 
     # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+#    from osf.models import RdmTimestampGrantPattern
+    timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+#    timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
+    ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
 
     return ret
 

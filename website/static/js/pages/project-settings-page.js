@@ -78,6 +78,7 @@ $(document).ready(function() {
             category: ctx.node.category,
             categoryOptions: categoryOptions,
             node_id: ctx.node.id,
+            timestampPattern: ctx.timestampPattern,
             updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
         });
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);

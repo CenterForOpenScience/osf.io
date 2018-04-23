@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>User Search Results</title>
+{% endblock title %}
+{% block content %}
+  {% include 'rdm_keymanagement/user_list.html' %}
+    {% if not remove_key_users|length %}
+     <h3>No results found</h3>
+    {% endif %}
+{% endblock content %}

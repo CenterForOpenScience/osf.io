@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+<title>RDM Announcements - Options</title>
+{% endblock title %}
+{% block content %}
+<h2>RDM Announcements - Options</h2>
+
+<div class="row">
+    <form class="form-horizontal" action="{% url 'statistics:preview' %}">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Tiwwer</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_apiKey.name }}" class="col-sm-2 control-label">{{ form.twitter_apiKey.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_apiKey }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_apiSecret.name }}" class="col-sm-2 control-label">{{ form.twitter_apiSecret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_apiSecret }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_acessToken.name }}" class="col-sm-2 control-label">{{ form.twitter_acessToken.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_acessToken }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.twitter_acessTokenSecret.name }}" class="col-sm-2 control-label">{{ form.twitter_acessTokenSecret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.twitter_acessTokenSecret }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Facebook</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.facebook_apiKey.name }}" class="col-sm-2 control-label">{{ form.facebook_apiKey.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.facebook_apiKey }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.facebook_apiSecret.name }}" class="col-sm-2 control-label">{{ form.facebook_apiSecret.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.facebook_apiSecret }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix"><h3 class="panel-title">Redmine</h3></div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="id_{{ form.redmine_apiUrl.name }}" class="col-sm-2 control-label">{{ form.redmine_apiUrl.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.redmine_apiUrl }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_{{ form.redmine_apiKey.name }}" class="col-sm-2 control-label">{{ form.redmine_apiKey.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.redmine_apiKey }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                <input type="submit" class="btn btn-primary" value="Save">
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock content %}

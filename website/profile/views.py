@@ -321,7 +321,14 @@ def user_addons(auth, **kwargs):
     ret = {
         'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
     }
-    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    # RDM
+    from admin.rdm_addons import utils as rdm_utils
+    rdm_utils.update_with_rdm_addon_settings(ret['addon_settings'], user)
+    allowed_addon_dict = {addon['addon_short_name']: addon['is_allowed'] for addon in ret['addon_settings']}
+    ret['addon_settings'] = [addon for addon in ret['addon_settings'] if addon['is_allowed']]
+
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE
+            if 'accounts' in addon.configs and allowed_addon_dict[addon.short_name]]
     ret.update({
         'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
         'addons_js': collect_user_config_js(accounts_addons),

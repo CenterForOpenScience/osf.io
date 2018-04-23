@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block top_includes %}
+<script src="{% static 'js/datatables.min.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/institutions.css' %}" />
+{% endblock top_includes %}
+
+
+{% block title %}
+<title>RDM Statistics</title>
+{% endblock title %}
+
+{% block content %}
+<h2>RDM Statistics</h2>
+
+<!--pre>
+User: {{ user|pprint }}
+Is Authenticated: {{ user.is_authenticated }}
+Is SuperUser: {{ user.is_superuser }}
+Is Affilated with Institution: {{ user.is_affiliated_with_institution|pprint }}
+Institutions: {{ user.institutions|pprint }}
+</pre-->
+
+<h3>Institution List</h3>
+<table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
+    <thead><tr><th>Logo</th><th>Name</th></tr></thead>
+    <tbody>
+        {% for institution in institutions %}
+            <tr>
+                <td>
+                    <a href="{% url 'statistics:statistics' institution.id %}">
+                        <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'statistics:statistics' institution.id %}">{{ institution.name }} </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+$(document).ready(function() {
+    $('#datatables').DataTable({
+        'order': [[1, 'asc']]
+    });
+});
+</script>
+{% endblock content %}

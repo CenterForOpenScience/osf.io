@@ -23,6 +23,18 @@ var _buildLogUrl = function(node, page, limitLogs) {
     if (viewOnly) {
         query.view_only = viewOnly;
     }
+    var LogSearchKeyUser = $('#LogSearchKeyUser').val();
+    if (LogSearchKeyUser.length > 0) {
+        query['filter[user][eq]'] = Number(LogSearchKeyUser);
+    }
+    var LogFilterKeyS = $('#LogSearchS').val();
+    if (LogFilterKeyS.length > 5) {
+        query['filter[date][gte]'] = LogFilterKeyS;
+    }
+    var LogFilterKeyE = $('#LogSearchE').val();
+    if (LogFilterKeyE.length > 5) {
+        query['filter[date][lte]'] = LogFilterKeyE+'T23:59';
+    }
     return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
 };
 

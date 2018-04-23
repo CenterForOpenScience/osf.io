@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load node_extras %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+
+{% load static %}
+{% block title %}
+    <title>Affiliated Nodes</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Nodes for {{ institution.name }}
+        <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+    </h2>
+    {% load node_extras %}
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                {% if form_action %}
+                <th>
+                    <input type="checkbox" onclick="toggle(this)">
+                    <script language="javascript">
+                        function toggle(source) {
+                            var checkboxes = document.getElementsByClassName('selection');
+                            for (var i in checkboxes) {
+                                checkboxes[i].checked = source.checked;
+                            }
+                        }
+                    </script>
+                </th>
+                {% endif %}
+                <th>GUID</th>
+                {% if show_title %}
+                <th>
+                    Title
+                </th>
+                {% endif %}
+                <th>Parent</th>
+                <th>Root</th>
+<!--                <th>Date created</th>
+                <th>Public</th>
+                <th>Withdrawn</th>
+                <th>Embargo</th>
+                <th>Contributors</th>-->
+                <th>TimeStampPattern</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in nodes %}
+            <tr>
+                {% if form_action %}
+                <td>
+                    <input name="{{data.node.id}}" class="selection" type="checkbox"/>
+                </td>
+                {% endif %}
+                <td>
+                    <div class="btn btn-primary">
+                        {{ data.node.id }}
+                    </div>
+                </td>
+                {% if show_title %}
+                <td>
+                    {{data.node.title}}
+                </td>
+                {% endif %}
+                <td>
+                    {{ data.node.parent.title }}
+                </td>
+                <td>
+                    {{ data.node.root.title }}
+                </td>
+<!--                <td>
+                    {{ data.node.date_created|date }}
+                </td>
+                <td>
+                    {{ data.node.public }}
+                </td>
+                <td>
+                    {{ data.node.retraction }}
+                </td>
+                <td>
+                    {{ data.node.embargo }}
+                </td>
+                <td>
+                    {% for user in data.node.contributors %}
+                        <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>-->
+                <td>
+                    <select id="{{ data.timestamppattern.node_guid }}">
+                        {% for timestamppattern in timestamppatterns %}
+                             {% if timestamppattern.value == data.timestamppattern.timestamp_pattern_division %}
+                                  <option value="{{ timestamppattern.value }}" selected>{{ timestamppattern.name }}</option>
+                             {% else %}
+                                  <option value="{{ timestamppattern.value }}">{{ timestamppattern.name }}</option>
+                             {% endif %}
+                         {% endfor  %}
+                    </select>
+                </td>
+                <td class="is_changed">
+                    <div class="button">
+                        <input type="button" class="btn btn-primary"
+                                             data-institution-id="{{ institution.id }}" 
+                                             data-node-guid="{{data.timestamppattern.node_guid }}"  
+                                             data-institution-short-name="{{ data.institution.name }}" value="setting"> 
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+<script src="{{ '/static/public/js/rdm-timestampsettings-page.js' }}"></script>
+{% endblock content %}
+

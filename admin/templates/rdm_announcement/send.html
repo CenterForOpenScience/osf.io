@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+<title>RDM Announcement</title>
+{% endblock title %}
+{% block content %}
+
+{% if institution_name %}
+  <h2>RDM Announcement <small>({{ institution_name }})</small></h2>
+{% else %}
+  <h2>RDM Announcement</h2>
+{% endif %}
+
+
+<form class="form-horizontal" method="post" action="{% url 'announcement:send'  %}">
+<h3>{{ data.announcement_type}} Preview</h3>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                    {% csrf_token %}
+                    <div class="form-group" style="padding-left:1em">
+                        <h3>{{ data.title}}</h3>
+                        <p>{{ data.body }}</p>
+                        <div style="display:none">{{ form }}</div>
+                    </div>
+            </div>
+        </div>
+        <div class="text-center">
+            {# if perms.rdm.change_rdmannouncement #}
+            <input type="submit" class="btn btn-primary" value="Send">
+            <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">Cancel</a>
+            <div>
+                 <span class="text-danger">{{ msg }}</span>
+            </div>
+            {# endif #}
+        </div>
+    </div>
+</div>
+ </form>
+{% endblock content %}

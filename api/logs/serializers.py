@@ -172,7 +172,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
 class NodeLogSerializer(JSONAPISerializer):
 
-    filterable_fields = frozenset(['action', 'date'])
+    filterable_fields = frozenset(['action', 'date', 'user'])
     non_anonymized_fields = [
         'id',
         'date',

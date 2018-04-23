@@ -34,6 +34,7 @@
     <script src="{% static 'vendor/bower_components/raven-js/dist/raven.min.js' %}"></script>
     <script src="{% static 'vendor/bower_components/jquery/dist/jquery.js' %}"></script>
     <script src="{% static 'vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js' %}"></script>
+    {% render_bundle 'vendor' %}
 
     {% block top_includes %}
 
@@ -178,6 +179,14 @@
           {% endif %}
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
+          {% endif %}
+          {% if user.is_superuser or user.is_staff %}
+            <li><a href="{% url 'addons:institutions' %}"><i class='fa fa-link'></i> <span>RDM Addons</span></a></li>
+            <li><a href="{% url 'statistics:institutions' %}"><i class='fa fa-link'></i> <span>RDM Statistics</span></a></li>
+            <li><a href="{% url 'announcement:index' %}"><i class='fa fa-link'></i> <span>RDM Announcement</span></a></li>
+            <li><a href="{% url 'timestampadd:institutions' %}"><i class='fa fa-link'></i> <span>RDM Time Stamp Add</span></a></li>
+            <li><a href="{% url 'keymanagement:institutions' %}"><i class='fa fa-link'></i> <span>RDM KeyManagement</span></a></li>
+            <li><a href="{% url 'timestampsettings:institutions' %}"><i class='fa fa-link'></i> <span>RDM TimestampSettings</span></a></li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>

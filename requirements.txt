@@ -78,6 +78,16 @@ django-webpack-loader==0.5.0
 django-nose==1.4.5
 django-password-reset==1.0
 sendgrid-django==2.0.0
+python-redmine==2.0.2
+pyfcm==1.4.3
+#facebook-sdk==3.0.0a0
+git+https://github.com/mobolic/facebook-sdk.git#egg=facebook-sdk
+tweepy==3.5.0
+pandas==0.22.0
+matplotlib==2.1.1
+seaborn==0.8.1
+reportlab==3.4.0
+pdfkit==0.6.1
 
 # Analytics requirements
 keen==0.5.1

@@ -122,6 +122,7 @@ SESSION_COOKIE_HTTPONLY = True
 # local path to private key and cert for local development using https, overwrite in local.py
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
+SUPPORT_EMAIL = 'support@osf.io'
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None

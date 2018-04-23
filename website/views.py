@@ -160,6 +160,12 @@ def index():
             for inst in all_institutions
         ]
 
+        # generation key check
+        key_exists_check = userkey_generation_check(user_id)
+
+        if not key_exists_check:
+            userkey_generation(user_id)       
+
         return {
             'home': True,
             'dashboard_institutions': dashboard_institutions,
@@ -293,7 +299,38 @@ def resolve_guid(guid, suffix=None):
                 url = _build_guid_url(urllib.unquote(file_referent.deep_url))
                 return proxy_url(url)
 
-        # Handle Ember Applications
+        if suffix and suffix.rstrip('/').lower() == 'addtimestamp':
+            file_referent = None
+            if isinstance(referent, PreprintService) and referent.primary_file:
+                if not referent.is_published:
+                    # TODO: Ideally, permissions wouldn't be checked here.
+                    # This is necessary to prevent a logical inconsistency with
+                    # the routing scheme - if a preprint is not published, only
+                    # admins should be able to know it exists.
+                    auth = Auth.from_kwargs(request.args.to_dict(), {})
+                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                        raise HTTPError(http.NOT_FOUND)
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                # Extend `request.args` adding `action=addtimestamp`.
+                request.args = request.args.copy()
+                request.args.update({'action': 'addtimestamp'})
+                # Do not include the `addtimestamp` suffix in the url rebuild.
+                # Do not include the `addtimestamp` suffix in the url rebuild.
+                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                return proxy_url(url)
+        elif suffix and suffix.rstrip('/').split('/')[-1].lower() == 'addtimestamp':
+            # Extend `request.args` adding `action=addtimestamp`.
+            request.args = request.args.copy()
+            request.args.update({'action': 'addtimestamp'})
+            # Do not include the `addtimestamp` suffix in the url rebuild.
+            # Do not include the `addtimestamp` suffix in the url rebuild.
+            url = _build_guid_url(urllib.unquote(referent.deep_url), suffix.split('/')[0])
+            return proxy_url(url)
+
         if isinstance(referent, PreprintService):
             if referent.provider.domain_redirect_enabled:
                 # This route should always be intercepted by nginx for the branded domain,
@@ -369,3 +406,85 @@ def legacy_share_v1_search(**kwargs):
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )
     )
+
+# userkey generation check
+def userkey_generation_check(guid):
+    from osf.models import RdmUserKey
+
+    logger.info(' userkey_generation_check ')
+    # no user_key_info
+    if not RdmUserKey.objects.filter(guid=Guid.objects.get(_id=guid).object_id).exists():
+        return False
+
+    return True
+
+# userkey generation
+def userkey_generation(guid):
+    logger.info('userkey_generation guid:' + guid)
+    from api.timestamp import local
+    from osf.models import RdmUserKey
+    import os.path
+    import subprocess
+    from datetime import datetime
+    import hashlib
+
+    try:
+       generation_date = datetime.now()
+       generation_date_str = generation_date.strftime('%Y%m%d%H%M%S')
+       generation_date_hash = hashlib.md5(generation_date_str).hexdigest()
+       generation_pvt_key_name = local.KEY_NAME_FORMAT.format(guid, generation_date_hash,
+                                                                   local.KEY_NAME_PRIVATE, local.KEY_EXTENSION)
+       generation_pub_key_name = local.KEY_NAME_FORMAT.format(guid, generation_date_hash,
+                                                                   local.KEY_NAME_PUBLIC, local.KEY_EXTENSION)
+       # private key generation
+       pvt_key_generation_cmd = [local.OPENSSL_MAIN_CMD, local.OPENSSL_OPTION_GENRSA,
+                                     local.OPENSSL_OPTION_OUT,
+                                     os.path.join(local.KEY_SAVE_PATH, generation_pvt_key_name),
+                                     local.KEY_BIT_VALUE]
+
+       pub_key_generation_cmd = [local.OPENSSL_MAIN_CMD, local.OPENSSL_OPTION_RSA,
+                                     local.OPENSSL_OPTION_IN,
+                                     os.path.join(local.KEY_SAVE_PATH, generation_pvt_key_name),
+                                     local.OPENSSL_OPTION_PUBOUT, local.OPENSSL_OPTION_OUT,
+                                     os.path.join(local.KEY_SAVE_PATH, generation_pub_key_name)]
+
+       prc = subprocess.Popen(pvt_key_generation_cmd, shell=False,
+                              stdin=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              stdout=subprocess.PIPE)
+
+       stdout_data, stderr_data = prc.communicate()
+
+       prc = subprocess.Popen(pub_key_generation_cmd, shell=False,
+                              stdin=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              stdout=subprocess.PIPE)
+
+       stdout_data, stderr_data = prc.communicate()
+
+       pvt_userkey_info = create_rdmuserkey_info(Guid.objects.get(_id=guid).object_id
+                                                 , generation_pvt_key_name
+                                                 , local.PRIVATE_KEY_VALUE
+                                                 , generation_date)
+
+       pub_userkey_info = create_rdmuserkey_info(Guid.objects.get(_id=guid).object_id
+                                                 , generation_pub_key_name
+                                                 , local.PUBLIC_KEY_VALUE
+                                                 , generation_date)
+
+       pvt_userkey_info.save()
+       pub_userkey_info.save()
+
+    except Exception as error:
+       logger.exception(error)
+
+def create_rdmuserkey_info(user_id, key_name, key_kind, date):
+    from osf.models import RdmUserKey
+
+    userkey_info = RdmUserKey()
+    userkey_info.guid = user_id
+    userkey_info.key_name = key_name
+    userkey_info.key_kind = key_kind
+    userkey_info.created_time = date
+
+    return userkey_info

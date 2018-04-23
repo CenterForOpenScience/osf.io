@@ -22,4 +22,5 @@ class AdminProfile(models.Model):
             ('view_prereg', 'Can view entries for the preregistration chellenge on the admin'),
             ('administer_prereg', 'Can update, comment on, and approve entries to the prereg challenge'),
             ('view_desk', 'Can view details about Desk users'),
+            ('view_announcement', 'Can view announcement on the RDM Admin app'),
         )

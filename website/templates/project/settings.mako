@@ -98,6 +98,20 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
+                    % if 'admin' in user['permissions']:
+                        <div class="form-group">
+                            <label for="description">TimeStamp Pattern:</label>
+                            <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
+                            % if timestamp_pattern_division == 1:
+                                 <option value="1" selected>AddTimeStamp</option>
+                                 <option value="2">Digital signature And AddTimeStamp</option>
+                            % else:
+                                 <option value="1">AddTimeStamp</option>
+                                 <option value="2" selected>Digital signature And AddTimeStamp</option>
+                            % endif
+                            </select>
+                        </div>
+                    % endif
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
                             <button data-bind="click: updateAll"
@@ -487,6 +501,7 @@
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
+      window.contextVars.timestampPattern = 1;
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',
