@@ -7,7 +7,9 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
 import osf.models.base
+import osf.utils.fields
 import osf.utils.datetime_aware_jsonfield
+from website.settings import WATERBUTLER_URL
 
 
 class Migration(migrations.Migration):
@@ -24,8 +26,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('_id', models.CharField(db_index=True, max_length=255)),
                 ('name', models.CharField(max_length=200)),
-                ('waterbutler_credentials', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
-                ('waterbutler_url', models.URLField(default=b'http://localhost:7777')),
+                ('waterbutler_credentials', osf.utils.fields.EncryptedJSONField(default=dict)),
+                ('waterbutler_url', models.URLField(default=WATERBUTLER_URL)),
                 ('waterbutler_settings', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
             ],
         ),

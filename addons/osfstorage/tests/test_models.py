@@ -10,7 +10,7 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
-from osf.models import Contributor, OSFUser
+from osf.utils.fields import EncryptedJSONField
 from osf_tests.factories import ProjectFactory, UserFactory
 
 from addons.osfstorage.tests import factories
@@ -565,6 +565,18 @@ class TestNodeSettingsModel(StorageTestCase):
 
         assert node_settings.region_id == region.id
 
+    def test_encrypted_json_field(self):
+        new_test_creds = {
+            'storage': {
+                'go': 'science',
+            }
+        }
+        region = factories.RegionFactory()
+        region.waterbutler_credentials = new_test_creds
+        region.save()
+
+        assert region.waterbutler_credentials == new_test_creds
+
 
 @pytest.mark.django_db
 class TestOsfStorageFileVersion(StorageTestCase):
@@ -782,7 +794,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_remove_contributor_with_checked_file(self):
         user = factories.AuthUserFactory()
-        Contributor.objects.create(
+        models.Contributor.objects.create(
             node=self.node,
             user=user,
             admin=True,
@@ -796,3 +808,10 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.node.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)
+
+
+# def TestEncryptedJSONField:
+#
+#     @pytest.fixture
+#     def field(self):
+#         return EncryptedJSONField

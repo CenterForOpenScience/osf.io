@@ -7,6 +7,7 @@ from django.db import models, connection
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
@@ -419,7 +420,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 class Region(models.Model):
     _id = models.CharField(max_length=255, db_index=True)
     name = models.CharField(max_length=200)
-    waterbutler_credentials = DateTimeAwareJSONField(default=dict)
+    waterbutler_credentials = EncryptedJSONField(default=dict)
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
