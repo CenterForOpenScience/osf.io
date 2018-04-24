@@ -20,7 +20,7 @@ option_data = dict(
     facebook_api_key='935938406547385',
     facebook_api_secret='f15fccd3b67d437b73ee43b8f629c408',
     facebook_access_token='EAACvJ14jcSsBAIujVKBHWZCo4xBVRCZAva3ypbEfaQuOmyxOQAY9FZBJyqs6wyF2lwRIzGuieXZAzLMezutqJaTT9khOajkqZCYlVQCQpnnczBt6L7rgAZBQJZAHoAOHDjZAljARtp2p7sezXqYpZAZANM9IBVnWMYBClfcN7pxbrZAB5myw7eyeTYi',
-    redmine_api_url='http://13.115.44.225:3000/projects/test-project/issues.json',
+    redmine_api_url='http://localhost:3000/projects/test-project/issues.json',
     redmine_api_key='54367a4c8a859b5db74e4c3f2c17b35824c559ec',
 )
 

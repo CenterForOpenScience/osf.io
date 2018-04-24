@@ -24,14 +24,12 @@ class AddTimestamp:
 
     #②ファイル情報 + 鍵情報をハッシュ化したタイムスタンプリクエスト（tsq）を生成する
     def get_timestamp_request(self, file_name):
-        process = subprocess.Popen(
-            [local.OPENSSL_MAIN_CMD, local.OPENSSL_OPTION_TS, local.OPENSSL_OPTION_QUERY, local.OPENSSL_OPTION_DATA,
-             file_name, local.OPENSSL_OPTION_CERT, local.OPENSSL_OPTION_SHA512],
+        cmd = [local.OPENSSL_MAIN_CMD, local.OPENSSL_OPTION_TS, local.OPENSSL_OPTION_QUERY, local.OPENSSL_OPTION_DATA,
+               file_name, local.OPENSSL_OPTION_CERT, local.OPENSSL_OPTION_SHA512]
+        process = subprocess.Popen(cmd, shell=False, 
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False
-            )
+            stderr=subprocess.PIPE)
 
         stdout_data, stderr_data = process.communicate()
         return stdout_data
@@ -83,10 +81,7 @@ class AddTimestamp:
             if not verify_data:
                 verify_data = RdmFileTimestamptokenVerifyResult()
                 verify_data.key_file_name = key_file
-                if provider == 'osfstorage':
-                    verify_data.file_id = file_id
-                else:
-                    verify_data.file_id = 'file_id_dummy'
+                verify_data.file_id = file_id
                 verify_data.project_id = project_id
                 verify_data.provider = provider
                 verify_data.path = path
@@ -113,7 +108,7 @@ class AddTimestamp:
     #⑥メイン処理
     def add_timestamp(self, guid, file_id, project_id, provider, path, file_name, tmp_dir):
 
-        logger.info('add_timestamp start guid:{guid} project_id:{project_id} provider:{provider}'.format(guid=guid,project_id=project_id,provider=provider))
+#        logger.info('add_timestamp start guid:{guid} project_id:{project_id} provider:{provider} path:{path} file_name:{file_name} file_id:{file_id}'.format(guid=guid,project_id=project_id,provider=provider,path=path,file_name=file_name, file_id=file_id))
 
         # guid から user_idを取得する
         #user_id = Guid.find_one(Q('_id', 'eq', guid)).object_id
