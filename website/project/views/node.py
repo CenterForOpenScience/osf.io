@@ -840,7 +840,8 @@ def serialize_collections(cgms, auth):
         'status': cgm.status,
         'type': cgm.collected_type,
         'is_public': cgm.collection.is_public,
-    } for cgm in cgms if cgm.collection.is_public or auth.user.has_perm('read_collection', cgm.collection)]
+    } for cgm in cgms if cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
 def serialize_children(child_list, nested, indent=0):
     """

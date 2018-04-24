@@ -4217,6 +4217,9 @@ class TestCollectionProperties:
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
         assert len(collection_summary) == 2
 
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        assert len(collection_summary) == 0
+
         collection_public = CollectionFactory(creator=user, provider=provider, is_public=True)
         collection_public.collect_object(node, user)
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
