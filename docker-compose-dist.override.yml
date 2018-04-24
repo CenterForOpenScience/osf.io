@@ -64,7 +64,7 @@ services:
 ##      - emberosf
 ##    command:
 ##      - /bin/bash
-##      - -c 
+##      - -c
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
@@ -73,27 +73,27 @@ services:
 ##        yarn link @centerforopenscience/ember-osf &&
 ##        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
 
-#  preprints:
-#    volumes:
-#      - preprints-sync:/code:nocopy
-#
-##      # Use this for ember-osf linked development (with docker-sync):
-##      - preprints_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##        (rm -r node_modules || true) &&
-##        yarn --frozen-lockfile &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        (rm -r bower_components || true) &&
-##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
-##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
+  preprints:
+    volumes:
+      - preprints-sync:/code:nocopy
+
+      # Use this for ember-osf linked development (with docker-sync):
+      - preprints_dist_vol:/code/dist
+      - emberosf-sync:/ember-osf
+    depends_on:
+      - emberosf
+    command:
+      - /bin/bash
+      - -c
+      - cd /ember-osf &&
+        yarn link &&
+        cd /code &&
+        (rm -r node_modules || true) &&
+        yarn --frozen-lockfile &&
+        yarn link @centerforopenscience/ember-osf &&
+        (rm -r bower_components || true) &&
+        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
 #    volumes:
@@ -115,37 +115,56 @@ services:
 ##        yarn link @centerforopenscience/ember-osf &&
 ##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
 
-#  reviews:
-#    volumes:
-#      - reviews-sync:/code:nocopy
-#
-##      # Use this for ember-osf linked development (with docker-sync):
-##      - reviews_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        yarn --frozen-lockfile &&
-##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
+  reviews:
+    volumes:
+      - reviews-sync:/code:nocopy
 
-#  # Use this for ember-osf linked development (with docker-sync):
-#  emberosf:
-#    build: ../ember-osf
-#    command:
-#      - /bin/bash
-#      - -c
-#      - (rm -r node_modules || true) &&
-#        yarn --frozen-lockfile --ignore-engines &&
-#        (rm -r bower_components || true) &&
-#        ./node_modules/.bin/bower install --allow-root --config.interactive=false
-#    volumes:
-#      - emberosf-sync:/code:nocopy
+      # Use this for ember-osf linked development (with docker-sync):
+      - reviews_dist_vol:/code/dist
+      - emberosf-sync:/ember-osf
+    depends_on:
+      - emberosf
+    command:
+      - /bin/bash
+      - -c
+      - cd /ember-osf &&
+        yarn link &&
+        cd /code &&
+        yarn link @centerforopenscience/ember-osf &&
+        yarn --frozen-lockfile &&
+        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
+
+  collections:
+    volumes:
+      - collections-sync:/code:nocopy
+
+      # Use this for ember-osf linked development (with docker-sync):
+      - collections_dist_vol:/code/dist
+      - emberosf-sync:/ember-osf
+    depends_on:
+      - emberosf
+    command:
+      - /bin/bash
+      - -c
+      - cd /ember-osf &&
+        yarn link &&
+        cd /code &&
+        yarn link @centerforopenscience/ember-osf &&
+        yarn --frozen-lockfile &&
+        yarn start --host 0.0.0.0 --port 4204 --live-reload-port 41957
+
+  # Use this for ember-osf linked development (with docker-sync):
+  emberosf:
+    build: ../ember-osf
+    command:
+      - /bin/bash
+      - -c
+      - (rm -r node_modules || true) &&
+        yarn --frozen-lockfile --ignore-engines &&
+        (rm -r bower_components || true) &&
+        ./node_modules/.bin/bower install --allow-root --config.interactive=false
+    volumes:
+      - emberosf-sync:/code:nocopy
 
 #  ####################
 #  # RabbitMQ SSL
@@ -185,20 +204,23 @@ volumes:
 #  mfr-sync:
 #    external: true
 
-#  emberosf-sync:
-#    external: true
+  emberosf-sync:
+    external: true
 
 #  ember_osf_web-sync:
 #    external: true
 
-#  preprints-sync:
-#    external: true
+  preprints-sync:
+    external: true
 
 #  registries-sync:
 #    external: true
 
-#  reviews-sync:
-#    external: true
+  reviews-sync:
+    external: true
+
+  collections-sync:
+    external: true
 
 #  sharejs-sync:
 #    external: true
