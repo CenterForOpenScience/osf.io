@@ -21,7 +21,7 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, OSFUser, Subject, PreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintProvider
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
