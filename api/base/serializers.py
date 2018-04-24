@@ -172,6 +172,15 @@ class HideIfWithdrawal(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfWikiDisabled(ConditionalField):
+    """
+    If wiki is disabled, don't show relationship field
+    """
+
+    def should_hide(self, instance):
+        return 'wiki' not in instance.get_addon_names()
+
+
 class HideIfNotNodePointerLog(ConditionalField):
     """
     This field will not be shown if the log is not a pointer log for a node
