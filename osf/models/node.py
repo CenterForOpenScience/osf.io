@@ -1184,6 +1184,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
+
+            # If there are pending access requests for this user, mark them as accepted
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='')
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
