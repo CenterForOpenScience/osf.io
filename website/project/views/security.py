@@ -137,10 +137,11 @@ def collect_security_trees(auth, node, **kwargs):
                                                                     node, cookies, headers))
             else:
                 file_info = None
+                basefile_node = BaseFileNode.resolve_class(provider_data['attributes']['provider'],
+                                                           BaseFileNode.FILE).get_or_create(node, 
+                                                           file_data['attributes']['path'])
+                basefile_node.save()
                 if provider_data['attributes']['provider'] == 'osfstorage':
-                    basefile_node = BaseFileNode.resolve_class(provider_data['attributes']['provider'],
-                                                               BaseFileNode.FILE).get_or_create(node, 
-                                                               file_data['attributes']['path'])
                     file_info = {'file_name': file_data['attributes']['name'],
                                  'file_path': file_data['attributes']['materialized'],
                                  'file_kind':file_data['attributes']['kind'],
@@ -150,7 +151,7 @@ def collect_security_trees(auth, node, **kwargs):
                      file_info = {'file_name': file_data['attributes']['name'],
                                   'file_path': file_data['attributes']['materialized'],
                                   'file_kind': file_data['attributes']['kind'],
-                                  'file_id': file_data['attributes']['path'],
+                                  'file_id': basefile_node._id,
                                   'version': ''}
 
                 if file_info:
@@ -172,29 +173,30 @@ def get_timestamp_error_data(auth, node, **kwargs):
         request_data = request.json
         data = {}
         for key in request_data.keys():
-            data.update({key: request_data[key][0]}) 
+            data.update({key: request_data[key][0]})
     else:
         data = request.args.to_dict()
- 
+
     cookies = {settings.COOKIE_NAME:auth.user.get_or_create_cookie()}
     headers = {"content-type": "application/json"}
     url = None
     tmp_dir = None
     result = None
     try:
+        file_node = BaseFileNode.objects.get(_id=data['file_id'])
         if data['provider'] == 'osfstorage':
-            file_node = BaseFileNode.objects.get(_id=data['file_id'])
             url = file_node.generate_waterbutler_url(**dict(action='download',
                                                      version=data['version'],
-                                                     mode='direct', _internal=False))
+                                                     direct=None, _internal=False))
 
         else:
-            url = util.waterbutler_api_url_for(node._id, data['provider'], data['file_path'],
-                                               **dict(waterbutler_meta_parameter()))
+            url = file_node.generate_waterbutler_url(**dict(action='download',
+                                                     direct=None, _internal=False))
 
         res = requests.get(url, headers=headers, cookies=cookies)
         tmp_dir='tmp_{}'.format(auth.user._id)
-        os.mkdir(tmp_dir)
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])
         with open(download_file_path, "wb") as fout:
             fout.write(res.content)
@@ -233,19 +235,22 @@ def add_timestamp_token(auth, node, **kwargs):
     tmp_dir = None
     try:
         if data['provider'] == 'osfstorage':
+#            file_node = BaseFileNode.objects.get(_id=data['file_id'])
             file_node = BaseFileNode.objects.get(_id=data['file_id'])
             url = file_node.generate_waterbutler_url(**dict(action='download',
                                                      version=data['version'],
-                                                     mode='direct', _internal=False))
+                                                     direct=None, _internal=False))
 
         else:
-            url = util.waterbutler_api_url_for(node._id, data['provider'], data['file_path'],
-                                               **dict(waterbutler_meta_parameter()))
+            url = file_node.generate_waterbutler_url(**dict(action='download',
+                                                     direct=None, _internal=False))
+
 
         # Request To Download File
         res = requests.get(url, headers=headers, cookies=cookies)
         tmp_dir='tmp_{}'.format(auth.user._id)
-        os.mkdir(tmp_dir)
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])
         with open(download_file_path, "wb") as fout:
             fout.write(res.content)
@@ -254,7 +259,7 @@ def add_timestamp_token(auth, node, **kwargs):
         addTimestamp = AddTimestamp()
         result = addTimestamp.add_timestamp(auth.user._id, data['file_id'],
                                             node._id, data['provider'], data['file_path'], 
-                                            data['file_name'], tmp_dir)
+                                            download_file_path, tmp_dir)
 
 
         shutil.rmtree(tmp_dir)
@@ -262,7 +267,7 @@ def add_timestamp_token(auth, node, **kwargs):
     except Exception as err:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
-        logger.exception(err)
+#        logger.exception(err)
 
     return result
 
@@ -303,10 +308,11 @@ def collect_security_trees_to_json(auth, node, **kwargs):
                                                                      node, cookies, headers))
             else:
                 file_info = None
+                basefile_node = BaseFileNode.resolve_class(provider_data['attributes']['provider'],
+                                                           BaseFileNode.FILE).get_or_create(node, 
+                                                           file_data['attributes']['path'])
+                basefile_node.save()
                 if provider_data['attributes']['provider'] == 'osfstorage':
-                    basefile_node = BaseFileNode.resolve_class(provider_data['attributes']['provider'],
-                                                               BaseFileNode.FILE).get_or_create(node,
-                                                               file_data['attributes']['path'])
                     file_info = {'file_name': file_data['attributes']['name'],
                                  'file_path': file_data['attributes']['materialized'],
                                  'file_kind':file_data['attributes']['kind'],
@@ -316,7 +322,7 @@ def collect_security_trees_to_json(auth, node, **kwargs):
                     file_info = {'file_name': file_data['attributes']['name'],
                                  'file_path': file_data['attributes']['materialized'],
                                  'file_kind': file_data['attributes']['kind'],
-                                 'file_id': file_data['attributes']['path'],
+                                 'file_id': basefile_node._id,
                                  'version': ''}
                 if file_info:
                    file_list.append(file_info)
@@ -356,20 +362,21 @@ def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
                                                   node, cookies, headers))
         else:
              if provider == 'osfstorage':
-                 basefile_node = BaseFileNode.resolve_class(provider,
-                                                            BaseFileNode.FILE).get_or_create(node, 
-                                                            file_data['attributes']['path'])
-                 file_info = {'file_name': file_data['attributes']['name'],
-                              'file_path': file_data['attributes']['materialized'],
-                              'file_kind': file_data['attributes']['kind'],
-                              'file_id': basefile_node._id,
-                              'version': file_data['attributes']['extra']['version']}
+                  basefile_node = BaseFileNode.resolve_class(provider,
+                                                             BaseFileNode.FILE).get_or_create(node,
+                                                             file_data['attributes']['path'])
+                  basefile_node.save()
+                  file_info = {'file_name': file_data['attributes']['name'],
+                               'file_path': file_data['attributes']['materialized'],
+                               'file_kind': file_data['attributes']['kind'],
+                               'file_id': basefile_node._id,
+                               'version': file_data['attributes']['extra']['version']}
              else:
-                 file_info = {'file_name': file_data['attributes']['name'],
-                              'file_path': file_data['attributes']['materialized'],
-                              'file_kind': file_data['attributes']['kind'],
-                              'file_id': file_data['attributes']['path'],
-                              'version': ''}
+                  file_info = {'file_name': file_data['attributes']['name'],
+                               'file_path': file_data['attributes']['materialized'],
+                               'file_kind': file_data['attributes']['kind'],
+                               'file_id': basefile_node._id,
+                               'version': ''}
 
              file_list.append(file_info)
 

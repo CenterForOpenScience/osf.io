@@ -43,7 +43,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
-    '13.115.158.202'
+    '.osf.io'
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -62,8 +62,7 @@ USE_L10N = False
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Sendgrid Email Settings - Using OSF credentials.
 # Add settings references to local.py
@@ -71,8 +70,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = osf_settings.MAIL_SERVER
 EMAIL_HOST_USER = osf_settings.MAIL_USERNAME
 EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD
-EMAIL_PORT = 25
-EMAIL_USE_TLS = False
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 # Application definition
 
@@ -99,19 +98,6 @@ INSTALLED_APPS = (
     'addons.osfstorage',
     'addons.wiki',
     'addons.twofactor',
-    # Additional addons
-    'addons.bitbucket',
-    'addons.box',
-    'addons.dataverse',
-    'addons.dropbox',
-    'addons.figshare',
-    'addons.forward',
-    'addons.github',
-    'addons.googledrive',
-    'addons.mendeley',
-    'addons.owncloud',
-    'addons.s3',
-    'addons.zotero',
 
     # Internal apps
     'admin.common_auth',
@@ -125,6 +111,7 @@ INSTALLED_APPS = (
     'admin.meetings',
     'admin.institutions',
     'admin.preprint_providers',
+
 )
 
 MIGRATION_MODULES = {
@@ -133,18 +120,6 @@ MIGRATION_MODULES = {
     'addons_osfstorage': None,
     'addons_wiki': None,
     'addons_twofactor': None,
-    'addons_bitbucket': None,
-    'addons_box': None,
-    'addons_dataverse': None,
-    'addons_dropbox': None,
-    'addons_figshare': None,
-    'addons_forward': None,
-    'addons_github': None,
-    'addons_googledrive': None,
-    'addons_mendeley': None,
-    'addons_owncloud': None,
-    'addons_s3': None,
-    'addons_zotero': None,
 }
 
 USE_TZ = True
@@ -208,7 +183,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'admin.rdm_announcement.context_processor.setInstitution',
             ],
         }
     }]
@@ -278,7 +252,3 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
-
-FCM_SETTINGS = {
-    "FCM_SERVER_KEY": ""
-}

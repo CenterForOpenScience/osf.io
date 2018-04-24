@@ -307,9 +307,14 @@ def node_addons(auth, node, **kwargs):
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
 
 #    from osf.models import RdmTimestampGrantPattern
-    timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+    try:
+        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+        ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
+    except Exception as err:
+        logging.exception(err)
+        timestamp_pattern = None
 #    timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
-    ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
+#    ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
 
     return ret
 
