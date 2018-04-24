@@ -46,8 +46,17 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Minimum seconds between attempts to change password
+CHANGE_PASSWORD_THROTTLE = 30
+
+# Number of incorrect password attempts allowed before throttling.
+INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
+
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+
+# Seconds that must elapse before change password attempts are reset(currently 1 hour)
+TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
