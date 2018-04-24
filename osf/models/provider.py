@@ -42,6 +42,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     default_license = models.ForeignKey(NodeLicense, related_name='default_license',
                                         null=True, blank=True, on_delete=models.CASCADE)
     allow_submissions = models.BooleanField(default=True)
+    allow_commenting = models.BooleanField(default=False)
 
     def __unicode__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '

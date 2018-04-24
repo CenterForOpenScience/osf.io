@@ -147,6 +147,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         Implemented here so that subclasses may override it or path.
         See OsfStorage or PathFollowingNode.
         """
+        # Files are inaccessible if a node is retracted, so just show
+        # the retraction detail page for files on retractions
+        if self.node.is_registration and self.node.is_retracted:
+            return self.node.web_url_for('view_project')
         return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     @property

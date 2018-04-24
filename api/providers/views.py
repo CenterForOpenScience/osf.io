@@ -207,6 +207,9 @@ class GenericProviderLicenseList(LicenseList):
     """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
 
+    def get_default_queryset(self):
+        return NodeLicense.objects.preprint_licenses()
+
     def get_queryset(self):
         provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
         if not provider.licenses_acceptable.count():

@@ -889,6 +889,7 @@ class TestProjectViews(OsfTestCase):
         project = ProjectFactory(creator=self.user1, is_public=True)
 
         registration = RegistrationFactory(project=project, is_public=True)
+        reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
         registration.retract_registration(self.user1)
 
         approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
@@ -908,6 +909,10 @@ class TestProjectViews(OsfTestCase):
             res = res.follow()
             assert_equal(res.status_code, 200, route)
             assert_in('This project is a withdrawn registration of', res.body, route)
+
+        res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
+        assert_equal(res.status_code, 200)
+        assert_in('This project is a withdrawn registration of', res.body)
 
 
 class TestEditableChildrenViews(OsfTestCase):

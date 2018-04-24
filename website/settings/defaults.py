@@ -1474,7 +1474,6 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
-    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',
@@ -1851,9 +1850,10 @@ BLACKLISTED_DOMAINS = [
 ]
 
 # reCAPTCHA API
+# NOTE: Using the recaptcha.net domain h/t https://github.com/google/recaptcha/issues/87#issuecomment-368252094
 RECAPTCHA_SITE_KEY = None
 RECAPTCHA_SECRET_KEY = None
-RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None

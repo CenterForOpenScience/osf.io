@@ -29,6 +29,7 @@ class ProviderSerializer(JSONAPISerializer):
     email_support = ser.CharField(read_only=True, allow_null=True)
     facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
+    allow_commenting = ser.BooleanField(read_only=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -67,6 +68,7 @@ class CollectionProviderSerializer(ProviderSerializer):
 
     filterable_fields = frozenset([
         'allow_submissions',
+        'allow_commenting',
         'description',
         'domain',
         'domain_redirect_enabled',
@@ -81,6 +83,7 @@ class PreprintProviderSerializer(ProviderSerializer):
 
     filterable_fields = frozenset([
         'allow_submissions',
+        'allow_commenting',
         'description',
         'domain',
         'domain_redirect_enabled',
