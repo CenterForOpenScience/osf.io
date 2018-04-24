@@ -26,7 +26,7 @@ def main():
                     comment.root_target = None
                     comment.save()
                     count += 1
-                if comment.root_target and hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
+                if hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
                     comment.root_target = None
                     comment.save()
                     count += 1
