@@ -1247,7 +1247,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # TODO: Move validation to set_password
         issues = []
         if not self.check_password(raw_old_password):
-            self.increment_old_password_invalid_attempts()
+            self.old_password_invalid_attempts += 1
             self.change_password_last_attempt = timezone.now()
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
@@ -1268,9 +1268,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
         self.reset_old_password_invalid_attempts()
-
-    def increment_old_password_invalid_attempts(self):
-        self.old_password_invalid_attempts += 1
 
     def reset_old_password_invalid_attempts(self):
         self.old_password_invalid_attempts = 0

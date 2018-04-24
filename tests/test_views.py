@@ -1575,7 +1575,7 @@ class TestUserAccount(OsfTestCase):
         res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
         assert_true(mock_push_status_message.called)
         error_strings = mock_push_status_message.mock_calls[3][2]
-        assert_in('Too many requests.', error_strings['message'])
+        assert_in('Too many failed attempts', error_strings['message'])
         self.user.reload()
         # Too many failed requests within a short window.  Throttled.
         assert self.user.change_password_last_attempt is not None

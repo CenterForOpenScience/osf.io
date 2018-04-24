@@ -295,8 +295,8 @@ def user_account_password(auth, **kwargs):
     # There have been more than 3 failed attempts and throttle hasn't expired.
     if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
         push_status_message(
-            message='Too many requests. Please wait a while before attempting to change your password.',
-            kind='error',
+            message='Too many failed attempts. Please wait a while before attempting to change your password.',
+            kind='warning',
             trust=False
         )
         return redirect(web_url_for('user_account'))
