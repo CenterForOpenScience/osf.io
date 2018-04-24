@@ -28,7 +28,7 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     label = 'addons_osfstorage'
     full_name = 'OSF Storage'
     short_name = 'osfstorage'
-    added_default = ['node']
+    added_default = ['node', 'user']
     added_mandatory = ['node']
 
     categories = ['storage']
