@@ -563,7 +563,7 @@ class TestNodeSettingsModel(StorageTestCase):
         project = ProjectFactory(creator=user)
         node_settings = project.get_addon('osfstorage')
 
-        assert node_settings.region == region
+        assert node_settings.region_id == region.id
 
 
 @pytest.mark.django_db

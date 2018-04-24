@@ -15,7 +15,7 @@ from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website import settings as website_settings
-from addons.osfstorage.settings import DEFAULT_REGION_NAME
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -430,7 +430,7 @@ class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
 
     def on_add(self):
-        default_region = Region.objects.get(name=DEFAULT_REGION_NAME)
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
         self.default_region = default_region
         self.save()
 
@@ -462,9 +462,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
         creator_user_settings = UserSettings.objects.get(owner=self.owner.creator)
         self.user_settings = creator_user_settings
-        self.region = creator_user_settings.default_region
+        self.region_id = creator_user_settings.default_region_id
 
-        # A save is required here to qboth create and attach the root_node
+        # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
         self.save()
@@ -481,7 +481,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         clone = self.clone()
         clone.owner = fork
         clone.user_settings = self.user_settings
-        clone.region = self.region
+        clone.region_id = self.region_id
 
         clone.save()
         if not self.root_node:

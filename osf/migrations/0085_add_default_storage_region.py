@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 
 from osf.models import OSFUser
 from addons.osfstorage.models import Region, UserSettings as OsfStorageUserSettings
-from addons.osfstorage.settings import DEFAULT_REGION_NAME
+from addons.osfstorage.settings import DEFAULT_REGION_NAME, DEFAULT_REGION_ID
 from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__file__)
@@ -21,6 +21,7 @@ osfstorage_config = apps.get_app_config('addons_osfstorage')
 def add_osfstorage_addon(*args):
 
     default_region, created = Region.objects.get_or_create(
+        _id = DEFAULT_REGION_ID,
         name=DEFAULT_REGION_NAME,
         waterbutler_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
         waterbutler_settings=osfstorage_config.WATERBUTLER_SETTINGS,
