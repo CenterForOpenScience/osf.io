@@ -388,8 +388,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.recast(TrashedFile._typedmodels_type)
 
             Comment = apps.get_model('osf.Comment')
-            if Comment.objects.filter(root_target=self.guids.first()).exists():
-                Comment.objects.filter(root_target=self.guids.first()).update(root_target=None)
+            Comment.objects.filter(root_target=self.guids.first()).update(root_target=None)
 
         if save:
             self.save()

@@ -2659,8 +2659,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         log_date = date or timezone.now()
 
         Comment = apps.get_model('osf.Comment')
-        if Comment.objects.filter(node=self).exists():
-            Comment.objects.filter(node=self).update(root_target=None)
+        Comment.objects.filter(node=self).update(root_target=None)
 
         # Add log to parent
         if self.parent_node:
@@ -2860,8 +2859,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         page.save()
 
         Comment = apps.get_model('osf.Comment')
-        if Comment.objects.filter(root_target=page.guids.first()).exists():
-            Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
+        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
