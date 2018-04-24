@@ -296,6 +296,15 @@ class TestNodeDetail:
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url_public) in link
 
+    def test_node_shows_wiki_relationship_based_on_disabled_status(self, app, user, project_public, url_public):
+        res = app.get(url_public, auth=user.auth)
+        url = res.json['data']['relationships'].get('wikis', False)
+        assert url
+        project_public.delete_addon('wiki', auth=Auth(self.user))
+        res = app.get(url_public, auth=user.auth)
+        url = res.json['data']['relationships'].get('wikis', False)
+        assert url is False
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:
