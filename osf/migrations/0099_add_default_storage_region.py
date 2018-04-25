@@ -68,7 +68,7 @@ def remove_osfstorage_addon(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0084_merge_20180308_1821'),
+        ('osf', '0098_merge_20180416_1807'),
     ]
 
     operations = [
