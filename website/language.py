@@ -107,7 +107,7 @@ BEFORE_REGISTER_HAS_POINTERS = (
     u'This {category} contains links to other projects. These links will be '
     u'copied into your registration, but the projects that they link to will '
     u'not be registered. If you wish to register the linked projects, they '
-    u'must registered separately. Learn more about <a href="http://help.osf.io'
+    u'must be registered separately. Learn more about <a href="http://help.osf.io'
     u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
