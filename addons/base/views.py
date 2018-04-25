@@ -310,11 +310,10 @@ DOWNLOAD_ACTIONS = set([
 ])
 
 
-def mark_file_version_as_seen(user, path):
+def mark_file_version_as_seen(user, path, version):
     file_to_update = OsfStorageFile.objects.get(_id=path)
-    # TODO - once the version is available in the waterbutler callback, update a specific version
-    version = file_to_update.versions.order_by('created').last()
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=version)
+    file_version = file_to_update.versions.get(identifier=version)
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
 
 
 @must_be_signed
@@ -331,11 +330,12 @@ def create_waterbutler_log(payload, **kwargs):
             # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
+                url = furl.furl(payload['request_meta']['url'])
+                version = url.args.get('version') or url.args.get('revision')
+                path = payload['metadata']['path'].lstrip('/')
+                if version:
+                    mark_file_version_as_seen(user, path, version)
                 if not node.is_contributor(user):
-                    url = furl.furl(payload['request_meta']['url'])
-                    version = url.args.get('version') or url.args.get('revision')
-                    path = payload['metadata']['path'].lstrip('/')
-                    mark_file_version_as_seen(user, path)
                     if payload['action_meta']['is_mfr_render']:
                         update_analytics(node, path, version, 'view')
                     else:

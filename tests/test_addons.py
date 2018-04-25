@@ -321,10 +321,12 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_contrib(self, mock_mark_version):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
+        wb_url = settings.WATERBUTLER_URL + '?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
                                          action_meta={'is_mfr_render': False},
+                                         request_meta={'url': wb_url},
                                          action=action)
             nlogs = self.node.logs.count()
             res = self.app.put_json(
@@ -367,10 +369,12 @@ class TestAddonLogs(OsfTestCase):
     @mock.patch('addons.base.views.mark_file_version_as_seen')
     def test_action_download_mfr_views_contrib(self, mock_mark_version):
         url = self.node.api_url_for('create_waterbutler_log')
+        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
         payload = self.build_payload(metadata={'path': '/testfile',
                                                'nid': self.node._id},
                                      action='download_file',
-                                     action_meta={'is_mfr_render': True})
+                                     action_meta={'is_mfr_render': True},
+                                     request_meta={'url': request_url})
         nlogs = self.node.logs.count()
         res = self.app.put_json(
             url,
@@ -384,10 +388,10 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.file.get_view_count(), 0) # contribs don't count as views
         assert_equal(self.node.logs.count(), nlogs) # don't log views
 
-    def test_action_download_mfr_views_non_contrib(self):
+    @mock.patch('addons.base.views.mark_file_version_as_seen')
+    def test_action_download_mfr_views_non_contrib(self, mock_mark_version):
         url = self.node.api_url_for('create_waterbutler_log')
         request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-
         payload = self.build_payload(metadata={'path': '/testfile',
                                                'nid': self.node._id},
                                      action='download_file',
@@ -410,7 +414,13 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_marks_version_as_seen(self):
         test_file = create_test_file(self.node, self.user)
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': test_file._id}, action='download_file')
+        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
+        payload = self.build_payload(metadata={'path': test_file._id,
+                                               'nid': self.node._id},
+                                     action='download_file',
+                                     request_meta={'url': request_url},
+                                     action_meta={'is_mfr_render': True},
+                                     auth={'id': self.user_non_contrib._id})
         res = self.app.put_json(
             url,
             payload,
@@ -425,9 +435,8 @@ class TestAddonLogs(OsfTestCase):
         test_file.save()
 
         versions = test_file.versions.order_by('created')
-
-        assert versions.first().seen_by.filter(guids___id=self.user._id).exists()
-        assert not versions.last().seen_by.filter(guids___id=self.user._id).exists()
+        assert versions.first().seen_by.filter(guids___id=self.user_non_contrib._id).exists()
+        assert not versions.last().seen_by.filter(guids___id=self.user_non_contrib._id).exists()
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()
