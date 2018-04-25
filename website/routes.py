@@ -874,6 +874,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/profile/region/',
+            'put',
+            profile_views.update_region,
+            json_renderer,
+        ),
+
+        Rule(
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
