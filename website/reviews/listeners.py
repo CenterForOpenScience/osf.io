@@ -42,22 +42,40 @@ def reviews_submit_notification(self, recipients, context):
             **context
         )
 
+
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, context):
+    # imports moved here to avoid AppRegistryNotReady error
     from osf.models import NotificationSubscription
+    from website.profile.utils import get_profile_image_url
+    from website.notifications import emails
     from website import settings
-    provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
-    from api.preprint_providers.permissions import GroupHelper
-    for subscriber in provider_subscription.email_transactional.all():
-        context['is_admin'] = GroupHelper(context['reviewable'].provider).get_group('admin').user_set.filter(id=subscriber.id).exists()
-        mails.send_mail(
-            subscriber.username,
-            mails.REVIEWS_SUBMISSION_NOTIFICATION_MODERATORS,
-            mimetype='html',
-            user=subscriber,
-            **context
-        )
 
-    for subscriber in provider_subscription.email_digest.all():
-        pass
+    # Get NotificationSubscription instance, which contains reference to all subscribers
+    provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
+    # Set message
+    context['message'] = u'submitted {}.'.format(context['reviewable'].node.title)
+    # Set url for profile image
+    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    # Set submission url
+    context['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN, context['reviewable'].provider._id, context['reviewable']._id )
+    # Store emails to be sent to subscribers instantly (at a 5 min interval)
+    emails.store_emails(provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
+                        'email_transactional',
+                        'new_pending_submissions',
+                        context['referrer'],
+                        context['reviewable'].node,
+                        timezone.now(),
+                        context['reviewable'].provider,
+                        **context)
+
+    # Store emails to be sent to subscribers daily
+    emails.store_emails(provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
+                        'email_digest',
+                        'new_pending_submissions',
+                        context['referrer'],
+                        context['reviewable'].node,
+                        timezone.now(),
+                        context['reviewable'].provider,
+                        **context)

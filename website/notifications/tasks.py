@@ -46,9 +46,78 @@ def send_users_email(send_type):
                 )
             remove_notifications(email_notification_ids=notification_ids)
 
+@celery_app.task(name='website.notifications.tasks.send_moderators_email', max_retries=0)
+def send_moderators_email(send_type):
+    """Find pending Emails for moderators and amalgamates them into a single Email.
+    :param send_type
+    :return
+    """
+    grouped_emails = get_moderators_emails(send_type)
+    for group in group:
+        user = OSFUser.load(group['user_id'])
+        if not user:
+            log_exception()
+            continue
+
+        info = group['info']
+        notification_ids = [message['_id'] for message in info]
+        if not user.is_disabled:
+            mails.send_mail(
+                to_addr=user.username,
+                mimetype='html',
+                mail=mails.DIGEST,
+                name=user.fullname,
+                message=sorted_messages,
+            )
+        remove_notifications(email_notification_ids=notification_ids)
+
+
+def get_moderators_emails(send_type):
+    """Get all emails for reviews moderators that need to be sent.
+    :param send_type: from NOTIFICATION_TYPES, could be "email_digest" or "email_transactional"
+    :return Iterable of dicts of the form:
+        {
+            'user_id': 'se8ea',
+            'info': [{
+                'message': {
+                    'message': 'Freddie commented on your project Open Science',
+                    'timestamp': datetime object
+                },
+                '_id': NotificationDigest._id
+            }, ...
+            }]
+            {
+            'user_id': ...
+            }
+        }
+    """
+    sql = """
+        SELECT json_build_object(
+                'user_id', osf_guid._id,
+                'provider_id', nd.provider_id,
+                'info', json_agg(
+                    json_build_object(
+                        'message', nd.message,
+                        '_id', nd._id
+                    )
+                )
+            )
+        FROM osf_notificationdigest AS nd
+          LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
+        WHERE send_type = %s AND event = 'new_pending_submissions'
+        AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
+        GROUP BY osf_guid.id, nd.provider_id
+        ORDER BY osf_guid.id ASC
+        """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [send_type, ])
+        return itertools.chain.from_iterable(cursor.fetchall())
+
 
 def get_users_emails(send_type):
     """Get all emails that need to be sent.
+    NOTE: These do not include moderators related emails.
 
     :param send_type: from NOTIFICATION_TYPES
     :return: Iterable of dicts of the form:
@@ -82,7 +151,7 @@ def get_users_emails(send_type):
         )
     FROM osf_notificationdigest AS nd
       LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
-    WHERE send_type = %s
+    WHERE send_type = %s AND event != 'new_pending_submissions'
     AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
     GROUP BY osf_guid.id
     ORDER BY osf_guid.id ASC
@@ -103,7 +172,6 @@ def group_by_node(notifications, limit=15):
     for notification in notifications[:15]:
         emails.add_message(notification['node_lineage'], notification['message'])
     return emails
-
 
 def remove_notifications(email_notification_ids=None):
     """Remove sent emails.

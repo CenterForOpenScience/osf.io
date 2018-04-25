@@ -72,7 +72,7 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, template=None, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, provider, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -112,7 +112,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             event=event,
             user=recipient,
             message=message,
-            node_lineage=node_lineage_ids
+            node_lineage=node_lineage_ids,
+            provider=provider
         )
         digest.save()
 
