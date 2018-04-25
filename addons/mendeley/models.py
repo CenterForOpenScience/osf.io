@@ -294,7 +294,7 @@ class NodeSettings(BaseCitationsNodeSettings):
                 if show_root:
                     serialized_folders.insert(0, serialized_root_folder)
                 return serialized_folders
-            except MendeleyApiException:
-                return []
+            except MendeleyApiException as error:
+                raise HTTPError(error.status)
         else:
             raise exceptions.InvalidAuthError()

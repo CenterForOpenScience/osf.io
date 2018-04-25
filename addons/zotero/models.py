@@ -256,8 +256,8 @@ class NodeSettings(BaseCitationsNodeSettings):
             append_personal = kwargs.get('append_personal', 'true')
             # Fetch group libraries
             libraries = self.api._fetch_libraries(limit=limit, start=start)
-        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound):
-            return []
+        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound) as error:
+            raise HTTPError(error)
 
         # Serialize libraries
         serialized = []
@@ -283,8 +283,8 @@ class NodeSettings(BaseCitationsNodeSettings):
         """
         try:
             sub_folders = self.api._get_folders(library_id=library_id, folder_id=folder_id)
-        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound):
-            return []
+        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound) as error:
+            raise HTTPError(error)
 
         serialized = []
         for folder in sub_folders:
