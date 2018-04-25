@@ -151,17 +151,19 @@ class RequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles contributorship changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
-            contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
-            self.machineable.target.add_contributor(
-                self.machineable.creator,
-                auth=Auth(ev.kwargs['user']),
-                permissions=permissions.expand_permissions(contributor_permissions),
-                visible=ev.kwargs.get('visible', True),
-                send_email='{}_request'.format(self.machineable.request_type))
-        elif ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
             self.machineable.comment = self.action.comment
         self.machineable.save()
+
+        if ev.event.name == DefaultTriggers.ACCEPT.value:
+            if not self.machineable.target.is_contributor(self.machineable.creator):
+                contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
+                self.machineable.target.add_contributor(
+                    self.machineable.creator,
+                    auth=Auth(ev.kwargs['user']),
+                    permissions=permissions.expand_permissions(contributor_permissions),
+                    visible=ev.kwargs.get('visible', True),
+                    send_email='{}_request'.format(self.machineable.request_type))
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
