@@ -569,6 +569,7 @@ class TestNodeSettingsModel(StorageTestCase):
         new_test_creds = {
             'storage': {
                 'go': 'science',
+                'hey': ['woo', 'yeah', 'great']
             }
         }
         region = factories.RegionFactory()
