@@ -63,7 +63,7 @@ class PreprintProviderList(GenericProviderList):
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()
         context['meta'] = {
-            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name',flat=True)
+            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True)
         }
         return context
 
