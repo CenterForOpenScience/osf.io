@@ -21,7 +21,7 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintProvider, WhitelistedSHAREPreprintProvider
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -59,6 +59,13 @@ class PreprintProviderList(GenericProviderList):
     serializer_class = PreprintProviderSerializer
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
+
+    def get_renderer_context(self):
+        context = super(PreprintProviderList, self).get_renderer_context()
+        context['meta'] = {
+            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name',flat=True)
+        }
+        return context
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permissions':
