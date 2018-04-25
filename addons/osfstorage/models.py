@@ -17,6 +17,7 @@ from website.files import exceptions
 from website.files import utils as files_utils
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
+from website.util import api_v2_url
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -423,6 +424,14 @@ class Region(models.Model):
     waterbutler_credentials = EncryptedJSONField(default=dict)
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    def get_absolute_url(self):
+        return '{}storage_regions/{}'.format(self.absolute_api_v2_url, self._id)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/storage_regions/{}/'.format(self._id)
+        return api_v2_url(path)
 
     class Meta:
         unique_together = ('_id', 'name')
