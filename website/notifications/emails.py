@@ -63,6 +63,7 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
 
     for recipient in recipients:
         subscriptions = get_user_subscriptions(recipient, event_type)
+        context['is_creator'] = recipient == node.creator
         for notification_type in subscriptions:
             if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
                 store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template, **context)

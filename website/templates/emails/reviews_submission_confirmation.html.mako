@@ -40,7 +40,7 @@
                                     <td>
                                     Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more OSF features:
                                         <ul>
-                                            <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${reviewable.provider.preprint_word}: ${reviewable.node.absolute_url}.
+                                            <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${reviewable.provider.preprint_word}.
                                                 <a href="http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint" target="_blank">Learn how</a></li>
                                             <li>Preregister your next study. <a href="http://help.osf.io/m/registrations/l/524205-register-your-project">Read more</a></li>
                                             <li>Or share on social media: Tell your friends through:
@@ -72,21 +72,18 @@
                             </tbody>
                         </table>
                     % endif
-                    % if not no_future_emails:
+                    % if not no_future_emails and not isOsfSubmission:
                         You will receive a separate notification informing you of any status changes.
                     % endif
                 </p>
+                % if not is_creator:
                 <p>
                     If you have been erroneously associated with "${reviewable.node.title}," then you may visit the project's
                     "Contributors" page and remove yourself as a contributor.
                 </p>
-                <p>
-                    For more information about ${reviewable.provider.name}, visit
-                    <a href="${provider_url}">${provider_url}</a>
-                    to learn more. To learn about the OSF, visit
-                    <a href="https://osf.io/">https://osf.io/</a>.
-                    For questions regarding submission criteria, please email ${provider_contact_email}.
-                </p><br>
+                % endif
+                <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a>.</p>
+                <br>
                 <p>
                     Sincerely,<br>
                     ${'Your OSF team' if isOsfSubmission else 'Your {provider} and OSF teams'.format(provider=reviewable.provider.name)}
