@@ -1188,7 +1188,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # If there are pending access requests for this user, mark them as accepted
             pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
             if pending_access_requests_for_user.exists():
-                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='')
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
 
             if log:
                 self.add_log(
