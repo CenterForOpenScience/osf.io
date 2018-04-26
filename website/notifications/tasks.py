@@ -7,10 +7,11 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from osf.models import OSFUser, AbstractNode
+from osf.models import OSFUser, AbstractNode, AbstractProvider
 from osf.models import NotificationDigest
-from website import mails
+from website import mails, settings
 from website.notifications.utils import NotificationsDict
+from api.preprint_providers.permissions import GroupHelper
 
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
@@ -20,6 +21,7 @@ def send_users_email(send_type):
     :param send_type
     :return:
     """
+    # Send emails to users, excluding reviews moderators
     grouped_emails = get_users_emails(send_type)
     for group in grouped_emails:
         user = OSFUser.load(group['user_id'])
@@ -46,38 +48,36 @@ def send_users_email(send_type):
                 )
             remove_notifications(email_notification_ids=notification_ids)
 
-@celery_app.task(name='website.notifications.tasks.send_moderators_email', max_retries=0)
-def send_moderators_email(send_type):
-    """Find pending Emails for moderators and amalgamates them into a single Email.
-    :param send_type
-    :return
-    """
+    # Send emails to reviews moderators
     grouped_emails = get_moderators_emails(send_type)
-    for group in group:
+    for group in grouped_emails:
         user = OSFUser.load(group['user_id'])
-        if not user:
-            log_exception()
-            continue
-
+        provider = AbstractProvider.objects.get(id=group['provider_id'])
         info = group['info']
         notification_ids = [message['_id'] for message in info]
         if not user.is_disabled:
             mails.send_mail(
                 to_addr=user.username,
                 mimetype='html',
-                mail=mails.DIGEST,
+                mail=mails.DIGEST_REVIEWS_MODERATORS,
                 name=user.fullname,
-                message=sorted_messages,
+                message=info,
+                provider_name=provider.name,
+                reviews_submissions_url='{}reviews/preprints/{}'.format(settings.DOMAIN, provider._id),
+                notification_settings_url='{}reviews/preprints/{}/notifications'.format(settings.DOMAIN, provider._id),
+                is_reviews_moderator_notificaiton=True,
+                is_admin=GroupHelper(provider).get_group('admin').user_set.filter(id=user.id).exists()
             )
         remove_notifications(email_notification_ids=notification_ids)
 
 
 def get_moderators_emails(send_type):
-    """Get all emails for reviews moderators that need to be sent.
+    """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.
     :param send_type: from NOTIFICATION_TYPES, could be "email_digest" or "email_transactional"
     :return Iterable of dicts of the form:
         {
             'user_id': 'se8ea',
+            'provider_id': '1',
             'info': [{
                 'message': {
                     'message': 'Freddie commented on your project Open Science',
