@@ -100,14 +100,14 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <div class="form-group">
-                            <label for="description">TimeStamp Pattern:</label>
+                            <label for="description">Select Timestamp Function:</label>
                             <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
                             % if timestamp_pattern_division == 1:
-                                 <option value="1" selected>AddTimeStamp</option>
-                                 <option value="2">Digital signature And AddTimeStamp</option>
+                                 <option value="1" selected>Timestamp only</option>
+                                 <option value="2">Timestamp with digital signature</option>
                             % else:
-                                 <option value="1">AddTimeStamp</option>
-                                 <option value="2" selected>Digital signature And AddTimeStamp</option>
+                                 <option value="1">Timestamp only</option>
+                                 <option value="2" selected>Timestamp with digital signature</option>
                             % endif
                             </select>
                         </div>

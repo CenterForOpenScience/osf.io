@@ -434,7 +434,7 @@ def create_waterbutler_log(payload, **kwargs):
 
             metadata['path'] = metadata['path'].lstrip('/')
 
-            if action in (NodeLog.FILE_ADDED, NodeLog.FILE_ADDED):
+            if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
                add_result = upload_file_add_timestamptoken(payload, node)
                
             node_addon.create_waterbutler_log(auth, action, metadata)

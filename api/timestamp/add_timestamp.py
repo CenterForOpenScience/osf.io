@@ -57,17 +57,11 @@ class AddTimestamp:
 
     #④データの取得
     def get_data(self, file_id, project_id, provider, path):
-        logger.debug(provider)
         try:
-            if provider == 'osfstorage':
                 res = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_id)
-            else:
-                res = RdmFileTimestamptokenVerifyResult.objects.get(project_id=project_id, 
-                                                                    provider=provider,
-                                                                    path=path) 
 
         except Exception as ex:
-#            logger.exception(ex)
+            logger.exception(ex)
             res = None
 
         return res

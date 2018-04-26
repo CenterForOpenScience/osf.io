@@ -550,8 +550,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comments/timestamps/',
-                '/project/<pid>/node/<nid>/comments/timestamps/',
+                '/project/<pid>/comments/timestamp/',
+                '/project/<pid>/node/<nid>/comments/timestamp/',
             ],
             'put',
             project_views.comment.update_comments_timestamp,
@@ -1321,21 +1321,21 @@ def make_url_map(app):
         ), 
         Rule(
             [
-                '/project/<pid>/security/',
-                '/project/<pid>/node/<nid>/security/',
+                '/project/<pid>/timestamp/',
+                '/project/<pid>/node/<nid>/timestamp/',
             ],
             ['get', 'post'],
-            #project_views.security.collect_security_trees,
-            project_views.security.get_init_timestamp_error_data_list,
-            OsfWebRenderer('project/securitys.mako', trust=False),
+            #project_views.timestamp.collect_timestamp_trees,
+            project_views.timestamp.get_init_timestamp_error_data_list,
+            OsfWebRenderer('project/timestamp.mako', trust=False),
         ),
         Rule(
             [
-                '/project/<pid>/security/json/',
-                '/project/<pid>/node/<nid>/security/json/',
+                '/project/<pid>/timestamp/json/',
+                '/project/<pid>/node/<nid>/timestamp/json/',
             ],
             ['get', 'post'],
-            project_views.security.collect_security_trees_to_json,
+            project_views.timestamp.collect_timestamp_trees_to_json,
             json_renderer,
         )
     ])
@@ -1704,20 +1704,20 @@ def make_url_map(app):
         # Security
         Rule(
             [
-                '/project/<pid>/security/timestamp_error_data/',
-                '/project/<pid>/node/<nid>/security/timestamp_error_data/',
+                '/project/<pid>/timestamp/timestamp_error_data/',
+                '/project/<pid>/node/<nid>/timestamp/timestamp_error_data/',
             ],
             ['get', 'post'],
-            project_views.security.get_timestamp_error_data,
+            project_views.timestamp.get_timestamp_error_data,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/security/add_timestamp/',
-                '/project/<pid>/node/<nid>/security/add_timestamp/',
+                '/project/<pid>/timestamp/add_timestamp/',
+                '/project/<pid>/node/<nid>/timestamp/add_timestamp/',
             ],
             ['get', 'post'],
-            project_views.security.add_timestamp_token,
+            project_views.timestamp.add_timestamp_token,
             json_renderer,
         ),
 

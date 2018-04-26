@@ -91,9 +91,9 @@
                        </li>
                     % endif
                     % if 'admin' in user['permissions']:
-                       <li id="projectNavSecurity">
-                           <a href="${node['url']}security/">
-                              Security
+                       <li id="projectNavTimestamp">
+                           <a href="${node['url']}timestamp/">
+                              Timestamp
                            </a>
                        </li>
                     % endif

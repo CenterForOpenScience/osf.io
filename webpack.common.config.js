@@ -41,7 +41,7 @@ var entry = {
     'statistics-page': staticPath('js/pages/statistics-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'security-page': staticPath('js/pages/security-page.js'),
+    'timestamp-page': staticPath('js/pages/timestamp-page.js'),
     'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
