@@ -13,17 +13,17 @@
 <form action "" id="addTimestampForm">
 <div class="row">
     <div class="col-md-12">
-        <a class="btn btn-default" id="btn-verify" href={% url 'timestampadd:verify' institution_id=institution_id guid=guid %}>Verify</a>
-        <a class="btn btn-success" id="btn-addtimestamp"  href={% url 'timestampadd:addtimestamp' institution_id=institution_id guid=guid %}>AddTimestamp</a>
-<!--        <button type="button" class="btn btn-success" id="btn-addtimestamp">AddTimeStamp</button> -->
+        <a class="btn btn-success" id="btn-verify" href={% url 'timestampadd:timestamp_add' institution_id=institution_id guid=guid %}>Verify</a>
+        <a class="btn btn-success" id="btn-addtimestamp"  href={% url 'timestampadd:timestamp_add' institution_id=institution_id guid=guid %}>Request Trusted Timestamp</a>
+        <p id="timestamp_errors_spinner"></p>
     </div>
 <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
     <thead>
         <tr>
             <th>FilePath</th>
-            <th>OperationUser</th>
-            <th>OperationDate</th>
-            <th>TimestampVerify</th>
+            <th>TimestampUpdateUser</th>
+            <th>TimestampUpdateDate</th>
+            <th>Timestamp verification</th>
         </tr>
     </thead>
     <tbody id="timestamp_error_list">
@@ -67,34 +67,99 @@
                  }
             });
 
+            var btnVerify_onclick = function(event) {
+                var button = $(this);
+                button.attr("disabled", true);
+                var post_data = {}
+                var fileCnt = 0;
+                $("#timestamp_errors_spinner").text("Storage files list gathering ...");
+                $.ajax({
+                    url: "{% url 'timestampadd:verify' institution_id=institution_id guid=guid %}",
+                    data: post_data,
+                    dataType: 'json',
+                    method: 'POST',
+                    async: false
+                }).done(function(data) {
+                    //console.log(data);
+                    var project_file_list = data["provider_file_list"];
+                    for (var i = 0; i < project_file_list.length; i++) {
+                        var file_list = project_file_list[i].provider_file_list;
+                        for (var j = 0; j < file_list.length; j++) {
+                           fileCnt++;
+                        }
+                    }
+                    var url = "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}"
+                    var successCnt = 0;
+                    for (var i = 0; i < project_file_list.length; i++) {
+                        var file_list = project_file_list[i].provider_file_list;
+                        var provider_output_flg = false;
+                        for (var j = 0; j < file_list.length; j++) {
+                            var post_data = {'provider': project_file_list[i].provider,
+                                             'file_id': file_list[j].file_id,
+                                             'file_path': file_list[j].file_path,
+                                             'file_name': file_list[j].file_name,
+                                             'version': file_list[j].version};
+                            //console.log(post_data);
+                            $.ajax({
+                                    url: "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}",
+                                    data: post_data,
+                                    dataType: 'json',
+                                    method: 'POST',
+                                    async: false
+                            }).done(function(data) {
+                                    //console.log(data);
+                                    successCnt++;
+                                    $("#timestamp_errors_spinner").text("Verivification (" + Math.round((successCnt/fileCnt)*100) + "%)...");
+                            }).fail(function(xhr, status, error) {
+                                    Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+                                         extra: {
+                                             url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
+                                             status: status,
+                                             error: error
+                                         }
+                                    });
+                            });
+                        }
+                    }
+                    //console.log(successCnt);i
+                    $("#timestamp_errors_spinner").text("Verivification refreshing...");
+                }).fail(function(xhr, status, error) {
+                    Raven.captureMessage('Timestamp Add Error: ', {
+                      extra: {
+                        url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
+                        status: status,
+                        error: error
+                      }
+                    });
+                });
+            };
+
             var btnAddtimestamp_onclick = function(event) {
                 var button = $(this);
                 button.attr("disabled", true);
+                $("#timestamp_errors_spinner").text("Addtimestamp loading ...");
                 var inputCheckBoxs = $("[id=addTimestampCheck]:checked").map(function (index, el) {
                     return $(this).val();
                 });
 
                 if (inputCheckBoxs.length == 0) {
-                    button.attr("enabled", true);
+                    button.removeAttr("disabled");
+                    $("#timestamp_errors_spinner").text("");
                     return false;
                 }
 
                 providerList = $('[id=provider]').map(function (index, el) {
                     return $(this).val();
                 });
-
                 fileIdList = $('[id="file_id"]').map(function (index, el) {
                     return $(this).val();
                 });
-
                 filePathList = $('[id=file_path]').map(function (index, el) {
                     return $(this).val();
                 });
-
                 versionList = $('[id=version]').map(function (index, el) {
                     return $(this).val();
                 });
-
                 fileNameList = $('[id=file_name]').map(function (index, el) {
                     return $(this).val();
                 });
@@ -128,16 +193,20 @@
                      });
                  }              
                  if (successCnt != inputCheckBoxs.length) {
-                    button.attr("enabled", true);
+                    button.removeAttr("disabled");
+                    $("#timestamp_errors_spinner").text("");
                     return false;
                  }
+                $("#timestamp_errors_spinner").text("Addtimestamp refreshing ...");
             };
+
             var document_onready = function (event) {
+                 $("#btn-verify").on("click", btnVerify_onclick).focus();
                  $("#btn-addtimestamp").on("click", btnAddtimestamp_onclick).focus();
                  var provider = '';
                  var index = 0;
                  {% for provider_error_info in init_project_timestamp_error_list %}
-                    console.log('{{ provider_error_info }}');
+                    //console.log('{{ provider_error_info }}');
                     var provider_tr = '<tr><td colspan="4">{{ provider_error_info.provider }}</td></tr>';
                     $(provider_tr).appendTo($('#timestamp_error_list'));
                     {% for error_info in provider_error_info.error_list %}
@@ -145,10 +214,10 @@
                                         '<td class="addTimestamp">' +
                                         '<input type="checkBox" id="addTimestampCheck" value="' + index + '"/>&nbsp;&nbsp;' +
                                         '{{ error_info.file_path }}' +
-                                        '<input type="hidden" name="provider" id="provider" value="{{ error_info.provider }}" />' +
+                                        '<input type="hidden" name="provider" id="provider" value="{{ provider_error_info.provider }}" />' +
                                         '<input type="hidden" name="file_id" id="file_id" value="{{ error_info.file_id }}" />' +
                                         '<input type="hidden" name="file_path" id="file_path" value="{{ error_info.file_path }}" />' +
-                                        '<input type="hidden" name="project_id" id="file_path" value="{{ error_info.project_id }}" />' +
+                                        '<input type="hidden" name="project_id" id="project_id" value="{{ error_info.project_id }}" />' +
                                         '<input type="hidden" name="version" id="version" value="{{ error_info.version }}" />' +
                                         '<input type="hidden" name="file_name" id="file_name" value="{{ error_info.file_name }}" />' +
                                         '</td>' +
@@ -156,61 +225,14 @@
                                         '<td>{{ error_info.operator_date }}</td>' +
                                         '<td>{{ error_info.verify_result_title }}</td>' +
                                         '</tr>';
-                         console.log(error_tr);
+                         //console.log(error_tr);
                          $(error_tr).appendTo($('#timestamp_error_list'));
                          index++;
                     {% endfor %}
-                 {% endfor %}
- 
-                 {% for provider_info in provider_file_list %}
-                    var provider_output_flg = false;
-                    var provider_tr = '<tr><td colspan="4">{{ provider_info.provider }}</td></tr>';
-                    {% for file_info in provider_info.provider_file_list %}
-                        console.log('{{ file_info }}');
-                         var post_data = {'provider': '{{ provider_info.provider }}',
-                             'file_id': '{{ file_info.file_id }}',
-                             'file_path': '{{ file_info.file_path }}',
-                             'file_name': '{{ file_info.file_name }}',
-                             'version': '{{ file_infofile.version }}'}
-                         $.ajax({
-                              url: "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}",
-                              data: post_data,
-                              dataType: 'json',
-                              method: 'POST',
-                              async: false
-                         }).done(function(data) {
-                              console.log(data);
-                              var verify_result = data["verify_result"];
-                              if (verify_result > 1) {
-                                  var error_tr = '<tr>' +
-                                                 '<td class="addTimestamp">' +
-                                                 '<input type="checkBox" id="addTimestampCheck" value="' + index + '"/>&nbsp;' +
-                                                 '{{ file_info.file_path }}' +
-                                                 '<input type="hidden" id="provider" value="{{ provider_info.provider }}" />' +
-                                                 '<input type="hidden" id="file_id" value="{{ file_info.file_id }}" />' +
-                                                 '<input type="hidden" id="file_path" value="{{ file_info.file_path }}" />' +
-                                                 '<input type="hidden" id="version" value="{{ file_info.version }}" />' +
-                                                 '<input type="hidden" id="file_name" value="{{ file_info.file_name }}" />' +
-                                                 '</td>' +
-                                                 '<td>' + data["operator_user"] + '</td>' +
-                                                 '<td>' + data["operator_date"] + '</td>' +
-                                                 '<td>' + data["verify_result_title"] + '</td>' +
-                                                 '</tr>';
-                                  if (!provider_output_flg) {
-                                      $(provider_tr).appendTo($('#timestamp_error_list'));
-                                          provider_output_flg = true;
-                                  }
-                                  $(error_tr).appendTo($('#timestamp_error_list'));
-                                  index++;
-                             }
-                         }); 
-                    {% endfor %}
-                 {% endfor  %}
-            };
+                 {% endfor %} 
+          };
             $(document).ready(document_onready);
        });
-
-        
   </script>
 
 {% endblock %}

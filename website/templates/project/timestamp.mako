@@ -1,14 +1,14 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Security</%def>
+<%def name="title()">${node['title']} Timestamp</%def>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Security</h2>
+  <h2 class="text-300">Timestamp</h2>
 </div>
 
 <div class="row">
     <div class="col-sm-5">
         <h2 class="break-word">
-            TimeStampErrors
+            Timestamp Control
         </h2>
     </div>
     <div class="col-sm-7">
@@ -23,14 +23,14 @@
         <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263">
             <!-- Begin sidebar -->
             <ul class="nav nav-stacked nav-pills">
-                <li class="active"><a href="#">TimestampErrors</a></li>
+                <li class="active"><a href="#">Timestamp Error</a></li>
                 <li><a href="#">&nbsp;</a></li>
             </ul>
         </div>
     </div>
  
     <div class="col-md-9 col-xs-12">
-         <form id="security-form" class="form">
+         <form id="timestamp-form" class="form">
          <div class="panel panel-default">
              <div class="col-xs-12">
                  <div class="pull-right">
@@ -40,7 +40,7 @@
                                      id="btn-verify">Verify</button>
                          <button type="button"
                                      class="btn btn-success"
-                                     id="btn-addtimestamp">Addtimestamp</button>
+                                     id="btn-addtimestamp">Request Trusted Timestamp</button>
                    </span>
                  </div>
              </div>
@@ -51,7 +51,7 @@
                               <th width="45%">FilePath</th>
                               <th width="15%">TimestampUpdateUser</th>
                               <th width="15%">TimestampUpdateDate</th>
-                              <th widht="25%">TimestampVerification</th>
+                              <th widht="25%">Timestamp Verification</th>
                           </tr>
                       </thead>
                       <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
@@ -76,7 +76,7 @@
         window.contextVars.project_file_list = ${provider_list| sjson, n }
     </script>
 
-    <script src=${"/static/public/js/security-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/timestamp-page.js" | webpack_asset}></script>
 
 </%def>
 <script>
@@ -111,16 +111,15 @@
                              beforeSend: function(){
                                   $("#timestamp_errors_spinner").show();
                              },
-                             url:  nodeApiUrl + 'security/timestamp_error_data/',
+                             url:  nodeApiUrl + 'timestamp/timestamp_error_data/',
                              data: post_data,
                              dataType: 'json',
                              async: false
                         })
                     }
                 }
-                console.log('end');
             }).fail(function(xhr, textStatus, error) {
-               Raven.captureMessage('security json error', {
+               Raven.captureMessage('timestamp json error', {
                    extra: {
                       url: url,
                       textStatus: textStatus,
@@ -129,7 +128,7 @@
                });
                errorFlg = true;
             });
-            $("#security-form").submit();
+            $("#timestamp-form").submit();
         };
 
         var btnAddtimestamp_onclick = function(event) {
@@ -173,7 +172,7 @@
                      beforeSend: function(){
                        $("#timestamp_errors_spinner").show();
                      },
-                     url: nodeApiUrl + 'security/add_timestamp/',
+                     url: nodeApiUrl + 'timestamp/add_timestamp/',
                      data: post_data,
                      dataType: 'json',
                      async: false
@@ -196,7 +195,7 @@
             if (errorFlg) {
                 return;
             }
-            $("#security-form").submit();
+            $("#timestamp-form").submit();
         };
 
         var document_onready = function (event) {

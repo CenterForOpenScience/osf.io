@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var bootstrap = require('bootstrap');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var oop = require('js/oop');

@@ -1,5 +1,5 @@
 """
-Security views.
+Timestamp views.
 """
 from flask import request
 
@@ -29,6 +29,7 @@ def get_init_timestamp_error_data_list(auth, node, **kwargs):
     """
      get timestamp error data list (OSF view)
     """
+    
     ctx = _view_project(node, auth, primary=True)
     ctx.update(rubeus.collect_addon_assets(node))
     data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=kwargs.get('pid')).order_by('provider')
@@ -48,15 +49,15 @@ def get_init_timestamp_error_data_list(auth, node, **kwargs):
             error_list = []
 
         if data.inspection_result_status == local.TIME_STAMP_TOKEN_CHECK_NG:
-            verify_result_title = 'NG'
+            verify_result_title = local.TIME_STAMP_TOKEN_CHECK_NG_MSG #'NG'
         elif data.inspection_result_status == local.TIME_STAMP_TOKEN_NO_DATA:
-            verify_result_title = 'NOT TIMESTAMP_TOKEN'
+            verify_result_title = local.TIME_STAMP_TOKEN_NO_DATA_MSG #'TST missing(Retrieving Failed)'
         elif data.inspection_result_status == local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
-            verify_result_title = 'NOT TIMESTAMP_VERIFY'
+            verify_result_title = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'TST missing(Unverify)'
         elif data.inspection_result_status == local.FILE_NOT_EXISTS:
-            verify_result_title = 'FILE_NOT_EXISTS'
+            verify_result_title = local.FILE_NOT_EXISTS_MSG #'FILE missing'
         else:
-            verify_result_title = 'FILE_NOT_FOUND_AND_NOT_TIMESTAMP_VERIFY'
+            verify_result_title = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'FILE missing(Unverify)'
 
         if not data.update_user:
             operator_user = OSFUser.objects.get(id=data.create_user).fullname
@@ -100,7 +101,7 @@ def get_init_timestamp_error_data_list(auth, node, **kwargs):
 
 
 @must_be_contributor_or_public
-def collect_security_trees(auth, node, **kwargs):
+def collect_timestamp_trees(auth, node, **kwargs):
     """
     get provider file list
     """
@@ -168,15 +169,15 @@ def collect_security_trees(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_timestamp_error_data(auth, node, **kwargs):
-    # timestamp error data to security or admin view
+    # timestamp error data to timestamp or admin view
     if request.method == 'POST':
         request_data = request.json
         data = {}
         for key in request_data.keys():
-            data.update({key: request_data[key][0]})
+            data.update({key: request_data[key][0]}) 
     else:
         data = request.args.to_dict()
-
+ 
     cookies = {settings.COOKIE_NAME:auth.user.get_or_create_cookie()}
     headers = {"content-type": "application/json"}
     url = None
@@ -204,7 +205,7 @@ def get_timestamp_error_data(auth, node, **kwargs):
 
         verify_check = TimeStampTokenVerifyCheck()
         result = verify_check.timestamp_check(auth.user._id, data['file_id'],
-                                              node._id, data['provider'], data['file_path'], data['file_name'], tmp_dir)
+                                              node._id, data['provider'], data['file_path'], download_file_path, tmp_dir)
 
         shutil.rmtree(tmp_dir)
 
@@ -234,9 +235,8 @@ def add_timestamp_token(auth, node, **kwargs):
     url = None
     tmp_dir = None
     try:
+        file_node = BaseFileNode.objects.get(_id=data['file_id'])
         if data['provider'] == 'osfstorage':
-#            file_node = BaseFileNode.objects.get(_id=data['file_id'])
-            file_node = BaseFileNode.objects.get(_id=data['file_id'])
             url = file_node.generate_waterbutler_url(**dict(action='download',
                                                      version=data['version'],
                                                      direct=None, _internal=False))
@@ -244,7 +244,6 @@ def add_timestamp_token(auth, node, **kwargs):
         else:
             url = file_node.generate_waterbutler_url(**dict(action='download',
                                                      direct=None, _internal=False))
-
 
         # Request To Download File
         res = requests.get(url, headers=headers, cookies=cookies)
@@ -260,6 +259,7 @@ def add_timestamp_token(auth, node, **kwargs):
         result = addTimestamp.add_timestamp(auth.user._id, data['file_id'],
                                             node._id, data['provider'], data['file_path'], 
                                             download_file_path, tmp_dir)
+                                            #data['file_name'], tmp_dir)
 
 
         shutil.rmtree(tmp_dir)
@@ -267,13 +267,13 @@ def add_timestamp_token(auth, node, **kwargs):
     except Exception as err:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
-#        logger.exception(err)
+        logger.exception(err)
 
     return result
 
 
 @must_be_contributor_or_public
-def collect_security_trees_to_json(auth, node, **kwargs):
+def collect_timestamp_trees_to_json(auth, node, **kwargs):
     # admin call project to provider file list
     serialized = _view_project(node, auth, primary=True)
     serialized.update(rubeus.collect_addon_assets(node))
@@ -309,8 +309,8 @@ def collect_security_trees_to_json(auth, node, **kwargs):
             else:
                 file_info = None
                 basefile_node = BaseFileNode.resolve_class(provider_data['attributes']['provider'],
-                                                           BaseFileNode.FILE).get_or_create(node, 
-                                                           file_data['attributes']['path'])
+                                                           BaseFileNode.FILE).get_or_create(node,
+                                                              file_data['attributes']['path'])
                 basefile_node.save()
                 if provider_data['attributes']['provider'] == 'osfstorage':
                     file_info = {'file_name': file_data['attributes']['name'],
@@ -361,22 +361,22 @@ def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
                                                   pid, provider, file_data['attributes']['path'],
                                                   node, cookies, headers))
         else:
+             basefile_node = BaseFileNode.resolve_class(provider,
+                                                        BaseFileNode.FILE).get_or_create(node, 
+                                                        file_data['attributes']['path'])
+             basefile_node.save()
              if provider == 'osfstorage':
-                  basefile_node = BaseFileNode.resolve_class(provider,
-                                                             BaseFileNode.FILE).get_or_create(node,
-                                                             file_data['attributes']['path'])
-                  basefile_node.save()
-                  file_info = {'file_name': file_data['attributes']['name'],
-                               'file_path': file_data['attributes']['materialized'],
-                               'file_kind': file_data['attributes']['kind'],
-                               'file_id': basefile_node._id,
-                               'version': file_data['attributes']['extra']['version']}
+                 file_info = {'file_name': file_data['attributes']['name'],
+                              'file_path': file_data['attributes']['materialized'],
+                              'file_kind': file_data['attributes']['kind'],
+                              'file_id': basefile_node._id,
+                              'version': file_data['attributes']['extra']['version']}
              else:
-                  file_info = {'file_name': file_data['attributes']['name'],
-                               'file_path': file_data['attributes']['materialized'],
-                               'file_kind': file_data['attributes']['kind'],
-                               'file_id': basefile_node._id,
-                               'version': ''}
+                 file_info = {'file_name': file_data['attributes']['name'],
+                              'file_path': file_data['attributes']['materialized'],
+                              'file_kind': file_data['attributes']['kind'],
+                              'file_id': basefile_node._id,
+                              'version': ''}
 
              file_list.append(file_info)
 

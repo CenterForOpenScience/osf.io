@@ -79,8 +79,8 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
-        kwargs.setdefault('timestamppatterns', [{'name':'AddTimeStamp','value':1},
-                                                {'name':'Digital signature And AddTimeStamp', 'value':2}])
+        kwargs.setdefault('timestamppatterns', [{'name':'Timestamp only','value':1},
+                                                {'name':'Timestamp with digital signature', 'value':2}])
         return super(InstitutionList, self).get_context_data(**kwargs)
 
 class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
@@ -115,8 +115,8 @@ class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         kwargs.setdefault('institution', Institution.objects.get(id=self.kwargs['institution_id']))
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
-        kwargs.setdefault('timestamppatterns', [{'name':'AddTimeStamp','value':1},
-                                                {'name':'Digital signature And AddTimeStamp', 'value':2}])
+        kwargs.setdefault('timestamppatterns', [{'name':'Timestamp only','value':1},
+                                                {'name':'Timestamp with digital signature', 'value':2}])
         return super(InstitutionNodeList, self).get_context_data(**kwargs)
 
 class InstitutionTimeStampPatternForce(RdmPermissionMixin, UserPassesTestMixin, View):
