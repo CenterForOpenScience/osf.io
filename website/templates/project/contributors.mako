@@ -138,9 +138,9 @@
         ${buttonGroup()}
     </div>
 
-    % if 'admin' in user['permissions'] and access_requests:
+    % if 'admin' in user['permissions'] and access_requests and node['access_requests_enabled']:
     <div id="manageAccessRequests">
-        <h3> Requests for access</h3>
+        <h3> Requests for Access</h3>
         <p class="m-b-xs">The following users have requested access to this project.</p>
         <table  id="manageAccessRequestsTable"
         class="table responsive-table responsive-table-xxs"

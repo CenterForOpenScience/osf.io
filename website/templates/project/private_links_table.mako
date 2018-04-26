@@ -47,7 +47,7 @@
         <td>
             <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <span data-bind="click: $root.removeLink, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
-                <button class="btn btn-default btn-sm m-l-md" data-bind="click: $root.removeLink, visible: $root.collapsed()"><i class="fa fa-minus"></i> Remove</button>
+                <button class="btn btn-default btn-sm m-l-md" data-bind="click: $root.removeLink, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>
             </div>
         </td>
     </tr>

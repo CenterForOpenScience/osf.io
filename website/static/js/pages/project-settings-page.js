@@ -141,16 +141,16 @@ var subscribeViewModel = function(viewModel, options) {
         $osf.postJSON(ctx.node.urls.api + options.updateUrl, payload
         ).done(function(response) {
             if (newValue) {
-                viewModel[options.messageObservable](options.name + ' Enabled');
+                viewModel[options.messageObservable](options.name + ' enabled');
             }
             else {
-                viewModel[options.messageObservable](options.name + ' Disabled');
+                viewModel[options.messageObservable](options.name + ' disabled');
             }
             //Give user time to see message before reload.
             setTimeout(function(){window.location.reload();}, 1500);
         }).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Unable to update wiki');
-            Raven.captureMessage('Could not update wiki.', {
+            $osf.growl('Error', 'Unable to update settings');
+            Raven.captureMessage('Could not update settings.', {
                 extra: {
                     url: ctx.node.urls.api + options.updateUrl, status: status, error: error
                 }
@@ -185,7 +185,7 @@ var RequestAccessSettingsViewModel = {
 
 subscribeViewModel(RequestAccessSettingsViewModel, {
     messageObservable: 'requestAccessMessage',
-    name: 'Request Access',
+    name: 'Request access',
     updateUrl: 'settings/requests/',
     objectToUpdate: 'accessRequestsEnabled'
 });
