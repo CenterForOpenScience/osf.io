@@ -37,6 +37,21 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     def _id(self):
         return self.guid._id
 
+    @cached_property
+    def _es_doc_id(self):
+        return '{}-{}'.format(self._id, self.collection._id)
+
+    @classmethod
+    def load(cls, data, select_for_update=False):
+        if isinstance(data, basestring):
+            cgm_id, collection_id = data.split('-')
+            if cgm_id and collection_id:
+                try:
+                    return cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get()
+                except cls.DoesNotExist:
+                        return None
+        return None
+
     def update_index(self):
         if self.collection.is_public:
             from website.search.search import update_collected_metadata
@@ -121,10 +136,6 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     @property
     def linked_registrations_related_url(self):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
-
-    @property
-    def is_collected(self):
-        return CollectedGuidMetadata.objects.filter(guid___id=self._id).exists()
 
     @classmethod
     def bulk_update_search(cls, cgms, op='update', index=None):

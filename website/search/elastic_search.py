@@ -47,7 +47,6 @@ ALIASES = {
     'file': 'Files',
     'institution': 'Institutions',
     'preprint': 'Preprints',
-    'collectionSubmission': 'Collection Submissions',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -249,7 +248,7 @@ def format_results(results):
             result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
-        elif result.get('category') == 'collection':
+        elif result.get('category') == 'collectionSubmission':
             pass
         elif not result.get('category'):
             continue
@@ -443,7 +442,7 @@ def serialize_cgm(cgm):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
 
     return {
-        'id': cgm._id,
+        'id': cgm._es_doc_id,
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
@@ -451,7 +450,7 @@ def serialize_cgm(cgm):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title'),
         'url': getattr(obj, 'url'),
-        'category': 'collection',
+        'category': 'collectionSubmission',
     }
 
 @requires_search
@@ -460,7 +459,7 @@ def bulk_update_cgm(cgms, op='update', index=None):
     actions = ({
         '_op_type': op,
         '_index': index,
-        '_id': cgm._id,
+        '_id': cgm._es_doc_id,
         '_type': 'collectionSubmission',
         'doc': serialize_cgm(cgm),
         'doc_as_upsert': True,
@@ -632,9 +631,15 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
     if collection_id:
         try:
-            cgm = CollectedGuidMetadata.objects.get(guid___id=cgm_id, collection_id=collection_id)
+            cgm = CollectedGuidMetadata.objects.get(
+                guid___id=cgm_id,
+                collection_id=collection_id,
+                collection__provider__isnull=False,
+                collection__deleted__isnull=True,
+                collection__is_bookmark_collection=False)
+
         except CollectedGuidMetadata.DoesNotExist:
-            logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
+            logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
         else:
             if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
                 try:
@@ -643,9 +648,13 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
                     self.retry(exc=exc)
     else:
         try:
-            cgms = CollectedGuidMetadata.objects.filter(guid___id=cgm_id)
+            cgms = CollectedGuidMetadata.objects.filter(
+                guid___id=cgm_id,
+                collection__provider__isnull=False,
+                collection__deleted__isnull=True,
+                collection__is_bookmark_collection=False)
         except CollectedGuidMetadata.DoesNotExist:
-            logger.exception('Could not find object with <_id {}> in a collection'.format(cgm_id))
+            logger.exception('Could not find object <_id {}> in a collection'.format(cgm_id))
         else:
             for cgm in cgms:
                 try:
@@ -657,10 +666,10 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
 def update_cgm(cgm, op='update', index=None):
     index = index or INDEX
     if op == 'delete':
-        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        client().delete(index=index, doc_type='collectionSubmission', id=cgm._es_doc_id, refresh=True, ignore=[404])
         return
     collection_submission_doc = serialize_cgm(cgm)
-    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._es_doc_id, refresh=True)
 
 @requires_search
 def delete_all():

@@ -132,11 +132,12 @@ def migrate_users(index, delete, increment=10000):
 
 def migrate_collected_metadata(index, delete):
     cgms = CollectedGuidMetadata.objects.filter(
-        collection__provider__isnull=False,
+        # collection__provider__isnull=False,
         collection__is_public=True,
         collection__deleted__isnull=True,
         collection__is_bookmark_collection=False)
     bulk_update_collected_metadata(cgms, index=index)
+    logger.info('{} collection submissions migrated'.format(cgms.count()))
 
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
