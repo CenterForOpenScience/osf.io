@@ -47,7 +47,6 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Institution
 
     def test_func(self):
-        print "-- start InstitutionList.test_func"
         """権限等のチェック"""
         # ログインチェック
         if not self.is_authenticated:
@@ -59,7 +58,6 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 
     def get(self, request, *args, **kwargs):
         """コンテキスト取得"""
-        print "-- InstitutionList.get"
         user = self.request.user
         # 統合管理者
         if self.is_super_admin:
@@ -76,11 +74,9 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
                 return redirect(reverse('timestampadd:nodes', args=[institution.id]))
 
     def get_queryset(self):
-        print "-- start InstitutionList.get_queryset"
         return Institution.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
-        print "-- start InstitutionList.get_context_data"
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
@@ -97,18 +93,15 @@ class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Node
 
     def test_func(self):
-        print "-- start InstitutionNodeList.test_func"
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get_queryset(self):
-        print "InstitutionNodeList.get_queryset"
         inst = self.kwargs['institution_id']
         return Node.objects.filter(affiliated_institutions=inst).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
-        print "-- strat InstitutionNodeList.get_context_data"
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
@@ -122,7 +115,6 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
     template_name = 'rdm_timestampadd/timestampadd.html'
     ordering = 'provider'
     def get_context_data(self, **kwargs):
-        print "-- start TimeStampAddList.get_context_data"
         ctx = super(TimeStampAddList, self).get_context_data(**kwargs)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=absNodeData._id).order_by('provider', 'path')
@@ -196,13 +188,11 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
         return ctx
 
     def web_api_url(self, node_id):
-        print "--strat TimeStampAddList.web_api_url"
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 class VerifyTimeStampAddList(RdmPermissionMixin, View):
 
     def post(self, request, *args, **kwargs):
-        print "-- start VerifyTimeStampAddList.post"
         json_data = dict(self.request.POST.iterlists())
         ctx = {}
         for key in json_data.keys():
@@ -234,23 +224,19 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
         return HttpResponse(json.dumps(ctx), content_type="application/json")
 
     def web_url_path(self, node_id):
-        print "-- start VerifyTimeStampAddList.web_url_path"
         return settings.osf_settings.DOMAIN + node_id + '/timestamp/json/'
 
     def web_api_url(self, node_id):
-        print "-- start VerifyTimeStampAddList.web_api_url"
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 class TimestampVerifyData(RdmPermissionMixin, View):
 
     def test_func(self):
-        print "-- start TimestampVerifyData.test_func"
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def post(self, request, *args, **kwargs):
-        print "-- start TimestampVerifyData.post"
         json_data = dict(self.request.POST.iterlists())
         request_data = {}
         for key in json_data.keys():
@@ -283,20 +269,17 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         return HttpResponse(json.dumps(response), content_type="application/json")
 
     def web_api_url(self, node_id):
-        print "-- start TimestampVerifyData.web_api_url"
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
     template_name = 'rdm_timestampadd/timestampadd.html'
 
     def test_func(self):
-        print "-- start AddTimeStampResultList.test_func"
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
-        print "-- start AddTimeStampResultList.get_context_data"
         ctx = super(AddTimeStampResultList, self).get_context_data(**kwargs)
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME:cookie}
@@ -315,23 +298,19 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
         return ctx
 
     def web_url_path(self, node_id):
-        print "-- start AddTimeStampResultList.web_url_path"
         return settings.ADMIN_URL + '/timestampadd/' + self.kwargs['institution_id'] + '/nodes/' +  self.kwargs['guid'] + '/'
 
     def web_api_url(self, node_id):
-        print "-- start AddTimeStampResultList.web_api_url"
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 class AddTimestampData(RdmPermissionMixin, View):
 
     def test_func(self):
-        print "-- start AddTimestampData.test_func"
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def post(self, request, *args, **kwargs):
-        print "-- start AddTimestampData.post"
         json_data = dict(self.request.POST.iterlists())
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         request_data = {}
@@ -387,13 +366,11 @@ class AddTimestampData(RdmPermissionMixin, View):
         return HttpResponse(json.dumps(request_data), content_type="application/json")
 
     def web_api_url(self, node_id):
-        print "-- start AddTimestampData.web_api_url"
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 
 def waterbutler_meta_parameter(self):
     # get waterbutler api parameter value
-    print "-- start waterbutler_meta_parameter"
     return {'meta=&_':int(time.mktime(datetime.now().timetuple()))}
 
 
