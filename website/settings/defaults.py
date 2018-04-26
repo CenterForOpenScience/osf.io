@@ -346,8 +346,8 @@ WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
 # Test identifier namespaces
-DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:99999/fk4'
+DOI_NAMESPACE = 'doi:10.5072'
+ARK_NAMESPACE = 'ark:99999'
 
 # For creating DOIs and ARKs
 EZID_USERNAME = None
@@ -358,7 +358,7 @@ CROSSREF_PASSWORD = None
 CROSSREF_DEPOSIT_URL = None
 
 # Format for DOIs and ARKs
-DOI_FORMAT = '{namespace}osf.io/{guid}'
+DOI_FORMAT = '{namespace}FK2osf.io/{guid}'
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
