@@ -448,6 +448,16 @@ class UserSettings(BaseUserSettings):
         """Merge `user_settings` into this instance"""
         NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
 
+    def set_region(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise ValueError('Region cannot be found.')
+
+        self.default_region = region
+        self.save()
+        return
+
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides

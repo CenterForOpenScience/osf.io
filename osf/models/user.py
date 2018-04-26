@@ -1134,19 +1134,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return self
 
-    def set_region(self, region_id):
-        from addons.osfstorage.models import Region
-
-        try:
-            region = Region.objects.get(_id=region_id)
-        except Region.DoesNotExist:
-            raise ValueError('Region cannot be found.')
-
-        user_settings = self.get_addon('osfstorage')
-        user_settings.default_region = region
-        user_settings.save()
-        return
-
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self.get_unconfirmed_email_for_token(token)

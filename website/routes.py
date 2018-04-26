@@ -36,6 +36,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from addons.osfstorage import views as osfstorage_views
 from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -876,7 +877,7 @@ def make_url_map(app):
         Rule(
             '/profile/region/',
             'put',
-            profile_views.update_region,
+            osfstorage_views.update_region,
             json_renderer,
         ),
 

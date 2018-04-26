@@ -753,22 +753,6 @@ def request_export(auth):
     return {'message': 'Sent account export request'}
 
 @must_be_logged_in
-def update_region(auth, **kwargs):
-    user = auth.user
-    data = request.get_json()
-    try:
-        region_id = data['region_id']
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    try:
-        user.set_region(region_id)
-    except ValueError:
-        raise HTTPError(404, data=dict(message_short='region not found',
-                                    message_long='A storage region with this id does not exist'))
-    return {'message': 'User region updated.'}
-
-@must_be_logged_in
 def request_deactivation(auth):
     user = auth.user
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
