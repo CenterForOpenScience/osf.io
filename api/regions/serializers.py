@@ -12,7 +12,7 @@ class RegionSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'storage_regions'
+        type_ = 'regions'
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

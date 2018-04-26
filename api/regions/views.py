@@ -6,7 +6,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from framework.auth.oauth_scopes import CoreScopes
-from api.storage_regions.serializers import RegionSerializer
+from api.regions.serializers import RegionSerializer
 
 from addons.osfstorage.models import Region
 
@@ -26,7 +26,7 @@ class RegionMixin(object):
         return reg
 
 
-class StorageRegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """Undocumented endpoint. Subject to change.
     """
     permission_classes = (
@@ -39,8 +39,8 @@ class StorageRegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     model_class = Region
 
     serializer_class = RegionSerializer
-    view_category = 'storage_regions'
-    view_name = 'storage_regions-list'
+    view_category = 'regions'
+    view_name = 'regions-list'
 
     ordering = ('name', )
 
@@ -52,7 +52,7 @@ class StorageRegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 
-class StorageRegionDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegionMixin):
+class RegionDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegionMixin):
     """Undocumented endpoint. Subject to change.
     """
     permission_classes = (
@@ -65,8 +65,8 @@ class StorageRegionDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegionMixin
     model_class = Region
 
     serializer_class = RegionSerializer
-    view_category = 'storage_regions'
-    view_name = 'storage_regions-detail'
+    view_category = 'regions'
+    view_name = 'egions-detail'
 
     ordering = ('name', )
 

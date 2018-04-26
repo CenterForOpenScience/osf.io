@@ -426,11 +426,11 @@ class Region(models.Model):
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     def get_absolute_url(self):
-        return '{}storage_regions/{}'.format(self.absolute_api_v2_url, self._id)
+        return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
 
     @property
     def absolute_api_v2_url(self):
-        path = '/storage_regions/{}/'.format(self._id)
+        path = '/regions/{}/'.format(self._id)
         return api_v2_url(path)
 
     class Meta:
