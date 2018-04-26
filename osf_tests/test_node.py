@@ -4190,37 +4190,110 @@ class TestCollectionProperties:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def collector(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def contrib(self):
         return AuthUserFactory()
 
-    def test_collection_project_views(self, user, contrib, node):
-        # test_collection_properties
-        provider = CollectionProviderFactory()
-        collection_one = CollectionFactory(creator=user, provider=provider)
-        collection_two = CollectionFactory(creator=user, provider=provider)
-        bookmark_collection = find_bookmark_collection(user)
-        assert not node.is_collected
-        collection_one.collect_object(node, user)
-        collection_two.collect_object(node, user)
-        bookmark_collection.collect_object(node, user)
-        assert node.is_collected
-        assert node.collecting_metadata_qs.count() == 2
-        assert len(node.collecting_metadata_list) == 2
+    @pytest.fixture()
+    def provider(self):
+        return CollectionProviderFactory()
 
-        # test_only_user_with_collection_permissions_can_see_collection_summary_on_project_overview
+    @pytest.fixture()
+    def collection_one(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_two(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_public(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+
+    @pytest.fixture()
+    def public_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=True)
+
+    @pytest.fixture()
+    def private_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=False)
+
+    @pytest.fixture()
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    def test_collection_project_views(
+            self, user, node, collection_one, collection_two, collection_public,
+            public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
+
+        # test_collection_properties
+        assert not node.is_collected
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        assert node.is_collected
+        assert len(node.collecting_metadata_list) == 3
+
+        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_expected = {collection_one._id, collection_two._id, collection_public._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+
+        assert ids_not_expected.isdisjoint(ids_actual)
+        assert ids_actual == ids_expected
+
+    def test_permissions_collection_project_views(
+            self, user, node, contrib, collection_one, collection_two,
+            collection_public, public_non_provided_collection, private_non_provided_collection,
+            bookmark_collection, collector):
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        ## test_not_logged_in_user_only_sees_public_collection_info
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
         node.add_contributor(contributor=contrib, auth=Auth(user))
         node.save()
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
-        assert not collection_summary
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
-        assert len(collection_summary) == 2
-
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
-        assert len(collection_summary) == 0
-
-        collection_public = CollectionFactory(creator=user, provider=provider, is_public=True)
-        collection_public.collect_object(node, user)
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
         assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
+        node.add_contributor(contributor=collector, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
+        assert ids_actual == ids_expected
+
+        ## test_node_contrib_cannot_see_public_bookmark_collections
+        bookmark_collection_public = bookmark_collection
+        bookmark_collection_public.is_public = True
+        bookmark_collection_public.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        assert bookmark_collection_public._id not in ids_actual
