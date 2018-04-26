@@ -13,9 +13,11 @@
 <form action "" id="addTimestampForm">
 <div class="row">
     <div class="col-md-12">
-        <a class="btn btn-success" id="btn-verify" href={% url 'timestampadd:timestamp_add' institution_id=institution_id guid=guid %}>Verify</a>
-        <a class="btn btn-success" id="btn-addtimestamp"  href={% url 'timestampadd:timestamp_add' institution_id=institution_id guid=guid %}>Request Trusted Timestamp</a>
-        <p id="timestamp_errors_spinner"></p>
+        <a class="btn btn-success" id="btn-verify">Verify</a>
+        <a class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</a>
+        <font color="red">
+            <h4 id="timestamp_errors_spinner"></h4>
+        </font>
     </div>
 <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
     <thead>
@@ -68,17 +70,20 @@
             });
 
             var btnVerify_onclick = function(event) {
+                if($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
+                    return false;
+                }
                 var button = $(this);
-                button.attr("disabled", true);
+                $("#btn-verify").attr("disabled", true);
+                $("#btn-addtimestamp").attr("disabled", true);
+                $("#timestamp_errors_spinner").text("Storage files list gathering ...");
                 var post_data = {}
                 var fileCnt = 0;
-                $("#timestamp_errors_spinner").text("Storage files list gathering ...");
                 $.ajax({
                     url: "{% url 'timestampadd:verify' institution_id=institution_id guid=guid %}",
                     data: post_data,
                     dataType: 'json',
-                    method: 'POST',
-                    async: false
+                    method: 'POST'
                 }).done(function(data) {
                     //console.log(data);
                     var project_file_list = data["provider_file_list"];
@@ -88,6 +93,7 @@
                            fileCnt++;
                         }
                     }
+                    //console.log(fileCnt);
                     var url = "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}"
                     var successCnt = 0;
                     for (var i = 0; i < project_file_list.length; i++) {
@@ -104,13 +110,21 @@
                                     url: "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}",
                                     data: post_data,
                                     dataType: 'json',
-                                    method: 'POST',
-                                    async: false
+                                    method: 'POST'
                             }).done(function(data) {
-                                    //console.log(data);
                                     successCnt++;
-                                    $("#timestamp_errors_spinner").text("Verivification (" + Math.round((successCnt/fileCnt)*100) + "%)...");
+                                    //console.log(successCnt);
+                                    //console.log(post_data);
+                                    $("#timestamp_errors_spinner").text("Verification files : " + successCnt + " / " + fileCnt + " ...");
+                                    if (successCnt == fileCnt) {
+                                       button.removeAttr("disabled");
+                                       $("#timestamp_errors_spinner").text("Verification (100%) and Refreshing...");
+                                       window.location.reload();
+                                    }
                             }).fail(function(xhr, status, error) {
+                                    $("#btn-verify").removeAttr("disabled");
+                                    $("#btn-addtimestamp").removeAttr("disabled");
+                                    $("#timestamp_errors_spinner").text("Error : " + file_list[j].file_path);
                                     Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
                                          extra: {
                                              url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
@@ -121,9 +135,11 @@
                             });
                         }
                     }
-                    //console.log(successCnt);i
-                    $("#timestamp_errors_spinner").text("Verivification refreshing...");
+                    //$("#timestamp_errors_spinner").text("Verification refreshing...");
                 }).fail(function(xhr, status, error) {
+                    $("#btn-verify").removeAttr("disabled");
+                    $("#btn-addtimestamp").removeAttr("disabled");
+                    $("#timestamp_errors_spinner").text("Error : Storage files list gathering Failed");
                     Raven.captureMessage('Timestamp Add Error: ', {
                       extra: {
                         url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
@@ -135,16 +151,15 @@
             };
 
             var btnAddtimestamp_onclick = function(event) {
+                if($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
+                    return false;
+                }
                 var button = $(this);
-                button.attr("disabled", true);
-                $("#timestamp_errors_spinner").text("Addtimestamp loading ...");
                 var inputCheckBoxs = $("[id=addTimestampCheck]:checked").map(function (index, el) {
                     return $(this).val();
                 });
 
                 if (inputCheckBoxs.length == 0) {
-                    button.removeAttr("disabled");
-                    $("#timestamp_errors_spinner").text("");
                     return false;
                 }
 
@@ -164,8 +179,12 @@
                     return $(this).val();
                 });
 
+                $("#btn-verify").attr("disabled", true);
+                $("#btn-addtimestamp").attr("disabled", true);
+                $("#timestamp_errors_spinner").text("Addtimestamp loading ...");
                 var url = "{% url 'timestampadd:addtimestamp' institution_id=institution_id guid=guid %}"
                 var successCnt = 0;
+                //console.log("check : " + inputCheckBoxs.length);
                 for (var i = 0; i < inputCheckBoxs.length; i++) {
                      index = inputCheckBoxs[i];
                      var post_data = {'provider': providerList[index],
@@ -173,16 +192,26 @@
                                       'file_path': filePathList[index],
                                       'file_name': fileNameList[index],
                                       'version': versionList[index]};
-
+                     //console.log(post_data);
                      $.ajax({
                           url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
                           data: post_data,
                           dataType: 'json',
-                          method: 'POST',
-                          async: false
+                          method: 'POST'
                      }).done(function(data) {
                           successCnt++;
+                          //console.log(successCnt);
+                          //console.log(post_data);
+                          $("#timestamp_errors_spinner").text("Adding Timestamp files : " + successCnt + " / " + inputCheckBoxs.length + " ...");
+                          if (successCnt ==  inputCheckBoxs.length) {
+                             button.removeAttr("disabled");
+                             $("#timestamp_errors_spinner").text("Added Timestamp (100%) and Refreshing...");
+                             window.location.reload();
+                          }
                      }).fail(function(xhr, status, error) {
+                        $("#btn-verify").removeAttr("disabled");
+                        $("#btn-addtimestamp").removeAttr("disabled");
+                        $("#timestamp_errors_spinner").text("");
                         Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
                             extra: {
                                 url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
@@ -192,12 +221,6 @@
                         });
                      });
                  }              
-                 if (successCnt != inputCheckBoxs.length) {
-                    button.removeAttr("disabled");
-                    $("#timestamp_errors_spinner").text("");
-                    return false;
-                 }
-                $("#timestamp_errors_spinner").text("Addtimestamp refreshing ...");
             };
 
             var document_onready = function (event) {

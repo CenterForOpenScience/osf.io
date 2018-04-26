@@ -126,6 +126,7 @@ RUN for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
+        /code/admin/rdm*/requirements.txt \
     ; do \
         pip install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
