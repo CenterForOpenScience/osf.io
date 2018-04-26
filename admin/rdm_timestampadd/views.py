@@ -37,6 +37,7 @@ from django import forms
 from django.forms.widgets import HiddenInput, CheckboxInput
 from framework.auth import Auth
 from website.util import api_v2_url, waterbutler_api_url_for
+import pytz
 
 class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 
@@ -288,7 +289,17 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
 
+        # Node Admin
+        admin_osfuser_list = list(absNodeData.get_admin_contributors(absNodeData.contributors))
+        source_user = self.request.user
+        self.request.user = admin_osfuser_list[0]
+        cookie = self.request.user.get_or_create_cookie()
+        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
+
         web_response = requests.get(web_url, headers=headers, cookies=cookies)
+
+        # Admin User
+        self.request.user = source_user
 
         ctx['provider_file_list'] = web_response.json()['provider_list']
         ctx['guid'] = self.kwargs['guid']
@@ -341,7 +352,17 @@ class AddTimestampData(RdmPermissionMixin, View):
                                               '/' + request_data['file_id'][0], 
                                               action='download',direct=None)
             res = requests.get(url, headers=headers, cookies=cookies)
-            tmp_dir = 'tmp_{}'.format(self.request.user._id)
+
+            # Admin User
+            self.request.user = source_user
+
+            current_datetime = datetime.now(pytz.timezone('Asia/Tokyo'))
+            current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+            #print(current_datetime_str)
+            tmp_dir = 'tmp_{}_{}_{}'.format(self.request.user._id, request_data['file_name'][0], current_datetime_str)
+
+#            tmp_dir = 'tmp_{}'.format(self.request.user._id)
+
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
             os.mkdir(tmp_dir)
@@ -351,8 +372,6 @@ class AddTimestampData(RdmPermissionMixin, View):
                 res.close()
 
             addTimestamp = AddTimestamp()
-            # Admin User
-            self.request.user = source_user
             result = addTimestamp.add_timestamp(self.request.user._id, request_data['file_id'][0],
                                                 guid._id, request_data['provider'][0], request_data['file_path'][0],
                                                 download_file_path, tmp_dir)

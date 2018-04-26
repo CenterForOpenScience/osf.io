@@ -19,7 +19,7 @@ import requests
 import time
 import os
 import shutil
-
+import pytz
 import logging
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,13 @@ def get_timestamp_error_data(auth, node, **kwargs):
                                                      direct=None, _internal=False))
 
         res = requests.get(url, headers=headers, cookies=cookies)
-        tmp_dir='tmp_{}'.format(auth.user._id)
+#        tmp_dir='tmp_{}'.format(auth.user._id)
+        current_datetime = datetime.now(pytz.timezone('Asia/Tokyo'))
+        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        #print(current_datetime_str)
+        tmp_dir='tmp_{}_{}_{}'.format(auth.user._id, file_node._id, current_datetime_str)
+        #print(tmp_dir)
+
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])

@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import httplib
 import os
 import uuid
@@ -826,7 +827,6 @@ def upload_file_add_timestamptoken(payload, node):
         cookie = user_info.get_or_create_cookie()
         cookies = {settings.COOKIE_NAME:cookie}
         headers = {"content-type": "application/json"}
-        tmp_dir='tmp_{}'.format(guid)
         res_content = None
         if metadata['provider'] == 'osfstorage':
             res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', 
@@ -837,7 +837,10 @@ def upload_file_add_timestamptoken(payload, node):
         res_content = res.content
         res.close()
 
-        tmp_dir='tmp_{}'.format(auth_id)
+        current_datetime = timezone.now()
+        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        #print(current_datetime_str)
+        tmp_dir='tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
         with open(download_file_path, "wb") as fout:
@@ -907,6 +910,9 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     verify_result = 0
     verify_title = None
     tmp_dir='tmp_{}'.format(guid)
+    current_datetime = timezone.now()
+    current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+    tmp_dir='tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
@@ -927,7 +933,6 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
                                              tmp_file, tmp_dir)
         shutil.rmtree(tmp_dir)
     except Exception as err:
-        logger.exception(err)
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
