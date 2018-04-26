@@ -82,7 +82,7 @@
                     "Contributors" page and remove yourself as a contributor.
                 </p>
                 % endif
-                <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a>.</p>
+                <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.</p>
                 <br>
                 <p>
                     Sincerely,<br>
