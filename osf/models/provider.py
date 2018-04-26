@@ -219,3 +219,11 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
         else:
             # A user is required for Collections / Groups
             sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))
+
+
+class WhitelistedSHAREPreprintProvider(BaseModel):
+    id = models.AutoField(primary_key=True)
+    provider_name = models.CharField(unique=True, max_length=200)
+
+    def __unicode__(self):
+        return self.provider_name
