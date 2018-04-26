@@ -1914,3 +1914,5 @@ CUSTOM_CITATIONS = {
 }
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+
+INSTITUTIONAL_LANDING_FLAG = 'ember_institutional_landing_page'
