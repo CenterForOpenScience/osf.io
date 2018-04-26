@@ -243,7 +243,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                 pass
 
         context.update({
-            "region_id": id
+            'region_id': id
         })
         return context
 

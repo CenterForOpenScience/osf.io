@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
+from api.base.pagination import MaxSizePagination
 from framework.auth.oauth_scopes import CoreScopes
 from api.regions.serializers import RegionSerializer
 
@@ -34,6 +35,7 @@ class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         base_permissions.TokenHasScope,
     )
 
+    pagination_class = MaxSizePagination
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     model_class = Region

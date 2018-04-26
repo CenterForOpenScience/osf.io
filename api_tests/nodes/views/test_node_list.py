@@ -16,6 +16,7 @@ from osf_tests.factories import (
     PreprintFactory,
     InstitutionFactory
 )
+from addons.osfstorage.tests.factories import RegionFactory
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
@@ -932,6 +933,14 @@ class TestNodeCreate:
         return 'data'
 
     @pytest.fixture()
+    def region(self):
+        return RegionFactory(name='Frankfort', _id='eu-central-1')
+
+    @pytest.fixture()
+    def url_with_region_query_param(self, region, url):
+        return url + '?region={}'.format(region._id)
+
+    @pytest.fixture()
     def public_project(self, title, description, category, institution_one):
         return {
             'data': {
@@ -1210,6 +1219,32 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
+
+    def test_create_project_with_region_query_param(
+            self, app, user_one, region, private_project, url_with_region_query_param):
+        res = app.post_json_api(
+            url_with_region_query_param, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        pid = res.json['data']['id']
+        project = AbstractNode.load(pid)
+
+        node_settings = project.get_addon('osfstorage')
+        assert node_settings.region_id == region.id
+
+    def test_create_project_with_bad_region_query_param(
+            self, app, user_one, region, private_project, url):
+        bad_region_id = 'bad-region-1'
+        res = app.post_json_api(
+            url + '?region={}'.format(bad_region_id), private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        pid = res.json['data']['id']
+        project = AbstractNode.load(pid)
+
+        node_settings = project.get_addon('osfstorage')
+        # NodeSettings just left at default region on creation
+        assert node_settings.region_id == 1
 
     def test_create_project_errors(
             self, app, user_one, title, description, category, url):
