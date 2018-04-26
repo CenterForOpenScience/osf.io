@@ -522,6 +522,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
+
+        region_id = self.context.get('region_id')
+        if region_id:
+            node_settings = node.get_addon('osfstorage')
+            node_settings.region_id = region_id
+            node_settings.save()
+
         return node
 
     def update(self, node, validated_data):

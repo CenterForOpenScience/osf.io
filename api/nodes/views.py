@@ -108,6 +108,7 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
 from website import mails
@@ -230,6 +231,21 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return NodeDetailSerializer
         else:
             return NodeSerializer
+
+    def get_serializer_context(self):
+        context = super(NodeList, self).get_serializer_context()
+        region__id = self.request.query_params.get('region', None)
+        id = None
+        if region__id:
+            try:
+                id = Region.objects.get(_id=region__id).id
+            except Region.DoesNotExist:
+                pass
+
+        context.update({
+            "region_id": id
+        })
+        return context
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
