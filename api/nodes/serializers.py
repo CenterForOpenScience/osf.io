@@ -318,6 +318,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     ))
 
+    region = RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
+        read_only=True
+    )
+
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<_id>'},

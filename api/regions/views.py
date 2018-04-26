@@ -40,7 +40,7 @@ class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     serializer_class = RegionSerializer
     view_category = 'regions'
-    view_name = 'regions-list'
+    view_name = 'region-list'
 
     ordering = ('name', )
 
@@ -66,7 +66,7 @@ class RegionDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegionMixin):
 
     serializer_class = RegionSerializer
     view_category = 'regions'
-    view_name = 'egions-detail'
+    view_name = 'region-detail'
 
     ordering = ('name', )
 
