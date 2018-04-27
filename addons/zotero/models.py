@@ -9,6 +9,7 @@ from addons.zotero import \
     settings  # TODO: Move `settings` to `apps.py` when deleting
 from addons.zotero.serializer import ZoteroSerializer
 from website.citations.providers import CitationsOauthProvider
+from api.base.utils import is_truthy
 
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
 # of citations, requesting the citations may take longer than the UWSGI harakiri time.
@@ -212,7 +213,7 @@ class NodeSettings(BaseCitationsNodeSettings):
         self.list_id = None
         self.library_id = None
 
-    def v2_serialization(self, kind, id, name, path, parent=None, provider_list_id=None):
+    def serialize_folder(self, kind, id, name, path, parent=None, provider_list_id=None):
         return {
             'addon': 'zotero',
             'kind': kind,
@@ -248,12 +249,12 @@ class NodeSettings(BaseCitationsNodeSettings):
         You can use kwargs to refine what data is returned -  how to limit the number of group libraries,
         whether to return the personal library alongside group_libraries, or append the total library count.
         """
+        # These kwargs are passed in from ZoteroViews > library_list
+        limit = kwargs.get('limit', None)
+        start = kwargs.get('start', None)
+        return_count = is_truthy(kwargs.get('return_count', False))
+        append_personal = is_truthy(kwargs.get('append_personal', True))
         try:
-            # These kwargs are passed in from ZoteroViews > library_list
-            limit = kwargs.get('limit', None)
-            start = kwargs.get('start', None)
-            return_count = kwargs.get('return_count', 'false')
-            append_personal = kwargs.get('append_personal', 'true')
             # Fetch group libraries
             libraries = self.api._fetch_libraries(limit=limit, start=start)
         except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound) as error:
@@ -263,15 +264,15 @@ class NodeSettings(BaseCitationsNodeSettings):
         serialized = []
         for library in libraries[:-1]:
             data = library['data']
-            serialized.append(self.v2_serialization('library', data['id'], data['name'], str(data['id'])))
+            serialized.append(self.serialize_folder('library', data['id'], data['name'], str(data['id'])))
 
-        if return_count == 'true':
+        if return_count:
             # Return total number of libraries as last item in list
             serialized.append(libraries[-1])
 
-        if append_personal == 'true':
+        if append_personal:
             # Append personal library as option alongside group libraries
-            serialized.insert(0, self.v2_serialization('library', 'personal', 'My Library', 'personal'))
+            serialized.insert(0, self.serialize_folder('library', 'personal', 'My Library', 'personal'))
         return serialized
 
     def get_sub_folders(self, library_id, folder_id=None):
@@ -290,10 +291,10 @@ class NodeSettings(BaseCitationsNodeSettings):
         for folder in sub_folders:
             data = folder['data']
             path = folder['library']['id'] if folder['library']['type'] == 'group' else 'personal'
-            serialized.append(self.v2_serialization('folder', data['key'], data['name'], path, data['parentCollection']))
+            serialized.append(self.serialize_folder('folder', data['key'], data['name'], path, data['parentCollection']))
 
         if folder_id:
             return serialized
         else:
-            all_documents = self.v2_serialization('folder', 'ROOT', 'All Documents', library_id, '__', None)
+            all_documents = self.serialize_folder('folder', 'ROOT', 'All Documents', library_id, '__', None)
             return [all_documents] + serialized

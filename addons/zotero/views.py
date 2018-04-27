@@ -57,7 +57,7 @@ class ZoteroViews(GenericCitationViews):
             start = request.args.get('start')
             return_count = request.args.get('return_count')
             append_personal = request.args.get('append_personal')
-            return node_addon.get_folders(**{'limit': limit, 'start': start, 'return_count': return_count, 'append_personal': append_personal})
+            return node_addon.get_folders(limit=limit, start=start, return_count=return_count, append_personal=append_personal)
         _library_list.__name__ = '{0}_library_list'.format(addon_short_name)
         return _library_list
 
