@@ -72,7 +72,7 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, provider, template=None, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -85,7 +85,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
-
     if notification_type == 'none':
         return
 
@@ -105,7 +104,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
         message = mails.render_message(template, **context)
-
         digest = NotificationDigest(
             timestamp=timestamp,
             send_type=notification_type,
@@ -113,7 +111,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             user=recipient,
             message=message,
             node_lineage=node_lineage_ids,
-            provider=provider
+            provider=abstract_provider
         )
         digest.save()
 

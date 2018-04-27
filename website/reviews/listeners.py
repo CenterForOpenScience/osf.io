@@ -45,7 +45,7 @@ def reviews_submit_notification(self, recipients, context):
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
-def reviews_submit_notification_moderators(self, context):
+def reviews_submit_notification_moderators(self, timestamp, context):
     # imports moved here to avoid AppRegistryNotReady error
     from osf.models import NotificationSubscription
     from website.profile.utils import get_profile_image_url
@@ -66,8 +66,8 @@ def reviews_submit_notification_moderators(self, context):
                         'new_pending_submissions',
                         context['referrer'],
                         context['reviewable'].node,
-                        timezone.now(),
-                        context['reviewable'].provider,
+                        timestamp,
+                        abstract_provider=context['reviewable'].provider,
                         **context)
 
     # Store emails to be sent to subscribers daily
@@ -76,6 +76,6 @@ def reviews_submit_notification_moderators(self, context):
                         'new_pending_submissions',
                         context['referrer'],
                         context['reviewable'].node,
-                        timezone.now(),
-                        context['reviewable'].provider,
+                        timestamp,
+                        abstract_provider=context['reviewable'].provider,
                         **context)

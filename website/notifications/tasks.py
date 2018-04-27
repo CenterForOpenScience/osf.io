@@ -11,7 +11,7 @@ from osf.models import OSFUser, AbstractNode, AbstractProvider
 from osf.models import NotificationDigest
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)

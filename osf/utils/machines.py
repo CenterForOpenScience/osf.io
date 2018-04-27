@@ -113,7 +113,7 @@ class ReviewsMachine(BaseMachine):
         )
         recipients = list(self.machineable.node.contributors)
         reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
-        reviews_signals.reviews_email_submit_moderators_notifications.send(context=context)
+        reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
 
     def notify_resubmit(self, ev):
         context = self.get_context()
