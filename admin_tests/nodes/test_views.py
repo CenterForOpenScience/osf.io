@@ -11,7 +11,8 @@ from admin.nodes.views import (
     NodeKnownSpamList,
     NodeKnownHamList,
     NodeConfirmHamView,
-    AdminNodeLogView
+    AdminNodeLogView,
+    RestartStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -409,3 +410,28 @@ class TestAdminNodeLogView(AdminTestCase):
         nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
         nt.assert_true(log_entry.node._id == component._id)
         nt.assert_true(('node', component._id) in log_params)
+
+
+class TestRestartStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRestartStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RestartStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_restart_stuck_registration(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+
+        view.post(self.request)
+
+        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
