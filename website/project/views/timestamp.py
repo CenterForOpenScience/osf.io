@@ -15,6 +15,7 @@ from datetime import datetime
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
 from api.timestamp.add_timestamp import AddTimestamp
 from api.timestamp import local
+from django.contrib.contenttypes.models import ContentType
 import requests
 import time
 import os
@@ -32,8 +33,8 @@ def get_init_timestamp_error_data_list(auth, node, **kwargs):
     
     ctx = _view_project(node, auth, primary=True)
     ctx.update(rubeus.collect_addon_assets(node))
-    data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=kwargs.get('pid')).order_by('provider')
-    guid = Guid.objects.get(_id=kwargs.get('pid'))
+    data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=kwargs.get('pid')).order_by('provider', 'path')
+    guid = Guid.objects.get(_id=kwargs.get('pid'), content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
     provider_error_list = []
     provider = None
     error_list = []

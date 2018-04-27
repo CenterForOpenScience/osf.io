@@ -35,13 +35,9 @@
              <div class="col-xs-12">
                  <div class="pull-right">
                    <span>
-                         <button type="button"
-                                     class="btn btn-default"
-                                     id="btn-verify">Verify</button>
-                         <button type="button"
-                                     class="btn btn-success"
-                                     id="btn-addtimestamp">Request Trusted Timestamp</button>
-                   </span>
+                         <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
+                         <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
+                   </span>        
                  </div>
              </div>
              <span id="configureNodeAnchor" class="anchor"></span></div>
@@ -51,13 +47,15 @@
                               <th width="45%">FilePath</th>
                               <th width="15%">TimestampUpdateUser</th>
                               <th width="15%">TimestampUpdateDate</th>
-                              <th widht="25%">Timestamp Verification</th>
+                              <th widht="25%">Timestamp verification</th>
                           </tr>
                       </thead>
-                      <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
-                           <div class="logo-spin logo-lg"></div>
-                           <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
-                      </div>
+                      <font color="red">
+                           <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
+                           </div>
+                      </font>
                       <tbody id="tree_timestamp_error_data">
                       </tbody>
                  </table>
@@ -82,21 +80,34 @@
 <script>
     $(function(){
         var btnVerify_onclick = function(event) {
-            post_data = {}
+            if($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
+                return false;
+            }
+
+            $("#btn-verify").attr("disabled", true);
+            $("#btn-addtimestamp").attr("disabled", true);
+            $("#timestamp_errors_spinner").text("Storage files list gathering ...");
+            var post_data = {}
+            var fileCnt = 0;
             $.ajax({
                 beforeSend: function(){
                     $("#timestamp_errors_spinner").show();
                 },
                 url: 'json/',
                 data: post_data,
-                dataType: 'json',
-                async: false
+                dataType: 'json'
             }).done(function(project_file_list) {
-                var node_title = "${node['title']}";
-                var project_tr = '<tr><td colspan="4">' + node_title + '</td></tr>';
-                $(project_tr).appendTo($('#tree_timestamp_error_data'));
-                var index = 0;
                 project_file_list = project_file_list.provider_list;
+                //console.log(project_file_list);
+                for (var i = 0; i < project_file_list.length; i++) {
+                    var file_list = project_file_list[i].provider_file_list;
+                    for (var j = 0; j < file_list.length; j++) {
+                       fileCnt++;
+                    }
+                }
+                //console.log(fileCnt);
+                var index = 0;
+                var successCnt = 0;
                 for (var i = 0; i < project_file_list.length; i++) {
                     var provider_tr = '<tr><td colspan="4">' + project_file_list[i].provider + '</td></tr>';
                     var file_list = project_file_list[i].provider_file_list;
@@ -107,31 +118,53 @@
                                          'file_path': file_list[j].file_path,
                                          'file_name': file_list[j].file_name,
                                          'version': file_list[j].version};
+                        //console.log(post_data);
                         $.ajax({
-                             beforeSend: function(){
-                                  $("#timestamp_errors_spinner").show();
-                             },
                              url:  nodeApiUrl + 'timestamp/timestamp_error_data/',
                              data: post_data,
-                             dataType: 'json',
-                             async: false
-                        })
+                             dataType: 'json'
+                          }).done(function(data) {
+                                  successCnt++;
+                                  //console.log(successCnt);
+                                  //console.log(post_data);
+                                  $("#timestamp_errors_spinner").text("Verification files : " + successCnt + " / " + fileCnt + " ...");
+                                  if (successCnt == fileCnt) {
+                                     $("#timestamp_errors_spinner").text("Verification (100%) and Refreshing...");
+                                     window.location.reload();
+                                  }
+                          }).fail(function(xhr, status, error) {
+                                  $("#btn-verify").removeAttr("disabled");
+                                  $("#btn-addtimestamp").removeAttr("disabled");
+                                  $("#timestamp_errors_spinner").text("Error : " + file_list[j].file_path);
+                                  Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+                                       extra: {
+                                           url: url,
+                                           status: status,
+                                           error: error
+                                       }
+                                  });
+                          });
                     }
                 }
             }).fail(function(xhr, textStatus, error) {
-               Raven.captureMessage('timestamp json error', {
+               $("#btn-verify").removeAttr("disabled");
+               $("#btn-addtimestamp").removeAttr("disabled");
+               $("#timestamp_errors_spinner").text("Error : Storage files list gathering Failed");
+               Raven.captureMessage('Timestamp Add Error', {
                    extra: {
                       url: url,
                       textStatus: textStatus,
                       error: error
                    }
                });
-               errorFlg = true;
             });
-            $("#timestamp-form").submit();
         };
 
         var btnAddtimestamp_onclick = function(event) {
+            if($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
+                return false;
+            }
+
             inputCheckBoxs = $('[id=addTimestampCheck]:checked').map(function (index, el) {
                 return $(this).val();
             });
@@ -159,8 +192,13 @@
             fileNameList = $('[id=file_name]').map(function (index, el) {
                 return $(this).val();
             });
+
+            $("#btn-verify").attr("disabled", true);
+            $("#btn-addtimestamp").attr("disabled", true);
+            $("#timestamp_errors_spinner").text("Addtimestamp loading ...");
             errorFlg = false;
             successCnt = 0;
+            //console.log("check : " + inputCheckBoxs.length);
             for (var i = 0; i < inputCheckBoxs.length; i++) {
                  index = inputCheckBoxs[i];
                  var post_data = {'provider': providerList[index],
@@ -168,34 +206,36 @@
                                   'file_path': filePathList[index],
                                   'file_name': fileNameList[index],
                                   'version': versionList[index]};
+                 //console.log(post_data);
                  $.ajax({
                      beforeSend: function(){
                        $("#timestamp_errors_spinner").show();
                      },
                      url: nodeApiUrl + 'timestamp/add_timestamp/',
                      data: post_data,
-                     dataType: 'json',
-                     async: false
+                     dataType: 'json'
                  }).done(function(data) {
                      successCnt++;
+                     //console.log(successCnt);
+                     //console.log(post_data);
+                     $("#timestamp_errors_spinner").text("Adding Timestamp files : " + successCnt + " / " + inputCheckBoxs.length + " ...");
+                     if (successCnt ==  inputCheckBoxs.length) {
+                        $("#timestamp_errors_spinner").text("Added Timestamp (100%) and Refreshing...");
+                        window.location.reload();
+                     }
                  }).fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('timestamptoken add error', {
+                    $("#btn-verify").removeAttr("disabled");
+                    $("#btn-addtimestamp").removeAttr("disabled");
+                    $("#timestamp_errors_spinner").text("Error : Timestamp Add Failed");
+                    Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
                         extra: {
                            url: url,
                            textStatus: textStatus,
                            error: error
                         }
                     });
-                    errorFlg = true;
                  });
-                 if (errorFlg) {
-                     break;
-                 }
             }
-            if (errorFlg) {
-                return;
-            }
-            $("#timestamp-form").submit();
         };
 
         var document_onready = function (event) {

@@ -117,7 +117,6 @@
                                     //console.log(post_data);
                                     $("#timestamp_errors_spinner").text("Verification files : " + successCnt + " / " + fileCnt + " ...");
                                     if (successCnt == fileCnt) {
-                                       button.removeAttr("disabled");
                                        $("#timestamp_errors_spinner").text("Verification (100%) and Refreshing...");
                                        window.location.reload();
                                     }
@@ -135,7 +134,6 @@
                             });
                         }
                     }
-                    //$("#timestamp_errors_spinner").text("Verification refreshing...");
                 }).fail(function(xhr, status, error) {
                     $("#btn-verify").removeAttr("disabled");
                     $("#btn-addtimestamp").removeAttr("disabled");
@@ -204,14 +202,13 @@
                           //console.log(post_data);
                           $("#timestamp_errors_spinner").text("Adding Timestamp files : " + successCnt + " / " + inputCheckBoxs.length + " ...");
                           if (successCnt ==  inputCheckBoxs.length) {
-                             button.removeAttr("disabled");
                              $("#timestamp_errors_spinner").text("Added Timestamp (100%) and Refreshing...");
                              window.location.reload();
                           }
                      }).fail(function(xhr, status, error) {
                         $("#btn-verify").removeAttr("disabled");
                         $("#btn-addtimestamp").removeAttr("disabled");
-                        $("#timestamp_errors_spinner").text("");
+                        $("#timestamp_errors_spinner").text("Error : Timestamp Add Failed");
                         Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
                             extra: {
                                 url: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
