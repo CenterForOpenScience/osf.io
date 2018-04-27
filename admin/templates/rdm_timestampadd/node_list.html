@@ -56,13 +56,15 @@
                 </td>
                 {% endif %}
                 <td>
-                    <a href="{% url 'timestampadd:timestamp_add' institution_id=institution.id guid=node.root.id %}"
-                       class="btn btn-primary">
+                    <a href="{% url 'timestampadd:timestamp_add' institution_id=institution.id guid=node.root.id %}">
                         {{ node.id }}
                     </a>
                 </td>
                 <td>
+                    <a href="{% url 'timestampadd:timestamp_add' institution_id=institution.id guid=node.root.id %}"
+                       class="btn btn-primary">
                     {{node.title}}
+                    </a>
                 </td>
                 <td>
                     {% if not node.parent %}
