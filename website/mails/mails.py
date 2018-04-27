@@ -416,3 +416,8 @@ ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
     subject='Your access request to an OSF project has been declined'
 )
+
+CROSSREF_ERROR = Mail(
+    'crossref_doi_error',
+    subject='There was an error creating a DOI for the preprint ${preprint_guid}'
+)
