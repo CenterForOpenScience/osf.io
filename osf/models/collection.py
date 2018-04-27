@@ -35,35 +35,38 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
 
     @cached_property
     def _id(self):
-        return self.guid._id
-
-    @cached_property
-    def _es_doc_id(self):
-        return '{}-{}'.format(self._id, self.collection._id)
+        return '{}-{}'.format(self.guid._id, self.collection._id)
 
     @classmethod
     def load(cls, data, select_for_update=False):
-        if isinstance(data, basestring):
+        if isinstance(data, int):
+            return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
+
+        try:
             cgm_id, collection_id = data.split('-')
+        except ValueError:
+            raise ValueError('Invalid CollectedGuidMetadata object <_id {}>'.format(data))
+        else:
             if cgm_id and collection_id:
                 try:
-                    return cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get()
+                    if isinstance(data, basestring):
+                        return cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get()
                 except cls.DoesNotExist:
                         return None
-        return None
+            return None
 
     def update_index(self):
         if self.collection.is_public:
             from website.search.search import update_collected_metadata
             try:
-                update_collected_metadata(self._id, collection_id=self.collection.id)
+                update_collected_metadata(self.guid._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
                 logger.exception(e)
 
     def remove_from_index(self):
         from website.search.search import update_collected_metadata
         try:
-            update_collected_metadata(self._id, collection_id=self.collection.id, op='delete')
+            update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
 

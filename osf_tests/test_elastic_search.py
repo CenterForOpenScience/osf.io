@@ -15,7 +15,7 @@ from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
-from website.search_migration.migrate import migrate
+from website.search_migration.migrate import migrate, migrate_collected_metadata
 from osf.models import (
     Retraction,
     NodeLicense,
@@ -1040,6 +1040,41 @@ class TestSearchMigration(OsfTestCase):
                 institution_bucket_found = True
 
         assert_equal(institution_bucket_found, True)
+
+    def test_migration_collections(self):
+        provider = factories.CollectionProviderFactory()
+        collection_one = factories.CollectionFactory(is_public=True, provider=provider)
+        collection_two = factories.CollectionFactory(is_public=True, provider=provider)
+        node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
+        collection_one.collect_object(node, self.user)
+        collection_two.collect_object(node, self.user)
+        assert node.is_collected
+
+        docs = query_collections('*')['results']
+        assert len(docs) == 2
+
+        docs = query_collections('Bomaye')['results']
+        assert len(docs) == 2
+
+        count_query = {}
+        count_query['aggregations'] = {
+            'counts': {
+                'terms': {
+                    'field': '_type',
+                }
+            }
+        }
+
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+
+        docs = query_collections('*')['results']
+        assert len(docs) == 2
+
+        docs = query_collections('Bomaye')['results']
+        assert len(docs) == 2
+
+        res = self.es.search(index=settings.ELASTIC_INDEX, doc_type='collectionSubmission', search_type='count', body=count_query)
+        assert res['hits']['total'] == 2
 
 class TestSearchFiles(OsfTestCase):
 
