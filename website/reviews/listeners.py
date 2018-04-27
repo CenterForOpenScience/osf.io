@@ -59,7 +59,7 @@ def reviews_submit_notification_moderators(self, context):
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
-    context['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN, context['reviewable'].provider._id, context['reviewable']._id )
+    context['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN, context['reviewable'].provider._id, context['reviewable']._id)
     # Store emails to be sent to subscribers instantly (at a 5 min interval)
     emails.store_emails(provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
                         'email_transactional',

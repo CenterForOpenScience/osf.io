@@ -28,7 +28,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Today's Submissions to ${provider_name}</h3>
+    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Recent Submissions to ${provider_name}</h3>
   </td>
 </tr>
 <tr>

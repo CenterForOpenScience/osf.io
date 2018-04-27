@@ -267,7 +267,7 @@ DIGEST = Mail(
 
 DIGEST_REVIEWS_MODERATORS = Mail(
     'digest_reviews_moderators',
-    subject='Today\'s submissions to ${provider_name}',
+    subject='Recent submissions to ${provider_name}',
 )
 
 TRANSACTIONAL = Mail(
@@ -410,11 +410,6 @@ SHARE_PREPRINT_ERROR_DESK = Mail(
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
     subject='Confirmation of your submission to ${provider_name}'
-)
-
-REVIEWS_SUBMISSION_NOTIFICATION_MODERATORS = Mail(
-    'reviews_submission_notification_moderators',
-    subject='New submission to ${provider_name}'
 )
 
 ACCESS_REQUEST_SUBMITTED = Mail(

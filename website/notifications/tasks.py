@@ -16,12 +16,19 @@ from api.preprint_providers.permissions import GroupHelper
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
 def send_users_email(send_type):
-    """Find pending Emails and amalgamates them into a single Email.
+    """Send pending emails.
 
     :param send_type
     :return:
     """
-    # Send emails to users, excluding reviews moderators
+    _send_global_and_node_emails(send_type)
+    _send_reviews_moderator_emails(send_type)
+
+
+def _send_global_and_node_emails(send_type):
+    """
+    Called by `send_users_email`. Send all global and node-related notification emails.
+    """
     grouped_emails = get_users_emails(send_type)
     for group in grouped_emails:
         user = OSFUser.load(group['user_id'])
@@ -48,14 +55,18 @@ def send_users_email(send_type):
                 )
             remove_notifications(email_notification_ids=notification_ids)
 
-    # Send emails to reviews moderators
+
+def _send_reviews_moderator_emails(send_type):
+    """
+    Called by `send_users_email`. Send all reviews triggered emails.
+    """
     grouped_emails = get_moderators_emails(send_type)
     for group in grouped_emails:
         user = OSFUser.load(group['user_id'])
-        provider = AbstractProvider.objects.get(id=group['provider_id'])
         info = group['info']
         notification_ids = [message['_id'] for message in info]
         if not user.is_disabled:
+            provider = AbstractProvider.objects.get(id=group['provider_id'])
             mails.send_mail(
                 to_addr=user.username,
                 mimetype='html',
@@ -75,21 +86,16 @@ def get_moderators_emails(send_type):
     """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.
     :param send_type: from NOTIFICATION_TYPES, could be "email_digest" or "email_transactional"
     :return Iterable of dicts of the form:
-        {
+        [
             'user_id': 'se8ea',
             'provider_id': '1',
-            'info': [{
-                'message': {
-                    'message': 'Freddie commented on your project Open Science',
-                    'timestamp': datetime object
-                },
-                '_id': NotificationDigest._id
-            }, ...
-            }]
-            {
-            'user_id': ...
-            }
-        }
+            'info': [
+                {
+                    'message': 'Hana Xie submitted Gravity',
+                    '_id': NotificationDigest._id,
+                }
+            ],
+        ]
     """
     sql = """
         SELECT json_build_object(
@@ -117,7 +123,7 @@ def get_moderators_emails(send_type):
 
 def get_users_emails(send_type):
     """Get all emails that need to be sent.
-    NOTE: These do not include moderators related emails.
+    NOTE: These do not include reviews triggered emails for moderators.
 
     :param send_type: from NOTIFICATION_TYPES
     :return: Iterable of dicts of the form:
@@ -172,6 +178,7 @@ def group_by_node(notifications, limit=15):
     for notification in notifications[:15]:
         emails.add_message(notification['node_lineage'], notification['message'])
     return emails
+
 
 def remove_notifications(email_notification_ids=None):
     """Remove sent emails.
