@@ -675,6 +675,11 @@ span.ball-pulse-small>div {
 }
 
 /* To be added to osf-style: generic dropdown-menu */
+
+.generic-dropdown .dropdown-menu {
+    /* Prevents dropdowns from obscuring navs and subnavs */
+    z-index: 98;
+}
 .generic-dropdown ul.dropdown-menu > li > a {
     color: #000;
 }
@@ -685,7 +690,7 @@ span.ball-pulse-small>div {
     background-color: #D9D9D9;
 }
 
-.generic-dropdown button {
+.generic-dropdown button.dropdown-toggle-sm {
     padding: 4px 12px;
     line-height: 0;
 }
@@ -697,6 +702,10 @@ span.ball-pulse-small>div {
 
 .generic-dropdown a {
     color: #333;
+}
+
+.generic-dropdown li .disabled {
+    opacity: 0.65;
 }
 
 /* Table
@@ -759,6 +768,10 @@ table.add-links {
         float: left;
         font-weight: bold;
     }
+}
+
+.generic-dropdown.dropdown.pull-right .fa {
+    padding-right: 0px;
 }
 
 .generic-dropdown .fa {

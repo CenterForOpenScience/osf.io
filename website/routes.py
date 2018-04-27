@@ -1644,6 +1644,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
+            json_renderer,
+        ),
+
         # Invite Users
         Rule(
             [

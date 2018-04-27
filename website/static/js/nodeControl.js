@@ -15,6 +15,8 @@ var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
+var RequestAccess = require('js/requestAccess.js');
+
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -47,7 +49,9 @@ var ProjectViewModel = function(data, options) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
+    self.currentUserRequestState = options.currentUserRequestState;
 
+    self.requestAccess = new RequestAccess(options.currentUserRequestState, self._id, self.user);
     self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
     self.makePublicTooltip = ko.computed(function() {
         if(self.nodeIsPendingEmbargoTermination()) {
