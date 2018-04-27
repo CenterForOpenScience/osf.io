@@ -40,7 +40,7 @@ var markdown = new MarkdownIt('commonmark', {
     linkify: true
     }).use(require('markdown-it-mfr'), {
         type: 'osf',
-        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5})\/\?action=download|(^[a-zA-Z0-9]{5}$)/,
+        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5,})\/\?action=download|(^[a-zA-Z0-9]{5,}$)/,
         formatUrl: function(assetID) { return mfrURL + 'render?url='+ osfURL + assetID + '/?action=download%26mode=render'; },
     })
     .use(require('markdown-it-video'))
