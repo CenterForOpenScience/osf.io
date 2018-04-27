@@ -4,8 +4,6 @@ import abc
 import mock
 import pytest
 from nose.tools import *  # flake8: noqa
-from github3.repos import Repository
-
 
 from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
@@ -507,7 +505,7 @@ class NodeAddonFolderMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
-            assert_in(addon_data['kind'], ('folder', 'repo'))
+            assert_equal(addon_data['kind'], 'folder')
             assert_equal(addon_data['name'], self._mock_folder_result['name'])
             assert_equal(addon_data['path'], self._mock_folder_result['path'])
             assert_equal(
@@ -712,40 +710,6 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'user': 'abc',
             'owner': self.node
         }
-
-    @mock.patch('addons.github.models.GitHubClient')
-    def test_folder_list_GET_expected_behavior(self, mock_client):
-        mock_repo = Repository.from_json({
-            'name': 'test',
-            'id': '12345',
-            'owner':
-                {'login': 'test name'}
-        })
-
-        mock_connection = mock.MagicMock()
-        mock_client.return_value = mock_connection
-        mock_connection.repos = mock.MagicMock(return_value=[mock_repo])
-        mock_connection.my_orgs_repos = mock.MagicMock(return_value=[mock_repo])
-
-        res = self.app.get(
-            self.folder_url,
-            auth=self.user.auth)
-
-        addon_data = res.json['data'][0]['attributes']
-        assert_in(addon_data['kind'], ('folder', 'repo'))
-        assert_equal(addon_data['name'], self._mock_folder_result['name'])
-        assert_equal(addon_data['path'], self._mock_folder_result['path'])
-        assert_equal(
-            addon_data['folder_id'],
-            self._mock_folder_result['id'])
-
-    @property
-    def _mock_folder_result(self):
-        return {u'path': u'test name/test',
-                u'kind': u'repo',
-                u'name': u'test',
-                u'provider': u'github',
-                u'id': u'12345'}
 
 
 class TestNodeMendeleyAddon(

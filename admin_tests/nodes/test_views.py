@@ -431,6 +431,13 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
 
         view.post(self.request)
 
