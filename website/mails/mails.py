@@ -232,7 +232,7 @@ MODERATOR_ADDED = lambda provider: Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to an OSF project has been approved.'
+    subject='Your access request to an OSF project has been approved'
 )
 PREPRINT_CONFIRMATION_DEFAULT = Mail(
     'preprint_confirmation_default',
@@ -424,5 +424,5 @@ ACCESS_REQUEST_SUBMITTED = Mail(
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to an OSF project has been declined.'
+    subject='Your access request to an OSF project has been declined'
 )
