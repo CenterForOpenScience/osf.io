@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import os
 import httplib as http
+import waffle
 
 from flask import request
 from flask import send_from_directory
@@ -123,6 +124,7 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
+        'institutional_landing_flag': waffle.flag_is_active(request, settings.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
