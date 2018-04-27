@@ -19,10 +19,19 @@
             <h4 id="timestamp_errors_spinner"></h4>
         </font>
     </div>
+<style type="text/css">
+    #addTimestampAllCheck, #addTimestampCheck {
+       -ms-transform:          scale(1.2); /* IE */
+       -moz-transform:         scale(1.2); /* FF */
+       -webkit-transform:      scale(1.2); /* Safari and Chrome */
+       -o-transform:           scale(1.2); /* Opera */
+       //transform:              scale(1.2);
+    }
+</style>
 <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
     <thead>
         <tr>
-            <th>FilePath</th>
+            <th><input type="checkBox" id="addTimestampAllCheck"/>FilePath</th>
             <th>TimestampUpdateUser</th>
             <th>TimestampUpdateDate</th>
             <th>Timestamp verification</th>
@@ -219,6 +228,10 @@
                      });
                  }              
             };
+
+            $('#addTimestampAllCheck').on('change', function() {
+                 $('input[id=addTimestampCheck]').prop('checked', this.checked);
+            });
 
             var document_onready = function (event) {
                  $("#btn-verify").on("click", btnVerify_onclick).focus();

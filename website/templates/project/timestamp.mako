@@ -40,11 +40,20 @@
                    </span>        
                  </div>
              </div>
+             <style type="text/css">
+                 #addTimestampAllCheck, #addTimestampCheck {
+                    -ms-transform:          scale(1.2); /* IE */
+                    -moz-transform:         scale(1.2); /* FF */
+                    -webkit-transform:      scale(1.2); /* Safari and Chrome */
+                    -o-transform:           scale(1.2); /* Opera */
+                    //transform:              scale(1.2);
+                 }
+             </style>
              <span id="configureNodeAnchor" class="anchor"></span></div>
                  <table class="table table-bordered table-addon-terms">
                       <thead class="block-head">
                           <tr>
-                              <th width="45%">FilePath</th>
+                              <th width="45%"><input type="checkBox" id="addTimestampAllCheck"/>FilePath</th>
                               <th width="15%">TimestampUpdateUser</th>
                               <th width="15%">TimestampUpdateDate</th>
                               <th widht="25%">Timestamp verification</th>
@@ -237,6 +246,10 @@
                  });
             }
         };
+
+        $('#addTimestampAllCheck').on('change', function() {
+             $('input[id=addTimestampCheck]').prop('checked', this.checked);
+        });
 
         var document_onready = function (event) {
             $("#btn-verify").on("click", btnVerify_onclick);
