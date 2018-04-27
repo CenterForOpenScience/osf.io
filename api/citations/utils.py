@@ -168,7 +168,9 @@ def apa_name(name):
 def mla_reformat(node, cit):
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
-    retrive_from = cit.split('Open')[-1]
+    # Remove extra period after right-side quotation
+    cit = cit.encode('utf-8').replace('\xe2\x80\x9d.', '\xe2\x80\x9d').decode('utf-8')
+    cit_minus_authors = cit.split('.', 1)[1]
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
@@ -176,25 +178,23 @@ def mla_reformat(node, cit):
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True).rstrip(' ')
-    # handle more than one contributor  but less than 5 contributors
+        new_mla = mla_name(name, initial=True).rstrip(' ')[:-1] + '.'
+    # handle more than one contributor but less than 5 contributors
     elif contributors_list_length in range(1, 5):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
         rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
         last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
-            new_mla = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one
+            new_mla = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one + '.'
         else:
             new_mla = first_one + 'and ' + last_one
     # handle 5 or more contributors
     else:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True) + ' et al. '
+        new_mla = mla_name(name, initial=True) + ' et al.'
 
-    cit = new_mla
-    cit += u' \u201c' + node.title.title() + u'.\u201d Open' + retrive_from
-    return cit
+    return new_mla + cit_minus_authors
 
 
 def chicago_reformat(node, cit):
