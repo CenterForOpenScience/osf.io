@@ -40,7 +40,10 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     @classmethod
     def load(cls, data, select_for_update=False):
         if isinstance(data, int):
-            return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
+            try:
+                return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
+            except cls.DoesNotExist:
+                return None
 
         try:
             cgm_id, collection_id = data.split('-')
@@ -52,7 +55,7 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
                     if isinstance(data, basestring):
                         return cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get()
                 except cls.DoesNotExist:
-                        return None
+                    return None
             return None
 
     def update_index(self):
