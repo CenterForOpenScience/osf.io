@@ -26,21 +26,12 @@ logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def find_failed_registrations():
-    expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
-    jobs = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).prefetch_related('dst_node')
-    return sorted({
-        node.root for node in [job.dst_node for job in jobs]
-        if node and node.root
-        and not node.root.is_deleted
-    }, key=lambda n: n.registered_date)
-
 def analyze_failed_registration_nodes():
     """ If we can just retry the archive, but we can only do that if the
     ORIGINAL node hasn't changed.
     """
     # Get the registrations that are messed up
-    failed_registration_nodes = find_failed_registrations()
+    failed_registration_nodes = Registration.find_failed_registrations()
 
     # Build up a list of dictionaries with info about these failed nodes
     failed_registration_info = []
