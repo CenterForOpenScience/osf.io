@@ -296,6 +296,18 @@ class TestNodeDetail:
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url_public) in link
 
+    def test_node_shows_wiki_relationship_based_on_disabled_status_and_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
+        project_public.delete_addon('wiki', auth=Auth(user))
+        project_public.save()
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' not in res.json['data']['relationships']
+        url = url_public + '?version=2.7'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

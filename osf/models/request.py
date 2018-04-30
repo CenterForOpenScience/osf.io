@@ -25,9 +25,5 @@ class AbstractRequest(BaseModel, ObjectIDMixin, RequestableMixin):
 
 
 class NodeRequest(AbstractRequest):
-    class Meta:
-        unique_together = [
-            ('target', 'creator',)
-        ]
 
     target = models.ForeignKey('AbstractNode', related_name='requests')

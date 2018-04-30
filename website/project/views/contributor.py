@@ -528,6 +528,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and \
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
+        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
         preprint_provider = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
@@ -535,6 +536,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
         elif email_template == 'access_request':
+            mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
@@ -553,6 +555,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         mails.send_mail(
             contributor.username,
             email_template,
+            mimetype=mimetype,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',

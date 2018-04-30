@@ -2,9 +2,13 @@
 from __future__ import absolute_import
 import os
 import httplib as http
+import requests
+import urlparse
 
 from flask import request
 from flask import send_from_directory
+from flask import Response
+from flask import stream_with_context
 from django.core.urlresolvers import reverse
 
 from geoip import geolite2
@@ -51,6 +55,7 @@ from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 from website.ember_osf_web.decorators import ember_flag_is_active
+from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 
 def get_globals():
@@ -197,10 +202,25 @@ def ember_app(path=None):
     """Serve the contents of the ember application"""
     ember_app_folder = None
     fp = path or 'index.html'
-    for k in settings.EXTERNAL_EMBER_APPS.keys():
+
+    ember_app = None
+
+    for k in EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
-            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
+            ember_app = EXTERNAL_EMBER_APPS[k]
             break
+
+    if not ember_app:
+        raise HTTPError(http.NOT_FOUND)
+
+    if settings.PROXY_EMBER_APPS:
+        url = urlparse.urljoin(ember_app['server'], request.path[len(ember_app['path']):])
+        resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+        return Response(resp.content, resp.status_code, headers)
+
+    ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
 
     if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
@@ -280,7 +300,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+        for prefix in EXTERNAL_EMBER_APPS.keys():
             process_rules(app, [
                 Rule(
                     [
@@ -307,7 +327,7 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+        if EXTERNAL_EMBER_APPS.get('ember_osf_web'):
             process_rules(app, [
                 Rule(
                     ember_osf_web_views.routes,
@@ -1644,6 +1664,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
+            json_renderer,
+        ),
+
         # Invite Users
         Rule(
             [
@@ -1660,9 +1690,6 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
-        from flask import stream_with_context, Response
-        import requests
-
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')

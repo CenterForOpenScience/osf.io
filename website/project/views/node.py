@@ -378,6 +378,7 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['access_requests'] = utils.serialize_access_requests(node)
     ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
@@ -392,6 +393,34 @@ def configure_comments(node, **kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
     node.save()
+
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def configure_requests(node, **kwargs):
+    access_requests_enabled = request.get_json().get('accessRequestsEnabled')
+    node.access_requests_enabled = access_requests_enabled
+    if node.access_requests_enabled:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    else:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    node.save()
+    return {'access_requests_enabled': access_requests_enabled}, 200
 
 
 ##############################################################################
@@ -418,6 +447,9 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    access_request = node.requests.filter(creator=auth.user).exclude(machine_state='accepted')
+    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
@@ -649,6 +681,7 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+
     try:
         contributor = node.contributor_set.get(user=user)
     except Contributor.DoesNotExist:
@@ -756,7 +789,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
             'exists': parent is not None,
