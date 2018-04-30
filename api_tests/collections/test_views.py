@@ -7,6 +7,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
+    CollectionProviderFactory,
     NodeFactory,
     RegistrationFactory,
     ProjectFactory,
@@ -28,6 +29,9 @@ url_collection_list = '/{}collections/'.format(API_BASE)
 def user_one():
     return AuthUserFactory()
 
+@pytest.fixture()
+def provider():
+    return CollectionProviderFactory()
 
 @pytest.mark.django_db
 class TestCollectionList:
@@ -1246,8 +1250,8 @@ class TestCollectionNodeLinkDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def collection(self, user_one):
-        return CollectionFactory(creator=user_one)
+    def collection(self, user_one, provider):
+        return CollectionFactory(creator=user_one, provider=provider)
 
     @pytest.fixture()
     def project_private(self, user_one):
@@ -1370,7 +1374,7 @@ class TestCollectionNodeLinkDetail:
             pointed_project, user_one)
         assert collection.guid_links.filter(_id=pointed_project._id).exists()
         url = '/{}collections/{}/node_links/{}/'.format(
-            API_BASE, collection._id, pointer._id)
+            API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
@@ -3580,22 +3584,22 @@ class TestCollectedMetaList:
         return SubjectFactory()
 
     @pytest.fixture()
-    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
-        c = CollectionFactory(creator=user_one)
+    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three, provider):
+        c = CollectionFactory(creator=user_one, provider=provider)
         c.collect_object(project_one, user_one)
         c.collect_object(project_two, user_one, status='two')
         c.collect_object(project_three, user_one)
         return c
 
     @pytest.fixture()
-    def collection_with_one_cgm(self, user_one, project_one):
-        c = CollectionFactory(creator=user_one)
+    def collection_with_one_cgm(self, user_one, project_one, provider):
+        c = CollectionFactory(creator=user_one, provider=provider)
         c.collect_object(project_one, user_one)
         return c
 
     @pytest.fixture()
-    def collection_with_zero_cgm(self, user_one):
-        return CollectionFactory(creator=user_one)
+    def collection_with_zero_cgm(self, user_one, provider):
+        return CollectionFactory(creator=user_one, provider=provider)
 
     @pytest.fixture()
     def url(self):
@@ -3746,7 +3750,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def url(self, collection, cgm):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm._id)
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
     @pytest.fixture()
     def payload(self):
@@ -3789,11 +3793,11 @@ class TestCollectedMetaDetail:
         collection.save()
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,
@@ -3854,7 +3858,7 @@ class TestCollectedMetaDetail:
 
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,

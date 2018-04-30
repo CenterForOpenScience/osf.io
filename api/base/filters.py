@@ -430,6 +430,8 @@ class ListFilterMixin(FilterMixin):
                 else self.model_class.primary_identifier_name
             )
             operation['op'] = 'in'
+            if not isinstance(operation['value'], list):
+                operation['value'] = [operation['value']]
         if field_name == 'subjects':
             if Subject.objects.filter(_id=operation['value']).exists():
                 operation['source_field_name'] = 'subjects___id'

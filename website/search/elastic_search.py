@@ -631,17 +631,17 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
     CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
     if collection_id:
         try:
-            cgm = CollectedGuidMetadata.objects.filter(
+            cgm = CollectedGuidMetadata.objects.get(
                 guid___id=cgm_id,
                 collection_id=collection_id,
                 collection__provider__isnull=False,
                 collection__deleted__isnull=True,
-                collection__is_bookmark_collection=False).first()
+                collection__is_bookmark_collection=False)
 
         except CollectedGuidMetadata.DoesNotExist:
             logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
         else:
-            if hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+            if cgm and hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
                 try:
                     update_cgm(cgm, op=op, index=index)
                 except Exception as exc:

@@ -152,7 +152,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
         'status',
     ])
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='guid._id', read_only=True)
     type = TypeField()
 
     creator = RelationshipField(
@@ -176,7 +176,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'collected-metadata:collected-metadata-detail',
             kwargs={
                 'collection_id': obj.collection._id,
-                'cgm_id': obj._id,
+                'cgm_id': obj.guid._id,
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
@@ -246,7 +246,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
             'collections:node-pointer-detail',
             kwargs={
                 'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
-                'node_link_id': obj._id,
+                'node_link_id': obj.guid._id,
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
