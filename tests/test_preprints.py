@@ -314,7 +314,7 @@ class TestPreprintIdentifiers(OsfTestCase):
     def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory()
         preprint = PreprintFactory(provider=new_provider)
-        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
+        ideal_doi = settings.DOI_FORMAT.format(namespace=new_provider.doi_prefix, guid=preprint._id)
 
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 

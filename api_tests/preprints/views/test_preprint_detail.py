@@ -15,7 +15,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import EZID_FORMAT, DOI_NAMESPACE
+from website.settings import DOI_FORMAT, EZID_DOI_NAMESPACE
 
 
 def build_preprint_update_payload(
@@ -125,8 +125,8 @@ class TestPreprintDetail:
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
+        expected_doi = DOI_FORMAT.format(
+            namespace=EZID_DOI_NAMESPACE,
             guid=unpublished_preprint._id).replace(
             'doi:',
             '').upper()
@@ -136,8 +136,8 @@ class TestPreprintDetail:
 
     def test_published_preprint_doi_link_returned_after_datacite_request(
             self, app, user, preprint, url):
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
+        expected_doi = DOI_FORMAT.format(
+            namespace=EZID_DOI_NAMESPACE,
             guid=preprint._id).replace(
             'doi:',
             '')

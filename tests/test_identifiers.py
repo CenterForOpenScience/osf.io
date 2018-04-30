@@ -165,9 +165,8 @@ class TestMetadataGeneration(OsfTestCase):
             'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
         }
         preprint = PreprintFactory(provider=provider, project=self.node, is_published=True, license_details=license_details)
-
-        crossref_xml = metadata.crossref_metadata_for_preprint(preprint, pretty_print=True)
-
+        doi = settings.DOI_FORMAT.format(namespace=preprint.provider.doi_prefix, guid=preprint._id)
+        crossref_xml = metadata.crossref_metadata_for_preprint(preprint, doi, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find(".//{%s}contributors" % metadata.CROSSREF_NAMESPACE)
 
@@ -241,7 +240,7 @@ class TestIdentifierViews(OsfTestCase):
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
+        doi = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
         url.path.segments.append(doi)
         responses.add(
             responses.Response(
@@ -249,8 +248,8 @@ class TestIdentifierViews(OsfTestCase):
                 url.url,
                 body=to_anvl({
                     'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
-                        doi=settings.DOI_NAMESPACE,
-                        ark=settings.ARK_NAMESPACE,
+                        doi=settings.EZID_DOI_NAMESPACE,
+                        ark=settings.EZID_ARK_NAMESPACE,
                         ident=identifier,
                     ),
                 }),
@@ -273,7 +272,7 @@ class TestIdentifierViews(OsfTestCase):
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):
         identifier = self.node._id
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
+        doi = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
         url.path.segments.append(doi)
         responses.add(
@@ -347,12 +346,13 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.CROSSREF_USERNAME', 'thisisatest')
     @mock.patch('website.settings.CROSSREF_PASSWORD', 'thisisatest')
+    @mock.patch('website.identifiers.client.CrossRefClient.BASE_URL', 'https://test.test.osf.io')
     def test_create_identifiers_crossref(self):
 
         responses.add(
             responses.Response(
                 responses.POST,
-                settings.CROSSREF_DEPOSIT_URL,
+                'https://test.test.osf.io',
                 body=self.mock_crossref_response,
                 content_type='text/html;charset=ISO-8859-1',
                 status=200

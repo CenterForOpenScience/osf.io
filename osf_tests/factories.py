@@ -570,7 +570,7 @@ def sync_set_identifiers(preprint):
     ezid_return_value = {
         'response': {
             'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
+                doi=settings.EZID_DOI_NAMESPACE, ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id
             )
         },
         'already_exists': False

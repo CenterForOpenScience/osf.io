@@ -60,14 +60,14 @@ def get_doi_and_metadata_for_object(target_object):
     from osf.models import PreprintService, PreprintProvider
 
     metadata_function = datacite_metadata_for_node
-    namespace = settings.DOI_NAMESPACE
+    namespace = settings.EZID_DOI_NAMESPACE
     if isinstance(target_object, PreprintService):
         metadata_function = crossref_metadata_for_preprint
         doi_prefix = target_object.provider.doi_prefix
         if not doi_prefix:
             doi_prefix = PreprintProvider.objects.get(_id='osf').doi_prefix
         namespace = doi_prefix
-    doi = settings.DOI_FORMAT.format(namespace=namespace, guid=target_object._id.upper())
+    doi = settings.DOI_FORMAT.format(namespace=namespace, guid=target_object._id)
 
     metadata = metadata_function(target_object, doi)
 
@@ -129,10 +129,10 @@ def parse_identifiers(ezid_response):
 
     if exists:
         doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
+        suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
         return {
             'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+            'ark': '{0}{1}'.format(settings.EZID_ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
         identifiers = dict(
@@ -156,11 +156,11 @@ def get_or_create_identifiers(target_object):
     only_doi = response_dict['only_doi']
     if exists:
         doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
+        suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
         if not only_doi:
             return {
                 'doi': doi.replace('doi:', ''),
-                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+                'ark': '{0}{1}'.format(settings.EZID_ARK_NAMESPACE.replace('ark:', ''), suffix),
             }
         else:
             return {'doi': doi.replace('doi:', '')}
