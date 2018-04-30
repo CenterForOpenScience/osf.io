@@ -8,7 +8,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
 from osf.models import MetaSchema
-from api.metaschemas.serializers import MetaSchemaSerializer
+from api.metaschemas.serializers import MetaSchemaSerializer, RegistrationMetaSchemaSerializer
 
 
 class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
@@ -23,7 +23,7 @@ class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = MetaSchemaSerializer
+    serializer_class = RegistrationMetaSchemaSerializer
     view_category = 'registration-metaschemas'
     view_name = 'registration-metaschema-list'
 
@@ -45,7 +45,7 @@ class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.METASCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = MetaSchemaSerializer
+    serializer_class = RegistrationMetaSchemaSerializer
     view_category = 'registration-metaschemas'
     view_name = 'registration-metaschema-detail'
 
