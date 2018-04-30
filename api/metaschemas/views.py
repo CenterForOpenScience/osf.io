@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-
+from api.base.views import DeprecatedView
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
@@ -11,7 +11,7 @@ from osf.models import MetaSchema
 from api.metaschemas.serializers import MetaSchemaSerializer
 
 
-class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
+class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
 
     """
@@ -24,8 +24,8 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
     serializer_class = MetaSchemaSerializer
-    view_category = 'metaschemas'
-    view_name = 'metaschema-list'
+    view_category = 'registration-metaschemas'
+    view_name = 'registration-metaschema-list'
 
     ordering = ('-id',)
 
@@ -34,9 +34,8 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
         return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
 
-class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
-
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -47,10 +46,28 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = MetaSchemaSerializer
-    view_category = 'metaschemas'
-    view_name = 'metaschema-detail'
+    view_category = 'registration-metaschemas'
+    view_name = 'registration-metaschema-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
         return get_object_or_error(MetaSchema, schema_id, self.request)
+
+
+class DeprecatedMetaSchemasList(DeprecatedView, RegistrationMetaschemaList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
+    """
+    max_version = '2.7'
+    view_category = 'metaschemas'
+    view_name = 'metaschema-list'
+    serializer_class = MetaSchemaSerializer
+
+
+class DeprecatedMetaSchemaDetail(DeprecatedView, RegistrationMetaschemaDetail):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
+    """
+    max_version = '2.7'
+    view_category = 'metaschemas'
+    view_name = 'metaschema-detail'
+    serializer_class = MetaSchemaSerializer

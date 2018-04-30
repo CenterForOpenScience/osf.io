@@ -1134,7 +1134,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
+        related_view='metaschemas:registration-metaschema-detail',
         related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
     )
 
