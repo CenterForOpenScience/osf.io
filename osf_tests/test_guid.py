@@ -196,7 +196,6 @@ class TestResolveGuid(OsfTestCase):
     @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
     @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
         'preprints': {
-            'url': '/preprints/',
             'server': 'http://localhost:4200',
             'path': '/preprints/'
         },

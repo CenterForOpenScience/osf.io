@@ -6,6 +6,7 @@ NOTE: local.py will not be added to source control.
 '''
 
 from . import defaults
+from os import environ
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -22,40 +23,32 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
-LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
-PROXY_EMBER_APPS = False
+PROXY_EMBER_APPS = True
+EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
+LIVE_RELOAD_DOMAIN = 'http://{}:4200'.format(EMBER_DOMAIN)  # Change port for the current app
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
-        'url': '/ember_osf_web/',
-        'server': 'http://localhost:4200',
+        'server': 'http://{}:4200/'.format(EMBER_DOMAIN),
         'path': '/ember_osf_web/'
     },
     'preprints': {
-        'url': '/preprints/',
-        'server': 'http://192.168.168.167:4201/',
+        'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
         'path': '/preprints/'
     },
     'registries': {
-        'url': '/registries/',
-        'server': 'http://192.168.168.167:4202',
+        'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
         'path': '/registries/'
     },
     'reviews': {
-        'url': '/reviews/',
-        'server': 'http://localhost:4203',
+        'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
         'path': '/reviews/'
-    }
-    # 'meetings': {
-    #     'url': '/meetings/',
-    #     'server': 'http://localhost:4201',
-    #     'path': '../osf-meetings/dist/'
-    # },
+    },
 }
 
 SEARCH_ENGINE = 'elastic'
