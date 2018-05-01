@@ -56,7 +56,7 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
-def get_doi_and_metadata_for_object(target_object):
+def get_doi_and_metadata_for_object(target_object, **kwargs):
     from osf.models import PreprintService, PreprintProvider
 
     metadata_function = datacite_metadata_for_node
@@ -69,16 +69,16 @@ def get_doi_and_metadata_for_object(target_object):
         namespace = doi_prefix
     doi = settings.DOI_FORMAT.format(namespace=namespace, guid=target_object._id)
 
-    metadata = metadata_function(target_object, doi)
+    metadata = metadata_function(target_object, doi, **kwargs)
 
     return doi, metadata
 
 
-def build_doi_metadata(target_object):
+def build_doi_metadata(target_object, **kwargs):
     """Build metadata for DOI submission to a DOI client.
     Moved from website/project/views/register.py for use by other modules
     """
-    doi, doi_metadata = get_doi_and_metadata_for_object(target_object)
+    doi, doi_metadata = get_doi_and_metadata_for_object(target_object, **kwargs)
     metadata = {
         '_target': target_object.absolute_url,
         'doi_metadata': doi_metadata

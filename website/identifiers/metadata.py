@@ -136,11 +136,14 @@ def format_date_crossref(element, date):
     return elements
 
 
-def crossref_metadata_for_preprint(preprint, doi, pretty_print=False):
+def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
     """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
     :param preprint -- the preprint
     """
+    if kwargs.get('status', None) == 'unavailable':
+        return ''
+
     element = lxml.builder.ElementMaker(nsmap={
         None: CROSSREF_NAMESPACE,
         'xsi': XSI},
