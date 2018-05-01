@@ -68,7 +68,7 @@ class TestMetadataGeneration(OsfTestCase):
         pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
         assert_equal(pub_year.text, str(self.node.registered_date.year))
 
-    def test_metadata_for_preprint_has_correct_structure(self):
+    def test_datacite_metadata_for_preprint_has_correct_structure(self):
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {
@@ -114,7 +114,7 @@ class TestMetadataGeneration(OsfTestCase):
         rights = root.find('{%s}rightsList' % metadata.NAMESPACE).getchildren()[0]
         assert rights.text == preprint.license.name
 
-    def test_format_creators_for_preprint(self):
+    def test_datacite_format_creators_for_preprint(self):
         preprint = PreprintFactory(project=self.node, is_published=True)
 
         verified_user = AuthUserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
@@ -123,7 +123,7 @@ class TestMetadataGeneration(OsfTestCase):
         self.node.add_contributor(linked_user, visible=True)
         self.node.save()
 
-        formatted_creators = metadata.format_creators(preprint)
+        formatted_creators = metadata.datacite_format_creators(preprint)
 
         contributors_with_orcids = 0
         guid_identifiers = []
@@ -145,7 +145,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert len(formatted_creators) == len(self.node.visible_contributors)
         assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
 
-    def test_format_subjects_for_preprint(self):
+    def test_datacite_format_subjects_for_preprint(self):
         subject = SubjectFactory()
         subject_1 = SubjectFactory(parent=subject)
         subject_2 = SubjectFactory(parent=subject)
@@ -153,10 +153,10 @@ class TestMetadataGeneration(OsfTestCase):
         subjects = [[subject._id, subject_1._id], [subject._id, subject_2._id]]
         preprint = PreprintFactory(subjects=subjects, project=self.node, is_published=True)
 
-        formatted_subjects = metadata.format_subjects(preprint)
+        formatted_subjects = metadata.datacite_format_subjects(preprint)
         assert len(formatted_subjects) == Subject.objects.all().count()
 
-    def test_crossref_metadata_has_correct_structure(self):
+    def test_crossref_metadata_for_preprint_has_correct_structure(self):
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {
@@ -237,7 +237,7 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_not_exists(self):
+    def test_create_identifiers_not_exists_ezid(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
         doi = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
@@ -270,7 +270,7 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_exists(self):
+    def test_create_identifiers_exists_ezid(self):
         identifier = self.node._id
         doi = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
