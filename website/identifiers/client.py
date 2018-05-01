@@ -92,7 +92,8 @@ class CrossRefClient(BaseClient):
         url.args.update(query)
         return url.url
 
-    def create_identifier(self, filename, metadata=None):
+    def create_identifier(self, identifier, metadata=None):
+        filename = identifier.split('/')[-1]
         resp = self._make_request(
             'POST',
             self._build_url(

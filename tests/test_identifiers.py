@@ -362,7 +362,7 @@ class TestIdentifierViews(OsfTestCase):
         preprint = PreprintFactory(doi=None)
         doi, preprint_metadata = build_doi_metadata(preprint)
         client = CrossRefClient(settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
-        res = client.create_identifier(filename=preprint._id, metadata=preprint_metadata)
+        res = client.create_identifier(identifier=doi, metadata=preprint_metadata)
 
         assert res.status_code == 200
         assert 'SUCCESS' in res.content
