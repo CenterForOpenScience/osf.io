@@ -9,6 +9,7 @@ from osf.models import Node
 
 class Migration(migrations.Migration):
 
+    # Avoid locking the osf_abstractnode table
     atomic = False
 
     dependencies = [
@@ -16,7 +17,8 @@ class Migration(migrations.Migration):
     ]
 
     def add_default_access_requests_enabled(self, *args, **kwargs):
-        BATCHSIZE = 10000
+        # Update nodes in batches
+        BATCHSIZE = 5000
 
         max_pk = Node.objects.aggregate(models.Max('pk'))['pk__max']
         if max_pk is not None:
