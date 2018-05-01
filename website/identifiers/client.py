@@ -105,3 +105,6 @@ class CrossRefClient(BaseClient):
             expects=(200, ),
         )
         return resp
+
+    def change_status_identifier(self, status, identifier, metadata=None):
+        return self.create_identifier(identifier, metadata=metadata)
