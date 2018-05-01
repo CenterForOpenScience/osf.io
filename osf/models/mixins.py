@@ -731,4 +731,3 @@ class TaxonomizableMixin(models.Model):
             )
 
         self.save(old_subjects=old_subjects)
-

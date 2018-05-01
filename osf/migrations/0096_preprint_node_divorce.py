@@ -6,9 +6,14 @@ from django.contrib.auth.models import Group
 from django.db import migrations
 from django.db.models import F
 from django.db.models import OuterRef, Subquery
+from guardian.shortcuts import assign_perm, get_perms, remove_perm
+from django.core.management.sql import emit_post_migrate_signal
+from osf.models import OSFUser
+
 
 from itertools import islice, chain
 
+from itertools import islice, chain
 
 def batch(iterable, size):
     sourceiter = iter(iterable)
@@ -18,6 +23,9 @@ def batch(iterable, size):
 
 
 def divorce_preprints_from_nodes(apps, schema_editor):
+    # this is to make sure that the permissions created earlier exist!
+    emit_post_migrate_signal(2, False, 'default')
+
     Preprint = apps.get_model('osf', 'PreprintService')
     AbstractNode = apps.get_model('osf', 'AbstractNode')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
@@ -58,23 +66,49 @@ def divorce_preprints_from_nodes(apps, schema_editor):
                 write.append(contrib.user)
             else:
                 read.append(contrib.user)
-        preprint.get_group('admin').user_set.add(admin)
-        preprint.get_group('write').user_set.add(write)
-        preprint.get_group('read').user_set.add(read)
+
+        update_group_permissions(preprint)
+
+        add_users_to_group(Group.objects.get(name=format_group(preprint, 'admin')), admin)
+        add_users_to_group(Group.objects.get(name=format_group(preprint, 'write')), write)
+        add_users_to_group(Group.objects.get(name=format_group(preprint, 'read')), read)
+
         preprint.save()
 
     batch_size = 1000
-    while True:
-        batch = list(islice(contributors, batch_size))
-        if not batch:
-            break
-        PreprintContributor.objects.bulk_create(batch, batch_size)
+    for batchiter in batch(contributors, batch_size):
+        PreprintContributor.objects.bulk_create(batchiter)
+
+
+group_format = 'preprint_{self.id}_{group}'
+
+def format_group(self, name):
+    return group_format.format(self=self, group=name)
+
+def update_group_permissions(self):
+    for group_name, group_permissions in groups.items():
+        group, created = Group.objects.get_or_create(name=format_group(self, group_name))
+        to_remove = set(get_perms(group, self)).difference(group_permissions)
+        for p in to_remove:
+            remove_perm(p, group, self)
+        for p in group_permissions:
+            assign_perm(p, group, self)
+
+groups = {
+    'read': ('read_preprint',),
+    'write': ('read_preprint', 'write_preprint',),
+    'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
+}
+
+def add_users_to_group(group, user_list):
+    for user in user_list:
+        group.user_set.add(OSFUser.objects.get(id=user.id))
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0083_update_preprint_model_for_divorce'),
+        ('osf', '0095_update_preprint_model_for_divorce'),
     ]
 
     operations = [
