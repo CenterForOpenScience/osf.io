@@ -9,7 +9,7 @@ from django.db import transaction
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
+from website.identifiers.utils import request_identifiers, parse_identifiers
 
 django.setup()
 logger = logging.getLogger(__name__)
@@ -26,8 +26,8 @@ def add_identifiers_to_preprints(dry_run=True):
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
 
         if not dry_run:
-            ezid_response = request_identifiers_from_ezid(preprint)
-            id_dict = parse_identifiers(ezid_response)
+            doi_client_response = request_identifiers(preprint)
+            id_dict = parse_identifiers(doi_client_response)
             preprint.set_identifier_values(doi=id_dict['doi'])
             preprint.save()
 
