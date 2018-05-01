@@ -18,7 +18,7 @@ import lxml.etree
 from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers import metadata
-from website.identifiers.client import CrossRefClient
+from website.identifiers.client import CrossRefClient, EzidClient
 from website.identifiers.utils import build_doi_metadata
 from osf.models import Identifier, Subject, NodeLicense
 
@@ -237,6 +237,7 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('website.settings.NODE_DOI_CLIENT', 'ezid')
     def test_create_identifiers_not_exists_ezid(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
@@ -270,6 +271,7 @@ class TestIdentifierViews(OsfTestCase):
     @responses.activate
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('website.settings.NODE_DOI_CLIENT', 'ezid')
     def test_create_identifiers_exists_ezid(self):
         identifier = self.node._id
         doi = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)

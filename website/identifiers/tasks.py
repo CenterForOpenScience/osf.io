@@ -10,6 +10,6 @@ def update_doi_metadata_on_change(target_guid, status):
     target_object = Guid.load(target_guid).referent
     if target_object.get_identifier('doi'):
         client = get_doi_client(target_object)
-
-        doi, metadata = build_doi_metadata(target_object)
-        client.change_status_identifier(status, doi, metadata)
+        if client:
+            doi, metadata = build_doi_metadata(target_object)
+            client.change_status_identifier(status, doi, metadata)

@@ -5,7 +5,7 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.identifiers.metadata import datacite_metadata_for_node, crossref_metadata_for_preprint
+from website.identifiers.metadata import datacite_metadata_for_node, crossref_metadata_for_preprint, datacite_metadata_for_preprint
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +62,11 @@ def get_doi_and_metadata_for_object(target_object, **kwargs):
     metadata_function = datacite_metadata_for_node
     namespace = settings.EZID_DOI_NAMESPACE
     if isinstance(target_object, PreprintService):
-        metadata_function = crossref_metadata_for_preprint
         doi_prefix = target_object.provider.doi_prefix
+        if settings.PREPRINT_DOI_CLIENT == 'crossref':
+            metadata_function = crossref_metadata_for_preprint
+        else:
+            metadata_function = datacite_metadata_for_preprint
         if not doi_prefix:
             doi_prefix = PreprintProvider.objects.get(_id='osf').doi_prefix
         namespace = doi_prefix
@@ -87,19 +90,47 @@ def build_doi_metadata(target_object, **kwargs):
 
 
 def get_doi_client(target_object):
+    """ Get the approprite DOI creation client for the target object requested.
+    :param target_object: object to request a DOI for.
+    :return: client appropriate for that target object.
+             If credentials for that target object aren't set, return None
+    """
     from website.identifiers.client import EzidClient, CrossRefClient
-    from osf.models import PreprintService
+    from osf.models import PreprintService, AbstractNode
+
+    # TODO -- I don't love this implementation because it still requires some checking to see what
+    #         the client is for a specific object...
 
     if isinstance(target_object, PreprintService):
-        return CrossRefClient(settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
-
-    return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        if settings.PREPRINT_DOI_CLIENT == 'crossref':
+            if (settings.CROSSREF_USERNAME and settings.CROSSREF_PASSWORD):
+                return CrossRefClient(settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
+            elif settings.PREPRINT_DOI_CLIENT == 'ezid':
+                if (settings.EZID_USERNAME, settings.EZID_PASSWORD):
+                    return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+    if isinstance(target_object, AbstractNode):
+        if settings.NODE_DOI_CLIENT == 'ezid':
+            if (settings.EZID_USERNAME, settings.EZID_PASSWORD):
+                return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
 
 
 def request_identifiers(target_object):
+    """Request identifiers for the target object using the appropriate client.
+
+    :param target_object: object to request identifiers for
+    :return: dict with keys relating to the status of the identifier
+                 response - response from the DOI client
+                 already_exists - the DOI has already been registered with a client
+                 only_doi - boolean; only include the DOI (and not the ARK) identifier
+                            when processing this response in get_or_create_identifiers
+    """
     doi, metadata = build_doi_metadata(target_object)
 
     client = get_doi_client(target_object)
+
+    if not client:
+        return
+
     already_exists = False
     only_doi = True
     try:

@@ -345,6 +345,10 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
+# Set which client to use for which type of object
+PREPRINT_DOI_CLIENT = 'crossref'  # set to 'ezid' to use old ezid client
+NODE_DOI_CLIENT = 'ezid'
+
 # Test EZID identifier namespaces
 EZID_DOI_NAMESPACE = 'doi:10.5072'
 EZID_ARK_NAMESPACE = 'ark:99999'
