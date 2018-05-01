@@ -1,15 +1,17 @@
 import pytest
+import mock
 
 from api.users.serializers import UserSerializer
 from osf_tests.factories import (
-    AuthUserFactory,
+    UserFactory,
 )
 from tests.utils import make_drf_request_with_version
 
 
 @pytest.fixture()
-def user():
-    user = AuthUserFactory()
+@mock.patch('website.search.elastic_search.update_user')
+def user(mock_update_user):
+    user = UserFactory()
     user.jobs = [{
         'title': 'Veterinarian/Owner',
         'ongoing': True,
@@ -26,14 +28,15 @@ def user():
         'startMonth': 8,
         'institution': 'UC Davis'
     }]
-    return user.save()
+    user.save()
+    return user
 
 
 @pytest.mark.django_db
 class TestUserSerializer:
 
     def test_user_serializer(self, user):
-        req = make_drf_request_with_version(version='2.7')
+        req = make_drf_request_with_version(version='2.0')
         result = UserSerializer(user, context={'request': req}).data
         data = result['data']
         assert data['id'] == user._id
@@ -43,7 +46,7 @@ class TestUserSerializer:
         attributes = data['attributes']
         assert attributes['family_name'] == user.family_name
         assert attributes['given_name'] == user.given_name
-        assert attributes['active'] == user.active
+        assert attributes['active'] == user.is_active
         assert attributes['jobs'] == user.jobs
         assert attributes['schools'] == user.schools
 
