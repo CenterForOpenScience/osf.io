@@ -467,7 +467,7 @@ def bulk_update_cgm(cgms, actions=None, op='update', index=None):
         } for cgm in cgms)
 
     try:
-        helpers.bulk(client(), actions, refresh=True)
+        helpers.bulk(client(), actions or [], refresh=True)
     except helpers.BulkIndexError as e:
         raise exceptions.BulkUpdateError(e.errors)
 
