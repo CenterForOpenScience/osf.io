@@ -45,7 +45,6 @@ from osf.models.private_link import PrivateLink
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.collection import CollectedGuidMetadata
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from addons.wiki import utils as wiki_utils

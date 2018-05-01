@@ -7,7 +7,6 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
-    CollectionProviderFactory,
     NodeFactory,
     RegistrationFactory,
     ProjectFactory,
@@ -29,9 +28,6 @@ url_collection_list = '/{}collections/'.format(API_BASE)
 def user_one():
     return AuthUserFactory()
 
-@pytest.fixture()
-def provider():
-    return CollectionProviderFactory()
 
 @pytest.mark.django_db
 class TestCollectionList:
@@ -1250,8 +1246,8 @@ class TestCollectionNodeLinkDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def collection(self, user_one, provider):
-        return CollectionFactory(creator=user_one, provider=provider)
+    def collection(self, user_one):
+        return CollectionFactory(creator=user_one)
 
     @pytest.fixture()
     def project_private(self, user_one):
@@ -3584,22 +3580,22 @@ class TestCollectedMetaList:
         return SubjectFactory()
 
     @pytest.fixture()
-    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three, provider):
-        c = CollectionFactory(creator=user_one, provider=provider)
+    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
+        c = CollectionFactory(creator=user_one)
         c.collect_object(project_one, user_one)
         c.collect_object(project_two, user_one, status='two')
         c.collect_object(project_three, user_one)
         return c
 
     @pytest.fixture()
-    def collection_with_one_cgm(self, user_one, project_one, provider):
-        c = CollectionFactory(creator=user_one, provider=provider)
+    def collection_with_one_cgm(self, user_one, project_one):
+        c = CollectionFactory(creator=user_one)
         c.collect_object(project_one, user_one)
         return c
 
     @pytest.fixture()
-    def collection_with_zero_cgm(self, user_one, provider):
-        return CollectionFactory(creator=user_one, provider=provider)
+    def collection_with_zero_cgm(self, user_one):
+        return CollectionFactory(creator=user_one)
 
     @pytest.fixture()
     def url(self):
