@@ -6,10 +6,10 @@
         <label class="">
           <input type="checkbox" data-bind="checked: consent, value: consent">
           <span data-bind="if: mustAgree">
-            I agree
+            I agree. I understand that articles must be published by December 31, 2018 in order to be eligible for a prize.
           </span>
           <span data-bind="ifnot: mustAgree">
-            I have read these terms
+            I have read these terms. I understand that articles must be published by December 31, 2018 in order to be eligible for a prize.
           </span>
         </label>
       </div>
