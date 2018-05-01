@@ -197,7 +197,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
     def url(self):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
 
-    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    @mock.patch('website.identifiers.client.CrossRefClient.change_status_identifier')
     def test_provider_filter_equals_returns_one(
             self,
             mock_change_identifier,

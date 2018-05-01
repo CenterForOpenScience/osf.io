@@ -314,6 +314,8 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         privacy = 'public'
         mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
         mock_change_identifier.start()
+        mock_change_identifier_preprints = mock.patch('website.identifiers.client.CrossRefClient.change_status_identifier')
+        mock_change_identifier_preprints.start()
         project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
         node = project.node
     elif is_registration:
