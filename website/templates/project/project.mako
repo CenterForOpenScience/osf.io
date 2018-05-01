@@ -273,6 +273,37 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
+% if node['is_collected']:
+    <div class="collections-container">
+    % for i, collection in enumerate(node['collections'][:5]):
+    <div class="row">
+        <div class="col-xs-6">
+            <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+            % if any([collection['type'], collection['status']]):
+              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            % endif
+            </div>
+            <div id="metadata${i}" class="collection-details collapse">
+                <dl class="dl-horizontal dl-collection">
+
+                % if collection['type']:
+                  <dt>Type:</dt>
+                  <dd>${collection['type']}</dd>
+                % endif
+
+                % if collection['status']:
+                  <dt>Status:</dt>
+                  <dd>${collection['status']}</dd>
+                % endif
+
+                </dl>
+            </div>
+        </div>
+    </div>
+    % endfor
+    </div>
+% endif
+
 % if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
 <div class="row">
     <div class="col-xs-12">

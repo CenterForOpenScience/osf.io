@@ -42,6 +42,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     default_license = models.ForeignKey(NodeLicense, related_name='default_license',
                                         null=True, blank=True, on_delete=models.CASCADE)
     allow_submissions = models.BooleanField(default=True)
+    allow_commenting = models.BooleanField(default=False)
 
     def __unicode__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -218,3 +219,11 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
         else:
             # A user is required for Collections / Groups
             sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))
+
+
+class WhitelistedSHAREPreprintProvider(BaseModel):
+    id = models.AutoField(primary_key=True)
+    provider_name = models.CharField(unique=True, max_length=200)
+
+    def __unicode__(self):
+        return self.provider_name

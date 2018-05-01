@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@centerforopenscience/list-of-licenses@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.0.0.tgz#0d9ffad911347e711e788d2217abf24d31294432"
+"@centerforopenscience/list-of-licenses@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.1.0.tgz#2a4379633409205047e723e21cd818560a29ab45"
 
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
@@ -66,16 +66,7 @@ ajv@^4.9.1:
     co "^4.6.0"
     json-stable-stringify "^1.0.1"
 
-ajv@^5.1.0:
-  version "5.2.3"
-  resolved "https://registry.yarnpkg.com/ajv/-/ajv-5.2.3.tgz#c06f598778c44c6b161abafe3466b81ad1814ed2"
-  dependencies:
-    co "^4.6.0"
-    fast-deep-equal "^1.0.0"
-    json-schema-traverse "^0.3.0"
-    json-stable-stringify "^1.0.1"
-
-ajv@^5.1.5:
+ajv@^5.1.0, ajv@^5.1.5:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-5.3.0.tgz#4414ff74a50879c208ee5fdc826e32c303549eda"
   dependencies:
@@ -249,11 +240,7 @@ async@0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/async/-/async-0.9.0.tgz#ac3613b1da9bed1b47510bb4651b8931e47146c7"
 
-async@>=0.1.7:
-  version "1.5.2"
-  resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
-
-async@^2.1.2:
+async@>=0.1.7, async@^2.1.2:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/async/-/async-2.5.0.tgz#843190fd6b7357a0b9e1c956edddd5ec8462b54d"
   dependencies:

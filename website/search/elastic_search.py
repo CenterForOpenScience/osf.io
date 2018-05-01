@@ -278,7 +278,7 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis']),
+        'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
         'preprint_url': result.get('preprint_url'),
@@ -289,23 +289,18 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = AbstractNode.load(parent_id)
-    if parent is None:
-        return None
-    parent_info = {}
-    if parent is not None and parent.is_public:
-        parent_info['title'] = parent.title
-        parent_info['url'] = parent.url
-        parent_info['is_registration'] = parent.is_registration
-        parent_info['id'] = parent._id
-    else:
-        parent_info['title'] = '-- private project --'
-        parent_info['url'] = ''
-        parent_info['is_registration'] = None
-        parent_info['id'] = None
-    return parent_info
+    if parent and parent.is_public:
+        return {
+            'title': parent.title,
+            'url': parent.url,
+            'id': parent._id,
+            'is_registation': parent.is_registration,
+        }
+    return None
 
 
 COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
+
 
 def get_doctype_from_node(node):
     if node.is_registration:
