@@ -11,7 +11,7 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_ezid_metadata_on_change
+from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.utils import request_identifiers, parse_identifiers
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def update_or_create_preprint_identifiers(preprint):
         get_and_set_preprint_identifiers(preprint)
     else:
         try:
-            update_ezid_metadata_on_change(preprint._id, status=status)
+            update_doi_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])

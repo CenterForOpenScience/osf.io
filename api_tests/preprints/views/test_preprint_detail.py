@@ -400,8 +400,8 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
+    def test_update_tags(self, mock_update_doi_metadata, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -424,11 +424,11 @@ class TestPreprintUpdate:
                     'name',
                     flat=True))
         ) == new_tags
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
     def test_update_contributors(
-            self, mock_update_ezid, app, user, preprint, url):
+            self, mock_update_doi_metadata, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
@@ -458,7 +458,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
