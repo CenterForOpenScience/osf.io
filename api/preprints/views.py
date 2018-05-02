@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, PreprintService
+from osf.models import ReviewAction, Preprint
 from osf.utils.requests import check_select_for_update
 
 from api.actions.permissions import ReviewActionPermission
@@ -43,10 +43,10 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
-        except PreprintService.DoesNotExist:
+        except Preprint.DoesNotExist:
             raise NotFound
 
         if preprint.node.is_deleted:
@@ -91,7 +91,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(PreprintService.objects.all(), auth_user)
+        return self.preprints_queryset(Preprint.objects.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -126,7 +126,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     def perform_destroy(self, instance):
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
-        PreprintService.delete(instance)
+        Preprint.delete(instance)
 
     def get_parser_context(self, http_request):
         """

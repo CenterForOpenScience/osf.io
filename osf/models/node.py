@@ -1592,8 +1592,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save_node_preprints(self):
         if self.preprint_file:
-            PreprintService = apps.get_model('osf.PreprintService')
-            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
+            Preprint = apps.get_model('osf.Preprint')
+            for preprint in Preprint.objects.filter(node_id=self.id, is_published=True):
                 preprint.save()
 
     @property
@@ -2363,9 +2363,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
-            PreprintService = apps.get_model('osf.PreprintService')
+            Preprint = apps.get_model('osf.Preprint')
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
+            for preprint in Preprint.objects.filter(node_id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)

@@ -99,7 +99,7 @@ class TestDeletePreprintProvider(AdminTestCase):
 
     def test_cannot_delete_if_preprints_present(self):
         preprint = PreprintFactory()
-        self.preprint_provider.preprint_services.add(preprint)
+        self.preprint_provider.preprints.add(preprint)
         self.preprint_provider.save()
 
         redirect = self.view.delete(self.request)
@@ -117,7 +117,7 @@ class TestDeletePreprintProvider(AdminTestCase):
 
     def test_cannot_get_if_preprints_present(self):
         preprint = PreprintFactory()
-        self.preprint_provider.preprint_services.add(preprint)
+        self.preprint_provider.preprints.add(preprint)
         self.preprint_provider.save()
 
         redirect = self.view.get(self.request)

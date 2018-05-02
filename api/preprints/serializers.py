@@ -19,7 +19,7 @@ from framework.exceptions import PermissionsError
 from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions
 
 
@@ -83,8 +83,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     license_record = NodeLicenseSerializer(required=False, source='license')
     title = ser.CharField(source='title', required=False, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='description')
-    tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
+    tags = JSONAPIListField(child=NodeTagField(), required=False, source='tags')
+    node_is_public = ser.BooleanField(read_only=True, source='is_public')
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
     contributors = RelationshipField(
@@ -169,7 +169,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
 
     def update(self, preprint, validated_data):
-        assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
+        assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
 
         auth = get_user_auth(self.context['request'])
@@ -291,7 +291,7 @@ class PreprintCreateSerializer(PreprintSerializer):
         if node_preprints.exists():
             raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
 
-        preprint = PreprintService(node=node, provider=provider)
+        preprint = Preprint(node=node, provider=provider)
         preprint.save()
         preprint.node._has_abandoned_preprint = True
         preprint.node.save()

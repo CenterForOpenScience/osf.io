@@ -31,7 +31,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
 
 
 class ReviewAction(BaseAction):
-    target = models.ForeignKey('PreprintService', related_name='actions', on_delete=models.CASCADE)
+    target = models.ForeignKey('Preprint', related_name='actions', on_delete=models.CASCADE)
 
 
 class NodeRequestAction(BaseAction):

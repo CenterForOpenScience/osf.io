@@ -14,7 +14,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
 )
 
-from osf.models import Node, Registration, PreprintService, Identifier
+from osf.models import Node, Registration, Preprint, Identifier
 
 
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -124,7 +124,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
                 return NodeIdentifierSerializer
             if isinstance(referent, Registration):
                 return RegistrationIdentifierSerializer
-            if isinstance(referent, PreprintService):
+            if isinstance(referent, Preprint):
                 return PreprintIdentifierSerializer
         return JSONAPISerializer
 

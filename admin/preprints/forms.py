@@ -1,9 +1,9 @@
 from django import forms
 
-from osf.models import PreprintService
+from osf.models import Preprint
 
 
 class ChangeProviderForm(forms.ModelForm):
     class Meta:
-        model = PreprintService
+        model = Preprint
         fields = ('provider',)

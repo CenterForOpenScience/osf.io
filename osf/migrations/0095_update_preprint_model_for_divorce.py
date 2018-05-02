@@ -18,55 +18,91 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RenameModel('PreprintService', 'Preprint'),
+        migrations.CreateModel(
+            name='PreprintLog',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
+                ('date', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=django.utils.timezone.now, null=True)),
+                ('action', models.CharField(db_index=True, max_length=255)),
+                ('params', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
+                ('should_hide', models.BooleanField(default=False)),
+                ('foreign_user', models.CharField(blank=True, max_length=255, null=True)),
+                ('preprint', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='osf.Preprint')),
+                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='logs', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'ordering': ['-date'],
+                'get_latest_by': 'date',
+            },
+        ),
         migrations.CreateModel(
             name='PreprintContributor',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('visible', models.BooleanField(default=False)),
+                ('preprint', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Preprint')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL))
             ],
         ),
         migrations.AlterModelOptions(
-            name='preprintservice',
+            name='preprint',
             options={'permissions': (('osf_admin_view_preprint', 'Can view preprint service details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
         ),
         migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
             name='creator',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints_created', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
+            name='primary_file',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='osf.BaseFileNode'),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='is_public',
+            field=models.BooleanField(default=False, db_index=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='deleted',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='migrated',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
             name='description',
             field=models.TextField(blank=True, default=b''),
         ),
         migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
+            name='article_doi',
+            field= models.CharField(blank=True, max_length=128, null=True, validators=[osf.models.validators.validate_doi])
+        ),
+        migrations.AddField(
+            model_name='preprint',
             name='last_logged',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=django.utils.timezone.now, null=True),
         ),
         migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
             name='tags',
-            field=models.ManyToManyField(related_name='preprintservice_tagged', to='osf.Tag'),
+            field=models.ManyToManyField(related_name='preprint_tagged', to='osf.Tag'),
         ),
         migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
             name='title',
             field=models.TextField(default='Untitled', validators=[osf.models.validators.validate_title]),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='preprintcontributor',
-            name='preprint',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.PreprintService'),
-        ),
-        migrations.AddField(
-            model_name='preprintcontributor',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
+            model_name='preprint',
             name='_contributors',
             field=models.ManyToManyField(related_name='preprints', through='osf.PreprintContributor', to=settings.AUTH_USER_MODEL),
         ),

@@ -57,10 +57,10 @@ def merge_dicts(*dicts):
 
 
 def get_doi_and_metadata_for_object(target_object):
-    from osf.models import PreprintService
+    from osf.models import Preprint
 
     metadata_function = datacite_metadata_for_node
-    if isinstance(target_object, PreprintService):
+    if isinstance(target_object, Preprint):
         metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=target_object._id)

@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 def add_identifiers_to_preprints(dry_run=True):
-    from osf.models import PreprintService
+    from osf.models import Preprint
 
-    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
+    preprints_without_identifiers = Preprint.objects.filter(identifiers__isnull=True)
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
     identifiers_added = 0
 

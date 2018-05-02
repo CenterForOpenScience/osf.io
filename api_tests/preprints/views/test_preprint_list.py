@@ -12,7 +12,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsValidListMixin,
 )
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
-from osf.models import PreprintService, Node
+from osf.models import Preprint, Node
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -525,7 +525,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth)
         assert_equal(res.status_code, 201)
         preprint_id = res.json['data']['id']
-        preprint = PreprintService.load(preprint_id)
+        preprint = Preprint.load(preprint_id)
         log = preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)

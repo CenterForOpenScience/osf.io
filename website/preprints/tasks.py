@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    from osf.models import PreprintService
-    preprint = PreprintService.load(preprint_id)
+    from osf.models import Preprint
+    preprint = Preprint.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
@@ -58,8 +58,8 @@ def _update_preprint_share(preprint, old_subjects, share_type):
 def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
     # Any modifications to this function may need to change _update_preprint_share
     # Takes preprint_id to ensure async retries push fresh data
-    PreprintService = apps.get_model('osf.PreprintService')
-    preprint = PreprintService.load(preprint_id)
+    Preprint = apps.get_model('osf.Preprint')
+    preprint = Preprint.load(preprint_id)
 
     data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
@@ -179,8 +179,8 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
 @celery_app.task(ignore_results=True)
 def get_and_set_preprint_identifiers(preprint_id):
-    PreprintService = apps.get_model('osf.PreprintService')
-    preprint = PreprintService.load(preprint_id)
+    Preprint = apps.get_model('osf.Preprint')
+    preprint = Preprint.load(preprint_id)
     ezid_response = request_identifiers_from_ezid(preprint)
     if ezid_response is None:
         return

@@ -34,7 +34,7 @@ from osf.models import (Contributor,
                         ExternalAccount,
                         QuickFilesNode,
                         AbstractNode,
-                        PreprintService,
+                        Preprint,
                         Node,
                         Registration,
                         OSFUser)
@@ -334,7 +334,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        default_qs = Preprint.objects.filter(node___contributors__guids___id=target_user._id)
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):

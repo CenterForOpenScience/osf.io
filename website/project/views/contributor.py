@@ -17,7 +17,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, PreprintService
+from osf.models import AbstractNode, OSFUser, Preprint
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
@@ -576,11 +576,11 @@ def find_preprint_provider(node):
     """
 
     try:
-        preprint = PreprintService.objects.get(node=node)
+        preprint = Preprint.objects.get(node=node)
         provider = preprint.provider
         email_template = 'osf' if provider._id == 'osf' else 'branded'
         return email_template, provider
-    except PreprintService.DoesNotExist:
+    except Preprint.DoesNotExist:
         return None, None
 
 

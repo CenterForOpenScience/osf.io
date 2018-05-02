@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 
-from osf.models.preprint_service import PreprintService
+from osf.models.preprint import Preprint
 from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
 from website.preprints.tasks import update_preprint_share
 
@@ -37,7 +37,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     View of OSF database. No admin models.
     """
     template_name = 'preprints/preprint.html'
-    context_object_name = 'preprintservice'
+    context_object_name = 'preprint'
     permission_required = 'osf.osf_admin_view_preprint'
     raise_exception = True
     form_class = ChangeProviderForm
@@ -46,15 +46,15 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
 
     def post(self, request, *args, **kwargs):
-        if not request.user.has_perm('osf.change_preprintservice'):
+        if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
         return super(PreprintView, self).post(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
-        return PreprintService.load(self.kwargs.get('guid'))
+        return Preprint.load(self.kwargs.get('guid'))
 
     def get_context_data(self, **kwargs):
-        preprint = PreprintService.load(self.kwargs.get('guid'))
+        preprint = Preprint.load(self.kwargs.get('guid'))
         # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
@@ -63,7 +63,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
 
 class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
     template_name = 'preprints/reindex_preprint_share.html'
-    context_object_name = 'preprintservice'
+    context_object_name = 'preprint'
     object = None
     permission_required = 'osf.osf_admin_view_preprint'
     raise_exception = True
@@ -74,7 +74,7 @@ class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
         return super(PreprintReindexShare, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return PreprintService.load(self.kwargs.get('guid'))
+        return Preprint.load(self.kwargs.get('guid'))
 
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()

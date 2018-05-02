@@ -23,7 +23,7 @@ from framework.auth.core import get_current_user_id
 from website import settings
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
+from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.model import has_anonymous_link
@@ -277,7 +277,7 @@ def resolve_guid(guid, suffix=None):
         # Handle file `/download` shortcut with supported types.
         if suffix and suffix.rstrip('/').lower() == 'download':
             file_referent = None
-            if isinstance(referent, PreprintService) and referent.primary_file:
+            if isinstance(referent, Preprint) and referent.primary_file:
                 if not referent.is_published:
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
@@ -303,7 +303,7 @@ def resolve_guid(guid, suffix=None):
                 return proxy_url(url)
 
         # Handle Ember Applications
-        if isinstance(referent, PreprintService):
+        if isinstance(referent, Preprint):
             if referent.provider.domain_redirect_enabled:
                 # This route should always be intercepted by nginx for the branded domain,
                 # w/ the exception of `<guid>/download` handled above.

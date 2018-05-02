@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from api.base.utils import get_user_auth
-from osf.models import PreprintService
+from osf.models import Preprint
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
 
@@ -11,7 +11,7 @@ from osf.utils import permissions as osf_permissions
 class PreprintPublishedOrAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, PreprintService), 'obj must be a PreprintService'
+        assert isinstance(obj, Preprint), 'obj must be a Preprint'
         node = obj.node
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:

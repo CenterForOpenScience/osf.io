@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
-from osf.models import PreprintService
+from osf.models import Preprint
 from osf_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
 from osf.models.admin_log_entry import AdminLogEntry
 
@@ -33,7 +33,7 @@ class TestPreprintView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         view = setup_view(self.view(), request, guid=self.preprint._id)
         res = view.get_object()
-        nt.assert_is_instance(res, PreprintService)
+        nt.assert_is_instance(res, Preprint)
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -67,7 +67,7 @@ class TestPreprintView(AdminTestCase):
     def test_change_preprint_provider_correct_permission(self):
         user = AuthUserFactory()
 
-        change_permission = Permission.objects.get(codename='change_preprintservice')
+        change_permission = Permission.objects.get(codename='change_preprint')
         view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)

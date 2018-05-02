@@ -11,7 +11,7 @@ from osf.models import (
     Node,
     NodeRelation,
     OSFUser,
-    PreprintService,
+    Preprint,
     PrivateLink,
 )
 from osf.utils import permissions as osf_permissions
@@ -26,9 +26,9 @@ class ContributorOrPublic(permissions.BasePermission):
         from api.nodes.views import NodeProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, (NodeProvider, PreprintService)):
+        if isinstance(obj, (NodeProvider, Preprint)):
             obj = obj.node
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeProvider, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeProvider, NodeRelation, Preprint, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)

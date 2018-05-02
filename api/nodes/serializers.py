@@ -27,7 +27,7 @@ from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
-from osf.models.preprint_service import PreprintService
+from osf.models.preprint import Preprint
 from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -130,7 +130,7 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
 
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, PreprintService) else node.node_license
+    license = node.license if isinstance(node, Preprint) else node.node_license
 
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None

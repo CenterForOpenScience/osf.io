@@ -56,7 +56,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
                              null=True, blank=True, on_delete=models.CASCADE)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
-    preprint = models.ForeignKey('PreprintService', related_name='logs',
+    preprint = models.ForeignKey('Preprint', related_name='logs',
                              db_index=True, null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):

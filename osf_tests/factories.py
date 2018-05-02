@@ -279,7 +279,7 @@ class CollectionFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprint']))
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
@@ -564,7 +564,7 @@ def sync_set_identifiers(preprint):
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
-        model = models.PreprintService
+        model = models.Preprint
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)

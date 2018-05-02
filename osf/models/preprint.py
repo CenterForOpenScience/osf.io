@@ -11,7 +11,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework import status
 from framework.exceptions import PermissionsError
 
-from osf.models import PreprintLog, NodeLog, Subject, Tag, OSFUser
+from osf.models import NodeLog, Subject, Tag, OSFUser
 from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
@@ -34,11 +34,11 @@ from osf.exceptions import (
 )
 
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
     BaseModel, Loggable, Taggable, GuardianMixin, TaxonomizableMixin):
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
-                                 related_name='preprint_services',
+                                 related_name='preprints',
                                  null=True, blank=True, db_index=True)
     node = models.ForeignKey('osf.AbstractNode', on_delete=models.SET_NULL,
                              related_name='preprints',
@@ -49,7 +49,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
-    identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
+    identifiers = GenericRelation(Identifier, related_query_name='preprints')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
     # begin changes
     title = models.TextField(
@@ -71,7 +71,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                                       on_delete=models.SET_NULL,
                                       null=True, blank=True)
     # (for legacy preprints), pull off of node
-    is_public = NonNaiveDateTimeField(null=True, blank=True, default=True)
+    is_public = models.BooleanField(default=False, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     # For legacy preprints
@@ -210,16 +210,16 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         self.primary_file = preprint_file
 
         # only log if updating the preprint file, not adding for the first time
-        if existing_file:
-            self.preprint.add_log(
-                action=PreprintLog.FILE_UPDATED,
-                params={
-                    'preprint': self._id,
-                    'file': self.primary_file._id
-                },
-                auth=auth,
-                save=False
-            )
+        # if existing_file:
+        #     self.preprint.add_log(
+        #         action=PreprintLog.FILE_UPDATED,
+        #         params={
+        #             'preprint': self._id,
+        #             'file': self.primary_file._id
+        #         },
+        #         auth=auth,
+        #         save=False
+        #     )
 
         if save:
             self.save()
@@ -299,7 +299,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        ret = super(PreprintService, self).save(*args, **kwargs)
+        ret = super(Preprint, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
@@ -596,7 +596,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
         if visible and not PreprintContributor.objects.filter(preprint=self, user=user, visible=True).exists():
             PreprintContributor.objects.filter(preprint=self, user=user, visible=False).update(visible=True)
-        elif not visible and PreprintContributor.objects.filter(preprintservice=self, user=user, visible=True).exists():
+        elif not visible and PreprintContributor.objects.filter(preprint=self, user=user, visible=True).exists():
             if PreprintContributor.objects.filter(preprint=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
             PreprintContributor.objects.filter(preprint=self, user=user, visible=True).update(visible=False)

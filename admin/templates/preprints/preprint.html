@@ -13,7 +13,7 @@
                    class="btn btn-primary col-md-1">
                     <i class="fa fa-search"></i>
                 </a>
-                    {% if perms.osf.delete_preprintservice %}
+                    {% if perms.osf.delete_preprint %}
                     {% if not serialized_preprint.node.deleted %}
                     <span class="col-md-2">
                         <a href="{% url 'nodes:remove' guid=serialized_preprint.node.id %}"
@@ -91,7 +91,7 @@
                         <td>Provider</td>
                         <td>
                             {{ serialized_preprint.provider.name }}
-                            {% if perms.osf.change_preprintservice %}
+                            {% if perms.osf.change_preprint %}
                             <span class="provider_form_link" style="margin-left: 100px;">
                                 <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
                                     Change prepint provider

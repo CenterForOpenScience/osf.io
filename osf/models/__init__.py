@@ -23,7 +23,7 @@ from osf.models.notifications import NotificationDigest, NotificationSubscriptio
 from osf.models.spam import SpamStatus, SpamMixin  # noqa
 from osf.models.subject import Subject  # noqa
 from osf.models.provider import AbstractProvider, PreprintProvider  # noqa
-from osf.models.preprint_service import PreprintService  # noqa
+from osf.models.preprint import Preprint  # noqa
 from osf.models.request import NodeRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa

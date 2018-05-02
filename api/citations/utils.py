@@ -9,7 +9,7 @@ from citeproc.source.json import CiteProcJSON
 
 from framework.exceptions import HTTPError
 from framework.auth import utils
-from osf.models import PreprintService
+from osf.models import Preprint
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
@@ -77,7 +77,7 @@ def process_name(node, user):
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     csl = None
-    if isinstance(node, PreprintService):
+    if isinstance(node, Preprint):
         csl = preprint_csl(node, node.node)
         data = [csl, ]
     else:
@@ -107,7 +107,7 @@ def render_citation(node, style='apa'):
     elif cit.count(title) == 0:
         cit = clean_up_common_errors(cit)
 
-    if isinstance(node, PreprintService):
+    if isinstance(node, Preprint):
         cit_node = node.node
     else:
         cit_node = node

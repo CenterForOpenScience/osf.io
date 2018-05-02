@@ -60,7 +60,7 @@ class PreprintContributor(models.Model):
     primary_identifier_name = 'user__guids___id'
     visible = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
-    preprint = models.ForeignKey('PreprintService', on_delete=models.CASCADE)
+    preprint = models.ForeignKey('Preprint', on_delete=models.CASCADE)
 
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '

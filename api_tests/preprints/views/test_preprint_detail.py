@@ -6,7 +6,7 @@ from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
-from osf.models import PreprintService, NodeLicense
+from osf.models import Preprint, NodeLicense
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     PreprintFactory,
@@ -176,18 +176,18 @@ class TestPreprintDelete:
     def test_can_delete_unpublished(
             self, app, user, url, unpublished_preprint):
         previous_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True))
         app.delete(url.format(unpublished_preprint._id), auth=user.auth)
         remaining_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True))
         assert unpublished_preprint.pk in previous_ids
         assert unpublished_preprint.pk not in remaining_ids
 
     def test_cannot_delete_published(self, app, user, published_preprint, url):
         previous_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True)
         )
         res = app.delete(
@@ -196,7 +196,7 @@ class TestPreprintDelete:
             auth=user.auth,
             expect_errors=True)
         remaining_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True))
         assert res.status_code == 409
         assert previous_ids == remaining_ids
@@ -206,11 +206,11 @@ class TestPreprintDelete:
             self, app, user, published_preprint,
             unpublished_preprint, url):
         previous_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True))
         app.delete(url.format(unpublished_preprint._id), auth=user.auth)
         remaining_ids = list(
-            PreprintService.objects.all().values_list(
+            Preprint.objects.all().values_list(
                 'pk', flat=True))
 
         assert unpublished_preprint.pk in previous_ids

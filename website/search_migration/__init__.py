@@ -285,18 +285,18 @@ FROM osf_abstractnode AS N
                   '/' || (SELECT G._id
                           FROM osf_guid G
                           WHERE (G.object_id = P.id)
-                                AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
+                                AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprint'))
                           ORDER BY created ASC, id ASC
                           LIMIT 1) || '/'
               ELSE
                 '/preprints/' || osf_abstractprovider._id || '/' || (SELECT G._id
                                                                      FROM osf_guid G
                                                                      WHERE (G.object_id = P.id)
-                                                                           AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
+                                                                           AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprint'))
                                                                      ORDER BY created ASC, id ASC
                                                                      LIMIT 1) || '/'
               END AS URL
-            FROM osf_preprintservice P
+            FROM osf_preprint P
               INNER JOIN osf_abstractprovider ON P.provider_id = osf_abstractprovider.id
             WHERE P.node_id = N.id
               AND P.machine_state != 'initial'  -- is_preprint
@@ -645,7 +645,7 @@ FROM osf_abstractnode AS N
             ) PARENT_GUID ON TRUE
   LEFT JOIN LATERAL (
           SELECT COUNT(P.id) as is_preprint
-          FROM osf_preprintservice P
+          FROM osf_preprint P
           WHERE P.node_id = N.id
             AND P.machine_state != 'initial'
             AND N.preprint_file_id IS NOT NULL

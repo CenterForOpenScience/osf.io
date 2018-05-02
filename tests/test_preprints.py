@@ -145,9 +145,9 @@ class TestSetPreprintFile(OsfTestCase):
         assert_equal(self.project.preprint_file._id, self.file._id)
 
 
-class TestPreprintServicePermissions(OsfTestCase):
+class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
-        super(TestPreprintServicePermissions, self).setUp()
+        super(TestPreprintPermissions, self).setUp()
         self.user = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)

@@ -26,7 +26,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
 
-    Preprint = apps.get_model('osf', 'PreprintService')
+    Preprint = apps.get_model('osf', 'Preprint')
     AbstractNode = apps.get_model('osf', 'AbstractNode')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
 
