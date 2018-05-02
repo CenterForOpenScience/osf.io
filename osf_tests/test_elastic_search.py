@@ -35,13 +35,13 @@ from tests.utils import mock_archive, run_celery_tasks
 
 TEST_INDEX = 'test'
 
-def query(term):
-    results = search.search(build_query(term), index=elastic_search.INDEX, raw=True)
+def query(term, raw=False):
+    results = search.search(build_query(term), index=elastic_search.INDEX, raw=raw)
     return results
 
 def query_collections(name):
     term = 'category:collectionSubmission AND "{}"'.format(name)
-    return query(term)
+    return query(term, raw=True)
 
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
