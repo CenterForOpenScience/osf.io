@@ -42,7 +42,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
     contributors = []
 
-    for preprint in Preprint.objects.filter(node__isnull=False):
+    for preprint in Preprint.objects.filter(node__isnull=False).select_related('node'):
         # use bulk create
         admin = []
         write = []

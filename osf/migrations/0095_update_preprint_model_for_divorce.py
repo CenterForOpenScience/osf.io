@@ -22,9 +22,6 @@ class Migration(migrations.Migration):
             name='PreprintContributor',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('read', models.BooleanField(default=False)),
-                ('write', models.BooleanField(default=False)),
-                ('admin', models.BooleanField(default=False)),
                 ('visible', models.BooleanField(default=False)),
             ],
         ),

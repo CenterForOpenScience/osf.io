@@ -54,15 +54,31 @@ class Contributor(AbstractBaseContributor):
         # NOTE: Adds an _order column
         order_with_respect_to = 'node'
 
-class PreprintContributor(AbstractBaseContributor):
+class PreprintContributor(models.Model):
+    objects = IncludeManager()
+
+    primary_identifier_name = 'user__guids___id'
+    visible = models.BooleanField(default=False)
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     preprint = models.ForeignKey('PreprintService', on_delete=models.CASCADE)
+
+    def __repr__(self):
+        return ('<{self.__class__.__name__}(user={self.user}, '
+                'visible={self.visible}'
+                ')>').format(self=self)
 
     @property
     def _id(self):
         return '{}-{}'.format(self.preprint._id, self.user._id)
 
+    @property
+    def bibliographic(self):
+        return self.visible
+
     class Meta:
         unique_together = ('user', 'preprint')
+        # Make contributors orderable
+        # NOTE: Adds an _order column
         order_with_respect_to = 'preprint'
 
 class InstitutionalContributor(AbstractBaseContributor):
