@@ -60,7 +60,7 @@ class CollectionSerializer(JSONAPISerializer):
     links = LinksField({})
 
     provider = ProviderRelationshipField(
-        related_view='providers:collection-provider-detail',
+        related_view='providers:collection-providers:collection-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=True
     )
