@@ -36,7 +36,7 @@ from tests.utils import mock_archive, run_celery_tasks
 TEST_INDEX = 'test'
 
 def query(term):
-    results = search.search(build_query(term), index=elastic_search.INDEX)
+    results = search.search(build_query(term), index=elastic_search.INDEX, raw=True)
     return results
 
 def query_collections(name):
@@ -216,18 +216,18 @@ class TestCollectionsSearch(OsfTestCase):
     def test_collection_submission_doc_structure(self):
         self.collection_public.collect_object(self.node_one, self.user)
         docs = query_collections('Keita')['results']
-        assert_equal(docs[0]['title'], self.node_one.title)
+        assert_equal(docs[0]['_source']['title'], self.node_one.title)
         self.node_one.title = 'Keita Royal Family of Mali'
         self.node_one.save()
         docs = query_collections('Keita')['results']
-        assert_equal(docs[0]['title'], self.node_one.title)
-        assert_equal(docs[0]['abstract'], self.node_one.description)
-        assert_equal(docs[0]['contributors'][0]['url'], self.user.url)
-        assert_equal(docs[0]['contributors'][0]['fullname'], self.user.fullname)
-        assert_equal(docs[0]['url'], self.node_one.url)
-        assert_equal(docs[0]['id'], '{}-{}'.format(self.node_one._id,
+        assert_equal(docs[0]['_source']['title'], self.node_one.title)
+        assert_equal(docs[0]['_source']['abstract'], self.node_one.description)
+        assert_equal(docs[0]['_source']['contributors'][0]['url'], self.user.url)
+        assert_equal(docs[0]['_source']['contributors'][0]['fullname'], self.user.fullname)
+        assert_equal(docs[0]['_source']['url'], self.node_one.url)
+        assert_equal(docs[0]['_source']['id'], '{}-{}'.format(self.node_one._id,
             self.node_one.collecting_metadata_list[0].collection._id))
-        assert_equal(docs[0]['category'], 'collectionSubmission')
+        assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
 class TestUserUpdate(OsfTestCase):
 

@@ -249,7 +249,7 @@ def format_results(results):
         elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
         elif result.get('category') == 'collectionSubmission':
-            pass
+            continue
         elif not result.get('category'):
             continue
 
@@ -443,8 +443,8 @@ def serialize_cgm(cgm):
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
         'status': cgm.status,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
-        'title': getattr(obj, 'title'),
-        'url': getattr(obj, 'url'),
+        'title': getattr(obj, 'title', ''),
+        'url': getattr(obj, 'url', ''),
         'category': 'collectionSubmission',
     }
 
@@ -642,20 +642,17 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
                 except Exception as exc:
                     self.retry(exc=exc)
     else:
-        try:
-            cgms = CollectedGuidMetadata.objects.filter(
-                guid___id=cgm_id,
-                collection__provider__isnull=False,
-                collection__deleted__isnull=True,
-                collection__is_bookmark_collection=False)
-        except CollectedGuidMetadata.DoesNotExist:
-            logger.exception('Could not find object <_id {}> in a collection'.format(cgm_id))
-        else:
-            for cgm in cgms:
-                try:
-                    update_cgm(cgm, op=op, index=index)
-                except Exception as exc:
-                    self.retry(exc=exc)
+        cgms = CollectedGuidMetadata.objects.filter(
+            guid___id=cgm_id,
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+        for cgm in cgms:
+            try:
+                update_cgm(cgm, op=op, index=index)
+            except Exception as exc:
+                self.retry(exc=exc)
 
 @requires_search
 def update_cgm(cgm, op='update', index=None):
