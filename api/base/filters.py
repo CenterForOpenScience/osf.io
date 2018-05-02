@@ -108,13 +108,24 @@ class FilterMixin(object):
         else:
             return self.DEFAULT_OPERATORS
 
-    def _get_field_or_error(self, field_name):
+    def _get_field_or_error(self, field_name, embeded_serializer_class=None):
         """
         Check that the attempted filter field is valid
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        serializer_class = self.serializer_class
+
+        serializer_class = embeded_serializer_class or self.serializer_class
+        from api.users.serializers import UserSerializer
+        from api.nodes.serializers import NodeContributorsSerializer
+
+        # Big problem here because user attributes aren't '_declared_fields' only the user forigein key.
+        # This also is broken because UserSerializer doesn't give us the permission info we need from the NodeContributorsSerializer
+        if embeded_serializer_class == NodeContributorsSerializer:
+            serializer_class = UserSerializer
+
+        # so if we field name is 'full_name' and use NodeContributorsSerializer here it raises an
+        # error, because NodeContributorsSerializer decalared field is just the forgien key for the user.
         if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
@@ -186,7 +197,7 @@ class FilterMixin(object):
         values = [self.convert_value(val.strip(), field) for val in separated_values]
         return values
 
-    def parse_query_params(self, query_params):
+    def parse_query_params(self, query_params, embeded_serializer_class=None):
         """Maps query params to a dict usable for filtering
         :param dict query_params:
         :return dict: of the format {
@@ -207,7 +218,7 @@ class FilterMixin(object):
                 query.update({key: {}})
 
                 for field_name in field_names:
-                    field = self._get_field_or_error(field_name)
+                    field = self._get_field_or_error(field_name, embeded_serializer_class)
                     op = match_dict.get('op') or self._get_default_operator(field)
                     self._validate_operator(field, field_name, op)
 
@@ -356,12 +367,11 @@ class ListFilterMixin(FilterMixin):
         else:
             return default_queryset
 
-    def param_queryset(self, query_params, default_queryset):
+    def param_queryset(self, query_params, default_queryset, embeded_serializer_class=None):
         """filters default queryset based on query parameters"""
-        filters = self.parse_query_params(query_params)
+        filters = self.parse_query_params(query_params, embeded_serializer_class)
         queryset = default_queryset
         query_parts = []
-
         if filters:
             for key, field_names in filters.iteritems():
 
@@ -384,6 +394,14 @@ class ListFilterMixin(FilterMixin):
 
             if not isinstance(queryset, list):
                 for query in query_parts:
+                    # At this point the query is (AND: ('fullname__icontains', u'John'))
+                    # But we still have the problem of joining on the foreign key.
+                    from api.nodes.serializers import NodeContributorsSerializer
+
+                    if embeded_serializer_class == NodeContributorsSerializer:
+                        query.children = [('user__' + query.children[0][0], query.children[0][1])]
+                    # At this point the query is correct (AND: ('user__fullname__icontains', u'John'))
+                    # But we are still not including permmissions info.
                     queryset = queryset.filter(query)
 
         return queryset

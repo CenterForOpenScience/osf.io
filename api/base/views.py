@@ -111,6 +111,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
                     ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
+                    # Problem #1 this overwrites old QUERY_PATTERN making difficult to filter and filter_embed at the same time.
+                    # Not sure if a I should create a class the just filters embeds.
+                    import re
+                    self.QUERY_PATTERN = re.compile(r'^filter_embed\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
+                    queryset = self.param_queryset(self.request.query_params, queryset, view.get_serializer_class()) # Problem #2 have to pass the serializer of the embeded class
                     page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
