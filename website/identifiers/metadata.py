@@ -163,7 +163,7 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
     )
 
     posted_content = element.posted_content(
-        element.group_title(preprint.provider._id),
+        element.group_title(preprint.provider.name),
         element.contributors(*crossref_format_contributors(element, preprint)),
         element.titles(element.title(preprint.node.title)),
         element.posted_date(*format_date_crossref(element, preprint.date_published)),

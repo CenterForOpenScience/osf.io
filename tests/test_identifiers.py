@@ -165,16 +165,35 @@ class TestMetadataGeneration(OsfTestCase):
             'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
         }
         preprint = PreprintFactory(provider=provider, project=self.node, is_published=True, license_details=license_details)
+        test_email = 'test-email'
         doi = settings.DOI_FORMAT.format(namespace=preprint.provider.doi_prefix, guid=preprint._id)
-        crossref_xml = metadata.crossref_metadata_for_preprint(preprint, doi, pretty_print=True)
+        with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
+            crossref_xml = metadata.crossref_metadata_for_preprint(preprint, doi, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
+
+        # header
+        assert root.find('.//{%s}doi_batch_id' % metadata.CROSSREF_NAMESPACE).text == preprint._id
+        assert root.find('.//{%s}depositor_name' % metadata.CROSSREF_NAMESPACE).text == metadata.CROSSREF_DEPOSITOR_NAME
+        assert root.find('.//{%s}email_address' % metadata.CROSSREF_NAMESPACE).text == test_email
+
+        # body
         contributors = root.find(".//{%s}contributors" % metadata.CROSSREF_NAMESPACE)
-
         assert len(contributors.getchildren()) == len(preprint.node.visible_contributors)
-        assert root.find('.//{%s}license_ref' % metadata.CROSSREF_ACCESS_INDICATORS).text == license.url
-        assert root.find('.//{%s}abstract/' % metadata.JATS_NAMESPACE).text == preprint.node.description
 
-        # TODO - finish this test!
+        assert root.find(".//{%s}group_title" % metadata.CROSSREF_NAMESPACE).text == preprint.provider.name
+        assert root.find('.//{%s}title' % metadata.CROSSREF_NAMESPACE).text == preprint.node.title
+        assert root.find('.//{%s}item_number' % metadata.CROSSREF_NAMESPACE).text == 'osf.io/{}'.format(preprint._id)
+        assert root.find('.//{%s}abstract/' % metadata.JATS_NAMESPACE).text == preprint.node.description
+        assert root.find('.//{%s}license_ref' % metadata.CROSSREF_ACCESS_INDICATORS).text == license.url
+        assert root.find('.//{%s}license_ref' % metadata.CROSSREF_ACCESS_INDICATORS).get('start_date') == preprint.date_published.strftime('%Y-%m-%d')
+
+        assert root.find('.//{%s}intra_work_relation' % metadata.CROSSREF_RELATIONS).text == preprint.node.preprint_article_doi
+        assert root.find('.//{%s}doi' % metadata.CROSSREF_NAMESPACE).text == settings.DOI_FORMAT.format(namespace=preprint.provider.doi_prefix, guid=preprint._id)
+        assert root.find('.//{%s}resource' % metadata.CROSSREF_NAMESPACE).text == settings.DOMAIN + preprint._id
+
+        metadata_date_parts = [elem.text for elem in root.find('.//{%s}posted_date' % metadata.CROSSREF_NAMESPACE)]
+        preprint_date_parts = preprint.date_published.strftime ('%Y-%m-%d').split('-')
+        assert set(metadata_date_parts) == set(preprint_date_parts)
 
 
 class TestIdentifierModel(OsfTestCase):
