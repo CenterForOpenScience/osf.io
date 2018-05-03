@@ -9,11 +9,13 @@ from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, enqueue_task
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from framework.celery_tasks.handlers import enqueue_task
 from framework import status
 from framework.exceptions import PermissionsError
 
-from osf.models import PreprintLog, Subject, Tag, OSFUser
+from osf.models import Subject, Tag, OSFUser
+from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
 from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
@@ -98,8 +100,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
     group_format = 'preprint_{self.id}_{group}'
 
     class Meta:
-        # TODO - do we still need this anymore?
-        unique_together = ('node', 'provider')
         permissions = (
             ('osf_admin_view_preprint', 'Can view preprint service details in the admin app.'),
             ('read_preprint', 'Can read the preprint'),

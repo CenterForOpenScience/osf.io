@@ -15,7 +15,8 @@ from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog, PreprintLog
+from osf.models.nodelog import NodeLog
+from osf.models.preprintlog import PreprintLog
 from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
@@ -85,19 +86,17 @@ class Loggable(models.Model):
             params=params, preprint=self
         )
 
-        if log_date:
-            log.date = log_date
         log.save()
 
         if self.logs.count() == 1:
-            self.last_logged = log.date.replace(tzinfo=pytz.utc)
+            self.last_logged = log.created.replace(tzinfo=pytz.utc)
         else:
-            self.last_logged = self.logs.first().date
+            self.last_logged = self.logs.first().created
 
         if save:
             self.save()
         if user:
-            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
+            increment_user_activity_counters(user._primary_key, action, log.created.isoformat())
 
         return log
 

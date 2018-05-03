@@ -108,7 +108,7 @@ def add_users_to_group(group, user_list):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0095_update_preprint_model_for_divorce'),
+        ('osf', '0096_add_preprint_partial_index'),
     ]
 
     operations = [
