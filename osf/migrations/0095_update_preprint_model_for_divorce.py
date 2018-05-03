@@ -18,7 +18,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameModel('PreprintService', 'Preprint'),
         migrations.CreateModel(
             name='PreprintLog',
             fields=[
@@ -37,6 +36,7 @@ class Migration(migrations.Migration):
                 'get_latest_by': 'date',
             },
         ),
+        migrations.RenameModel('PreprintService', 'Preprint'),
         migrations.CreateModel(
             name='PreprintContributor',
             fields=[
@@ -55,15 +55,15 @@ class Migration(migrations.Migration):
             name='creator',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints_created', to=settings.AUTH_USER_MODEL),
         ),
-        migrations.AddField(
-            model_name='preprint',
-            name='primary_file',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='osf.BaseFileNode'),
-        ),
+        # migrations.AddField(
+        #     model_name='preprint',
+        #     name='primary_file',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='osf.BaseFileNode'),
+        # ),
         migrations.AddField(
             model_name='preprint',
             name='is_public',
-            field=models.BooleanField(default=False, db_index=True),
+            field=models.BooleanField(default=True, db_index=True),
         ),
         migrations.AddField(
             model_name='preprint',

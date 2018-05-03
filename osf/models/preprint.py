@@ -11,7 +11,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework import status
 from framework.exceptions import PermissionsError
 
-from osf.models import NodeLog, Subject, Tag, OSFUser
+from osf.models import PreprintLog, Subject, Tag, OSFUser
 from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
@@ -35,7 +35,7 @@ from osf.exceptions import (
 
 
 class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
-    BaseModel, Loggable, Taggable, GuardianMixin, TaxonomizableMixin):
+        BaseModel, Loggable, Taggable, GuardianMixin, TaxonomizableMixin):
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -67,11 +67,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
     article_doi = models.CharField(max_length=128,
                                             validators=[validate_doi],
                                             null=True, blank=True)
-    primary_file = models.ForeignKey('osf.BaseFileNode',
-                                      on_delete=models.SET_NULL,
-                                      null=True, blank=True)
+    # primary_file = models.ForeignKey('osf.BaseFileNode',
+    #                                   on_delete=models.SET_NULL,
+    #                                   null=True, blank=True)
     # (for legacy preprints), pull off of node
-    is_public = models.BooleanField(default=False, db_index=True)
+    is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     # For legacy preprints
@@ -181,7 +181,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                 ret.append(subj_hierarchy)
         return ret
 
-    def set_subjects(self, preprint_subjects, auth):
+    def set_subjects(self, preprint_subjects, auth, log=True):
         if not self.has_permission(auth.user, 'admin'):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
@@ -195,6 +195,18 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                 validate_subject_hierarchy(subj_hierarchy)
                 for s_id in subj_hierarchy:
                     self.subjects.add(Subject.load(s_id))
+
+        if log:
+            self.add_preprint_log(
+                action=PreprintLog.SUBJECTS_UPDATED,
+                params={
+                    'subjects': list(self.subjects.values('_id', 'text')),
+                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
+                    'preprint': self._id
+                },
+                auth=auth,
+                save=False,
+            )
 
         self.save(old_subjects=old_subjects)
 
@@ -210,16 +222,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         self.primary_file = preprint_file
 
         # only log if updating the preprint file, not adding for the first time
-        # if existing_file:
-        #     self.preprint.add_log(
-        #         action=PreprintLog.FILE_UPDATED,
-        #         params={
-        #             'preprint': self._id,
-        #             'file': self.primary_file._id
-        #         },
-        #         auth=auth,
-        #         save=False
-        #     )
+        if existing_file:
+            self.add_preprint_log(
+                action=PreprintLog.FILE_UPDATED,
+                params={
+                    'preprint': self._id,
+                    'file': self.primary_file._id
+                },
+                auth=auth,
+                save=False
+            )
 
         if save:
             self.save()
@@ -246,21 +258,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
-            self.node.add_log(
-                action=NodeLog.PREPRINT_INITIATED,
+            self.add_preprint_log(
+                action=PreprintLog.CREATED,
                 params={
                     'preprint': self._id
                 },
                 auth=auth,
                 save=False,
             )
-
-            if not self.node.is_public:
-                self.node.set_privacy(
-                    self.node.PUBLIC,
-                    auth=None,
-                    log=True
-                )
 
             # This should be called after all fields for EZID metadta have been set
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
@@ -275,8 +280,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
 
         if license_changed:
-            self.node.add_log(
-                action=NodeLog.PREPRINT_LICENSE_UPDATED,
+            self.add_preprint_log(
+                action=PreprintLog.CHANGED_LICENSE,
                 params={
                     'preprint': self._id,
                     'new_license': license_record.node_license.name
@@ -352,17 +357,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
-        # self.add_log(
-        #     action=NodeLog.TAG_ADDED,
-        #     params={
-        #         'parent_node': self.parent_id,
-        #         'node': self._id,
-        #         'tag': tag.name
-        #     },
-        #     auth=auth,
-        #     save=False
-        # )
-        pass
+        self.add_preprint_log(
+            action=PreprintLog.TAG_ADDED,
+            params={
+                'preprint': self._id,
+                'tag': tag.name
+            },
+            auth=auth,
+            save=False
+        )
 
     # Override Taggable
     def on_tag_added(self, tag):
@@ -377,16 +380,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         else:
             tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
-            # self.add_log(
-            #     action=NodeLog.TAG_REMOVED,
-            #     params={
-            #         'parent_node': self.parent_id,
-            #         'node': self._id,
-            #         'tag': tag,
-            #     },
-            #     auth=auth,
-            #     save=False,
-            # )
+            self.add_preprint_log(
+                action=PreprintLog.TAG_REMOVED,
+                params={
+                    'preprint': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
             if save:
                 self.save()
             # self.update_search()  # TODO: uncomment this
@@ -440,17 +442,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
-            # if log:
-            #     self.add_log(
-            #         action=NodeLog.CONTRIB_ADDED,
-            #         params={
-            #             'project': self.parent_id,
-            #             'node': self._primary_key,
-            #             'contributors': [contrib_to_add._primary_key],
-            #         },
-            #         auth=auth,
-            #         save=False,
-            #     )
+            if log:
+                self.add_preprint_log(
+                    action=PreprintLog.CONTRIB_ADDED,
+                    params={
+                        'preprint': self._id,
+                        'contributors': [contrib_to_add._id],
+                    },
+                    auth=auth,
+                    save=False,
+                )
             if save:
                 self.save()
 
@@ -486,20 +487,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                 contributor=contrib['user'], permission=contrib['permissions'],
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
-        # if log and contributors:
-        #     self.add_log(
-        #         action=NodeLog.CONTRIB_ADDED,
-        #         params={
-        #             'project': self.parent_id,
-        #             'node': self._primary_key,
-        #             'contributors': [
-        #                 contrib['user']._id
-        #                 for contrib in contributors
-        #             ],
-        #         },
-        #         auth=auth,
-        #         save=False,
-        #     )
+        if log and contributors:
+            self.add_preprint_log(
+                action=PreprintLog.CONTRIB_ADDED,
+                params={
+                    'preprint': self._id,
+                    'contributors': [
+                        contrib['user']._id
+                        for contrib in contributors
+                    ],
+                },
+                auth=auth,
+                save=False,
+            )
         if save:
             self.save()
 
@@ -602,23 +602,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             PreprintContributor.objects.filter(preprint=self, user=user, visible=True).update(visible=False)
         else:
             return
-        # todo: implement preprint log
-        # message = (
-        # NodeLog.MADE_CONTRIBUTOR_VISIBLE
-        # if visible
-        # else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
-        # )
-        # if log:
-        # self.add_log(
-        # message,
-        # params={
-        # 'parent': self.parent_id,
-        # 'node': self._id,
-        # 'contributors': [user._id],
-        # },
-        # auth=auth,
-        # save=False,
-        # )
+        message = (PreprintLog.MADE_CONTRIBUTOR_VISIBLE if visible else PreprintLog.MADE_CONTRIBUTOR_INVISIBLE)
+        if log:
+            self.add_preprint_log(
+                action=message,
+                params={
+                    'preprint': self._id,
+                    'contributors': [user._id],
+                },
+                auth=auth,
+                save=False,
+            )
         if save:
             self.save()
 
@@ -675,17 +669,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                 # for markupsafe-escaping any messages returned
                 status.push_status_message(message, kind='info', trust=True)
 
-        # if log:
-        #     self.add_log(
-        #         action=NodeLog.CONTRIB_REMOVED,
-        #         params={
-        #             'project': self.parent_id,
-        #             'node': self._id,
-        #             'contributors': [contributor._id],
-        #         },
-        #         auth=auth,
-        #         save=False,
-        #     )
+        if log:
+            self.add_preprint_log(
+                action=PreprintLog.CONTRIB_REMOVED,
+                params={
+                    'preprint': self._id,
+                    'contributors': [contributor._id],
+                },
+                auth=auth,
+                save=False,
+            )
 
         self.save()
         # self.update_search()  # TODO: uncomment this
@@ -706,17 +699,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             )
             results.append(outcome)
             removed.append(contrib._id)
-        # if log:
-        #     self.add_log(
-        #         action=NodeLog.CONTRIB_REMOVED,
-        #         params={
-        #             'project': self.parent_id,
-        #             'node': self._primary_key,
-        #             'contributors': removed,
-        #         },
-        #         auth=auth,
-        #         save=False,
-        #     )
+        if log:
+            self.add_preprint_log(
+                action=PreprintLog.CONTRIB_REMOVED,
+                params={
+                    'preprint': self._id,
+                    'contributors': removed,
+                },
+                auth=auth,
+                save=False,
+            )
 
         if save:
             self.save()
@@ -732,18 +724,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_contributor_order(contributor_ids)
-        # self.add_log(
-        #     action=NodeLog.CONTRIB_REORDERED,
-        #     params={
-        #         'project': self.parent_id,
-        #         'node': self._id,
-        #         'contributors': [
-        #             contributor.user._id
-        #         ],
-        #     },
-        #     auth=auth,
-        #     save=False,
-        # )
+        self.add_preprint_log(
+            action=PreprintLog.CONTRIB_REORDERED,
+            params={
+                'preprint': self._id,
+                'contributors': [
+                    contributor.user._id
+                ],
+            },
+            auth=auth,
+            save=False,
+        )
         if save:
             self.save()
         # self.save_node_preprints()  # TODO: decide what to do with this
@@ -823,34 +814,32 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                     each.id for each in sorted(self.preprintcontributor_set.all(), key=lambda c: user_ids.index(c.user._id))
                 ]
                 self.set_contributor_order(sorted_contrib_ids)
-                # self.add_log(
-                #     action=NodeLog.CONTRIB_REORDERED,
-                #     params={
-                #         'project': self.parent_id,
-                #         'node': self._id,
-                #         'contributors': [
-                #             user._id
-                #             for user in users
-                #         ],
-                #     },
-                #     auth=auth,
-                #     save=False,
-                # )
+                self.add_preprint_log(
+                    action=PreprintLog.CONTRIB_REORDERED,
+                    params={
+                        'preprint': self._id,
+                        'contributors': [
+                            user._id
+                            for user in users
+                        ],
+                    },
+                    auth=auth,
+                    save=False,
+                )
 
             if to_remove:
                 self.remove_contributors(to_remove, auth=auth, save=False)
 
-            # if permissions_changed:
-            #     self.add_log(
-            #         action=NodeLog.PERMISSIONS_UPDATED,
-            #         params={
-            #             'project': self.parent_id,
-            #             'node': self._id,
-            #             'contributors': permissions_changed,
-            #         },
-            #         auth=auth,
-            #         save=False,
-            #     )
+            if permissions_changed:
+                self.add_preprint_log(
+                    action=PreprintLog.PERMISSIONS_UPDATED,
+                    params={
+                        'preprint': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=False,
+                )
             if save:
                 self.save()
 
@@ -887,16 +876,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                 permissions_changed = {
                     user._id: permission
                 }
-                # self.add_log(
-                #     action=NodeLog.PERMISSIONS_UPDATED,
-                #     params={
-                #         'project': self.parent_id,
-                #         'node': self._id,
-                #         'contributors': permissions_changed,
-                #     },
-                #     auth=auth,
-                #     save=save
-                # )
+                self.add_preprint_log(
+                    action=PreprintLog.PERMISSIONS_UPDATED,
+                    params={
+                        'preprint': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=save
+                )
                 with transaction.atomic():
                     if ['read'] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
@@ -919,17 +907,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         if original_title == new_title:
             return False
         self.title = new_title
-        # self.add_log(
-        #     action=NodeLog.EDITED_TITLE,
-        #     params={
-        #         'parent_node': self.parent_id,
-        #         'node': self._primary_key,
-        #         'title_new': self.title,
-        #         'title_original': original_title,
-        #     },
-        #     auth=auth,
-        #     save=False,
-        # )
+        self.add_preprint_log(
+            action=PreprintLog.EDITED_TITLE,
+            params={
+                'preprint': self._id,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            auth=auth,
+            save=False,
+        )
         if save:
             self.save()
         return None
@@ -946,17 +933,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         if original == new_description:
             return False
         self.description = new_description
-        # self.add_log(
-        #     action=NodeLog.EDITED_DESCRIPTION,
-        #     params={
-        #         'parent_node': self.parent_id,
-        #         'node': self._primary_key,
-        #         'description_new': self.description,
-        #         'description_original': original
-        #     },
-        #     auth=auth,
-        #     save=False,
-        # )
+        self.add_preprint_log(
+            action=PreprintLog.EDITED_DESCRIPTION,
+            params={
+                'preprint': self._id,
+                'description_new': self.description,
+                'description_original': original
+            },
+            auth=auth,
+            save=False,
+        )
         if save:
             self.save()
         return None

@@ -15,7 +15,7 @@ from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog
+from osf.models.nodelog import NodeLog, PreprintLog
 from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
@@ -70,6 +70,36 @@ class Versioned(models.Model):
 class Loggable(models.Model):
 
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
+
+    def add_preprint_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+        user = None
+        if auth:
+            user = auth.user
+        elif request:
+            user = request.user
+
+        params['preprint'] = params.get('preprint') or self._id
+
+        log = PreprintLog(
+            action=action, user=user, foreign_user=foreign_user,
+            params=params, preprint=self
+        )
+
+        if log_date:
+            log.date = log_date
+        log.save()
+
+        if self.logs.count() == 1:
+            self.last_logged = log.date.replace(tzinfo=pytz.utc)
+        else:
+            self.last_logged = self.logs.first().date
+
+        if save:
+            self.save()
+        if user:
+            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
+
+        return log
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
