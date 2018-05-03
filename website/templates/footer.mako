@@ -14,13 +14,13 @@
                         |
                     </span>
                     <a href="${footer_links['terms']}">
-                        Terms&nbsp;of&nbsp;use
+                        Terms&nbsp;of&nbsp;Use
                     </a>
                     <span>
                         |
                     </span>
                     <a href="${footer_links['privacyPolicy']}">
-                        Privacy&nbsp;policy
+                        Privacy&nbsp;Policy
                     </a>
                     <span>
                         |
@@ -36,7 +36,7 @@
                     </a>
                     <br>
                     <a href="${footer_links['topGuidelines']}">
-                        TOP guidelines
+                        TOP Guidelines
                     </a>
                     <span>
                         |
