@@ -382,7 +382,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
     # Override Taggable
     def on_tag_added(self, tag):
-        # self.update_search()  # TODO: uncomment this
+        self.update_search()
         pass
 
     def remove_tag(self, tag, auth, save=True):
@@ -404,7 +404,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             )
             if save:
                 self.save()
-            # self.update_search()  # TODO: uncomment this
+            self.update_search()
             return True
 
     def is_contributor(self, user):
@@ -441,20 +441,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
             contributor.save()
 
-            # Add contributor to recently added list for user
-            if auth is not None:
-                user = auth.user
-                recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
-                    user=user,
-                    contributor=contrib_to_add
-                )
-                recently_added_contributor_obj.date_added = timezone.now()
-                recently_added_contributor_obj.save()
-                count = user.recently_added.count()
-                if count > MAX_RECENT_LENGTH:
-                    difference = count - MAX_RECENT_LENGTH
-                    for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
-                        each.delete()
             if log:
                 self.add_preprint_log(
                     action=PreprintLog.CONTRIB_ADDED,
@@ -468,7 +454,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             if save:
                 self.save()
 
-            # self.update_search()  # TODO: uncomment this
+            self.update_search()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -694,11 +680,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             )
 
         self.save()
-        # self.update_search()  # TODO: uncomment this
+        self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
-
-        # self.save_node_preprints()  # TODO: decide what to do with this
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -750,7 +734,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         )
         if save:
             self.save()
-        # self.save_node_preprints()  # TODO: decide what to do with this
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -856,8 +839,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             if save:
                 self.save()
 
-            # self.save_node_preprints()  # TODO: decide what to do with this
-
         with transaction.atomic():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
@@ -903,7 +884,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
-            # self.save_node_preprints()  # TODO: decide what to do with this
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
@@ -979,12 +959,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         if auth and user:
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
-        if auth:
-            is_api_node = auth.api_node == self
-        else:
-            is_api_node = False
+
         return (
-            (user and self.has_permission(user, 'write')) or is_api_node
+            (user and self.has_permission(user, 'write'))
         )
 
     # TODO: Remove save parameter
