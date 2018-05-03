@@ -31,7 +31,6 @@ CROSSREF_SCHEMA_VERSION = '4.4.1'
 JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
 
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
-CROSSREF_DEPOSITOR_EMAIL = 'crossref@osf.io'
 
 
 # From https://stackoverflow.com/a/19016117
@@ -158,7 +157,7 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
         element.timestamp('{}'.format(int(time.time()))),
         element.depositor(
             element.depositor_name(CROSSREF_DEPOSITOR_NAME),
-            element.email_address(CROSSREF_DEPOSITOR_EMAIL)
+            element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
         ),
         element.registrant(preprint.provider.name)  # TODO - confirm provider name is desired
     )

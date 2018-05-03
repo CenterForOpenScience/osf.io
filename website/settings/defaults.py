@@ -360,6 +360,7 @@ EZID_PASSWORD = None
 CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
 CROSSREF_DEPOSIT_URL = None
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # changeme in local.py
 
 # Format for DOIs and ARKs
 DOI_FORMAT = '{namespace}/FK2osf.io/{guid}'
