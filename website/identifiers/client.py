@@ -94,7 +94,7 @@ class CrossRefClient(BaseClient):
 
     def create_identifier(self, identifier, metadata=None):
         filename = identifier.split('/')[-1]
-        resp = self._make_request(
+        self._make_request(
             'POST',
             self._build_url(
                 operation='doMDUpload',
@@ -105,7 +105,8 @@ class CrossRefClient(BaseClient):
             files={'file': ('{}.xml'.format(filename), metadata['doi_metadata'])},
             expects=(200, ),
         )
-        return resp
+
+        return {'doi': identifier}
 
     def change_status_identifier(self, status, identifier, metadata=None):
         return self.create_identifier(identifier, metadata=metadata)

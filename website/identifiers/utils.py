@@ -148,17 +148,17 @@ def request_identifiers(target_object):
     }
 
 
-def parse_identifiers(ezid_response):
+def parse_identifiers(doi_client_response):
     """
     Note: ARKs include a leading slash. This is stripped here to avoid multiple
     consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    resp = ezid_response['response']
-    exists = ezid_response['already_exists']
+    resp = doi_client_response['response']
+    exists = doi_client_response.get('already_exists', None)
 
-    if exists:
+    if exists and settings.PREPRINT_DOI_CLIENT == 'ezid':
         doi = resp['success']
         suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
         return {
@@ -166,10 +166,14 @@ def parse_identifiers(ezid_response):
             'ark': '{0}{1}'.format(settings.EZID_ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
-        identifiers = dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
+        if settings.PREPRINT_DOI_CLIENT == 'ezid':
+            identifiers = dict(
+                [each.strip('/') for each in pair.strip().split(':')]
+                for pair in resp['success'].split('|')
+            )
+        else:
+            identifiers = resp
+
         return {'doi': identifiers['doi']}
 
 
