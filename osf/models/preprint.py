@@ -17,7 +17,7 @@ from framework.exceptions import PermissionsError
 from osf.models import Subject, Tag, OSFUser
 from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
-from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
+from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
@@ -424,7 +424,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
         """
-        MAX_RECENT_LENGTH = 15
 
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
