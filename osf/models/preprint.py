@@ -1,23 +1,28 @@
 # -*- coding: utf-8 -*-
 import urlparse
+import logging
 
 from dirtyfields import DirtyFieldsMixin
+from django.apps import apps
 from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, enqueue_task
 from framework import status
 from framework.exceptions import PermissionsError
 
 from osf.models import PreprintLog, Subject, Tag, OSFUser
+from osf.models.spam import SpamMixin
 from osf.models.contributor import PreprintContributor, RecentlyAddedContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils import sanitize
+from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
+
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url
@@ -28,14 +33,23 @@ from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
 
 from framework.auth.core import get_user
+from framework.sentry import log_exception
 from website.project import signals as project_signals
 from osf.exceptions import (
     PreprintStateError, ValidationValueError, InvalidTagError, TagNotFoundError
 )
 
+logger = logging.getLogger(__name__)
+
 
 class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
-        BaseModel, Loggable, Taggable, GuardianMixin, TaxonomizableMixin):
+        BaseModel, Loggable, Taggable, GuardianMixin, SpamMixin, TaxonomizableMixin):
+    # Preprint fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+    }
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -344,8 +358,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
     def all_tags(self):
         """Return a queryset containing all of this node's tags (incl. system tags)."""
         # Tag's default manager only returns non-system tags, so we can't use self.tags
-        # TODO need preprint_tags table
-        return Tag.all_tags.filter(abstractnode_tagged=self)
+        return Tag.all_tags.filter(preprint_tagged=self)
 
     @property
     def system_tags(self):
@@ -1029,3 +1042,95 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             contributor__preprint=self,
             contributor__visible=True
         ).order_by('contributor___order')
+
+    def on_update(self, first_save, saved_fields):
+        User = apps.get_model('osf.OSFUser')
+        request, user_id = get_request_and_user_id()
+        request_headers = {}
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+
+        if self.primary_file and self.is_published:
+            # avoid circular imports
+            from website.preprints.tasks import on_preprint_updated
+            enqueue_task(on_preprint_updated.s(self._id))
+
+        user = User.load(user_id)
+        if user and self.check_spam(user, saved_fields, request_headers):
+            # Specifically call the super class save method to avoid recursion into model save method.
+            super(Preprint, self).save()
+
+    def _get_spam_content(self, saved_fields):
+        spam_fields = self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+        logger.info("Preprint ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.is_public = False
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.add_system_tag('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                )
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                    node.set_privacy('private', log=False, save=True)
+
+            # Make preprints private fromt his contributor
+            for preprint in user.preprints.all():
+                if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+                    preprint.is_public = False
+                    preprint.save()
+
+    def update_search(self):
+        from website import search
+
+        try:
+            search.search.update_preprint(self, bulk=False, async=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()

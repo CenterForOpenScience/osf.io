@@ -382,6 +382,39 @@ def serialize_node(node, category):
 
     return elastic_document
 
+def serialize_preprint(preprint, category):
+    elastic_document = {}
+
+    try:
+        normalized_title = six.u(preprint.title)
+    except TypeError:
+        normalized_title = preprint.title
+    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    elastic_document = {
+        'id': preprint._id,
+        'contributors': [
+            {
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+            }
+            for x in preprint._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
+        ],
+        'title': preprint.title,
+        'normalized_title': normalized_title,
+        'category': category,
+        'public': preprint.is_public,
+        'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
+        'description': preprint.description,
+        'url': preprint.url,
+        'date_created': preprint.created,
+        'license': serialize_node_license_record(preprint.license),
+        'boost': 2,  # This is for making registered projects less relevant
+        'extra_search_terms': clean_splitters(preprint.title),
+    }
+
+    return elastic_document
+
 @requires_search
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
@@ -399,6 +432,25 @@ def update_node(node, index=None, bulk=False, async=False):
             return elastic_document
         else:
             client().index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
+
+
+@requires_search
+def update_preprint(preprint, index=None, bulk=False, async=False):
+    from addons.osfstorage.models import OsfStorageFile
+    index = index or INDEX
+    for file_ in paginated(OsfStorageFile, Q(preprint=preprint)):
+        update_file(file_, index=index)
+
+    is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if preprint.deleted or not preprint.is_public or (preprint.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
+        delete_doc(preprint._id, preprint, category='preprint', index=index)
+    else:
+        category = 'preprint'
+        elastic_document = serialize_preprint(preprint, category)
+        if bulk:
+            return elastic_document
+        else:
+            client().index(index=index, doc_type=category, id=preprint._id, body=elastic_document, refresh=True)
 
 def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
