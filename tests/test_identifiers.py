@@ -385,5 +385,5 @@ class TestIdentifierViews(OsfTestCase):
         client = CrossRefClient(settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
         res = client.create_identifier(identifier=doi, metadata=preprint_metadata)
 
-        assert res.status_code == 200
-        assert 'SUCCESS' in res.content
+        assert res['response'].status_code == 200
+        assert 'SUCCESS' in res['response'].content
