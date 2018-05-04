@@ -4,11 +4,13 @@
 
 Hello ${user.fullname},
 
-Congratulations on sharing your preprint "${node.title}" on OSF Preprints: ${preprint.absolute_url}
+Congratulations on sharing your preprint "${preprint.title}" on OSF Preprints: ${preprint.absolute_url}
 
 Now that you've shared your preprint, take advantage of more OSF features:
 
-*Upload supplemental, materials, data, and code to the OSF project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
+% if node:
+    *Upload supplemental, materials, data, and code to the OSF project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
+% endif
 
 *Preregister your next study and become eligible for a $1000 prize: osf.io/prereg
 

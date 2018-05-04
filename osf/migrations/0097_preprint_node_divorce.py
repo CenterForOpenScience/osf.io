@@ -14,6 +14,31 @@ from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
 from osf.models import OSFUser
 
+node_preprint_logs = [
+    'contributor_added',
+    'contributor_removed',
+    'contributors_reordered',
+    'edit_description',
+    'edit_title',
+    'made_contributor_invisible',
+    'made_contributor_visible',
+    'made_private',
+    'made_public',
+    'permissions_updated',
+    'preprint_file_updated',
+    'preprint_initiated',
+    'preprint_license_updated',
+    'subjects_updated',
+    'tag_added',
+    'tag_removed'
+]
+
+def pull_preprint_date_modified_from_node(node, preprint):
+    latest_log_date = node.logs.filter(action__in=node_preprint_logs).order_by('date').first().date
+    if preprint.modified < latest_log_date:
+        return latest_log_date
+    return preprint.modified
+
 def reverse_func(apps, schema_editor):
     Preprint = apps.get_model('osf', 'Preprint')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
@@ -73,6 +98,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         preprint.is_public = node.is_public
         preprint.deleted = deleted_log.date if deleted_log else None
         preprint.migrated = datetime.datetime.now()
+        preprint.date_modified = pull_preprint_date_modified_from_node(node, preprint)
 
         # use bulk create
         admin = []
@@ -119,7 +145,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         PreprintTags.objects.bulk_create(batchiter)
 
     # TODO add primary_file below
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified'])
 
 group_format = 'preprint_{self.id}_{group}'
 

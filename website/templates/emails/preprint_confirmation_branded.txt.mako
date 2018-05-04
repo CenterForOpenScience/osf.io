@@ -4,12 +4,14 @@
 
 Hello ${user.fullname},
 
-Congratulations on sharing your ${preprint.provider.preprint_word} "${node.title}" on ${preprint.provider.name}, powered by OSF Preprints: ${preprint.absolute_url}
+Congratulations on sharing your ${preprint.provider.preprint_word} "${preprint.title}" on ${preprint.provider.name}, powered by OSF Preprints: ${preprint.absolute_url}
 
 Now that you've shared your ${preprint.provider.preprint_word}, take advantage of more OSF features:
 
-*Upload supplemental, materials, data, and code to the OSF project associated with your ${preprint.provider.preprint_word}: ${node.absolute_url}
-Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
+% if node:
+    *Upload supplemental, materials, data, and code to the OSF project associated with your ${preprint.provider.preprint_word}: ${node.absolute_url}
+    Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
+% endif
 
 *Preregister your next study and become eligible for a $1000 prize: osf.io/prereg
 
@@ -34,4 +36,3 @@ Center for Open Science
 210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
 
 Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
-
