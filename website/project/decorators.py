@@ -8,7 +8,7 @@ from flask import request
 from framework import status
 from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
@@ -195,6 +195,24 @@ def check_can_access(node, user, key=None, api_node=None):
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
+
+        if node.access_requests_enabled:
+            access_request = node.requests.filter(creator=user).exclude(machine_state='accepted')
+            data = {
+                'node': {
+                    'id': node._id,
+                    'url': node.url
+                },
+                'user': {
+                    'access_request_state': access_request.get().machine_state if access_request else None
+                }
+            }
+            raise TemplateHTTPError(
+                http.FORBIDDEN,
+                template='request_access.mako',
+                data=data
+            )
+
         raise HTTPError(
             http.FORBIDDEN,
             data={'message_long': ('User has restricted access to this page. If this should not '

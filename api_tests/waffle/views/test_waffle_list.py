@@ -7,6 +7,7 @@ from osf_tests.factories import (
     SampleFactory,
     SwitchFactory
 )
+from api.base.pagination import MaxSizePagination
 
 @pytest.mark.django_db
 class TestWaffleList:
@@ -67,3 +68,7 @@ class TestWaffleList:
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['name'] == 'inactive_switch'
         assert not res.json['data'][0]['attributes']['active']
+
+    def test_page_size(self, app, url, user):
+        res = app.get(url)
+        assert res.json['links']['meta']['per_page'] == MaxSizePagination.page_size

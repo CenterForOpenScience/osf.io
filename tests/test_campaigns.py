@@ -43,6 +43,7 @@ class TestCampaignInitialization(OsfTestCase):
             'engrxiv-preprints',
             'psyarxiv-preprints',
             'osf-registries',
+            'osf-registered-reports',
         ]
         self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated

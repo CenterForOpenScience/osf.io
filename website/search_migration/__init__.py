@@ -90,18 +90,20 @@ SELECT json_agg(
                        WHEN RETRACTION.state != 'approved'
                          THEN
                            (SELECT json_agg(json_build_object(
-                                                translate(page_name, '.', ' '), content
+                                                translate(WP.page_name, '.', ' '), WV."content"
                                             ))
-                            FROM addons_wiki_nodewikipage
-                              INNER JOIN osf_guid
-                                ON (addons_wiki_nodewikipage.id = osf_guid.object_id AND
-                                    (osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'nodewikipage')))
-                            WHERE osf_guid._id = ANY (SELECT p.value
-                                                      FROM osf_abstractnode
-                                                        INNER JOIN
-                                                            jsonb_each_text(osf_abstractnode.wiki_pages_current) P
-                                                          ON TRUE
-                                                      WHERE id = N.id))
+                            FROM addons_wiki_wikipage AS WP
+                              LEFT JOIN LATERAL (
+                                SELECT
+                                    content,
+                                    identifier
+                                FROM addons_wiki_wikiversion
+                                WHERE addons_wiki_wikiversion.wiki_page_id = WP.id
+                                ORDER BY identifier DESC
+                                LIMIT 1
+                              ) WV ON TRUE
+                            WHERE WP.node_id = N.id
+                                AND WP.deleted IS NULL)
                        ELSE
                          '{{}}'::JSON
                        END
@@ -277,8 +279,8 @@ FROM osf_abstractnode AS N
             ) REGISTRATION_APPROVAL ON TRUE
   LEFT JOIN LATERAL (
             SELECT
-              CASE WHEN ((osf_preprintprovider.domain_redirect_enabled AND osf_preprintprovider.domain IS NOT NULL) OR
-                         osf_preprintprovider._id = 'osf')
+              CASE WHEN ((osf_abstractprovider.domain_redirect_enabled AND osf_abstractprovider.domain IS NOT NULL) OR
+                         osf_abstractprovider._id = 'osf')
                 THEN
                   '/' || (SELECT G._id
                           FROM osf_guid G
@@ -287,7 +289,7 @@ FROM osf_abstractnode AS N
                           ORDER BY created ASC, id ASC
                           LIMIT 1) || '/'
               ELSE
-                '/preprints/' || osf_preprintprovider._id || '/' || (SELECT G._id
+                '/preprints/' || osf_abstractprovider._id || '/' || (SELECT G._id
                                                                      FROM osf_guid G
                                                                      WHERE (G.object_id = P.id)
                                                                            AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
@@ -295,7 +297,7 @@ FROM osf_abstractnode AS N
                                                                      LIMIT 1) || '/'
               END AS URL
             FROM osf_preprintservice P
-              INNER JOIN osf_preprintprovider ON P.provider_id = osf_preprintprovider.id
+              INNER JOIN osf_abstractprovider ON P.provider_id = osf_abstractprovider.id
             WHERE P.node_id = N.id
               AND P.machine_state != 'initial'  -- is_preprint
               AND N.preprint_file_id IS NOT NULL

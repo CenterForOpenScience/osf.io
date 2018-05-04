@@ -22,6 +22,12 @@
      - What edge cases should QA be aware of?
 -->
 
+## Documentation
+
+<!-- Does any internal or external documentation need to be updated?
+     - Developer documentation? If so, link developer.osf.io PR here. 
+-->
+
 ## Side Effects
 
 <!-- Any possible side effects? -->

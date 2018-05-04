@@ -729,6 +729,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert not mock_async.called
         assert mock_mail.called
 
+
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super(TestPreprintConfirmationEmails, self).setUp()
@@ -749,6 +750,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             user=self.user,
             node=self.preprint.node,
             preprint=self.preprint,
+            logo=settings.OSF_PREPRINTS_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 

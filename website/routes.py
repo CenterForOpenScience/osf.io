@@ -7,7 +7,7 @@ from flask import request
 from flask import send_from_directory
 from django.core.urlresolvers import reverse
 
-from geoip import geolite2
+from geolite2 import geolite2
 
 from framework import status
 from framework import sentry
@@ -50,6 +50,7 @@ from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
+from website.ember_osf_web.decorators import ember_flag_is_active
 
 
 def get_globals():
@@ -58,7 +59,7 @@ def get_globals():
     """
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
@@ -82,8 +83,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
+            'continent': (location or {}).get('continent', {}).get('code', None),
+            'country': (location or {}).get('country', {}).get('iso_code', None),
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
@@ -107,6 +108,7 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
@@ -174,7 +176,7 @@ def robots():
     return send_from_directory(
         settings.STATIC_FOLDER,
         robots_file,
-        mimetype='text/plain'
+        mimetype='html'
     )
 
 def sitemap_file(path):
@@ -212,6 +214,7 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
+@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -342,8 +345,7 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
-
+        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -411,6 +413,17 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/rr/',
+                '/registeredreports/',
+                '/registeredreport/',
+            ],
+            'get',
+            registries_views.registered_reports_landing,
+            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+        ),
+
+        Rule(
             '/erpc/',
             'get',
             closed_challenges_views.erpc_landing_page,
@@ -453,9 +466,12 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/<campaign>/draft_registrations/',
+            [
+                '/api/v1/<campaign>/draft_registrations/',
+                '/api/v1/draft_registrations/'
+            ],
             'get',
-            prereg.prereg_draft_registrations,
+            registries_views.draft_registrations,
             json_renderer,
         ),
     ])
@@ -953,7 +969,7 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {'shareUrl': settings.SHARE_URL},
+            search_views.search_view,
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(
@@ -1627,6 +1643,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.configure_comments,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
             json_renderer,
         ),
 
