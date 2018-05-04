@@ -53,13 +53,13 @@ function Submissions(data) {
                     sortInclude : true,
                     filter : true,
                     custom : function() {
-                        return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); }
+                        return m('a', { href : item.data.nodeUrl }, item.data.title ); }
 
                 },
                 {
                     data: 'author',  // Data field name
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); },
+                    custom: function() { return m('a', { href: item.data.authorUrl }, item.data.author); },
                     filter : true
                 },
                 {

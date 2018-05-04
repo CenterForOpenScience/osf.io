@@ -151,15 +151,19 @@ class RequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles contributorship changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
-            self.machineable.target.add_contributor(
-                self.machineable.creator,
-                auth=Auth(ev.kwargs['user']),
-                permissions=permissions.READ,
-                send_email='{}_request'.format(self.machineable.request_type))
-        elif ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
             self.machineable.comment = self.action.comment
         self.machineable.save()
+
+        if ev.event.name == DefaultTriggers.ACCEPT.value:
+            if not self.machineable.target.is_contributor(self.machineable.creator):
+                contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
+                self.machineable.target.add_contributor(
+                    self.machineable.creator,
+                    auth=Auth(ev.kwargs['user']),
+                    permissions=permissions.expand_permissions(contributor_permissions),
+                    visible=ev.kwargs.get('visible', True),
+                    send_email='{}_request'.format(self.machineable.request_type))
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -171,11 +175,13 @@ class RequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.admin_contributors:
+        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
                 admin=admin,
+                mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
 
@@ -193,6 +199,8 @@ class RequestMachine(BaseMachine):
             mails.send_mail(
                 self.machineable.creator.username,
                 mails.ACCESS_REQUEST_DENIED,
+                mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
         else:

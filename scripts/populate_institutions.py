@@ -50,6 +50,20 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'asu',
+                'name': 'Arizona State University',
+                'description': '<a href="https://asu.edu">Arizona State University</a>',
+                'banner_name': 'asu-banner.png',
+                'logo_name': 'asu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.asu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'brown',
                 'name': 'Brown University',
                 'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
@@ -84,6 +98,18 @@ def main(env):
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'callutheran',
+                'name': 'California Lutheran University',
+                'description': '',
+                'banner_name': 'callutheran-banner.png',
+                'logo_name': 'callutheran-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'capolicylab',
@@ -218,6 +244,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'gmu',
+                'name': 'George Mason University',
+                'description': 'This service is supported on campus by <a href="https://oria.gmu.edu/">Research Development, Integrity and Assurance</a> (RDIA), <a href="https://library.gmu.edu/"> The Office of Research Computing</a> (ORC), and <a href="https://orc.gmu.edu/">University Libraries</a>. Users should abide by all requirements of Mason\'s <a href="https://universitypolicy.gmu.edu/policies/data-stewardship/">Data Stewardship Policy</a> including not using this service to store or transfer highly sensitive data or any controlled unclassified information. For assistance please contact <a href="mailto:datahelp@gmu.edu">Wendy Mann</a>, Director of Mason\'s Digital Scholarship Center.',
+                'banner_name': 'gmu-banner.png',
+                'logo_name': 'gmu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.gmu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation',
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
@@ -276,6 +314,20 @@ def main(env):
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+            },
+            {
+                '_id': 'sc',
+                'name': 'University of South Carolina Libraries',
+                'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
+                'banner_name': 'sc-banner.png',
+                'logo_name': 'sc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.sc.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'thelabatdc',
@@ -538,6 +590,20 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'asu',
+                'name': 'Arizona State University [Test]',
+                'description': '<a href="https://asu.edu">Arizona State University</a>',
+                'banner_name': 'asu-banner.png',
+                'logo_name': 'asu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-asu.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'brown',
                 'name': 'Brown University [Test]',
                 'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
@@ -572,6 +638,18 @@ def main(env):
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'callutheran',
+                'name': 'California Lutheran University [Test]',
+                'description': '',
+                'banner_name': 'callutheran-banner.png',
+                'logo_name': 'callutheran-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-callutheran.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'capolicylab',
@@ -706,6 +784,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'gmu',
+                'name': 'George Mason University [Test]',
+                'description': 'This service is supported on campus by <a href="https://oria.gmu.edu/">Research Development, Integrity and Assurance</a> (RDIA), <a href="https://library.gmu.edu/"> The Office of Research Computing</a> (ORC), and <a href="https://orc.gmu.edu/">University Libraries</a>. Users should abide by all requirements of Mason\'s <a href="https://universitypolicy.gmu.edu/policies/data-stewardship/">Data Stewardship Policy</a> including not using this service to store or transfer highly sensitive data or any controlled unclassified information. For assistance please contact <a href="mailto:datahelp@gmu.edu">Wendy Mann</a>, Director of Mason\'s Digital Scholarship Center.',
+                'banner_name': 'gmu-banner.png',
+                'logo_name': 'gmu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.gmu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-gmu.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation [Test]',
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
@@ -764,6 +854,20 @@ def main(env):
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+            },
+            {
+                '_id': 'sc',
+                'name': 'University of South Carolina Libraries [Test]',
+                'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
+                'banner_name': 'sc-banner.png',
+                'logo_name': 'sc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-sc.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'thelabatdc',

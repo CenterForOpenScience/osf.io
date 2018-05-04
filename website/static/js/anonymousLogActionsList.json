@@ -65,6 +65,8 @@
     "node_created" : "A user created a project",
     "node_forked" : "A user created fork from a project",
     "node_removed" : "A user removed a project",
+    "node_access_requests_enabled": "A user enabled access requests for a project",
+    "node_access_requests_disabled": "A user disabled access requests for a project",
     "license_changed" : "A user updated the license of a project",
     "file_tag_added": "A user added a tag to a file in OSF Storage in a project",
     "file_tag_removed": "A user removed tag from a file in OSF Storage in a project",
@@ -77,6 +79,7 @@
     "preprint_initiated": "A user made a project a preprint",
     "preprint_file_updated": "A user updated the primary file of a preprint",
     "preprint_license_updated": "A user updated the license of a preprint",
+    "subjects_updated": "A user updated the subjects",
     "view_only_link_added": "A user created a view-only link to a project",
     "view_only_link_removed": "A user removed a view-only link to a project"
 }

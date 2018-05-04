@@ -31,6 +31,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+    NODE_ACCESS_REQUESTS_ENABLED = 'node_access_requests_enabled'
+    NODE_ACCESS_REQUESTS_DISABLED = 'node_access_requests_disabled'
 
     POINTER_CREATED = NODE_LINK_CREATED = 'pointer_created'
     POINTER_FORKED = NODE_LINK_FORKED = 'pointer_forked'
@@ -116,11 +118,14 @@ class NodeLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
     PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
+    SUBJECTS_UPDATED = 'subjects_updated'
+
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
 
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
+                NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
                 NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
                 WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
                 MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,

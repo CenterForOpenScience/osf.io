@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import itertools
 import httplib as http
 import logging
@@ -6,6 +7,7 @@ import math
 import os
 import requests
 import urllib
+import waffle
 
 from django.apps import apps
 from django.db.models import Count
@@ -25,6 +27,8 @@ from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from api.preprint_providers.permissions import GroupHelper
@@ -125,7 +129,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
-
+@ember_flag_is_active('ember_home_page')
 def index():
     try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
@@ -171,14 +175,19 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
+    return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_dashboard_page')
 def dashboard(auth):
     return redirect('/')
 
+@ember_flag_is_active('ember_support_page')
+def support():
+    return {}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
     bookmark_collection = find_bookmark_collection(user)
@@ -317,6 +326,11 @@ def resolve_guid(guid, suffix=None):
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
+
+        if isinstance(referent, Node) and not referent.is_registration and suffix:
+            page = suffix.strip('/').split('/')[0]
+            if waffle.flag_is_active(request, 'ember_project_{}_page'.format(page)):
+                use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)

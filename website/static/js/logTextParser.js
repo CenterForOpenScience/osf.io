@@ -718,6 +718,16 @@ var LogPieces = {
         }
     },
 
+    subjects: {
+        view: function(ctrl, logObject){
+            var subjects = logObject.attributes.params.subjects;
+            if (paramIsReturned(subjects, logObject)) {
+                return m('span', subjects.map(function(item) {return item.text;}).join(', '), '');
+            }
+            return m('span', '');
+        }
+    },
+
     license: {
         view: function(ctrl, logObject){
             var license_name = logObject.attributes.params.license;

@@ -486,8 +486,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        # 1 node created, 1 bookmarks collection created (new user), 1 node log
-        nt.assert_equal(user_logs_since_workshop, 3)
+        # 1 node created, 1 node log
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
         # Test workshop 30 days ago
@@ -497,7 +497,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 3)
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
         # Test workshop a year ago
@@ -507,7 +507,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 3)
+        nt.assert_equal(user_logs_since_workshop, 2)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     # Regression test for OSF-8089
@@ -564,7 +564,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_id, self.user.id)
+        nt.assert_equal(user_id, self.user._id)
         nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
@@ -622,13 +622,13 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
-            'name': '~Dr. Sportello-Fay, PI'
+            'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, furl.quote('/users/search/~Dr. Sportello-Fay, PI/', safe='/.,~'))
+        nt.assert_equal(self.view.success_url, '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
 
     def test_search_user_by_username(self):
         form_data = {

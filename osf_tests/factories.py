@@ -11,6 +11,7 @@ import factory
 import pytz
 from factory.django import DjangoModelFactory
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory
 from waffle.models import Flag, Sample, Switch
@@ -275,6 +276,15 @@ class CollectionFactory(DjangoModelFactory):
     is_bookmark_collection = False
     title = factory.Faker('catch_phrase')
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        obj = cls._build(*args, **kwargs)
+        obj.save()
+        # M2M, requires initial save
+        obj.collected_types = collected_types
+        return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True

@@ -663,8 +663,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor
         for node in user.contributed:
-            # Skip bookmark collection node
-            if node.is_bookmark_collection or node.is_quickfiles:
+            # Skip quickfiles
+            if node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -684,11 +684,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             node.save()
 
+        # Skip bookmark collections
+        user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
+
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
 
         # - projects where the user was the creator
-        user.nodes_created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -847,8 +850,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
+                mimetype='html',
                 user=self,
+                can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
@@ -1154,7 +1158,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
             unregistered_user = None
 

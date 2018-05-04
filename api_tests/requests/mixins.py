@@ -34,6 +34,7 @@ class NodeRequestTestMixin(object):
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            send_email='access_request',
             save=True
         )
         return proj

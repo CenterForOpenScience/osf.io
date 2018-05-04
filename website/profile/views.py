@@ -26,6 +26,7 @@ from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, Qu
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
@@ -170,11 +171,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username,
-                            osf_contact_email=settings.OSF_CONTACT_EMAIL)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -241,6 +246,7 @@ def profile_view_id_json(uid, auth):
     return _profile_view(user, is_profile)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_profile_page')
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -255,6 +261,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_page')
 def user_profile(auth, **kwargs):
     user = auth.user
     return {
@@ -287,6 +294,8 @@ def user_account_password(auth, **kwargs):
 
     try:
         user.change_password(old_password, new_password, confirm_password)
+        if user.verification_key_v2:
+            user.verification_key_v2['expires'] = timezone.now()
         user.save()
     except ChangePasswordError as error:
         for m in error.messages:
@@ -742,6 +751,7 @@ def request_export(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
@@ -762,6 +772,7 @@ def request_deactivation(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True
