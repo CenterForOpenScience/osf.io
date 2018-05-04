@@ -673,8 +673,8 @@ class TrashedFolder(TrashedFileNode):
 
 
 class FileVersionUserMetadata(BaseModel):
-    user = models.ForeignKey('OSFUser')
-    file_version = models.ForeignKey('FileVersion')
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    file_version = models.ForeignKey('FileVersion', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'file_version')
