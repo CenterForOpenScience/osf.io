@@ -64,17 +64,6 @@ def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
     data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
     try:
-        resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-            'data': {
-                'type': 'NormalizedData',
-                'attributes': {
-                    'tasks': [],
-                    'raw': None,
-                    'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
-                }
-            }
-        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
-        logger.debug(resp.content)
         resp.raise_for_status()
     except Exception as e:
         if resp.status_code >= 500:
