@@ -6,9 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm
-from guardian.shortcuts import get_perms
-from guardian.shortcuts import remove_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm
+
 from include import IncludeQuerySet
 
 from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
@@ -543,6 +542,7 @@ class MachineableMixin(models.Model):
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
 
+
 class RequestableMixin(MachineableMixin):
     """Something that users may request access or changes to.
     """
@@ -733,3 +733,4 @@ class TaxonomizableMixin(models.Model):
             )
 
         self.save(old_subjects=old_subjects)
+

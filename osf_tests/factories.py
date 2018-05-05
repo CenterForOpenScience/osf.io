@@ -574,8 +574,9 @@ class PreprintFactory(DjangoModelFactory):
         creator = kwargs.pop('creator', None) or UserFactory()
         project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
-        instance = target_class(node=project, provider=provider)
-
+        title = kwargs.pop('title', None) or 'Untitled'
+        description = kwargs.pop('description', None) or 'None'
+        instance = target_class(node=project, provider=provider, title=title, description=description)
         return instance
 
     @classmethod
@@ -594,15 +595,7 @@ class PreprintFactory(DjangoModelFactory):
         instance.node.preprint_article_doi = doi
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
-
         user = kwargs.pop('creator', None) or instance.node.creator
-        if not instance.node.is_contributor(user):
-            instance.node.add_contributor(
-                contributor=user,
-                permissions=permissions.CREATOR_PERMISSIONS,
-                log=False,
-                save=True
-            )
 
         preprint_file = OsfStorageFile.create(
             node=instance.node,
@@ -625,6 +618,14 @@ class PreprintFactory(DjangoModelFactory):
         if finish:
             auth = Auth(user)
 
+            if not instance.is_contributor(user):
+                instance.add_contributor(
+                    contributor=user,
+                    permission='admin',
+                    log=False,
+                )
+                instance.save()
+
             instance.set_primary_file(preprint_file, auth=auth, save=True)
             instance.set_subjects(subjects, auth=auth)
             if license_details:
@@ -640,7 +641,6 @@ class PreprintFactory(DjangoModelFactory):
 
         if not instance.is_published:
             instance.node._has_abandoned_preprint = True
-
         instance.node.save()
         instance.save()
         return instance

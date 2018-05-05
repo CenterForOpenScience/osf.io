@@ -435,10 +435,11 @@ def subscribe_user_to_notifications(node, user):
     :param user: User to subscribe to notifications
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    if node.is_collection:
+    Node = apps.get_model('osf.Node')
+    if isinstance(node, Node) and node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
-    if node.is_deleted:
+    if isinstance(node, Node) and node.is_deleted:
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
@@ -456,7 +457,7 @@ def subscribe_user_to_notifications(node, user):
             # If no subscription for component and creator is the user, do not create subscription
             # If no subscription exists for the component, this means that it should adopt its
             # parent's settings
-            if not(node and node.parent_node and not subscription and node.creator == user):
+            if not(isinstance(node, Node) and node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
                     # Need to save here in order to access m2m fields
