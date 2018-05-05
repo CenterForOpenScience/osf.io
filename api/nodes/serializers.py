@@ -765,6 +765,12 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
+
+    def get_current_user_is_contributor(self, obj):
+        user = self.context['request'].user
+        user = None if user.is_anonymous else user
+        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):

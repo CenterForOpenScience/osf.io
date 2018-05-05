@@ -20,7 +20,7 @@ from api.preprint_providers.permissions import CanAddModerator, CanDeleteModerat
 from api.preprints.serializers import PreprintSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider
+from osf.models import AbstractNode, OSFUser, Subject, PreprintProvider, NodeLicense
 
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -215,6 +215,9 @@ class PreprintProviderLicenseList(LicenseList):
     """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
+
+    def get_default_queryset(self):
+        return NodeLicense.objects.preprint_licenses()
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')

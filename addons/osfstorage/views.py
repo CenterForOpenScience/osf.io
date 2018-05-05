@@ -19,13 +19,14 @@ from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon, must_have_permission
+    must_not_be_registration, must_have_permission
 )
 from website.project.model import has_anonymous_link
 
 from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
+from addons.osfstorage.models import OsfStorageFolder
 from addons.osfstorage import settings as osf_storage_settings
 
 
@@ -42,8 +43,7 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
-@must_have_addon('osfstorage', 'node')
-def osfstorage_update_metadata(node_addon, payload, **kwargs):
+def osfstorage_update_metadata(payload, **kwargs):
     """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
 
     The basic metadata response looks like::
@@ -96,11 +96,11 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
+def osfstorage_get_revisions(file_node, payload, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
+    is_anon = has_anonymous_link(kwargs['target'], Auth(private_key=request.args.get('view_only')))
 
-    counter_prefix = 'download:{}:{}:'.format(file_node.node._id, file_node._id)
+    counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
@@ -113,7 +113,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=version_count - idx - 1, anon=is_anon)
+            utils.serialize_revision(kwargs['target'], file_node, version, index=version_count - idx - 1, anon=is_anon)
             for idx, version in enumerate(qs)
         ]
     }
@@ -140,7 +140,7 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
-def osfstorage_get_lineage(file_node, node_addon, **kwargs):
+def osfstorage_get_lineage(file_node, **kwargs):
     lineage = []
 
     while file_node:
@@ -222,24 +222,32 @@ def osfstorage_get_children(file_node, **kwargs):
             ) DOWNLOAD_COUNT ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
+        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.target._id, file_node.id])
 
         return cursor.fetchone()[0] or []
 
 
 @must_be_signed
-@must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
-def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+def osfstorage_create_child(file_node, payload, **kwargs):
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
 
+    if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'Registered Nodes are immutable',
+                'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+            }
+        )
+
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.node.is_quickfiles and is_folder:
+    if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
 
     try:
@@ -297,16 +305,16 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_be_signed
 @must_not_be_registration
 @decorators.autoload_filenode()
-def osfstorage_delete(file_node, payload, node_addon, **kwargs):
+def osfstorage_delete(file_node, payload, **kwargs):
     user = OSFUser.load(payload['user'])
     auth = Auth(user)
 
     #TODO Auth check?
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
-
-    if file_node == node_addon.get_root():
-        raise HTTPError(httplib.BAD_REQUEST)
+    target = kwargs['target']
+    if file_node == OsfStorageFolder.objects.get_root(target=target):
+            raise HTTPError(httplib.BAD_REQUEST)
 
     try:
         file_node.delete(user=user)
@@ -323,7 +331,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_download(file_node, payload, node_addon, **kwargs):
+def osfstorage_download(file_node, payload, **kwargs):
     # Set user ID in session data for checking if user is contributor
     # to project.
     user_id = payload.get('user')
@@ -341,9 +349,6 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-
-    if request.args.get('mode') not in ('render', ):
-        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
 
     return {
         'data': {

@@ -42,6 +42,9 @@ class WikiMixin(object):
         if not wiki:
             raise NotFound
 
+        if wiki.node.addons_wiki_node_settings.deleted:
+            raise NotFound(detail='The wiki for this node has been disabled.')
+
         if wiki.deleted:
             raise Gone
 

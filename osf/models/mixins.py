@@ -533,14 +533,14 @@ class MachineableMixin(models.Model):
         """
         return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
 
-    def run_accept(self, user, comment):
+    def run_accept(self, user, comment, **kwargs):
         """Run the 'accept' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment)
+        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
@@ -716,9 +716,11 @@ class TaxonomizableMixin(models.Model):
 
     @cached_property
     def subject_hierarchy(self):
-        return [
-            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
-        ]
+        if self.subjects.exists():
+            return [
+                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
+            ]
+        return []
 
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.

@@ -56,14 +56,14 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
@@ -167,7 +167,7 @@ class TestPreprintPermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -198,7 +198,7 @@ class TestPreprintPermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -729,6 +729,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert not mock_async.called
         assert mock_mail.called
 
+
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super(TestPreprintConfirmationEmails, self).setUp()
@@ -749,6 +750,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             user=self.user,
             node=self.preprint.node,
             preprint=self.preprint,
+            logo=settings.OSF_PREPRINTS_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 

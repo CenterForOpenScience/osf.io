@@ -24,7 +24,11 @@ class TestGuidDetail:
     def project(self):
         return ProjectFactory()
 
-    def test_redirects(self, app, project, user):
+    @pytest.fixture()
+    def registration(self):
+        return RegistrationFactory()
+
+    def test_redirects(self, app, project, registration, user):
         # test_redirect_to_node_view
         url = '/{}guids/{}/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth)
@@ -34,7 +38,6 @@ class TestGuidDetail:
         assert res.location == redirect_url
 
         # test_redirect_to_registration_view
-        registration = RegistrationFactory()
         url = '/{}guids/{}/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}registrations/{}/'.format(
@@ -53,7 +56,7 @@ class TestGuidDetail:
 
         # test_redirect_to_file_view
         test_file = OsfStorageFile.create(
-            node=ProjectFactory(),
+            target=ProjectFactory(),
             path='/test', name='test',
             materialized_path='/test',
         )
@@ -97,7 +100,7 @@ class TestGuidDetail:
 
         # test_redirect_when_viewing_private_project_file_through_view_only_link
         test_file = OsfStorageFile.create(
-            node=project,
+            target=project,
             path='/test',
             name='test',
             materialized_path='/test',
@@ -144,3 +147,13 @@ class TestGuidDetail:
         referent = res.json['data']['embeds']['referent']['data']
         assert referent['id'] == project._id
         assert referent['type'] == 'nodes'
+
+    def test_resolve_registration(self, app, registration, user):
+        url = '{}{}guids/{}/?resolve=false'.format(API_DOMAIN, API_BASE, registration._id)
+        res = app.get(url, auth=user.auth)
+        related_url = '{}{}registrations/{}/'.format(API_DOMAIN, API_BASE, registration._id)
+        referent = res.json['data']['relationships']['referent']
+
+        assert referent['links']['related']['href'] == related_url
+        assert referent['data']['id'] == registration._id
+        assert referent['data']['type'] == 'registrations'

@@ -15,6 +15,7 @@ import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
@@ -273,7 +274,7 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis']),
+        'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
         'preprint_url': result.get('preprint_url'),
@@ -284,23 +285,18 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = AbstractNode.load(parent_id)
-    if parent is None:
-        return None
-    parent_info = {}
-    if parent is not None and parent.is_public:
-        parent_info['title'] = parent.title
-        parent_info['url'] = parent.url
-        parent_info['is_registration'] = parent.is_registration
-        parent_info['id'] = parent._id
-    else:
-        parent_info['title'] = '-- private project --'
-        parent_info['url'] = ''
-        parent_info['is_registration'] = None
-        parent_info['id'] = None
-    return parent_info
+    if parent and parent.is_public:
+        return {
+            'title': parent.title,
+            'url': parent.url,
+            'id': parent._id,
+            'is_registation': parent.is_registration,
+        }
+    return None
 
 
 COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
+
 
 def get_doctype_from_node(node):
     if node.is_registration:
@@ -419,7 +415,7 @@ def serialize_preprint(preprint, category):
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q(node=node)):
+    for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
         update_file(file_, index=index)
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
@@ -565,9 +561,9 @@ def update_file(file_, index=None, delete=False):
     file_node_is_qa = bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
     ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))
-    ) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.target.tags.all().values_list('name', flat=True))
+    ) or any(substring in file_.target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not file_.target.is_public or delete or file_.target.is_deleted or file_.target.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -579,12 +575,12 @@ def update_file(file_, index=None, delete=False):
 
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
-    file_deep_url = '/{node_id}/files/{provider}{path}/'.format(
-        node_id=file_.node._id,
+    file_deep_url = '/{target_id}/files/{provider}{path}/'.format(
+        target_id=file_.target._id,
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+    node_url = '/{target_id}/'.format(target_id=file_.target._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
@@ -598,10 +594,10 @@ def update_file(file_, index=None, delete=False):
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,
-        'node_title': file_.node.title,
-        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
-        'is_registration': file_.node.is_registration,
-        'is_retracted': file_.node.is_retracted,
+        'node_title': getattr(file_.target, 'title', None),
+        'parent_id': file_.target.parent_node._id if getattr(file_.target, 'parent_node', None) else None,
+        'is_registration': getattr(file_.target, 'is_registration', False),
+        'is_retracted': getattr(file_.target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
     }
 

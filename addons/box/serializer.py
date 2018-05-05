@@ -1,8 +1,10 @@
 from addons.base.serializer import StorageAddonSerializer
+from addons.box import settings
 
 from website.util import api_url_for
 
-from box.client import BoxClient, BoxClientException
+from boxsdk import Client, OAuth2
+from boxsdk.exception import BoxAPIException
 
 class BoxSerializer(StorageAddonSerializer):
 
@@ -15,10 +17,11 @@ class BoxSerializer(StorageAddonSerializer):
                 return True
 
         if user_settings:
-            client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=user_settings.external_accounts[0].oauth_key)
+            client = client or Client(oauth)
             try:
-                client.get_user_info()
-            except (BoxClientException, IndexError):
+                client.user()
+            except (BoxAPIException, IndexError):
                 return False
         return True
 

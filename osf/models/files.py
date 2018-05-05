@@ -5,10 +5,12 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
@@ -23,7 +25,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url
+from website.util import api_v2_url, web_url_for
 
 __all__ = (
     'File',
@@ -92,7 +94,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    target_object_id = models.PositiveIntegerField()
+    target = GenericForeignKey('target_content_type', 'target_object_id')
+
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
     copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
@@ -147,7 +152,13 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         Implemented here so that subclasses may override it or path.
         See OsfStorage or PathFollowingNode.
         """
-        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
+        # Files are inaccessible if a node is retracted, so just show
+        # the retraction detail page for files on retractions
+        from osf.models import AbstractNode
+        if isinstance(self.target, AbstractNode):
+            if self.target.is_registration and self.target.is_retracted:
+                return self.target.web_url_for('view_project')
+        return web_url_for('addon_view_or_download_file', guid=self.target._id, provider=self.provider, path=self.path.strip('/'))
 
     @property
     def absolute_api_v2_url(self):
@@ -177,20 +188,22 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_or_create(cls, node, path):
+    def get_or_create(cls, target, path):
+        content_type = ContentType.objects.get_for_model(target)
         try:
-            obj = cls.objects.get(node=node, _path='/' + path.lstrip('/'))
+            obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         except cls.DoesNotExist:
-            obj = cls(node=node, _path='/' + path.lstrip('/'))
+            obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node):
+    def get_file_guids(cls, materialized_path, provider, target):
+        content_type = ContentType.objects.get_for_model(target)
         guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             # it's a folder
-            folder_children = cls.objects.filter(provider=provider, node=node, _materialized_path__startswith=materialized_path)
+            folder_children = cls.objects.filter(provider=provider, target_object_id=target.id, target_content_type=content_type, _materialized_path__startswith=materialized_path)
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -200,7 +213,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             # it's a file
             try:
                 file_obj = cls.objects.get(
-                    node=node, _materialized_path=materialized_path
+                    target_object_id=target.id, target_content_type=content_type, _materialized_path=materialized_path
                 )
             except cls.DoesNotExist:
                 return guids
@@ -265,7 +278,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def generate_waterbutler_url(self, **kwargs):
         return waterbutler_api_url_for(
-            self.node._id,
+            self.target._id,
             self.provider,
             self.path,
             **kwargs
@@ -315,12 +328,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
-        Currently only useful for OsfStorage
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.target._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
@@ -328,8 +340,16 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return count or 0
 
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
+
     def copy_under(self, destination_parent, name=None):
-        return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
+        return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
@@ -338,9 +358,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return self
 
-    def belongs_to_node(self, node_id):
+    def belongs_to_node(self, target_id):
         """Check whether the file is attached to the specified node."""
-        return self.node._id == node_id
+        return self.target._id == target_id
 
     def get_extra_log_params(self, comment):
         return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
@@ -357,7 +377,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
-            self.node = self.parent.node
+            self.target = self.parent.target
         if save:
             self.save()
         if recursive and not self.is_file:
@@ -405,10 +425,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         super(BaseFileNode, self).save(*args, **kwargs)
 
     def __repr__(self):
-        return '<{}(name={!r}, node={!r})>'.format(
+        return '<{}(name={!r}, target={!r})>'.format(
             self.__class__.__name__,
             self.name,
-            self.node
+            self.target
         )
 
 class UnableToRestore(Exception):
@@ -547,14 +567,24 @@ class Folder(models.Model):
         if not self.pk:
             logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
             self.save()
-        child = self._resolve_class(kind)(
+
+        target_content_type = ContentType.objects.get_for_model(self.target)
+        if self._resolve_class(kind).objects.filter(
             name=name,
-            node=self.node,
-            path=path or '/' + name,
-            parent=self,
-            materialized_path=materialized_path or
-            os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
-        )
+            target_object_id=self.target.id,
+            target_content_type=target_content_type,
+            parent=self
+        ).exists():
+            raise IntegrityError('Child by that name already, exists, update instead')
+        else:
+            child = self._resolve_class(kind)(
+                name=name,
+                target=self.target,
+                path=path or '/' + name,
+                parent=self,
+                materialized_path=materialized_path or
+                os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
+            )
         if save:
             child.save()
         return child

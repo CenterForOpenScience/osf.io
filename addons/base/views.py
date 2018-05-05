@@ -13,10 +13,12 @@ import furl
 import jwe
 import jwt
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -303,22 +305,37 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
+DOWNLOAD_ACTIONS = set([
+    'download_file',
+    'download_zip',
+])
+
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions
-            if payload['action'] in ('download_file', 'download_zip'):
+            # Don't log download actions, but do update analytics
+            user = OSFUser.load(auth['id'])
+            if payload['action'] in DOWNLOAD_ACTIONS:
+                node = AbstractNode.load(payload['metadata']['nid'])
+                if not node.is_contributor(user):
+                    url = furl.furl(payload['request_meta']['url'])
+                    version = url.args.get('version') or url.args.get('revision')
+                    path = payload['metadata']['path'].lstrip('/')
+                    if payload['action_meta']['is_mfr_render']:
+                        update_analytics(node, path, version, 'view')
+                    else:
+                        update_analytics(node, path, version, 'download')
+
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        user = OSFUser.load(auth['id'])
         if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
@@ -432,13 +449,13 @@ def create_waterbutler_log(payload, **kwargs):
             node_addon.create_waterbutler_log(auth, action, metadata)
 
     with transaction.atomic():
-        file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
+        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
 
 @file_signals.file_updated.connect
-def addon_delete_file_node(self, node, user, event_type, payload):
+def addon_delete_file_node(self, target, user, event_type, payload):
     """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
 
@@ -449,10 +466,12 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         provider = payload['provider']
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
+        content_type = ContentType.objects.get_for_model(target)
         if path.endswith('/'):
             folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
                 provider=provider,
-                node=node,
+                target_object_id=target.id,
+                target_content_type=content_type,
                 _materialized_path__startswith=materialized_path
             )
             for item in folder_children:
@@ -463,7 +482,8 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         else:
             try:
                 file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
-                    node=node,
+                    target_object_id=target.id,
+                    target_content_type=content_type,
                     _materialized_path=materialized_path
                 )
             except BaseFileNode.DoesNotExist:
@@ -596,23 +616,24 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     return ret, httplib.GONE
 
 
-@must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
 @ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
+    guid = kwargs.get('guid')
+    guid_target = getattr(Guid.load(guid), 'referent', None)
+    target = guid_target or kwargs.get('node') or kwargs['project']
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
-    project_safe = markupsafe.escape(node.project_or_component)
+    project_safe = markupsafe.escape(getattr(target, 'project_or_component', target))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    node_addon = target.get_addon(provider)
 
     if not isinstance(node_addon, BaseStorageAddon):
         raise HTTPError(httplib.BAD_REQUEST, data={
@@ -633,7 +654,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         })
 
     savepoint_id = transaction.savepoint()
-    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(node, path)
+    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
@@ -654,7 +675,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
             if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    file_node.node.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
+                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
     else:
@@ -670,7 +691,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format) != extension:
+        if format and '.{}'.format(format.lower()) != extension.lower():
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
@@ -691,7 +712,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
-    return addon_view_file(auth, node, file_node, version)
+    return addon_view_file(auth, target, file_node, version)
 
 
 @collect_auth
@@ -712,7 +733,7 @@ def persistent_file_download(auth, **kwargs):
             'message_long': 'Downloading folders is not permitted.'
         })
 
-    auth_redirect = check_contributor_auth(file.node, auth,
+    auth_redirect = check_contributor_auth(file.target, auth,
                                            include_public=True,
                                            include_view_only_anon=True)
     if auth_redirect:
@@ -734,7 +755,7 @@ def addon_view_or_download_quickfile(**kwargs):
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue

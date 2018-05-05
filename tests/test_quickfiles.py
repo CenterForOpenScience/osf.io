@@ -7,7 +7,6 @@ from osf_tests.factories import AuthUserFactory
 from tests.base import test_app
 from webtest_plus import TestApp
 from addons.osfstorage.tests.utils import make_payload
-from addons.osfstorage.models import OsfStorageFile
 
 from framework.auth import signing
 
@@ -32,7 +31,7 @@ def post_to_quickfiles(quickfiles, user, flask_app, **kwargs):
     def func(name, *args, **kwargs):
         osfstorage = quickfiles.get_addon('osfstorage')
         root = osfstorage.get_root()
-        url = '/api/v1/project/{}/osfstorage/{}/children/'.format(quickfiles._id, root._id)
+        url = '/api/v1/{}/osfstorage/{}/children/'.format(quickfiles._id, root._id)
         expect_errors = kwargs.pop('expect_errors', False)
         payload = make_payload(user=user, name=name, **kwargs)
 
@@ -52,7 +51,7 @@ class TestUserQuickFilesNodeFileCreation:
 
         assert res.status_code == 201
         assert res.json['status'] == 'success'
-        assert OsfStorageFile.objects.filter(node__creator=user, name=name).exists()
+        assert quickfiles.files.filter(name=name).exists()
 
     def test_create_folder_throws_error(self, flask_app, user, quickfiles, post_to_quickfiles):
         name = 'new_illegal_folder'

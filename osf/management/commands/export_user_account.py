@@ -208,7 +208,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
             *same as projects*
 
     """
-    user = OSFUser.objects.get(guids___id=user_id)
+    user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
     proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
@@ -225,7 +225,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     os.mkdir(registrations_dir)
 
     preprints_to_export = (Preprint.objects
-        .filter(node___contributors__guids___id=user_id)
+        .filter(node___contributors__guids___id=user_id, guids___id__isnull=False)
         .select_related('node')
     )
 

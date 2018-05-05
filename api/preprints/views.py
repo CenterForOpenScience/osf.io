@@ -43,7 +43,7 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except Preprint.DoesNotExist:

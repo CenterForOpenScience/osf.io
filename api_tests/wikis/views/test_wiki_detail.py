@@ -13,8 +13,10 @@ from addons.wiki.tests.factories import (
 )
 
 from api.base.settings.defaults import API_BASE
+from framework.auth.core import Auth
 
 from osf.models import Guid
+from osf.utils import permissions
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
@@ -23,7 +25,6 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from tests.base import ApiWikiTestCase, fake
-from website.util import permissions
 
 
 def make_rename_payload(wiki_page):
@@ -454,6 +455,12 @@ class TestWikiDetailView(ApiWikiTestCase):
             expected_comments_relationship_url,
             res.json['data']['relationships']['comments']['links']['related']['href'])
 
+    def test_do_not_return_disabled_wiki(self):
+        self._set_up_public_project_with_wiki_page()
+        self.public_project.delete_addon('wiki', auth=Auth(self.user))
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestWikiDelete(WikiCRUDTestCase):
@@ -538,6 +545,7 @@ class TestWikiUpdate(WikiCRUDTestCase):
                     'id': wiki_public._id,
                     'type': 'wikis',
                     'attributes': {
+                        'name': 'new page name',
                         'content': 'brave new wiki'
                     }
                 }

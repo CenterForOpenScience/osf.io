@@ -171,11 +171,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username,
-                            osf_contact_email=settings.OSF_CONTACT_EMAIL)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -290,6 +294,8 @@ def user_account_password(auth, **kwargs):
 
     try:
         user.change_password(old_password, new_password, confirm_password)
+        if user.verification_key_v2:
+            user.verification_key_v2['expires'] = timezone.now()
         user.save()
     except ChangePasswordError as error:
         for m in error.messages:
@@ -745,6 +751,7 @@ def request_export(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
@@ -765,6 +772,7 @@ def request_deactivation(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True

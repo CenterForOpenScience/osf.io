@@ -229,7 +229,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         if not self.has_permission(auth.user, 'admin'):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        if preprint_file.provider != 'osfstorage':
+        if preprint_file.target != self or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
         existing_file = self.primary_file
@@ -260,7 +260,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         self.is_published = published
 
         if published:
-            if not (self.primary_file):
+            if not (self.primary_file and self.primary_file.target == self):
                 raise ValueError('Preprint is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

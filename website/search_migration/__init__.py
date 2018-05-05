@@ -449,12 +449,15 @@ FROM osf_basefilenode AS F
                          END)
                    ) AS DATA
             FROM osf_abstractnode N
-            WHERE N.id = F.node_id
+            WHERE (N.id = F.target_object_id AND (
+                SELECT id FROM "django_content_type" WHERE (
+                  "django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'
+                )) = F.target_content_type_id)
             LIMIT 1
             ) NODE ON TRUE
 WHERE name IS NOT NULL
       AND name != ''
-      AND node_id = ANY (SELECT id
+      AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
                                AND is_public IS TRUE
@@ -473,6 +476,7 @@ WHERE name IS NOT NULL
                                              WHERE (AJ.status != 'FAILURE' AND AJ.status != 'SUCCESS'
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
+      AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
       AND id > {page_start}
       AND id <= {page_end}
 LIMIT 1;
@@ -685,7 +689,7 @@ SELECT json_agg(json_build_object(
 FROM osf_basefilenode AS F
 WHERE NOT (name IS NOT NULL
       AND name != ''
-      AND node_id = ANY (SELECT id
+      AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
                                AND is_public IS TRUE
@@ -707,6 +711,7 @@ WHERE NOT (name IS NOT NULL
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
       )
+      AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
       AND id > {page_start}
       AND id <= {page_end}
 LIMIT 1;

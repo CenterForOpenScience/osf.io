@@ -130,6 +130,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'title',
             'type',
             'current_user_can_comment',
+            'current_user_is_contributor',
             'preprint',
             'subjects']
         # fields that do not appear on registrations

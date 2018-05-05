@@ -34,7 +34,7 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
+        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False, guids___id__isnull=False)
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
@@ -80,8 +80,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
 
         if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
-        elif isinstance(comment.target.referent, (WikiPage,
-                                                 BaseFileNode)):
+        elif isinstance(comment.target.referent, BaseFileNode):
+            comment_node = comment.target.referent.target
+        elif isinstance(comment.target.referent, WikiPage):
             comment_node = comment.target.referent.node
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer

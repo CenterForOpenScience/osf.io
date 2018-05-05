@@ -72,6 +72,7 @@ def limit_filter(limit, (item, usage)):
     """Note: usage is a tuple(current_usage, deleted_usage)"""
     return item not in WHITE_LIST and sum(usage) >= limit
 
+
 def main(send_email=False):
     logger.info('Starting Project storage audit')
 
@@ -105,7 +106,7 @@ def main(send_email=False):
     if lines:
         if send_email:
             logger.info('Sending email...')
-            mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
+            mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
         else:
             logger.info('send_email is False, not sending email'.format(len(lines)))
         logger.info('{} offending project(s) and user(s) found'.format(len(lines)))

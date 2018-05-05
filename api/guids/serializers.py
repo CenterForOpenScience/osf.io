@@ -1,6 +1,6 @@
 import urlparse
 
-from osf.models import OSFUser, AbstractNode, Guid, BaseFileNode
+from osf.models import OSFUser, AbstractNode, Registration, Guid, BaseFileNode
 from website import settings as website_settings
 
 from api.base.utils import absolute_reverse
@@ -8,7 +8,9 @@ from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField)
 
 def get_type(record):
-    if isinstance(record, AbstractNode):
+    if isinstance(record, Registration):
+        return 'registrations'
+    elif isinstance(record, AbstractNode):
         return 'nodes'
     elif isinstance(record, OSFUser):
         return 'users'
@@ -27,6 +29,9 @@ def get_related_view_kwargs(record):
     kind = get_type(record)
     # slight hack, works for existing types
     singular = kind.rstrip('s')
+    # The registration view_kwarg is node_id
+    if singular == 'registration':
+        singular = 'node'
     return {
         '{}_id'.format(singular): '<_id>'
     }
