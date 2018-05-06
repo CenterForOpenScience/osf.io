@@ -6,7 +6,7 @@ import furl
 import pytz
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode
+from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -328,7 +328,7 @@ class FileSerializer(BaseFileSerializer):
 
     def get_target_type(self, obj):
         target_type = 'node'
-        if isinstance(obj, PreprintService):
+        if isinstance(obj, Preprint):
             target_type = 'preprint'
         return target_type
 

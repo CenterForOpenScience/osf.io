@@ -23,6 +23,7 @@ from osf.models.validators import validate_subject_hierarchy, validate_title, va
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils import sanitize
+from osf.utils.caching import cached_property
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
@@ -83,9 +84,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
     article_doi = models.CharField(max_length=128,
                                             validators=[validate_doi],
                                             null=True, blank=True)
-    # primary_file = models.ForeignKey('osf.BaseFileNode',
-    #                                   on_delete=models.SET_NULL,
-    #                                   null=True, blank=True)
+    files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
     # (for legacy preprints), pull off of node
     is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
@@ -109,6 +108,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
     def __unicode__(self):
         return '{} preprint (guid={}) with supplemental files on {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
+
+    @cached_property
+    def primary_file(self):
+        try:
+            return self.files.first()
+        except IndexError:
+            return None
 
     @property
     def contributors(self):

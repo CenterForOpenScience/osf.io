@@ -15,7 +15,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0094_update_preprintprovider_group_auth'),
+        ('osf', '0099_merge_20180505_1027'),
     ]
 
     operations = [
@@ -68,11 +68,6 @@ class Migration(migrations.Migration):
             name='creator',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints_created', to=settings.AUTH_USER_MODEL),
         ),
-        # migrations.AddField(
-        #     model_name='preprint',
-        #     name='primary_file',
-        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='osf.BaseFileNode'),
-        # ),
         migrations.AddField(
             model_name='preprint',
             name='date_last_reported',

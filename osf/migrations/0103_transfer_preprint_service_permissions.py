@@ -25,7 +25,7 @@ def unmigrate_preprint_service_permissions(state, schema):
 
 def remove_users_from_permission(perm):
     for user in OSFUser.objects.filter(user_permissions=perm):
-        u.user_permissions.remove(perm)
+        user.user_permissions.remove(perm)
 
 def add_users_to_renamed_permission(old_perm, new_perm):
     if old_perm:
@@ -56,7 +56,7 @@ def migrate_preprint_service_permissions(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0097_preprint_node_divorce'),
+        ('osf', '0102_preprint_node_divorce'),
     ]
 
     operations = [

@@ -563,7 +563,9 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.target.tags.all().values_list('name', flat=True))
     ) or any(substring in file_.target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not file_.target.is_public or delete or file_.target.is_deleted or file_.target.archiving or file_node_is_qa:
+    # if not file_.name or not file_.target.is_public or delete or file_.target.is_deleted or file_.target.archiving or file_node_is_qa:
+    if not file_.name or not file_.target.is_public or delete or file_node_is_qa:
+
         client().delete(
             index=index,
             doc_type='file',

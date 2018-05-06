@@ -81,9 +81,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
-    title = ser.CharField(source='title', required=False, max_length=512)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='description')
-    tags = JSONAPIListField(child=NodeTagField(), required=False, source='tags')
+    title = ser.CharField(required=False, max_length=512)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    tags = JSONAPIListField(child=NodeTagField(), required=False)
     node_is_public = ser.BooleanField(read_only=True, source='is_public')
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
