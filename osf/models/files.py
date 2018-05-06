@@ -154,8 +154,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """
         # Files are inaccessible if a node is retracted, so just show
         # the retraction detail page for files on retractions
-        if self.node.is_registration and self.node.is_retracted:
-            return self.node.web_url_for('view_project')
+        from osf.models import AbstractNode
+        if isinstance(self.target, AbstractNode):
+            if self.target.is_registration and self.target.is_retracted:
+                return self.target.web_url_for('view_project')
         return web_url_for('addon_view_or_download_file', guid=self.target._id, provider=self.provider, path=self.path.strip('/'))
 
     @property
