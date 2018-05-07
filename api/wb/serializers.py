@@ -9,7 +9,7 @@ from api.base.serializers import IDField
 
 class DestinationSerializer(ser.Serializer):
     parent = ser.CharField(write_only=True)
-    node = ser.CharField(write_only=True)
+    target = ser.CharField(write_only=True)
     name = ser.CharField(write_only=True, allow_blank=True, allow_null=True)
 
 
