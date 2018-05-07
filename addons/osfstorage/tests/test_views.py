@@ -60,7 +60,7 @@ class TestGetMetadataHook(HookTestCase):
     def test_empty(self):
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': self.node_settings.get_root()._id},
+            {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
             {},
         )
         assert_true(isinstance(res.json, list))
@@ -88,7 +88,7 @@ class TestGetMetadataHook(HookTestCase):
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': record.parent._id},
+            {'fid': record.parent._id, 'user_id': self.user._id},
             {},
         )
         assert_equal(len(res.json), 1)
