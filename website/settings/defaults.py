@@ -495,6 +495,7 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
+        'scripts.add_missing_identifiers_to_preprints',
     )
 
     # Modules that need metrics and release requirements
