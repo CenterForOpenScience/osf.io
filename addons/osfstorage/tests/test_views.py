@@ -1106,7 +1106,7 @@ class TestFileViews(StorageTestCase):
         mock_get_client.return_value = client
 
         base_url = '/download/{}/'
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
 
         responses.add(
             responses.Response(

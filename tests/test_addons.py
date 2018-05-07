@@ -144,7 +144,7 @@ class TestAddonLogs(OsfTestCase):
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
         self.file = OsfStorageFileNode.create(
-            node=self.node,
+            target=self.node,
             path='/testfile',
             _id='testfile',
             name='testfile',
@@ -732,7 +732,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -745,7 +745,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
