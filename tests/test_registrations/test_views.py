@@ -12,7 +12,7 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from framework.exceptions import HTTPError
 
-from osf.models import MetaSchema, DraftRegistration
+from osf.models import RegistrationMetaSchema, DraftRegistration
 from osf.utils import permissions
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
 from website.util import api_url_for
@@ -389,7 +389,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
-        open_ended_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+        open_ended_schema = RegistrationMetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
 
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)
@@ -464,7 +464,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(
             len(res['meta_schemas']),
-            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
+            RegistrationMetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
         )
 
     def test_get_metaschemas_all(self):
@@ -473,7 +473,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.OK)
         assert_equal(
             len(res.json['meta_schemas']),
-            MetaSchema.objects.filter(active=True).count()
+            RegistrationMetaSchema.objects.filter(active=True).count()
         )
 
     def test_validate_embargo_end_date_too_soon(self):

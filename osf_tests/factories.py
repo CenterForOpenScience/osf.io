@@ -37,7 +37,7 @@ fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 10000
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.MetaSchema.objects.first()
+    return models.RegistrationMetaSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -448,7 +448,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        registration_schema = registration_schema or models.MetaSchema.objects.first()
+        registration_schema = registration_schema or models.RegistrationMetaSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,

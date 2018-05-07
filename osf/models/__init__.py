@@ -1,4 +1,4 @@
-from osf.models.metaschema import MetaSchema  # noqa
+from osf.models.metaschema import RegistrationMetaSchema, FileMetadataMetaSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
@@ -31,6 +31,7 @@ from osf.models.files import (  # noqa
     File, Folder,  # noqa
     FileVersion, TrashedFile, TrashedFileNode, TrashedFolder,  # noqa
 )  # noqa
+from osf.models.metadata import FileMetadataRecord  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
 from osf.models.admin_profile import AdminProfile  # noqa

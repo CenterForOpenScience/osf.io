@@ -14,7 +14,7 @@ from website.util import api_v2_url
 from website import settings
 
 from osf.models import (
-    OSFUser, MetaSchema, RegistrationApproval,
+    OSFUser, RegistrationMetaSchema, RegistrationApproval,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
@@ -35,7 +35,7 @@ class Registration(AbstractNode):
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
-    registered_schema = models.ManyToManyField(MetaSchema)
+    registered_schema = models.ManyToManyField(RegistrationMetaSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
@@ -443,13 +443,13 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
+    registration_schema = models.ForeignKey('RegistrationMetaSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
-    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # Dictionary field mapping extra fields defined in the RegistrationMetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     # TODO: Use "FIELD_ALIASES"?

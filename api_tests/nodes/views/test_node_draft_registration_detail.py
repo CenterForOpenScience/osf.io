@@ -5,7 +5,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 
-from osf.models import MetaSchema
+from osf.models import RegistrationMetaSchema
 from osf_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
@@ -22,7 +22,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -123,7 +123,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -137,7 +137,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema_prereg(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -523,7 +523,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -537,7 +537,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema_prereg(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -638,7 +638,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -726,7 +726,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
 
     @pytest.fixture()
     def schema_prereg(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
