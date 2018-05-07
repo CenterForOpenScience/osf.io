@@ -44,6 +44,14 @@ class TestUserQuickFiles:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
+    def test_deactivated_gets_410(self, app, url):
+        user = AuthUserFactory(is_disabled=True)
+        QuickFilesNode.objects.get(creator=user).save()
+        url = '/{}users/{}/quickfiles/'.format(API_BASE, user._id)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 410
+        assert res.content_type == 'application/vnd.api+json'
+
     def test_get_files_logged_in(self, app, user, url):
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
