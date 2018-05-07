@@ -23,9 +23,11 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -142,6 +144,10 @@ def update_user(auth):
             except (ValidationError, ValueError):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
+                )
+            except BlacklistedEmailError:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long=language.BLACKLISTED_EMAIL)
                 )
 
             # TODO: This setting is now named incorrectly.
