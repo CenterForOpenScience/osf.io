@@ -1497,7 +1497,7 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
         var titleRow = m('span', attrs, nameTitle);
 
         if  (item.data.extra.latestVersionSeen && item.data.extra.latestVersionSeen.seen === false && col.data === 'name') {
-            titleRow = m('b', [titleRow]);
+            titleRow = m('strong', [titleRow]);
         }
 
         return titleRow;
