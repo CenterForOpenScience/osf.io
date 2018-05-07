@@ -822,7 +822,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create(cls, username, password, fullname):
-        validate_email(username)  # Raises ValidationError if spam address
+        validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
