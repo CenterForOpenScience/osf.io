@@ -697,6 +697,26 @@ class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'owner': self.node
         }
 
+    @mock.patch('addons.dataverse.models.client')
+    def test_folder_list_GET_expected_behavior(self, mock_folder):
+        mock_folder.get_datasets = lambda _ : [
+            type('mock_dataset',
+                 (object,),
+                 {'title': 'dataset title',
+                  'doi': 'doi 12345',
+                  'id':'1234'})()
+        ]
+
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth)
+        print(res.json)
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], 'dataset')
+        assert_equal(addon_data['name'], 'dataset title')
+        assert_equal(addon_data['path'], '/')
+        assert_equal(addon_data['folder_id'], "1234")
+
 
 class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'github'

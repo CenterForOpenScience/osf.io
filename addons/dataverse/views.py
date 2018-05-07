@@ -15,7 +15,7 @@ from addons.dataverse import client
 from addons.dataverse.models import DataverseProvider
 from addons.dataverse.settings import DEFAULT_HOSTS
 from addons.dataverse.serializer import DataverseSerializer
-from dataverse.exceptions import VersionJsonNotFoundError, OperationFailedError
+from dataverse.exceptions import VersionJsonNotFoundError, OperationFailedError, DataverseError
 from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -136,9 +136,12 @@ def dataverse_set_config(node_addon, auth, **kwargs):
     if doi is None or alias is None:
         return HTTPError(http.BAD_REQUEST)
 
-    connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_dataverse(connection, alias)
-    dataset = client.get_dataset(dataverse, doi)
+    try:
+        connection = client.connect_from_settings(node_addon)
+        dataverse = client.get_dataverse(connection, alias)
+        dataset = client.get_dataset(dataverse, doi)
+    except DataverseError:
+        raise HTTPError(http.BAD_GATEWAY)
 
     node_addon.set_folder(dataverse, dataset, auth)
 
@@ -150,16 +153,7 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def dataverse_get_datasets(node_addon, **kwargs):
     """Get list of datasets from provided Dataverse alias"""
-    alias = request.json.get('alias')
-
-    connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_dataverse(connection, alias)
-    datasets = client.get_datasets(dataverse)
-    ret = {
-        'alias': alias,  # include alias to verify dataset container
-        'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
-    }
-    return ret, http.OK
+    return {'alias': node_addon.dataverse_alias, 'datasets': node_addon.get_folders()}, http.OK
 
 ## Crud ##
 
