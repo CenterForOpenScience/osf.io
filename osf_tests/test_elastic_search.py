@@ -130,8 +130,9 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 2)
 
-        self.node_one.is_public = False
-        self.node_one.save()
+        with run_celery_tasks():
+            self.node_one.is_public = False
+            self.node_one.save()
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -141,8 +142,9 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
-        self.node_private.is_public = True
-        self.node_private.save()
+        with run_celery_tasks():
+            self.node_private.is_public = True
+            self.node_private.save()
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 1)
@@ -159,8 +161,9 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 3)
 
-        self.collection_public.is_public = False
-        self.collection_public.save()
+        with run_celery_tasks():
+            self.collection_public.is_public = False
+            self.collection_public.save()
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -177,8 +180,9 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
-        self.collection_private.is_public = True
-        self.collection_private.save()
+        with run_celery_tasks():
+            self.collection_private.is_public = True
+            self.collection_private.save()
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 3)
@@ -217,8 +221,9 @@ class TestCollectionsSearch(OsfTestCase):
         self.collection_public.collect_object(self.node_one, self.user)
         docs = query_collections('Keita')['results']
         assert_equal(docs[0]['_source']['title'], self.node_one.title)
-        self.node_one.title = 'Keita Royal Family of Mali'
-        self.node_one.save()
+        with run_celery_tasks():
+            self.node_one.title = 'Keita Royal Family of Mali'
+            self.node_one.save()
         docs = query_collections('Keita')['results']
         assert_equal(docs[0]['_source']['title'], self.node_one.title)
         assert_equal(docs[0]['_source']['abstract'], self.node_one.description)

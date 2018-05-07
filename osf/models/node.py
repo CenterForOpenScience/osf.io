@@ -2385,15 +2385,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if self.is_collected:
-            from website.search.search import update_collected_metadata
-
-            if self.is_public:
-                update_collected_metadata(self._id)
-            else:
-                if 'is_public' in saved_fields:
-                    update_collected_metadata(self._id, op='delete')
-
         if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated

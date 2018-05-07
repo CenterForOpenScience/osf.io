@@ -9,6 +9,7 @@ from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
+from framework.celery_tasks.handlers import enqueue_task
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
@@ -53,7 +54,8 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
             if cgm_id and collection_id:
                 try:
                     if isinstance(data, basestring):
-                        return cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get()
+                        return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
+                                else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:
                     return None
             return None
@@ -170,14 +172,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             self.get_group('admin').user_set.add(self.creator)
 
         elif 'is_public' in saved_fields:
-            cgms = list(self.collectedguidmetadata_set.all())
-
-            if self.is_public:
-                # Add all collection submissions back to ES index
-                self.bulk_update_search(cgms)
-            else:
-                # Remove all collection submissions from ES index
-                self.bulk_update_search(cgms, op='delete')
+            from website.collections.tasks import on_collection_updated
+            enqueue_task(on_collection_updated.s(self._id))
 
         return ret
 

@@ -242,7 +242,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: {
                                 'op': op,
-                                'value': self.convert_value(value, field),
+                                'value': self.bulk_get_values(value, field),
                                 'source_field_name': source_field_name
                             }
                         })
@@ -430,8 +430,6 @@ class ListFilterMixin(FilterMixin):
                 else self.model_class.primary_identifier_name
             )
             operation['op'] = 'in'
-            if not isinstance(operation['value'], list):
-                operation['value'] = [operation['value']]
         if field_name == 'subjects':
             if Subject.objects.filter(_id=operation['value']).exists():
                 operation['source_field_name'] = 'subjects___id'
