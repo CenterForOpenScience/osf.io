@@ -23,17 +23,17 @@ from osf.models.validators import validate_subject_hierarchy, validate_title, va
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils import sanitize
-from osf.utils.caching import cached_property
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
-from website.util import api_v2_url
+from website.util import api_v2_url, api_url_for
 from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
+from addons.osfstorage.mixins import UploadMixin
 
 from framework.auth.core import get_user
 from framework.sentry import log_exception
@@ -45,7 +45,7 @@ from osf.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, UploadMixin,
         BaseModel, Loggable, Taggable, GuardianMixin, SpamMixin, TaxonomizableMixin):
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
@@ -85,6 +85,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
                                             validators=[validate_doi],
                                             null=True, blank=True)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
+    primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
     # (for legacy preprints), pull off of node
     is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
@@ -108,13 +109,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
     def __unicode__(self):
         return '{} preprint (guid={}) with supplemental files on {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
-
-    @cached_property
-    def primary_file(self):
-        try:
-            return self.files.first()
-        except IndexError:
-            return None
 
     @property
     def contributors(self):
@@ -155,6 +149,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
 
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._id, _absolute=_absolute, *args, **kwargs)
+
     @property
     def absolute_url(self):
         return urlparse.urljoin(
@@ -175,7 +172,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
         """
         if not user:
             return False
-        return self.get_group(permission).filter(user_id=user.id).exists()
+        return user.groups.filter(name=self.get_group(permission)).exists()
 
     def set_permissions(self, user, permission, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -331,7 +328,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
 
         if first_save:
             self.update_group_permissions()
-            self.get_group('admin').user_set.add(self.creator)
+            self.add_contributor(self.creator, permission='admin')
 
         return ret
 
@@ -459,7 +456,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin,
             if save:
                 self.save()
 
-            self.update_search()
+            # self.update_search()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is

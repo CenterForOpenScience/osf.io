@@ -7,6 +7,7 @@ pytest==3.0.3
 pytest-xdist==1.15.0
 pytest-django==3.2.1
 nose
+fake-factory==0.7.4
 factory-boy==2.7.0
 webtest-plus==0.3.3
 mock==1.0.1

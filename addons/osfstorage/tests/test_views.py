@@ -32,7 +32,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory
+from osf_tests.factories import ProjectFactory, UnpublishedPreprintFactory, ApiOAuth2PersonalTokenFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -50,6 +50,14 @@ class HookTestCase(StorageTestCase):
         guid = view_kwargs.pop('guid', None) or target._id
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),
+            signing.sign_data(signing.default_signer, payload),
+            **kwargs
+        )
+
+    def send_target_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
+        method = getattr(self.app, method)
+        return method(
+            target.api_url_for(view_name, **view_kwargs),
             signing.sign_data(signing.default_signer, payload),
             **kwargs
         )
@@ -172,6 +180,16 @@ class TestUploadFileHook(HookTestCase):
             **kwargs
         )
 
+    def send_target_upload_hook(self, parent, target, payload=None, **kwargs):
+        return self.send_target_hook(
+            'osfstorage_create_child',
+            {'fid': parent._id, 'guid': target._id},
+            payload=payload or {},
+            target=target,
+            method='post_json',
+            **kwargs
+        )
+
     def make_payload(self, **kwargs):
         user = kwargs.pop('user', self.user)
         name = kwargs.pop('name', self.name)
@@ -211,6 +229,15 @@ class TestUploadFileHook(HookTestCase):
         assert_not_in(version, self.record.versions.all())
         assert_equal(record.serialize(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+    def test_upload_create_on_preprint(self):
+        preprint = UnpublishedPreprintFactory()
+        name = 'My Preprint File'
+        res = self.send_target_upload_hook(preprint.root_folder, preprint, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert name in preprint.files.all().values_list('name', flat=True)
 
     def test_upload_update(self):
         delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)

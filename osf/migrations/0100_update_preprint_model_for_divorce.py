@@ -53,6 +53,16 @@ class Migration(migrations.Migration):
             name='preprint',
             options={'permissions': (('osf_admin_view_preprint', 'Can view preprint service details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
         ),
+        migrations.AddField(
+            model_name='preprint',
+            name='root_folder',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint_object', to='osf.OsfStorageFolder'),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='primary_file',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint', to='osf.OsfStorageFile'),
+        ),
         migrations.AlterField(
             model_name='preprint',
             name='provider',

@@ -562,6 +562,91 @@ def sync_set_identifiers(preprint):
     preprint.set_identifier_values(doi=id_dict['doi'])
 
 
+class UnpublishedPreprintFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Preprint
+
+    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
+    provider = factory.SubFactory(PreprintProviderFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        creator = kwargs.pop('creator', None) or UserFactory()
+        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
+        provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+        title = kwargs.pop('title', None) or 'Untitled'
+        description = kwargs.pop('description', None) or 'This is my preprint description'
+        instance = target_class(node=project, provider=provider, title=title, description=description, creator=creator)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
+        update_task_patcher.start()
+
+        finish = kwargs.pop('finish', True)
+        is_published = kwargs.pop('is_published', True)
+        instance = cls._build(target_class, *args, **kwargs)
+
+        doi = kwargs.pop('doi', None)
+        license_details = kwargs.pop('license_details', None)
+        # filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
+        instance.node.preprint_article_doi = doi
+
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
+        user = kwargs.pop('creator', None) or cls.creator
+
+        # preprint_file = OsfStorageFile.create(
+        #     target=instance.node,
+        #     path='/{}'.format(filename),
+        #     name=filename,
+        #     materialized_path='/{}'.format(filename))
+        # preprint_file.save()
+        instance.save()
+        # from addons.osfstorage import settings as osfstorage_settings
+
+        # preprint_file.create_version(user, {
+        #     'object': '06d80e',
+        #     'service': 'cloud',
+        #     osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        # }, {
+        #     'size': 1337,
+        #     'contentType': 'img/png'
+        # }).save()
+
+        if finish:
+            auth = Auth(user)
+
+            if not instance.is_contributor(user):
+                instance.add_contributor(
+                    contributor=user,
+                    permission='admin',
+                    log=False,
+                )
+                instance.save()
+
+            # instance.set_primary_file(preprint_file, auth=auth, save=True)
+            instance.set_subjects(subjects, auth=auth)
+            if license_details:
+                instance.set_preprint_license(license_details, auth=auth)
+
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+            mock_create_identifier = create_task_patcher.start()
+            if is_published:
+                mock_create_identifier.side_effect = sync_set_identifiers(instance)
+
+            # instance.set_published(is_published, auth=auth)
+            create_task_patcher.stop()
+
+        if not instance.is_published:
+            instance.node._has_abandoned_preprint = True
+        instance.node.save()
+        instance.save()
+        return instance
+
+
 class PreprintFactory(DjangoModelFactory):
     class Meta:
         model = models.Preprint

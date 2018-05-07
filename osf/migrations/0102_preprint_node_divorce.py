@@ -62,6 +62,7 @@ def reverse_func(apps, schema_editor):
         preprint_file.target = node
         node.preprint_file = preprint_file
 
+        preprint.primary_file = None
         preprint.is_public = True
         preprint.deleted = None
         preprint.migrated = None
@@ -78,8 +79,7 @@ def reverse_func(apps, schema_editor):
 
     PreprintContributor.objects.all().delete()
     PreprintTags.objects.all().delete()
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated'])
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified', 'primary_file'])
     bulk_update(nodes, update_fields=['preprint_file'])
     bulk_update(files)
 
@@ -116,6 +116,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         preprint.creator = node.logs.filter(action='preprint_initiated').first().user
         preprint.article_doi = node.preprint_article_doi
         preprint_file.target = preprint
+        preprint.primary_file_id = preprint_file.id
         node.preprint_file = None
 
         preprint.is_public = node.is_public
@@ -169,7 +170,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     for batchiter in batch(tags, batch_size):
         PreprintTags.objects.bulk_create(batchiter)
 
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified', 'primary_file'])
     bulk_update(nodes, update_fields=['preprint_file'])
     bulk_update(files)
 
