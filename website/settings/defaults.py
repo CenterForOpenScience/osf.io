@@ -417,6 +417,9 @@ class CeleryConfig:
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
     }
 
     med_pri_modules = {
@@ -425,9 +428,6 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
     }
 
     high_pri_modules = {
