@@ -164,6 +164,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
         return qs
 
+
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
     def get_queryset(self):
@@ -1183,6 +1184,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
+
+            # If there are pending access requests for this user, mark them as accepted
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -2440,7 +2447,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     to_addr=user.username,
                     mail=mails.SPAM_USER_BANNED,
                     user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
                 )
             user.save()
 
@@ -2631,6 +2639,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth)
         return updated
 
+    def add_remove_node_log(self, auth, date):
+        node_to_log = self.parent_node if self.parent_node else self
+        log_action = NodeLog.NODE_REMOVED if self.parent_node else NodeLog.PROJECT_DELETED
+        node_to_log.add_log(
+            log_action,
+            params={
+                'project': self._primary_key,
+            },
+            auth=auth,
+            log_date=date,
+            save=True,
+        )
+
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
 
@@ -2647,14 +2668,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True):
+        if Node.objects.get_children(self, active=True).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
-        for addon in self.get_addons():
-            message = addon.after_delete(self, auth.user)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+        remove_addons(auth, [self])
 
         log_date = date or timezone.now()
 
@@ -2662,26 +2680,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         Comment.objects.filter(node=self).update(root_target=None)
 
         # Add log to parent
-        if self.parent_node:
-            self.parent_node.add_log(
-                NodeLog.NODE_REMOVED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
-        else:
-            self.add_log(
-                NodeLog.PROJECT_DELETED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
+        self.add_remove_node_log(auth=auth, date=log_date)
 
         self.is_deleted = True
         self.deleted_date = date
@@ -2970,6 +2969,19 @@ class Node(AbstractNode):
         permissions = (
             ('view_node', 'Can view node details'),
         )
+
+
+def remove_addons(auth, resource_object_list):
+    for config in AbstractNode.ADDONS_AVAILABLE:
+        try:
+            settings_model = config.node_settings
+        except LookupError:
+            settings_model = None
+
+        if settings_model:
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
+            for addon in addon_list:
+                addon.after_delete(auth.user)
 
 
 ##### Signal listeners #####

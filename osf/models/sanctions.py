@@ -301,7 +301,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return None
 
     def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, **context)
+        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
@@ -608,7 +608,7 @@ class Retraction(EmailApprovableSanction):
             registration = Registration.objects.select_related(
                 'registered_from'
             ).get(
-                guids___id=node_id
+                guids___id=node_id, guids___id__isnull=False
             ) if node_id else self.registrations.first()
 
             return {
@@ -861,7 +861,9 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.absolute_url
+                draft_url=draft.absolute_url,
+                can_change_preferences=False,
+                logo=osf_settings.OSF_PREREG_LOGO
             )
         else:
             raise NotImplementedError(

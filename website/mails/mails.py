@@ -34,7 +34,6 @@ _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
 )
 
-TXT_EXT = '.txt.mako'
 HTML_EXT = '.html.mako'
 
 
@@ -58,11 +57,6 @@ class Mail(object):
         tpl_name = self.tpl_prefix + HTML_EXT
         return render_message(tpl_name, **context)
 
-    def text(self, **context):
-        """Render the plaintext email message"""
-        tpl_name = self.tpl_prefix + TXT_EXT
-        return render_message(tpl_name, **context)
-
     def subject(self, **context):
         return Template(self._subject).render(**context)
 
@@ -73,8 +67,10 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, celery=True,
-            username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
+def send_mail(
+        to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
+        username=None, password=None, callback=None, attachment_name=None,
+        attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -95,7 +91,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, cele
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
-    message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
+    message = mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
@@ -201,7 +197,6 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 
@@ -232,7 +227,7 @@ MODERATOR_ADDED = lambda provider: Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to an OSF project has been approved.'
+    subject='Your access request to an OSF project has been approved'
 )
 PREPRINT_CONFIRMATION_DEFAULT = Mail(
     'preprint_confirmation_default',
@@ -424,5 +419,5 @@ ACCESS_REQUEST_SUBMITTED = Mail(
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to an OSF project has been declined.'
+    subject='Your access request to an OSF project has been declined'
 )

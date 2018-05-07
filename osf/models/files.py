@@ -148,6 +148,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         Implemented here so that subclasses may override it or path.
         See OsfStorage or PathFollowingNode.
         """
+        # Files are inaccessible if a node is retracted, so just show
+        # the retraction detail page for files on retractions
+        if self.node.is_registration and self.node.is_retracted:
+            return self.node.web_url_for('view_project')
         return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     @property
@@ -316,18 +320,25 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
-        Currently only useful for OsfStorage
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
         _, count = get_basic_counters(page)
 
         return count or 0
+
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
