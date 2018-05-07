@@ -21,18 +21,18 @@ class FileMetadataView(APIView):
     node_lookup_url_kwarg = 'node_id'
 
     def get_object(self):
-        return self.get_node(self.kwargs[self.node_lookup_url_kwarg])
+        return self.get_target(self.kwargs[self.node_lookup_url_kwarg])
 
-    def get_node(self, node_id):
-        node = get_object_or_error(
+    def get_target(self, target_id):
+        target = get_object_or_error(
             AbstractNode,
-            node_id,
+            target_id,
             self.request,
             display_name='node'
         )
-        if node.is_registration and not node.archiving:
+        if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
-        return node
+        return target
 
     def get_serializer_context(self):
         """
@@ -48,14 +48,14 @@ class FileMetadataView(APIView):
             source = serializer.validated_data.pop('source')
             destination = serializer.validated_data.pop('destination')
             name = destination.get('name')
-            dest_node = self.get_node(node_id=destination.get('node'))
+            dest_target = self.get_target(target_id=destination.get('target'))
             try:
                 source = OsfStorageFileNode.get(source, self.get_object())
             except OsfStorageFileNode.DoesNotExist:
                 raise NotFound
 
             try:
-                dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_node)
+                dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_target)
             except OsfStorageFolder.DoesNotExist:
                 raise NotFound
             serializer.save(source=source, destination=dest_parent, name=name)
