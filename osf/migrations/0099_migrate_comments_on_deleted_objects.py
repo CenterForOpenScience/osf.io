@@ -26,13 +26,13 @@ def update_comment_root_target(state, *args, **kwargs):
                 comment.root_target = None
                 comments_to_update.append(comment)
     bulk_update(comments_to_update, update_fields=['root_target'])
-    logger.info('Total comments migrated: {}.'.format(len(comments_to_update)))
+    logger.info('Total comments migrated: {}'.format(len(comments_to_update)))
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0094_update_preprintprovider_group_auth'),
+        ('osf', '0098_merge_20180416_1807'),
     ]
 
     operations = [
