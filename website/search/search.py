@@ -52,15 +52,15 @@ def update_preprint(preprint, index=None, bulk=False, async=True, saved_fields=N
         'bulk': bulk
     }
     if async:
-        node_id = preprint._id
+        preprint_id = preprint._id
         # We need the transaction to be committed before trying to run celery tasks.
         # For example, when updating a Node's privacy, is_public must be True in the
         # database in order for method that updates the Node's elastic search document
         # to run correctly.
         if settings.USE_CELERY:
-            enqueue_task(search_engine.update_node_async.s(node_id=node_id, **kwargs))
+            enqueue_task(search_engine.update_preprint_async.s(preprint_id=preprint_id, **kwargs))
         else:
-            search_engine.update_node_async(node_id=node_id, **kwargs)
+            search_engine.update_preprint_async(preprint_id=preprint_id, **kwargs)
     else:
         index = index or settings.ELASTIC_INDEX
         return search_engine.update_preprint(preprint, **kwargs)

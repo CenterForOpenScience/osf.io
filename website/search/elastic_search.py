@@ -321,6 +321,15 @@ def update_node_async(self, node_id, index=None, bulk=False):
         self.retry(exc=exc)
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_preprint_async(self, preprint_id, index=None, bulk=False):
+    Preprint = apps.get_model('osf.Preprint')
+    preprint = Preprint.load(preprint_id)
+    try:
+        update_preprint(preprint=preprint, index=index, bulk=bulk, async=True)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_user_async(self, user_id, index=None):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
