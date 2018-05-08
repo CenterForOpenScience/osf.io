@@ -231,6 +231,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
+    change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
+    # Logs number of times user attempted to change their password where their
+    # old password was invalid
+    old_password_invalid_attempts = models.PositiveIntegerField(default=0)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -580,6 +584,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
+        self.is_superuser = self.is_superuser or user.is_superuser
+        self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
         if user.jobs and not self.jobs:
@@ -1244,6 +1250,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # TODO: Move validation to set_password
         issues = []
         if not self.check_password(raw_old_password):
+            self.old_password_invalid_attempts += 1
+            self.change_password_last_attempt = timezone.now()
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
@@ -1262,6 +1270,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if issues:
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
+        self.reset_old_password_invalid_attempts()
+
+    def reset_old_password_invalid_attempts(self):
+        self.old_password_invalid_attempts = 0
 
     def profile_image_url(self, size=None):
         """A generalized method for getting a user's profile picture urls.

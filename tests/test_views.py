@@ -1553,6 +1553,116 @@ class TestUserAccount(OsfTestCase):
         error_strings = [e[1][0] for e in mock_push_status_message.mock_calls]
         assert_in(error_message, error_strings)
 
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_rate_limiting(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'invalid old password',
+            'new_password': 'this is a new password',
+            'confirm_password': 'this is a new password',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 1
+        assert_true(200, res.status_code)
+        # Make a second request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len( mock_push_status_message.mock_calls) == 2)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[1][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 2
+
+        # Make a third request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len( mock_push_status_message.mock_calls) == 3)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[2][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 3
+
+        # Make a fourth request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(mock_push_status_message.called)
+        error_strings = mock_push_status_message.mock_calls[3][2]
+        assert_in('Too many failed attempts', error_strings['message'])
+        self.user.reload()
+        # Too many failed requests within a short window.  Throttled.
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 3
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_rate_limiting_not_imposed_if_old_password_correct(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'password',
+            'new_password': 'short',
+            'confirm_password': 'short',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        assert_true(200, res.status_code)
+        # Make a second request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len(mock_push_status_message.mock_calls) == 2)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[1][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+        # Make a third request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len(mock_push_status_message.mock_calls) == 3)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[2][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+        # Make a fourth request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(mock_push_status_message.called)
+        assert_true(len(mock_push_status_message.mock_calls) == 4)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[3][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_old_password_invalid_attempts_reset_if_password_successfully_reset(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'invalid old password',
+            'new_password': 'this is a new password',
+            'confirm_password': 'this is a new password',
+        }
+        correct_post_data = {
+            'old_password': 'password',
+            'new_password': 'thisisanewpassword',
+            'confirm_password': 'thisisanewpassword',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(len( mock_push_status_message.mock_calls) == 1)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[0][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 1
+        assert_true(200, res.status_code)
+
+        # Make a second request that successfully changes password
+        res = self.app.post(url, correct_post_data, auth=self.user.auth, expect_errors=True)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 0
+
     def test_password_change_invalid_old_password(self):
         self.test_password_change_invalid(
             old_password='invalid old password',
@@ -1592,13 +1702,17 @@ class TestUserAccount(OsfTestCase):
             error_message='Passwords cannot be blank',
         )
 
+    def test_password_change_invalid_empty_string_new_password(self):
+        self.test_password_change_invalid_blank_password('password', '', 'new password')
+
     def test_password_change_invalid_blank_new_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', password, 'new password')
+        self.test_password_change_invalid_blank_password('password', '      ', 'new password')
+
+    def test_password_change_invalid_empty_string_confirm_password(self):
+        self.test_password_change_invalid_blank_password('password', 'new password', '')
 
     def test_password_change_invalid_blank_confirm_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', 'new password', password)
+        self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):

@@ -129,7 +129,6 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
-@ember_flag_is_active('ember_home_page')
 def index():
     try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
@@ -145,6 +144,10 @@ def index():
     except Institution.DoesNotExist:
         pass
 
+    return home()
+
+@ember_flag_is_active('ember_home_page')
+def home():
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
         all_institutions = (
