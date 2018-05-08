@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_not_be_retracted_registration
 )
 from website.identifiers.utils import build_ezid_metadata
-from osf.models import Identifier, MetaSchema
+from osf.models import Identifier, RegistrationMetaSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
@@ -125,10 +125,10 @@ def node_registration_retraction_post(auth, node, **kwargs):
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
-            meta_schema = MetaSchema.objects.get(_id=metaschema_id)
-        except MetaSchema.DoesNotExist:
+            meta_schema = RegistrationMetaSchema.objects.get(_id=metaschema_id)
+        except RegistrationMetaSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
-            meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
+            meta_schema = RegistrationMetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',

@@ -2,7 +2,7 @@ import pytest
 
 from api.search.serializers import SearchSerializer
 from api_tests import utils
-from osf.models import MetaSchema
+from osf.models import RegistrationMetaSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -22,7 +22,7 @@ class TestSearchSerializer:
         component = NodeFactory(parent=project, creator=user, is_public=True)
         file_component = utils.create_test_file(component, user)
         context = {'request': make_drf_request_with_version(version='2.0')}
-        schema = MetaSchema.objects.filter(
+        schema = RegistrationMetaSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
 

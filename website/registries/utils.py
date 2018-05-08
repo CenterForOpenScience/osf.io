@@ -4,12 +4,12 @@ REG_CAMPAIGNS = {
 }
 
 def get_campaign_schema(campaign):
-    from osf.models import MetaSchema
+    from osf.models import RegistrationMetaSchema
     if campaign not in REG_CAMPAIGNS:
         raise ValueError('campaign must be one of: {}'.format(', '.join(REG_CAMPAIGNS.keys())))
     schema_name = REG_CAMPAIGNS[campaign]
 
-    return MetaSchema.objects.get(name=schema_name, schema_version=2)
+    return RegistrationMetaSchema.objects.get(name=schema_name, schema_version=2)
 
 def drafts_for_user(user, campaign=None):
     from osf.models import DraftRegistration, Node

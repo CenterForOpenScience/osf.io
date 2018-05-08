@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from django.apps import apps
 
 from website import settings
-from osf.models import NodeLicense, MetaSchema
+from osf.models import NodeLicense, RegistrationMetaSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
@@ -130,12 +130,12 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     try:
-        MetaSchema = args[0].get_model('osf', 'metaschema')
+        RegistrationMetaSchema = args[0].get_model('osf', 'metaschema')
     except:
         # Working outside a migration
-        from osf.models import MetaSchema
+        from osf.models import RegistrationMetaSchema
     for schema in OSF_META_SCHEMAS:
-        schema_obj, created = MetaSchema.objects.update_or_create(
+        schema_obj, created = RegistrationMetaSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
@@ -152,7 +152,7 @@ def ensure_schemas(*args):
 
 
 def remove_schemas(*args):
-    pre_count = MetaSchema.objects.all().count()
-    MetaSchema.objects.all().delete()
+    pre_count = RegistrationMetaSchema.objects.all().count()
+    RegistrationMetaSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))

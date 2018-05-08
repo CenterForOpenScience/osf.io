@@ -9,7 +9,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
-from osf.models import MetaSchema, DraftRegistration
+from osf.models import RegistrationMetaSchema, DraftRegistration
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -515,7 +515,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationMetaSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -655,7 +655,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -692,7 +692,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -728,7 +728,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -764,7 +764,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_third_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationMetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 

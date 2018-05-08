@@ -1,0 +1,111 @@
+{
+    "_id": "datacite",
+    "name": "Datacite",
+    "schema_version": 1,
+    "category": "file",
+    "schema": {
+        "title": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "name": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "creator": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "contributor": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "description": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": true
+        },
+        "identifier": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "date_available": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "date_modified": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "funding_agency": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": true
+        },
+        "grant_number": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": true
+        },
+        "subject": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "resource_type": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": true,
+
+        },
+        "license": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "version": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "related_publication_doi": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": true
+        },
+        "publisher": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        },
+        "publication_year": {
+            "display_name": "",
+            "description": "",
+            "input_type": "",
+            "editable": false
+        }
+    }
+}

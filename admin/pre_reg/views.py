@@ -25,7 +25,7 @@ from website.exceptions import NodeStateError
 from osf.models import (
     BaseFileNode,
     DraftRegistration,
-    MetaSchema,
+    RegistrationMetaSchema,
     Node,
     OSFUser,
 )
@@ -99,7 +99,7 @@ class CheckoutCheckupView(PermissionRequiredMixin, DeleteView):
     def get_object(self, queryset=None):
         self.prereg_admins = OSFUser.objects.filter(groups__name='prereg_view')
         self.bad_drafts = DraftRegistration.objects.filter(
-            registration_schema=MetaSchema.objects.get(name='Prereg Challenge', schema_version=2),
+            registration_schema=RegistrationMetaSchema.objects.get(name='Prereg Challenge', schema_version=2),
             approval__state__in=['approved', 'rejected'],
             branched_from__files__checkout__in=self.prereg_admins
         ).distinct().values_list('id', flat=True)
