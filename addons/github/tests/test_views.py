@@ -45,7 +45,9 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     def setUp(self):
         super(TestGitHubConfigViews, self).setUp()
         self.mock_api_user = mock.patch('addons.github.api.GitHubClient.user')
+        self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
         self.mock_api_user.return_value = mock.Mock()
+        self.mock_api_credentials_are_valid.start()
         self.mock_api_user.start()
 
     def tearDown(self):
