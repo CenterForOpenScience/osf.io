@@ -26,6 +26,8 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from addons.osfstorage.models import Region
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError, BlacklistedEmailError
@@ -576,6 +578,12 @@ class TestOSFUser:
         assert user.is_affiliated_with_institution(institution1) is True
         assert user.is_affiliated_with_institution(institution2) is False
 
+    def test_has_osfstorage_usersettings(self, user):
+        addon = user.get_addon('osfstorage')
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+
+        assert addon
+        assert addon.default_region == default_region
 
 class TestProjectsInCommon:
 
