@@ -35,7 +35,7 @@ from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
-                        OSFUser, AbstractNode,
+                        OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, MetaSchema,
                         Guid)
 from website.profile.utils import get_profile_image_url
@@ -213,6 +213,33 @@ def check_access(node, auth, action, cas_resp):
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
+def check_preprint_access(preprint, auth, action, cas_resp):
+    """Verify that user can perform requested action on resource. Raise appropriate
+    error code if action cannot proceed.
+    """
+    permission = permission_map.get(action, None)
+    if permission is None:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if cas_resp:
+        if permission == 'read':
+            if preprint.is_public:
+                return True
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+        else:
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+        if not cas_resp.authenticated \
+           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+            raise HTTPError(httplib.FORBIDDEN)
+
+    if permission == 'read':
+        if preprint.has_permission(auth.user, 'read'):
+            return True
+
+    if permission == 'write' and preprint.has_permission(auth.user, 'write'):
+        return True
+
+    raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
 def make_auth(user):
     if user is not None:
@@ -265,17 +292,21 @@ def get_auth(auth, **kwargs):
 
     node = AbstractNode.load(node_id)
     if not node:
-        raise HTTPError(httplib.NOT_FOUND)
+        preprint = Preprint.load(node_id)
+        if not preprint:
+            raise HTTPError(httplib.NOT_FOUND)
 
-    check_access(node, auth, action, cas_resp)
-
-    provider_settings = node.get_addon(provider_name)
-    if not provider_settings:
-        raise HTTPError(httplib.BAD_REQUEST)
+    if node:
+        check_access(node, auth, action, cas_resp)
+        provider_settings = node.get_addon(provider_name)
+        if not provider_settings:
+            raise HTTPError(httplib.BAD_REQUEST)
+    else:
+        check_preprint_access(preprint, auth, action, cas_resp)
 
     try:
-        credentials = provider_settings.serialize_waterbutler_credentials()
-        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+        credentials = provider_settings.serialize_waterbutler_credentials() if node else preprint.serialize_waterbutler_credentials()
+        waterbutler_settings = provider_settings.serialize_waterbutler_settings() if node else preprint.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
@@ -290,7 +321,7 @@ def get_auth(auth, **kwargs):
                 ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
                 _absolute=True,
                 _internal=True
-            ),
+            ) if node else preprint.api_url_for(('create_preprint_waterbutler_log'), _absolute=True, _internal=True)
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
@@ -310,6 +341,22 @@ DOWNLOAD_ACTIONS = set([
     'download_zip',
 ])
 
+@must_be_signed
+@no_auto_transaction
+def create_preprint_waterbutler_log(payload, **kwargs):
+    preprint = Preprint.load(payload['metadata']['nid'])
+    if preprint:
+        action = LOG_ACTION_MAP[payload['action']]
+        user = OSFUser.load(payload['auth']['id'])
+        metadata = payload['metadata']
+        preprint.create_waterbutler_log(payload['auth'], action, metadata)
+
+        with transaction.atomic():
+            file_signals.file_updated.send(target=preprint, user=user, event_type=action, payload=payload)
+
+        return {'status': 'success'}
+    else:
+        raise HTTPError(httplib.NOT_FOUND)
 
 @must_be_signed
 @no_auto_transaction

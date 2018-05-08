@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import urlparse
 import logging
 
@@ -9,6 +10,7 @@ from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 
+from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.celery_tasks.handlers import enqueue_task
 from framework import status
@@ -27,13 +29,14 @@ from osf.utils.requests import DummyRequest, get_request_and_user_id, get_header
 
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
-from website.util import api_v2_url, api_url_for
+from website.util import api_v2_url, api_url_for, web_url_for
 from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
 from addons.osfstorage.mixins import UploadMixin
+from addons.osfstorage.models import OsfStorageFolder
 
 from framework.auth.core import get_user
 from framework.sentry import log_exception
@@ -149,6 +152,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
 
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key,
+                           _absolute=_absolute, _guid=_guid, *args, **kwargs)
+
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._id, _absolute=_absolute, *args, **kwargs)
 
@@ -172,7 +179,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         """
         if not user:
             return False
-        return user.groups.filter(name=self.get_group(permission)).exists()
+        return user.has_perm(permission + '_preprint', self)
 
     def set_permissions(self, user, permission, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -328,9 +335,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if first_save:
             self.update_group_permissions()
-            self.add_contributor(self.creator, permission='admin')
+            self.add_creator_as_contributor()
 
         return ret
+
+    def add_creator_as_contributor(self):
+        self.add_contributor(self.creator, permission='admin', save=True)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
@@ -1113,3 +1123,60 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    WATERBUTLER_CREDENTIALS = {
+        'storage': {}
+    }
+
+    WATERBUTLER_SETTINGS = {
+        'storage': {
+            'provider': 'filesystem',
+            'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
+        }
+    }
+
+    def create_root_folder(self):
+        if self.root_folder:
+            return self.root_folder
+
+        # Note: The "root" node will always be "named" empty string
+        root_folder = OsfStorageFolder(name='', target=self)
+        root_folder.save()
+        return root_folder
+
+    def serialize_waterbutler_settings(self):
+        root_folder = self.create_root_folder()
+        return dict(self.WATERBUTLER_SETTINGS, **{
+            'nid': self._id,
+            'rootId': root_folder._id,
+            'baseUrl': api_url_for(
+                'osfstorage_get_metadata',
+                guid=self._id,
+                _absolute=True,
+                _internal=True
+            )
+        })
+
+    def serialize_waterbutler_credentials(self):
+        return self.WATERBUTLER_CREDENTIALS
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        user = OSFUser.load(auth['id'])
+        params = {
+            'preprint': self._id,
+            'path': metadata['materialized'],
+        }
+        if (metadata['kind'] != 'folder'):
+            url = self.web_url_for(
+                'addon_view_or_download_file',
+                guid=self._id,
+                path=metadata['path'],
+                provider='osfstorage'
+            )
+            params['urls'] = {'view': url, 'download': url + '?action=download'}
+
+        self.add_preprint_log(
+            'osf_storage_{0}'.format(action),
+            auth=Auth(user),
+            params=params
+        )

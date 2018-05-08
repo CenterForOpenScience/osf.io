@@ -1565,6 +1565,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/preprint/<pid>/waterbutler/logs/',
+                '/preprint/<pid>/node/<nid>/waterbutler/logs/',
+            ],
+            'put',
+            addon_views.create_preprint_waterbutler_log,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/registration/<pid>/callbacks/',
             ],
             'put',

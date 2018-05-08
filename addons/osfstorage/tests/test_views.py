@@ -32,7 +32,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory, UnpublishedPreprintFactory, ApiOAuth2PersonalTokenFactory
+from osf_tests.factories import ProjectFactory, PreprintFactory, ApiOAuth2PersonalTokenFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -231,7 +231,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_create_on_preprint(self):
-        preprint = UnpublishedPreprintFactory()
+        preprint = PreprintFactory()
         name = 'My Preprint File'
         res = self.send_target_upload_hook(preprint.root_folder, preprint, self.make_payload(name=name))
 
@@ -1133,7 +1133,7 @@ class TestFileViews(StorageTestCase):
         mock_get_client.return_value = client
 
         base_url = '/download/{}/'
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
 
         responses.add(
             responses.Response(
