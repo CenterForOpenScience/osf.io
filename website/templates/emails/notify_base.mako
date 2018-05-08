@@ -43,12 +43,20 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
-                                % if context.get('can_change_node_preferences', False) and node:
-                                    this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
-                                % endif
-                                your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
-                            </p>
+                            % if context.get('is_reviews_moderator_notificaiton', False):
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
+                                    You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
+                                    To change your email notification preferences,
+                                    visit your <a href=${notification_settings_url}>notification settings</a>.
+                                </p>
+                            % else:
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
+                                    % if context.get('can_change_node_preferences', False) and node:
+                                        this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
+                                    % endif
+                                    your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
+                                </p>
+                            % endif
                         </td>
                     </tr>
                 </tbody>

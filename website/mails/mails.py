@@ -264,6 +264,12 @@ DIGEST = Mail(
     'digest', subject='OSF Notifications',
     categories=['notifications', 'notifications-digest']
 )
+
+DIGEST_REVIEWS_MODERATORS = Mail(
+    'digest_reviews_moderators',
+    subject='Recent submissions to ${provider_name}',
+)
+
 TRANSACTIONAL = Mail(
     'transactional', subject='OSF: ${subject}',
     categories=['notifications', 'notifications-transactional']

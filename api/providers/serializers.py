@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, IDField, LinksField, TypeField, TypedRelationshipField
+from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, TypedRelationshipField
 from api.providers.permissions import GROUPS
 from api.providers.workflows import Workflows
 from osf.models.user import Email, OSFUser
@@ -65,6 +65,11 @@ class ProviderSerializer(JSONAPISerializer):
 class CollectionProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'collection-providers'
+
+    primary_collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<primary_collection._id>'}
+    )
 
     filterable_fields = frozenset([
         'allow_submissions',

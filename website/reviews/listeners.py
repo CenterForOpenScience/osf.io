@@ -41,3 +41,41 @@ def reviews_submit_notification(self, recipients, context):
             user=recipient,
             **context
         )
+
+
+# Handle email notifications to notify moderators of new submissions.
+@reviews_signals.reviews_email_submit_moderators_notifications.connect
+def reviews_submit_notification_moderators(self, timestamp, context):
+    # imports moved here to avoid AppRegistryNotReady error
+    from osf.models import NotificationSubscription
+    from website.profile.utils import get_profile_image_url
+    from website.notifications import emails
+    from website import settings
+
+    # Get NotificationSubscription instance, which contains reference to all subscribers
+    provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
+    # Set message
+    context['message'] = u'submitted {}.'.format(context['reviewable'].node.title)
+    # Set url for profile image of the submitter
+    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    # Set submission url
+    context['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN, context['reviewable'].provider._id, context['reviewable']._id)
+    # Store emails to be sent to subscribers instantly (at a 5 min interval)
+    emails.store_emails(provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
+                        'email_transactional',
+                        'new_pending_submissions',
+                        context['referrer'],
+                        context['reviewable'].node,
+                        timestamp,
+                        abstract_provider=context['reviewable'].provider,
+                        **context)
+
+    # Store emails to be sent to subscribers daily
+    emails.store_emails(provider_subscription.email_digest.all().values_list('guids___id', flat=True),
+                        'email_digest',
+                        'new_pending_submissions',
+                        context['referrer'],
+                        context['reviewable'].node,
+                        timestamp,
+                        abstract_provider=context['reviewable'].provider,
+                        **context)
