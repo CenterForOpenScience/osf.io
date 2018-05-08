@@ -809,10 +809,3 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.node.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)
-
-
-# def TestEncryptedJSONField:
-#
-#     @pytest.fixture
-#     def field(self):
-#         return EncryptedJSONField

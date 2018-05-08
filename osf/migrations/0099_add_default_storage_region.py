@@ -21,7 +21,7 @@ osfstorage_config = apps.get_app_config('addons_osfstorage')
 def add_osfstorage_addon(*args):
 
     default_region, created = Region.objects.get_or_create(
-        _id = DEFAULT_REGION_ID,
+        _id=DEFAULT_REGION_ID,
         name=DEFAULT_REGION_NAME,
         waterbutler_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
         waterbutler_settings=osfstorage_config.WATERBUTLER_SETTINGS,
@@ -33,7 +33,7 @@ def add_osfstorage_addon(*args):
 
     total_users = OSFUser.objects.all().count()
     users_done = 0
-    paginator = Paginator(OSFUser.objects.all(), 1000)
+    paginator = Paginator(OSFUser.objects.all().order_by('pk'), 1000)
     for page_num in paginator.page_range:
         page = paginator.page(page_num)
 
@@ -47,7 +47,7 @@ def add_osfstorage_addon(*args):
             users_done += 1
 
         OsfStorageUserSettings.objects.bulk_create(user_settings_to_update)
-        logger.info('Updated {}/{} users'.format(users_done, total_users))
+        logger.info('Created {}/{} UserSettings'.format(users_done, total_users))
 
     logger.info('Created UserSettings for {} users'.format(total_users))
 
