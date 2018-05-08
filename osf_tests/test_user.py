@@ -28,7 +28,7 @@ from website.views import find_bookmark_collection
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, BlacklistedEmailError
 
 from .utils import capture_signals
 from .factories import (
@@ -230,7 +230,7 @@ class TestOSFUser:
             u.save()
 
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert e.value.message == 'Invalid Email'
 

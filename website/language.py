@@ -27,6 +27,8 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
+BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, please report this to {}.'.format(settings.OSF_SUPPORT_EMAIL)
+
 AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
