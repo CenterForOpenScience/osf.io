@@ -220,7 +220,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and source_field_name == '_id':
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -242,7 +242,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: {
                                 'op': op,
-                                'value': self.bulk_get_values(value, field),
+                                'value': self.convert_value(value, field),
                                 'source_field_name': source_field_name
                             }
                         })

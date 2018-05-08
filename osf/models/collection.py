@@ -40,12 +40,6 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
 
     @classmethod
     def load(cls, data, select_for_update=False):
-        if isinstance(data, int):
-            try:
-                return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
-            except cls.DoesNotExist:
-                return None
-
         try:
             cgm_id, collection_id = data.split('-')
         except ValueError:
