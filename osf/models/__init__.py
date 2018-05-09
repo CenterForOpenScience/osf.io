@@ -4,7 +4,8 @@ from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
-from osf.models.node import AbstractNode, Node, Collection  # noqa
+from osf.models.collection import CollectedGuidMetadata, Collection  # noqa
+from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
@@ -21,7 +22,7 @@ from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
 from osf.models.spam import SpamStatus, SpamMixin  # noqa
 from osf.models.subject import Subject  # noqa
-from osf.models.preprint_provider import PreprintProvider  # noqa
+from osf.models.provider import AbstractProvider, PreprintProvider  # noqa
 from osf.models.preprint_service import PreprintService  # noqa
 from osf.models.request import NodeRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa

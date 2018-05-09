@@ -340,7 +340,3 @@ select.form-control {
     top:50%;
     z-index: 1;
 }
-.wmd-panel .ball-scale.absolute-center  > div {
-    width: 30px !important;
-    height: 30px !important;
-}

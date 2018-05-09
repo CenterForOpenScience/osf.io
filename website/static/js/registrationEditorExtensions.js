@@ -296,6 +296,9 @@ var Uploader = function(question, pk) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
+                if (!file.data) { // old data may have empty file objects
+                    return; // skip bad files
+                }
                 if(!file.data.descriptionValue){
                     elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
                 }else{

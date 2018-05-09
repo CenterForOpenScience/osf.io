@@ -21,7 +21,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from osf.models import AbstractNode, Comment, BaseFileNode
-from addons.wiki.models import NodeWikiPage
+from addons.wiki.models import WikiPage
 
 
 class CommentMixin(object):
@@ -34,13 +34,19 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
+        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False, guids___id__isnull=False)
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
-        if comment.root_target.referent.is_deleted:
-            comment.root_target = None
-            comment.save()
+        if comment.root_target:
+            # Temporary, while 'is_deleted' and 'deleted' fields both still exist
+            if hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
+                comment.root_target = None
+                comment.save()
+
+            if comment.root_target and hasattr(comment.root_target.referent, 'is_deleted') and comment.root_target.referent.is_deleted:
+                comment.root_target = None
+                comment.save()
 
         if comment.root_target is None:
             raise NotFound
@@ -74,10 +80,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
 
         if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
-        elif isinstance(comment.target.referent, (NodeWikiPage,
-                                                  BaseFileNode)):
+        elif isinstance(comment.target.referent, (WikiPage,
+                                                 BaseFileNode)):
             comment_node = comment.target.referent.node
-
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
 

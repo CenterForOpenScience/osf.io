@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -378,6 +378,7 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['access_requests'] = utils.serialize_access_requests(node)
     ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
@@ -392,6 +393,34 @@ def configure_comments(node, **kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
     node.save()
+
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def configure_requests(node, **kwargs):
+    access_requests_enabled = request.get_json().get('accessRequestsEnabled')
+    node.access_requests_enabled = access_requests_enabled
+    if node.access_requests_enabled:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    else:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    node.save()
+    return {'access_requests_enabled': access_requests_enabled}, 200
 
 
 ##############################################################################
@@ -418,6 +447,9 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    access_request = node.requests.filter(creator=auth.user).exclude(machine_state='accepted')
+    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
@@ -572,7 +604,8 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, kind='success', trust=False)
+    id = '{}_deleted'.format(node.project_or_component)
+    status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
@@ -632,7 +665,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -648,6 +681,7 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+
     try:
         contributor = node.contributor_set.get(user=user)
     except Contributor.DoesNotExist:
@@ -657,7 +691,7 @@ def _view_project(node, auth, primary=False,
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
-        in_bookmark_collection = bookmark_collection.linked_nodes.filter(pk=node.pk).exists()
+        in_bookmark_collection = bookmark_collection.guid_links.filter(_id=node._id).exists()
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
@@ -755,7 +789,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -1173,7 +1208,10 @@ def _add_pointers(node, pointers, auth):
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer, auth, save=False)
+        if isinstance(node, Collection):
+            node.collect_object(pointer, auth.user)
+        else:
+            node.add_pointer(pointer, auth, save=False)
         added = True
 
     if added:
@@ -1192,7 +1230,7 @@ def add_pointer(auth):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = AbstractNode.load(pointer_to_move)
-    to_node = AbstractNode.load(to_node_id)
+    to_node = Guid.load(to_node_id).referent
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
@@ -1306,8 +1344,7 @@ def serialize_pointer(node, auth):
 def get_pointed(auth, node, **kwargs):
     """View that returns the pointers for a project."""
     NodeRelation = apps.get_model('osf.NodeRelation')
-    # exclude folders
     return {'pointed': [
         serialize_pointer(each.parent, auth)
-        for each in NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection')
+        for each in NodeRelation.objects.filter(child=node, is_node_link=True)
     ]}

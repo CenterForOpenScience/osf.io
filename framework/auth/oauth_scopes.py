@@ -35,6 +35,9 @@ class CoreScopes(object):
 
     USER_ADDON_READ = 'users.addon_read'
 
+    SUBSCRIPTIONS_READ = 'subscriptions_read'
+    SUBSCRIPTIONS_WRITE = 'subscriptions_write'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
@@ -98,6 +101,9 @@ class CoreScopes(object):
     ACTIONS_READ = 'actions_read'
     ACTIONS_WRITE = 'actions_write'
 
+    MODERATORS_READ = 'moderators_read'
+    MODERATORS_WRITE = 'moderators_write'
+
     NODE_REQUESTS_READ = 'node_requests_read'
     NODE_REQUESTS_WRITE = 'node_requests_write'
 
@@ -120,6 +126,7 @@ class CoreScopes(object):
     GUIDS_READ = 'guids.base_read'
 
     WIKI_BASE_READ = 'wikis.base_read'
+    WIKI_BASE_WRITE = 'wikis.base_write'
 
     IDENTIFIERS_READ = 'identifiers.data_read'
 
@@ -132,8 +139,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, )
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
@@ -173,32 +180,34 @@ class ComposedScopes(object):
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
-                     CoreScopes.NODE_PREPRINTS_WRITE)
+                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
     ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ,) + NODE_METADATA_READ
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
-    # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
-    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, )
+    # Privileges relating to editing content uploaded under that node
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ)
     NODE_DATA_WRITE = NODE_DATA_READ + \
-                        (CoreScopes.NODE_FILE_WRITE, )
+                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
-                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ)
+                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
+                        CoreScopes.NODE_REQUESTS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
-                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE)
+                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
+                             CoreScopes.NODE_REQUESTS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Reviews
-    REVIEWS_READ = (CoreScopes.ACTIONS_READ,)
-    REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.PROVIDERS_WRITE)
+    REVIEWS_READ = (CoreScopes.ACTIONS_READ, CoreScopes.MODERATORS_READ)
+    REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
     FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )

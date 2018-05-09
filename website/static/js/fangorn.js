@@ -483,7 +483,7 @@ function handleCancel(tb, provider, mode, item){
 function displayConflict(tb, item, folder, cb) {
 
     if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
-        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
         return;
     }
 
@@ -513,7 +513,7 @@ function checkConflictsRename(tb, item, name, cb) {
     var parent = item.parent();
 
     if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
-        $osf.growl('Error', 'You cannot replace a folder named ' + WIKI_IMAGES_FOLDER_PATH);
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
         return;
     }
 
@@ -1228,7 +1228,7 @@ function _removeEvent (event, items, col) {
         var detail;
         if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
             detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
-                ' image embedded in your wiki(s).');
+                ' image embedded in your wiki(s). ');
         } else {
             detail = '';
         }
@@ -1261,10 +1261,7 @@ function _removeEvent (event, items, col) {
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
-            if(item.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
-                deleteMessage.push(m('p.text-danger',  m('b', item.data.name), ' may be linked to' +
-                    ' your wiki(s). Deleting them will remove images embedded in your wiki(s).'));
-            } else if(!item.data.permissions.edit){
+            if(!item.data.permissions.edit){
                 canDelete = false;
                 noDeleteList.push(item);
             } else {
@@ -1284,7 +1281,12 @@ function _removeEvent (event, items, col) {
                                 m('i.fa.fa-folder'), m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        if(n.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
+                            return m('p.text-danger', m('b', n.data.name), ' may be linked to' +
+                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s). ');
+                        } else {
+                            return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        }
                     })
                 ]);
             mithrilButtonsMultiple = m('div', [

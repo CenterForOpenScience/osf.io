@@ -900,17 +900,17 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             'id': '0'
         }
 
-    @mock.patch('addons.box.models.BoxClient.get_folder')
-    def test_settings_detail_PUT_all_sets_settings(self, mock_get):
-        mock_get.return_value = {
-            'id': self._mock_folder_info['folder_id'],
-            'name': 'FAKEFOLDERNAME',
-            'path_collection': {'entries': {}}
-        }
-        with mock.patch('addons.box.models.Provider.refresh_oauth_key') as mock_update:
-            super(
-                TestNodeBoxAddon,
-                self).test_settings_detail_PUT_all_sets_settings()
+    def test_settings_detail_PUT_all_sets_settings(self):
+        with mock.patch('addons.box.models.Client.folder') as folder_mock:
+            folder_mock.return_value.get.return_value = {
+                'id': self._mock_folder_info['folder_id'],
+                'name': 'FAKEFOLDERNAME',
+                'path_collection': {'entries': {}}
+            }
+            with mock.patch('addons.box.models.Provider.refresh_oauth_key') as mock_update:
+                super(
+                    TestNodeBoxAddon,
+                    self).test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeDropboxAddon(

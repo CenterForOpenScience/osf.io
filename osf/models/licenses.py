@@ -22,11 +22,26 @@ def serialize_node_license_record(node_license_record):
     return ret
 
 
+class NodeLicenseManager(models.Manager):
+    PREPRINT_ONLY_LICENSES = {
+        'CCBYNCND',
+        'CCBYSA40',
+    }
+
+    def preprint_licenses(self):
+        return self.all()
+
+    def project_licenses(self):
+        return self.exclude(license_id__in=self.PREPRINT_ONLY_LICENSES)
+
+
 class NodeLicense(ObjectIDMixin, BaseModel):
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)
     text = models.TextField(null=False)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+
+    objects = NodeLicenseManager()
 
     def __unicode__(self):
         return '(license_id={}, name={})'.format(self.license_id, self.name)

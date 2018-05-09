@@ -80,6 +80,8 @@ def must_be_logged_in(func):
 
     return wrapped
 
+# TODO Can remove after Waterbutler is sending requests to V2 endpoints.
+# This decorator has been adapted for use in an APIv2 parser - HMACSignedParser
 def must_be_signed(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

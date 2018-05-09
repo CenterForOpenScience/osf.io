@@ -17,23 +17,23 @@
 <div id="newReg${size}" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p class="reg-landing-page-text-left">Please provide a title for your project: </p>
   <input type="text" class="new-project-title form-control" placeholder="Title">
-  <button type="submit" id="newProject${size}" class="btn btn-primary pull-right m-t-md">Create <i class="fa fa-angle-right"></i></button>
+  <button type="submit" id="newProject${size}" class="btn btn-primary pull-right m-t-md">Create</button>
 </div>
 </%def>
 
 <%def name="existingDraft(size='')">
 <div id="existingDraft${size}" class="p-md osf-box box-round clearfix m-b-lg" style="display:none; width: 100%;">
-  <p>Go to an existing registration:</p>
+  <p class="reg-landing-page-text-left">Go to an existing registration:</p>
     <input id="regDraftSearch${size}" class="form-control"></input>
-    <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary disabled pull-right">Continue</a></div>
+    <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary m-t-sm disabled pull-right">Continue</a></div>
 </div>
 </%def>
 
 <%def name="existingProject(size='')">
 <div id="existingProject${size}" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
-  <p>Register an existing project:</p>
+  <p class="reg-landing-page-text-left">Register an existing project:</p>
   <input id="projectSearch${size}" class="form-control" ></input>
-  <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary disabled pull-right">Register</a></div>
+  <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary m-t-sm disabled pull-right">Register</a></div>
 </div>
 </%def>
 
@@ -59,12 +59,12 @@
       </div>
       %else:
       <a href="${domain}login/">
-          <div class="reg-landing-page-button-xs reg-button m-b-md p-md osf-box-lt p-md box-round">Register</div>
+          <div class="reg-landing-page-button-xs reg-landing-page-button m-b-md p-md osf-box-lt p-md box-round">Register</div>
       </a>
       %endif
       %if has_draft_registrations:
       <div class="row">
-        <div class="reg-landing-page-button-xs reg-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="reg" data-qtoggle-target="#existingDraftXS">Continue working on an existing registration draft</div>
+        <div class="reg-landing-page-button-xs reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="reg" data-qtoggle-target="#existingDraftXS">Continue working on an existing registration draft</div>
         <div class="reg-landing-page-button-content-xs">
           ${existingDraft('XS')}
         </div>
@@ -72,7 +72,7 @@
       %endif
       %if has_projects:
       <div class="row">
-        <div class="reg-landing-page-button-xs reg-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="reg" data-qtoggle-target="#existingProjectXS">Preregister an analysis plan for an OSF Project
+        <div class="reg-landing-page-button-xs reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="reg" data-qtoggle-target="#existingProjectXS">Preregister an analysis plan for an OSF Project
         </div>
         <div class="reg-landing-page-button-content-xs">
           ${existingProject('XS')}
@@ -102,7 +102,7 @@
             </td>
             %else:
             <td class="col-sm-${ num_cols } reg-landing-page-button-col">
-              <a href="${domain}login/?campaign=osf-registries&next=${domain}rr">
+              <a href="${domain}login/?campaign=osf-registered-reports&next=${domain}rr">
                 <div class="reg-landing-page-button m-b-md p-md osf-box-lt p-md box-round">Create a Registered Report</div>
               </a>
             </td>
@@ -151,5 +151,6 @@
 <%include file="components/autocomplete.mako"/>
 <script type="text/javascript">
   window.contextVars = window.contextVars || {};
+  window.contextVars.campaign = ${campaign_short | sjson};
 </script>
 </%def>

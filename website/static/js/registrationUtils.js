@@ -1384,6 +1384,8 @@ RegistrationManager.prototype.init = function() {
                 schemaName = 'Prereg Challenge';
             } else if (urlParams.campaign === 'erpc') {
                 schemaName = 'Election Research Preacceptance Competition';
+            } else if (urlParams.campaign === 'registered_report') {
+                schemaName = 'Registered Report Protocol Preregistration';
             }
             if (schemaName) {
                 $osf.block();
@@ -1391,10 +1393,15 @@ RegistrationManager.prototype.init = function() {
                     var preregSchema = self.schemas().filter(function(schema) {
                         return schema.name === schemaName;
                     })[0];
-                    preregSchema.askConsent(true).then(function() {
+                    if(urlParams.campaign === 'prereg') {
+                        preregSchema.askConsent(true).then(function () {
+                            self.selectedSchema(preregSchema);
+                            $('#newDraftRegistrationForm').submit();
+                        });
+                    } else {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
-                    });
+                    }
                 }).always($osf.unblock);
             }
         }
