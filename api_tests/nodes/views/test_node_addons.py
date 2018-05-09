@@ -3,6 +3,7 @@ import abc
 
 import mock
 import pytest
+import mendeley
 from nose.tools import *  # flake8: noqa
 from github3.repos import Repository
 
@@ -755,6 +756,31 @@ class TestNodeMendeleyAddon(
     AccountFactory = MendeleyAccountFactory
     NodeSettingsFactory = MendeleyNodeSettingsFactory
 
+    @mock.patch('addons.mendeley.models.Mendeley._get_folders')
+    def test_folder_list_GET_expected_behavior(self, mock_folders):
+        mock_folder = mendeley.models.folders.Folder(
+           json = {
+              "created":"2017-10-14T21:17:14.000Z",
+              "id":"fasdkljla-2341-4592-10po-fds0920dks0ds",
+              "modified":"2017-10-14T21:18:00.000Z",
+              "name":"Test Mendeley Folder"
+           },
+           session = 'session'
+        )
+
+        mock_folders.return_value = [mock_folder]
+
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth)
+
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], 'folder')
+        assert_equal(addon_data['name'], 'Test Mendeley Folder')
+        assert_equal(addon_data['path'], '/')
+        assert_equal(
+            addon_data['folder_id'],
+            "fasdkljla-2341-4592-10po-fds0920dks0ds")
 
 class TestNodeZoteroAddon(
         NodeOAuthCitationAddonTestSuiteMixin,
@@ -762,6 +788,98 @@ class TestNodeZoteroAddon(
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
     NodeSettingsFactory = ZoteroNodeSettingsFactory
+
+    @mock.patch('addons.zotero.models.Zotero._fetch_libraries')
+    def test_folder_list_GET_expected_behavior(self, mock_libraries):
+        ## Testing top level - GET library behavior
+        mock_library = {
+          "data": {
+            "description": "",
+            "url": "",
+            "libraryReading": "members",
+            "version": 1,
+            "owner": 2533095,
+            "fileEditing": "members",
+            "libraryEditing": "members",
+            "type": "Private",
+            "id": 18497322,
+            "name": "Group Library I"
+          },
+          "version": 1,
+          "meta": {
+            "lastModified": "2017-10-19T22:20:41Z",
+            "numItems": 20,
+            "created": "2017-10-19T22:20:41Z"
+          },
+          "id": 18497322
+        }
+
+        mock_libraries.return_value = [mock_library, 1]
+
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth)
+
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], self._mock_folder_result['kind'])
+        assert_equal(addon_data['name'], 'My Library')
+        assert_equal(addon_data['path'], 'personal')
+        assert_equal(
+            addon_data['folder_id'],
+            'personal')
+
+        addon_data = res.json['data'][1]['attributes']
+        assert_equal(addon_data['kind'], self._mock_folder_result['kind'])
+        assert_equal(addon_data['name'], self._mock_folder_result['name'])
+        assert_equal(addon_data['path'], self._mock_folder_result['path'])
+        assert_equal(
+            addon_data['folder_id'],
+            self._mock_folder_result['id'])
+
+    @property
+    def _mock_folder_result(self):
+        return {u'path': u'18497322',
+                u'kind': u'library',
+                u'name': u'Group Library I',
+                u'provider': u'zotero',
+                u'id': u'18497322'}
+
+    @mock.patch('addons.zotero.models.Zotero._get_folders')
+    def test_sub_folder_list_GET_expected_behavior(self, mock_folders):
+        ## Testing second level - GET folder behavior
+        mock_folder = {
+           "library":{
+              "type":"group",
+              "id":18497322,
+              "name":"Group Library I"
+           },
+           "version":14,
+           "meta":{
+              "numCollections":0,
+              "numItems":1
+           },
+           "key":"V63S7EUJ",
+           "data":{
+              "version":14,
+              "name":"Test Folder",
+              "key":"FSCFSLREF",
+              "parentCollection": "False"
+           }
+        }
+
+        mock_folders.return_value = [mock_folder]
+
+        res = self.app.get(
+            self.folder_url + '?id=18497322&path=18497322',
+            auth=self.user.auth)
+
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], 'folder')
+        assert_equal(addon_data['name'], 'Test Folder')
+        assert_equal(addon_data['path'], '18497322')
+        assert_equal(
+            addon_data['folder_id'],
+            'FSCFSLREF')
 
 # CONFIGURABLE
 

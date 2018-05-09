@@ -49,37 +49,6 @@ class ZoteroProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.TestC
         assert(res.get('display_name') == 'Fake User Name')
         assert(res.get('provider_id') == 'Fake User ID')
 
-    def test_citation_lists_from_personal_library(self):
-        # mock_library_client doesn't need to specified b/c personal libraries
-        # use the client.
-        mock_client = mock.Mock()
-        mock_folders = [MockFolder()]
-        mock_list = mock.Mock()
-        mock_list.items = mock_folders
-        mock_client.folders.list.return_value = mock_list
-        mock_client.collections.return_value = mock_folders
-        self.provider._client = mock_client
-        mock_account = mock.Mock()
-        self.provider.account = mock_account
-        res = self.provider.citation_lists(self.ProviderClass()._extract_folder, "personal")
-        assert_equal(res[1]['name'], mock_folders[0].name)
-        assert_equal(res[1]['id'], mock_folders[0].json['id'])
-
-    def test_citation_lists_from_group_library(self):
-        mock_library_client = mock.Mock()
-        mock_folders = [MockFolder()]
-        mock_list = mock.Mock()
-        mock_list.items = mock_folders
-        mock_library_client.folders.list.return_value = mock_list
-        mock_library_client.collections.return_value = mock_folders
-        self.provider._library_client = mock_library_client
-        mock_account = mock.Mock()
-        self.provider.account = mock_account
-        res = self.provider.citation_lists(self.ProviderClass()._extract_folder, "Test Group")
-        assert_equal(res[1]['name'], mock_folders[0].name)
-        assert_equal(res[1]['id'], mock_folders[0].json['id'])
-
-
 
 class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unittest.TestCase):
     short_name = 'zotero'
@@ -167,6 +136,34 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
             self.node_settings.fetch_library_name,
             'My library'
         )
+
+    @mock.patch('addons.zotero.models.Zotero._fetch_libraries')
+    def test_get_folders_top_level(self, mock_libraries):
+        """
+        Top level folders in Zotero are group libraries + personal libraries
+        """
+        mock_libraries.return_value = [MockLibrary(), MockLibrary()]
+        # No path is specified, so top level libraries are fetched
+        libraries = self.node_settings.get_folders()
+
+        assert_equal(len(libraries), 2)
+        assert_equal(libraries[0]['kind'], 'library')
+        assert_equal(libraries[1]['kind'], 'library')
+
+    @mock.patch('addons.zotero.models.Zotero._get_folders')
+    def test_get_folders_second_level(self, mock_folders):
+        """
+        Second level folders are folders within group/personal libraries
+        """
+        mock_folders.return_value = [MockFolder(), MockFolder()]
+        # Path - personal, is specified, so folders are fetched from personal library.
+        folders = self.node_settings.get_folders('personal')
+
+        assert_equal(len(folders), 3)
+        assert_equal(folders[0]['kind'], 'folder')
+        assert_equal(folders[0]['name'], 'All Documents')
+        assert_equal(folders[1]['kind'], 'folder')
+        assert_equal(folders[2]['kind'], 'folder')
 
     def test_selected_library_name_empty(self):
         self.node_settings.library_id = None

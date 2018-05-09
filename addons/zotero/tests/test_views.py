@@ -47,6 +47,17 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         self.documentsApiUrl = urlparse.urljoin(API_URL, 'users/{}/items/top'
             .format(self.external_account.provider_id))
 
+        # Sets library key
+        self.citationsProvider().set_config(
+            self.node_settings,
+            self.user,
+            self.folder.json['id'],
+            self.folder.name,
+            Auth(self.user),
+            'personal',
+            'personal'
+        )
+
     def test_widget_view_incomplete_library_set_only(self):
         # JSON: everything a widget needs
         # When library is set in zotero, folder is cleared.
