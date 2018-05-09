@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.140.0 (2018-04-27)
+====================
+
+- Users can request to be a contributor on projects.
+- Include "Create view-only link" button on Project Overview page.
+
 0.139.0 (2018-04-18)
 ====================
 

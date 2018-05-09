@@ -10,8 +10,8 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
-from osf.models import Contributor
-from osf_tests.factories import ProjectFactory
+from osf.utils.fields import EncryptedJSONField
+from osf_tests.factories import ProjectFactory, UserFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -552,6 +552,32 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
+    def test_region_wb_url_from_creators_defaults(self):
+        user = UserFactory()
+        region = factories.RegionFactory()
+
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = region
+        user_settings.save()
+
+        project = ProjectFactory(creator=user)
+        node_settings = project.get_addon('osfstorage')
+
+        assert node_settings.region_id == region.id
+
+    def test_encrypted_json_field(self):
+        new_test_creds = {
+            'storage': {
+                'go': 'science',
+                'hey': ['woo', 'yeah', 'great']
+            }
+        }
+        region = factories.RegionFactory()
+        region.waterbutler_credentials = new_test_creds
+        region.save()
+
+        assert region.waterbutler_credentials == new_test_creds
+
 
 @pytest.mark.django_db
 class TestOsfStorageFileVersion(StorageTestCase):
@@ -769,7 +795,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_remove_contributor_with_checked_file(self):
         user = factories.AuthUserFactory()
-        Contributor.objects.create(
+        models.Contributor.objects.create(
             node=self.node,
             user=user,
             admin=True,

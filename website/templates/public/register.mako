@@ -179,7 +179,7 @@
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
     %if recaptcha_site_key:
-        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        <script src="https://recaptcha.net/recaptcha/api.js" async defer></script>
     %endif
 </%def>
 

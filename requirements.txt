@@ -59,7 +59,7 @@ requests-oauthlib==0.8.0
 raven==5.32.0
 
 # API requirements
-Django==1.11.11  # pyup: <2.0 # Remove this when we're on Py3
+Django==1.11.13  # pyup: <2.0 # Remove this when we're on Py3
 djangorestframework==3.6.3
 django-cors-headers==1.3.1
 djangorestframework-bulk==0.2.1

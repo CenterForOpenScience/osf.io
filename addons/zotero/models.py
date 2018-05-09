@@ -132,7 +132,7 @@ class Zotero(CitationsOauthProvider):
         more = True
         offset = 0
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = client.collection_items(list_id, content='csljson', limit=100, start=offset)
+            page = client.collection_items_top(list_id, content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False
@@ -148,13 +148,17 @@ class Zotero(CitationsOauthProvider):
         client = self._get_library(library_id)
 
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = client.items(content='csljson', limit=100, start=offset)
+            page = client.top(content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False
             else:
                 offset = offset + len(page)
-        return citations
+        # Loops through all items in the library and extracts the keys for unfiled items
+        unfiled_keys = [citation['data']['key'] for citation in client.top() if not citation['data']['collections']]
+
+        # Return only unfiled items in csljson format
+        return [cite for cite in citations if cite['id'].split('/')[1] in unfiled_keys]
 
     @property
     def auth_url(self):

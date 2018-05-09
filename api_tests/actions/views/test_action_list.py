@@ -46,7 +46,6 @@ class TestReviewActionCreateRoot(object):
     def preprint(self, node_admin, provider):
         preprint = PreprintFactory(
             provider=provider,
-            node__creator=node_admin,
             is_published=False
         )
         preprint.node.add_contributor(

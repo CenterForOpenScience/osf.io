@@ -19,7 +19,7 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        if obj['addon'] in ('s3', 'figshare', 'mendeley'):
+        if obj['addon'] in ('s3', 'figshare', 'github', 'mendeley'):
             # These addons don't currently support linking anything other
             # than top-level objects.
             return

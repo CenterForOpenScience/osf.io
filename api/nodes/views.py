@@ -190,7 +190,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     model_class = apps.get_model('osf.AbstractNode')
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
@@ -879,7 +878,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.exclude(type='osf.registration').order_by('-forked_date')
+        all_forks = self.get_node().forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -1278,19 +1277,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
             operation['value'] = Guid.load(operation['value'])
 
     def get_queryset(self):
-        comments = self.get_queryset_from_request()
-        for comment in comments:
-            # Deleted root targets still appear as tuples in the database,
-            # but need to be None in order for the query to be correct.
-            if comment.root_target:
-                if hasattr(comment.root_target.referent, 'is_deleted') and comment.root_target.referent.is_deleted:
-                    comment.root_target = None
-                    comment.save()
-                # Temporary while there are both 'is_deleted' and 'deleted' attributes on referents
-                if comment.root_target and hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
-                    comment.root_target = None
-                    comment.save()
-        return comments
+        return self.get_queryset_from_request()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

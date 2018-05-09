@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import sys
 import time
 import logging
 import django
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 def add_identifiers_to_preprints(dry_run=True):
     from osf.models import PreprintService
 
-    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
+    preprints_without_identifiers = PreprintService.objects.filter(is_published=True, preprint_doi_created__isnull=True)
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
     identifiers_added = 0
 
@@ -53,7 +55,11 @@ def run_main(dry_run=True):
     if not dry_run:
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
-    
+
     # Finally run the migration
     with transaction.atomic():
         main(dry_run=dry_run)
+
+if __name__ == "__main__":
+    dry_run = '--dry' in sys.argv
+    run_main(dry_run=dry_run)

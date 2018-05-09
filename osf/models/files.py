@@ -5,6 +5,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
+from django.apps import apps
 from django.db import models
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
@@ -397,6 +398,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         else:
             self.recast(TrashedFile._typedmodels_type)
 
+            Comment = apps.get_model('osf.Comment')
+            Comment.objects.filter(root_target=self.guids.first()).update(root_target=None)
+
         if save:
             self.save()
 
@@ -672,6 +676,14 @@ class TrashedFolder(TrashedFileNode):
         return tf
 
 
+class FileVersionUserMetadata(BaseModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    file_version = models.ForeignKey('FileVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'file_version')
+
+
 class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
@@ -695,6 +707,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
 
     includable_objects = IncludeManager()
 

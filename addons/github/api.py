@@ -159,6 +159,9 @@ class GitHubClient(object):
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
 
+    def check_authorization(self):
+        return self.gh3.check_authorization(self.access_token)
+
 
 def ref_to_params(branch=None, sha=None):
 

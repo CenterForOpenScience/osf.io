@@ -181,14 +181,25 @@ class TestNodeForksList:
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_forks_list_does_not_show_registrations_of_forks(
-            self, app, public_project, public_fork, public_project_url):
+            self, app, user, public_project, public_fork, public_project_url):
         reg = RegistrationFactory(project=public_fork, is_public=True)
 
         # confirm registration shows up in node forks
         assert reg in public_project.forks.all()
-        res = app.get(public_project_url)
+        assert len(public_project.forks.all()) == 2
+        res = app.get(public_project_url, auth=user.auth)
 
-        # confirm registration of fork does not show up in public data
+        # confirm registration of fork does not show up in public data (only public_fork)
+        assert len(res.json['data']) == 1
+
+        public_fork.is_deleted = True
+        public_fork.save()
+
+        # confirm it's still a fork even after deletion
+        assert len(public_project.forks.all()) == 2
+
+        # confirm fork no longer shows on public project's forks list
+        res = app.get(public_project_url, auth=user.auth)
         assert len(res.json['data']) == 0
 
 

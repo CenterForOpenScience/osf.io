@@ -413,8 +413,6 @@ class RegistrationApprovalFactory(SanctionFactory):
 
 class EmbargoTerminationApprovalFactory(DjangoModelFactory):
 
-    FACTORY_STRATEGY = factory.base.CREATE_STRATEGY
-
     @classmethod
     def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
         if registration:
