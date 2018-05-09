@@ -761,7 +761,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     mails.send_mail(
         email,
         mail_template,
-        'plain',
+        'html',
         user=user,
         confirmation_url=confirmation_url,
         email=email,
