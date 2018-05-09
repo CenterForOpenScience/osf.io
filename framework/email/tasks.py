@@ -3,7 +3,7 @@ import logging
 from email.mime.text import MIMEText
 
 from framework.celery_tasks import app
-from framework.sentry import sentry
+from framework import sentry
 from website import settings
 import sendgrid
 
