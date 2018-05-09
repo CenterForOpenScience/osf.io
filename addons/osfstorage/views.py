@@ -61,7 +61,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
                 "modified": "a date",
                 "modified_utc": "a date in utc",
 
-                # glacier vault
+                # glacier vault (optional)
                 "archive": "glacier_key",
                 "vault": "glacier_vault_name",
 
