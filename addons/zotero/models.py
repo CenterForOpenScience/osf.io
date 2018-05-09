@@ -299,7 +299,6 @@ class NodeSettings(BaseCitationsNodeSettings):
         except zotero_errors.UserNotAuthorised:
             raise HTTPError(403)
         except zotero_errors.HTTPError:
-            # How we can distinguish call came from APIv2.
             sentry.log_exception()
             sentry.log_message('Unexpected Zotero Error when fetching folders.')
             raise HTTPError(500)
