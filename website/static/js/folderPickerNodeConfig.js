@@ -636,6 +636,16 @@ var FolderPickerViewModel = oop.defclass({
             },
             multiselect: false,
             allowMove: false,
+            ondataloaderror: function(xhr) {
+                self.loading(false);
+                self.changeMessage(self.messages.connectError(), 'text-danger');
+                Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
+                    extra: {
+                        textStatus: xhr.statusText,
+                        error: xhr.status
+                    }
+                });
+            },
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);

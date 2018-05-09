@@ -3,13 +3,13 @@
 from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
 from addons.base import exceptions
 from django.db import models
+from framework import sentry
 from framework.exceptions import HTTPError
 from pyzotero import zotero, zotero_errors
 from addons.zotero import \
     settings  # TODO: Move `settings` to `apps.py` when deleting
 from addons.zotero.serializer import ZoteroSerializer
 from website.citations.providers import CitationsOauthProvider
-from api.base.utils import is_truthy
 
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
 # of citations, requesting the citations may take longer than the UWSGI harakiri time.
@@ -252,13 +252,21 @@ class NodeSettings(BaseCitationsNodeSettings):
         # These kwargs are passed in from ZoteroViews > library_list
         limit = kwargs.get('limit', None)
         start = kwargs.get('start', None)
-        return_count = is_truthy(kwargs.get('return_count', False))
-        append_personal = is_truthy(kwargs.get('append_personal', True))
+        return_count = kwargs.get('return_count', False)
+        append_personal = kwargs.get('append_personal', True)
         try:
             # Fetch group libraries
             libraries = self.api._fetch_libraries(limit=limit, start=start)
-        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound) as error:
-            raise HTTPError(error)
+        except zotero_errors.ResourceNotFound:
+            raise HTTPError(404)
+        except zotero_errors.UserNotAuthorised:
+            raise HTTPError(403)
+        except zotero_errors.HTTPError:
+            # How we can distinguish call came from APIv2.
+            if not return_count:
+                sentry.log_exception()
+                sentry.log_message('Unexpected Zotero Error when fetching group libraries.')
+            raise HTTPError(500)
 
         # Serialize libraries
         serialized = []
@@ -275,7 +283,7 @@ class NodeSettings(BaseCitationsNodeSettings):
             serialized.insert(0, self.serialize_folder('library', 'personal', 'My Library', 'personal'))
         return serialized
 
-    def get_sub_folders(self, library_id, folder_id=None):
+    def get_sub_folders(self, library_id, folder_id=None, **kwargs):
         """
         Returns serialized folders underneath a specific library/group - these are the lower tiers of folders in Zotero.
 
@@ -284,8 +292,16 @@ class NodeSettings(BaseCitationsNodeSettings):
         """
         try:
             sub_folders = self.api._get_folders(library_id=library_id, folder_id=folder_id)
-        except (zotero_errors.HTTPError, zotero_errors.UserNotAuthorised, zotero_errors.ResourceNotFound) as error:
-            raise HTTPError(error)
+        except zotero_errors.ResourceNotFound:
+            raise HTTPError(404)
+        except zotero_errors.UserNotAuthorised:
+            raise HTTPError(403)
+        except zotero_errors.HTTPError:
+            # How we can distinguish call came from APIv2.
+            if not kwargs.get('return_count', False):
+                sentry.log_exception()
+                sentry.log_message('Unexpected Zotero Error when fetching folders.')
+            raise HTTPError(500)
 
         serialized = []
         for folder in sub_folders:

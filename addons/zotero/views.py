@@ -8,6 +8,8 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public
 )
+from api.base.utils import is_truthy
+
 
 class ZoteroViews(GenericCitationViews):
     def set_config(self):
@@ -55,8 +57,8 @@ class ZoteroViews(GenericCitationViews):
             """
             limit = request.args.get('limit')
             start = request.args.get('start')
-            return_count = request.args.get('return_count')
-            append_personal = request.args.get('append_personal')
+            return_count = is_truthy(request.args.get('return_count', False))
+            append_personal = is_truthy(request.args.get('append_personal', True))
             return node_addon.get_folders(limit=limit, start=start, return_count=return_count, append_personal=append_personal)
         _library_list.__name__ = '{0}_library_list'.format(addon_short_name)
         return _library_list
