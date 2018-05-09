@@ -103,6 +103,8 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
             mail.add_attachment_stream(attachment_name, attachment_content)
 
         status, msg = client.send(mail)
+        if status >= 400:
+            sentry.log_message('{}: {}'.format(status, message))
         return status < 400
     else:
         sentry.log_message(
