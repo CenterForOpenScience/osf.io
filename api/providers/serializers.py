@@ -174,6 +174,7 @@ class ModeratorSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         user_id = validated_data.pop('_id', '')
         address = validated_data.pop('email', '')
+        provider = self.context['provider']
         context = {
             'referrer': auth.user
         }
@@ -191,9 +192,11 @@ class ModeratorSerializer(JSONAPISerializer):
                 if not full_name:
                     raise ValidationError('"full_name" is required when adding a moderator via email.')
                 user = OSFUser.create_unregistered(full_name, email=address)
-                user.add_unconfirmed_email(user.username)
+                user.add_unclaimed_record(provider, referrer=auth.user,
+                                                 given_name=full_name, email=address)
                 user.save()
-                context['confirmation_url'] = user.get_confirmation_url(user.username)
+                claim_url = user.get_claim_url(provider._id, external=True)
+                context['claim_url'] = claim_url
             else:
                 user = email.user
         else:
@@ -202,12 +205,11 @@ class ModeratorSerializer(JSONAPISerializer):
         if not user:
             raise ValidationError('Unable to find specified user.')
         context['user'] = user
+        context['provider'] = provider
 
-        provider = self.context['provider']
         if bool(get_perms(user, provider)):
             raise ValidationError('Specified user is already a moderator.')
-        context['provider'] = provider
-        if 'confirmation_url' in context:
+        if 'claim_url' in context:
             template = mails.CONFIRM_EMAIL_MODERATION(provider)
         else:
             template = mails.MODERATOR_ADDED(provider)

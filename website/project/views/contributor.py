@@ -752,8 +752,10 @@ def claim_user_form(auth, **kwargs):
             # Authenticate user and redirect to project page
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
+            redirect_url = (web_url_for('resolve_guid', guid=pid, _absolute=True) if not pid.isalpha()
+                            else '{domain}reviews/preprints/{pid}'.format(domain=settings.DOMAIN, pid=pid))
             return redirect(cas.get_login_url(
-                web_url_for('resolve_guid', guid=pid, _absolute=True),
+                redirect_url,
                 username=user.username,
                 verification_key=user.verification_key
             ))
