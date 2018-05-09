@@ -296,10 +296,8 @@ class NodeSettings(BaseCitationsNodeSettings):
                     serialized_folders.insert(0, serialized_root_folder)
                 return serialized_folders
             except MendeleyApiException as error:
-                # How we can distinguish call came from APIv2.
-                if not show_root:
-                    sentry.log_exception()
-                    sentry.log_message('Unexpected Mendeley Error when fetching folders.')
+                sentry.log_exception()
+                sentry.log_message('Unexpected Mendeley Error when fetching folders.')
                 raise HTTPError(error.status)
         else:
             raise exceptions.InvalidAuthError()

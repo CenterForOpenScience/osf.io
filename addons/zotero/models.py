@@ -262,10 +262,8 @@ class NodeSettings(BaseCitationsNodeSettings):
         except zotero_errors.UserNotAuthorised:
             raise HTTPError(403)
         except zotero_errors.HTTPError:
-            # How we can distinguish call came from APIv2.
-            if not return_count:
-                sentry.log_exception()
-                sentry.log_message('Unexpected Zotero Error when fetching group libraries.')
+            sentry.log_exception()
+            sentry.log_message('Unexpected Zotero Error when fetching group libraries.')
             raise HTTPError(500)
 
         # Serialize libraries
@@ -298,9 +296,8 @@ class NodeSettings(BaseCitationsNodeSettings):
             raise HTTPError(403)
         except zotero_errors.HTTPError:
             # How we can distinguish call came from APIv2.
-            if not kwargs.get('return_count', False):
-                sentry.log_exception()
-                sentry.log_message('Unexpected Zotero Error when fetching folders.')
+            sentry.log_exception()
+            sentry.log_message('Unexpected Zotero Error when fetching folders.')
             raise HTTPError(500)
 
         serialized = []
