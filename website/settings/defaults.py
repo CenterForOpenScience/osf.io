@@ -407,10 +407,7 @@ class CeleryConfig:
         'framework.celery_tasks',
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
-        'scripts.osfstorage.glacier_inventory',
         'scripts.analytics.tasks',
-        'scripts.osfstorage.files_audit',
-        'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.remind_draft_preregistrations',
@@ -500,11 +497,8 @@ class CeleryConfig:
 
     # Modules that need metrics and release requirements
     # imports += (
-    #     'scripts.osfstorage.glacier_inventory',
-    #     'scripts.osfstorage.glacier_audit',
     #     'scripts.osfstorage.usage_audit',
     #     'scripts.stuck_registration_audit',
-    #     'scripts.osfstorage.files_audit',
     #     'scripts.analytics.tasks',
     #     'scripts.analytics.upload',
     # )
@@ -622,36 +616,6 @@ class CeleryConfig:
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
-        #     },
-        #     'glacier_inventory': {
-        #         'task': 'scripts.osfstorage.glacier_inventory',
-        #         'schedule': crontab(minute=0, hour=5, day_of_week=0),  # Sunday 12:00 a.m.
-        #         'args': (),
-        #     },
-        #     'glacier_audit': {
-        #         'task': 'scripts.osfstorage.glacier_audit',
-        #         'schedule': crontab(minute=0, hour=11, day_of_week=0),  # Sunday 6:00 a.m.
-        #         'kwargs': {'dry_run': False},
-        #     },
-        #     'files_audit_0': {
-        #         'task': 'scripts.osfstorage.files_audit.0',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_1': {
-        #         'task': 'scripts.osfstorage.files_audit.1',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_2': {
-        #         'task': 'scripts.osfstorage.files_audit.2',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_3': {
-        #         'task': 'scripts.osfstorage.files_audit.3',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         # })
 
