@@ -849,7 +849,7 @@ class TestUnregisteredUser:
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
         given_name = 'Fredd Merkury'
-        user.add_unclaimed_record(node=project,
+        user.add_unclaimed_record(resource=project,
             given_name=given_name, referrer=referrer,
             email=email)
         user.save()
@@ -898,7 +898,7 @@ class TestUnregisteredUser:
     def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self, referrer, unreg_user):
         project = NodeFactory()  # referrer isn't a contributor to this project
         with pytest.raises(PermissionsError):
-            unreg_user.add_unclaimed_record(node=project,
+            unreg_user.add_unclaimed_record(resource=project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
 
@@ -1047,7 +1047,7 @@ class TestCitationProperties:
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
-        user.add_unclaimed_record(node=project,
+        user.add_unclaimed_record(resource=project,
             given_name=user.fullname, referrer=referrer,
             email=email)
         user.save()

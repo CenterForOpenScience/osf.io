@@ -679,7 +679,7 @@ class GuardianMixin(models.Model):
 
     @property
     def group_names(self):
-        return [self.format_group(name) for name in self.groups_dict]
+        return [self.format_group(name) for name in self.groups.keys()]
 
     @property
     def group_objects(self):

@@ -1333,27 +1333,31 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, node, referrer, given_name, email=None):
+    def add_unclaimed_record(self, resource, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param Node node: Node this unclaimed user was added to.
+        :param Node or Preprint, resource: Resourcer this unclaimed user was added to.
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
         :returns: The added record
         """
-        if not node.is_preprint:
-            if not node.can_edit(user=referrer):
+        from osf.models import AbstractNode, Preprint
+        is_project = True
+        if isinstance(resource, AbstractNode):
+            if not resource.can_edit(user=referrer):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
-                )
-        else:
-            if not self.has_perm('ADMIN', node):
-                raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+                    'Referrer does not have permission to add a contributor to project {0}'.format(resource._id)
                 )
 
-        project_id = str(node._id)
+        if isinstance(resource, Preprint):
+            is_project = False
+            if not resource.has_permission(referrer, 'admin'):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to project {0}'.format(resource._id)
+                )
+
+        resource_id = str(resource._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
@@ -1361,7 +1365,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             clean_email = None
         verification_key = generate_verification_key(verification_type='claim')
         try:
-            record = self.unclaimed_records[node._id]
+            record = self.unclaimed_records[resource._id]
         except KeyError:
             record = None
         if record:
@@ -1373,7 +1377,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'expires': verification_key['expires'],
             'email': clean_email,
         }
-        self.unclaimed_records[project_id] = record
+        self.unclaimed_records[resource_id] = record
         return record
 
     def get_unclaimed_record(self, project_id):

@@ -1,7 +1,7 @@
 from osf.models.metaschema import MetaSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
-from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
+from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
 from osf.models.collection import CollectedGuidMetadata, Collection  # noqa
@@ -9,6 +9,7 @@ from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
+from osf.models.preprintlog import PreprintLog #noqa
 from osf.models.tag import Tag  # noqa
 from osf.models.comment import Comment  # noqa
 from osf.models.conference import Conference, MailRecord  # noqa
