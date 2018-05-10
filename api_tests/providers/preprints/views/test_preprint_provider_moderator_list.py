@@ -112,6 +112,23 @@ class TestPreprintProviderModeratorList:
         assert mock_mail.call_count == 0
 
     @mock.patch('framework.auth.views.mails.send_mail')
+    def test_list_post_admin_failure_unreg_moderator(self, mock_mail, app, url, moderator, nonmoderator, admin, provider):
+        unreg_user = {'full_name': 'Son Goku', 'email': 'goku@dragonball.org'}
+        # test_user_with_no_moderator_admin_permissions
+        payload = self.create_payload(permission_group='moderator', **unreg_user)
+        res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert mock_mail.assert_not_called()
+
+        # test_user_with_moderator_admin_permissions
+        payload = self.create_payload(permission_group='moderator', **unreg_user)
+        res = app.post_json_api(url, payload, auth=admin.auth)
+
+        assert res.status_code == 201
+        assert mock_mail.assert_called_once()
+        assert mock_mail.call_args[0][0] == unreg_user['email']
+
+    @mock.patch('framework.auth.views.mails.send_mail')
     def test_list_post_admin_failure_invalid_group(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='citizen')
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
