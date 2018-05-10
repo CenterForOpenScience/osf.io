@@ -15,7 +15,9 @@ from framework.forms import (
     BootstrapTextInput,
     BootstrapPasswordInput,
     stripped,
-    lowerstripped
+    lowerstripped,
+    BooleanField,
+    CheckboxInput
 )
 from website import language
 
@@ -144,6 +146,11 @@ class ResetPasswordForm(Form):
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
+    accepted_terms_of_service = BooleanField(
+        [
+            validators.Required(message=u'This field is required'),
+        ]
+    )
 
 
 class SignInForm(Form):
@@ -153,6 +160,12 @@ class SignInForm(Form):
 
 class ResendConfirmationForm(Form):
     email = email_field
+    accepted_terms_of_service = BooleanField(
+        [
+            validators.Required(message=u'This field is required'),
+        ],
+        widget=CheckboxInput()
+    )
 
 
 class PasswordForm(Form):

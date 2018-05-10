@@ -747,7 +747,7 @@ def claim_user_form(auth, **kwargs):
                     'account on the project to which you were invited.'
                 ))
 
-            user.register(username=username, password=password)
+            user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
             # Clear unclaimed records
             user.unclaimed_records = {}
             user.verification_key = generate_verification_key()

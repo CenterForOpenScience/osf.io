@@ -141,6 +141,14 @@
                         </div>
                     </div>
                 </div>
+                <!-- Terms of Service and Privacy Policy agreement -->
+                <div class="form-group">
+                    <div style="float: right">
+                        <input type="checkbox" data-bind="checked: acceptedTermsOfService, disable: submitted()">
+                        <label style="margin-right: 15px">I have read and agree to the <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>.</label>
+                        <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
+                    </div>
+                </div>
                 </br>
                 <div class="form-group m-t-md">
                     <div class="col-md-5 col-sm-12" style="padding-left: 25px">
@@ -155,16 +163,11 @@
                             </div>
                         %endif
                             <div class="col-xs-12">
-                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
+                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted() || !acceptedTermsOfService()">Create account</button></span>
                             </div>
                     </div>
                 </div>
             </form>
-        </div>
-        <div class="row">
-            <div id="termsAndConditions" class="m-t-md col-sm-6 col-sm-offset-3">
-                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-            </div>
         </div>
     </div>
     %endif
