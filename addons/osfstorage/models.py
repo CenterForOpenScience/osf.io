@@ -17,6 +17,7 @@ from website.files import exceptions
 from website.files import utils as files_utils
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
+from website.util import api_v2_url
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -424,6 +425,14 @@ class Region(models.Model):
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
+    def get_absolute_url(self):
+        return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/regions/{}/'.format(self._id)
+        return api_v2_url(path)
+
     class Meta:
         unique_together = ('_id', 'name')
 
@@ -438,6 +447,16 @@ class UserSettings(BaseUserSettings):
     def merge(self, user_settings):
         """Merge `user_settings` into this instance"""
         NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
+    def set_region(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise ValueError('Region cannot be found.')
+
+        self.default_region = region
+        self.save()
+        return
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):

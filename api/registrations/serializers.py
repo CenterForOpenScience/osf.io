@@ -157,6 +157,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
+    region = HideIfWithdrawal(RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
+        read_only=True
+    ))
+
     affiliated_institutions = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<_id>'}
