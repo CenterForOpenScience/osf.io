@@ -2,6 +2,7 @@ import mock
 import pytest
 
 from rest_framework import exceptions
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -97,6 +98,31 @@ class TestPreprintDetail:
             deleted_preprint_url, expect_errors=True)
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
+
+    def test_retracted_preprint(self, app, user, preprint, url, data):
+        # test_retracted_fields
+        assert not data['attributes']['date_retracted']
+        assert 'retraction_justification' not in data['attributes']
+        assert 'ever_public' not in data['attributes']
+
+        ## retracted and not ever_public (False by default)
+        preprint.date_retracted = timezone.now()
+        preprint.retraction_justification = 'assumptions no longer apply'
+        preprint.save()
+        assert preprint.is_retracted
+        assert not preprint.ever_public
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+
+        ## retracted and ever_public (True)
+        preprint.ever_public = True
+        preprint.save()
+        res = app.get(url)
+        data = res.json['data']
+        assert data['attributes']['date_retracted']
+        assert 'retraction_justification' in data['attributes']
+        assert 'assumptions no longer apply' == data['attributes']['retraction_justification']
+        assert 'date_retracted' in data['attributes']
 
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
