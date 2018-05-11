@@ -27,9 +27,6 @@ class Migration(migrations.Migration):
         default_region, created = Region.objects.get_or_create(
             _id=DEFAULT_REGION_ID,
             name=DEFAULT_REGION_NAME,
-            waterbutler_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
-            waterbutler_settings=osfstorage_config.WATERBUTLER_SETTINGS,
-            waterbutler_url=WATERBUTLER_URL
         )
         if created:
             logger.info('Created default region: {}'.format(DEFAULT_REGION_NAME))
