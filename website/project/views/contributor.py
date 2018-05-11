@@ -538,7 +538,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and \
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
-        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
+        mimetype = 'html'
         preprint_provider = None
         logo = None
         if email_template == 'preprint':
