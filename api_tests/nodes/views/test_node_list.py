@@ -190,7 +190,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_three(self):
-        return ProjectFactory(title='Unique Test Title', is_public=True)
+        return ProjectFactory(title='Unique Test Title', description='three', is_public=True)
 
     @pytest.fixture()
     def user_one_private_project(self, user_one):
