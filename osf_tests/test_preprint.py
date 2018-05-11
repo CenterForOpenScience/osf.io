@@ -10,7 +10,7 @@ from website import settings
 from website.preprints.signals import contributor_removed, contributor_added
 from framework.auth.core import Auth
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
-from osf.exceptions import PreprintStateError, ValidationError
+from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf.utils.permissions import READ, WRITE, ADMIN
 from .utils import capture_signals, assert_datetime_equal
 from api_tests.utils import disconnected_from_listeners
@@ -24,6 +24,7 @@ from osf_tests.factories import (
     TagFactory,
     SubjectFactory,
     UnregUserFactory,
+    SessionFactory,
     PreprintProviderFactory
 )
 
@@ -903,7 +904,7 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    def test_check_spam_only_public_node_by_default(self, preprint, user):
+    def test_check_spam_only_public_preprint_by_default(self, preprint, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
@@ -988,3 +989,542 @@ class TestPreprintSpam:
         preprint.confirm_spam()
         assert preprint.is_spammy
         assert preprint.is_public is False
+
+
+# copied from tests/test_models.py
+class TestManageContributors:
+
+    def test_contributor_manage_visibility(self, preprint, user, auth):
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        preprint.add_contributor(contributor=user, permission=ADMIN, auth=auth)
+        preprint.add_contributor(contributor=reg_user1, permission=ADMIN, auth=auth)
+
+        preprint.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': ADMIN, 'visible': True},
+                {'id': reg_user1._id, 'permission': ADMIN, 'visible': False},
+            ],
+            auth=auth,
+            save=True
+        )
+        preprint.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': ADMIN, 'visible': False},
+                {'id': reg_user1._id, 'permission': ADMIN, 'visible': True},
+            ],
+            auth=auth,
+            save=True
+        )
+
+        assert len(preprint.visible_contributor_ids) == 1
+
+    def test_contributor_set_visibility_validation(self, preprint, user, auth):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        preprint.add_contributors(
+            [
+                {'user': reg_user1, 'permission': ADMIN, 'visible': True},
+                {'user': reg_user2, 'permission': ADMIN, 'visible': False},
+            ]
+        )
+        print(preprint.visible_contributor_ids)
+        with pytest.raises(ValueError) as e:
+            preprint.set_visible(user=reg_user1, visible=False, auth=None)
+            preprint.set_visible(user=user, visible=False, auth=None)
+            assert e.value.message == 'Must have at least one visible contributor'
+
+    def test_manage_contributors_cannot_remove_last_admin_contributor(self, auth, preprint):
+        user2 = UserFactory()
+        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.save()
+        with pytest.raises(PreprintStateError) as excinfo:
+            preprint.manage_contributors(
+                user_dicts=[{'id': user2._id,
+                             'permission': WRITE,
+                             'visible': True}],
+                auth=auth,
+                save=True
+            )
+        assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
+
+    def test_manage_contributors_reordering(self, preprint, user, auth):
+        user2, user3 = UserFactory(), UserFactory()
+        preprint.add_contributor(contributor=user2, auth=auth)
+        preprint.add_contributor(contributor=user3, auth=auth)
+        preprint.save()
+        assert list(preprint.contributors.all()) == [user, user2, user3]
+        preprint.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user3._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        assert list(preprint.contributors.all()) == [user2, user3, user]
+
+    def test_manage_contributors_logs_when_users_reorder(self, preprint, user, auth):
+        user2 = UserFactory()
+        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.save()
+        preprint.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        latest_log = preprint.logs.latest()
+        assert latest_log.action == PreprintLog.CONTRIB_REORDERED
+        assert latest_log.user == user
+        assert user._id in latest_log.params['contributors']
+        assert user2._id in latest_log.params['contributors']
+
+    def test_manage_contributors_logs_when_permissions_change(self, preprint, user, auth):
+        user2 = UserFactory()
+        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.save()
+        preprint.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+                {
+                    'id': user2._id,
+                    'permission': READ,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        latest_log = preprint.logs.latest()
+        assert latest_log.action == PreprintLog.PERMISSIONS_UPDATED
+        assert latest_log.user == user
+        assert user2._id in latest_log.params['contributors']
+        assert user._id not in latest_log.params['contributors']
+
+    def test_manage_contributors_new_contributor(self, preprint, user, auth):
+        user = UserFactory()
+        users = [
+            {'id': user._id, 'permission': READ, 'visible': True},
+            {'id': preprint.creator._id, 'permission': [READ, WRITE, ADMIN], 'visible': True},
+        ]
+        with pytest.raises(ValueError) as excinfo:
+            preprint.manage_contributors(
+                users, auth=auth, save=True
+            )
+        assert excinfo.value.args[0] == 'User {0} not in contributors'.format(user.fullname)
+
+    def test_manage_contributors_no_contributors(self, preprint, auth):
+        with pytest.raises(PreprintStateError):
+            preprint.manage_contributors(
+                [], auth=auth, save=True,
+            )
+
+    def test_manage_contributors_no_admins(self, preprint, auth):
+        user = UserFactory()
+        preprint.add_contributor(
+            user,
+            permission=ADMIN,
+            save=True
+        )
+        users = [
+            {'id': preprint.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
+        ]
+        with pytest.raises(PreprintStateError):
+            preprint.manage_contributors(
+                users, auth=auth, save=True,
+            )
+
+    def test_manage_contributors_no_registered_admins(self, preprint, auth):
+        unregistered = UnregUserFactory()
+        preprint.add_contributor(
+            unregistered,
+            permission=ADMIN,
+            save=True
+        )
+        users = [
+            {'id': preprint.creator._id, 'permission': READ, 'visible': True},
+            {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
+        ]
+        with pytest.raises(PreprintStateError):
+            preprint.manage_contributors(
+                users, auth=auth, save=True,
+            )
+
+    def test_get_admin_contributors(self, user, auth, preprint):
+        read, write, admin = UserFactory(), UserFactory(), UserFactory()
+        nonactive_admin = UserFactory()
+        noncontrib = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.add_contributor(read, auth=auth, permission=READ)
+        preprint.add_contributor(write, auth=auth, permission=WRITE)
+        preprint.add_contributor(admin, auth=auth, permission=ADMIN)
+        preprint.add_contributor(nonactive_admin, auth=auth, permission=ADMIN)
+        preprint.save()
+
+        nonactive_admin.is_disabled = True
+        nonactive_admin.save()
+
+        result = list(preprint.get_admin_contributors([
+            read, write, admin, noncontrib, nonactive_admin
+        ]))
+
+        assert admin in result
+        assert read not in result
+        assert write not in result
+        assert noncontrib not in result
+        assert nonactive_admin not in result
+
+
+class TestContributorOrdering:
+
+    def test_can_get_contributor_order(self, preprint):
+        user1, user2 = UserFactory(), UserFactory()
+        contrib1 = PreprintContributor.objects.create(user=user1, preprint=preprint)
+        contrib2 = PreprintContributor.objects.create(user=user2, preprint=preprint)
+        creator_contrib = PreprintContributor.objects.get(user=preprint.creator, preprint=preprint)
+        assert list(preprint.get_preprintcontributor_order()) == [creator_contrib.id, contrib1.id, contrib2.id]
+        assert list(preprint.contributors.all()) == [preprint.creator, user1, user2]
+
+    def test_can_set_contributor_order(self, preprint):
+        user1, user2 = UserFactory(), UserFactory()
+        contrib1 = PreprintContributor.objects.create(user=user1, preprint=preprint)
+        contrib2 = PreprintContributor.objects.create(user=user2, preprint=preprint)
+        creator_contrib = PreprintContributor.objects.get(user=preprint.creator, preprint=preprint)
+        preprint.set_preprintcontributor_order([contrib1.id, contrib2.id, creator_contrib.id])
+        assert list(preprint.get_preprintcontributor_order()) == [contrib1.id, contrib2.id, creator_contrib.id]
+        assert list(preprint.contributors.all()) == [user1, user2, preprint.creator]
+
+    def test_move_contributor(self, user, preprint, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        preprint.add_contributors(
+            [
+                {'user': user1, 'permission': WRITE, 'visible': True},
+                {'user': user2, 'permission': WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
+
+        user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
+        user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id
+        user2_contrib_id = preprint.preprintcontributor_set.get(user=user2).id
+
+        old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
+        assert list(preprint.get_preprintcontributor_order()) == old_order
+
+        preprint.move_contributor(user2, auth=auth, index=0, save=True)
+
+        new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
+        assert list(preprint.get_preprintcontributor_order()) == new_order
+
+
+class TestDOIValidation:
+
+    def test_validate_bad_doi(self):
+        with pytest.raises(ValidationError):
+            Preprint(article_doi='nope').save()
+        with pytest.raises(ValidationError):
+            Preprint(article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with pytest.raises(ValidationError):
+            Preprint(article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self, preprint):
+        doi = '10.11038/nwooo1170'
+        preprint.article_doi = doi
+        preprint.save()
+        assert preprint.article_doi == doi
+
+
+# copied from tests/test_models.py
+class TestPreprintUpdate:
+    def test_set_title_works_with_valid_title(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        proj.set_title('This is now', auth=auth)
+        proj.save()
+        # Title was changed
+        assert proj.title == 'This is now'
+        # A log event was saved
+        latest_log = proj.logs.latest()
+        assert latest_log.action == 'edit_title'
+        assert latest_log.params['title_original'] == 'That Was Then'
+
+    def test_set_title_fails_if_empty_or_whitespace(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        with pytest.raises(ValidationValueError):
+            proj.set_title(' ', auth=auth)
+        with pytest.raises(ValidationValueError):
+            proj.set_title('', auth=auth)
+        assert proj.title == 'That Was Then'
+
+    def test_set_title_fails_if_too_long(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        long_title = ''.join('a' for _ in range(201))
+        with pytest.raises(ValidationValueError):
+            proj.set_title(long_title, auth=auth)
+
+    def test_set_description(self, preprint, auth):
+        old_desc = preprint.description
+        preprint.set_description(
+            'new description', auth=auth)
+        preprint.save()
+        assert preprint.description, 'new description'
+        latest_log = preprint.logs.latest()
+        assert latest_log.action, PreprintLog.EDITED_DESCRIPTION
+        assert latest_log.params['description_original'], old_desc
+        assert latest_log.params['description_new'], 'new description'
+
+    def test_updating_title_twice_with_same_title(self, fake, auth, preprint):
+        original_n_logs = preprint.logs.count()
+        new_title = fake.bs()
+        preprint.set_title(new_title, auth=auth, save=True)
+        assert preprint.logs.count() == original_n_logs + 1  # sanity check
+
+        # Call update with same title
+        preprint.set_title(new_title, auth=auth, save=True)
+        # A new log is not created
+        assert preprint.logs.count() == original_n_logs + 1
+
+    def test_updating_description_twice_with_same_content(self, fake, auth, preprint):
+        original_n_logs = preprint.logs.count()
+        new_desc = fake.bs()
+        preprint.set_description(new_desc, auth=auth, save=True)
+        assert preprint.logs.count() == original_n_logs + 1  # sanity check
+
+        # Call update with same description
+        preprint.set_description(new_desc, auth=auth, save=True)
+        # A new log is not created
+        assert preprint.logs.count() == original_n_logs + 1
+
+class TestOnPreprintUpdate:
+
+    @pytest.fixture(autouse=True)
+    def session(self, user, request_context):
+        s = SessionFactory(user=user)
+        set_session(s)
+        return s
+
+    def teardown_method(self, method):
+        handlers.celery_before_request()
+
+    @mock.patch('osf.models.preprint.enqueue_task')
+    def test_enqueue_called(self, enqueue_task, preprint, user, request_context):
+        preprint.title = 'A new title'
+        preprint.save()
+
+        (task, ) = enqueue_task.call_args[0]
+
+        assert task.task == 'website.preprints.tasks.on_preprint_updated'
+        assert task.args[0] == preprint._id
+        assert task.args[1] == user._id
+        assert task.args[2] is False
+        assert 'title' in task.args[3]
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_updates_share(self, requests, preprint, user):
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+
+        assert requests.post.called
+        assert kwargs['headers']['Authorization'] == 'Bearer Token'
+        assert graph[0]['uri'] == '{}{}/'.format(settings.DOMAIN, preprint._id)
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_update_share_correctly_for_projects(self, requests, preprint, user, request_context):
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(preprint, attr, value)
+            preprint.save()
+
+            on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            assert graph[1]['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations(self, requests, registration, user, request_context):
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True}
+        }, {
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(registration, attr, value)
+            registration.save()
+
+            on_preprint_updated(registration._id, user._id, False, {'is_public'})
+
+            assert registration.is_registration
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_tags(self, requests, preprint, user, request_context):
+        preprint.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        preprint.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_tags(self, requests, registration, user, request_context):
+        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_preprint_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_preprint_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, preprint, user, request_context):
+        preprint.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        preprint.save()
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        preprint.title = 'Not a qa title'
+        preprint.save()
+        assert preprint.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.preprints.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
+        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        registration.save()
+        on_preprint_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.title = 'Not a qa title'
+        registration.save()
+        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_preprint_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', None)
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', None)
+    @mock.patch('website.preprints.tasks.requests')
+    def test_skips_no_settings(self, requests, preprint, user, request_context):
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        assert requests.post.called is False
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_call_async_update_on_500_failure(self, requests, mock_async, preprint, user, request_context):
+        requests.post.return_value = MockShareResponse(501)
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        assert mock_async.called
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.preprints.tasks.send_desk_share_error')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail, preprint, user, request_context):
+        requests.post.return_value = MockShareResponse(400)
+        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
+        assert mock_mail.called
+        assert not mock_async.called
