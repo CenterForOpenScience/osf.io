@@ -28,6 +28,9 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
 
@@ -42,7 +45,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     actions = ([CREATED, DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
                 EDITED_DESCRIPTION, FILE_UPDATED, MADE_CONTRIBUTOR_VISIBLE,
-                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED] + list(sum([
+                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]

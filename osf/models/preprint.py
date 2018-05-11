@@ -13,7 +13,6 @@ from django.core.exceptions import ValidationError
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.celery_tasks.handlers import enqueue_task
-from framework import status
 from framework.exceptions import PermissionsError
 
 from osf.models import Subject, Tag, OSFUser
@@ -31,6 +30,7 @@ from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_id
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website import settings, mails
+from website.identifiers.tasks import update_ezid_metadata_on_change
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
@@ -348,7 +348,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 save=False,
             )
             self._add_creator_as_contributor()
-
 
         return ret
 
@@ -960,10 +959,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return None
 
     def can_view(self, auth):
-        if not auth and not self.is_published:
+        # TODO - need more thinking about is_public and is_published.
+        # Possible to have current nodes with is_public = False with a preprint is_published = True
+        if not auth and (not self.is_public or not self.is_published):
             return False
 
-        return self.is_published or (auth.user and self.has_permission(auth.user, 'read'))
+        return (self.is_published and self.is_public) or (auth.user and self.has_permission(auth.user, 'read'))
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -1060,7 +1061,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             super(Preprint, self).save()
 
     def _get_spam_content(self, saved_fields):
-        spam_fields = self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
         content = []
         for field in spam_fields:
             content.append((getattr(self, field, None) or '').encode('utf-8'))
@@ -1071,11 +1073,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:
             return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
+            return False
         if 'ham_confirmed' in user.system_tags:
             return False
         content = self._get_spam_content(saved_fields)
         if not content:
             return
+
         is_spam = self.do_check_spam(
             user.fullname,
             user.username,
@@ -1088,6 +1093,39 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         if is_spam:
             self._check_spam_user(user)
         return is_spam
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(Preprint, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy('private', auth=None, log=False, save=False)
+            log = self.add_preprint_log(
+                action=PreprintLog.MADE_PRIVATE,
+                params={
+                    'preprint': self._id,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
+
+    def confirm_spam(self, save=False):
+        super(Preprint, self).confirm_spam(save=False)
+        self.set_privacy('private', auth=None, log=False, save=False)
+        log = self.add_preprint_log(
+            action=PreprintLog.MADE_PRIVATE,
+            params={
+                'preprint': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
 
     def _check_spam_user(self, user):
         if (
@@ -1186,3 +1224,45 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             auth=Auth(user),
             params=params
         )
+
+    def set_privacy(self, permissions, auth=None, log=True, save=True):
+        """Set the permissions for this preprint.
+
+        :param permissions: A string, either 'public' or 'private'
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
+        :param bool check_addons: Check and collect messages for addons?
+        """
+        if auth and not self.has_permission(auth.user, 'admin'):
+            raise PermissionsError('Must be an admin to change privacy settings.')
+        if permissions == 'public' and not self.is_public:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                # TODO: Should say will review within a certain agreed upon time period.
+                raise PreprintStateError('This preprint has been marked as spam. Please contact the help desk if you think this is in error.')
+            self.is_public = True
+        elif permissions == 'private' and self.is_public:
+            self.is_public = False
+        else:
+            return False
+
+        # Update existing identifiers
+        if self.preprint_doi:
+            doi_status = 'unavailable' if permissions == 'private' else 'public'
+            enqueue_task(update_ezid_metadata_on_change.s(self._id, status=doi_status))
+
+        if log:
+            action = PreprintLog.MADE_PUBLIC if permissions == 'public' else PreprintLog.MADE_PRIVATE
+            self.add_preprint_log(
+                action=action,
+                params={
+                    'preprint': self._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        if auth and permissions == 'public':
+            preprint_signals.privacy_set_public.send(auth.user, preprint=self)
+        return True

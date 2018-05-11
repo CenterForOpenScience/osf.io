@@ -1,6 +1,7 @@
 import mock
 import urlparse
 import datetime
+from django.utils import timezone
 import pytest
 import pytz
 
@@ -153,7 +154,6 @@ class TestPreprintSubjects:
         assert preprint.get_subjects()[0][0]['text'] == subject.text
         assert preprint.get_subjects()[0][0]['id'] == subject._id
 
-
     def test_set_subjects(self, preprint, auth):
         subject = SubjectFactory()
         subjects = [[subject._id]]
@@ -305,7 +305,6 @@ class TestContributorMethods:
         last_log = preprint.logs.all().order_by('-created')[0]
         assert last_log.action == 'contributor_added'
         assert last_log.params['contributors'] == [user._id]
-
 
     def test_add_contributors(self, preprint, auth):
         user1 = UserFactory()
@@ -667,6 +666,7 @@ class TestPermissionMethods:
         assert preprint.has_permission(user, ADMIN) is False
 
         preprint.add_permission(user, WRITE)
+        assert contributor.user in preprint.contributors
         assert preprint.has_permission(user, WRITE) is True
 
     def test_has_permission_passed_non_contributor_returns_false(self, preprint):
@@ -683,6 +683,7 @@ class TestPermissionMethods:
 
         preprint.add_permission(user, WRITE)
         assert set(preprint.get_permissions(user)) == set(['read_preprint', 'write_preprint'])
+        assert contributor.user in preprint.contributors
 
     def test_add_permission(self, preprint):
         user = UserFactory()
@@ -776,6 +777,8 @@ class TestPermissionMethods:
         assert bool(preprint.can_edit(user1_auth)) is False
 
     def test_can_view_private(self, preprint, auth):
+        preprint.is_public = False
+        preprint.save()
         # Create contributor and noncontributor
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
@@ -798,11 +801,11 @@ class TestPermissionMethods:
         assert creator in preprint.contributors.all()
         # Creator is removed from project
         preprint.remove_contributor(creator, auth=Auth(user=contrib))
-        assert preprint.can_view(Auth(user=creator)) is False
+        assert preprint.can_view(Auth(user=creator)) is True
         assert preprint.can_edit(Auth(user=creator)) is False
         assert preprint.is_contributor(creator) is False
 
-    def test_can_view_public(self, project, auth):
+    def test_can_view_public(self, preprint, auth):
         # Create contributor and noncontributor
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
@@ -810,13 +813,30 @@ class TestPermissionMethods:
         other_guy_auth = Auth(user=other_guy)
         preprint.add_contributor(
             contributor=contributor, auth=auth)
-        # Change project to public
+        # Change preprint to public
         preprint.is_public = True
         preprint.save()
         # Creator, contributor, and noncontributor can view
         assert preprint.can_view(auth)
         assert preprint.can_view(contributor_auth)
         assert preprint.can_view(other_guy_auth)
+
+    def test_can_view_unpublished(self, preprint, auth):
+        # Create contributor and noncontributor
+        contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
+        other_guy = UserFactory()
+        other_guy_auth = Auth(user=other_guy)
+        preprint.add_contributor(
+            contributor=contributor, auth=auth)
+
+        # Change preprint to unpublished
+        preprint.is_published = False
+        preprint.save()
+        # Creator, contributor, and noncontributor can view
+        assert preprint.can_view(auth)
+        assert preprint.can_view(contributor_auth)
+        assert preprint.can_view(other_guy_auth) is False
 
 
 # Copied from tests/test_models.py
@@ -866,3 +886,105 @@ class TestAddUnregisteredContributor:
             )
 
 
+class TestPreprintSpam:
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
+    def test_preprint_on_spammy_preprint(self, preprint):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch.object(Preprint, 'is_spammy', mock.PropertyMock(return_value=True)):
+            with pytest.raises(PreprintStateError):
+                preprint.set_privacy('public')
+
+    def test_check_spam_disabled_by_default(self, preprint, user):
+        # SPAM_CHECK_ENABLED is False by default
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                preprint.set_privacy('public')
+                assert preprint.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_only_public_node_by_default(self, preprint, user):
+        # SPAM_CHECK_PUBLIC_ONLY is True by default
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                preprint.set_privacy('private')
+                assert preprint.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_skips_ham_user(self, preprint, user):
+        with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                user.add_system_tag('ham_confirmed')
+                preprint.set_privacy('public')
+                assert preprint.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    def test_check_spam_on_private_preprint(self, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                preprint.set_privacy('private')
+                assert preprint.check_spam(user, None, None) is True
+
+    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                user.date_confirmed = timezone.now()
+                preprint.set_privacy('public')
+                user2 = UserFactory()
+                # preprint w/ one contributor
+                preprint2 = PreprintFactory(creator=user, description='foobar2', is_public=True)
+                preprint2.save()
+                # preprint with more than one contributor
+                preprint3 = PreprintFactory(creator=user, description='foobar3', is_public=True)
+                preprint3.add_contributor(user2)
+                preprint3.save()
+
+                assert preprint.check_spam(user, None, None) is True
+
+                assert user.is_disabled is True
+                assert preprint.is_public is False
+                preprint2.reload()
+                assert preprint2.is_public is False
+                preprint3.reload()
+                assert preprint3.is_public is True
+
+    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_send_mail, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                preprint.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
+                preprint.set_privacy('public')
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is True
+
+    def test_flag_spam_make_preprint_private(self, preprint):
+        assert preprint.is_public
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            preprint.flag_spam()
+        assert preprint.is_spammy
+        assert preprint.is_public is False
+
+    def test_flag_spam_do_not_make_preprint_private(self, preprint):
+        assert preprint.is_public
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
+            preprint.flag_spam()
+        assert preprint.is_spammy
+        assert preprint.is_public
+
+    def test_confirm_spam_makes_preprint_private(self, preprint):
+        assert preprint.is_public
+        preprint.confirm_spam()
+        assert preprint.is_spammy
+        assert preprint.is_public is False

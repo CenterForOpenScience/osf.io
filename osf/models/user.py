@@ -1343,7 +1343,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The added record
         """
         from osf.models import AbstractNode, Preprint
-        is_project = True
         if isinstance(resource, AbstractNode):
             if not resource.can_edit(user=referrer):
                 raise PermissionsError(
@@ -1351,7 +1350,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 )
 
         if isinstance(resource, Preprint):
-            is_project = False
             if not resource.has_permission(referrer, 'admin'):
                 raise PermissionsError(
                     'Referrer does not have permission to add a contributor to project {0}'.format(resource._id)
