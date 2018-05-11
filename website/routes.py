@@ -130,7 +130,8 @@ def get_globals():
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
+        'footer_links': settings.FOOTER_LINKS,
     }
 
 
@@ -1643,6 +1644,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.configure_comments,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
             json_renderer,
         ),
 

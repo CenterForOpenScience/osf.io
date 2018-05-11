@@ -584,6 +584,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
+        self.is_superuser = self.is_superuser or user.is_superuser
+        self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
         if user.jobs and not self.jobs:

@@ -160,7 +160,10 @@ class WikiVersion(ObjectIDMixin, BaseModel):
                 if isinstance(v, basestring)
             }
         user = OSFUser.load(user_id)
-        return self.wiki_page.node.check_spam(user, ['wiki_pages_latest'], request_headers)
+        if user:
+            return self.wiki_page.node.check_spam(user, ['wiki_pages_latest'], request_headers)
+        else:
+            return False
 
     def clone_version(self, wiki_page, user):
         """Clone a node wiki page.

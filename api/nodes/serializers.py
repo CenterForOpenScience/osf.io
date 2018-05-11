@@ -8,7 +8,8 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
                                   JSONAPISerializer, LinksField, ValuesListField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff, BaseAPISerializer)
+                                  WaterbutlerLink, relationship_diff, BaseAPISerializer,
+                                  HideIfWikiDisabled)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -269,10 +270,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'}
     )
 
-    wikis = RelationshipField(
+    wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',

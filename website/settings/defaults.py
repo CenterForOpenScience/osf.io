@@ -417,6 +417,9 @@ class CeleryConfig:
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
     }
 
     med_pri_modules = {
@@ -425,9 +428,6 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
     }
 
     high_pri_modules = {
@@ -495,6 +495,7 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
+        'scripts.add_missing_identifiers_to_preprints',
     )
 
     # Modules that need metrics and release requirements
@@ -1924,4 +1925,21 @@ CUSTOM_CITATIONS = {
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
 
-INSTITUTIONAL_LANDING_FLAG = 'ember_institutional_landing_page'
+INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
+
+FOOTER_LINKS = {
+    'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
+    'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
+    'cookies': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies',
+    'cos': 'https://cos.io',
+    'statusPage': 'https://status.cos.io/',
+    'apiDocs': 'https://developer.osf.io/',
+    'topGuidelines': 'http://cos.io/top/',
+    'rpp': 'https://osf.io/ezcuj/wiki/home/',
+    'rpcb': 'https://osf.io/e81xl/wiki/home/',
+    'twitter': 'http://twitter.com/OSFramework',
+    'facebook': 'https://www.facebook.com/CenterForOpenScience/',
+    'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
+    'github': 'https://www.github.com/centerforopenscience',
+    'googlePlus': 'https://plus.google.com/b/104751442909573665859',
+}

@@ -164,7 +164,6 @@
 
 
     ${self.footer()}
-    <%include file="copyright.mako"/>
         <%!
             import hashlib
 
