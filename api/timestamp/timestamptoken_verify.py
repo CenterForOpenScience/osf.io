@@ -82,7 +82,8 @@ class TimeStampTokenVerifyCheck:
         create_data.provider = provider
         create_data.key_file_name = userKey.key_name
         create_data.path = path
-        create_data.inspection_result_status = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+#        create_data.inspection_result_status = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+        create_data.inspection_result_status = inspection_result_status
         create_data.validation_user = userid
         create_data.validation_date = timezone.now()
         create_data.create_user = userid
@@ -108,13 +109,14 @@ class TimeStampTokenVerifyCheck:
             if provider == 'osfstorage':
                 # ファイル取得
                 baseFileNode = self.get_baseFileNode(file_id)
-                if baseFileNode and not verifyResult:
-                    # ファイルが存在せず、検証結果がない場合
-                    ret = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
-                    verify_result_title = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'TST missing(Unverify)'
-                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider, 
-                                                                            path, ret, userid)
-                elif baseFileNode.is_deleted and not verifyResult:
+#                if baseFileNode and not verifyResult:
+#                    # ファイルが存在せず、検証結果がない場合
+#                    ret = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+#                    verify_result_title = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'TST missing(Unverify)'
+#                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider, 
+#                                                                            path, ret, userid)
+#                elif baseFileNode.is_deleted and not verifyResult:
+                if baseFileNode.is_deleted and not verifyResult:
                     # ファイルが削除されていて検証結果がない場合
                     ret = local.FILE_NOT_EXISTS
                     verify_result_title = local.FILE_NOT_EXISTS_MSG #'FILE missing'
@@ -125,7 +127,8 @@ class TimeStampTokenVerifyCheck:
                     verifyResult.inspection_result_status = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verifyResult.validation_user = userid
                     verifyResult.validation_date = datetime.datetime.now()
-                    ret = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_NO_DATA
+#                    ret = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_NO_DATA
+                    ret = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'FILE missing(Unverify)'
                 elif baseFileNode.is_deleted and verifyResult:
                     # ファイルが削除されていて、検証結果テーブルにレコードが存在する場合
@@ -184,8 +187,8 @@ class TimeStampTokenVerifyCheck:
                                        stdout=subprocess.PIPE)
                 stdout_data, stderr_data = prc.communicate()
                 ret = local.TIME_STAMP_TOKEN_UNCHECKED
-                print(stdout_data.__str__())
-                print(stderr_data.__str__())
+#                print(stdout_data.__str__())
+#                print(stderr_data.__str__())
                 if stdout_data.__str__().find(local.OPENSSL_VERIFY_RESULT_OK) > -1:
                    ret = local.TIME_STAMP_TOKEN_CHECK_SUCCESS
                    verify_result_title = local.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG #'OK'
