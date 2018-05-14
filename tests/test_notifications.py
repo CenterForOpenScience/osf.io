@@ -1478,7 +1478,7 @@ class TestSendEmails(NotificationTestCase):
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
         mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
-                                      node, time_now, None, new_mentions=[node.creator._id], is_creator=(user == node.creator))
+                                      node, time_now, template=None, new_mentions=[node.creator._id], is_creator=(user == node.creator))
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):

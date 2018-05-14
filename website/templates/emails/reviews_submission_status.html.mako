@@ -8,7 +8,7 @@
                 <p>Hello ${recipient.fullname},</p>
                 <p>
                 % if workflow == 'pre-moderation':
-                    Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
+                    Your submission <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>, submitted to ${reviewable.provider.name} has
                     % if is_rejected:
                         not been accepted. Contributors with admin permissions may edit the ${reviewable.provider.preprint_word} and
                         resubmit, at which time it will return to a pending state and be reviewed by a moderator.
