@@ -25,13 +25,12 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     preprint = Preprint.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
-    if preprint.node:
-        status = 'public' if preprint.verified_publishable else 'unavailable'
-        try:
-            update_ezid_metadata_on_change(preprint._id, status=status)
-        except HTTPError as err:
-            sentry.log_exception()
-            sentry.log_message(err.args[0])
+    status = 'public' if preprint.verified_publishable else 'unavailable'
+    try:
+        update_ezid_metadata_on_change(preprint._id, status=status)
+    except HTTPError as err:
+        sentry.log_exception()
+        sentry.log_message(err.args[0])
     if update_share:
         update_preprint_share(preprint, old_subjects, share_type)
 

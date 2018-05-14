@@ -262,6 +262,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if save:
             self.save()
+        self.update_search()
 
     def set_published(self, published, auth, save=False):
         if not self.has_permission(auth.user, 'admin'):
@@ -319,6 +320,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if save:
             self.save()
+        self.update_search()
 
     def set_identifier_values(self, doi, save=False):
         self.set_identifier_value('doi', doi)
@@ -942,6 +944,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         )
         if save:
             self.save()
+        self.update_search()
         return None
 
     def set_description(self, description, auth, save=False):
@@ -968,6 +971,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         )
         if save:
             self.save()
+        self.update_search()
         return None
 
     def can_view(self, auth):
