@@ -39,3 +39,4 @@ from osf.models.maintenance_state import MaintenanceState  # noqa
 from osf.models.banner import ScheduledBanner  # noqa
 from osf.models.quickfiles import QuickFilesNode  # noqa
 from osf.models.action import NodeRequestAction, ReviewAction  # noqa
+from osf.models.storage import ProviderAssetFile  # noqa

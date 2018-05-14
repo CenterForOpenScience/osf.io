@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
     'waffle',
 
     # OSF
@@ -233,6 +234,11 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
+# GOOGLE_APPLICATION_CREDENTIALS env var must be set
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
