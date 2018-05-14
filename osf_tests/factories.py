@@ -597,7 +597,7 @@ class PreprintFactory(DjangoModelFactory):
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
-        instance.node.preprint_article_doi = doi
+        instance.article_doi = doi
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
         user = kwargs.pop('creator', None) or instance.node.creator

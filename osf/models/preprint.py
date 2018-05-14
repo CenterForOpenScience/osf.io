@@ -87,6 +87,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     article_doi = models.CharField(max_length=128,
                                             validators=[validate_doi],
                                             null=True, blank=True)
+    _is_preprint_orphan = models.NullBooleanField(default=False)
+    _has_abandoned_preprint = models.BooleanField(default=False)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
     primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
     # (for legacy preprints), pull off of node
@@ -111,7 +113,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) with supplemental files on {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
+        return '{} preprint (guid={}) {}'.format('published' if self.is_published else 'unpublished', self._id, "with supplemental files on " + self.node.__unicode__() if self.node else None)
 
     @property
     def contributors(self):
@@ -120,24 +122,35 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.is_public and not self.deleted and not self.is_preprint_orphan
+        return self.is_published and self.is_preprint_ready and not self.deleted
 
     @property
     def preprint_doi(self):
         return self.get_identifier_value('doi')
 
     @property
-    def is_preprint_orphan(self):
-        return not self.primary_file or self.primary_file.is_deleted
+    def is_preprint_ready(self):
+        # Copied from node.is_preprint
+        if not self.primary_file_id or not self.is_public:
+            return False
+        if self.primary_file.target == self:
+            return self.has_submitted_preprint
+        else:
+            self._is_preprint_orphan = True
+            return False
 
     @property
-    def _has_abandoned_preprint(self):
-        # TODO does is_published cover this?
-        return not self.is_published
+    def is_preprint_orphan(self):
+        """For v1 compat"""
+        if (not self.is_preprint_ready) and self._is_preprint_orphan:
+            return True
+        if self.primary_file:
+            return self.primary_file.is_deleted
+        return False
 
     @property
     def has_submitted_preprint(self):
-        return self.machine_state == DefaultStates.INITIAL.value
+        return self.machine_state != DefaultStates.INITIAL.value
 
     @property
     def deep_url(self):
@@ -273,7 +286,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         self.is_published = published
         # For legacy preprints, not logging
-        self.is_public = True
+        self.set_privacy('public', log=False, save=False)
 
         if published:
             if not (self.primary_file and self.primary_file.target == self):
@@ -609,7 +622,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         contributor_obj = self.preprintcontributor_set.get(user=contributor)
         contributor.bibliographic = contributor_obj.visible
-        contributor.node_id = self._id
+        contributor.preprint_id = self._id
         contributor_order = list(self.get_preprintcontributor_order())
         contributor.index = contributor_order.index(contributor_obj.pk)
 
@@ -977,10 +990,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     def can_view(self, auth):
         # TODO - need more thinking about is_public and is_published.
         # Possible to have current nodes with is_public = False with a preprint is_published = True
-        if not auth and (not self.is_public or not self.is_published):
+        if not auth and (not self.verified_publishable):
             return False
 
-        return (self.is_published and self.is_public) or (auth.user and self.has_permission(auth.user, 'read'))
+        return (self.verified_publishable) or (auth.user and self.has_permission(auth.user, 'read'))
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -1140,7 +1153,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ):
-            self.is_public = False
+            self.set_privacy('private', log=False, save=False)
 
             # Suspend the flagged user for spam.
             if 'spam_flagged' not in user.system_tags:
@@ -1158,14 +1171,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
             # Make public nodes private from this contributor
             for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                if len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 
-            # Make preprints private fromt his contributor
+            # Make preprints private from this contributor
             for preprint in user.preprints.all():
                 if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                    preprint.is_public = False
-                    preprint.save()
+                    preprint.set_privacy('private', log=False, save=True)
 
     def update_search(self):
         from website import search

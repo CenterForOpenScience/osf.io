@@ -88,17 +88,17 @@ class TestPreprintProperties:
 
     def test_is_preprint_orphan(self, preprint):
         assert preprint.is_preprint_orphan is False
-        preprint.primary_file = None
+        preprint.primary_file.is_deleted = True
+        preprint.save()
         assert preprint.is_preprint_orphan is True
 
-    def test__has_abandoned_preprint(self, preprint):
-        assert preprint._has_abandoned_preprint is False
-        preprint.is_published = False
-        assert preprint._has_abandoned_preprint is True
-
     def test_has_submitted_preprint(self, preprint):
-        assert preprint.has_submitted_preprint is False
         preprint.machine_state = 'initial'
+        preprint.save()
+        assert preprint.has_submitted_preprint is False
+
+        preprint.machine_state = 'pending'
+        preprint.save()
         assert preprint.has_submitted_preprint is True
 
     def test_deep_url(self, preprint):
@@ -583,27 +583,27 @@ class TestPreprintAddContributorRegisteredOrNot:
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
 
-
-class TestContributorAddedSignal:
-
-    # Override disconnected signals from conftest
-    @pytest.fixture(autouse=True)
-    def disconnected_signals(self):
-        return None
-
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, preprint, auth):
-        user = UserFactory()
-        contributors = [{
-            'user': user,
-            'visible': True,
-            'permission': WRITE
-        }]
-        with capture_signals() as mock_signals:
-            preprint.add_contributors(contributors=contributors, auth=auth)
-            preprint.save()
-            assert preprint.is_contributor(user)
-            assert mock_signals.signals_sent() == set([contributor_added])
+#
+# class TestContributorAddedSignal:
+#
+#     # Override disconnected signals from conftest
+#     @pytest.fixture(autouse=True)
+#     def disconnected_signals(self):
+#         return None
+#
+#     @mock.patch('website.project.views.contributor.mails.send_mail')
+#     def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, preprint, auth):
+#         user = UserFactory()
+#         contributors = [{
+#             'user': user,
+#             'visible': True,
+#             'permission': WRITE
+#         }]
+#         with capture_signals() as mock_signals:
+#             preprint.add_contributors(contributors=contributors, auth=auth)
+#             preprint.save()
+#             assert preprint.is_contributor(user)
+#             assert mock_signals.signals_sent() == set([contributor_added])
 
 
 class TestContributorVisibility:

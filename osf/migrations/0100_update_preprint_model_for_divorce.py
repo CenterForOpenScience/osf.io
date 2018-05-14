@@ -80,6 +80,16 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='preprint',
+            name='_has_abandoned_preprint',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='_is_preprint_orphan',
+            field=models.NullBooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='preprint',
             name='date_last_reported',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True),
         ),

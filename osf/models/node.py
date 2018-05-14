@@ -2459,6 +2459,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 
+            # Make preprints private from this contributor
+            for preprint in user.preprints.all():
+                if len(preprint.contributors) == 1 and preprint.is_public:
+                    preprint.set_privacy('private', log=False, save=True)
+
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
