@@ -55,6 +55,33 @@ def assert_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
+def assert_preprint_logs(log_action, preprint_key, index=-1):
+    """A decorator to ensure a log is added during a unit test.
+    :param str log_action: PreprintLog action
+    :param str preprint_key: key to get Preprint instance from self
+    :param int index: list index of log to check against
+
+    Example usage:
+    @assert_logs(PreprintLog.UPDATED_FIELDS, 'preprint')
+    def test_update_preprint(self):
+        self.preprint.update({'title': 'New Title'}, auth=self.auth)
+
+    TODO: extend this decorator to check log param correctness?
+    """
+    def outer_wrapper(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            preprint = getattr(self, preprint_key)
+            last_log = preprint.logs.latest()
+            func(self, *args, **kwargs)
+            preprint.reload()
+            new_log = preprint.logs.order_by('-created')[-index - 1]
+            assert_not_equal(last_log._id, new_log._id)
+            assert_equal(new_log.action, log_action)
+            preprint.save()
+        return wrapper
+    return outer_wrapper
+
 def assert_not_logs(log_action, node_key, index=-1):
     def outer_wrapper(func):
         @functools.wraps(func)

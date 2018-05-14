@@ -24,7 +24,6 @@ from osf_tests.factories import (
     TagFactory,
     SubjectFactory,
     UnregUserFactory,
-    SessionFactory,
     PreprintProviderFactory
 )
 
@@ -592,19 +591,19 @@ class TestContributorAddedSignal:
     def disconnected_signals(self):
         return None
 
-    # @mock.patch('website.project.views.contributor.mails.send_mail')
-    # def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, preprint, auth):
-    #     user = UserFactory()
-    #     contributors = [{
-    #         'user': user,
-    #         'visible': True,
-    #         'permission': WRITE
-    #     }]
-    #     with capture_signals() as mock_signals:
-    #         preprint.add_contributors(contributors=contributors, auth=auth)
-    #         preprint.save()
-    #         assert preprint.is_contributor(user)
-    #         assert mock_signals.signals_sent() == set([contributor_added])
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, preprint, auth):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permission': WRITE
+        }]
+        with capture_signals() as mock_signals:
+            preprint.add_contributors(contributors=contributors, auth=auth)
+            preprint.save()
+            assert preprint.is_contributor(user)
+            assert mock_signals.signals_sent() == set([contributor_added])
 
 
 class TestContributorVisibility:
@@ -1323,208 +1322,3 @@ class TestPreprintUpdate:
         preprint.set_description(new_desc, auth=auth, save=True)
         # A new log is not created
         assert preprint.logs.count() == original_n_logs + 1
-
-class TestOnPreprintUpdate:
-
-    @pytest.fixture(autouse=True)
-    def session(self, user, request_context):
-        s = SessionFactory(user=user)
-        set_session(s)
-        return s
-
-    def teardown_method(self, method):
-        handlers.celery_before_request()
-
-    @mock.patch('osf.models.preprint.enqueue_task')
-    def test_enqueue_called(self, enqueue_task, preprint, user, request_context):
-        preprint.title = 'A new title'
-        preprint.save()
-
-        (task, ) = enqueue_task.call_args[0]
-
-        assert task.task == 'website.preprints.tasks.on_preprint_updated'
-        assert task.args[0] == preprint._id
-        assert task.args[1] == user._id
-        assert task.args[2] is False
-        assert 'title' in task.args[3]
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_updates_share(self, requests, preprint, user):
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-
-        assert requests.post.called
-        assert kwargs['headers']['Authorization'] == 'Bearer Token'
-        assert graph[0]['uri'] == '{}{}/'.format(settings.DOMAIN, preprint._id)
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_update_share_correctly_for_projects(self, requests, preprint, user, request_context):
-        cases = [{
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
-        }]
-
-        for case in cases:
-            for attr, value in case['attrs'].items():
-                setattr(preprint, attr, value)
-            preprint.save()
-
-            on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-
-            kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['data']['attributes']['data']['@graph']
-            assert graph[1]['is_deleted'] == case['is_deleted']
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations(self, requests, registration, user, request_context):
-        cases = [{
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': False, 'is_deleted': False}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': True}
-        }, {
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False}
-        }]
-
-        for case in cases:
-            for attr, value in case['attrs'].items():
-                setattr(registration, attr, value)
-            registration.save()
-
-            on_preprint_updated(registration._id, user._id, False, {'is_public'})
-
-            assert registration.is_registration
-            kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-            assert payload['is_deleted'] == case['is_deleted']
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_update_share_correctly_for_projects_with_qa_tags(self, requests, preprint, user, request_context):
-        preprint.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is True
-
-        preprint.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations_with_qa_tags(self, requests, registration, user, request_context):
-        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_preprint_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is True
-
-        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-        on_preprint_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, preprint, user, request_context):
-        preprint.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
-        preprint.save()
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is True
-
-        preprint.title = 'Not a qa title'
-        preprint.save()
-        assert preprint.title not in settings.DO_NOT_INDEX_LIST['titles']
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
-        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
-        registration.save()
-        on_preprint_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is True
-
-        registration.title = 'Not a qa title'
-        registration.save()
-        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
-        on_preprint_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', None)
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', None)
-    @mock.patch('website.preprints.tasks.requests')
-    def test_skips_no_settings(self, requests, preprint, user, request_context):
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        assert requests.post.called is False
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
-    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_call_async_update_on_500_failure(self, requests, mock_async, preprint, user, request_context):
-        requests.post.return_value = MockShareResponse(501)
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        assert mock_async.called
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.preprints.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
-    @mock.patch('website.preprints.tasks.send_desk_share_error')
-    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail, preprint, user, request_context):
-        requests.post.return_value = MockShareResponse(400)
-        on_preprint_updated(preprint._id, user._id, False, {'is_public'})
-        assert mock_mail.called
-        assert not mock_async.called

@@ -120,7 +120,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     @property
     def verified_publishable(self):
-        return self.is_published and not self.deleted
+        return self.is_published and self.is_public and not self.deleted and not self.is_preprint_orphan
 
     @property
     def preprint_doi(self):
@@ -128,8 +128,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     @property
     def is_preprint_orphan(self):
-        # TODO - is this covering it? There was also an _is_preprint_orphan field on the node.
-        return not self.primary_file
+        return not self.primary_file or self.primary_file.is_deleted
 
     @property
     def _has_abandoned_preprint(self):
@@ -272,6 +271,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             raise ValueError('Cannot unpublish preprint.')
 
         self.is_published = published
+        # For legacy preprints, not logging
+        self.is_public = True
 
         if published:
             if not (self.primary_file and self.primary_file.target == self):
@@ -287,7 +288,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.date_last_transitioned = self.date_published
 
             self.add_preprint_log(
-                action=PreprintLog.CREATED,
+                action=PreprintLog.PUBLISHED,
                 params={
                     'preprint': self._id
                 },
@@ -297,11 +298,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
             # This should be called after all fields for EZID metadta have been set
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
-
             self._send_preprint_confirmation(auth)
 
         if save:
-            self.node.save()
             self.save()
 
     def set_preprint_license(self, license_detail, auth, save=False):
@@ -336,6 +335,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
+
+        if saved_fields:
+            self.on_update(first_save, saved_fields)
 
         if first_save:
             self.update_group_permissions()
@@ -476,7 +478,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 )
             if save:
                 self.save()
-
             if self._id:
                 preprint_signals.contributor_added.send(self, user=contributor, auth=auth, email_template=send_email)
 
@@ -750,6 +751,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             auth=auth,
             save=False,
         )
+        self.update_search()
         if save:
             self.save()
 
@@ -891,7 +893,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                     'User {0} not in contributors'.format(user.fullname)
                 )
             if not self.get_group(permission).user_set.filter(id=user.id).exists():
-                self.set_permissions(user, permission, save=save)
+                self.set_permissions(user, permission)
                 permissions_changed = {
                     user._id: permission
                 }
@@ -902,13 +904,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                         'contributors': permissions_changed,
                     },
                     auth=auth,
-                    save=save
+                    save=False
                 )
                 with transaction.atomic():
                     if ['read'] in permissions_changed.values():
                         preprint_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
+
+        if save:
+            self.save()
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
@@ -1053,11 +1058,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-
-        if self.primary_file and self.is_published:
-            # avoid circular imports
-            from website.preprints.tasks import on_preprint_updated
-            enqueue_task(on_preprint_updated.s(self._id))
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

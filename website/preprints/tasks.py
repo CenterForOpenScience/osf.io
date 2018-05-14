@@ -110,22 +110,16 @@ def format_preprint(preprint, share_type, old_subjects=None):
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
     preprint_graph = GraphNode(share_type, **{
-        'title': preprint.node.title,
-        'description': preprint.node.description or '',
+        'title': preprint.title,
+        'description': preprint.description or '',
         'is_deleted': (
             not preprint.verified_publishable or
-            preprint.node.tags.filter(name='qatest').exists()
+            preprint.tags.filter(name='qatest').exists() or
+            (preprint.deleted or False)
         ),
-        # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
-        # the preprint's date modified but will bump the node's date_modified.
-        # We have to send the latest date to SHARE to actually get the result to be updated.
-        # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
-        # because it looks like a race condition that arose from preprints being resent to SHARE on
-        # every step of preprint creation.
-        'date_updated': max(preprint.modified, preprint.node.modified).isoformat(),
+        'date_updated': preprint.modified.isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
-
     to_visit = [
         preprint_graph,
         GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
@@ -145,7 +139,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.node.tags.values_list('name', flat=True) if tag
+        for tag in preprint.tags.values_list('name', flat=True) if tag
     ]
 
     current_subjects = [
@@ -158,7 +152,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     ]
     preprint_graph.attrs['subjects'] = current_subjects + deleted_subjects
 
-    to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
+    to_visit.extend(format_contributor(preprint_graph, user, preprint.get_visible(user), i) for i, user in enumerate(preprint.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))
                     for institution in preprint.node.affiliated_institutions.values_list('name', flat=True))
 
