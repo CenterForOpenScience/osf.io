@@ -131,7 +131,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         connection = client.connect_from_settings(self)
         dataverse = client.get_dataverse(connection, self.dataverse_alias)
 
-        datasets = client.get_datasets(dataverse)
+        try:
+            datasets = client.get_datasets(dataverse)
+        except Exception as e:
+            raise HTTPError(code=e.code, message=e.message)
+
         return [
             {
                 'name': dataset.title,

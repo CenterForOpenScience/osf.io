@@ -153,6 +153,7 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def dataverse_get_datasets(node_addon, **kwargs):
     """Get list of datasets from provided Dataverse alias"""
+    node_addon.dataverse_alias = request.json.get('alias')
     return {'alias': node_addon.dataverse_alias, 'datasets': node_addon.get_folders()}, http.OK
 
 ## Crud ##
