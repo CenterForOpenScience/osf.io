@@ -25,6 +25,7 @@ from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
+from osf.models import Preprint
 from osf.models import QuickFilesNode
 from osf.utils.sanitize import unescape_entities
 from website import settings
@@ -572,9 +573,7 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.target.tags.all().values_list('name', flat=True))
     ) or any(substring in file_.target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    # if not file_.name or not file_.target.is_public or delete or file_.target.is_deleted or file_.target.archiving or file_node_is_qa:
-    if not file_.name or not file_.target.is_public or delete or file_node_is_qa:
-
+    if not file_.name or not file_.target.is_public or delete or file_node_is_qa or getattr(file_.target, 'is_deleted', False) or getattr(file_.target, 'deleted', None) or getattr(file_.target, 'archiving', False):
         client().delete(
             index=index,
             doc_type='file',
