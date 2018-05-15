@@ -26,9 +26,8 @@ def add_identifiers_to_preprints(dry_run=True):
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
 
         if not dry_run:
-            doi_client_response = request_identifiers(preprint)
-            id_dict = parse_identifiers(doi_client_response)
-            preprint.set_identifier_values(doi=id_dict['doi'])
+            identifiers = request_identifiers(preprint)
+            preprint.set_identifier_values(doi=identifiers['doi'])
             preprint.save()
 
             doi = preprint.get_identifier('doi')

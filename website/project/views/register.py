@@ -21,7 +21,6 @@ from website.project.decorators import (
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
-from website.identifiers.utils import build_doi_metadata
 from osf.models import Identifier, MetaSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
@@ -34,7 +33,7 @@ from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
-from website.identifiers.client import EzidClient
+from website.identifiers.utils import get_doi_client
 
 from .node import _view_project
 
@@ -216,8 +215,9 @@ def project_before_register(auth, node, **kwargs):
 
 def osf_admin_change_status_identifier(node, status):
     if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = build_doi_metadata(node)
-        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        client = get_doi_client(node)
+        doi = client.build_doi(node)
+        metadata = client.build_metadata(node)
         client.change_status_identifier(status, doi, metadata)
 
 

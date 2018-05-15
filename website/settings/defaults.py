@@ -345,25 +345,57 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
-# Set which client to use for which type of object
-PREPRINT_DOI_CLIENT = 'crossref'  # set to 'ezid' to use old ezid client
-NODE_DOI_CLIENT = 'ezid'
+####################
+#   Identifiers   #
+###################
 
-# Test EZID identifier namespaces
+DOI_URL_PREFIX = 'https://dx.doi.org/'
+
+# General Format for DOIs
+DOI_FORMAT = '{namespace}osf.io/{guid}'
+
+########
+# EZID #
+########
 EZID_DOI_NAMESPACE = 'doi:10.5072'
 EZID_ARK_NAMESPACE = 'ark:99999'
-
-# For creating DOIs and ARKs
 EZID_USERNAME = None
 EZID_PASSWORD = None
 
+
+############
+# Datacite #
+############
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_URL = None
+DATACITE_PREFIX = '10.17605'
+DATACITE_DOI_NAMESPACE = '10.5072/FK2'
+
+# metadata
+DATACITE_NAMESPACE = 'http://datacite.org/schema/kernel-4'
+XSI = 'http://www.w3.org/2001/XMLSchema-instance'
+DATACITE_SCHEMA_LOCATION = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
+DATACITE_SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
+
+
+############
+# CrossRef #
+############
 CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
+
+# metadata
 CROSSREF_DEPOSIT_URL = None
 CROSSREF_DEPOSITOR_EMAIL = 'None'  # changeme in local.py
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
+CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
+CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
+CROSSREF_SCHEMA_VERSION = '4.4.1'
+JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
+CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
 
-# Format for DOIs and ARKs
-DOI_FORMAT = '{namespace}/FK2osf.io/{guid}'
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None

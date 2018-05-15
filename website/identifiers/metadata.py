@@ -8,30 +8,13 @@ import lxml.builder
 from website import settings
 
 
-# datacite metadata settings
-NAMESPACE = 'http://datacite.org/schema/kernel-4'
-XSI = 'http://www.w3.org/2001/XMLSchema-instance'
-SCHEMA_LOCATION = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
 E = lxml.builder.ElementMaker(nsmap={
-    None: NAMESPACE,
-    'xsi': XSI},
+    None: settings.DATACITE_NAMESPACE,
+    'xsi': settings.XSI},
 )
+
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
-SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
-
-DOI_URL_PREFIX = 'https://dx.doi.org/'
-
-# CrossRef metadata settings
-CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
-CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
-CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
-CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
-CROSSREF_SCHEMA_VERSION = '4.4.1'
-JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
-
-CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
-
 
 # From https://stackoverflow.com/a/19016117
 # lxml does not accept strings with control characters
@@ -59,7 +42,7 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
         E.publicationYear(str(publication_year)),
     )
     # set xsi:schemaLocation
-    root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
+    root.attrib['{%s}schemaLocation' % settings.XSI] = settings.DATACITE_SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)
 
 
@@ -105,7 +88,7 @@ def datacite_format_creators(preprint):
 
 
 def datacite_format_subjects(preprint):
-    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
+    return [E.subject(subject, subjectScheme=settings.DATACITE_SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
 
 
 def crossref_format_contributors(element, preprint):
@@ -148,15 +131,15 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
         return ''
 
     element = lxml.builder.ElementMaker(nsmap={
-        None: CROSSREF_NAMESPACE,
-        'xsi': XSI},
+        None: settings.CROSSREF_NAMESPACE,
+        'xsi': settings.XSI},
     )
 
     head = element.head(
         element.doi_batch_id(preprint._id),  # TODO -- CrossRef has said they don't care about this field, is this OK?
         element.timestamp('{}'.format(int(time.time()))),
         element.depositor(
-            element.depositor_name(CROSSREF_DEPOSITOR_NAME),
+            element.depositor_name(settings.CROSSREF_DEPOSITOR_NAME),
             element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
         ),
         element.registrant(preprint.provider.name)  # TODO - confirm provider name is desired
@@ -172,13 +155,13 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
     )
 
     if preprint.node.description:
-        posted_content.append(element.abstract(element.p(preprint.node.description), xmlns=JATS_NAMESPACE))
+        posted_content.append(element.abstract(element.p(preprint.node.description), xmlns=settings.JATS_NAMESPACE))
 
     if preprint.license and preprint.license.node_license.url:
         posted_content.append(
             element.program(
                 element.license_ref(preprint.license.node_license.url, start_date=preprint.date_published.strftime('%Y-%m-%d')),
-                xmlns=CROSSREF_ACCESS_INDICATORS
+                xmlns=settings.CROSSREF_ACCESS_INDICATORS
             )
         )
 
@@ -190,7 +173,7 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
                         preprint.node.preprint_article_doi,
                         **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
                     ),
-                    xmlns=CROSSREF_RELATIONS
+                    xmlns=settings.CROSSREF_RELATIONS
                 )
             )
         )
@@ -204,11 +187,11 @@ def crossref_metadata_for_preprint(preprint, doi, pretty_print=False, **kwargs):
     root = element.doi_batch(
         head,
         element.body(posted_content),
-        version=CROSSREF_SCHEMA_VERSION
+        version=settings.CROSSREF_SCHEMA_VERSION
     )
 
     # set xsi:schemaLocation
-    root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
+    root.attrib['{%s}schemaLocation' % settings.XSI] = settings.CROSSREF_SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)
 
 
@@ -241,7 +224,7 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         root.append(E.rightsList(E.rights(preprint.license.name)))
 
     if preprint.article_doi:
-        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(settings.DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
     # set xsi:schemaLocation
-    root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
+    root.attrib['{%s}schemaLocation' % settings.XSI] = settings.DATACITE_SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)

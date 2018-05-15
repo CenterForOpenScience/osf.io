@@ -15,6 +15,7 @@ from website import settings
 class ParseCrossRefConfirmation(JSONAPIBaseView):
     # This view goes under the _/ namespace
     view_name = 'parse_crossref_confirmation_email'
+    view_category = 'identifiers'
 
     permission_classes = (
         base_permissions.TokenHasScope,

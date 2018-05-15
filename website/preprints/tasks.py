@@ -12,7 +12,7 @@ from framework import sentry
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
 from website.identifiers.tasks import update_doi_metadata_on_change
-from website.identifiers.utils import request_identifiers, parse_identifiers
+from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -176,11 +176,10 @@ def format_preprint(preprint, share_type, old_subjects=None):
 def get_and_set_preprint_identifiers(preprint_id):
     PreprintService = apps.get_model('osf.PreprintService')
     preprint = PreprintService.load(preprint_id)
-    doi_client_response = request_identifiers(preprint)
-    if doi_client_response is None:
+    identifiers = request_identifiers(preprint)
+    if identifiers is None:
         return
-    id_dict = parse_identifiers(doi_client_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], save=True)
+    preprint.set_identifier_values(doi=identifiers['doi'], save=True)
 
 
 def send_desk_share_preprint_error(preprint, resp, retries):
