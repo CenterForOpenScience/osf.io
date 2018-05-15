@@ -25,7 +25,6 @@ from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
-from osf.models import Preprint
 from osf.models import QuickFilesNode
 from osf.utils.sanitize import unescape_entities
 from website import settings

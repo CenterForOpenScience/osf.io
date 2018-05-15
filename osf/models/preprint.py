@@ -8,6 +8,7 @@ from django.apps import apps
 from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
 from framework.auth import Auth
@@ -105,14 +106,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     class Meta:
         permissions = (
-            ('osf_admin_view_preprint', 'Can view preprint service details in the admin app.'),
+            ('osf_admin_view_preprint', 'Can view preprint details in the admin app.'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) {}'.format('published' if self.is_published else 'unpublished', self._id, "with supplemental files on " + self.node.__unicode__() if self.node else None)
+        return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, " with supplemental files on " + self.node.__unicode__() if self.node else '')
 
     @property
     def contributors(self):
@@ -194,7 +195,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         """
         if not user:
             return False
-        return user.has_perm(permission + '_preprint', self)
+        try:
+            return self.get_group(permission).user_set.filter(id=user.id).exists()
+        except Group.DoesNotExist:
+            return False
 
     def set_permissions(self, user, permission, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin

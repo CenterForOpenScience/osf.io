@@ -12,7 +12,6 @@ from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf.utils.permissions import READ, WRITE, ADMIN
 from .utils import assert_datetime_equal
-from api_tests.utils import disconnected_from_listeners
 
 from osf_tests.factories import (
     ProjectFactory,
