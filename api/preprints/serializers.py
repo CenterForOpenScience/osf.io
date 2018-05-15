@@ -254,7 +254,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if recently_published:
             for author in preprint.node.contributors:
                 if author != auth.user:
-                    project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
+                    project_signals.contributor_added.send(preprint, contributor=author, auth=auth, email_template='preprint')
 
         return preprint
 

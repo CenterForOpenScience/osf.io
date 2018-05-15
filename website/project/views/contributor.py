@@ -535,9 +535,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and \
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
-
+    if contributor.is_registered:
         mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
         preprint_provider = None
         logo = None
@@ -550,14 +548,16 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
-        elif email_template == 'access_request':
-            mimetype = 'html'
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
-        elif node.is_preprint:
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
-            logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+            if not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)):
+                if email_template == 'access_request':
+                    mimetype = 'html'
+                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
+                elif node.is_preprint:
+                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+                    logo = settings.OSF_PREPRINTS_LOGO
+                else:
+                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
@@ -598,7 +598,7 @@ def find_preprint_provider(node):
     """
 
     try:
-        preprint = Preprint.objects.get(node=node)
+        preprint = node if isinstance(node, Preprint) else Preprint.objects.get(node=node)
         provider = preprint.provider
         email_template = 'osf' if provider._id == 'osf' else 'branded'
         return email_template, provider

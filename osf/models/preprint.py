@@ -40,7 +40,6 @@ from addons.osfstorage.models import OsfStorageFolder
 
 from framework.auth.core import get_user
 from framework.sentry import log_exception
-from website.preprints import signals as preprint_signals
 from osf.exceptions import (
     PreprintStateError, ValidationValueError, InvalidTagError, TagNotFoundError
 )
@@ -181,7 +180,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
-        return web_url_for(view_name, pid=self._primary_key,
+        return web_url_for(view_name, pid=self._id,
                            _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
@@ -493,8 +492,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 )
             if save:
                 self.save()
-            if self._id:
-                preprint_signals.contributor_added.send(self, user=contributor, auth=auth, email_template=send_email)
 
             self.update_search()
             return contrib_to_add, True
@@ -715,8 +712,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         self.save()
         self.update_search()
-        # send signal to remove this user from preprint subscriptions
-        preprint_signals.contributor_removed.send(self, user=contributor)
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -881,10 +876,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             if save:
                 self.save()
 
-        with transaction.atomic():
-            if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                preprint_signals.write_permissions_revoked.send(self)
-
     # TODO: optimize me
     def update_contributor(self, user, permission, visible, auth, save=False):
         """ TODO: this method should be updated as a replacement for the main loop of
@@ -921,9 +912,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                     auth=auth,
                     save=False
                 )
-                with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
-                        preprint_signals.write_permissions_revoked.send(self)
+
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
 
@@ -1138,7 +1127,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         log = self.add_preprint_log(
             action=PreprintLog.MADE_PRIVATE,
             params={
-                'preprint': self._primary_key,
+                'preprint': self._id,
             },
             auth=None,
             save=False
@@ -1276,13 +1265,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.add_preprint_log(
                 action=action,
                 params={
-                    'preprint': self._primary_key,
+                    'preprint': self._id,
                 },
                 auth=auth,
                 save=False,
             )
         if save:
             self.save()
-        if auth and permissions == 'public':
-            preprint_signals.privacy_set_public.send(auth.user, preprint=self)
+
         return True

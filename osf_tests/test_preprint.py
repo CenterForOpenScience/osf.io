@@ -7,12 +7,11 @@ import pytz
 
 from framework.exceptions import PermissionsError
 from website import settings
-from website.preprints.signals import contributor_removed, contributor_added
 from framework.auth.core import Auth
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf.utils.permissions import READ, WRITE, ADMIN
-from .utils import capture_signals, assert_datetime_equal
+from .utils import assert_datetime_equal
 from api_tests.utils import disconnected_from_listeners
 
 from osf_tests.factories import (
@@ -433,8 +432,7 @@ class TestContributorMethods:
         assert user2 in preprint.contributors
         assert preprint.has_permission(user2, WRITE)
         # The user is removed
-        with disconnected_from_listeners(contributor_removed):
-            preprint.remove_contributor(auth=auth, contributor=user2)
+        preprint.remove_contributor(auth=auth, contributor=user2)
         preprint.reload()
 
         assert user2 not in preprint.contributors
@@ -457,8 +455,7 @@ class TestContributorMethods:
         assert preprint.has_permission(user1, WRITE)
         assert preprint.has_permission(user2, WRITE)
 
-        with disconnected_from_listeners(contributor_removed):
-            preprint.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        preprint.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
         preprint.reload()
 
         assert user1 not in preprint.contributors
@@ -582,28 +579,6 @@ class TestPreprintAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
-
-#
-# class TestContributorAddedSignal:
-#
-#     # Override disconnected signals from conftest
-#     @pytest.fixture(autouse=True)
-#     def disconnected_signals(self):
-#         return None
-#
-#     @mock.patch('website.project.views.contributor.mails.send_mail')
-#     def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, preprint, auth):
-#         user = UserFactory()
-#         contributors = [{
-#             'user': user,
-#             'visible': True,
-#             'permission': WRITE
-#         }]
-#         with capture_signals() as mock_signals:
-#             preprint.add_contributors(contributors=contributors, auth=auth)
-#             preprint.save()
-#             assert preprint.is_contributor(user)
-#             assert mock_signals.signals_sent() == set([contributor_added])
 
 
 class TestContributorVisibility:

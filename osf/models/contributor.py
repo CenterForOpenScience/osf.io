@@ -41,6 +41,7 @@ class AbstractBaseContributor(models.Model):
             return 'write'
         return 'read'
 
+
 class Contributor(AbstractBaseContributor):
     node = models.ForeignKey('AbstractNode', on_delete=models.CASCADE)
 
@@ -53,6 +54,7 @@ class Contributor(AbstractBaseContributor):
         # Make contributors orderable
         # NOTE: Adds an _order column
         order_with_respect_to = 'node'
+
 
 class PreprintContributor(models.Model):
     objects = IncludeManager()
@@ -81,11 +83,13 @@ class PreprintContributor(models.Model):
         # NOTE: Adds an _order column
         order_with_respect_to = 'preprint'
 
+
 class InstitutionalContributor(AbstractBaseContributor):
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'institution')
+
 
 class RecentlyAddedContributor(models.Model):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)  # the user who added the contributor
