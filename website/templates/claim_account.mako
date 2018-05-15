@@ -90,7 +90,7 @@
             <!-- Terms of Service and Privacy Policy agreement -->
             <div class="form-group">
                     <input type="checkbox" data-bind="checked: acceptedTermsOfService" name="accepted_terms_of_service">
-                    <label style="margin-right: 15px">I have read and agree to the <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>.</label>
+                    <label style="margin-right: 15px">I have read and agree to the <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>.</label>
                     <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
             </div>
 

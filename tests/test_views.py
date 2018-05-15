@@ -292,6 +292,25 @@ class TestProjectViews(OsfTestCase):
         self.project2.add_contributor(self.user2, auth=Auth(self.user1))
         self.project2.save()
 
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_tos_status_message(self, mock_push_status_message):
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_true(mock_push_status_message.called)
+        assert_equal('terms_of_service', mock_push_status_message.mock_calls[0][2]['id'])
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_no_tos_status_message(self, mock_push_status_message):
+        self.user1.accepted_terms_of_service = timezone.now()
+        self.user1.save()
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_false(mock_push_status_message.called)
+
     def test_node_setting_with_multiple_matched_institution_email_domains(self):
         # User has alternate emails matching more than one institution's email domains
         inst1 = InstitutionFactory(email_domains=['foo.bar'])
