@@ -165,6 +165,19 @@
                   </ul>
               </div>
           {% endif %}
+          {% if perms.osf.view_asset_files %}
+              <li><a role="button" data-toggle="collapse" href="#collapseAssetFiles">
+                  <i class='fa fa-caret-down'></i> Provider Assets
+              </a></li>
+              <div class="collapse" id="collapseAssetFiles">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_asset_files %}
+                      <li><a href="{% url 'asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_conference %}
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
