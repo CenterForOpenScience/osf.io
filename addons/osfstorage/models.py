@@ -149,7 +149,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def is_preprint_primary(self):
-        return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint', None)
+        return getattr(self.target, 'primary_file', None) == self and not getattr(self.target, '_has_abandoned_preprint', None)
 
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
@@ -416,9 +416,9 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
     def is_preprint_primary(self):
-        if hasattr(self.target, 'preprint_file') and self.target.preprint_file:
+        if hasattr(self.target, 'primary_file') and self.target.primary_file:
             for child in self.children.all():
-                if getattr(child.target, 'preprint_file', None):
+                if getattr(child.target, 'primary_file', None):
                     if child.is_preprint_primary:
                         return True
         return False
