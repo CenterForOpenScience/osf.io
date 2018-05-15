@@ -308,6 +308,40 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
+    def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
+        res = app.get(url_public)
+        assert res.json['data']['attributes']['templated_by_count'] == 0
+        ProjectFactory(title='template copy', template_node=project_public, creator=user)
+        project_public.reload()
+        res = app.get(url_public)
+        assert res.json['data']['attributes']['templated_by_count'] == 1
+
+    def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
+        url = url_public + '?related_counts=true'
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        RegistrationFactory(project=project_private, creator=user)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

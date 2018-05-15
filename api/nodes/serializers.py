@@ -473,7 +473,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return count
 
     def get_linked_by_nodes_count(self, obj):
-        return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration').select_related('parent').exclude(parent__type='osf.collection').count()
+        return NodeRelation.objects.filter(child=obj, is_node_link=True).select_related('parent').exclude(parent__type='osf.collection').exclude(parent__type='osf.registration').count()
 
     def get_linked_by_registrations_count(self, obj):
         return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration').select_related('parent').exclude(parent__type='osf.collection').count()
