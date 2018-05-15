@@ -16,6 +16,7 @@ urlpatterns = [
                 url(r'^', include('waffle.urls')),
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
+                url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
             ],
         )
         ),

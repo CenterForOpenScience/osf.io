@@ -976,9 +976,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_set_node_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user, project_public,
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
+    def test_set_node_private_updates_doi(
+            self, mock_update_doi_metadata, app, user, project_public,
             url_public, make_node_payload):
 
         IdentifierFactory(referent=project_public, category='doi')
@@ -991,12 +991,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_ezid_metadata.assert_called_with(
+        mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_set_node_with_preprint_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user,
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
+    def test_set_node_with_preprint_private_updates_doi(
+            self, mock_update_doi_metadata, app, user,
             project_public, url_public, make_node_payload):
         target_object = PreprintFactory(project=project_public)
 
@@ -1009,7 +1009,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_ezid_metadata.assert_called_with(
+        mock_update_doi_metadata.assert_called_with(
             target_object._id, status='unavailable')
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
@@ -1128,25 +1128,25 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Bookmark collections are collections, so a 404 is returned
         assert res.status_code == 404
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_preprint_calls_preprint_update_status(
-            self, mock_update_ezid_metadata_on_change, app, user,
+            self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
         PreprintFactory(project=project_public)
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_ezid_metadata_on_change.called
+        assert mock_update_doi_metadata_on_change.called
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(
-            self, mock_update_ezid_metadata_on_change, app, user,
+            self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
         IdentifierFactory(referent=project_public, category='doi')
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_ezid_metadata_on_change.called
+        assert mock_update_doi_metadata_on_change.called
 
     def test_deletes_public_node_succeeds_as_owner(
             self, app, user, project_public, url_public):

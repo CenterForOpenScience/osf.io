@@ -15,7 +15,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import EZID_FORMAT, DOI_NAMESPACE
+from website.settings import DATACITE_DOI_FORMAT, DATACITE_DOI_NAMESPACE
 
 
 def build_preprint_update_payload(
@@ -125,8 +125,8 @@ class TestPreprintDetail:
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
+        expected_doi = DATACITE_DOI_FORMAT.format(
+            namespace=DATACITE_DOI_NAMESPACE,
             guid=unpublished_preprint._id).replace(
             'doi:',
             '').upper()
@@ -136,8 +136,8 @@ class TestPreprintDetail:
 
     def test_published_preprint_doi_link_returned_after_datacite_request(
             self, app, user, preprint, url):
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
+        expected_doi = DATACITE_DOI_FORMAT.format(
+            namespace=DATACITE_DOI_NAMESPACE,
             guid=preprint._id).replace(
             'doi:',
             '')
@@ -400,8 +400,8 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
+    def test_update_tags(self, mock_update_doi_metadata, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -424,11 +424,11 @@ class TestPreprintUpdate:
                     'name',
                     flat=True))
         ) == new_tags
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
     def test_update_contributors(
-            self, mock_update_ezid, app, user, preprint, url):
+            self, mock_update_doi_metadata, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
@@ -458,7 +458,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 

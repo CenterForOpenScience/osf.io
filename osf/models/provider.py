@@ -86,6 +86,7 @@ class PreprintProvider(AbstractProvider):
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
     access_token = EncryptedTextField(null=True, blank=True)
+    doi_prefix = models.CharField(blank=True, max_length=32)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

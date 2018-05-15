@@ -22,7 +22,6 @@ from osf.utils import permissions
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
-from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
@@ -317,15 +316,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.preprint.set_published(True, auth=self.auth, save=True)
 
         assert mock_get_and_set_identifiers.called
-
-    def test_get_doi_for_preprint(self):
-        new_provider = PreprintProviderFactory()
-        preprint = PreprintFactory(provider=new_provider)
-        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
-
-        doi, metadata = get_doi_and_metadata_for_object(preprint)
-
-        assert doi == ideal_doi
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
@@ -728,6 +718,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         update_preprint_share(self.preprint)
         assert not mock_async.called
         assert mock_mail.called
+
 
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):

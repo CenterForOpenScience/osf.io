@@ -39,6 +39,7 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)
     text = models.TextField(null=False)
+    url = models.URLField(blank=True)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
     objects = NodeLicenseManager()

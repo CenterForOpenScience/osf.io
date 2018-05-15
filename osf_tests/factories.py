@@ -548,15 +548,22 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value = {
-        'response': {
-            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            )
-        },
+    from website.identifiers.utils import get_doi_client
+    from website.identifiers.clients.ezid_client import EzidClient
+    client = get_doi_client(preprint)
+
+    if isinstance(client, EzidClient):
+        doi_value = settings.EZID_DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
+        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
+        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
+    else:
+        return_value = {'doi': settings.EZID_DOI_FORMAT.format(namespace=preprint.provider.doi_prefix, guid=preprint._id)}
+
+    doi_client_return_value = {
+        'response': return_value,
         'already_exists': False
     }
-    id_dict = parse_identifiers(ezid_return_value)
+    id_dict = parse_identifiers(doi_client_return_value)
     preprint.set_identifier_values(doi=id_dict['doi'])
 
 

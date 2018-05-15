@@ -165,7 +165,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     log=True
                 )
 
-            # This should be called after all fields for EZID metadta have been set
+            # This should be called after all fields for preprint metadata have been set
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
 
             self._send_preprint_confirmation(auth)
