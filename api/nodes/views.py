@@ -907,6 +907,53 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         return res
 
 
+class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-linked-by-nodes'
+
+    serializer_class = NodeSerializer
+
+    def get_queryset(self):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_relations = NodeRelation.objects.filter(child=node, is_node_link=True)\
+            .select_related('parent').exclude(parent__type='osf.collection').exclude(parent__type='osf.registration')
+        return [each.parent for each in node_relations if each.parent.can_view(auth)]
+
+
+class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-linked-by-registrations'
+
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_relations = NodeRelation.objects.filter(child=node, is_node_link=True, parent__type='osf.registration')\
+            .select_related('parent').exclude(parent__type='osf.collection')
+        return [each.parent for each in node_relations if each.parent.can_view(auth)]
+
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_list).
 

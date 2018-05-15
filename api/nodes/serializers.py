@@ -25,7 +25,8 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode, PrivateLink)
+                        MetaSchema, AbstractNode, PrivateLink,
+                        NodeRelation)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -218,7 +219,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
-
+    templated_by_count = ser.SerializerMethodField(help_text='How many projects have used this as a template.')
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
@@ -296,6 +297,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     ), min_version='2.0', max_version='2.0')
+
+    linked_by_nodes = RelationshipField(
+        related_view='nodes:node-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    )
+
+    linked_by_registrations = RelationshipField(
+        related_view='nodes:node-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
@@ -458,6 +471,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if pointer.can_view(auth):
                 count += 1
         return count
+
+    def get_linked_by_nodes_count(self, obj):
+        return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration').select_related('parent').exclude(parent__type='osf.collection').count()
+
+    def get_linked_by_registrations_count(self, obj):
+        return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration').select_related('parent').exclude(parent__type='osf.collection').count()
+
+    def get_templated_by_count(self, obj):
+        return obj.templated_list.count()
 
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user
