@@ -577,11 +577,10 @@ class PreprintFactory(DjangoModelFactory):
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
-        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'
-        instance = target_class(node=project, provider=provider, title=title, description=description, creator=creator)
+        instance = target_class(provider=provider, title=title, description=description, creator=creator)
         return instance
 
     @classmethod
@@ -639,8 +638,7 @@ class PreprintFactory(DjangoModelFactory):
             create_task_patcher.stop()
 
         if not instance.is_published:
-            instance.node._has_abandoned_preprint = True
-        instance.node.save()
+            instance._has_abandoned_preprint = True
         instance.save()
         return instance
 

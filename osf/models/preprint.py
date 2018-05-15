@@ -8,7 +8,6 @@ from django.apps import apps
 from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
 from framework.auth import Auth
