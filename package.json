@@ -8,7 +8,7 @@
   "dependencies": {
     "@centerforopenscience/list-of-licenses": "1.1.0",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
-    "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#e15bf09f4d4e3c6f3f89fcfdaf6d72e91faf8a7d",
+    "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^0.1.0",
     "babel-loader": "^4.1.0",
