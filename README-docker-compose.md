@@ -414,9 +414,14 @@ When you use "Trusted Timestamp Token", execute following steps.
 1. add cotaining keyfile directory at web container:
 mofify docker-compose.yml
 ```yml
-web:
+admin:
+  ...
   volumes:
-    - /<host_server>/<user_key_info>:/user_key_info # <- Directory containing keyfile ex. /mnt/nfs/keys
+    - /<host_server>/<user_key_info>:/user_key_info # <- add Directory containing keyfile ex. /mnt/nfs/keys
+web:
+  ...
+  volumes:
+    - /<host_server>/<user_key_info>:/user_key_info # <- add here
 ```
 
 2. download http://eswg.jnsa.org/sandbox/handson/ESig-PKI-handson-win-v100.zip, and extract root2.pem
