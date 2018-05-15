@@ -14,10 +14,10 @@ from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider, Node
+from osf.models import Subject, PreprintProvider, Preprint
 from osf.models.base import GuidMixin
 from osf.utils.workflows import DefaultStates
 
@@ -506,18 +506,17 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
+        no_user_query = Q(is_published=True, is_public=True)
 
         if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
+            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
             if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(auth_user, 'read_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
                 query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (no_user_query | admin_user_query | reviews_user_query)
         else:
             query = no_user_query
 
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
+        return base_queryset.filter(query).distinct('id', 'created')

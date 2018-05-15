@@ -344,19 +344,44 @@ DOWNLOAD_ACTIONS = set([
 @must_be_signed
 @no_auto_transaction
 def create_preprint_waterbutler_log(payload, **kwargs):
-    preprint = Preprint.load(payload['metadata']['nid'])
-    if preprint:
-        action = LOG_ACTION_MAP[payload['action']]
-        user = OSFUser.load(payload['auth']['id'])
-        metadata = payload['metadata']
-        preprint.create_waterbutler_log(payload['auth'], action, metadata)
+    with transaction.atomic():
+        try:
+            auth = payload['auth']
+            # Don't log download actions, but do update analytics
+            user = OSFUser.load(auth['id'])
+            if payload['action'] in DOWNLOAD_ACTIONS:
+                preprint = Preprint.load(payload['metadata']['nid'])
+                if not preprint.is_contributor(user):
+                    url = furl.furl(payload['request_meta']['url'])
+                    version = url.args.get('version') or url.args.get('revision')
+                    path = payload['metadata']['path'].lstrip('/')
+                    if payload['action_meta']['is_mfr_render']:
+                        update_analytics(preprint, path, version, 'view')
+                    else:
+                        update_analytics(preprint, path, version, 'download')
 
-        with transaction.atomic():
-            file_signals.file_updated.send(target=preprint, user=user, event_type=action, payload=payload)
+                return {'status': 'success'}
+            action = LOG_ACTION_MAP[payload['action']]
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST)
 
-        return {'status': 'success'}
-    else:
-        raise HTTPError(httplib.NOT_FOUND)
+        if user is None:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        preprint = Preprint.load(payload['metadata']['nid'])
+        if preprint:
+            action = LOG_ACTION_MAP[payload['action']]
+            user = OSFUser.load(payload['auth']['id'])
+            metadata = payload['metadata']
+            preprint.create_waterbutler_log(payload['auth'], action, metadata)
+
+            with transaction.atomic():
+                file_signals.file_updated.send(target=preprint, user=user, event_type=action, payload=payload)
+
+            return {'status': 'success'}
+        else:
+            raise HTTPError(httplib.NOT_FOUND)
+
 
 @must_be_signed
 @no_auto_transaction

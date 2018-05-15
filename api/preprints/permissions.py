@@ -2,29 +2,48 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
-from api.base.utils import get_user_auth
-from osf.models import Preprint
+from api.base.utils import get_user_auth, assert_resource_type
+from api.nodes.permissions import (
+    AdminOrPublic as NodeAdminOrPublic,
+    ContributorDetailPermissions as NodeContributorDetailPermissions
+)
+from osf.models import Preprint, OSFUser, PreprintContributor
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
 
 
 class PreprintPublishedOrAdmin(permissions.BasePermission):
 
+    acceptable_models = (Preprint,)
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, Preprint), 'obj must be a Preprint'
-        node = obj.node
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             if auth.user is None:
                 return obj.verified_publishable
             else:
                 user_has_permissions = (obj.verified_publishable or
-                    (node.is_public and auth.user.has_perm('view_submissions', obj.provider)) or
-                    node.has_permission(auth.user, osf_permissions.ADMIN) or
-                    (node.is_contributor(auth.user) and obj.machine_state != DefaultStates.INITIAL.value)
+                    (obj.is_public and auth.user.has_perm('view_submissions', obj.provider)) or
+                    obj.has_permission(auth.user, osf_permissions.ADMIN) or
+                    (obj.is_contributor(auth.user) and obj.machine_state != DefaultStates.INITIAL.value)
                 )
                 return user_has_permissions
         else:
-            if not node.has_permission(auth.user, osf_permissions.ADMIN):
+            if not obj.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
             return True
+
+
+class ContributorDetailPermissions(NodeContributorDetailPermissions):
+    """Permissions for preprint contributor detail page."""
+
+    acceptable_models = (Preprint, OSFUser, PreprintContributor)
+
+    def load_resource(self, context, view):
+        return Preprint.load(context[view.preprint_lookup_url_kwarg])
+
+
+class AdminOrPublic(NodeAdminOrPublic):
+
+    acceptable_models = (Preprint,)

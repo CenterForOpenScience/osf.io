@@ -871,7 +871,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
+        unclaimed_records = obj.user.unclaimed_records.get(getattr(obj, 'preprint', getattr(obj, 'node', None))._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
@@ -895,6 +895,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     email_preferences = ['default', 'preprint', 'false']
 
+    def get_related_resource(self):
+        return self.context['view'].get_node()
+
+    def get_proposed_permissions(self, validated_data):
+        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if user_id and (full_name or email):
             raise Conflict(detail='Full name and/or email should not be included with a user ID.')
@@ -909,12 +915,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         index = None
         if '_order' in validated_data:
             index = validated_data.pop('_order')
-        node = self.context['view'].get_node()
+        node = self.get_related_resource()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
         send_email = self.context['request'].GET.get('send_email') or 'default'
-        permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        permissions = self.get_proposed_permissions(validated_data)
 
         self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
 
@@ -922,9 +928,16 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
+            contributor_dict = {'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
+            'bibliographic': bibliographic, 'index': index, 'save': True}
+
+            if isinstance(node, AbstractNode):
+                contributor_dict['permissions'] = permissions
+            else:
+                contributor_dict['permission'] = permissions
+
             contributor_obj = node.add_contributor_registered_or_not(
-                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
-                permissions=permissions, bibliographic=bibliographic, index=index, save=True
+                **contributor_dict
             )
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
@@ -940,13 +953,16 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
+    def get_related_resource(self):
+        return self.context['view'].get_node()
+
     def update(self, instance, validated_data):
         index = None
         if '_order' in validated_data:
             index = validated_data.pop('_order')
 
         auth = Auth(self.context['request'].user)
-        node = self.context['view'].get_node()
+        node = self.get_related_resource()
 
         if 'bibliographic' in validated_data:
             bibliographic = validated_data.get('bibliographic')

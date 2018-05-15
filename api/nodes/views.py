@@ -451,9 +451,12 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
 
+    def get_resource(self):
+        return self.get_node()
+
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_resource()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')

@@ -205,3 +205,18 @@ def rapply(data, func, *args, **kwargs):
         )
     else:
         return func(data, *args, **kwargs)
+
+def assert_resource_type(obj, resource_tuple):
+    assert type(resource_tuple) is tuple, 'resources must be passed in as a tuple.'
+    if len(resource_tuple) == 1:
+        error_message = resource_tuple[0].__name__
+    elif len(resource_tuple) == 2:
+        error_message = resource_tuple[0].__name__ + ' or ' + resource_tuple[1].__name__
+    else:
+        error_message = ''
+        for resource in resource_tuple[:-1]:
+            error_message += resource.__name__ + ', '
+        error_message += 'or ' + resource_tuple[-1].__name__
+
+    a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
+    assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)

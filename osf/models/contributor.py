@@ -77,6 +77,19 @@ class PreprintContributor(models.Model):
     def bibliographic(self):
         return self.visible
 
+    @property
+    def permission(self):
+        preprint = self.preprint
+        user = self.user
+
+        if preprint.has_permission(user, 'admin'):
+            return 'admin'
+        elif preprint.has_permission(user, 'write'):
+            return 'write'
+        elif preprint.has_permission(user, 'read'):
+            return 'read'
+        return None
+
     class Meta:
         unique_together = ('user', 'preprint')
         # Make contributors orderable

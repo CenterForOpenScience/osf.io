@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, Preprint
+from osf.models import ReviewAction, Preprint, PreprintContributor
 from osf.utils.requests import check_select_for_update
 
 from api.actions.permissions import ReviewActionPermission
@@ -20,11 +20,14 @@ from api.base.parsers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
-from api.citations.utils import render_citation, preprint_csl
+from api.citations.utils import render_citation
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
     PreprintCitationSerializer,
+    PreprintContributorDetailSerializer,
+    PreprintContributorsSerializer,
+    PreprintContributorsCreateSerializer
 )
 from api.nodes.serializers import (
     NodeCitationStyleSerializer,
@@ -32,10 +35,15 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList
-from api.nodes.permissions import ContributorOrPublic
-
-from api.preprints.permissions import PreprintPublishedOrAdmin
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail
+from api.preprints.permissions import (
+    PreprintPublishedOrAdmin,
+    AdminOrPublic,
+    ContributorDetailPermissions
+)
+from api.nodes.permissions import (
+    ContributorOrPublic
+)
 
 
 class PreprintMixin(NodeMixin):
@@ -49,7 +57,7 @@ class PreprintMixin(NodeMixin):
         except Preprint.DoesNotExist:
             raise NotFound
 
-        if preprint.node.is_deleted:
+        if preprint.deleted:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -91,7 +99,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(Preprint.objects.all(), auth_user)
+        return self.preprints_queryset(Preprint.objects.filter(deleted__isnull=True), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -156,8 +164,8 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         preprint = self.get_preprint()
         auth = get_user_auth(self.request)
 
-        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
-            return preprint_csl(preprint, preprint.node)
+        if preprint.is_public or preprint.can_view(auth) or preprint.is_published:
+            return preprint.csl
 
         raise PermissionDenied if auth.user else NotAuthenticated
 
@@ -182,7 +190,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
         auth = get_user_auth(self.request)
         style = self.kwargs.get('style_id')
 
-        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+        if preprint.is_public or preprint.can_view(auth) or preprint.is_published:
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
@@ -248,10 +256,58 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
 
 class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    def create(self, request, *args, **kwargs):
-        self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
-        return super(PreprintContributorsList, self).create(request, *args, **kwargs)
+    view_category = 'preprints'
+    view_name = 'preprint-contributors'
+    serializer_class = PreprintContributorsSerializer
+
+    def get_default_queryset(self):
+        preprint = self.get_preprint()
+        return preprint.preprintcontributor_set.all().include('user__guids')
+
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
+    def get_serializer_class(self):
+        """
+        Use NodeContributorDetailSerializer which requires 'id'
+        """
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+            return PreprintContributorDetailSerializer
+        elif self.request.method == 'POST':
+            return PreprintContributorsCreateSerializer
+        else:
+            return PreprintContributorsSerializer
+
+
+class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprints'
+    view_name = 'preprint-contributor-detail'
+    serializer_class = PreprintContributorDetailSerializer
+
+    def get_resource(self):
+        return self.get_preprint()
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        preprint = self.get_preprint()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        try:
+            return preprint.preprintcontributor_set.get(user=user)
+        except PreprintContributor.DoesNotExist:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
 
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):

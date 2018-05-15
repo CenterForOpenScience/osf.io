@@ -2,6 +2,7 @@
 import os
 import urlparse
 import logging
+import re
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -29,6 +30,7 @@ from osf.utils.requests import DummyRequest, get_request_and_user_id, get_header
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
+from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.identifiers.tasks import update_ezid_metadata_on_change
 
@@ -176,8 +178,50 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return api_v2_url(path)
 
     @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
     def admin_contributor_ids(self):
         return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
+
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': sanitize.unescape_entities(self.title),
+            'author': [
+                contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
+                for contributor in self.visible_contributors
+            ],
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
+            'publisher': self.provider.name,
+        }
+
+        article_doi = self.article_doi
+        preprint_doi = self.preprint_doi
+
+        if article_doi:
+            csl['DOI'] = article_doi
+        elif preprint_doi and self.is_published and self.preprint_doi_created:
+            csl['DOI'] = preprint_doi
+
+        if self.logs.exists():
+            csl['issued'] = datetime_to_csl(self.logs.latest().created)
+
+        if self.original_publication_date:
+            csl['issued'] = datetime_to_csl(self.original_publication_date)
+
+        return csl
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._id,
@@ -185,6 +229,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._id, _absolute=_absolute, *args, **kwargs)
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     def has_permission(self, user, permission):
         """Check whether user has permission.

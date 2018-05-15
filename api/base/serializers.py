@@ -19,7 +19,7 @@ from osf.utils import sanitize
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState
+from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
 
@@ -155,6 +155,18 @@ class HideIfDisabled(ConditionalField):
 
     def should_hide(self, instance):
         return instance.is_disabled
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
+class HideIfPreprint(ConditionalField):
+    """
+    If object is a preprint or related to a preprint, hide the field.
+    """
+
+    def should_hide(self, instance):
+        return isinstance(instance, Preprint) or getattr(instance, 'preprint', False)
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
@@ -871,7 +883,7 @@ class TargetField(ser.Field):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         meta = utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        referent = value if isinstance(value, AbstractNode) else value.referent
+        referent = value if isinstance(value, AbstractNode) or isinstance(value, Preprint) else value.referent
         return {'links': {self.link_type: {'href': referent.get_absolute_url(), 'meta': meta}}}
 
 

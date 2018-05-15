@@ -5,12 +5,16 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField,
-    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
+    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
+    HideIfPreprint
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    NodeContributorsCreateSerializer,
+    NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField
 )
@@ -20,7 +24,7 @@ from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
-from osf.utils import permissions
+from osf.utils import permissions as osf_permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -87,10 +91,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     node_is_public = ser.BooleanField(read_only=True, source='is_public')
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
+    # contributors = RelationshipField(
+    #     related_view='nodes:node-contributors',
+    #     related_view_kwargs={'node_id': '<node._id>'},
+    # )
+
     contributors = RelationshipField(
-        related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<node._id>'},
+        related_view='preprints:preprint-contributors',
+        related_view_kwargs={'preprint_id': '<_id>'},
     )
+
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = VersionedDateTimeField(read_only=True)
 
@@ -122,10 +132,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    files = RelationshipField(
-        related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<_id>'}
-    )
+    # files = RelationshipField(
+    #     related_view='nodes:node-providers',
+    #     related_view_kwargs={'node_id': '<_id>'}
+    # )
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -280,7 +290,7 @@ class PreprintCreateSerializer(PreprintSerializer):
             raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
-        if not node.has_permission(auth.user, permissions.ADMIN):
+        if not node.has_permission(auth.user, osf_permissions.ADMIN):
             raise exceptions.PermissionDenied
 
         provider = validated_data.pop('provider', None)
@@ -303,3 +313,52 @@ class PreprintCitationSerializer(NodeCitationSerializer):
 
     class Meta:
         type_ = 'preprint-citation'
+
+
+class PreprintContributorsSerializer(NodeContributorsSerializer):
+    """ Separate from UserSerializer due to necessity to override almost every field as read only
+    """
+    preprint = RelationshipField(
+        related_view='preprints:preprint-detail',
+        related_view_kwargs={'preprint_id': '<preprint._id>'}
+    )
+
+    node = HideIfPreprint(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'}
+    ))
+
+    class Meta:
+        type_ = 'contributors'
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'preprints:preprint-contributor-detail',
+            kwargs={
+                'user_id': obj.user._id,
+                'preprint_id': self.context['request'].parser_context['kwargs']['preprint_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+
+class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
+    """
+    Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+    def get_related_resource(self):
+        return self.context['view'].get_preprint()
+
+    def get_proposed_permissions(self, validated_data):
+        return validated_data.get('permission') or osf_permissions.WRITE
+
+
+class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, PreprintContributorsSerializer):
+    """
+    Overrides NodeContributorDetailSerializer to set the preprint instead of the node
+    """
+    index = ser.IntegerField(required=False, read_only=False, source='_order')
+
+    def get_related_resource(self):
+        return self.context['view'].get_preprint()
