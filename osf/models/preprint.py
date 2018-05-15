@@ -195,10 +195,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         """
         if not user:
             return False
-        try:
-            return self.get_group(permission).user_set.filter(id=user.id).exists()
-        except Group.DoesNotExist:
-            return False
+        return user.has_perm('{}_preprint'.format(permission), self)
 
     def set_permissions(self, user, permission, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
@@ -255,6 +252,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     def set_primary_file(self, preprint_file, auth, save=False):
         # TODO might have to rework. Do we need osfstorage checks?
+
+        if not self.root_folder:
+            raise PreprintStateError('Preprint needs a root folder.')
+
         if not self.has_permission(auth.user, 'admin'):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
@@ -263,6 +264,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         existing_file = self.primary_file
         self.primary_file = preprint_file
+
+        # TODO Not sure how to go about this!
+        self.primary_file.move_under(self.root_folder)
 
         # only log if updating the preprint file, not adding for the first time
         if existing_file:
@@ -1015,10 +1019,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+        permission_group = self.get_group(permission)
 
-        if not self.has_permission(user, permission):
-            self.get_group(permission).user_set.add(user)
-        elif self.has_permission(user, permission):
+        if not permission_group.user_set.filter(id=user.id).exists():
+            permission_group.user_set.add(user)
+        else:
             raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
@@ -1032,8 +1037,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        if user.groups.filter(name=self.get_group(permission)).exists():
-            self.get_group(permission).user_set.remove(user)
+        permission_group = self.get_group(permission)
+
+        if permission_group.user_set.filter(id=user.id).exists():
+            permission_group.user_set.remove(user)
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
