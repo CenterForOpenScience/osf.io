@@ -50,12 +50,7 @@ EXTERNAL_EMBER_APPS = {
         'url': '/reviews/',
         'server': 'http://localhost:4203',
         'path': '/reviews/'
-    },
-    'collections': {
-        'url': '/collections/',
-        'server': 'http://localhost:4204',
-        'path': '/collections/'
-    },
+    }
     # 'meetings': {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',

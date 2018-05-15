@@ -64,7 +64,7 @@ services:
 ##      - emberosf
 ##    command:
 ##      - /bin/bash
-##      - -c
+##      - -c 
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
@@ -134,26 +134,7 @@ services:
 ##        yarn --frozen-lockfile &&
 ##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
 
-#  collections:
-#    volumes:
-#      - collections-sync:/code:nocopy
-#
-##      # Use this for ember-osf linked development (with docker-sync):
-##      - collections_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##       yarn link @centerforopenscience/ember-osf &&
-##        yarn --frozen-lockfile &&
-##        yarn start --host 0.0.0.0 --port 4204 --live-reload-port 41957
-
-#  Use this for ember-osf linked development (with docker-sync):
+#  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
 #    command:
@@ -217,9 +198,6 @@ volumes:
 #    external: true
 
 #  reviews-sync:
-#    external: true
-
-#  collections-sync:
 #    external: true
 
 #  sharejs-sync:
