@@ -407,3 +407,26 @@ wb:
     - wb_tmp_vol:/tmp
   stdin_open: true
 ```
+
+## About setting for "Trusted-Timestamp" usage
+
+When you use "Trusted Timestamp Token", execute following steps.
+1. add cotaining keyfile directory at web container:
+mofify docker-compose.yml
+```yml
+web:
+  volumes:
+    - /<host_server>/<user_key_info>:/user_key_info # <- Directory containing keyfile ex. /mnt/nfs/keys
+```
+
+2. download http://eswg.jnsa.org/sandbox/handson/ESig-PKI-handson-win-v100.zip, and extract root2.pem
+3. rename root2.pem to root_cert_verifycate.pem
+4. upload root_cert_verifycate.pem cotaining keyfile directory
+```bash
+  $ cp root_cert_verifycate.pem /mnt/nfs/keys
+```
+5. copy api/timestamp/local-dist.py to api/timestamp/local.py
+```bash
+  $ api/timestamp/local-dist.py api/timestamp/local.py
+```
+
