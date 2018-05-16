@@ -319,6 +319,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     ))
 
+    region = RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
+        read_only=True
+    )
+
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<_id>'},
@@ -523,6 +529,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
+
+        region_id = self.context.get('region_id')
+        if region_id:
+            node_settings = node.get_addon('osfstorage')
+            node_settings.region_id = region_id
+            node_settings.save()
+
         return node
 
     def update(self, node, validated_data):

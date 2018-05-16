@@ -990,6 +990,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.registrations.all()
 
     @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        node_settings = self.get_addon('osfstorage')
+        return Region.objects.get(id=node_settings.region_id)
+
+    @property
     def parent_id(self):
         if self.parent_node:
             return self.parent_node._id
