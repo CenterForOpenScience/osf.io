@@ -72,6 +72,12 @@ class CollectionProvider(AbstractProvider):
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
 
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_collectionprovider', 'Can view collection provider details'),
+        )
+
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
