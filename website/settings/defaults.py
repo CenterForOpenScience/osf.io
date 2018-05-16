@@ -1925,6 +1925,8 @@ CUSTOM_CITATIONS = {
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
 
+INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
+
 FOOTER_LINKS = {
     'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
     'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
