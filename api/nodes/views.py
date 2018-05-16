@@ -21,6 +21,7 @@ from api.base.exceptions import (
     InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
+    InvalidQueryStringError
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -240,7 +241,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             try:
                 id = Region.objects.get(_id=region__id).id
             except Region.DoesNotExist:
-                pass
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
 
         context.update({
             'region_id': id

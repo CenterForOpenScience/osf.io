@@ -392,6 +392,6 @@ def update_region(auth, **kwargs):
     try:
         user_settings.set_region(region_id)
     except ValueError:
-        raise HTTPError(404, data=dict(message_short='region not found',
+        raise HTTPError(404, data=dict(message_short='Region not found',
                                     message_long='A storage region with this id does not exist'))
     return {'message': 'User region updated.'}

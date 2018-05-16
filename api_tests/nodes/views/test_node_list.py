@@ -1232,19 +1232,26 @@ class TestNodeCreate:
         node_settings = project.get_addon('osfstorage')
         assert node_settings.region_id == region.id
 
-    def test_create_project_with_bad_region_query_param(
-            self, app, user_one, region, private_project, url):
-        bad_region_id = 'bad-region-1'
+    def test_create_project_with_no_region_specified(self, app, user_one, private_project, url):
         res = app.post_json_api(
-            url + '?region={}'.format(bad_region_id), private_project, auth=user_one.auth
+            url, private_project, auth=user_one.auth
         )
         assert res.status_code == 201
-        pid = res.json['data']['id']
-        project = AbstractNode.load(pid)
+        project = AbstractNode.load(res.json['data']['id'])
 
         node_settings = project.get_addon('osfstorage')
         # NodeSettings just left at default region on creation
         assert node_settings.region_id == 1
+
+    def test_create_project_with_bad_region_query_param(
+            self, app, user_one, region, private_project, url):
+        bad_region_id = 'bad-region-1'
+        res = app.post_json_api(
+            url + '?region={}'.format(bad_region_id), private_project,
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Region {} is invalid.'.format(bad_region_id)
 
     def test_create_project_errors(
             self, app, user_one, title, description, category, url):
