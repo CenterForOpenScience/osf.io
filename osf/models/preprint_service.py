@@ -215,7 +215,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
-            logo = self.provider.name
+            logo = self.provider._id
 
         mails.send_mail(
             auth.user.username,
