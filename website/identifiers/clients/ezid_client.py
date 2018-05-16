@@ -1,29 +1,21 @@
 # -*- coding: utf-8 -*-
-
 import furl
+from website.identifiers import utils
+from website.identifiers.clients.datacite_client import DataCiteClient
+from website import settings
 
-from website.util.client import BaseClient
 
-from . import utils
-
-
-class EzidClient(BaseClient):
+class EzidClient(DataCiteClient):
 
     BASE_URL = 'https://ezid.cdlib.org'
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
+    DOI_NAMESPACE = settings.EZID_DOI_NAMESPACE
+    FORMAT = settings.EZID_DOI_FORMAT
 
     def _build_url(self, *segments, **query):
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(segments)
         url.args.update(query)
         return url.url
-
-    @property
-    def _auth(self):
-        return (self.username, self.password)
 
     @property
     def _default_headers(self):
@@ -37,23 +29,18 @@ class EzidClient(BaseClient):
         )
         return utils.from_anvl(resp.content.strip('\n'))
 
-    def create_identifier(self, identifier, metadata=None):
+    def create_identifier(self, metadata, doi):
         resp = self._make_request(
             'PUT',
-            self._build_url('id', identifier),
+            self._build_url('id', doi),
             data=utils.to_anvl(metadata or {}),
             expects=(201, ),
         )
-        return utils.from_anvl(resp.content)
-
-    def mint_identifier(self, shoulder, metadata=None):
-        resp = self._make_request(
-            'POST',
-            self._build_url('shoulder', shoulder),
-            data=utils.to_anvl(metadata or {}),
-            expects=(201, ),
+        resp = utils.from_anvl(resp.content)
+        return dict(
+            [each.strip('/') for each in pair.strip().split(':')]
+            for pair in resp['success'].split('|')
         )
-        return utils.from_anvl(resp.content)
 
     def change_status_identifier(self, status, identifier, metadata=None):
         metadata['_status'] = status
