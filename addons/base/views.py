@@ -4,6 +4,7 @@ import os
 import uuid
 import markupsafe
 import urllib
+import logging
 from django.utils import timezone
 
 from flask import make_response
@@ -47,6 +48,8 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
+logger = logging.getLogger(__name__)
 
 ERROR_MESSAGES = {'FILE_GONE': u'''
 <style>
@@ -332,8 +335,11 @@ def create_waterbutler_log(payload, **kwargs):
                 node = AbstractNode.load(payload['metadata']['nid'])
                 url = furl.furl(payload['request_meta']['url'])
                 version = url.args.get('version') or url.args.get('revision')
+                logger.info('VERSION: {}'.format(version))
+                logger.info('REQUEST_META: {}'.format(payload['request_meta']))
                 path = payload['metadata']['path'].lstrip('/')
                 if version:
+                    logger.info('MARKING version {} as seen'.format(version))
                     mark_file_version_as_seen(user, path, version)
                 if not node.is_contributor(user):
                     if payload['action_meta']['is_mfr_render']:
