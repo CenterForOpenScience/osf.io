@@ -808,22 +808,6 @@ table.add-links {
     margin-bottom: 20px;
 }
 
-dl.dl-collection {
-    margin-bottom: 0;
-}
-
-.dl-collection dd {
-    margin-left: 50px;
-    font-weight: bold;
-}
-
-.dl-collection dt {
-    width: 50px;
-    text-align: left;
-    margin-left: 23px;
-    font-weight: normal;
-}
-
 .fa.bk-toggle-icon {
     border: 2px solid #FFFFFF;
     color: #000000;
