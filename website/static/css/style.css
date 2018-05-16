@@ -820,3 +820,8 @@ table.add-links {
 .comment-box {
     padding-bottom: 25px;
 }
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
