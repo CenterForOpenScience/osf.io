@@ -17,7 +17,7 @@ from website.identifiers.utils import request_identifiers_from_ezid, parse_ident
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(ignore_results=True)
+@celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=60)
 def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
@@ -177,7 +177,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     return [node.serialize() for node in visited]
 
 
-@celery_app.task(ignore_results=True)
+@celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=60)
 def get_and_set_preprint_identifiers(preprint_id):
     PreprintService = apps.get_model('osf.PreprintService')
     preprint = PreprintService.load(preprint_id)

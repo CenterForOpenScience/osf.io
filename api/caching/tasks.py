@@ -3,6 +3,7 @@ import urlparse
 import requests
 import logging
 
+from framework.celery_tasks import app
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ def get_bannable_urls(instance):
     return bannable_urls, parsed_absolute_url.hostname
 
 
+@app.task(max_retries=5, default_retry_delay=60)
 def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
     timeout = 0.3  # 300ms timeout for bans
