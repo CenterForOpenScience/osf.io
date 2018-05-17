@@ -236,9 +236,10 @@ USE_TZ = True
 
 # https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
 
-DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
-# GOOGLE_APPLICATION_CREDENTIALS env var must be set
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
