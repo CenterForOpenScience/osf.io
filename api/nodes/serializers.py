@@ -288,7 +288,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'}
     )
 
     node_links = ShowIfVersion(RelationshipField(
@@ -477,6 +478,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_linked_by_registrations_count(self, obj):
         return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration').select_related('parent').exclude(parent__type='osf.collection').count()
+
+    def get_forks_count(self, obj):
+        return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
 
     def get_templated_by_count(self, obj):
         return obj.templated_list.count()
