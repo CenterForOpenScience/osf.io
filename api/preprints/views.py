@@ -260,6 +260,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     view_category = 'preprints'
@@ -289,6 +290,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     view_category = 'preprints'

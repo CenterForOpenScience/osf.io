@@ -85,16 +85,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
-    title = ser.CharField(required=False, max_length=512)
+    title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     node_is_public = ser.BooleanField(read_only=True, source='is_public')
     preprint_doi_created = VersionedDateTimeField(read_only=True)
-
-    # contributors = RelationshipField(
-    #     related_view='nodes:node-contributors',
-    #     related_view_kwargs={'node_id': '<node._id>'},
-    # )
 
     contributors = RelationshipField(
         related_view='preprints:preprint-contributors',
@@ -180,10 +175,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
-        assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.node.has_permission(auth.user, 'admin'):
+        if not preprint.has_permission(auth.user, 'admin'):
             raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
 
         published = validated_data.pop('is_published', None)
@@ -202,20 +196,19 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
-            save_node = True
 
-        old_tags = set(preprint.node.tags.values_list('name', flat=True))
-        if validated_data.get('node') and 'tags' in validated_data['node']:
-            current_tags = set(validated_data['node'].pop('tags', []))
+        old_tags = set(preprint.tags.values_list('name', flat=True))
+        if validated_data.get('tags'):
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
             current_tags = set()
 
         for new_tag in (current_tags - old_tags):
-            preprint.node.add_tag(new_tag, auth=auth)
+            preprint.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
-            preprint.node.remove_tag(deleted_tag, auth=auth)
+            preprint.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
             preprint.node.update(fields=validated_data.pop('node'))
@@ -227,8 +220,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             save_preprint = True
 
         if 'article_doi' in validated_data:
-            preprint.node.preprint_article_doi = validated_data['article_doi']
-            save_node = True
+            preprint.article_doi = validated_data['article_doi']
+            save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
@@ -243,10 +236,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if not preprint.primary_file:
                 raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
             self.set_field(preprint.set_published, published, auth)
+            if not preprint.is_public:
+                self.set_field(preprint.is_public, True, auth)
             save_preprint = True
             recently_published = published
-            preprint.node.set_privacy('public')
-            save_node = True
+            preprint.set_privacy('public')
 
         if save_node:
             try:
@@ -262,7 +256,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         # TODO: Some more thought might be required on this; preprints made from existing
         # nodes will send emails making it seem like a new node.
         if recently_published:
-            for author in preprint.node.contributors:
+            for author in preprint.contributors:
                 if author != auth.user:
                     project_signals.contributor_added.send(preprint, contributor=author, auth=auth, email_template='preprint')
 
@@ -282,29 +276,21 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = validated_data.pop('node', {})
-        if isinstance(node, dict):
-            node = Node.objects.create(creator=self.context['request'].user, **node)
-
-        if node.is_deleted:
-            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
+        creator = self.context['request'].user
+        node = validated_data.pop('node', None)
+        if node:
+            if isinstance(node, dict):
+                node = Node.objects.create(creator=creator, **node)
 
         auth = get_user_auth(self.context['request'])
-        if not node.has_permission(auth.user, osf_permissions.ADMIN):
-            raise exceptions.PermissionDenied
 
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        node_preprints = node.preprints.filter(provider=provider)
-        if node_preprints.exists():
-            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
-
-        preprint = Preprint(node=node, provider=provider)
+        title = validated_data.pop('title')
+        preprint = Preprint(node=node, provider=provider, title=title, creator=creator)
         preprint.save()
-        preprint.node._has_abandoned_preprint = True
-        preprint.node.save()
 
         return self.update(preprint, validated_data)
 
