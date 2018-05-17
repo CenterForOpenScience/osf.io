@@ -154,6 +154,23 @@ class TestMetadataGeneration(OsfTestCase):
         formatted_subjects = metadata.format_subjects(preprint)
         assert len(formatted_subjects) == Subject.objects.all().count()
 
+    def test_crossref_metadata_has_correct_structure(self):
+        provider = PreprintProviderFactory()
+        license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
+        license_details = {
+            'id': license.license_id,
+            'year': '2017',
+            'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
+        }
+        preprint = PreprintFactory(provider=provider, project=self.node, is_published=True, license_details=license_details)
+
+        crossref_xml = metadata.crossref_metadata_for_preprint(preprint, pretty_print=True)
+
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find('{%s}contributors' % metadata.CROSSREF_NAMESPACE)
+
+        # TODO - finish this test!
+
 
 class TestIdentifierModel(OsfTestCase):
 

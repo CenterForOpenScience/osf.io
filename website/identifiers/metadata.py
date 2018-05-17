@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 import unicodedata
 import lxml.etree
 import lxml.builder
@@ -13,6 +15,11 @@ E = lxml.builder.ElementMaker(nsmap={
     'xsi': XSI},
 )
 DOI_URL_PREFIX = 'https://dx.doi.org/'
+
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
+CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
+CROSSREF_SCHEMA_VERSION = '4.4.1'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
@@ -91,6 +98,98 @@ def format_creators(preprint):
 
 def format_subjects(preprint):
     return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
+
+
+def format_contributors_crossref(element, preprint):
+    contributors = []
+    for index, contributor in enumerate(preprint.node.visible_contributors):
+        if index == 0:
+            sequence = 'first'
+        else:
+            sequence = 'additional'
+
+        person = element.person_name(sequence=sequence, contributor_role='author')  # TODO - different contributor roles?
+        person.append(element.given_name((remove_control_characters(contributor.given_name + ' ' + contributor.middle_names))))
+        person.append(element.surname((remove_control_characters(contributor.family_name))))
+        if contributor.suffix:
+            person.append(element.suffix((remove_control_characters(contributor.suffix))))
+
+        # TODO -- add contributor ORCID if confirmed
+
+        contributors.append(person)
+
+    return contributors
+
+
+def format_date_crossref(element, date):
+    elements = [
+        element.month(date.strftime('%m')),
+        element.day(date.strftime('%d')),
+        element.year(date.strftime('%Y'))
+    ]
+    return elements
+
+
+def crossref_metadata_for_preprint(preprint, pretty_print=False):
+    """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
+
+    :param preprint -- the preprint
+    """
+    element = lxml.builder.ElementMaker(nsmap={
+        None: CROSSREF_NAMESPACE,
+        'xsi': XSI},
+    )
+
+    head = element.head(
+        element.doi_batch_id('????'),
+        element.timestamp('{}'.format(int(time.time()))),
+        element.depositor(
+            element.depositor_name('Open Science Framework'),  # TODO - configure me
+            element.email_address('crossref@osf.io')  # TODO - configure me
+        ),
+        element.registrant('???')
+    )
+
+    doi_data = [
+        element.doi(
+            settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=preprint._id)  # TODO - use proper CrossRef DOI handle
+        ),
+        element.resource(settings.DOMAIN + preprint._id)
+    ]
+
+    posted_content = element.posted_content(
+        element.group_title(preprint.provider._id),
+        element.contributors(*format_contributors_crossref(element, preprint)),
+        element.titles(element.title(preprint.node.title)),
+        element.posted_date(*format_date_crossref(element, preprint.date_published)),
+        element.doi_data(*doi_data),
+        type='preprint'
+    )
+
+    # TODO - add 'abstract' element from description using JATS namespace
+
+    preprint_accepted = preprint.actions.filter(to_state='accepted')
+    if preprint_accepted:
+        posted_content.append(
+            element.accepted_date(element, *format_date_crossref(preprint_accepted.order_by('date_modified').first().date_created))
+        )
+
+    # if preprint.license:  # TODO - we don't currently seem to store the URL for each license
+    #     posted_content.append(
+    #         license_element.program(
+    #             license_element.license_ref(preprint.license.url)
+    #         )
+    #     )
+
+    root = element.doi_batch(
+        head,
+        element.body(posted_content),
+        version=CROSSREF_SCHEMA_VERSION
+    )
+
+    # set xsi:schemaLocation
+    root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
+    return lxml.etree.tostring(root, pretty_print=pretty_print)
 
 
 # This function is OSF specific.
