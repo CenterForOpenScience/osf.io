@@ -146,6 +146,18 @@ class BaseRegistrationSerializer(NodeSerializer):
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     )), min_version='2.0', max_version='2.0')
 
+    linked_by_nodes = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    ))
+
+    linked_by_registrations = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    ))
+
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
