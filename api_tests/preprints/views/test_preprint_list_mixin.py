@@ -1,5 +1,6 @@
 import mock
 import pytest
+from django.utils import timezone
 
 from api_tests import utils as test_utils
 from osf_tests.factories import (
@@ -244,21 +245,23 @@ class PreprintIsValidListMixin:
             project, user_admin_contrib, 'saor.pdf')
 
     @pytest.fixture()
-    def preprint(self, user_admin_contrib, project, provider, subject):
-        return PreprintFactory(
+    def preprint(self, user_admin_contrib, user_write_contrib, project, provider, subject):
+        preprint = PreprintFactory(
             creator=user_admin_contrib,
             filename='saor.pdf',
             provider=provider,
             subjects=[[subject._id]],
             project=project,
             is_published=True)
+        preprint.add_contributor(user_write_contrib, 'write', save=True)
+        return preprint
 
     def test_preprint_private_invisible_no_auth(
             self, app, project, preprint, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url)
         assert len(res.json['data']) == 0
 
@@ -266,8 +269,8 @@ class PreprintIsValidListMixin:
             self, app, user_non_contrib, project, preprint, url):
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
 
@@ -275,8 +278,8 @@ class PreprintIsValidListMixin:
             self, app, user_write_contrib, project, preprint, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
 
@@ -284,16 +287,16 @@ class PreprintIsValidListMixin:
             self, app, user_admin_contrib, project, preprint, url):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
 
-    def test_preprint_node_deleted_invisible(
+    def test_preprint_deleted_invisible(
             self, app, user_admin_contrib, user_write_contrib,
             user_non_contrib, project, preprint, url):
-        project.is_deleted = True
-        project.save()
+        preprint.deleted = timezone.now()
+        preprint.save()
         # unauth
         res = app.get(url)
         assert len(res.json['data']) == 0
@@ -308,7 +311,7 @@ class PreprintIsValidListMixin:
         assert len(res.json['data']) == 0
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
-    def test_preprint_node_null_invisible(
+    def test_preprint_node_null_visible(
             self, mock_preprint_updated, app,
             user_admin_contrib, user_write_contrib,
             user_non_contrib, preprint, url):
@@ -317,15 +320,15 @@ class PreprintIsValidListMixin:
 
         # unauth
         res = app.get(url)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
         # non_contrib
         res = app.get(url, auth=user_non_contrib.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
         # write_contrib
         res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
         assert mock_preprint_updated.called

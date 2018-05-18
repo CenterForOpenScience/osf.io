@@ -66,7 +66,8 @@ class PreprintContributor(models.Model):
 
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '
-                'visible={self.visible}'
+                'visible={self.visible}, '
+                'permission={self.permission}, '
                 ')>').format(self=self)
 
     @property
@@ -79,16 +80,18 @@ class PreprintContributor(models.Model):
 
     @property
     def permission(self):
+        # Checking group membership instead of permissions since unregistered
+        # contributors technically have no permissions
         preprint = self.preprint
         user = self.user
-
-        if preprint.has_permission(user, 'admin'):
+        if preprint.get_group('admin').user_set.filter(id=user.id).exists():
             return 'admin'
-        elif preprint.has_permission(user, 'write'):
+        elif preprint.get_group('write').user_set.filter(id=user.id).exists():
             return 'write'
-        elif preprint.has_permission(user, 'read'):
+        elif preprint.get_group('read').user_set.filter(id=user.id).exists():
             return 'read'
-        return None
+        else:
+            return None
 
     class Meta:
         unique_together = ('user', 'preprint')

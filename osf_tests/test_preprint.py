@@ -191,9 +191,9 @@ class TestPreprintSubjects:
 
 class TestLogging:
 
-    def test_add_preprint_log(self, preprint, auth):
-        preprint.add_preprint_log(PreprintLog.CREATED, params={'preprint': preprint._id}, auth=auth)
-        preprint.add_preprint_log(PreprintLog.FILE_UPDATED, params={'preprint': preprint._id}, auth=auth)
+    def test_add_log(self, preprint, auth):
+        preprint.add_log(PreprintLog.CREATED, params={'preprint': preprint._id}, auth=auth)
+        preprint.add_log(PreprintLog.FILE_UPDATED, params={'preprint': preprint._id}, auth=auth)
         preprint.save()
 
         last_log = preprint.logs.latest()

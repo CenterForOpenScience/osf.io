@@ -37,7 +37,10 @@ class PrimaryFileRelationshipField(RelationshipField):
 
 class NodeRelationshipField(RelationshipField):
     def get_object(self, node_id):
-        return Node.load(node_id)
+        try:
+            return Node.load(node_id)
+        except AttributeError:
+            raise exceptions.ValidationError(detail='Node not correctly specified.')
 
     def to_internal_value(self, data):
         node = self.get_object(data)
@@ -88,7 +91,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ser.BooleanField(read_only=True, source='is_public')
+    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
     contributors = RelationshipField(
@@ -193,9 +196,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         save_node = False
         save_preprint = False
         recently_published = False
+
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
+            save_preprint = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
         if validated_data.get('tags'):
@@ -219,6 +224,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             self.set_field(preprint.set_subjects, subjects, auth)
             save_preprint = True
 
+        if 'title' in validated_data:
+            title = validated_data['title']
+            self.set_field(preprint.set_title, title, auth)
+            save_preprint = True
+
+        if 'description' in validated_data:
+            description = validated_data['description']
+            self.set_field(preprint.set_description, description, auth)
+            save_preprint = True
+
         if 'article_doi' in validated_data:
             preprint.article_doi = validated_data['article_doi']
             save_preprint = True
@@ -236,11 +251,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if not preprint.primary_file:
                 raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
             self.set_field(preprint.set_published, published, auth)
-            if not preprint.is_public:
-                self.set_field(preprint.is_public, True, auth)
+            if preprint.node and not preprint.node.is_public:
+                preprint.node.set_privacy('public', save=False)
+                save_node = True
             save_preprint = True
             recently_published = published
-            preprint.set_privacy('public')
+            preprint.set_privacy('public', log=False, save=True)
 
         if save_node:
             try:
@@ -277,19 +293,27 @@ class PreprintCreateSerializer(PreprintSerializer):
 
     def create(self, validated_data):
         creator = self.context['request'].user
-        node = validated_data.pop('node', None)
-        if node:
-            if isinstance(node, dict):
-                node = Node.objects.create(creator=creator, **node)
-
         auth = get_user_auth(self.context['request'])
 
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
+        node = validated_data.pop('node', None) or None
+        if node:
+            if not node.has_permission(auth.user, 'admin'):
+                raise exceptions.PermissionDenied
+
+            node_preprints = node.preprints.filter(provider=provider)
+            if node_preprints.exists():
+                raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
+
+            if node.is_deleted:
+                raise exceptions.ValidationError('Cannot attach a deleted project to a preprint.')
+
         title = validated_data.pop('title')
-        preprint = Preprint(node=node, provider=provider, title=title, creator=creator)
+        description = validated_data.pop('description', '')
+        preprint = Preprint(node=node, provider=provider, title=title, creator=creator, description=description)
         preprint.save()
 
         return self.update(preprint, validated_data)
@@ -333,6 +357,13 @@ class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, Pre
     Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """
     id = IDField(source='_id', required=False, allow_null=True)
+    index = ser.IntegerField(required=False, source='_order')
+
+    email_preferences = ['preprint', 'false']
+
+    def get_default_send_email_type(self):
+        return self.context['request'].GET.get('send_email') or 'preprint'
+
     def get_related_resource(self):
         return self.context['view'].get_preprint()
 
@@ -344,6 +375,7 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
     """
     Overrides NodeContributorDetailSerializer to set the preprint instead of the node
     """
+    id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
     def get_related_resource(self):

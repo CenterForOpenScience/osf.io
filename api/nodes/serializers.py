@@ -23,6 +23,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
+from osf.exceptions import PreprintStateError
 from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
@@ -909,6 +910,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         if index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
+    def get_default_send_email_type(self):
+        return self.context['request'].GET.get('send_email') or 'default'
+
     def create(self, validated_data):
         id = validated_data.get('_id')
         email = validated_data.get('user', {}).get('email', None)
@@ -919,7 +923,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or 'default'
+        send_email = self.get_default_send_email_type()
         permissions = self.get_proposed_permissions(validated_data)
 
         self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
@@ -974,6 +978,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                 node.move_contributor(instance.user, auth, index, save=True)
             node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except PreprintStateError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)

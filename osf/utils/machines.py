@@ -6,7 +6,7 @@ from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
-from osf.models.nodelog import NodeLog
+from osf.models.preprintlog import PreprintLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
 from website.mails import mails
@@ -76,13 +76,11 @@ class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
 
     def save_changes(self, ev):
-        node = self.machineable.node
-        node._has_abandoned_preprint = False
         now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.machineable.in_public_reviews_state
         if should_publish and not self.machineable.is_published:
-            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.target == self.machineable.node):
-                raise ValueError('Preprint node is not a valid preprint; cannot publish.')
+            if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
+                raise ValueError('Preprint is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.machineable.subjects.exists():
@@ -93,7 +91,6 @@ class ReviewsMachine(BaseMachine):
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
-        node.save()
 
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
@@ -103,15 +100,15 @@ class ReviewsMachine(BaseMachine):
         context['referrer'] = ev.kwargs.get('user')
         user = ev.kwargs.get('user')
         auth = Auth(user)
-        self.machineable.node.add_log(
-            action=NodeLog.PREPRINT_INITIATED,
+        self.machineable.add_log(
+            action=PreprintLog.PUBLISHED,
             params={
                 'preprint': self.machineable._id
             },
             auth=auth,
             save=False,
         )
-        recipients = list(self.machineable.node.contributors)
+        recipients = list(self.machineable.contributors)
         reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
 
     def notify_resubmit(self, ev):

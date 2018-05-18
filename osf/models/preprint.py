@@ -3,6 +3,7 @@ import os
 import urlparse
 import logging
 import re
+import pytz
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -15,6 +16,7 @@ from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
+from framework.analytics import increment_user_activity_counters
 
 from osf.models import Subject, Tag, OSFUser
 from osf.models.preprintlog import PreprintLog
@@ -28,6 +30,7 @@ from osf.utils import sanitize
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
+from website.project import signals as project_signals
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
@@ -114,7 +117,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         )
 
     def __unicode__(self):
-        return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, " with supplemental files on " + self.node.__unicode__() if self.node else '')
+        return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @property
     def contributors(self):
@@ -233,6 +236,34 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+        user = None
+        if auth:
+            user = auth.user
+        elif request:
+            user = request.user
+
+        params['preprint'] = params.get('preprint') or self._id
+
+        log = PreprintLog(
+            action=action, user=user, foreign_user=foreign_user,
+            params=params, preprint=self
+        )
+
+        log.save()
+
+        if self.logs.count() == 1:
+            self.last_logged = log.created.replace(tzinfo=pytz.utc)
+        else:
+            self.last_logged = self.logs.first().created
+
+        if save:
+            self.save()
+        if user:
+            increment_user_activity_counters(user._primary_key, action, log.created.isoformat())
+
+        return log
+
     def has_permission(self, user, permission):
         """Check whether user has permission.
         :param User user: User to test
@@ -283,7 +314,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                     self.subjects.add(Subject.load(s_id))
 
         if log:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.SUBJECTS_UPDATED,
                 params={
                     'subjects': list(self.subjects.values('_id', 'text')),
@@ -316,7 +347,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         # only log if updating the preprint file, not adding for the first time
         if existing_file:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.FILE_UPDATED,
                 params={
                     'preprint': self._id,
@@ -338,8 +369,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             raise ValueError('Cannot unpublish preprint.')
 
         self.is_published = published
-        # For legacy preprints, not logging
-        self.set_privacy('public', log=False, save=False)
 
         if published:
             if not (self.primary_file and self.primary_file.target == self):
@@ -349,12 +378,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             if not self.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
+            # For legacy preprints, not logging
+            self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
             self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.PUBLISHED,
                 params={
                     'preprint': self._id
@@ -374,7 +405,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
 
         if license_changed:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.CHANGED_LICENSE,
                 params={
                     'preprint': self._id,
@@ -400,7 +431,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
         ret = super(Preprint, self).save(*args, **kwargs)
-
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
 
@@ -409,7 +439,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if first_save:
             self.update_group_permissions()
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.CREATED,
                 params={
                     'preprint': self._id
@@ -465,7 +495,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
-        self.add_preprint_log(
+        self.add_log(
             action=PreprintLog.TAG_ADDED,
             params={
                 'preprint': self._id,
@@ -488,7 +518,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         else:
             tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.TAG_REMOVED,
                 params={
                     'preprint': self._id,
@@ -507,7 +537,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return user is not None and PreprintContributor.objects.filter(user=user, preprint=self).exists()
 
     def add_contributor(self, contributor, permission=None, visible=True,
-                        send_email='default', auth=None, log=True, save=False):
+                        send_email='preprint', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -535,7 +565,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             contributor_obj.save()
 
             if log:
-                self.add_preprint_log(
+                self.add_log(
                     action=PreprintLog.CONTRIB_ADDED,
                     params={
                         'preprint': self._id,
@@ -547,6 +577,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             if save:
                 self.save()
 
+            if self._id and self.is_published:
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=send_email)
             self.update_search()
             return contrib_to_add, True
 
@@ -580,7 +612,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
         if log and contributors:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.CONTRIB_ADDED,
                 params={
                     'preprint': self._id,
@@ -595,7 +627,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='preprint',
                                      visible=True, permission=None, save=False, existing_user=None):
         """Add a non-registered contributor to the project.
 
@@ -696,7 +728,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             return
         message = (PreprintLog.MADE_CONTRIBUTOR_VISIBLE if visible else PreprintLog.MADE_CONTRIBUTOR_INVISIBLE)
         if log:
-            self.add_preprint_log(
+            self.add_log(
                 action=message,
                 params={
                     'preprint': self._id,
@@ -754,7 +786,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         self.clear_permissions(contributor)
 
         if log:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.CONTRIB_REMOVED,
                 params={
                     'preprint': self._id,
@@ -766,6 +798,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         self.save()
         self.update_search()
+        # send signal to remove this user from project subscriptions
+        if self.is_published:
+            project_signals.contributor_removed.send(self, user=contributor)
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -780,7 +815,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             results.append(outcome)
             removed.append(contrib._id)
         if log:
-            self.add_preprint_log(
+            self.add_log(
                 action=PreprintLog.CONTRIB_REMOVED,
                 params={
                     'preprint': self._id,
@@ -804,7 +839,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_preprintcontributor_order(contributor_ids)
-        self.add_preprint_log(
+        self.add_log(
             action=PreprintLog.CONTRIB_REORDERED,
             params={
                 'preprint': self._id,
@@ -901,7 +936,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                     each.id for each in sorted(self.preprintcontributor_set.all(), key=lambda c: user_ids.index(c.user._id))
                 ]
                 self.set_preprintcontributor_order(sorted_contrib_ids)
-                self.add_preprint_log(
+                self.add_log(
                     action=PreprintLog.CONTRIB_REORDERED,
                     params={
                         'preprint': self._id,
@@ -918,7 +953,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 self.remove_contributors(to_remove, auth=auth, save=False)
 
             if permissions_changed:
-                self.add_preprint_log(
+                self.add_log(
                     action=PreprintLog.PERMISSIONS_UPDATED,
                     params={
                         'preprint': self._id,
@@ -946,7 +981,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             if not admin_list.count() > 1:
                 # has only one admin
                 admin = admin_list.first()
-                if admin == user and permission is not 'admin':
+                if admin == user and permission != 'admin':
                     raise PreprintStateError('{} is the only admin.'.format(user.fullname))
             if not self.preprintcontributor_set.filter(user=user).exists():
                 raise ValueError(
@@ -957,7 +992,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 permissions_changed = {
                     user._id: permission
                 }
-                self.add_preprint_log(
+                self.add_log(
                     action=PreprintLog.PERMISSIONS_UPDATED,
                     params={
                         'preprint': self._id,
@@ -988,7 +1023,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         if original_title == new_title:
             return False
         self.title = new_title
-        self.add_preprint_log(
+        self.add_log(
             action=PreprintLog.EDITED_TITLE,
             params={
                 'preprint': self._id,
@@ -1015,7 +1050,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         if original == new_description:
             return False
         self.description = new_description
-        self.add_preprint_log(
+        self.add_log(
             action=PreprintLog.EDITED_DESCRIPTION,
             params={
                 'preprint': self._id,
@@ -1122,6 +1157,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 if isinstance(v, basestring)
             }
 
+        if self.is_published:
+            enqueue_task(on_preprint_updated.s(self._id))
+
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
@@ -1167,7 +1205,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         super(Preprint, self).flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             self.set_privacy('private', auth=None, log=False, save=False)
-            log = self.add_preprint_log(
+            log = self.add_log(
                 action=PreprintLog.MADE_PRIVATE,
                 params={
                     'preprint': self._id,
@@ -1181,7 +1219,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     def confirm_spam(self, save=False):
         super(Preprint, self).confirm_spam(save=False)
         self.set_privacy('private', auth=None, log=False, save=False)
-        log = self.add_preprint_log(
+        log = self.add_log(
             action=PreprintLog.MADE_PRIVATE,
             params={
                 'preprint': self._id,
@@ -1285,7 +1323,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             )
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
-        self.add_preprint_log(
+        self.add_log(
             'osf_storage_{0}'.format(action),
             auth=Auth(user),
             params=params
@@ -1319,7 +1357,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if log:
             action = PreprintLog.MADE_PUBLIC if permissions == 'public' else PreprintLog.MADE_PRIVATE
-            self.add_preprint_log(
+            self.add_log(
                 action=action,
                 params={
                     'preprint': self._id,

@@ -578,9 +578,11 @@ class PreprintFactory(DjangoModelFactory):
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+        project = kwargs.pop('project', None) or None
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'
-        instance = target_class(provider=provider, title=title, description=description, creator=creator)
+        is_public = kwargs.pop('is_public', True)
+        instance = target_class(provider=provider, title=title, description=description, creator=creator, node=project, is_public=is_public)
         return instance
 
     @classmethod

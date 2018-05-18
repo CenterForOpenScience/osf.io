@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from api.base.settings.defaults import API_BASE
-from api.citations.utils import display_absolute_url
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
@@ -64,7 +63,8 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(
             res.json['data']['links']['self'],
-            display_absolute_url(self.published_preprint))
+            self.published_preprint.display_absolute_url
+        )
 
 
 class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
@@ -79,7 +79,7 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
     def test_citation_contains_correct_date(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
-        expected_date = self.published_preprint.node.logs.latest().date.strftime('%Y, %B %-d')
+        expected_date = self.published_preprint.logs.latest().created.strftime('%Y, %B %-d')
         assert_true(
             expected_date in res.json['data']['attributes']['citation'])
 

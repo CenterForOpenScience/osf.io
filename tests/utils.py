@@ -108,7 +108,7 @@ def assert_latest_log(log_action, node_key, index=0):
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index]
+    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
     assert last_log._id != new_log._id
     assert new_log.action == log_action
 
@@ -118,7 +118,7 @@ def assert_latest_log_not(log_action, node_key, index=0):
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index]
+    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
     assert new_log.action != log_action
     assert last_log._id == new_log._id
 

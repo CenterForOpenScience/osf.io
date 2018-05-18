@@ -1,17 +1,19 @@
 import re
 
 from rest_framework import generics
-from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
+from django.db.models import Q
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ReviewAction, Preprint, PreprintContributor
 from osf.utils.requests import check_select_for_update
+from osf.utils.permissions import PERMISSIONS
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
 from api.actions.views import get_review_actions_queryset
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, InvalidFilterOperator, InvalidFilterValue
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
@@ -151,6 +153,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -176,6 +179,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -282,6 +286,29 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
             return PreprintContributorsCreateSerializer
         else:
             return PreprintContributorsSerializer
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        preprint = self.get_preprint()
+        if len(preprint.visible_contributors) == 1 and preprint.get_visible(instance):
+            raise ValidationError('Must have at least one visible contributor')
+        if not preprint.preprintcontributor_set.filter(user=instance).exists():
+            raise NotFound('User cannot be found in the list of contributors.')
+        removed = preprint.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            query_val = operation['value'].lower().strip()
+            if query_val not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return Q(user__in=self.get_preprint().get_group(query_val).user_set.all())
+        return super(PreprintContributorsList, self).build_query_from_field(field_name, operation)
 
 
 class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):

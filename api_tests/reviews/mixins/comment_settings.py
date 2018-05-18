@@ -5,6 +5,7 @@ from osf_tests.factories import (
     ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
+    ProjectFactory,
     PreprintProviderFactory,
 )
 from osf.utils import permissions as osf_permissions
@@ -44,6 +45,7 @@ class ReviewActionCommentSettingsMixin(object):
     @pytest.fixture()
     def node_admin(self, preprint):
         user = AuthUserFactory()
+        preprint.node = ProjectFactory(creator=preprint.creator)
         preprint.node.add_contributor(
             user,
             permissions=[
@@ -70,9 +72,10 @@ class ReviewActionCommentSettingsMixin(object):
                 res = app.get(url, auth=provider_moderator.auth)
                 self.__assert_fields(res, expected_ids, False, False)
 
-                # node admin sees what the settings allow
-                res = app.get(url, auth=node_admin.auth)
-                self.__assert_fields(res, expected_ids, anonymous, private)
+                # node admin, if attached node exists cannot see preprint
+                # Preprints and nodes have separate contributors
+                res = app.get(url, auth=node_admin.auth, expect_errors=True)
+                assert res.status_code == 403
 
     def __assert_fields(
             self, res, expected_ids, hidden_creator, hidden_comment):
