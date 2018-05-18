@@ -37,16 +37,18 @@ class ParseCrossRefConfirmation(JSONAPIBaseView):
             preprint_guid = crossref_email_content.find('batch_id').text
             preprint = PreprintService.load(preprint_guid)
 
-            # If a DOI seems like it was successful, undo that and email OSF Support
+            # If the preprint has a doi, mark it as deleted and email OSF Support
             if preprint.get_identifier_value('doi'):
-
-                # Remove that DOI relationship, as it's not really registered
-                preprint.identifiers.get(category='doi').delete()
+                incorrect_doi = preprint.identifiers.get(category='doi')
+                doi_value = incorrect_doi.value
+                incorrect_doi.remove()
 
                 mails.send_mail(
                     to_addr=settings.OSF_SUPPORT_EMAIL,
                     mail=mails.CROSSREF_ERROR,
                     preprint=preprint,
+                    doi=doi_value,
+                    email_content=crossref_email_content,
                     mimetype='plain'
                 )
 
