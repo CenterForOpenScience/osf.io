@@ -823,7 +823,8 @@ table.add-links {
 
 
 
-/* Override jumbotron */
+/* Override jumbotron to be a bit smaller.
+   Used for the updated terms of service banner on all pages. */
 .jumbotron {
     padding: 10px 40px 10px 40px;
     margin-bottom: 0;
