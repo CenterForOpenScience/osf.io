@@ -70,7 +70,7 @@ def get_campaigns():
                         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                         'login_type': 'proxy',
                         'provider': name,
-                        'logo': name if name != 'OSF' else settings.OSF_PREPRINTS_LOGO,
+                        'logo': provider._id if name != 'OSF' else settings.OSF_PREPRINTS_LOGO,
                     }
                 })
 
