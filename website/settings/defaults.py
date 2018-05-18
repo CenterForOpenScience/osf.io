@@ -387,7 +387,7 @@ CROSSREF_PASSWORD = None
 
 # metadata
 CROSSREF_DEPOSIT_URL = None
-CROSSREF_DEPOSITOR_EMAIL = 'None'  # changeme in local.py
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission 
 CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
 CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
 CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
