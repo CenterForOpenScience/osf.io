@@ -12,6 +12,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
+                <a class="btn btn-primary" href={% url 'collection_providers:export' collection_provider.id %}>Export collection provider metadata</a>
                 <a class="btn btn-danger" href={% url 'collection_providers:delete' collection_provider.id %}>Delete collection provider</a>
             </div>
         </div>
