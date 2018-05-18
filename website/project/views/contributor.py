@@ -753,7 +753,12 @@ def claim_user_form(auth, **kwargs):
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             provider = PreprintProvider.load(pid)
-            redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True) if provider is None else provider.landing_url
+            redirect_url = None
+            if provider:
+                redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
+            else:
+                redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
+
             return redirect(cas.get_login_url(
                 redirect_url,
                 username=user.username,
