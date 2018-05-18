@@ -1,7 +1,9 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 class Identifier(ObjectIDMixin, BaseModel):
@@ -15,9 +17,16 @@ class Identifier(ObjectIDMixin, BaseModel):
     category = models.CharField(max_length=10)  # longest was 3, 8/19/2016
     # value: e.g. 'FK424601'
     value = models.CharField(max_length=50)  # longest was 21, 8/19/2016
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
 
     class Meta:
         unique_together = ('object_id', 'content_type', 'category')
+
+    def remove(self, save=True):
+        """Mark an identifier as deleted, which excludes it from being returned in get_identifier"""
+        self.deleted = timezone.now
+        if save:
+            self.save()
 
 
 class IdentifierMixin(models.Model):
@@ -28,7 +37,7 @@ class IdentifierMixin(models.Model):
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
         content_type = ContentType.objects.get_for_model(self)
-        return Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type).first()
+        return Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type, deleted__isnull=True).first()
 
     def get_identifier_value(self, category):
         identifier = self.get_identifier(category)
