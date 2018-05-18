@@ -72,4 +72,20 @@
             <input class="form-button" type="submit" value="Save" />
         </form>
     </div>
+    <div class="col-md-3">
+        <div>
+            <h4>Import from JSON</h4>
+            <p>Choose a JSON file that has been previously exported from another Collection Provider detail page. This will
+                pre-populate the Collection Provider change form with those details.</p>
+            {% if collection_provider %}
+                <form action = {% url 'collection_providers:import' collection_provider_id=collection_provider.id %} method="post" enctype="multipart/form-data" >
+            {% else %}
+                <form action = {% url 'collection_providers:import' %} method="post" enctype="multipart/form-data" >
+            {% endif %}
+                {% csrf_token %}
+                {{ import_form.as_p }}
+                <input class="form-button" type="submit" value="Import" />
+            </form>
+        </div>
+    </div>
 </div>

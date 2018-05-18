@@ -1,13 +1,17 @@
 import json
 
+from django.http import HttpResponse, JsonResponse
+from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
+from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 
 from admin.collection_providers.forms import CollectionProviderForm
 from admin.base import settings
-from osf.models import CollectionProvider
+from admin.base.forms import ImportFileForm
+from osf.models import CollectionProvider, Collection, NodeLicense
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
@@ -30,6 +34,7 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
         return super(CreateCollectionProvider, self).form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreateCollectionProvider, self).get_context_data(*args, **kwargs)
 
@@ -83,6 +88,7 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         collection_provider_attributes = model_to_dict(collection_provider)
         collection_provider_attributes['default_license'] = collection_provider.default_license.name if collection_provider.default_license else None
         kwargs['collection_provider'] = collection_provider_attributes
+        kwargs['import_form'] = ImportFileForm()
 
         # compile html list of licenses_acceptable so we can render them as a list
         licenses_acceptable = list(collection_provider.licenses_acceptable.values_list('name', flat=True))
@@ -130,6 +136,9 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
         self.object.primary_collection.save()
         return super(CollectionProviderChangeForm, self).form_valid(form)
 
+    def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
+        return super(CollectionProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_object(self, queryset=None):
         provider_id = self.kwargs.get('collection_provider_id')
@@ -148,3 +157,79 @@ class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):
 
     def get_object(self, queryset=None):
         return CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+
+
+class ExportColectionProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_collectionprovider'
+    raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        collection_provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+        data = serializers.serialize('json', [collection_provider])
+        cleaned_data = json.loads(data)[0]
+        cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems()}
+        cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in collection_provider.licenses_acceptable.all()]
+        cleaned_fields['default_license'] = collection_provider.default_license.license_id if collection_provider.default_license else ''
+        cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
+        cleaned_data['fields'] = cleaned_fields
+        filename = '{}_export.json'.format(collection_provider.name)
+        response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
+        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        return response
+
+    def serialize_primary_collection(self, primary_collection):
+        primary_collection = Collection.objects.get(id=primary_collection)
+        data = serializers.serialize('json', [primary_collection])
+        cleaned_data = json.loads(data)[0]
+        return cleaned_data
+
+
+class ImportCollectionProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_collectionprovider'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        form = ImportFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file_str = self.parse_file(request.FILES['file'])
+            file_json = json.loads(file_str)
+            current_fields = [f.name for f in CollectionProvider._meta.get_fields()]
+            cleaned_result = {key: value for key, value in file_json['fields'].iteritems()}
+            collection_provider = self.create_or_update_provider(cleaned_result)
+            return redirect('collection_providers:detail', collection_provider_id=collection_provider.id)
+
+    def parse_file(self, f):
+        parsed_file = ''
+        for chunk in f.chunks():
+            parsed_file += chunk.decode('utf-8')
+        return parsed_file
+
+    def get_page_provider(self):
+        page_provider_id = self.kwargs.get('collection_provider_id', '')
+        if page_provider_id:
+            return CollectionProvider.objects.get(id=page_provider_id)
+
+    def create_or_update_provider(self, provider_data):
+        provider = self.get_page_provider()
+        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
+        default_license = provider_data.pop('default_license', False)
+        primary_collection = provider_data.pop('primary_collection', '')
+        provider_data.pop('additional_providers')
+
+        if provider:
+            for key, val in provider_data.iteritems():
+                setattr(provider, key, val)
+            provider.save()
+        else:
+            provider = CollectionProvider(**provider_data)
+            provider._creator = self.request.user
+            provider.save()
+            provider.primary_collection.collected_type_choices = primary_collection['fields']['collected_type_choices']
+            provider.primary_collection.status_choices = primary_collection['fields']['status_choices']
+            provider.primary_collection.save()
+
+        if licenses:
+            provider.licenses_acceptable = licenses
+        if default_license:
+            provider.default_license = NodeLicense.objects.get(license_id=default_license)
+        return provider
