@@ -23,7 +23,7 @@ from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
 
@@ -311,13 +311,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
-        assert self.preprint.identifiers.count() == 0
-        self.preprint.set_published(True, auth=self.auth, save=True)
-
-        assert mock_get_and_set_identifiers.called
-
     def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory()
         preprint = PreprintFactory(provider=new_provider)
@@ -326,6 +319,22 @@ class TestPreprintIdentifiers(OsfTestCase):
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 
         assert doi == ideal_doi
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_update_or_create_preprint_identifiers(self, mock_get_identifiers):
+        self.preprint.is_published = True
+        update_or_create_preprint_identifiers(self.preprint)
+        assert mock_get_identifiers.called
+        assert mock_get_identifiers.call_count == 1
+
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_or_create_preprint_identifiers_ezid(self, mock_update_ezid):
+        published_preprint = PreprintFactory(is_published=True, creator=self.user)
+        update_or_create_preprint_identifiers(published_preprint)
+        assert mock_update_ezid.called
+        assert mock_update_ezid.call_count == 1
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
