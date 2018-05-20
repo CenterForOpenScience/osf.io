@@ -129,6 +129,23 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         """Get list of datasets from provided Dataverse alias"""
 
         connection = client.connect_from_settings(self)
+
+        dataverses = connection.get_dataverses()
+        return [
+            {
+                'name': dataverse.title,
+                'alias': dataverse.alias,
+                'id': dataverse.alias,
+                'addon': 'dataverse',
+                'kind': 'dataverse',
+                'path': '/',
+            }
+            for dataverse in dataverses]
+
+    def get_datasets(self, path=None, folder_id=None):
+        """Get list of datasets from provided Dataverse alias"""
+
+        connection = client.connect_from_settings(self)
         dataverse = client.get_dataverse(connection, self.dataverse_alias)
 
         try:
