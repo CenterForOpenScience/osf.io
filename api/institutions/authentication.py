@@ -3,6 +3,7 @@ import json
 import jwe
 import jwt
 
+from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -93,6 +94,9 @@ class InstitutionAuthentication(BaseAuthentication):
             if suffix:
                 user.suffix = suffix
             user.update_date_last_login()
+
+            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
+            user.accepted_terms_of_service = timezone.now()
 
             # save and register user
             user.save()

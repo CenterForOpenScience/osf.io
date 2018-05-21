@@ -897,6 +897,45 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['family_name'] == strip_html(
             bad_family_name)
 
+    def test_update_accepted_tos_sets_field(
+            self, app, user_one, url_user_one):
+        assert user_one.accepted_terms_of_service is None
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'accepted_terms_of_service': True,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.accepted_terms_of_service is not None
+
+    def test_update_accepted_tos_false(
+            self, app, user_one, url_user_one):
+        assert user_one.accepted_terms_of_service is None
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'accepted_terms_of_service': False,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.accepted_terms_of_service is None
 
 @pytest.mark.django_db
 class TestDeactivatedUser:
