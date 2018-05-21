@@ -226,13 +226,13 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         return '/{}users/{}/preprints/?version=2.2&'.format(
             API_BASE, user_admin_contrib._id)
 
-    # test override: user nodes/preprints routes do not show private nodes to
+    # test override: user nodes/preprints routes do not show private preprints to
     # anyone but the self
     def test_preprint_private_visible_write(
             self, app, user_write_contrib, project, preprint, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0

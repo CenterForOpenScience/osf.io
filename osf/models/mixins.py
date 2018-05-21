@@ -592,7 +592,7 @@ class ReviewProviderMixin(models.Model):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts

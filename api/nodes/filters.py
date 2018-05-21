@@ -1,19 +1,22 @@
 from copy import deepcopy
 
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode
+from osf.models import NodeRelation, AbstractNode, Preprint
 
 
 class NodesFilterMixin(ListFilterMixin):
 
     def param_queryset(self, query_params, default_queryset):
         filters = self.parse_query_params(query_params)
-        queryset = default_queryset
+        valid_preprint_subquery = Preprint.objects.filter(deleted__isnull=True, is_published=True, _is_preprint_orphan=False,
+                _has_abandoned_preprint=False, is_public=True, primary_file__isnull=False, node=OuterRef('pk'))
+
+        queryset = default_queryset.annotate(preprints_exist=Exists(valid_preprint_subquery))
 
         if filters:
             for key, field_names in filters.iteritems():
@@ -61,11 +64,8 @@ class NodesFilterMixin(ListFilterMixin):
 
         if field_name == 'preprint':
             not_preprint_query = (
-                Q(preprint_file=None) |
-                Q(_is_preprint_orphan=True) |
-                Q(_has_abandoned_preprint=True)
+                Q(preprints_exist=False)
             )
-
             return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)

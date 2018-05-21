@@ -3337,7 +3337,7 @@ class TestAuthViews(OsfTestCase):
         # unclaimed user has been invited to a project.
         referrer = UserFactory()
         project = ProjectFactory(creator=referrer)
-        unclaimed_user.add_unclaimed_record(resource, referrer, 'foo')
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
         unclaimed_user.save()
 
         # sanity check
@@ -4368,7 +4368,7 @@ class TestUserConfirmSignal(OsfTestCase):
         # unclaimed user has been invited to a project.
         referrer = UserFactory()
         project = ProjectFactory(creator=referrer)
-        unclaimed_user.add_unclaimed_record(resource, referrer, 'foo', email=fake_email())
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo', email=fake_email())
         unclaimed_user.save()
 
         token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']

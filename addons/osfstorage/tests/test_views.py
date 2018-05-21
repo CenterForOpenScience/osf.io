@@ -641,32 +641,6 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_attempt_delete_while_preprint(self):
-        file = self.root_node.append_file('Nights')
-        self.node.preprint_file = file
-        self.node.save()
-        res = self.delete(file, expect_errors=True)
-
-        assert_equal(res.status_code, 403)
-
-    def test_attempt_delete_folder_with_preprint(self):
-        folder = self.root_node.append_folder('Fishes')
-        file = folder.append_file('Fish')
-        self.node.preprint_file = file
-        self.node.save()
-        res = self.delete(folder, expect_errors=True)
-
-        assert_equal(res.status_code, 403)
-
-    def test_delete_folder_while_preprint(self):
-        folder = self.root_node.append_folder('Mr. Yuck')
-        preprint_file = self.root_node.append_file('Thyme Out')
-        self.node.preprint_file = preprint_file
-        self.node.save()
-        res = self.delete(folder)
-
-        assert_equal(res.status_code, 200)
-
     def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
         folder = self.root_node.append_folder('Herbal Crooners')
         file = folder.append_file('Frank Cilantro')
@@ -690,6 +664,125 @@ class TestDeleteHook(HookTestCase):
 
     def test_attempt_delete_double_nested_folder_rented_file(self):
         folder = self.root_node.append_folder('One is not enough')
+        folder_two = folder.append_folder('Two might be doe')
+        user = factories.AuthUserFactory()
+        file_checked = folder_two.append_file('We shall see')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
+@pytest.mark.django_db
+class TestDeleteHookPreprint(HookTestCase):
+
+    def setUp(self):
+        super(TestDeleteHookPreprint, self).setUp()
+        self.preprint= PreprintFactory(creator=self.user, is_published=True)
+        self.root_preprint = self.preprint.root_folder
+
+    def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
+        method = getattr(self.app, method)
+        return method(
+            '{url}?payload={payload}&signature={signature}'.format(
+                url=api_url_for(view_name, guid=target._id, **view_kwargs),
+                **signing.sign_data(signing.default_signer, payload)
+            ),
+            **kwargs
+        )
+
+    def delete(self, file, **kwargs):
+        return self.send_hook(
+            'osfstorage_delete',
+            {'fid': file._id},
+            payload={
+                'user': self.user._id
+            },
+            target=self.preprint,
+            method='delete',
+            **kwargs
+        )
+
+    def test_delete(self):
+        file = self.root_preprint.append_file('Newfile')
+        resp = self.delete(file)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'status': 'success'})
+        fid = file._id
+        del file
+        # models.StoredFileNode._clear_object_cache()
+        assert_is(OsfStorageFileNode.load(fid), None)
+        assert_true(models.TrashedFileNode.load(fid))
+
+    def test_delete_deleted(self):
+        file = self.root_preprint.append_file('Newfile')
+        file.delete()
+
+        resp = self.delete(file, expect_errors=True)
+
+        assert_equal(resp.status_code, 404)
+
+    def test_cannot_delete_root(self):
+        resp = self.delete(self.root_preprint, expect_errors=True)
+
+        assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        user = factories.AuthUserFactory()
+        file_checked = self.root_preprint.append_file('Newfile')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(file_checked, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_primary_file_off_preprint(self):
+        res = self.delete(self.preprint.primary_file, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_folder_with_preprint(self):
+        folder = self.root_preprint.append_folder('Fishes')
+        file = folder.append_file('Fish')
+        self.preprint.primary_file = file
+        self.preprint.save()
+        res = self.delete(folder, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_delete_folder_while_preprint(self):
+        folder = self.root_preprint.append_folder('Mr. Yuck')
+        preprint_file = self.root_preprint.append_file('Thyme Out')
+        self.preprint.primary_file = preprint_file
+        self.preprint.save()
+        res = self.delete(folder)
+
+        assert_equal(res.status_code, 200)
+
+    def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
+        folder = self.root_preprint.append_folder('Herbal Crooners')
+        file = folder.append_file('Frank Cilantro')
+        # project having a preprint should not block other moves
+        preprint_file = self.root_preprint.append_file('Thyme Out')
+        self.preprint.primary_file = preprint_file
+        self.preprint.save()
+        res = self.delete(folder)
+
+        assert_equal(res.status_code, 200)
+
+    def test_attempt_delete_folder_with_rented_file(self):
+        folder = self.root_preprint.append_folder('Hotel Events')
+        user = factories.AuthUserFactory()
+        file_checked = folder.append_file('Checkout time')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_double_nested_folder_rented_file(self):
+        folder = self.root_preprint.append_folder('One is not enough')
         folder_two = folder.append_folder('Two might be doe')
         user = factories.AuthUserFactory()
         file_checked = folder_two.append_file('We shall see')

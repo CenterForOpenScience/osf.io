@@ -201,15 +201,18 @@ class TestUserNodesPreprintsFiltering:
 
     @pytest.fixture()
     def abandoned_preprint(self, abandoned_preprint_node):
-        return PreprintFactory(
-            project=abandoned_preprint_node,
+        preprint = PreprintFactory(project=abandoned_preprint_node,
             is_published=False)
+        preprint._has_abandoned_preprint = True
+        preprint.save()
+        return preprint
 
     @pytest.fixture()
     def orphaned_preprint(self, orphaned_preprint_node):
         orphaned_preprint = PreprintFactory(project=orphaned_preprint_node)
-        orphaned_preprint.node.preprint_file = None
-        orphaned_preprint.node.save()
+        orphaned_preprint._is_preprint_orphan = True
+        orphaned_preprint.primary_file = None
+        orphaned_preprint.save()
         return orphaned_preprint
 
     @pytest.fixture()
@@ -217,7 +220,7 @@ class TestUserNodesPreprintsFiltering:
         return '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 
     def test_filter_false(
-            self, app, user, abandoned_preprint_node,
+            self, app, user, abandoned_preprint_node, abandoned_preprint, orphaned_preprint, valid_preprint, valid_preprint_node,
             no_preprints_node, orphaned_preprint_node, url_base):
         expected_ids = [
             abandoned_preprint_node._id,
@@ -229,7 +232,7 @@ class TestUserNodesPreprintsFiltering:
         assert set(expected_ids) == set(actual_ids)
 
     def test_filter_true(
-            self, app, user, valid_preprint_node,
+            self, app, user, valid_preprint_node, orphaned_preprint_node, orphaned_preprint, abandoned_preprint_node, abandoned_preprint,
             valid_preprint, url_base):
         expected_ids = [valid_preprint_node._id]
         res = app.get('{}true'.format(url_base), auth=user.auth)

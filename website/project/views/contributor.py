@@ -531,11 +531,10 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
     if email_template == 'false':
         return
-
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
-
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered:
+    if contributor.is_registered and (isinstance(node, Preprint) or
+            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
         preprint_provider = None
         logo = None
@@ -548,16 +547,15 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
+
+        elif email_template == 'access_request':
+            mimetype = 'html'
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
+        elif node.is_preprint:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
-            if not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)):
-                if email_template == 'access_request':
-                    mimetype = 'html'
-                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
-                elif node.is_preprint:
-                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
-                    logo = settings.OSF_PREPRINTS_LOGO
-                else:
-                    email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:

@@ -10,7 +10,7 @@ from website.reviews import signals as reviews_signals
 def reviews_notification(self, creator, template, context, action):
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import notify_global_event
-    recipients = list(action.target.node.contributors)
+    recipients = list(action.target.contributors)
     time_now = action.created if action is not None else timezone.now()
     node = action.target.node
     notify_global_event(
@@ -32,7 +32,7 @@ def reviews_submit_notification(self, recipients, context):
     for recipient in recipients:
         user_subscriptions = get_user_subscriptions(recipient, event_type)
         context['no_future_emails'] = user_subscriptions['none']
-        context['is_creator'] = recipient == context['reviewable'].node.creator
+        context['is_creator'] = recipient == context['reviewable'].creator
         context['provider_name'] = context['reviewable'].provider.name
         mails.send_mail(
             recipient.username,

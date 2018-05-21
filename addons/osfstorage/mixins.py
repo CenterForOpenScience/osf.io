@@ -19,7 +19,7 @@ def create_file_node(sender, instance, **kwargs):
         return
 
     # Note: The "root" node will always be "named" empty string
-    root_folder = OsfStorageFolder(name='', target=instance)
+    root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
     root_folder.save()
 
     instance.__class__.objects.filter(id=instance.id).update(root_folder=root_folder)

@@ -519,4 +519,4 @@ class PreprintFilterMixin(ListFilterMixin):
         else:
             query = no_user_query
 
-        return base_queryset.filter(query).distinct('id', 'created')
+        return base_queryset.filter(query & Q(deleted__isnull=True)).distinct('id', 'created')

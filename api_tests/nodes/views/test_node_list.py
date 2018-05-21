@@ -208,7 +208,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def preprint(self, user_one):
-        return PreprintFactory(creator=user_one)
+        return PreprintFactory(project=ProjectFactory(creator=user_one), creator=user_one)
 
     @pytest.fixture()
     def folder(self):
@@ -307,10 +307,7 @@ class TestNodeFiltering:
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = Node.objects.filter(
-            preprint_file__isnull=False
-        ).exclude(_is_preprint_orphan=True)
-        assert len(data) == len(preprints)
+        assert len(data) == 1
         assert preprint.node._id in ids
         assert public_project_one._id not in ids
         assert public_project_two._id not in ids
@@ -795,7 +792,7 @@ class TestNodeFiltering:
     def test_preprint_filter_excludes_orphans(
             self, app, user_one, preprint, public_project_one,
             public_project_two, public_project_three):
-        orphan = PreprintFactory(creator=preprint.node.creator)
+        orphan = PreprintFactory(creator=preprint.node.creator, project=ProjectFactory(creator=preprint.node.creator))
         orphan._is_preprint_orphan = True
         orphan.save()
 
@@ -814,11 +811,11 @@ class TestNodeFiltering:
 
     def test_deleted_preprint_file_not_in_filtered_results(
             self, app, user_one, preprint):
-        orphan = PreprintFactory(creator=preprint.node.creator)
+        orphan = PreprintFactory(creator=preprint.node.creator, project=ProjectFactory(creator=preprint.node.creator))
 
         # orphan the preprint by deleting the file
-        orphan.node.preprint_file = None
-        orphan.node.save()
+        orphan.primary_file = None
+        orphan.save()
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
@@ -831,11 +828,11 @@ class TestNodeFiltering:
 
     def test_deleted_preprint_file_in_preprint_false_filtered_results(
             self, app, user_one, preprint):
-        orphan = PreprintFactory(creator=preprint.node.creator)
+        orphan = PreprintFactory(creator=preprint.node.creator, project=ProjectFactory(creator=preprint.node.creator))
 
         # orphan the preprint by deleting the file
-        orphan.node.preprint_file = None
-        orphan.node.save()
+        orphan.primary_file = None
+        orphan.save()
         orphan.refresh_from_db()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
@@ -852,6 +849,7 @@ class TestNodeFiltering:
             self, app, user_one, preprint):
         unpublished = PreprintFactory(
             creator=preprint.node.creator,
+            project=ProjectFactory(creator=preprint.node.creator),
             is_published=False)
         assert not unpublished.is_published
 
@@ -868,6 +866,7 @@ class TestNodeFiltering:
             self, app, user_one, preprint):
         unpublished = PreprintFactory(
             creator=preprint.node.creator,
+            project=ProjectFactory(creator=preprint.node.creator),
             is_published=False)
         assert not unpublished.is_published
 
