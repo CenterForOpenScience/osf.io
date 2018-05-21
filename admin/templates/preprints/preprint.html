@@ -14,12 +14,12 @@
                     <i class="fa fa-search"></i>
                 </a>
                     {% if perms.osf.delete_preprint %}
-                    {% if not serialized_preprint.node.deleted %}
+                    {% if not serialized_preprint.deleted %}
                     <span class="col-md-2">
-                        <a href="{% url 'nodes:remove' guid=serialized_preprint.node.id %}"
+                        <a href="{% url 'preprints:remove' guid=serialized_preprint.id %}"
                            data-toggle="modal" data-target="#deleteModal"
                            class="btn btn-danger">
-                            Delete Preprint Node
+                            Delete Preprint
                         </a>
                         </span>
                         <div class="modal" id="deleteModal">
@@ -30,10 +30,10 @@
                         </div>
                     {% else %}
                         <span class="col-md-2">
-                        <form method="post" action="{% url 'nodes:restore' guid=serialized_preprint.node.id %}">
+                        <form method="post" action="{% url 'preprints:restore' guid=serialized_preprint.id %}">
                             {% csrf_token %}
                             <input class="btn btn-success" type="submit"
-                                   value="Restore Preprint Node" />
+                                   value="Restore Preprint" />
                         </form>
                     </span>
                 {% endif %}
@@ -56,7 +56,6 @@
         <div class="row">
             <div class="col-md-12">
                 <h3>Preprint Details</h3>
-                <p>To remove contributors and perform other operations, <a href="{{ serialized_preprint.node.id | reverse_node }}">visit the associated node detail page</a>.</p>
             </div>
         </div>
         <div class="row">
@@ -75,17 +74,21 @@
                     </tr>
                     <tr>
                         <td>Title</td>
-                        <td>{{ serialized_preprint.node.title }}</td>
+                        <td>{{ serialized_preprint.title }}</td>
                     </tr>
                     <tr>
                         <td>Node</td>
                         <td>
-                            <a href="{{ serialized_preprint.node.id | reverse_node }}">{{ serialized_preprint.node.id }}</a>
+                            {% if serialized_preprint.node %}
+                                <a href="{{ serialized_preprint.node.id | reverse_node }}">{{ serialized_preprint.node.id }}</a>
+                            {% else %}
+                                None
+                            {% endif %}
                         </td>
                     </tr>
                     <tr>
                         <td>Public</td>
-                        <td>{{ serialized_preprint.node.is_public }}</td>
+                        <td>{{ serialized_preprint.is_public }}</td>
                     </tr>
                     <tr>
                         <td>Provider</td>
@@ -94,7 +97,7 @@
                             {% if perms.osf.change_preprint %}
                             <span class="provider_form_link" style="margin-left: 100px;">
                                 <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
-                                    Change prepint provider
+                                    Change preprint provider
                                 </a>
                                 <div class="collapse" id="collapseChangeProvider">
                                     <div class="well">
@@ -125,7 +128,7 @@
                     </tr>
                     <tr>
                         <td>Date Modified</td>
-                        <td>{{ serialized_preprint.date_created }} UTC</td>
+                        <td>{{ serialized_preprint.modified }} UTC</td>
                     </tr>
                     <tr>
                         <td>Published</td>
@@ -141,8 +144,8 @@
                     <tr>
                         <td>Creator</td>
                         <td>
-                             <a href="{{ serialized_preprint.node.creator | reverse_user }}">
-                                {{ serialized_preprint.node.creator }}
+                             <a href="{{ serialized_preprint.creator | reverse_user }}">
+                                {{ serialized_preprint.creator }}
                             </a>
                         </td>
                     </tr>
@@ -158,16 +161,33 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            {% for user in serialized_preprint.node.contributors %}
-                                <tr>
+                            {% for user in serialized_preprint.contributors %}
+                            <tr>
+                                <td>
+                                    <a href="{{ user.id | reverse_user }}">
+                                        {{ user.id }}
+                                    </a>
+                                </td>
+                                <td>{{ user.name }}</td>
+                                <td>{{ user.permission|capfirst }}</td>
+                                {%  if perms.osf.change_preprint %}
                                     <td>
-                                        <a href="{{ user.id | reverse_user }}">
-                                            {{ user.id }}
+                                        <a href="{% url 'preprints:remove_user' guid=serialized_preprint.id user_id=user.id %}"
+                                           data-toggle="modal"
+                                           data-target="#{{ user.id }}Modal"
+                                           class="btn btn-danger">
+                                            Remove
                                         </a>
+                                        <div class="modal" id="{{ user.id }}Modal">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                {# from remove_preprintcontributor.html#}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td>{{ user.name }}</td>
-                                    <td>{{ user.permission|capfirst }}</td>
-                                </tr>
+                                {% endif %}
+                            </tr>
                             {% endfor %}
                             </tbody>
                             </table>

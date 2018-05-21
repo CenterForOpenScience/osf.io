@@ -1420,11 +1420,11 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permission='write', save=True)
         payload = {
-            "data": {
-                "id": preprint_unpublished._id,
-                "type": "preprints",
-                "attributes": {
-                    "is_published": True
+            'data': {
+                'id': preprint_unpublished._id,
+                'type': 'preprints',
+                'attributes': {
+                    'is_published': True
                 }
             }
         }

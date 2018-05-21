@@ -16,6 +16,7 @@ from website import search
 from osf.models import NodeLog
 from osf.models.user import OSFUser
 from osf.models.node import Node
+from osf.models.preprint import Preprint
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
 from admin.base.utils import change_embargo_date, validate_embargo_date
@@ -122,7 +123,7 @@ class NodeDeleteBase(DeleteView):
         return super(NodeDeleteBase, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid')) or Preprint.load(self.kwargs.get('guid'))
 
 
 class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
