@@ -381,7 +381,9 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-
+    # TODO: Update analytics in MFR callback when it is implemented
+    if request.args.get('mode') not in ('render', ):
+        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
     return {
         'data': {
             'name': file_node.name,
