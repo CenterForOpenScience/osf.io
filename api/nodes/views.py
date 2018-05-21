@@ -1,7 +1,7 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists
+from django.db.models import Q, OuterRef, Exists, Subquery
 from django.utils import timezone
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
@@ -103,7 +103,7 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
@@ -926,9 +926,8 @@ class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     def get_queryset(self):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        node_relations = NodeRelation.objects.filter(child=node, is_node_link=True)\
-            .select_related('parent').exclude(parent__type='osf.collection').exclude(parent__type='osf.registration')
-        return [each.parent for each in node_relations if each.parent.can_view(auth)]
+        node_relation_subquery = NodeRelation.objects.filter(child=node, is_node_link=True).values_list('parent', flat=True)
+        return Node.objects.filter(id__in=Subquery(node_relation_subquery), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link)
 
 
 class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -950,9 +949,9 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
     def get_queryset(self):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        node_relations = NodeRelation.objects.filter(child=node, is_node_link=True, parent__type='osf.registration')\
-            .select_related('parent').exclude(parent__type='osf.collection')
-        return [each.parent for each in node_relations if each.parent.can_view(auth)]
+        node_relation_subquery = NodeRelation.objects.filter(child=node, is_node_link=True).values_list('parent', flat=True)
+        return Registration.objects.filter(id__in=Subquery(node_relation_subquery), retraction__isnull=True).can_view(user=auth.user, private_link=auth.private_link)
+
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_list).

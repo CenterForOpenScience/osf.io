@@ -1,7 +1,7 @@
 import pytest
 from framework.auth.core import Auth
 
-from osf_tests.factories import ProjectFactory, AuthUserFactory, RegistrationFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
 from api.base.settings.defaults import API_BASE
 
 
@@ -66,6 +66,20 @@ class TestNodeLinkedByNodesList:
         res = app.get(url_public)
         assert len(res.json['data']) == 0
 
+    def test_linked_by_nodes_doesnt_show_deleted(self, app, url_public, user, project_public, project_private):
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == project_private._id
+
+        project_private.is_deleted = True
+        project_private.save()
+        project_public.reload()
+
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 0
+
 
 @pytest.mark.django_db
 class TestNodeLinkedByRegistrationsList:
@@ -117,4 +131,19 @@ class TestNodeLinkedByRegistrationsList:
         assert res.json['data'][0]['id'] == registration._id
 
         res = app.get(url_public)
+        assert len(res.json['data']) == 0
+
+    def test_linked_by_registrations_doesnt_show_retracted(self, app, url_public, user, project_public, project_private):
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+        registration = RegistrationFactory(project=project_private, creator=user)
+        project_public.reload()
+
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == registration._id
+
+        WithdrawnRegistrationFactory(registration=registration, user=user)
+        project_public.reload()
+
+        res = app.get(url_public, auth=user.auth)
         assert len(res.json['data']) == 0
