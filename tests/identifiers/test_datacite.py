@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
+import os
 import mock
 import lxml
 import pytest
 import responses
 from nose.tools import *  # noqa
 
+from datacite import schema40
+
 from website import settings
 from website.app import init_addons
 from website.identifiers.clients import DataCiteClient
+from website.identifiers import metadata
 
 from tests.base import OsfTestCase
+from tests.identifiers.conftest import datacite_metadata_response
 from tests.test_addons import assert_urls_equal
 from osf_tests.factories import AuthUserFactory, RegistrationFactory
-
-
-@pytest.fixture()
-def registration():
-    return RegistrationFactory()
-
 
 class MockDataciteClient(object):
 
@@ -27,12 +26,19 @@ class MockDataciteClient(object):
     metadata_get = mock.Mock(return_value=datacite_metadata_response())
     metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/yvzp4)')
 
+@pytest.fixture()
+def datacite_client():
+    return DataCiteClient()
+
+@pytest.fixture()
+def registration():
+    return RegistrationFactory()
 
 @pytest.mark.django_db
 class TestDataCiteClient:
 
     @responses.activate
-    @mock.patch('website.identifiers.clients.datacite_client.DataCiteMDSClient', MockDataciteClient)
+    @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
     @mock.patch('website.settings.DATACITE_URL', 'https://mds.fake.datacite.org')
     def test_datacite_create_identifiers(self, datacite_client, datacite_node_metadata):
         responses.add(
@@ -49,7 +55,7 @@ class TestDataCiteClient:
         MockDataciteClient.metadata_post.assert_called_with(datacite_node_metadata)
 
     @responses.activate
-    @mock.patch('website.identifiers.clients.datacite_client.DataCiteMDSClient', MockDataciteClient)
+    @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
     @mock.patch('website.settings.DATACITE_URL', 'https://mds.fake.datacite.org')
     def test_datacite_change_status_identifier(self, datacite_client, datacite_node_metadata):
         responses.add(
@@ -67,7 +73,7 @@ class TestDataCiteClient:
         MockDataciteClient.metadata_post.assert_called_with(datacite_node_metadata)
 
     def test_datacite_build_doi(self, registration, datacite_client):
-        assert datacite_client.build_doi(registration) == '10.5072/FK2osf.io/{}'.format(registration._id)
+        assert datacite_client.build_doi(registration) == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
 
     def test_datacite_build_metadata(self, registration, datacite_client):
         metadata_xml = datacite_client.build_metadata(registration).encode('utf-8')
@@ -77,17 +83,17 @@ class TestDataCiteClient:
         expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
         assert_equal(root.attrib[xsi_location], expected_location)
 
-        identifier = root.find('{%s}identifier' % settings.DATACITE_NAMESPACE)
+        identifier = root.find('{%s}identifier' % schema40.ns[None])
         assert_equal(identifier.attrib['identifierType'], 'DOI')
-        assert_equal(identifier.text, '10.5072/FK2osf.io/{}'.format(registration._id))
+        assert_equal(identifier.text, settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id))
 
-        creators = root.find('{%s}creators' % settings.DATACITE_NAMESPACE)
+        creators = root.find('{%s}creators' % schema40.ns[None])
         assert_equal(len(creators.getchildren()), len(registration.visible_contributors))
 
-        publisher = root.find('{%s}publisher' % settings.DATACITE_NAMESPACE)
+        publisher = root.find('{%s}publisher' % schema40.ns[None])
         assert_equal(publisher.text, 'Open Science Framework')
 
-        pub_year = root.find('{%s}publicationYear' % settings.DATACITE_NAMESPACE)
+        pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
         assert_equal(pub_year.text, str(registration.registered_date.year))
 
     def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):

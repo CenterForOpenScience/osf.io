@@ -52,34 +52,34 @@ class TestMetadataGeneration(OsfTestCase):
         expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
         assert root.attrib[xsi_location] == expected_location
 
-        identifier = root.find('{%s}identifier' % settings.DATACITE_NAMESPACE)
+        identifier = root.find('{%s}identifier' % metadata.NAMESPACE)
         assert identifier.attrib['identifierType'] == 'DOI'
         assert identifier.text == preprint.get_identifier('doi').value
 
-        creators = root.find('{%s}creators' % settings.DATACITE_NAMESPACE)
+        creators = root.find('{%s}creators' % metadata.NAMESPACE)
         assert len(creators.getchildren()) == len(self.node.visible_contributors)
 
-        subjects = root.find('{%s}subjects' % settings.DATACITE_NAMESPACE)
+        subjects = root.find('{%s}subjects' % metadata.NAMESPACE)
         assert subjects.getchildren()
 
-        publisher = root.find('{%s}publisher' % settings.DATACITE_NAMESPACE)
+        publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
         assert publisher.text == provider.name
 
-        pub_year = root.find('{%s}publicationYear' % settings.DATACITE_NAMESPACE)
+        pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
         assert pub_year.text == str(preprint.date_published.year)
 
-        dates = root.find('{%s}dates' % settings.DATACITE_NAMESPACE).getchildren()[0]
+        dates = root.find('{%s}dates' % metadata.NAMESPACE).getchildren()[0]
         assert dates.text == preprint.modified.isoformat()
         assert dates.attrib['dateType'] == 'Updated'
 
-        alternate_identifier = root.find('{%s}alternateIdentifiers' % settings.DATACITE_NAMESPACE).getchildren()[0]
+        alternate_identifier = root.find('{%s}alternateIdentifiers' % metadata.NAMESPACE).getchildren()[0]
         assert alternate_identifier.text == settings.DOMAIN + preprint._id
         assert alternate_identifier.attrib['alternateIdentifierType'] == 'URL'
 
-        descriptions = root.find('{%s}descriptions' % settings.DATACITE_NAMESPACE).getchildren()[0]
+        descriptions = root.find('{%s}descriptions' % metadata.NAMESPACE).getchildren()[0]
         assert descriptions.text == preprint.node.description
 
-        rights = root.find('{%s}rightsList' % settings.DATACITE_NAMESPACE).getchildren()[0]
+        rights = root.find('{%s}rightsList' % metadata.NAMESPACE).getchildren()[0]
         assert rights.text == preprint.license.name
 
     # This test is not used as datacite is currently used for nodes, leaving here for future reference
@@ -92,7 +92,7 @@ class TestMetadataGeneration(OsfTestCase):
         self.node.add_contributor(linked_user, visible=True)
         self.node.save()
 
-        formatted_creators = metadata.datacite_format_creators(preprint)
+        formatted_creators = metadata.format_creators(preprint)
 
         contributors_with_orcids = 0
         guid_identifiers = []
@@ -123,7 +123,7 @@ class TestMetadataGeneration(OsfTestCase):
         subjects = [[subject._id, subject_1._id], [subject._id, subject_2._id]]
         preprint = PreprintFactory(subjects=subjects, project=self.node, is_published=True)
 
-        formatted_subjects = metadata.datacite_format_subjects(preprint)
+        formatted_subjects = metadata.format_subjects(preprint)
         assert len(formatted_subjects) == Subject.objects.all().count()
 
 
