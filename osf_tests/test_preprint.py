@@ -890,12 +890,14 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    def test_check_spam_only_public_preprint_by_default(self, preprint, user):
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    def test_check_spam_only_public_preprint_by_default(self, mock_update_ezid, preprint, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is False
+        assert mock_update_ezid.called
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_skips_ham_user(self, preprint, user):
@@ -918,7 +920,8 @@ class TestPreprintSpam:
     @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_update_ezid, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -942,11 +945,13 @@ class TestPreprintSpam:
                 assert preprint2.is_public is False
                 preprint3.reload()
                 assert preprint3.is_public is True
+        assert mock_update_ezid.called
 
     @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_send_mail, preprint, user):
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_update_ezid, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -956,12 +961,17 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is True
                 assert preprint.is_public is True
 
-    def test_flag_spam_make_preprint_private(self, preprint):
+        assert mock_update_ezid.called
+
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    def test_flag_spam_make_preprint_private(self, mock_update_ezid, preprint):
         assert preprint.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             preprint.flag_spam()
         assert preprint.is_spammy
         assert preprint.is_public is False
+
+        assert mock_update_ezid.called
 
     def test_flag_spam_do_not_make_preprint_private(self, preprint):
         assert preprint.is_public
@@ -970,11 +980,14 @@ class TestPreprintSpam:
         assert preprint.is_spammy
         assert preprint.is_public
 
-    def test_confirm_spam_makes_preprint_private(self, preprint):
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    def test_confirm_spam_makes_preprint_private(self, mock_update_ezid, preprint):
         assert preprint.is_public
         preprint.confirm_spam()
         assert preprint.is_spammy
         assert preprint.is_public is False
+
+        assert mock_update_ezid.called
 
 
 # copied from tests/test_models.py

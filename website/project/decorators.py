@@ -193,10 +193,10 @@ def check_can_access(node, user, key=None, api_node=None):
     if user is None:
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
-        if key in node.private_link_keys_deleted:
+        if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
 
-        if node.access_requests_enabled:
+        if getattr(node, 'access_requests_enabled', False):
             access_request = node.requests.filter(creator=user).exclude(machine_state='accepted')
             data = {
                 'node': {
@@ -443,7 +443,7 @@ def check_contributor_auth(node, auth, include_public, include_view_only_anon):
         if not include_view_only_anon and link_anon:
             if not check_can_access(node=node, user=user):
                 raise HTTPError(http.UNAUTHORIZED)
-        elif auth.private_key not in node.private_link_keys_active:
+        elif not getattr(node, 'private_link_keys_active', False) or auth.private_key not in node.private_link_keys_active:
             if not check_can_access(node=node, user=user, key=auth.private_key):
                 redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':

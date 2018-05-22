@@ -705,25 +705,26 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node_addon = target.get_addon(provider)
+    if isinstance(target, AbstractNode):
+        node_addon = target.get_addon(provider)
 
-    if not isinstance(node_addon, BaseStorageAddon):
-        raise HTTPError(httplib.BAD_REQUEST, data={
-            'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
-        })
+        if not isinstance(node_addon, BaseStorageAddon):
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Bad Request',
+                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
+            })
 
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED, data={
-            'message_short': 'Unauthorized',
-            'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
-        })
+        if not node_addon.has_auth:
+            raise HTTPError(httplib.UNAUTHORIZED, data={
+                'message_short': 'Unauthorized',
+                'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
+            })
 
-    if not node_addon.complete:
-        raise HTTPError(httplib.BAD_REQUEST, data={
-            'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
-        })
+        if not node_addon.complete:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Bad Request',
+                'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
+            })
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)

@@ -997,8 +997,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
+        # Turning project private no longer turns an associated preprint private
         mock_update_ezid_metadata.assert_called_with(
-            target_object._id, status='unavailable')
+            target_object._id, status='public')
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects

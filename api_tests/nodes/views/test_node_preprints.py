@@ -1,5 +1,6 @@
 import pytest
 
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
@@ -32,7 +33,7 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
 
     @pytest.fixture()
     def project_one(self, user):
-        return ProjectFactory(creator=user)
+        return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture()
     def project_two(self, project_one):
@@ -157,10 +158,11 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             self, app, project, preprint, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
+        preprint.is_public = False
+        preprint.save()
+        res = app.get(url)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
     # test override: custom exception checks because of node permission
     # failures
@@ -168,10 +170,11 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             self, app, user_non_contrib, project, preprint, url):
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
     # test override: custom exception checks because of node permission
     # failures
@@ -180,6 +183,7 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             user_non_contrib, project, preprint, url):
         project.is_deleted = True
         project.save()
+
         # no auth
         res = app.get(url, expect_errors=True)
         assert res.status_code == 410
@@ -192,3 +196,44 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
         # admin
         res = app.get(url, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 410
+
+        project.is_deleted = False
+        project.save()
+        preprint.deleted = timezone.now()
+        preprint.save()
+        # no auth
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # contrib
+        res = app.get(url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+
+    def test_preprint_node_null_visible(
+            self, app,
+            user_admin_contrib, user_write_contrib,
+            user_non_contrib, preprint, url):
+        preprint.node = None
+        preprint.save()
+
+        # unauth
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+        # non_contrib
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 0

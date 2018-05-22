@@ -129,7 +129,7 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
-    elif node.parent_id:
+    elif getattr(node, 'parent_id', False):
         parent_subscriptions = \
             compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
     else:

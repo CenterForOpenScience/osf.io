@@ -291,7 +291,7 @@ def resolve_guid(guid, suffix=None):
                     admin_group = group_helper.get_group('admin')
                     mod_group = group_helper.get_group('moderator')
                     # Check if user isn't a nonetype or that the user has admin/moderator permissions
-                    if auth.user is None or not (referent.node.has_permission(auth.user, permissions.ADMIN) or (mod_group.user_set.all() | admin_group.user_set.all()).filter(id=auth.user.id).exists()):
+                    if auth.user is None or not (referent.has_permission(auth.user, permissions.ADMIN) or (mod_group.user_set.all() | admin_group.user_set.all()).filter(id=auth.user.id).exists()):
                         raise HTTPError(http.NOT_FOUND)
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
@@ -318,7 +318,7 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
-        if isinstance(referent, BaseFileNode) and referent.is_file and referent.target.is_quickfiles:
+        if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False) or isinstance(referent.target, Preprint)):
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:
