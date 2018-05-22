@@ -1889,6 +1889,14 @@ CUSTOM_CITATIONS = {
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
 
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
+OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
+
 INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
 
 FOOTER_LINKS = {

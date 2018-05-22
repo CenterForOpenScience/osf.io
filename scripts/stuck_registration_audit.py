@@ -113,6 +113,7 @@ def main():
             broken_registrations=broken_registrations,
             attachment_name=filename,
             attachment_content=output.getvalue(),
+            can_change_preferences=False,
         )
 
     logger.info('{n} broken registrations found'.format(n=len(broken_registrations)))

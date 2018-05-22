@@ -831,7 +831,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create(cls, username, password, fullname, accepted_terms_of_service=None):
-        validate_email(username)  # Raises ValidationError if spam address
+        validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
@@ -861,8 +861,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
+                mimetype='html',
                 user=self,
+                can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
@@ -1170,7 +1171,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
             unregistered_user = None
 
@@ -1502,6 +1503,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def add_default_user_addons(sender, instance, created, **kwargs):
+    if created:
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if 'user' in addon.added_default:
+                instance.add_addon(addon.short_name)
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):

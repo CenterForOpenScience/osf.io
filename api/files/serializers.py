@@ -85,7 +85,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         ])
 
     def get_queryset(self):
-        return OSFUser.objects.filter(guids___id=self.context['request'].user._id)
+        return OSFUser.objects.filter(guids___id=self.context['request'].user._id, guids___id__isnull=False)
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:

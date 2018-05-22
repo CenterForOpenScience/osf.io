@@ -12,7 +12,7 @@ from flask import Response
 from flask import stream_with_context
 from django.core.urlresolvers import reverse
 
-from geoip import geolite2
+from geolite2 import geolite2
 
 from framework import status
 from framework import sentry
@@ -78,7 +78,7 @@ def get_globals():
     user = _get_current_user()
     set_status_message(user)
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
@@ -102,8 +102,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
+            'continent': (location or {}).get('continent', {}).get('code', None),
+            'country': (location or {}).get('country', {}).get('iso_code', None),
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
@@ -197,7 +197,7 @@ def robots():
     return send_from_directory(
         settings.STATIC_FOLDER,
         robots_file,
-        mimetype='text/plain'
+        mimetype='html'
     )
 
 def sitemap_file(path):
