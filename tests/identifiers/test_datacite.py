@@ -11,15 +11,12 @@ from website.identifiers.clients import DataCiteClient
 
 from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
-from tests.identifers.fixtures import (
-    registration,
-    datacite_client,
-    datacite_node_metadata,
-    datacite_metadata_response,
-)
 from osf_tests.factories import AuthUserFactory, RegistrationFactory
 
-init_addons(settings)
+
+@pytest.fixture()
+def registration():
+    return RegistrationFactory()
 
 
 class MockDataciteClient(object):

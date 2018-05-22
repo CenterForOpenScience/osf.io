@@ -30,7 +30,7 @@ class TestEZIDClient(OsfTestCase):
     def test_create_identifiers_not_exists_ezid(self, mock_client):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
-        doi = settings.EZID_DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
+        doi = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=identifier)
         url.path.segments.append(doi)
         responses.add(
             responses.Response(
@@ -63,7 +63,7 @@ class TestEZIDClient(OsfTestCase):
     @mock.patch('website.identifiers.utils.get_doi_client', return_value=EzidClient())
     def test_create_identifiers_exists_ezid(self, mock_client):
         identifier = self.node._id
-        doi = settings.EZID_DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=identifier)
+        doi = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
         url.path.segments.append(doi)
         responses.add(

@@ -6,16 +6,44 @@ import responses
 from nose.tools import *  # noqa
 
 from website import settings
-from website.app import init_addons
+from website.app import init_addons, init_app
+from website.identifiers.clients import CrossRefClient
 
-from tests.identifers.fixtures import (
-    preprint,
-    crossref_client,
-    crossref_success_response,
-    crossref_preprint_metadata
+from osf.models import NodeLicense
+from osf_tests.factories import (
+    ProjectFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    AuthUserFactory
 )
+from framework.flask import rm_handlers
+from framework.django.handlers import handlers as django_handlers
 
-init_addons(settings)
+
+@pytest.fixture()
+def crossref_client():
+    return CrossRefClient()
+
+@pytest.fixture()
+def preprint():
+    node_license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
+    user = AuthUserFactory()
+    provider = PreprintProviderFactory()
+    provider.doi_prefix = '10.31219'
+    provider.save()
+    node = ProjectFactory(creator=user, preprint_article_doi='10.31219/FK2osf.io/test!')
+    license_details = {
+        'id': node_license.license_id,
+        'year': '2017',
+        'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
+    }
+    preprint = PreprintFactory(provider=provider,
+                           project=node,
+                           is_published=True,
+                           doi=None,
+                           license_details=license_details)
+    preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
+    return preprint
 
 
 @pytest.mark.django_db
@@ -23,7 +51,7 @@ class TestCrossRefClient:
 
     @responses.activate
     @mock.patch('website.identifiers.clients.crossref_client.CrossRefClient.BASE_URL', 'https://test.test.osf.io')
-    def test_crossref_create_identifiers(self, crossref_client, crossref_preprint_metadata, crossref_success_response):
+    def test_crossref_create_identifiers(self, preprint, crossref_client, crossref_preprint_metadata, crossref_success_response):
         responses.add(
             responses.Response(
                 responses.POST,
@@ -33,10 +61,12 @@ class TestCrossRefClient:
                 status=200
             )
         )
-        res = crossref_client.create_identifier(doi='10.123test/FK2osf.io/jf36m',
-                                                metadata=crossref_preprint_metadata)
 
-        assert res['doi'] == '10.123test/FK2osf.io/jf36m'
+        metadata = crossref_client.build_metadata(preprint)
+        doi = crossref_client.build_doi(preprint)
+        res = crossref_client.create_identifier(doi=doi, metadata=metadata)
+
+        assert res['doi'] == doi
 
     @responses.activate
     @mock.patch('website.identifiers.clients.crossref_client.CrossRefClient.BASE_URL', 'https://test.test.osf.io')
