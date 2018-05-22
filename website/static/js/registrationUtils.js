@@ -650,7 +650,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         };
     }
     var preRegisterPrompts = response.prompts || [];
-    preRegisterPrompts.push('Tags on a registration can be modified at any time to enhance discoverability.');
+    preRegisterPrompts.unshift('Registrations cannot be modified or deleted once completed.');
 
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
