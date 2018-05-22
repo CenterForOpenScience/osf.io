@@ -43,9 +43,9 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            % if context.get('is_reviews_moderator_notificaiton', False):
+                            % if context.get('is_reviews_moderator_notification', False):
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
-                                    % if not context.get('claim_url', False):
+                                  % if not context.get('referrer', False):
                                         You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
                                     % endif
                                     To change your moderation notification preferences,
