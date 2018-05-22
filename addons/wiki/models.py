@@ -238,14 +238,13 @@ class WikiPage(GuidMixin, BaseModel):
         return version
 
     def get_version(self, version=None):
-        ret = None
         if version:
             ret = self.versions.filter(identifier=version).order_by('-created').first()
+            if not ret:
+                raise VersionNotFoundError(version)
+            return ret
         else:
-            ret = self.versions.order_by('-created').first()
-        if not ret:
-            raise VersionNotFoundError(version)
-        return ret
+            return self.versions.order_by('-created').first()
 
     def get_versions(self):
         return self.versions.all().order_by('-created')
