@@ -16,7 +16,6 @@ from api.nodes.serializers import (
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
@@ -164,9 +163,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         doi_identifier = obj.get_identifier('doi')
         if doi_identifier:
             return 'https://dx.doi.org/{}'.format(doi_identifier.value)
-        else:
-            built_identifier = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=obj._id).replace('doi:', '').upper()
-            return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

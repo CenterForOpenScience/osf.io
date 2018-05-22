@@ -15,8 +15,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import DOI_FORMAT, DATACITE_DOI_NAMESPACE
-
+from website.settings import DOI_FORMAT
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -117,30 +116,21 @@ class TestPreprintDetail:
         assert 'preprint_doi' not in res.json['data']['links'].keys()
         assert res.json['data']['attributes']['preprint_doi_created'] is None
 
-    def test_published_preprint_doi_link_returned_before_datacite_request(
+    def test_published_preprint_doi_link_not_returned_before_doi_request(
             self, app, user, unpublished_preprint, unpublished_url):
         unpublished_preprint.is_published = True
         unpublished_preprint.save()
         res = app.get(unpublished_url, auth=user.auth)
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is True
-        assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = DOI_FORMAT.format(
-            namespace=DATACITE_DOI_NAMESPACE,
-            guid=unpublished_preprint._id).replace(
-            'doi:',
-            '').upper()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
-            expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is None
+        assert 'preprint_doi' not in res.json['data']['links'].keys()
 
-    def test_published_preprint_doi_link_returned_after_datacite_request(
+    def test_published_preprint_doi_link_returned_after_doi_request(
             self, app, user, preprint, url):
         expected_doi = DOI_FORMAT.format(
-            namespace=DATACITE_DOI_NAMESPACE,
-            guid=preprint._id).replace(
-            'doi:',
-            '')
+            prefix=preprint.provider.doi_prefix,
+            guid=preprint._id
+        )
         preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
@@ -148,7 +138,7 @@ class TestPreprintDetail:
         assert 'preprint_doi' in res.json['data']['links'].keys()
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
             expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is not None
+        assert res.json['data']['attributes']['preprint_doi_created']
 
     def test_preprint_embed_identifiers(self, app, user, preprint, url):
         embed_url = url + '?embed=identifiers'
