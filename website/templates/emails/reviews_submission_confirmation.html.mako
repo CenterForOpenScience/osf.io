@@ -6,14 +6,14 @@
         % if is_creator:
             <p>
                 Your ${reviewable.provider.preprint_word}
-                <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
+                <a href="${reviewable.absolute_url}">${reviewable.title}</a>
                 has been successfully submitted to ${reviewable.provider.name}.
             </p>
         % else:
             <p>
                 ${referrer.fullname} has added you as a contributor to the
                 ${reviewable.provider.preprint_word}
-                <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
+                <a href="${reviewable.absolute_url}">${reviewable.title}</a>
                 on ${reviewable.provider.name}, which is hosted on the Open Science Framework.
             </p>
         % endif
@@ -32,14 +32,12 @@
         </p>
         <p>
             You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future
-            notification emails for this ${reviewable.provider.preprint_word}.
-            Each ${reviewable.provider.preprint_word} is associated with a project on the
-            Open Science Framework for managing the ${reviewable.provider.preprint_word}. To change
+            notification emails for this ${reviewable.provider.preprint_word}. To change
             your email notification preferences, visit your
             <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
         </p>
         <p>
-            If you have been erroneously associated with "${reviewable.node.title}", then you may visit the project's
+            If you have been erroneously associated with "${reviewable.title}", then you may visit the ${reviewable.provider.preprint_word}'s
             "Contributors" page and remove yourself as a contributor.
         </p>
         <p>

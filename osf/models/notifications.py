@@ -21,6 +21,8 @@ class NotificationSubscription(BaseModel):
                              null=True, blank=True, on_delete=models.CASCADE)
     provider = models.ForeignKey('AbstractProvider', related_name='notification_subscriptions',
                                  null=True, blank=True, on_delete=models.CASCADE)
+    preprint = models.ForeignKey('Preprint', related_name='notification_subscriptions',
+                                 null=True, blank=True, on_delete=models.CASCADE)
     # Notification types
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
     email_digest = models.ManyToManyField('OSFUser', related_name='+')  # for these

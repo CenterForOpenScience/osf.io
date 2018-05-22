@@ -2,7 +2,6 @@ import collections
 
 from django.apps import apps
 from django.db.models import Q
-
 from framework.postcommit_tasks.handlers import run_postcommit
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
@@ -59,10 +58,11 @@ def from_subscription_key(key):
 
 @signals.contributor_removed.connect
 def remove_contributor_from_subscriptions(node, user):
-    """ Remove contributor from node subscriptions unless the user is an
-        admin on any of node's parent projects.
+    """ Remove contributor from preprint subscriptions or node subscriptions (unless the user is an
+        admin on any of node's parent projects).
     """
-    if user._id not in node.admin_contributor_ids:
+    Preprint = apps.get_model('osf.Preprint')
+    if isinstance(node, Preprint) or user._id not in node.admin_contributor_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
@@ -231,10 +231,13 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     :param user_subscriptions: all Subscription objects that the user is subscribed to
     :return: list of Subscription objects for a node that the user is subscribed to
     """
+    Preprint = apps.get_model('osf.Preprint')
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    return user_subscriptions.filter(user__isnull=True, node=node)
-
+    if isinstance(node, Preprint):
+        return user_subscriptions.filter(user__isnull=True, preprint=node)
+    else:
+        return user_subscriptions.filter(user__isnull=True, node=node)
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page

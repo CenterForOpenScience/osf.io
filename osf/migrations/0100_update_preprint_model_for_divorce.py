@@ -49,6 +49,11 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL))
             ],
         ),
+        migrations.AddField(
+            model_name='notificationsubscription',
+            name='preprint',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.Preprint'),
+        ),
         migrations.AlterModelOptions(
             name='preprint',
             options={'permissions': (('osf_admin_view_preprint', 'Can view preprint details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
