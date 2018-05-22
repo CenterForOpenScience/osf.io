@@ -436,6 +436,10 @@ class Region(models.Model):
     class Meta:
         unique_together = ('_id', 'name')
 
+    def serialize(self):
+        return {'name': self.name, 'id': self.id}
+
+
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
 
