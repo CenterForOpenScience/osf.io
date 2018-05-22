@@ -351,7 +351,7 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 DOI_URL_PREFIX = 'https://dx.doi.org/'
 
 # General Format for DOIs
-DOI_FORMAT = '{namespace}osf.io/{guid}'
+DOI_FORMAT = '{prefix}/osf.io/{guid}'
 
 # ezid
 EZID_DOI_NAMESPACE = 'doi:10.5072'
@@ -363,13 +363,13 @@ EZID_PASSWORD = None
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
-DATACITE_PREFIX = '10.17605'
-DATACITE_DOI_NAMESPACE = '10.5072/FK2'
+DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
 
 # crossref
 CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
-
+CROSSREF_DEPOSIT_URL = 'https://test.crossref.org/servlet/deposit'  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None

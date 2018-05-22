@@ -571,11 +571,11 @@ def sync_set_identifiers(preprint):
     client = get_doi_client(preprint)
 
     if isinstance(client, EzidClient):
-        doi_value = settings.DOI_FORMAT.format(namespace=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
+        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
         ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
         return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
     else:
-        return_value = {'doi': settings.DOI_FORMAT.format(namespace=preprint.provider.doi_prefix, guid=preprint._id)}
+        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
 
     doi_client_return_value = {
         'response': return_value,
