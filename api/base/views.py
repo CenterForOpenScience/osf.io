@@ -33,7 +33,8 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
-
+from waffle.models import Flag
+from waffle import flag_is_active
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -393,18 +394,21 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
+    The contents of this endpoint are variable and subject to change without notification.
     """
     if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
+    flags = [item.name for item in Flag.objects.all() if flag_is_active(request, item.name)]
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
             'current_user': current_user,
+            'active_flags': flags,
         },
         'links': {
             'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
