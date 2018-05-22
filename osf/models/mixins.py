@@ -687,9 +687,11 @@ class TaxonomizableMixin(models.Model):
 
     @cached_property
     def subject_hierarchy(self):
-        return [
-            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
-        ]
+        if self.subjects.exists():
+            return [
+                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
+            ]
+        return []
 
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.

@@ -159,7 +159,7 @@ class MockBox(object):
             ret['path'] = path
         return ret
 
-    def get_folder(*args, **kwargs):
+    def folder(*args, **kwargs):
         return mock_responses['folder']
 
     def get_file_and_metadata(*args, **kwargs):
@@ -174,18 +174,18 @@ class MockBox(object):
             each['path'] = path
         return ret
 
-    def get_user_info(self):
+    def user(self):
         return {'display_name': 'Mr. Box'}
 
 
 @contextmanager
 def patch_client(target, mock_client=None):
-    """Patches a function that returns a BoxClient, returning an instance
+    """Patches a function that returns a Box Client, returning an instance
     of MockBox instead.
 
     Usage: ::
 
-        with patch_client('addons.box.views.BoxClient') as client:
+        with patch_client('addons.box.views.Client') as client:
             # test view that uses the box client.
     """
     with mock.patch(target) as client_getter:
