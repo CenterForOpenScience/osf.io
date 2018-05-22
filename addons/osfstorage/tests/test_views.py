@@ -169,6 +169,7 @@ class TestUploadFileHook(HookTestCase):
         self.name = 'pízza.png'
         self.record = recursively_create_file(self.node_settings, self.name)
         self.auth = make_auth(self.user)
+        self.preprint = PreprintFactory()
 
     def send_upload_hook(self, parent, target=None, payload=None, **kwargs):
         return self.send_hook(
@@ -231,13 +232,12 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_create_on_preprint(self):
-        preprint = PreprintFactory()
         name = 'My Preprint File'
-        res = self.send_target_upload_hook(preprint.root_folder, preprint, self.make_payload(name=name))
+        res = self.send_target_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload(name=name))
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
-        assert name in preprint.files.all().values_list('name', flat=True)
+        assert name in self.preprint.files.all().values_list('name', flat=True)
 
     def test_upload_update(self):
         delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
@@ -601,7 +601,7 @@ class TestDeleteHook(HookTestCase):
             payload={
                 'user': self.user._id
             },
-            target=self.node,
+            target = self.node,
             method='delete',
             **kwargs
         )
@@ -641,17 +641,6 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
-        folder = self.root_node.append_folder('Herbal Crooners')
-        file = folder.append_file('Frank Cilantro')
-        # project having a preprint should not block other moves
-        preprint_file = self.root_node.append_file('Thyme Out')
-        self.node.preprint_file = preprint_file
-        self.node.save()
-        res = self.delete(folder)
-
-        assert_equal(res.status_code, 200)
-
     def test_attempt_delete_folder_with_rented_file(self):
         folder = self.root_node.append_folder('Hotel Events')
         user = factories.AuthUserFactory()
@@ -675,123 +664,44 @@ class TestDeleteHook(HookTestCase):
 
 
 @pytest.mark.django_db
-class TestDeleteHookPreprint(HookTestCase):
+class TestDeleteHookPreprint(TestDeleteHook):
 
     def setUp(self):
         super(TestDeleteHookPreprint, self).setUp()
-        self.preprint= PreprintFactory(creator=self.user, is_published=True)
-        self.root_preprint = self.preprint.root_folder
+        self.preprint = PreprintFactory(creator=self.user)
+        self.node = self.preprint
+        self.root_node = self.preprint.root_folder
 
-    def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
-        method = getattr(self.app, method)
-        return method(
-            '{url}?payload={payload}&signature={signature}'.format(
-                url=api_url_for(view_name, guid=target._id, **view_kwargs),
-                **signing.sign_data(signing.default_signer, payload)
-            ),
-            **kwargs
-        )
-
-    def delete(self, file, **kwargs):
-        return self.send_hook(
-            'osfstorage_delete',
-            {'fid': file._id},
-            payload={
-                'user': self.user._id
-            },
-            target=self.preprint,
-            method='delete',
-            **kwargs
-        )
-
-    def test_delete(self):
-        file = self.root_preprint.append_file('Newfile')
-        resp = self.delete(file)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {'status': 'success'})
-        fid = file._id
-        del file
-        # models.StoredFileNode._clear_object_cache()
-        assert_is(OsfStorageFileNode.load(fid), None)
-        assert_true(models.TrashedFileNode.load(fid))
-
-    def test_delete_deleted(self):
-        file = self.root_preprint.append_file('Newfile')
-        file.delete()
-
-        resp = self.delete(file, expect_errors=True)
-
-        assert_equal(resp.status_code, 404)
-
-    def test_cannot_delete_root(self):
-        resp = self.delete(self.root_preprint, expect_errors=True)
-
-        assert_equal(resp.status_code, 400)
-
-    def test_attempt_delete_rented_file(self):
-        user = factories.AuthUserFactory()
-        file_checked = self.root_preprint.append_file('Newfile')
-        file_checked.checkout = user
-        file_checked.save()
-
-        res = self.delete(file_checked, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_attempt_delete_primary_file_off_preprint(self):
+    def test_attempt_delete_while_preprint(self):
         res = self.delete(self.preprint.primary_file, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_attempt_delete_folder_with_preprint(self):
-        folder = self.root_preprint.append_folder('Fishes')
+        folder = self.root_node.append_folder('Fishes')
         file = folder.append_file('Fish')
         self.preprint.primary_file = file
         self.preprint.save()
         res = self.delete(folder, expect_errors=True)
-
         assert_equal(res.status_code, 403)
 
     def test_delete_folder_while_preprint(self):
-        folder = self.root_preprint.append_folder('Mr. Yuck')
-        preprint_file = self.root_preprint.append_file('Thyme Out')
+        folder = self.root_node.append_folder('Mr. Yuck')
+        preprint_file = self.root_node.append_file('Thyme Out')
         self.preprint.primary_file = preprint_file
         self.preprint.save()
         res = self.delete(folder)
-
         assert_equal(res.status_code, 200)
 
     def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
-        folder = self.root_preprint.append_folder('Herbal Crooners')
+        folder = self.root_node.append_folder('Herbal Crooners')
         file = folder.append_file('Frank Cilantro')
         # project having a preprint should not block other moves
-        preprint_file = self.root_preprint.append_file('Thyme Out')
-        self.preprint.primary_file = preprint_file
+        primary_file = self.root_node.append_file('Thyme Out')
+        self.preprint.primary_file = primary_file
         self.preprint.save()
         res = self.delete(folder)
 
         assert_equal(res.status_code, 200)
-
-    def test_attempt_delete_folder_with_rented_file(self):
-        folder = self.root_preprint.append_folder('Hotel Events')
-        user = factories.AuthUserFactory()
-        file_checked = folder.append_file('Checkout time')
-        file_checked.checkout = user
-        file_checked.save()
-
-        res = self.delete(folder, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_attempt_delete_double_nested_folder_rented_file(self):
-        folder = self.root_preprint.append_folder('One is not enough')
-        folder_two = folder.append_folder('Two might be doe')
-        user = factories.AuthUserFactory()
-        file_checked = folder_two.append_file('We shall see')
-        file_checked.checkout = user
-        file_checked.save()
-
-        res = self.delete(folder, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
 
 @pytest.mark.django_db
 class TestMoveHook(HookTestCase):
@@ -898,38 +808,6 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 405)
-
-
-    def test_move_preprint_file_out_of_node(self):
-        folder = self.root_node.append_folder('From Here')
-        file = folder.append_file('No I don\'t wanna go')
-        self.node.preprint_file = file
-        self.node.save()
-
-        project = ProjectFactory(creator=self.user)
-        project_settings = project.get_addon('osfstorage')
-        project_root_node = project_settings.get_root()
-
-        folder_two = project_root_node.append_folder('To There')
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': self.root_node.target._id},
-            payload={
-                'source': folder._id,
-                'target': self.root_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': folder_two._id,
-                    'target': folder_two.target._id,
-                    'name': folder_two.name,
-                }
-            },
-            target=project,
-            method='post_json',
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 403)
-
 
     def test_move_file_out_of_node(self):
         folder = self.root_node.append_folder('A long time ago')
@@ -1043,6 +921,41 @@ class TestMoveHook(HookTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(quickfiles_file.name, new_name)
+
+
+@pytest.mark.django_db
+class TestMoveHookPreprint(TestMoveHook):
+
+    def setUp(self):
+        super(TestMoveHook, self).setUp()
+        self.node = PreprintFactory(creator=self.user)
+        self.root_node = self.node.root_folder
+
+    def test_move_primary_file_out_of_preprint(self):
+        project = ProjectFactory(creator=self.user)
+        project_settings = project.get_addon('osfstorage')
+        project_root_node = project_settings.get_root()
+
+        folder_two = project_root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.root_node.target._id},
+            payload={
+                'source': self.node.primary_file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'target': folder_two.target._id,
+                    'name': folder_two.name,
+                }
+            },
+            target=project,
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 403)
+
 
 
 @pytest.mark.django_db
