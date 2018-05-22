@@ -10,8 +10,6 @@ from datacite import DataCiteMDSClient, schema40
 class DataCiteClient(BaseClient):
 
     BASE_URL = settings.DATACITE_URL
-    FORMAT = settings.DOI_FORMAT
-    DOI_NAMESPACE = settings.DATACITE_DOI_NAMESPACE
 
     @property
     def _client(self):
@@ -23,7 +21,7 @@ class DataCiteClient(BaseClient):
         )
 
     def build_doi(self, node):
-        return self.FORMAT.format(namespace=self.DOI_NAMESPACE, guid=node._id)
+        return settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id)
 
     def build_metadata(self, node):
         """Return the formatted datacite metadata XML as a string.

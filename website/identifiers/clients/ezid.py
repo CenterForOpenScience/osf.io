@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 from website.identifiers import utils
-from website.identifiers.clients.datacite_client import DataCiteClient
+from website.identifiers.clients import DataCiteClient
 from website import settings
 
 
