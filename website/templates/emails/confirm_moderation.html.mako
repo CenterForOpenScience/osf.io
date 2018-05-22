@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
-    You have been added by ${referrer.fullname}, as ${role} to ${provider.name}, powered by OSF. To set a password for your account, visit:<br>
+    You have been added by ${referrer.fullname}, as ${'an administrator' if is_admin else 'a moderator'} to ${provider.name}, powered by OSF. To set a password for your account, visit:<br>
     <br>
     ${claim_url}<br>
     <br>

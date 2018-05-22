@@ -45,8 +45,10 @@
                         <td style="border-collapse: collapse;">
                             % if context.get('is_reviews_moderator_notificaiton', False):
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
-                                    You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
-                                    To change your email notification preferences,
+                                    % if not context.get('claim_url', False):
+                                        You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
+                                    % endif
+                                    To change your moderation notification preferences,
                                     visit your <a href=${notification_settings_url}>notification settings</a>.
                                 </p>
                             % else:

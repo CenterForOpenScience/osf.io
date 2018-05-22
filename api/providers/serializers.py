@@ -217,8 +217,10 @@ class ModeratorSerializer(JSONAPISerializer):
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in GROUPS:
             raise ValidationError('Unrecognized permission_group')
-        context['role'] = 'an admin' if perm_group == 'admin' else 'a {}'.format(perm_group)
-        context['notification_url'] = '{}settings/notifications'.format(DOMAIN)
+        context['notification_settings_url'] = '{}reviews/preprints/{}/notifications'.format(DOMAIN, provider._id)
+        context['provider_name'] = provider.name
+        context['is_reviews_moderator_notificaiton'] = True
+        context['is_admin'] = perm_group == 'admin'
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
