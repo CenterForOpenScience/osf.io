@@ -2,7 +2,9 @@ import os
 import pytest
 
 from osf.models import NodeLicense
-from website.identifiers.clients import DataCiteClient, CrossRefClient
+from website.app import init_app
+from framework.flask import rm_handlers
+from framework.django.handlers import handlers as django_handlers
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
