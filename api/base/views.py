@@ -401,7 +401,7 @@ def root(request, format=None, **kwargs):
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
-    flags = [item.name for item in Flag.objects.all() if flag_is_active(request, item.name)]
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
