@@ -34,6 +34,7 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from addons.osfstorage.models import Region
 
 logger = logging.getLogger(__name__)
 
@@ -326,6 +327,14 @@ def user_account_password(auth, **kwargs):
 
     return redirect(web_url_for('user_account'))
 
+
+@must_be_logged_in
+def user_change_default_storage_location(auth, **kwargs):
+    region_id = request.get_json()['region']
+    user = auth.user
+    user_settings = user.get_addon('osfstorage')
+    user_settings.default_region = Region.objects.get(id=region_id)
+    user_settings.save()
 
 @must_be_logged_in
 def user_addons(auth, **kwargs):

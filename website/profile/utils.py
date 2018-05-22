@@ -3,6 +3,7 @@ from framework import auth
 
 from website import settings
 from osf.models import Contributor
+from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
 from osf.utils.permissions import reduce_permissions
@@ -86,10 +87,14 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             merged_by = None
 
+        default_storage_region = user.get_addon('osfstorage').default_region.serialize()
+        region_list = [region.serialize() for region in Region.objects.all()]
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
+            'storage_locations': region_list,
+            'default_storage_location': default_storage_region,
             'merged_by': merged_by,
         })
         if include_node_counts:

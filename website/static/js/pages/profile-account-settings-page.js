@@ -27,4 +27,7 @@ $(function() {
         new accountSettings.ExternalIdentityViewModel(),
         '#externalIdentity'
     );
+
+    $osf.applyBindings( new accountSettings.ChangeDefaultStorageLocation(),
+        '#changeDefaultStorageLocation');
 });

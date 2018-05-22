@@ -46,6 +46,7 @@ from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
+from addons.osfstorage.models import Region
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
@@ -791,6 +792,7 @@ def _view_project(node, auth, primary=False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
+            'storage_location': node.get_addon('osfstorage').region.name
         },
         'parent_node': {
             'exists': parent is not None,
@@ -903,6 +905,14 @@ def _get_children(node, auth):
         nested[child.parentnode_id].append(child)
 
     return serialize_children(nested[node._id], nested)
+
+@must_be_valid_project
+@must_be_logged_in
+def node_change_default_storage_location(node, **kwargs):
+    region_id = request.get_json()['region']
+    node_settings = node.get_addon('osfstorage')
+    node_settings.region = Region.objects.get(id=region_id)
+    node_settings.save()
 
 
 @must_be_valid_project

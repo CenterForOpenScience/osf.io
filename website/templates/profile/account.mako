@@ -82,6 +82,38 @@
                         </table>
                     </div>
                 </div>
+                <div id="changeDefaultStorageLocation" class="panel panel-default">
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Default storage location</h3></div>
+                    <div class="panel-body">
+                        <form id="changeDefaultStorageLocationForm" role="form">
+                            <div class="form-group">
+                                <label for="default_storage_location">Default storage location:</label>
+                                <span class="p-l-sm dropdown generic-dropdown category-list">
+                                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                                        <span data-bind="text: locationSelectedName" class="text-capitalize"></span>
+                                        <i class="fa fa-sort"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" data-bind="foreach: {data: profile().storage_locations, as: 'location'}">
+                                        <li>
+                                              <a href="#" data-bind="click: $root.setLocation.bind($root, location)">
+                                                  <span data-bind="text: location.name"></span>
+                                              </a>
+                                        </li>
+                                    </ul>
+                                    <div class="help-block">
+                                            <p>
+                                                This is the default storage location that will be applied for new projects and components created after setting
+                                                and will not be retroactively applied to the existing projects and components.
+                                            </p>
+                                    </div>
+
+                                </span>
+                            </div>
+                            <button class="btn btn-primary" data-bind="click: $root.changeDefaultStorageLocation.bind($root)">Update Location</button>
+                            <p class="text-muted"></p>
+                        </form>
+                    </div>
+                </div>
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
                     <div class="panel-body">

@@ -38,6 +38,7 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
+        self.newProjectStorageLocation = m.prop(window.contextVars.storage_regions[0]); // first storage region is default
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
@@ -149,6 +150,10 @@ var AddProject = {
                     }
                 });
             }
+            request.then(function (result) {
+                var changestorageLocationNode = '/api/v1/node/' + result.data.id + '/change_storage_location/';
+                $osf.postJSON(changestorageLocationNode, {'region': self.newProjectStorageLocation()});
+            });
             request.then(success, error);
             self.newProjectName('');
             self.newProjectDesc('');
@@ -228,6 +233,13 @@ var AddProject = {
                                 }
                             ))),
                         ]): '',
+                        m('.form-group.m-v-sm', [
+                            m('row',
+                                m('f-w-lg.text-bigger', 'Storage location'),
+                                m.component(SelectStorageLocation, {value: ctrl.newProjectStorageLocation})
+                            )
+                            ]
+                        ),
                         ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
                             m('label.f-w-md',
 
@@ -465,6 +477,36 @@ var Select2Template = {
                     ctrl.userProjects().map(function(node){
                         if(node.id === id) {
                             ctrl.value(node.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+            }
+        };
+    }
+};
+
+var SelectStorageLocation = {
+    view: function(ctrl, options) {
+        return m('select.p-t-sm', {config: SelectStorageLocation.config(options)},
+            [
+            window.contextVars.storage_regions.map(function(region) {
+                var args = {value: region.id};
+                return m('option', args, region.name);
+            })
+        ]);
+    },
+    config: function(ctrl) {
+        return function (element, isInitialized) {
+            var $el = $(element);
+            if (!isInitialized) {
+                $el.select2({allowClear: true, width: '100%'}).on('change', function () {
+                    var id = parseInt($el.select2('val'));
+                    m.startComputation();
+                    //Set the value to the selected option
+                    window.contextVars.storage_regions.map(function (location) {
+                        if (location.id === id) {
+                            ctrl.value(location.id);
                         }
                     });
                     m.endComputation();

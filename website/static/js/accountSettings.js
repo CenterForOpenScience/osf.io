@@ -24,6 +24,8 @@ var UserProfile = oop.defclass({
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
+        this.default_storage_location = ko.observable();
+        this.storage_locations = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
             var emails = this.emails();
@@ -150,6 +152,8 @@ var UserProfileClient = oop.defclass({
         }
 
         profile.id(data.profile.id);
+        profile.default_storage_location(data.profile.default_storage_location);
+        profile.storage_locations(data.profile.storage_locations);
         profile.emails(
             ko.utils.arrayMap(data.profile.emails, function (emailData){
                 var email = new UserEmail({
@@ -344,6 +348,48 @@ var ExternalIdentityViewModel = oop.defclass({
     }
 });
 
+var ChangeDefaultStorageLocation = oop.defclass({
+    constructor: function() {
+        this.client = new UserProfileClient();
+        this.profile = ko.observable(new UserProfile());
+        this.locationSelected = ko.observable({'name': ''});
+
+        this.locationSelectedName = ko.computed(function () {
+            return this.locationSelected().name;
+        }, this);
+
+
+        this.client.fetch().done(
+            function(profile) {
+                this.profile(profile);
+                this.locationSelected(this.profile().default_storage_location());
+            }.bind(this)
+        );
+
+
+    },
+    urls: {
+        'change': '/api/v1/profile/change_storage_location/'
+    },
+    changeDefaultStorageLocation: function() {
+        var request = $osf.ajaxJSON('POST', this.urls.change, {'data': {'region': this.locationSelected().id}});
+        request.done(function() {
+            $osf.growl('Success', 'You have successfully changed you default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'The process has failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                'danger'
+            );
+        }.bind(this));
+        return request;
+    },
+    setLocation: function(location) {
+        this.locationSelected(location);
+
+    }
+});
+
 var DeactivateAccountViewModel = oop.defclass({
     constructor: function () {
         this.requestPending = ko.observable(window.contextVars.requestedDeactivation);
@@ -496,5 +542,6 @@ module.exports = {
     UserProfileViewModel: UserProfileViewModel,
     DeactivateAccountViewModel: DeactivateAccountViewModel,
     ExportAccountViewModel: ExportAccountViewModel,
-    ExternalIdentityViewModel: ExternalIdentityViewModel
+    ExternalIdentityViewModel: ExternalIdentityViewModel,
+    ChangeDefaultStorageLocation: ChangeDefaultStorageLocation
 };
