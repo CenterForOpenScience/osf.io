@@ -6,7 +6,7 @@ from rest_framework.status import is_server_error
 import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Preprint
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for
@@ -19,6 +19,8 @@ def get_file_object(target, path, provider, request):
         if path == '/':
             if isinstance(target, AbstractNode):
                 obj = target.get_addon('osfstorage').get_root()
+            elif isinstance(target, Preprint):
+                obj = target.root_folder
             else:
                 obj = target
         else:

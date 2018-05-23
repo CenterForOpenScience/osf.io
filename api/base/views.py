@@ -586,7 +586,7 @@ class WaterButlerMixin(object):
         return file_node
 
     def fetch_from_waterbutler(self):
-        node = self.get_node(check_object_permissions=False)
+        node = self.get_resource(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         return self.get_file_object(node, path, provider)
@@ -597,3 +597,9 @@ class WaterButlerMixin(object):
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
         return obj
+
+    def get_resource(self, check_object_permissions):
+        """
+        Overwrite on view if your file is not on a node.
+        """
+        return self.get_node(check_object_permissions=check_object_permissions)

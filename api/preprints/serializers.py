@@ -130,10 +130,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    # files = RelationshipField(
-    #     related_view='nodes:node-providers',
-    #     related_view_kwargs={'node_id': '<_id>'}
-    # )
+    files = RelationshipField(
+        related_view='preprints:preprint-files',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -193,7 +193,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 })
             ))
 
-        save_node = False
         save_preprint = False
         recently_published = False
 
@@ -216,8 +215,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             preprint.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
-            preprint.node.update(fields=validated_data.pop('node'))
-            save_node = True
+            preprint.node = validated_data.pop('node')
+            save_preprint = True
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
@@ -251,19 +250,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if not preprint.primary_file:
                 raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
             self.set_field(preprint.set_published, published, auth)
-            if preprint.node and not preprint.node.is_public:
-                preprint.node.set_privacy('public', save=False)
-                save_node = True
             save_preprint = True
             recently_published = published
             preprint.set_privacy('public', log=False, save=True)
-
-        if save_node:
-            try:
-                preprint.node.save()
-            except ValidationError as e:
-                # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()

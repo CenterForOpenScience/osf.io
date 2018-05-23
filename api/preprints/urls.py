@@ -13,4 +13,5 @@ urlpatterns = [
     url(r'^(?P<preprint_id>\w+)/contributors/$', views.PreprintContributorsList.as_view(), name=views.PreprintContributorsList.view_name),
     url(r'^(?P<preprint_id>\w+)/contributors/(?P<user_id>\w+)/$', views.PreprintContributorDetail.as_view(), name=views.PreprintContributorDetail.view_name),
     url(r'^(?P<preprint_id>\w+)/review_actions/$', views.PreprintActionList.as_view(), name=views.PreprintActionList.view_name),
+    url(r'^(?P<preprint_id>\w+)/files/$', views.PreprintFilesList.as_view(), {'provider': 'osfstorage', 'path': '/'}, name=views.PreprintFilesList.view_name),
 ]

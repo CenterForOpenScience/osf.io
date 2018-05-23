@@ -294,6 +294,9 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
     def get_node(self, check_object_permissions):
         return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
 
+    def get_resource(self, check_object_permissions):
+        return self.get_node(check_object_permissions=check_object_permissions)
+
     def get_default_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'

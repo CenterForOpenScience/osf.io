@@ -506,7 +506,7 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        no_user_query = Q(is_published=True, is_public=True)
+        no_user_query = Q(is_published=True, is_public=True, _is_preprint_orphan=False, _has_abandoned_preprint=False, primary_file__isnull=False)
 
         if auth_user:
             admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))

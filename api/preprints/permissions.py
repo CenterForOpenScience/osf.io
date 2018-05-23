@@ -5,9 +5,9 @@ from rest_framework import exceptions
 from api.base.utils import get_user_auth, assert_resource_type
 from api.nodes.permissions import (
     AdminOrPublic as NodeAdminOrPublic,
-    ContributorDetailPermissions as NodeContributorDetailPermissions
 )
 from osf.models import Preprint, OSFUser, PreprintContributor
+from addons.osfstorage.models import OsfStorageFolder
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
 
@@ -17,6 +17,8 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
     acceptable_models = (Preprint,)
 
     def has_object_permission(self, request, view, obj):
+        if isinstance(obj, OsfStorageFolder):
+            obj = obj.target
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
@@ -35,13 +37,33 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             return True
 
 
-class ContributorDetailPermissions(NodeContributorDetailPermissions):
+class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for preprint contributor detail page."""
 
     acceptable_models = (Preprint, OSFUser, PreprintContributor)
 
     def load_resource(self, context, view):
         return Preprint.load(context[view.preprint_lookup_url_kwarg])
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        context = request.parser_context['kwargs']
+        preprint = self.load_resource(context, view)
+        if request.method in permissions.SAFE_METHODS:
+            if auth.user is None:
+                return preprint.verified_publishable
+            else:
+                user_has_permissions = (preprint.verified_publishable or
+                    (preprint.is_public and auth.user.has_perm('view_submissions', preprint.provider)) or
+                    preprint.has_permission(auth.user, osf_permissions.ADMIN) or
+                    (preprint.is_contributor(auth.user) and preprint.machine_state != DefaultStates.INITIAL.value)
+                )
+                return user_has_permissions
+        else:
+            if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+            return True
 
 
 class AdminOrPublic(NodeAdminOrPublic):

@@ -31,13 +31,14 @@ from api.preprints.serializers import (
     PreprintContributorsSerializer,
     PreprintContributorsCreateSerializer
 )
+from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
     NodeCitationStyleSerializer,
 )
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     AdminOrPublic,
@@ -153,7 +154,6 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintPublishedOrAdmin,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -167,7 +167,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         preprint = self.get_preprint()
         auth = get_user_auth(self.request)
 
-        if preprint.is_public or preprint.can_view(auth) or preprint.is_published:
+        if preprint.can_view(auth):
             return preprint.csl
 
         raise PermissionDenied if auth.user else NotAuthenticated
@@ -179,7 +179,6 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintPublishedOrAdmin,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -194,7 +193,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
         auth = get_user_auth(self.request)
         style = self.kwargs.get('style_id')
 
-        if preprint.is_public or preprint.can_view(auth) or preprint.is_published:
+        if preprint.can_view(auth):
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
@@ -317,7 +316,6 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintPublishedOrAdmin,
     )
 
     view_category = 'preprints'
@@ -417,3 +415,24 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+class PreprintFilesList(NodeFilesList, PreprintMixin):
+    """
+    Returns all preprint files in OSFStorage
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
+    )
+    view_category = 'preprints'
+    view_name = 'preprint-files'
+
+    @property
+    def serializer_class(self):
+        # Preprints will be stored in OSFStorage.
+        return OsfStorageFileSerializer
+
+    def get_resource(self, check_object_permissions):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
