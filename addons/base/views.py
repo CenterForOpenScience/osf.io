@@ -331,14 +331,15 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            user = OSFUser.load(auth['id'])
-            if user is None:
-                raise HTTPError(httplib.BAD_REQUEST)
-
             # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
                 return {'status': 'success'}
+
+            user = OSFUser.load(auth['id'])
+            if user is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
