@@ -29,6 +29,11 @@ def reviews_submit_notification(self, recipients, context):
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import get_user_subscriptions
     event_type = utils.find_subscription_type('global_reviews')
+    if context['reviewable'].provider._id == 'osf':
+        context['logo'] = settings.OSF_PREPRINTS_LOGO
+    else:
+        context['logo'] = context['reviewable'].provider._id
+
     for recipient in recipients:
         user_subscriptions = get_user_subscriptions(recipient, event_type)
         context['no_future_emails'] = user_subscriptions['none']
