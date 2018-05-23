@@ -909,13 +909,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/profile/change_storage_location/',
-            'post',
-            profile_views.user_change_default_storage_location,
-            json_renderer,
-        ),
-
-        Rule(
             '/profile/region/',
             'put',
             osfstorage_views.update_region,

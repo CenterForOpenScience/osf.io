@@ -94,7 +94,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
             'storage_locations': region_list,
-            'default_storage_location': {'name':default_storage_region.name, 'id':default_storage_region._id},
+            'default_storage_location': {'name': default_storage_region.name, 'id': default_storage_region._id},
             'merged_by': merged_by,
         })
         if include_node_counts:

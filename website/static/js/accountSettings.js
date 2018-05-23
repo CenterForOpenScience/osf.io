@@ -369,10 +369,10 @@ var ChangeDefaultStorageLocation = oop.defclass({
 
     },
     urls: {
-        'change': '/api/v1/profile/change_storage_location/'
+        'change': '/api/v1/profile/region/'
     },
     changeDefaultStorageLocation: function() {
-        var request = $osf.ajaxJSON('POST', this.urls.change, {'data': {'region': this.locationSelected().id}});
+        var request = $osf.ajaxJSON('PUT', this.urls.change, {'data': {'region_id': this.locationSelected().id}});
         request.done(function() {
             $osf.growl('Success', 'You have successfully changed you default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
         }.bind(this));
