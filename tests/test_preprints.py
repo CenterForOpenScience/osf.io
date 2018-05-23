@@ -44,6 +44,27 @@ class TestPreprintFactory(OsfTestCase):
         assert_true(self.preprint.node.is_public)
 
 
+class TestPreprintSpam(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreprintSpam, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user, is_public=True)
+        self.preprint_one = PreprintFactory(creator=self.user, project=self.node)
+        self.preprint_two = PreprintFactory(creator=self.user, project=self.node, filename='preprint_file_two.txt')
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_preprints_get_marked_as_spammy_if_node_is_spammy(self):
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.node.check_spam(self.user, None, None)
+        self.preprint_one.reload()
+        self.preprint_two.reload()
+        assert_true(self.preprint_one.is_spammy)
+        assert_true(self.preprint_two.is_spammy)
+
 class TestSetPreprintFile(OsfTestCase):
 
     def setUp(self):
