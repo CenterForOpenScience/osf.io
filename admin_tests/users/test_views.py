@@ -622,13 +622,13 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
-            'name': '~Dr. Sportello-Fay, PI'
+            'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, furl.quote('/users/search/~Dr. Sportello-Fay, PI/', safe='/.,~'))
+        nt.assert_equal(self.view.success_url, '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
 
     def test_search_user_by_username(self):
         form_data = {

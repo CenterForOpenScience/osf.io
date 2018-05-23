@@ -15,7 +15,7 @@ from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
-from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
+from website.preprints.tasks import on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website import settings, mails
@@ -167,9 +167,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     log=True
                 )
 
-            # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
-
             self._send_preprint_confirmation(auth)
 
         if save:
@@ -215,6 +212,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         recipient = self.node.creator
         event_type = utils.find_subscription_type('global_reviews')
         user_subscriptions = get_user_subscriptions(recipient, event_type)
+        if self.provider._id == 'osf':
+            logo = settings.OSF_PREPRINTS_LOGO
+        else:
+            logo = self.provider._id
+
         context = {
             'domain': settings.DOMAIN,
             'reviewable': self,
@@ -227,6 +229,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             'no_future_emails': user_subscriptions['none'],
             'is_creator': True,
             'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+            'logo': logo,
         }
 
         mails.send_mail(

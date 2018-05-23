@@ -3,14 +3,12 @@ from transitions import Machine
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
 from osf.models.nodelog import NodeLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
 from website.mails import mails
-from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
@@ -89,7 +87,6 @@ class ReviewsMachine(BaseMachine):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.machineable.date_published = now
             self.machineable.is_published = True
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self.machineable._id}, celery=True)
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
@@ -152,15 +149,19 @@ class RequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles contributorship changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
-            self.machineable.target.add_contributor(
-                self.machineable.creator,
-                auth=Auth(ev.kwargs['user']),
-                permissions=permissions.READ,
-                send_email='{}_request'.format(self.machineable.request_type))
-        elif ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
             self.machineable.comment = self.action.comment
         self.machineable.save()
+
+        if ev.event.name == DefaultTriggers.ACCEPT.value:
+            if not self.machineable.target.is_contributor(self.machineable.creator):
+                contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
+                self.machineable.target.add_contributor(
+                    self.machineable.creator,
+                    auth=Auth(ev.kwargs['user']),
+                    permissions=permissions.expand_permissions(contributor_permissions),
+                    visible=ev.kwargs.get('visible', True),
+                    send_email='{}_request'.format(self.machineable.request_type))
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -172,11 +173,13 @@ class RequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.admin_contributors:
+        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
                 admin=admin,
+                mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
 
@@ -194,6 +197,8 @@ class RequestMachine(BaseMachine):
             mails.send_mail(
                 self.machineable.creator.username,
                 mails.ACCESS_REQUEST_DENIED,
+                mimetype='html',
+                osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
         else:

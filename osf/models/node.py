@@ -1202,6 +1202,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
+
+            # If there are pending access requests for this user, mark them as accepted
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -2459,7 +2465,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     to_addr=user.username,
                     mail=mails.SPAM_USER_BANNED,
                     user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
                 )
             user.save()
 
@@ -2687,6 +2694,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         log_date = date or timezone.now()
 
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(node=self).update(root_target=None)
+
         # Add log to parent
         self.add_remove_node_log(auth=auth, date=log_date)
 
@@ -2864,6 +2874,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise ValidationError('The home wiki page cannot be deleted.')
         page.deleted = timezone.now()
         page.save()
+
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,

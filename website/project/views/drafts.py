@@ -17,8 +17,8 @@ from framework.status import push_status_message
 
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
+from osf.utils.functional import rapply
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
-from api.base.utils import rapply
 
 from website.exceptions import NodeStateError
 from website.project.decorators import (

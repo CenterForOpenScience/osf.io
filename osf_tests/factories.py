@@ -431,8 +431,6 @@ class RegistrationApprovalFactory(SanctionFactory):
 
 class EmbargoTerminationApprovalFactory(DjangoModelFactory):
 
-    FACTORY_STRATEGY = factory.base.CREATE_STRATEGY
-
     @classmethod
     def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
         if registration:
@@ -648,7 +646,7 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)

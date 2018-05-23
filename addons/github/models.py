@@ -192,6 +192,29 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except GitHubError:
             return
 
+    def get_folders(self, **kwargs):
+        if not self.has_auth:
+            raise exceptions.InvalidAuthError()
+        else:
+            connection = GitHubClient(external_account=self.external_account)
+            # Since /user/repos excludes organization repos to which the
+            # current user has push access, we have to make extra requests to
+            # find them
+            try:
+                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                repo_data = [
+                    {
+                        'addon': 'github',
+                        'kind': 'repo',
+                        'id': repo.id,
+                        'name': repo.name,
+                        'path': os.path.join(repo.owner.login, repo.name)
+                    }
+                    for repo in repos]
+            except GitHubError:
+                repo_data = []
+            return repo_data
+
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         ret = super(NodeSettings, self).to_json(user)
@@ -201,25 +224,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'is_registration': self.owner.is_registration,
         })
         if self.has_auth:
-            valid_credentials = False
             owner = self.user_settings.owner
-            connection = GitHubClient(external_account=self.external_account)
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
-            valid_credentials = True
-            try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
-                ]
-            except GitHubError:
-                repo_names = []
-                valid_credentials = False
+
             if owner == user:
-                ret.update({'repo_names': repo_names})
+                ret.update({'repo_names': self.get_folders()})
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -231,7 +239,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'github_user_name': self.external_account.display_name,
                 'github_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,
-                'valid_credentials': valid_credentials,
+                'valid_credentials': GitHubClient(external_account=self.external_account).check_authorization(),
                 'addons_url': web_url_for('user_addons'),
                 'files_url': self.owner.web_url_for('collect_file_trees')
             })

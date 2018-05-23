@@ -29,7 +29,7 @@ from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,
     File, Folder,  # noqa
-    FileVersion, TrashedFile, TrashedFileNode, TrashedFolder,  # noqa
+    FileVersion, TrashedFile, TrashedFileNode, TrashedFolder, FileVersionUserMetadata,  # noqa
 )  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa

@@ -7,6 +7,8 @@ from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
 from osf.utils.permissions import reduce_permissions
 
+from osf.utils import workflows
+
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
     return profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
@@ -178,3 +180,17 @@ def serialize_unregistered(fullname, email):
         serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
+
+
+def serialize_access_requests(node):
+    """Serialize access requests for a node"""
+    return [
+        {
+            'user': serialize_user(access_request.creator),
+            'comment': access_request.comment,
+            'id': access_request._id
+        } for access_request in node.requests.filter(
+            request_type=workflows.RequestTypes.ACCESS.value,
+            machine_state=workflows.DefaultStates.PENDING.value
+        ).select_related('creator')
+    ]

@@ -555,7 +555,7 @@ class TestNodeMODMCompat:
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
-        assert node in Node.objects.filter(guids___id=node._id)
+        assert node in Node.objects.filter(guids___id=node._id, guids___id__isnull=False)
 
 
 # copied from tests/test_models.py

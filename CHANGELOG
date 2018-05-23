@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.141.0 (2018-05-22)
+====================
+
+- Store storage region on users and node-osfstorage addons.
+- Add HTML formatting to all transactional emails.
+- API: Add folder/project listing functionality to node settings endpoints
+for GitHub, Zotero, and Mendeley addons.
+- API: Optimize comment listing views.
+- Optimize a number of GUID queries.
+- Update a number of dependencies that were blocking Python 3 upgrade.
+- Lots of bug fixes.
+
+0.140.0 (2018-04-27)
+====================
+
+- Users can request to be a contributor on projects.
+- Include "Create view-only link" button on Project Overview page.
+
 0.139.0 (2018-04-18)
 ====================
 

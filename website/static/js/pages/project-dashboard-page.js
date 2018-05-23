@@ -28,6 +28,7 @@ var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
+var currentUserRequestState = ctx.currentUserRequestState;
 
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -42,7 +43,10 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
+    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
+
+    // Enable the otherActionsButton once the page is loaded so the menu is properly populated
+    $('#otherActionsButton').removeClass('disabled');
 });
 
 // Initialize comment pane w/ its viewmodel
@@ -98,6 +102,13 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+    // Allows dropdown elements to persist after being clicked
+    // Used for the "Share" button in the more actions menu
+    $('.dropdown').on('click', 'li', function (evt) {
+        var target = $(evt.target);
+        // If the clicked element has .keep-open, don't allow the event to propagate
+        return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
+    });
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
@@ -199,7 +210,7 @@ $(document).ready(function () {
                     document.getElementById('shareButtonsPopover'),
                     m.component(
                         SocialShare.ShareButtonsPopover,
-                        {title: window.contextVars.node.title, url: window.location.href}
+                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
                     )
                 );
             }
