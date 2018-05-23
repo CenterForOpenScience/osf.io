@@ -264,6 +264,8 @@ def mla_name(name, initial=False):
 
 def middle_name_splitter(middle_names, add_periods=False):
     initials = ''
+    if middle_names:
+        middle_names = middle_names.strip()
     middle_names_arr = middle_names.split(' ')
     for name in middle_names_arr:
         initials += ' ' + name[0]
