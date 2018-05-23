@@ -93,7 +93,7 @@
                                         <span data-bind="text: locationSelectedName" class="text-capitalize"></span>
                                         <i class="fa fa-sort"></i>
                                     </button>
-                                    <ul class="dropdown-menu" data-bind="foreach: {data: profile().storage_locations, as: 'location'}">
+                                    <ul class="dropdown-menu" data-bind="foreach: {data: profile().storageLocations, as: 'location'}">
                                         <li>
                                               <a href="#" data-bind="click: $root.setLocation.bind($root, location)">
                                                   <span data-bind="text: location.name"></span>

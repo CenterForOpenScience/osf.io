@@ -333,7 +333,7 @@ def user_change_default_storage_location(auth, **kwargs):
     region_id = request.get_json()['region']
     user = auth.user
     user_settings = user.get_addon('osfstorage')
-    user_settings.default_region = Region.objects.get(id=region_id)
+    user_settings.default_region = Region.objects.get(_id=region_id)
     user_settings.save()
 
 @must_be_logged_in
