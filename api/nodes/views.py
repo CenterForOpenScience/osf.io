@@ -1745,7 +1745,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     view_name = 'node-view-only-link-detail'
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
             return NodeViewOnlyLinkUpdateSerializer
         return NodeViewOnlyLinkSerializer
 
