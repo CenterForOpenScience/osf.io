@@ -1499,12 +1499,6 @@ def make_url_map(app):
             project_views.node.update_node,
             json_renderer,
         ),
-        Rule(
-            '/node/<nid>/change_storage_location/',
-            'post',
-            project_views.node.node_change_default_storage_location,
-            json_renderer,
-        ),
 
         # Remove
         Rule(
