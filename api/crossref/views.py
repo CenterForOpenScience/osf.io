@@ -23,6 +23,9 @@ class ParseCrossRefConfirmation(APIView):
     def dispatch(self, request, *args, **kwargs):
         return super(ParseCrossRefConfirmation, self).dispatch(request, *args, **kwargs)
 
+    def get_serializer_class(self):
+        return None
+
     def post(self, request):
         crossref_email_content = lxml.etree.fromstring(str(request.POST['body-plain']))
         record_status = crossref_email_content.get('status').lower()
