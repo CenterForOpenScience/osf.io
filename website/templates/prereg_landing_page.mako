@@ -43,10 +43,10 @@
     <h1 class="m-t-xl m-b-lg text-center">
         <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-black.png" alt="preregistration_challenge_logo">
     </h1>
-    <p>Improve your research with preregistration. </p>
-    <p>The process of creating a <a href='http://www.cos.io/prereg'> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+    <p><strong> Articles must be published by an <a target='_blank' href='http://cos.io/our-services/prereg-more-information/'>approved</a> journal by December 31, 2018, to be eligible for a prize. </strong></p>
+    <p> Improve your research with preregistration. The process of creating a <a href='http://www.cos.io/prereg'> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
 
-    <div class="col-md-12 visible-xs">                  
+    <div class="col-md-12 visible-xs">
       %if is_logged_in:
       <div class="row">
         <div class="reg-landing-page-button-xs reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPreregXS">Start a new preregistration</div>
@@ -75,7 +75,7 @@
           ${existingProject('XS')}
         </div>
       </div>
-      %endif      
+      %endif
     </div>
     <div class="row hidden-xs">
       <%
