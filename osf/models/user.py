@@ -356,7 +356,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
-    accepted_terms_of_service = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
+    accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     objects = OSFUserManager()
 
