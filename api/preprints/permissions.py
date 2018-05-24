@@ -6,7 +6,7 @@ from api.base.utils import get_user_auth, assert_resource_type
 from api.nodes.permissions import (
     AdminOrPublic as NodeAdminOrPublic,
 )
-from osf.models import Preprint, OSFUser, PreprintContributor
+from osf.models import Preprint, OSFUser, PreprintContributor, Identifier
 from addons.osfstorage.models import OsfStorageFolder
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
@@ -64,6 +64,19 @@ class ContributorDetailPermissions(permissions.BasePermission):
             if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
             return True
+
+class PreprintIdentifierDetailPermissions(PreprintPublishedOrAdmin):
+
+    acceptable_models = (Identifier, Preprint)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        referent = obj.referent
+
+        if not isinstance(referent, Preprint):
+            return True
+
+        return super(PreprintIdentifierDetailPermissions, self).has_object_permission(request, view, referent)
 
 
 class AdminOrPublic(NodeAdminOrPublic):

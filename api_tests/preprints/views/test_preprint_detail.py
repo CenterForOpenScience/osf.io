@@ -603,7 +603,7 @@ class TestPreprintUpdate:
         assert mock_get_identifiers.called
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_update_published_makes_node_public(
+    def test_update_published_does_not_make_node_public(
             self, mock_get_identifiers, app, user):
         unpublished = PreprintFactory(creator=user, is_public=False, is_published=False, project=ProjectFactory(creator=user))
         assert not unpublished.node.is_public
@@ -614,7 +614,7 @@ class TestPreprintUpdate:
         unpublished.node.reload()
         unpublished.reload()
 
-        assert unpublished.node.is_public
+        assert unpublished.node.is_public is False
         assert unpublished.is_public
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')

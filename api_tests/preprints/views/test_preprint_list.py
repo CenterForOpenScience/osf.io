@@ -383,7 +383,7 @@ class TestPreprintCreate(ApiTestCase):
         preprint.reload()
         assert_equal(res.status_code, 200)
         self.private_project.reload()
-        assert_true(self.private_project.is_public)
+        assert_false(self.private_project.is_public)
         assert_true(preprint.is_public)
         assert_true(preprint.is_published)
 
