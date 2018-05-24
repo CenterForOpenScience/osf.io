@@ -28,6 +28,8 @@ def reviews_notification(self, creator, template, context, action):
 def reviews_submit_notification(self, recipients, context):
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import get_user_subscriptions
+    from website import settings
+
     event_type = utils.find_subscription_type('global_reviews')
     if context['reviewable'].provider._id == 'osf':
         context['logo'] = settings.OSF_PREPRINTS_LOGO
