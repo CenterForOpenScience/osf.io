@@ -71,11 +71,11 @@ class TestFileSerializer:
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert download_base.format(guid) in data['links']['download']
 
-    def test_no_node_relationship_after_version_2_6(self, file_one):
-        req_2_6 = make_drf_request_with_version(version='2.6')
-        data_2_6 = FileSerializer(file_one, context={'request': req_2_6}).data['data']
-        assert 'node' in data_2_6['relationships'].keys()
-
+    def test_no_node_relationship_after_version_2_7(self, file_one):
         req_2_7 = make_drf_request_with_version(version='2.7')
         data_2_7 = FileSerializer(file_one, context={'request': req_2_7}).data['data']
-        assert 'node' not in data_2_7['relationships'].keys()
+        assert 'node' in data_2_7['relationships'].keys()
+
+        req_2_8 = make_drf_request_with_version(version='2.8')
+        data_2_8 = FileSerializer(file_one, context={'request': req_2_8}).data['data']
+        assert 'node' not in data_2_8['relationships'].keys()

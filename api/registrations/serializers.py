@@ -360,7 +360,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
     )
 
     comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
-                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_view_kwargs={'node_id': '<target._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
