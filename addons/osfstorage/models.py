@@ -18,7 +18,7 @@ from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFil
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 
