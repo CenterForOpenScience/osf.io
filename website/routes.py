@@ -78,11 +78,9 @@ def get_globals():
 
     if user:
         default_storage_region = user.get_addon('osfstorage').default_region
-        default_storage_region = {'name': default_storage_region.name, 'id': default_storage_region._id}
-        region_list = [{'name': region.name, 'id': region._id} for region in Region.objects.all()]
+        default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
+        region_list = list(Region.objects.all().values('_id', 'name'))
         region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))  # default should be at top of list for UI.
-        print(region_list)
-
     else:
         region_list = []
 

@@ -92,9 +92,9 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2', 'region': self.newProjectStorageLocation().id}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             } else {
-                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2', 'region': self.newProjectStorageLocation().id}});
+                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             }
             data = {
                     'data' : {
@@ -487,7 +487,7 @@ var SelectStorageLocation = {
         return m('select.p-t-sm', {config: SelectStorageLocation.config(options)},
             [
             window.contextVars.storage_regions.map(function(region) {
-                var args = {value: region.id};
+                var args = {value: region._id};
                 return m('option', args, region.name);
             })
         ]);
@@ -497,12 +497,12 @@ var SelectStorageLocation = {
             var $el = $(element);
             if (!isInitialized) {
                 $el.select2({allowClear: true, width: '100%'}).on('change', function () {
-                    var id = parseInt($el.select2('val'));
+                    var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
                     window.contextVars.storage_regions.map(function (location) {
-                        if (location.id === id) {
-                            ctrl.value(location.id);
+                        if (location._id === id) {
+                            ctrl.value(location);
                         }
                     });
                     m.endComputation();
