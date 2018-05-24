@@ -15,7 +15,7 @@ Thank you for verifying your account on OSF, a free, open source service maintai
 <br>
 
 <h4>Select your storage location</h4>
-Files can be stored in a location you specify from the available geographic regions for new projects. <a href="https://osf.io/settings/account/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Set storage location.</a><br>
+Files can be stored in a location you specify from the available geographic regions for new projects. <a href="https://osf.io/settings/account/?utm_source=notification&utm_medium=email&utm_campaign=welcome#changeDefaultStorageLocation">Set storage location.</a><br>
 <br>
 
 <h4>Store your files</h4>
