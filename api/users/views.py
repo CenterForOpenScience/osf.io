@@ -48,7 +48,7 @@ class UserMixin(object):
     serializer_class = UserSerializer
     user_lookup_url_kwarg = 'user_id'
 
-    def get_user(self, check_permissions=True):
+    def get_user(self, check_permissions=True, check_active=False):
         key = self.kwargs[self.user_lookup_url_kwarg]
         # If Contributor is in self.request.parents,
         # then this view is getting called due to an embedded request (contributor embedding user)
@@ -79,6 +79,10 @@ class UserMixin(object):
                 return self.request.user
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
+
+        if not obj.is_active and check_active:
+            raise UserGone(user=obj)
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -292,7 +296,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
     view_name = 'user-quickfiles'
 
     def get_node(self, check_object_permissions):
-        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
+        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False, check_active=True))
 
     def get_default_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'
