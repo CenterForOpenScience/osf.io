@@ -292,6 +292,25 @@ class TestProjectViews(OsfTestCase):
         self.project2.add_contributor(self.user2, auth=Auth(self.user1))
         self.project2.save()
 
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_tos_status_message(self, mock_push_status_message):
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_true(mock_push_status_message.called)
+        assert_equal('terms_of_service', mock_push_status_message.mock_calls[0][2]['id'])
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_no_tos_status_message(self, mock_push_status_message):
+        self.user1.accepted_terms_of_service = timezone.now()
+        self.user1.save()
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_false(mock_push_status_message.called)
+
     def test_node_setting_with_multiple_matched_institution_email_domains(self):
         # User has alternate emails matching more than one institution's email domains
         inst1 = InstitutionFactory(email_domains=['foo.bar'])
@@ -3056,6 +3075,7 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+        assert_equal(user.accepted_terms_of_service, None)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -3073,6 +3093,40 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_with_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': True
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_true(user.accepted_terms_of_service)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_without_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': False
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_equal(user.accepted_terms_of_service, None)
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_register_scrubs_username(self, _):

@@ -355,6 +355,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
+    # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
+    accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
+
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
@@ -827,12 +830,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Legacy methods
 
     @classmethod
-    def create(cls, username, password, fullname):
+    def create(cls, username, password, fullname, accepted_terms_of_service=None):
         validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
             fullname=fullname,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         user.update_guessed_names()
         user.set_password(password)
@@ -866,11 +870,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           do_confirm=True, campaign=None):
+                           do_confirm=True, campaign=None, accepted_terms_of_service=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        user = cls.create(username, password, fullname)
+        user = cls.create(username, password, fullname, accepted_terms_of_service)
         user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
         if external_identity:
@@ -1122,7 +1126,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
-    def register(self, username, password=None):
+    def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
         """
         self.username = username
@@ -1133,6 +1137,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = timezone.now()
+        if accepted_terms_of_service:
+            self.accepted_terms_of_service = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
