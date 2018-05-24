@@ -88,8 +88,7 @@ class OsfStorageFileNode(BaseFileNode):
         Just manually assert that node is equal to node.
         """
         inst = cls.load(path.strip('/'))
-        # Use _id as odms default comparison mucks up sometimes
-        if inst and inst.target._id == target._id:
+        if inst and inst.target.id == target.id:
             return inst
 
         # Dont raise anything a 404 will be raised later
@@ -181,36 +180,37 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if isinstance(self.target, AbstractNode) and self.is_checked_out and self.checkout != user:
+        target = self.target
+        if isinstance(target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if self.target.has_permission(user, permissions.ADMIN):
+            if target.has_permission(user, permissions.ADMIN):
                 # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and self.target.draft_registrations_active.filter(
+                if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
                         registration_schema__name='Prereg Challenge').exists():
                     raise exceptions.FileNodeCheckedOutError()
             else:
                 raise exceptions.FileNodeCheckedOutError()
 
-        if not self.target.has_permission(user, permissions.WRITE):
+        if not target.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
 
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
             self.checkout = checkout
-            if isinstance(self.target, Loggable):
-                self.target.add_log(
+            if isinstance(target, Loggable):
+                target.add_log(
                     action=action,
                     params={
                         'kind': self.kind,
-                        'project': self.target.parent_id,
-                        'node': self.target._id,
+                        'project': target.parent_id,
+                        'node': target._id,
                         'urls': {
                             # web_url_for unavailable -- called from within the API, so no flask app
-                            'download': '/project/{}/files/{}/{}/?action=download'.format(self.target._id,
+                            'download': '/project/{}/files/{}/{}/?action=download'.format(target._id,
                                                                                           self.provider,
                                                                                           self._id),
-                            'view': '/project/{}/files/{}/{}'.format(self.target._id, self.provider, self._id)},
+                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id)},
                         'path': self.materialized_path
                     },
                     auth=Auth(user),
@@ -219,7 +219,7 @@ class OsfStorageFileNode(BaseFileNode):
             if save:
                 self.save()
 
-    def save(self, *args, **kwargs):
+    def save(self):
         self._path = ''
         self._materialized_path = ''
         return super(OsfStorageFileNode, self).save()
@@ -314,21 +314,26 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def add_tag_log(self, action, tag, auth):
-        if isinstance(self.target, AbstractNode):
-            node = self.target
-            node.add_log(
+        if isinstance(self.target, Loggable):
+            target = self.target
+            params = {
+                'urls': {
+                    'download': '/{}/files/osfstorage/{}/?action=download'.format(target._id, self._id),
+                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            }
+            if isinstance(target, AbstractNode):
+                params['parent_node'] = target.parent_id
+                params['node'] = target._id
+
+            target.add_log(
                 action=action,
-                params={
-                    'parent_node': node.parent_id,
-                    'node': node._id,
-                    'urls': {
-                        'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
-                        'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
-                    'path': self.materialized_path,
-                    'tag': tag,
-                },
+                params=params,
                 auth=auth,
             )
+        else:
+            raise NotImplementedError('Cannot add a tag log to a {}'.format(self.target.__class__.__name__))
 
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
@@ -421,7 +426,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     @property
     def is_preprint_primary(self):
         if hasattr(self.target, 'preprint_file') and self.target.preprint_file:
-            for child in self.children.all():
+            for child in self.children.all().prefetch_related('target'):
                 if getattr(child.target, 'preprint_file', None):
                     if child.is_preprint_primary:
                         return True

@@ -18,17 +18,17 @@ class FileMetadataView(APIView):
     parser_classes = (HMACSignedParser,)
     serializer_class = WaterbutlerMetadataSerializer
     view_category = 'wb'
-    node_lookup_url_kwarg = 'node_id'
+    target_lookup_url_kwarg = 'target_id'
 
     def get_object(self):
-        return self.get_target(self.kwargs[self.node_lookup_url_kwarg])
+        return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
 
     def get_target(self, target_id):
         target = get_object_or_error(
             AbstractNode,
             target_id,
             self.request,
-            display_name='node'
+            display_name='target'
         )
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')

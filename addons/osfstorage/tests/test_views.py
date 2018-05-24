@@ -799,7 +799,7 @@ class TestMoveHook(HookTestCase):
             'osfstorage_move_hook',
             {'guid': self.root_node.target._id},
             payload={
-                'source': folder._id,
+                'source': file._id,
                 'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {

@@ -803,10 +803,6 @@ class FileCommentRelationshipField(RelationshipField):
             raise SkipField
         return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
 
-    def lookup_attribute(self, obj, lookup_field):
-        if lookup_field == '<node._id>':
-            lookup_field = '<target._id>'
-        return super(FileCommentRelationshipField, self).lookup_attribute(obj, lookup_field)
 
 class TargetField(ser.Field):
     """

@@ -633,7 +633,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
-    project_safe = markupsafe.escape(getattr(target, 'project_or_component', target))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -641,9 +640,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     node_addon = target.get_addon(provider)
 
     if not isinstance(node_addon, BaseStorageAddon):
+        object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
         raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
+            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
         })
 
     if not node_addon.has_auth:

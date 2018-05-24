@@ -504,14 +504,15 @@ def update_user(user, index=None):
 @requires_search
 def update_file(file_, index=None, delete=False):
     index = index or INDEX
+    target = file_.target
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
     file_node_is_qa = bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
     ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.target.tags.all().values_list('name', flat=True))
-    ) or any(substring in file_.target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not file_.target.is_public or delete or file_.target.is_deleted or file_.target.archiving or file_node_is_qa:
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
+    ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not target.is_public or delete or target.is_deleted or target.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -524,11 +525,11 @@ def update_file(file_, index=None, delete=False):
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
     file_deep_url = '/{target_id}/files/{provider}{path}/'.format(
-        target_id=file_.target._id,
+        target_id=target._id,
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{target_id}/'.format(target_id=file_.target._id)
+    node_url = '/{target_id}/'.format(target_id=target._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
@@ -542,10 +543,10 @@ def update_file(file_, index=None, delete=False):
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,
-        'node_title': getattr(file_.target, 'title', None),
-        'parent_id': file_.target.parent_node._id if getattr(file_.target, 'parent_node', None) else None,
-        'is_registration': getattr(file_.target, 'is_registration', False),
-        'is_retracted': getattr(file_.target, 'is_retracted', False),
+        'node_title': getattr(target, 'title', None),
+        'parent_id': target.parent_node._id if getattr(target, 'parent_node', None) else None,
+        'is_registration': getattr(target, 'is_registration', False),
+        'is_retracted': getattr(target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
     }
 

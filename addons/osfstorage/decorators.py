@@ -50,7 +50,7 @@ def load_guid_as_target(func):
 
 
 def autoload_filenode(must_be=None, default_root=False):
-    """Implies handle_odm_errors
+    """Implies handle_django_errors
     Attempts to load fid as a OsfStorageFileNode with viable constraints
     """
     def _autoload_filenode(func):
