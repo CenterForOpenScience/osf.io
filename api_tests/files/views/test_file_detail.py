@@ -45,6 +45,10 @@ class TestFileView:
         return ProjectFactory(creator=user, comment_level='public')
 
     @pytest.fixture()
+    def quickfiles_node(self, user):
+        return QuickFilesNode.objects.get(creator=user)
+
+    @pytest.fixture()
     def file(self, user, node):
         return api_utils.create_test_file(node, user, create_guid=False)
 
@@ -81,6 +85,28 @@ class TestFileView:
         assert res.status_code == 410
 
         res = app.get(url_with_id, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, quickfiles_node, user):
+        file_node = api_utils.create_test_file(quickfiles_node, user, create_guid=True)
+        url_with_guid = '/{}files/{}/'.format(
+            API_BASE, file_node.get_guid()._id
+        )
+        url_with_id = '/{}files/{}/'.format(API_BASE, file_node._id)
+
+        res = app.get(url_with_id, expect_errors=True)
+        assert res.status_code == 200
+
+        res = app.get(url_with_guid, auth=user.auth)
+        assert res.status_code == 200
+
+        user.is_disabled = True
+        user.save()
+
+        res = app.get(url_with_id, expect_errors=True)
+        assert res.status_code == 410
+
+        res = app.get(url_with_guid, expect_errors=True)
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):

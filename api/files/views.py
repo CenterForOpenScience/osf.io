@@ -87,6 +87,9 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_object(self):
         user = utils.get_user_auth(self.request).user
         file = self.get_file()
+        if file.node.is_quickfiles and not file.node.creator.is_active:
+            raise Gone()
+
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
             if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or file.node.is_quickfiles:

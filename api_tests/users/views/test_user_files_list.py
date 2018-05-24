@@ -130,3 +130,11 @@ class TestUserQuickFiles:
 
         assert 'upload' in file_detail_json['links']
         assert file_detail_json['links']['upload'] == waterbutler_url
+
+    def test_disabled_users_quickfiles_gets_410(self, app, url):
+        user = AuthUserFactory(is_disabled=True)
+        QuickFilesNode.objects.get(creator=user).save()
+        url = '/{}users/{}/quickfiles/'.format(API_BASE, user._id)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 410
+        assert res.content_type == 'application/vnd.api+json'
