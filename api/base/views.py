@@ -399,6 +399,7 @@ def root(request, format=None, **kwargs):
     if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
+        current_user['data']['attributes']['accepted_terms_of_service'] = bool(user.accepted_terms_of_service)
     else:
         current_user = None
     flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
