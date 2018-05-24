@@ -241,7 +241,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'plain'
+            'html'
         ))
 
         self.app.post_json(url, sign_up_data)
@@ -250,7 +250,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'plain'
+            'html'
         ))
 
 
