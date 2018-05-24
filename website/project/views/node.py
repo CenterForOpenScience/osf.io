@@ -906,14 +906,6 @@ def _get_children(node, auth):
 
     return serialize_children(nested[node._id], nested)
 
-@must_be_valid_project
-@must_be_logged_in
-def node_change_default_storage_location(node, **kwargs):
-    region_id = request.get_json()['region']
-    node_settings = node.get_addon('osfstorage')
-    node_settings.region = Region.objects.get(id=region_id)
-    node_settings.save()
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
