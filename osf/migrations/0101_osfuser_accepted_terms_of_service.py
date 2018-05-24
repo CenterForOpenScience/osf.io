@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='osfuser',
             name='accepted_terms_of_service',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
     ]
