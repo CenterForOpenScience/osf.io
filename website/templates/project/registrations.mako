@@ -129,7 +129,7 @@
 <script type="text/html" id="createDraftRegistrationModal">
     <p>Registration creates a frozen version of the project. Your original project remains editable and will have the registration linked. Things to know about registration:</p>
     <ul>
-        <li><b>Registrations cannot be edited or deleted.</b></li>
+        <li><strong>Registrations cannot be edited or deleted.</strong></li>
         <li>Withdrawing a registration removes its contents, but leaves behind basic metadata: title, contributors, date registered, date withdrawn, and justification (if provided).</li>
         <li>Registrations can be public or embargoed for up to four years. Embargoed registrations will be made public automatically when the embargo expires.</li>
     </ul>
