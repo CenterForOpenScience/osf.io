@@ -21,8 +21,8 @@ from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
-from framework.auth import cas
 from website.util import rubeus, api_url_for
+from framework.auth import cas
 
 from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
@@ -735,7 +735,7 @@ class TestMoveHook(HookTestCase):
         file = folder.append_file('No I don\'t wanna go')
         file.checkout = self.user
         file.save()
-        
+
         folder_two = self.root_node.append_folder('To There')
         res = self.send_hook(
             'osfstorage_move_hook',
@@ -762,7 +762,7 @@ class TestMoveHook(HookTestCase):
         file = folder_nested.append_file('No I don\'t wanna go')
         file.checkout = self.user
         file.save()
-        
+
         folder_two = self.root_node.append_folder('To There')
         res = self.send_hook(
             'osfstorage_move_hook',
