@@ -10,6 +10,8 @@ from addons.base.tests.models import (
     OAuthAddonUserSettingTestSuiteMixin,
     OAuthCitationsNodeSettingsTestSuiteMixin,
 )
+from addons.base.tests.utils import MockFolder
+
 from addons.mendeley.models import (
     Mendeley, NodeSettings,
 )
@@ -51,6 +53,15 @@ class MendeleyNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, uni
     NodeSettingsFactory = MendeleyNodeSettingsFactory
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = MendeleyUserSettingsFactory
+
+    @mock.patch('addons.mendeley.models.Mendeley._get_folders')
+    def test_get_folders(self, mock_folders):
+        mock_folders.return_value = [MockFolder(), MockFolder()]
+        folders = self.node_settings.get_folders()
+
+        assert(len(folders) == 2)
+        assert(folders[0]['kind'] == 'folder')
+        assert(folders[1]['kind'] == 'folder')
 
 class MendeleyUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
     short_name = 'mendeley'

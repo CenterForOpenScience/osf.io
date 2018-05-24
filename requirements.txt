@@ -17,7 +17,6 @@ celery==4.2.0rc2
 kombu==4.1.0
 vine==1.1.4
 httplib2==0.10.3
-hurry.filesize==0.9
 itsdangerous==0.24
 lxml==3.4.1
 mailchimp==2.0.9
@@ -82,7 +81,7 @@ sendgrid-django==2.0.0
 
 # Analytics requirements
 keen==0.5.1
-python-geoip-geolite2==2015.0303
+maxminddb-geolite2==2018.308
 
 # OSF models
 django-typed-models==0.7.0

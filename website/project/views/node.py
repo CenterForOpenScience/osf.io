@@ -17,7 +17,7 @@ from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
-from api.base.utils import rapply
+from osf.utils.functional import rapply
 
 from website import language
 

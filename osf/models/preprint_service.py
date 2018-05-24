@@ -13,7 +13,7 @@ from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
-from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
+from website.preprints.tasks import on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website import settings, mails
@@ -165,9 +165,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     log=True
                 )
 
-            # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
-
             self._send_preprint_confirmation(auth)
 
         if save:
@@ -212,8 +209,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         # Send creator confirmation email
         if self.provider._id == 'osf':
             email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
+            logo = self.provider._id
 
         mails.send_mail(
             auth.user.username,
@@ -221,5 +220,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             user=auth.user,
             node=self.node,
             preprint=self,
+            logo=logo,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
         )

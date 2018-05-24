@@ -217,7 +217,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': 'cas-pac4j',
+                'delegation_protocol': '',
             },
             {
                 '_id': 'fsu',
@@ -793,7 +793,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': 'cas-pac4j',
+                'delegation_protocol': '',
             },
             {
                 '_id': 'fsu',

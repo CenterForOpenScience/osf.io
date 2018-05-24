@@ -110,6 +110,16 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/github/folders/',
+                '/project/<pid>/node/<nid>/github/folders/',
+            ],
+            'get',
+            views.github_folder_list,
+            json_renderer,
+        ),
+
     ],
     'prefix': '/api/v1'
 }

@@ -1,5 +1,4 @@
 import pytest
-import mock
 
 from api.base.settings.defaults import API_BASE
 from api.preprint_providers.permissions import GroupHelper
@@ -83,9 +82,8 @@ class TestReviewActionCreateRelated(object):
         moderator.groups.add(GroupHelper(provider).get_group('moderator'))
         return moderator
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_create_permissions(
-            self, mock_ezid, app, url, preprint, node_admin, moderator):
+            self, app, url, preprint, node_admin, moderator):
         assert preprint.machine_state == 'initial'
 
         submit_payload = self.create_payload(preprint._id, trigger='submit')
@@ -152,9 +150,6 @@ class TestReviewActionCreateRelated(object):
         assert preprint.machine_state == 'accepted'
         assert preprint.is_published
 
-        # Check if "get_and_set_preprint_identifiers" is called once.
-        assert mock_ezid.call_count == 1
-
     def test_cannot_create_actions_for_unmoderated_provider(
             self, app, url, preprint, provider, node_admin):
         provider.reviews_workflow = None
@@ -216,9 +211,8 @@ class TestReviewActionCreateRelated(object):
             expect_errors=True)
         assert res.status_code == 400
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_valid_transitions(
-            self, mock_ezid, app, url, preprint, provider, moderator):
+            self, app, url, preprint, provider, moderator):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),
@@ -264,12 +258,9 @@ class TestReviewActionCreateRelated(object):
                 if preprint.in_public_reviews_state:
                     assert preprint.is_published
                     assert preprint.date_published == action.created
-                    assert mock_ezid.called
-                    mock_ezid.reset_mock()
                 else:
                     assert not preprint.is_published
                     assert preprint.date_published is None
-                    assert not mock_ezid.called
 
                 if trigger == 'edit_comment':
                     assert preprint.date_last_transitioned is None
