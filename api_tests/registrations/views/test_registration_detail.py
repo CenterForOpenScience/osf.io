@@ -373,6 +373,7 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
+            'children',
             'tags']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -386,6 +387,7 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
+            'children',
             'tags']
 
         for field in RegistrationDetailSerializer._declared_fields:

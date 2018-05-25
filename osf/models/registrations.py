@@ -584,14 +584,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False):
+    def register(self, auth, save=False, excluded_node_ids=None):
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata
+            data=self.registration_metadata,
+            excluded_node_ids=excluded_node_ids
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
