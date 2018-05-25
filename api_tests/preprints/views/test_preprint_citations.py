@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+from django.utils import timezone
+
 from api.base.settings.defaults import API_BASE
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
 from datetime import datetime
+from osf.utils.workflows import DefaultStates
 
 
 class PreprintCitationsMixin(object):
@@ -50,6 +53,7 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
             API_BASE, self.published_preprint._id)
         self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
             API_BASE, self.unpublished_preprint._id)
+        self.other_contrib = AuthUserFactory()
 
     def test_citation_publisher_is_preprint_provider(self):
         res = self.app.get(self.published_preprint_url)
@@ -65,6 +69,123 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
             res.json['data']['links']['self'],
             self.published_preprint.display_absolute_url
         )
+
+class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintCitationsPermissions, self).setUp()
+        self.published_preprint_url = '/{}preprints/{}/citation/'.format(
+            API_BASE, self.published_preprint._id)
+        self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
+            API_BASE, self.unpublished_preprint._id)
+        self.other_contrib = AuthUserFactory()
+
+    def test_unpublished_preprint_citations(self):
+        # Unauthenticated
+        res = self.app.get(self.unpublished_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.unpublished_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state, not because of published flag
+        assert_equal(res.status_code, 403)
+
+        # Admin contrib
+        res = self.app.get(self.unpublished_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_private_preprint_citations(self):
+        self.published_preprint.is_public = False
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 200)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_deleted_preprint_citations(self):
+        self.published_preprint.deleted = timezone.now()
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 404)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_abandoned_preprint_citations(self):
+        self.published_preprint.machine_state = DefaultStates.INITIAL.value
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 403)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_orphaned_preprint_citations(self):
+        self.published_preprint.primary_file = None
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 200)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
@@ -93,3 +214,121 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
             '%Y, %B %-d')
         assert_true(
             expected_date in res.json['data']['attributes']['citation'])
+
+
+class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintCitationsContentPermissions, self).setUp()
+        self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
+            API_BASE, self.published_preprint._id)
+        self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(
+            API_BASE, self.unpublished_preprint._id)
+        self.other_contrib = AuthUserFactory()
+
+    def test_unpublished_preprint_citations(self):
+        # Unauthenticated
+        res = self.app.get(self.unpublished_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.unpublished_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state, not because of published flag
+        assert_equal(res.status_code, 403)
+
+        # Admin contrib
+        res = self.app.get(self.unpublished_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_private_preprint_citations(self):
+        self.published_preprint.is_public = False
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 200)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_deleted_preprint_citations(self):
+        self.published_preprint.deleted = timezone.now()
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 404)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_abandoned_preprint_citations(self):
+        self.published_preprint.machine_state = DefaultStates.INITIAL.value
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 403)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_orphaned_preprint_citations(self):
+        self.published_preprint.primary_file = None
+        self.published_preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.published_preprint_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        # Non contrib
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        # Write contrib
+        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
+        # Really because preprint is in initial machine state
+        assert_equal(res.status_code, 200)
+
+        # Admin contrib
+        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)

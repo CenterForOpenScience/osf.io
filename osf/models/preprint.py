@@ -1054,12 +1054,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return None
 
     def can_view(self, auth):
-        # TODO - need more thinking about is_public and is_published.
-        # Possible to have current nodes with is_public = False with a preprint is_published = True
-        if not auth and (not self.verified_publishable):
-            return False
+        if not auth.user:
+            return self.verified_publishable
 
-        return (self.verified_publishable) or (auth.user and self.has_permission(auth.user, 'read'))
+        return (self.verified_publishable or
+            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
+            self.has_permission(auth.user, 'admin') or
+            (self.is_contributor(auth.user) and self.machine_state != DefaultStates.INITIAL.value)
+        )
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -1076,7 +1078,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         user = user or auth.user
 
         return (
-            (user and self.has_permission(user, 'write'))
+            (user and self.has_permission(user, 'admin'))
         )
 
     # TODO: Remove save parameter
