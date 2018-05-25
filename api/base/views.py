@@ -414,7 +414,7 @@ def root(request, format=None, **kwargs):
             'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
             'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
             'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
-            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list', kwargs=kwargs),
+            'metaschemas': utils.absolute_reverse('metaschemas:registration-metaschema-list', kwargs=kwargs),
             'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
         }
     }
