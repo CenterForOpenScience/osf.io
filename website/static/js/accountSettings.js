@@ -24,7 +24,7 @@ var UserProfile = oop.defclass({
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
-        this.default_storage_location = ko.observable();
+        this.defaultStorageLocation = ko.observable();
         this.storageLocations = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
@@ -152,7 +152,7 @@ var UserProfileClient = oop.defclass({
         }
 
         profile.id(data.profile.id);
-        profile.default_storage_location(data.profile.default_storage_location);
+        profile.defaultStorageLocation(data.profile.default_storage_location);
         profile.storageLocations(data.profile.storage_locations);
         profile.emails(
             ko.utils.arrayMap(data.profile.emails, function (emailData){
@@ -362,7 +362,7 @@ var UpdateDefaultStorageLocation = oop.defclass({
         this.client.fetch().done(
             function(profile) {
                 this.profile(profile);
-                this.locationSelected(this.profile().default_storage_location());
+                this.locationSelected(this.profile().defaultStorageLocation());
             }.bind(this)
         );
 
@@ -372,7 +372,7 @@ var UpdateDefaultStorageLocation = oop.defclass({
         'update': '/api/v1/profile/region/'
     },
     updateDefaultStorageLocation: function() {
-        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected().id}});
+        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
         request.done(function() {
             $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
         }.bind(this));
