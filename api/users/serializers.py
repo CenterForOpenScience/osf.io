@@ -55,7 +55,7 @@ class UserSerializer(JSONAPISerializer):
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
-    accepted_terms_of_service = ser.BooleanField(write_only=True, required=False)
+    accepted_terms_of_service = ShowIfCurrentUser(ser.BooleanField(required=False))
 
     links = HideIfDisabled(LinksField(
         {
