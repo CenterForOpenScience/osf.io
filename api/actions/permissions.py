@@ -5,7 +5,6 @@ from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
 from osf.models.action import ReviewAction
-from osf.models import Preprint
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import DefaultTriggers
 from osf.utils import permissions as osf_permissions
@@ -40,18 +39,13 @@ class ReviewActionPermission(drf_permissions.BasePermission):
 
         serializer = view.get_serializer()
 
-        if isinstance(target, Preprint):
-            resource = target
-        else:
-            resource = target.node
-
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
-            is_node_contributor = target is not None and resource.has_permission(auth.user, osf_permissions.READ)
+            is_node_contributor = target is not None and target.has_permission(auth.user, osf_permissions.READ)
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
-            is_node_admin = target is not None and resource.has_permission(auth.user, osf_permissions.ADMIN)
+            is_node_admin = target is not None and target.has_permission(auth.user, osf_permissions.ADMIN)
             if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
                 return False
 

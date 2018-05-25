@@ -418,7 +418,8 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
 
 class PreprintFilesList(NodeFilesList, PreprintMixin):
     """
-    Returns all preprint files in OSFStorage
+    Returns a queryset of just the primary file in osfstorage.
+    This endpoint is necessary to return the WB links.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -436,3 +437,9 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
 
     def get_resource(self, check_object_permissions):
         return self.get_preprint(check_object_permissions=check_object_permissions)
+
+    def get_queryset(self):
+        # Restricting queryset so only primary file is returned.
+        queryset = super(PreprintFilesList, self).get_queryset()
+        preprint = self.get_preprint(check_object_permissions=False)
+        return queryset.filter(id=getattr(preprint.primary_file, 'id', None))
