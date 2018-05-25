@@ -397,6 +397,7 @@ def root(request, format=None, **kwargs):
     if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
+        current_user['data']['attributes']['accepted_terms_of_service'] = bool(user.accepted_terms_of_service)
     else:
         current_user = None
     kwargs = request.parser_context['kwargs']
