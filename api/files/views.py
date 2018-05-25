@@ -44,6 +44,9 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
+        if getattr(obj.target, 'deleted', None):
+            raise NotFound
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
