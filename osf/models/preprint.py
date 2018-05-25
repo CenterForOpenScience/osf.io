@@ -91,8 +91,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     article_doi = models.CharField(max_length=128,
                                             validators=[validate_doi],
                                             null=True, blank=True)
-    _is_preprint_orphan = models.NullBooleanField(default=False)
-    _has_abandoned_preprint = models.BooleanField(default=False)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
     primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
     # (for legacy preprints), pull off of node
@@ -126,30 +124,20 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.is_preprint_ready and not self.deleted
+        return self.is_published and \
+            self.is_public and \
+            self.has_submitted_preprint and not \
+            self.deleted and not \
+            self.is_preprint_orphan
 
     @property
     def preprint_doi(self):
         return self.get_identifier_value('doi')
 
     @property
-    def is_preprint_ready(self):
-        # Copied from node.is_preprint
-        if not self.primary_file_id or not self.is_public:
-            return False
-        if self.primary_file.target == self:
-            return self.has_submitted_preprint
-        else:
-            self._is_preprint_orphan = True
-            return False
-
-    @property
     def is_preprint_orphan(self):
-        """For v1 compat"""
-        if (not self.is_preprint_ready) and self._is_preprint_orphan:
+        if not self.primary_file_id or self.primary_file.deleted_on or self.primary_file.target != self:
             return True
-        if self.primary_file:
-            return self.primary_file.is_deleted
         return False
 
     @property

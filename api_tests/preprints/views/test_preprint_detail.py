@@ -1151,7 +1151,7 @@ class TestPreprintDetailPermissions:
             filename='toe_socks_and_sunrises.pdf',
             provider=provider,
             subjects=[[subject._id]],
-            is_published=False,
+            is_published=True,
             is_public=False,
             machine_state='accepted')
         fact.add_contributor(write_contrib, permission='write')
@@ -1161,7 +1161,7 @@ class TestPreprintDetailPermissions:
     @pytest.fixture()
     def abandoned_private_preprint(
             self, admin, provider, subject, private_project):
-        fact = PreprintFactory(
+        return PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunrises.pdf',
             provider=provider,
@@ -1170,9 +1170,6 @@ class TestPreprintDetailPermissions:
             is_published=False,
             is_public=False,
             machine_state='initial')
-        fact._has_abandoned_preprint = True
-        fact.save()
-        return fact
 
     @pytest.fixture()
     def abandoned_public_preprint(
@@ -1186,8 +1183,6 @@ class TestPreprintDetailPermissions:
             is_published=False,
             is_public=True,
             machine_state='initial')
-        fact._has_abandoned_preprint = True
-        fact.save()
         assert fact.is_public is True
         return fact
 

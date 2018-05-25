@@ -1,5 +1,6 @@
 import pytest
 
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
@@ -793,7 +794,7 @@ class TestNodeFiltering:
             self, app, user_one, preprint, public_project_one,
             public_project_two, public_project_three):
         orphan = PreprintFactory(creator=preprint.node.creator, project=ProjectFactory(creator=preprint.node.creator))
-        orphan._is_preprint_orphan = True
+        orphan.primary_file.deleted_on = timezone.now()
         orphan.save()
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)

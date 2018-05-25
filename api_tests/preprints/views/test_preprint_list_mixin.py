@@ -8,6 +8,8 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
+from osf.utils.workflows import DefaultStates
+
 
 @pytest.mark.django_db
 class PreprintListMatchesPreprintDetailMixin:
@@ -256,6 +258,42 @@ class PreprintIsValidListMixin:
         preprint.add_contributor(user_write_contrib, 'write', save=True)
         return preprint
 
+    def test_preprint_is_preprint_orphan_invisible_no_auth(
+            self, app, project, preprint, url):
+        res = app.get(url)
+        assert len(res.json['data']) == 1
+        preprint.primary_file = True
+        preprint.save()
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_is_preprint_orphan_visible_non_contributor(
+            self, app, project, preprint, user_non_contrib, url):
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 1
+        preprint.primary_file = None
+        preprint.save()
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_is_preprint_orphan_visible_write(
+            self, app, project, preprint, url, user_write_contrib):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        preprint.primary_file = None
+        preprint.save()
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+
+    def test_preprint_is_preprint_orphan_visible_owner(
+            self, app, project, preprint, url, user_admin_contrib):
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 1
+        preprint.primary_file = None
+        preprint.save()
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 1
+
     def test_preprint_private_invisible_no_auth(
             self, app, project, preprint, url):
         res = app.get(url)
@@ -310,11 +348,30 @@ class PreprintIsValidListMixin:
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
 
+    def test_preprint_has_abandoned_preprint(
+            self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
+            preprint, url):
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        # unauth
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+        # non_contrib
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 1
+
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_preprint_node_null_visible(
             self, mock_preprint_updated, app,
             user_admin_contrib, user_write_contrib,
             user_non_contrib, preprint, url):
+        # Removed node no longer affects whether you can see preprint
         preprint.node = None
         preprint.save()
 

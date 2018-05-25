@@ -738,6 +738,19 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         assert preprint_unpublished._id not in [
             d['id'] for d in res.json['data']]
 
+    def test_unpublished_invisible_to_noncontribs(
+                self,
+                app,
+                preprint_unpublished,
+                preprint_published,
+                url):
+        noncontrib = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [
+            d['id'] for d in res.json['data']]
+
+
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(

@@ -12,6 +12,7 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from website.views import find_bookmark_collection
+from osf.utils.workflows import DefaultStates
 
 
 @pytest.mark.django_db
@@ -203,14 +204,12 @@ class TestUserNodesPreprintsFiltering:
     def abandoned_preprint(self, abandoned_preprint_node):
         preprint = PreprintFactory(project=abandoned_preprint_node,
             is_published=False)
-        preprint._has_abandoned_preprint = True
-        preprint.save()
+        preprint.machine_state = DefaultStates.INITIAL.value
         return preprint
 
     @pytest.fixture()
     def orphaned_preprint(self, orphaned_preprint_node):
         orphaned_preprint = PreprintFactory(project=orphaned_preprint_node)
-        orphaned_preprint._is_preprint_orphan = True
         orphaned_preprint.primary_file = None
         orphaned_preprint.save()
         return orphaned_preprint

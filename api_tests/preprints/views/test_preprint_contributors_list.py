@@ -121,7 +121,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
                 user_id, api_perm)
 
     def test_return(
-            self, app, user, user_two, preprint_published,
+            self, app, user, user_two, preprint_published, preprint_unpublished,
             url_published, url_unpublished, make_contrib_id):
 
         #   test_return_published_contributor_list_logged_in
@@ -139,6 +139,13 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     #   test_return_unpublished_contributor_list_logged_in_non_contributor
         res = app.get(url_unpublished, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+    #   test_return_unpublished_contributor_list_logged_in_read_contributor
+        read_contrib = AuthUserFactory()
+        preprint_unpublished.add_contributor(read_contrib, permission='read', save=True)
+        res = app.get(url_unpublished, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 

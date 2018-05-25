@@ -7,14 +7,15 @@ from api.base.filters import ListFilterMixin
 from api.base import utils
 
 from osf.models import NodeRelation, AbstractNode, Preprint
+from osf.utils.workflows import DefaultStates
 
 
 class NodesFilterMixin(ListFilterMixin):
 
     def param_queryset(self, query_params, default_queryset):
         filters = self.parse_query_params(query_params)
-        valid_preprint_subquery = Preprint.objects.filter(deleted__isnull=True, is_published=True, _is_preprint_orphan=False,
-                _has_abandoned_preprint=False, is_public=True, primary_file__isnull=False, node=OuterRef('pk'))
+        valid_preprint_subquery = Preprint.objects.filter(deleted__isnull=True, is_published=True, is_public=True,
+            primary_file__isnull=False, primary_file__deleted_on__isnull=True, node=OuterRef('pk')).exclude(machine_state=DefaultStates.INITIAL.value)
 
         queryset = default_queryset.annotate(preprints_exist=Exists(valid_preprint_subquery))
 

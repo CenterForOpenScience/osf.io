@@ -3,6 +3,7 @@ from rest_framework import permissions
 from api.base.utils import get_user_auth
 from osf.models import BaseFileNode
 from api.preprints.permissions import PreprintPublishedOrAdmin
+from osf.utils.workflows import DefaultStates
 
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -24,7 +25,7 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, BaseFileNode), 'obj must be a BaseFileNode, got {}'.format(obj)
         if (hasattr(obj.target, 'primary_file') and obj.target.primary_file == obj):
-            if request.method == 'DELETE' and not obj.target._has_abandoned_preprint:
+            if request.method == 'DELETE' and obj.target.machine_state != DefaultStates.INITIAL.value:
                 return False
 
             # If object is a primary_file on a preprint, need PreprintPublishedOrAdmin permissions to view
