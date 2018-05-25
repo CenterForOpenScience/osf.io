@@ -632,6 +632,23 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
                 .values_list('child__pk', flat=True)
         return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
 
+    def get_serializer_context(self):
+        context = super(NodeChildrenList, self).get_serializer_context()
+        region__id = self.request.query_params.get('region', None)
+        id = None
+        if region__id:
+            try:
+                id = Region.objects.get(_id=region__id).id
+            except Region.DoesNotExist:
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
+
+        context.update({
+            'region_id': id
+        })
+        return context
+
+
+
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
