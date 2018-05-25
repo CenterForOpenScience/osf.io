@@ -82,10 +82,10 @@
                         </table>
                     </div>
                 </div>
-                <div id="changeDefaultStorageLocation" class="panel panel-default">
+                <div id="updateDefaultStorageLocation" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Default storage location</h3></div>
                     <div class="panel-body">
-                        <form id="changeDefaultStorageLocationForm" role="form">
+                        <form id="updateDefaultStorageLocation" role="form">
                             <div class="form-group">
                                 <label for="default_storage_location">Default storage location:</label>
                                 <span class="p-l-sm dropdown generic-dropdown category-list">
@@ -109,7 +109,7 @@
 
                                 </span>
                             </div>
-                            <button class="btn btn-primary" data-bind="click: $root.changeDefaultStorageLocation.bind($root)">Update Location</button>
+                            <button class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update Location</button>
                             <p class="text-muted"></p>
                         </form>
                     </div>

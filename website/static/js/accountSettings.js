@@ -348,7 +348,7 @@ var ExternalIdentityViewModel = oop.defclass({
     }
 });
 
-var ChangeDefaultStorageLocation = oop.defclass({
+var UpdateDefaultStorageLocation = oop.defclass({
     constructor: function() {
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
@@ -369,10 +369,10 @@ var ChangeDefaultStorageLocation = oop.defclass({
 
     },
     urls: {
-        'change': '/api/v1/profile/region/'
+        'update': '/api/v1/profile/region/'
     },
-    changeDefaultStorageLocation: function() {
-        var request = $osf.ajaxJSON('PUT', this.urls.change, {'data': {'region_id': this.locationSelected().id}});
+    updateDefaultStorageLocation: function() {
+        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected().id}});
         request.done(function() {
             $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
         }.bind(this));
@@ -543,5 +543,5 @@ module.exports = {
     DeactivateAccountViewModel: DeactivateAccountViewModel,
     ExportAccountViewModel: ExportAccountViewModel,
     ExternalIdentityViewModel: ExternalIdentityViewModel,
-    ChangeDefaultStorageLocation: ChangeDefaultStorageLocation
+    UpdateDefaultStorageLocation: UpdateDefaultStorageLocation
 };

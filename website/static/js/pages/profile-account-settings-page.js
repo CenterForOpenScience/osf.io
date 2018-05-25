@@ -28,6 +28,6 @@ $(function() {
         '#externalIdentity'
     );
 
-    $osf.applyBindings( new accountSettings.ChangeDefaultStorageLocation(),
-        '#changeDefaultStorageLocation');
+    $osf.applyBindings( new accountSettings.UpdateDefaultStorageLocation(),
+        '#updateDefaultStorageLocation');
 });
