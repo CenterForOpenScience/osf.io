@@ -24,4 +24,10 @@
 <%def name="javascript_bottom()">
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
+<script>
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        storage_regions: ${ storage_regions | sjson, n },
+
+    });
+</script>
 </%def>

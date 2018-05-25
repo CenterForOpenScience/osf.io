@@ -25,6 +25,7 @@ from framework.auth.core import get_current_user_id, _get_current_user
 from website import settings
 from website.institutions.views import serialize_institution
 
+from addons.osfstorage.models import Region
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
@@ -194,10 +195,20 @@ def support():
 @ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
+
+    if user:
+        default_storage_region = user.get_addon('osfstorage').default_region
+        default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
+        region_list = list(Region.objects.all().values('_id', 'name'))
+        region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))  # default should be at top of list for UI.
+    else:
+        region_list = []
+
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
+            'storage_regions': region_list
             }
 
 
