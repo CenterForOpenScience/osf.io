@@ -1,5 +1,6 @@
 import pytest
 from urlparse import urlparse
+from django.utils import timezone
 from framework.auth.core import Auth
 
 from api.base.settings.defaults import API_BASE
@@ -11,6 +12,7 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory,
 )
+from osf.utils.workflows import DefaultStates
 from tests.utils import assert_items_equal
 
 
@@ -293,7 +295,7 @@ class TestPreprintIdentifierList:
                               for identifier in data_preprint_identifier]
         assert_items_equal(values_in_response, list(values))
 
-    def test_preprint_identifier_list_permissions(
+    def test_preprint_identifier_list_permissions_unpublished(
             self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.is_published = False
         preprint.save()
@@ -314,11 +316,117 @@ class TestPreprintIdentifierList:
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
         preprint.add_contributor(read_user, 'read', save=True)
-        res = app.get(url_preprint_identifier, auth=user.auth, expect_errors=True)
+        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
         # test_published_preprint_identifier_unauthenticated
         preprint.set_published(True, Auth(user))
         preprint.save()
         res = app.get(url_preprint_identifier)
+        assert res.status_code == 200
+
+    def test_preprint_identifier_list_permissions_private(
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+        preprint.is_public = False
+        preprint.save()
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url_preprint_identifier, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_unpublished_preprint_identifier_noncontrib_authenticated
+        non_contrib = AuthUserFactory()
+        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_unpublished_preprint_identifier_admin_authenticated
+        res = app.get(url_preprint_identifier, auth=user.auth)
+        assert res.status_code == 200
+
+        # test_unpublished_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_published_preprint_identifier_unauthenticated
+        preprint.set_published(True, Auth(user))
+        preprint.save()
+        res = app.get(url_preprint_identifier)
+        assert res.status_code == 200
+
+    def test_preprint_identifier_list_permissions_deleted(
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url_preprint_identifier, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_unpublished_preprint_identifier_noncontrib_authenticated
+        non_contrib = AuthUserFactory()
+        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_unpublished_preprint_identifier_admin_authenticated
+        res = app.get(url_preprint_identifier, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_unpublished_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_published_preprint_identifier_unauthenticated
+        res = app.get(url_preprint_identifier, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_preprint_identifier_list_permissions_no_primary_file(
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+        preprint.primary_file = None
+        preprint.save()
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url_preprint_identifier, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_unpublished_preprint_identifier_noncontrib_authenticated
+        non_contrib = AuthUserFactory()
+        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_unpublished_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_unpublished_preprint_identifier_admin_authenticated
+        res = app.get(url_preprint_identifier, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_preprint_identifier_list_permissions_abandoned(
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url_preprint_identifier, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_unpublished_preprint_identifier_noncontrib_authenticated
+        non_contrib = AuthUserFactory()
+        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_unpublished_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_unpublished_preprint_identifier_admin_authenticated
+        res = app.get(url_preprint_identifier, auth=user.auth)
         assert res.status_code == 200

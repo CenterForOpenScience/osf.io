@@ -4176,4 +4176,5 @@ class TestPreprintProperties:
         node = ProjectFactory(is_public=True)
         published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
         PreprintFactory(project=node, is_published=False, filename='file2.txt')
+        # TODO - is this going away?
         assert node.preprint_url == published.url

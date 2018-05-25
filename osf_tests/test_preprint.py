@@ -99,8 +99,8 @@ class TestPreprintProperties:
 
     def test_is_preprint_orphan(self, preprint):
         assert preprint.is_preprint_orphan is False
-        preprint.primary_file.is_deleted = True
-        preprint.save()
+        preprint.primary_file = None
+        preprint.primary_file.save()
         assert preprint.is_preprint_orphan is True
 
     def test_has_submitted_preprint(self, preprint):
@@ -1410,8 +1410,8 @@ class TestSetPreprintFile(OsfTestCase):
     def test_deleted_file_creates_orphan(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_false(self.preprint.is_preprint_orphan)
-        self.file.is_deleted = True
-        self.file.save()
+        sself.preprint.primary_file = None
+        self.preprint.save()
         assert_true(self.preprint.is_preprint_orphan)
 
     def test_preprint_created_date(self):

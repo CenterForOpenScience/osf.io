@@ -102,7 +102,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(Preprint.objects.filter(deleted__isnull=True), auth_user)
+        return self.preprints_queryset(Preprint.objects.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):

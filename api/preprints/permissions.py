@@ -37,7 +37,7 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             return True
 
 
-class ContributorDetailPermissions(permissions.BasePermission):
+class ContributorDetailPermissions(PreprintPublishedOrAdmin):
     """Permissions for preprint contributor detail page."""
 
     acceptable_models = (Preprint, OSFUser, PreprintContributor)
@@ -47,23 +47,11 @@ class ContributorDetailPermissions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
         context = request.parser_context['kwargs']
         preprint = self.load_resource(context, view)
-        if request.method in permissions.SAFE_METHODS:
-            if auth.user is None:
-                return preprint.verified_publishable
-            else:
-                user_has_permissions = (preprint.verified_publishable or
-                    (preprint.is_public and auth.user.has_perm('view_submissions', preprint.provider)) or
-                    preprint.has_permission(auth.user, osf_permissions.ADMIN) or
-                    (preprint.is_contributor(auth.user) and preprint.machine_state != DefaultStates.INITIAL.value)
-                )
-                return user_has_permissions
-        else:
-            if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
-            return True
+
+        return super(ContributorDetailPermissions, self).has_object_permission(request, view, preprint)
+
 
 class PreprintIdentifierDetailPermissions(PreprintPublishedOrAdmin):
 

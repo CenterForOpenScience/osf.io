@@ -262,7 +262,7 @@ class PreprintIsValidListMixin:
             self, app, project, preprint, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
-        preprint.primary_file = True
+        preprint.primary_file = None
         preprint.save()
         res = app.get(url)
         assert len(res.json['data']) == 0

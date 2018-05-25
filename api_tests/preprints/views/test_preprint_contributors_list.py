@@ -3,6 +3,7 @@ from datetime import datetime
 import mock
 import pytest
 import random
+from django.utils import timezone
 
 from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
@@ -18,6 +19,7 @@ from osf_tests.factories import (
 
 )
 from osf.utils import permissions
+from osf.utils.workflows import DefaultStates
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
 from tests.utils import assert_latest_log, assert_items_equal
@@ -175,6 +177,94 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             preprint_unpublished._id, user._id)
         assert res.json['data'][1]['id'] == make_contrib_id(
             preprint_unpublished._id, user_two._id)
+
+    def test_return_preprint_contributors_private_preprint(
+            self, app, user, user_two, preprint_published, url_published):
+        preprint_published.is_public = False
+        preprint_published.save()
+
+        # test_private_preprint_contributors_logged_out
+        res = app.get(url_published, expect_errors=True)
+        assert res.status_code == 401
+
+        # test private_preprint_contributor_non_contrib
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test private_preprint_contributors_read_contrib_logged_out
+        preprint_published.add_contributor(user_two, 'read', save=True)
+        res = app.get(url_published, auth=user_two.auth)
+        assert res.status_code == 200
+
+        # test private_preprint_contributors_admin
+        res = app.get(url_published, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_return_preprint_contributors_deleted_preprint(
+            self, app, user, user_two, preprint_published, url_published):
+        preprint_published.deleted = timezone.now()
+        preprint_published.save()
+
+        # test_deleted_preprint_contributors_logged_out
+        res = app.get(url_published, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_contributor_non_contrib
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_contributors_read_contrib_logged_out
+        preprint_published.add_contributor(user_two, 'read', save=True)
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_contributors_admin
+        res = app.get(url_published, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_return_preprint_contributors_abandoned_preprint(
+            self, app, user, user_two, preprint_published, url_published):
+        preprint_published.machine_state = DefaultStates.INITIAL.value
+        preprint_published.save()
+
+        # test_abandoned_preprint_contributors_logged_out
+        res = app.get(url_published, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_abandoned_preprint_contributor_non_contrib
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_abandoned_preprint_contributors_read_contrib_logged_out
+        preprint_published.add_contributor(user_two, 'read', save=True)
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_abandoned_preprint_contributors_admin
+        res = app.get(url_published, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_return_preprint_contributors_orphaned_preprint(
+            self, app, user, user_two, preprint_published, url_published):
+        preprint_published.primary_file = None
+        preprint_published.save()
+
+        # test_orphaned_preprint_contributors_logged_out
+        res = app.get(url_published, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_orphaned_preprint_contributor_non_contrib
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_orphaned_preprint_contributors_read_contrib_logged_out
+        preprint_published.add_contributor(user_two, 'read', save=True)
+        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_orphaned_preprint_contributors_admin
+        res = app.get(url_published, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
 
     def test_filtering_on_obsolete_fields(self, app, user, url_published):
         # regression test for changes in filter fields
@@ -1423,7 +1513,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
     def test_publishing_preprint_sends_emails_to_contributors(
-            self, mock_mail, mock_ezid, app, user, url_preprint_contribs, preprint_unpublished):
+            self, mock_ezid, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
         url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permission='write', save=True)

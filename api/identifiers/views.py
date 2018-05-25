@@ -133,7 +133,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         identifier = Identifier.load(self.kwargs['identifier_id'])
-        if not identifier:
+        if not identifier or getattr(identifier.referent, 'deleted', False):
             raise NotFound
         self.check_object_permissions(self.request, identifier)
         return identifier

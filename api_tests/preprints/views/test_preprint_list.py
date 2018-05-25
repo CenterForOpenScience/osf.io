@@ -733,6 +733,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
             preprint_unpublished,
             preprint_published,
             url):
+        # Also invisible because in initial state
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
