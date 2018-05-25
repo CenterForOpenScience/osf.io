@@ -58,9 +58,8 @@ class TestCrossRefClient:
             )
         )
 
-        metadata = crossref_client.build_metadata(preprint)
         doi = crossref_client.build_doi(preprint)
-        res = crossref_client.create_identifier(doi=doi, metadata=metadata)
+        res = crossref_client.create_identifier(doi=doi, metadata=crossref_preprint_metadata)
 
         assert res['doi'] == doi
 
