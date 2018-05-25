@@ -26,7 +26,7 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, OSFUser
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
 from website.ember_osf_web.views import use_ember_app
@@ -167,10 +167,13 @@ def home():
             {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
             for inst in all_institutions
         ]
+        user = OSFUser.load(user_id)
+        region_list = get_storage_region_list(user)
 
         return {
             'home': True,
             'dashboard_institutions': dashboard_institutions,
+            'storage_locations': region_list
         }
     else:  # Logged out: return landing page
         return {
@@ -196,13 +199,7 @@ def support():
 def my_projects(auth):
     user = auth.user
 
-    if user:
-        default_storage_region = user.get_addon('osfstorage').default_region
-        default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
-        region_list = list(Region.objects.all().values('_id', 'name'))
-        region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))  # default should be at top of list for UI.
-    else:
-        region_list = []
+    region_list = get_storage_region_list(user)
 
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
@@ -404,3 +401,13 @@ def legacy_share_v1_search(**kwargs):
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )
     )
+
+def get_storage_region_list(user):
+    if user:
+        default_storage_region = user.get_addon('osfstorage').default_region
+        default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
+        region_list = list(Region.objects.all().values('_id', 'name'))
+        region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))  # default should be at top of list for UI.
+    else:
+        region_list = []
+    return region_list

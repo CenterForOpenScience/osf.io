@@ -26,7 +26,7 @@
 
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
-        storage_regions: ${ storage_regions | sjson, n },
+        storageRegions: ${ storage_regions | sjson, n },
 
     });
 </script>

@@ -38,7 +38,7 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectStorageLocation = m.prop(window.contextVars.storage_regions[0]); // first storage region is default
+        self.newProjectStorageLocation = m.prop(window.contextVars.storageRegions[0]); // first storage region is default
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
@@ -486,7 +486,7 @@ var SelectStorageLocation = {
     view: function(ctrl, options) {
         return m('select.p-t-sm', {config: SelectStorageLocation.config(options)},
             [
-            window.contextVars.storage_regions.map(function(region) {
+            window.contextVars.storageRegions.map(function(region) {
                 var args = {value: region._id};
                 return m('option', args, region.name);
             })
@@ -500,7 +500,7 @@ var SelectStorageLocation = {
                     var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
-                    window.contextVars.storage_regions.map(function (location) {
+                    window.contextVars.storageRegions.map(function (location) {
                         if (location._id === id) {
                             ctrl.value(location);
                         }

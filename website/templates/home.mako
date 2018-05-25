@@ -44,6 +44,7 @@
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
             dashboardInstitutions: ${ dashboard_institutions | sjson, n},
+            storageRegions: ${ storage_locations | sjson, n},
         });
     </script>
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>

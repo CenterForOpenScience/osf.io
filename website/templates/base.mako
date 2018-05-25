@@ -210,7 +210,6 @@
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Domain: ${ api_v2_domain | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                storage_regions: ${ storage_regions | sjson, n },
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
