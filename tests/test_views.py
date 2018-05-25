@@ -2184,13 +2184,17 @@ class TestUserInviteViews(OsfTestCase):
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
 
-    def test_invite_contributor_post_if_emaiL_already_registered(self):
+    def test_invite_contributor_post_if_email_already_registered(self):
         reg_user = UserFactory()
-        # Tries to invite user that is already regiestered
+        name, email = fake.name(), reg_user.username
+        # Tries to invite user that is already registered - this is now permitted.
         res = self.app.post_json(self.invite_url,
-                                 {'fullname': fake.name(), 'email': reg_user.username},
-                                 auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+                                 {'fullname': name, 'email': email},
+                                 auth=self.user.auth)
+        contrib = res.json['contributor']
+        assert_equal(contrib['id'], reg_user._id)
+        assert_equal(contrib['fullname'], name)
+        assert_equal(contrib['email'], email)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
         unreg_user = self.project.add_unregistered_contributor(
