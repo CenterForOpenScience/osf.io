@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import redirect
@@ -26,9 +26,9 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         self.object._creator = self.request.user
         self.object.save()
-        for item in json.loads(form.cleaned_data['collected_type_choices']):
+        for item in form.cleaned_data['collected_type_choices']['added']:
             self.object.primary_collection.collected_type_choices.append(item)
-        for item in json.loads(form.cleaned_data['status_choices']):
+        for item in form.cleaned_data['status_choices']['added']:
             self.object.primary_collection.status_choices.append(item)
         self.object.primary_collection.save()
         return super(CreateCollectionProvider, self).form_valid(form)
@@ -131,10 +131,23 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
     form_class = CollectionProviderForm
 
     def form_valid(self, form):
-        self.object.primary_collection.collected_type_choices = json.loads(form.cleaned_data['collected_type_choices'])
-        self.object.primary_collection.status_choices = json.loads(form.cleaned_data['status_choices'])
+        self.object.primary_collection.collected_type_choices.extend(form.cleaned_data['collected_type_choices']['added'])
+        for item in form.cleaned_data['collected_type_choices']['removed']:
+            self.object.primary_collection.collected_type_choices.remove(item)
+
+        self.object.primary_collection.status_choices.extend(form.cleaned_data['status_choices']['added'])
+        for item in form.cleaned_data['status_choices']['removed']:
+            self.object.primary_collection.status_choices.remove(item)
+
         self.object.primary_collection.save()
         return super(CollectionProviderChangeForm, self).form_valid(form)
+
+    def form_invalid(self, form):
+        super(CollectionProviderChangeForm, self).form_invalid(form)
+        err_message = ''
+        for item in form.errors.values():
+            err_message = err_message + item + '\n'
+        return HttpResponse(err_message, status=409)
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
@@ -193,7 +206,6 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
-            current_fields = [f.name for f in CollectionProvider._meta.get_fields()]
             cleaned_result = {key: value for key, value in file_json['fields'].iteritems()}
             collection_provider = self.create_or_update_provider(cleaned_result)
             return redirect('collection_providers:detail', collection_provider_id=collection_provider.id)
