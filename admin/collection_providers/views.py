@@ -180,7 +180,7 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         collection_provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
         data = serializers.serialize('json', [collection_provider])
         cleaned_data = json.loads(data)[0]
-        cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems()}
+        cleaned_fields = cleaned_data['fields']
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in collection_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = collection_provider.default_license.license_id if collection_provider.default_license else ''
         cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
@@ -206,7 +206,7 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems()}
+            cleaned_result = file_json['fields']
             collection_provider = self.create_or_update_provider(cleaned_result)
             return redirect('collection_providers:detail', collection_provider_id=collection_provider.id)
 

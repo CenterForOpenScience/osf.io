@@ -80,7 +80,7 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            status_choices_added = json.loads(self.data.get('collected_type_choices'))
+            status_choices_added = json.loads(self.data.get('status_choices'))
             status_choices_removed = []
 
         return {
