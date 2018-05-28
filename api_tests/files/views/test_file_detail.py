@@ -94,7 +94,7 @@ class TestFileView:
         )
         url_with_id = '/{}files/{}/'.format(API_BASE, file_node._id)
 
-        res = app.get(url_with_id, expect_errors=True)
+        res = app.get(url_with_id)
         assert res.status_code == 200
 
         res = app.get(url_with_guid, auth=user.auth)
@@ -104,9 +104,13 @@ class TestFileView:
         user.save()
 
         res = app.get(url_with_id, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
         assert res.status_code == 410
 
         res = app.get(url_with_guid, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
