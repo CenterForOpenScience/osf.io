@@ -44,6 +44,9 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
+        if obj.node.is_quickfiles and not obj.node.creator.is_active:
+            raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -87,8 +90,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_object(self):
         user = utils.get_user_auth(self.request).user
         file = self.get_file()
-        if file.node.is_quickfiles and not file.node.creator.is_active:
-            raise Gone()
 
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
