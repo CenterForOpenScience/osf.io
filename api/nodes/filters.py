@@ -1,12 +1,13 @@
 from copy import deepcopy
 
 from django.db.models import Q, Exists, OuterRef
+from guardian.shortcuts import get_objects_for_user
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode, Preprint
+from osf.models import NodeRelation, AbstractNode, Preprint, PreprintProvider
 from osf.utils.workflows import DefaultStates
 
 
@@ -14,10 +15,25 @@ class NodesFilterMixin(ListFilterMixin):
 
     def param_queryset(self, query_params, default_queryset):
         filters = self.parse_query_params(query_params)
-        valid_preprint_subquery = Preprint.objects.filter(deleted__isnull=True, is_published=True, is_public=True,
-            primary_file__isnull=False, primary_file__deleted_on__isnull=True, node=OuterRef('pk')).exclude(machine_state=DefaultStates.INITIAL.value)
 
-        queryset = default_queryset.annotate(preprints_exist=Exists(valid_preprint_subquery))
+        no_user_query = Q(
+            is_published=True,
+            is_public=True,
+            primary_file__isnull=False,
+            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+        auth_user = utils.get_user_auth(self.request)
+
+        if auth_user and getattr(auth_user, 'user'):
+            user = auth_user.user
+            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=user.id))))
+            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(user, 'view_submissions', PreprintProvider))
+            contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=user.id))))
+            query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+        else:
+            query = no_user_query
+        subquery = Preprint.objects.filter(query & Q(deleted__isnull=True) & Q(node=OuterRef('pk')))
+
+        queryset = default_queryset.annotate(preprints_exist=Exists(subquery))
 
         if filters:
             for key, field_names in filters.iteritems():
@@ -64,9 +80,9 @@ class NodesFilterMixin(ListFilterMixin):
             return ~with_as_root_query if operation['op'] == 'ne' else with_as_root_query
 
         if field_name == 'preprint':
-            not_preprint_query = (
-                Q(preprints_exist=False)
+            preprint_query = (
+                Q(preprints_exist=True)
             )
-            return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
+            return preprint_query if utils.is_truthy(operation['value']) else ~preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)
