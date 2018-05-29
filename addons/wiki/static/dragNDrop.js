@@ -9,10 +9,6 @@ var getExtension = function(filename) {
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var imageFolder = 'Wiki images';
 
-// Stop people from dropping files in the gutter while editor is disabled.
-$('.ace_gutter').bind("dragover", function(e) {
-            e.preventDefault();
-});
 
 var autoIncrementFileName = function(name, nameList) {
     var num = 1;
@@ -187,7 +183,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
      * Also adds a second cursor that follows around the mouse cursor and signifies where the image/link will
      * be inserted
      */
-    element.addEventListener('dragover', function(event) {
+    $(element).find('.ace_scroller')[0].addEventListener('dragover', function(event) {
         event.preventDefault();
         event.stopPropagation();
         if (!editor.marker.active) {
