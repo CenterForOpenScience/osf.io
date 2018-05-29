@@ -6,13 +6,14 @@ from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
-    HideIfPreprint, ShowIfVersion
+    HideIfPreprint, ShowIfVersion, NodeFileHyperLinkField, WaterbutlerLink
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
+    NodeProviderSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
@@ -131,7 +132,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     files = RelationshipField(
-        related_view='preprints:preprint-files',
+        related_view='preprints:preprint-providers',
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
@@ -369,3 +370,19 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
 
     def get_related_resource(self):
         return self.context['view'].get_preprint()
+
+
+class PreprintProviderSerializer(NodeProviderSerializer):
+    node = HideIfPreprint(ser.CharField(source='node_id', read_only=True))
+    preprint = ser.CharField(source='node_id', read_only=True)
+
+    files = (NodeFileHyperLinkField(
+        related_view='preprints:preprint-files',
+        related_view_kwargs={'preprint_id': '<node._id>'},
+        kind='folder',
+        never_embed=True
+    ))
+
+    links = LinksField({
+        'upload': WaterbutlerLink(),
+    })

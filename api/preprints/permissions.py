@@ -70,3 +70,19 @@ class PreprintIdentifierDetailPermissions(PreprintPublishedOrAdmin):
 class AdminOrPublic(NodeAdminOrPublic):
 
     acceptable_models = (Preprint,)
+
+
+class PreprintFilesPermissions(PreprintPublishedOrAdmin):
+    """Permissions for preprint contributor detail page."""
+
+    acceptable_models = (Preprint,)
+
+    def load_resource(self, context, view):
+        return Preprint.load(context[view.preprint_lookup_url_kwarg])
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        context = request.parser_context['kwargs']
+        preprint = self.load_resource(context, view)
+
+        return super(PreprintFilesPermissions, self).has_object_permission(request, view, preprint)

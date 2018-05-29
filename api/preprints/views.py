@@ -29,6 +29,7 @@ from api.preprints.serializers import (
     PreprintCitationSerializer,
     PreprintContributorDetailSerializer,
     PreprintContributorsSerializer,
+    PreprintProviderSerializer,
     PreprintContributorsCreateSerializer
 )
 from api.files.serializers import OsfStorageFileSerializer
@@ -38,11 +39,12 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeProvidersList, NodeProvider
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     AdminOrPublic,
-    ContributorDetailPermissions
+    ContributorDetailPermissions,
+    PreprintFilesPermissions
 )
 from api.nodes.permissions import (
     ContributorOrPublic
@@ -416,16 +418,38 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-class PreprintFilesList(NodeFilesList, PreprintMixin):
-    """
-    Returns a queryset of just the primary file in osfstorage.
-    This endpoint is necessary to return the WB links.
-    """
+
+class PreprintProvidersList(NodeProvidersList, PreprintMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
-        PreprintPublishedOrAdmin,
+        PreprintFilesPermissions,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = PreprintProviderSerializer
+    view_category = 'preprints'
+    view_name = 'preprint-providers'
+
+    ordering = ('-id',)
+
+    def get_provider_item(self, provider):
+        return NodeProvider(provider, self.get_preprint())
+
+    def get_queryset(self):
+        # Preprints Providers restricted so only osfstorage is allowed
+        return [
+            self.get_provider_item('osfstorage')
+        ]
+
+class PreprintFilesList(NodeFilesList, PreprintMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintFilesPermissions,
     )
     view_category = 'preprints'
     view_name = 'preprint-files'
@@ -435,11 +459,7 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         # Preprints will be stored in OSFStorage.
         return OsfStorageFileSerializer
 
-    def get_resource(self, check_object_permissions):
-        return self.get_preprint(check_object_permissions=check_object_permissions)
-
     def get_queryset(self):
         # Restricting queryset so only primary file is returned.
-        queryset = super(PreprintFilesList, self).get_queryset()
-        preprint = self.get_preprint(check_object_permissions=False)
-        return queryset.filter(id=getattr(preprint.primary_file, 'id', None))
+        preprint = self.get_preprint()
+        return preprint.files.filter(id=getattr(preprint.primary_file, 'id', None))

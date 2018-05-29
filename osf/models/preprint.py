@@ -330,9 +330,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         existing_file = self.primary_file
         self.primary_file = preprint_file
 
-        # TODO Not sure how to go about this!
-        self.primary_file.move_under(self.root_folder)
-
         # only log if updating the preprint file, not adding for the first time
         if existing_file:
             self.add_log(
