@@ -834,7 +834,15 @@ def _view_project(node, auth, primary=False,
         ]
     }
 
-    data.update({'storage_regions': get_storage_region_list(user)})
+    region_list = get_storage_region_list(user)
+
+    # Default should be at top of list for UI and for the project overview page the default region
+    # for a component is that of the it's parent node.
+    default_storage_region = node.get_addon('osfstorage').region
+    default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
+    region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))
+
+    data.update({'storage_regions': region_list})
 
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
