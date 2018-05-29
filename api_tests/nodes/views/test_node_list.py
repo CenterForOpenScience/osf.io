@@ -20,6 +20,7 @@ from osf_tests.factories import (
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
+from osf.utils.workflows import DefaultStates
 
 
 @pytest.fixture()
@@ -879,6 +880,85 @@ class TestNodeFiltering:
 
         assert preprint.node._id not in ids
         assert unpublished.node._id in ids
+
+    def test_private_preprint_in_preprint_filter_results(
+            self, app, user_one, preprint):
+        private = PreprintFactory(
+            creator=preprint.node.creator,
+            project=ProjectFactory(creator=preprint.node.creator)
+        )
+        private.is_public = False
+        private.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id in ids
+        assert private.node._id not in ids
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id not in ids
+        assert private.node._id in ids
+
+    def test_abandoned_preprint_in_preprint_filter_results(
+            self, app, user_one, preprint):
+        abandoned = PreprintFactory(
+            creator=preprint.node.creator,
+            project=ProjectFactory(creator=preprint.node.creator))
+        abandoned.machine_state = DefaultStates.INITIAL.value
+        abandoned.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id in ids
+        assert abandoned.node._id not in ids
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id not in ids
+        assert abandoned.node._id in ids
+
+    def test_deleted_preprint_in_preprint_filter_results(
+            self, app, user_one, preprint):
+        deleted = PreprintFactory(
+            creator=preprint.node.creator,
+            project=ProjectFactory(creator=preprint.node.creator))
+        deleted.deleted = timezone.now()
+        deleted.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id in ids
+        assert deleted.node._id not in ids
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id not in ids
+        assert deleted.node._id in ids
 
     def test_nodes_list_filter_multiple_field(
             self, app, public_project_one, public_project_two,
