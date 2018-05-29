@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <div id="updateDefaultStorageLocation" class="panel panel-default">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Default storage location</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
                     <div class="panel-body">
                         <form id="updateDefaultStorageLocation" role="form">
                             <div class="form-group">
@@ -102,14 +102,13 @@
                                     </ul>
                                     <div class="help-block">
                                             <p>
-                                                This is the default storage location that will be applied for new projects and components created after setting
-                                                and will not be retroactively applied to the existing projects and components.
+                                                This location will be applied to new projects and components. It will not affect existing projects and components.
                                             </p>
                                     </div>
 
                                 </span>
                             </div>
-                            <button class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update Location</button>
+                            <button class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update location</button>
                             <p class="text-muted"></p>
                         </form>
                     </div>
