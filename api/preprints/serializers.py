@@ -92,7 +92,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ShowIfVersion(ser.BooleanField(read_only=True, source='node__is_public'), min_version=2.0, max_version=2.7)
+    node_is_public = ShowIfVersion(ser.BooleanField(read_only=True, source='node.is_public'), min_version=2.0, max_version=2.7)
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
     contributors = RelationshipField(

@@ -173,6 +173,10 @@ def has_admin_scope(request):
 
 
 def is_deprecated(request_version, min_version, max_version):
+    try:
+        request_version = float(request_version)
+    except ValueError:
+        return True
     if request_version < min_version or request_version > max_version:
         return True
     return False

@@ -296,6 +296,16 @@ class TestNodeDetail:
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url_public) in link
 
+    def test_deprecated_preprint_field(self, app, user, project_public, url_public):
+        PreprintFactory(project=project_public, creator=user)
+        res = app.get(url_public + '?version=2.7', auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is False
+
+        res = app.get(url_public + '?version=2.8', auth=user.auth)
+        assert res.status_code == 200
+        assert 'preprint' not in res.json['data']['attributes']
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

@@ -166,6 +166,18 @@ class TestPreprintDetail:
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url) in link
 
+    def test_preprint_node_is_public_property_deprecation(self, app, user, preprint, url):
+        preprint.node = ProjectFactory(creator=user, is_public=True)
+        preprint.save()
+
+        res = app.get(url + '?version=2.7', auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['node_is_public'] is True
+
+        res = app.get(url + '?version=2.8', auth=user.auth)
+        assert res.status_code == 200
+        assert 'node_in_public' not in res.json['data']['attributes']
+
 
 @pytest.mark.django_db
 class TestPreprintDelete:
