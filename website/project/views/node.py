@@ -791,7 +791,7 @@ def _view_project(node, auth, primary=False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
-            'storage_location': node.get_addon('osfstorage').region.name
+            'storage_location': node.osfstorage_region.name
         },
         'parent_node': {
             'exists': parent is not None,
@@ -838,8 +838,7 @@ def _view_project(node, auth, primary=False,
 
     # Default should be at top of list for UI and for the project overview page the default region
     # for a component is that of the it's parent node.
-    default_storage_region = node.get_addon('osfstorage').region
-    default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
+    default_storage_region = {'name': node.osfstorage_region.name, '_id': node.osfstorage_region._id}
     region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))
 
     data.update({'storage_regions': region_list})
