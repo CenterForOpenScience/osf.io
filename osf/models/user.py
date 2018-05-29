@@ -584,6 +584,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
+        self.is_superuser = self.is_superuser or user.is_superuser
+        self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
         if user.jobs and not self.jobs:
@@ -826,7 +828,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create(cls, username, password, fullname):
-        validate_email(username)  # Raises ValidationError if spam address
+        validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
@@ -855,8 +857,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
+                mimetype='html',
                 user=self,
+                can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
@@ -1162,7 +1165,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
             unregistered_user = None
 
@@ -1494,6 +1497,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def add_default_user_addons(sender, instance, created, **kwargs):
+    if created:
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if 'user' in addon.added_default:
+                instance.add_addon(addon.short_name)
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):

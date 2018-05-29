@@ -4,6 +4,7 @@ import os
 import httplib as http
 import requests
 import urlparse
+import waffle
 
 from flask import request
 from flask import send_from_directory
@@ -11,7 +12,7 @@ from flask import Response
 from flask import stream_with_context
 from django.core.urlresolvers import reverse
 
-from geoip import geolite2
+from geolite2 import geolite2
 
 from framework import status
 from framework import sentry
@@ -64,7 +65,7 @@ def get_globals():
     """
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
@@ -88,8 +89,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
+            'continent': (location or {}).get('continent', {}).get('code', None),
+            'country': (location or {}).get('country', {}).get('iso_code', None),
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
@@ -128,12 +129,14 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
+        'institutional_landing_flag': waffle.flag_is_active(request, settings.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
+        'footer_links': settings.FOOTER_LINKS,
     }
 
 
@@ -181,7 +184,7 @@ def robots():
     return send_from_directory(
         settings.STATIC_FOLDER,
         robots_file,
-        mimetype='text/plain'
+        mimetype='html'
     )
 
 def sitemap_file(path):

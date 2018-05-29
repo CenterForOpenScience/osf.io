@@ -53,8 +53,8 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                 return file.attributes.name;
             });
             if (path) {
-                var newName;
                 $.each(files, function (i, file) {
+                    var newName = null;
                     if (fileNames.indexOf(file.name) !== -1) {
                         newName = autoIncrementFileName(file.name, fileNames);
                     }
@@ -63,7 +63,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                     if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
                         $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
                     } else {
-                        var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
+                        var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURIComponent(name) + '&type=file';
                         $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
                         promises.push(
                             $.ajax({

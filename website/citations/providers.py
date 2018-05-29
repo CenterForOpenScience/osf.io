@@ -195,7 +195,8 @@ class CitationsProvider(object):
     def citation_list(self, node_addon, user, list_id, show='all'):
         """Returns a list of citations"""
         attached_list_id = self._folder_id(node_addon)
-        account_folders = node_addon.api.citation_lists(self._extract_folder)
+        # Currently only being used by Mendeley. Zotero overrides this method.
+        account_folders = node_addon.get_folders(show_root=True)
 
         # Folders with 'parent_list_id'==None are children of 'All Documents'
         for folder in account_folders:

@@ -303,7 +303,7 @@ class UserMergeAccounts(PermissionRequiredMixin, FormView):
         user = self.get_object()
         guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
 
-        user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged)
+        user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged, guids___id__isnull=False)
         user.merge_user(user_to_be_merged)
 
         return redirect(reverse_user(user._id))

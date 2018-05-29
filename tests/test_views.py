@@ -2001,10 +2001,12 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
-            mimetype='plain',
+            mimetype='html',
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
@@ -2182,13 +2184,17 @@ class TestUserInviteViews(OsfTestCase):
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
 
-    def test_invite_contributor_post_if_emaiL_already_registered(self):
+    def test_invite_contributor_post_if_email_already_registered(self):
         reg_user = UserFactory()
-        # Tries to invite user that is already regiestered
+        name, email = fake.name(), reg_user.username
+        # Tries to invite user that is already registered - this is now permitted.
         res = self.app.post_json(self.invite_url,
-                                 {'fullname': fake.name(), 'email': reg_user.username},
-                                 auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+                                 {'fullname': name, 'email': email},
+                                 auth=self.user.auth)
+        contrib = res.json['contributor']
+        assert_equal(contrib['id'], reg_user._id)
+        assert_equal(contrib['fullname'], name)
+        assert_equal(contrib['email'], email)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
         unreg_user = self.project.add_unregistered_contributor(
@@ -2234,7 +2240,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE_DEFAULT
+            mail=mails.INVITE_DEFAULT,
+            can_change_preferences=False,
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2261,6 +2268,8 @@ class TestUserInviteViews(OsfTestCase):
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
@@ -2962,7 +2971,7 @@ class TestPointerViews(OsfTestCase):
         prompts = [
             prompt
             for prompt in res.json['prompts']
-            if 'Links will be copied into your registration' in prompt
+            if 'These links will be copied into your registration,' in prompt
         ]
         assert_equal(len(prompts), 1)
 
@@ -4454,7 +4463,7 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/robots.txt')
         assert_equal(res.status_code, 200)
         assert_in('User-agent', res)
-        assert_in('text/plain', res.headers['Content-Type'])
+        assert_in('html', res.headers['Content-Type'])
 
     def test_favicon(self):
         res = self.app.get('/favicon.ico')

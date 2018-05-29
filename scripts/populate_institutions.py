@@ -217,7 +217,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': 'cas-pac4j',
+                'delegation_protocol': '',
             },
             {
                 '_id': 'fsu',
@@ -270,7 +270,7 @@ def main(env):
             {
                 '_id': 'gwu',
                 'name': 'The George Washington University',
-                'description': 'This service is supported by the <a href="https://library.gwu.edu/">GW Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. Always abide by the <a href="https://compliance.gwu.edu/research-policies">GW Research Policies</a>. Contact the <a href="https://library.gwu.edu/research/data-services">GW Data Services Librarian</a> for support.',
+                'description': 'This service is supported by the <a href="https://library.gwu.edu/">GW Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. Always abide by the <a href="https://compliance.gwu.edu/research-policies">GW Research Policies</a>. Contact the <a href="https://libguides.gwu.edu/prf.php?account_id=151788">GW Data Services Librarian</a> for support.',
                 'banner_name': 'gwu-banner.png',
                 'logo_name': 'gwu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://singlesignon.gwu.edu/idp/shibboleth')),
@@ -793,7 +793,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': 'cas-pac4j',
+                'delegation_protocol': '',
             },
             {
                 '_id': 'fsu',
@@ -846,9 +846,9 @@ def main(env):
             {
                 '_id': 'gwu',
                 'name': 'The George Washington University [Test]',
-                'description': 'This service is supported by the <a href="https://library.gwu.edu/">GW Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. Always abide by the <a href="https://compliance.gwu.edu/research-policies">GW Research Policies</a>. Contact the <a href="https://library.gwu.edu/research/data-services">GW Data Services Librarian</a> for support.',
-                'banner_name': 'gmu-banner.png',
-                'logo_name': 'gmu-shield.png',
+                'description': 'This service is supported by the <a href="https://library.gwu.edu/">GW Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. Always abide by the <a href="https://compliance.gwu.edu/research-policies">GW Research Policies</a>. Contact the <a href="https://libguides.gwu.edu/prf.php?account_id=151788">GW Data Services Librarian</a> for support.',
+                'banner_name': 'gwu-banner.png',
+                'logo_name': 'gwu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://singlesignon.gwu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-gwu.cos.io'],

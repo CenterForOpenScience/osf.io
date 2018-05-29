@@ -39,11 +39,17 @@ a {
 /* Footer
 -------------------------------------------------- */
 .footer {
-    text-shadow: 0 1px 0 #fff;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    padding-top: 10px;
+    margin-top: 20px;
+    text-shadow: 0 1px 0 #FFF;
     width: 100%;
-    color: #555;
+    color: #515151;
+    text-align: center;
+    background-color: #efefef;
+}
+
+.footer a {
+    color: #2d6a9f;
 }
 
 

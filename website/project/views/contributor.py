@@ -408,6 +408,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         node=node,
         claim_url=claim_url,
         fullname=unclaimed_record['name'],
+        can_change_preferences=False,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
     unclaimed_record['last_sent'] = get_timestamp()
@@ -420,6 +421,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         fullname=claimer.fullname,
         referrer=referrer,
         node=node,
+        can_change_preferences=False,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
@@ -451,6 +453,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
     preprint_provider = None
+    logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
         if email_template == 'preprint':
@@ -458,6 +461,10 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             if not email_template or not preprint_provider:
                 return
             mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+            if preprint_provider._id == 'osf':
+                logo = settings.OSF_PREPRINTS_LOGO
+            else:
+                logo = preprint_provider._id
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -495,6 +502,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
                 node=node,
+                can_change_preferences=False,
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
         mail_tpl = mails.FORWARD_INVITE
@@ -511,6 +519,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         email=claimer_email,
         fullname=unclaimed_record['name'],
         branded_service=preprint_provider,
+        can_change_preferences=False,
+        logo=logo if logo else settings.OSF_LOGO,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
@@ -528,18 +538,24 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and \
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
-        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
+        mimetype = 'html'
         preprint_provider = None
+        logo = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+            if preprint_provider._id == 'osf':
+                logo = settings.OSF_PREPRINTS_LOGO
+            else:
+                logo = preprint_provider._id
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
@@ -561,6 +577,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
             branded_service=preprint_provider,
+            can_change_preferences=False,
+            logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
@@ -795,10 +813,7 @@ def invite_contributor_post(node, **kwargs):
     # Check if email is in the database
     user = get_user(email=email)
     if user:
-        if user.is_registered:
-            msg = 'User is already in database. Please go back and try your search again.'
-            return {'status': 400, 'message': msg}, 400
-        elif node.is_contributor(user):
+        if node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         elif not user.is_confirmed:

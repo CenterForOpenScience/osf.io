@@ -27,6 +27,8 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
+BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, please report this to {}.'.format(settings.OSF_SUPPORT_EMAIL)
+
 AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
@@ -102,10 +104,11 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your registration, but the projects that they link to will not be '
-    u'registered. If you wish to register the linked projects, you must fork '
-    u'them from the original project before registering.'
+    u'This {category} contains links to other projects. These links will be '
+    u'copied into your registration, but the projects that they link to will '
+    u'not be registered. If you wish to register the linked projects, they '
+    u'must be registered separately. Learn more about <a href="http://help.osf.io'
+    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
