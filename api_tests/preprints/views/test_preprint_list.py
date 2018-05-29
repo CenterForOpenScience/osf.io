@@ -600,6 +600,17 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'],
                      'Cannot attach a deleted project to a preprint.')
 
+    def test_create_preprint_with_no_permissions_to_node(self):
+        project = ProjectFactory()
+        public_project_payload = build_preprint_create_payload(
+            project._id, self.provider._id)
+        res = self.app.post_json_api(
+            self.url,
+            public_project_payload,
+            auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_create_preprint_adds_log_if_published(self, mock_get_identifiers):
         public_project_payload = build_preprint_create_payload(

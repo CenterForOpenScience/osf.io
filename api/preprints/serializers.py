@@ -216,7 +216,18 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             preprint.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
-            preprint.node = validated_data.pop('node')
+            node = validated_data.pop('node', None)
+            if not node.has_permission(auth.user, 'admin'):
+                raise exceptions.PermissionDenied
+
+            node_preprints = node.preprints.filter(provider=preprint.provider)
+            if node_preprints.exists():
+                raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
+
+            if node.is_deleted:
+                raise exceptions.ValidationError('Cannot attach a deleted project to a preprint.')
+
+            preprint.node = node
             save_preprint = True
 
         if 'subjects' in validated_data:
@@ -283,27 +294,13 @@ class PreprintCreateSerializer(PreprintSerializer):
 
     def create(self, validated_data):
         creator = self.context['request'].user
-        auth = get_user_auth(self.context['request'])
-
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        node = validated_data.pop('node', None) or None
-        if node:
-            if not node.has_permission(auth.user, 'admin'):
-                raise exceptions.PermissionDenied
-
-            node_preprints = node.preprints.filter(provider=provider)
-            if node_preprints.exists():
-                raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
-
-            if node.is_deleted:
-                raise exceptions.ValidationError('Cannot attach a deleted project to a preprint.')
-
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        preprint = Preprint(node=node, provider=provider, title=title, creator=creator, description=description)
+        preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
         preprint.save()
 
         return self.update(preprint, validated_data)

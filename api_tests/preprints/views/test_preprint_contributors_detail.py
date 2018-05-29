@@ -1203,7 +1203,7 @@ class TestNodeContributorDelete:
                 url_user_non_contrib,
                 auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == "User must be an admin to update a preprint."
+        assert res.json['errors'][0]['detail'] == 'User must be an admin to update a preprint.'
 
         preprint.reload()
         assert user_non_contrib in preprint.contributors

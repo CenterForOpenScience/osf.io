@@ -260,6 +260,61 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, update_doi_payload, expect_errors=True)
         assert res.status_code == 401
 
+    def test_update_node(self, app, user, preprint, url):
+        assert preprint.node is None
+        node = ProjectFactory(creator=user)
+        update_node_payload = build_preprint_update_payload(
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+        )
+
+        res = app.patch_json_api(url, update_node_payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['relationships']['node']['data']['id'] == node._id
+        preprint.reload()
+        assert preprint.node == node
+
+    def test_update_node_permissions(self, app, user, preprint, url):
+        assert preprint.node is None
+        node = ProjectFactory()
+        update_node_payload = build_preprint_update_payload(
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+        )
+
+        res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        preprint.reload()
+        assert preprint.node is None
+
+    def test_update_node_existing_preprint(self, app, user, preprint, url):
+        assert preprint.node is None
+        node = ProjectFactory(creator=user)
+        # Create preprint with same provider on node
+        PreprintFactory(creator=user, project=node, provider=preprint.provider)
+        update_node_payload = build_preprint_update_payload(
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+        )
+
+        res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert 'Only one preprint per provider can be submitted for a node' in res.json['errors'][0]['detail']
+        preprint.reload()
+        assert preprint.node is None
+
+    def test_update_deleted_node(self, app, user, preprint, url):
+        assert preprint.node is None
+        node = ProjectFactory(creator=user)
+        node.is_deleted = True
+        node.save()
+        update_node_payload = build_preprint_update_payload(
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+        )
+
+        res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot attach a deleted project to a preprint.'
+        preprint.reload()
+        assert preprint.node is None
+
     def test_update_subjects(self, app, user, preprint, subject, url):
         assert not preprint.subjects.filter(_id=subject._id).exists()
         update_subjects_payload = build_preprint_update_payload(
