@@ -34,14 +34,22 @@ var oldMarkdownList = function(md) {
 var mfrURL = window.contextVars.mfrURL;
 var osfURL = window.contextVars.osfURL;
 
+var getMfrUrl = function (guid) {
+    return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render'
+};
+
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
     linkify: true
     }).use(require('markdown-it-mfr'), {
         type: 'osf',
-        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5,})\/\?action=download|(^[a-zA-Z0-9]{5,}$)/,
-        formatUrl: function(assetID) { return mfrURL + 'render?url='+ osfURL + assetID + '/?action=download%26mode=render'; },
+        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5})\/\?action=download|(^[a-zA-Z0-9]{5}$)/,
+        format(assetID) {
+          var id = '__markdown-it-mfr-' + (new Date()).getTime();
+          return '<div id="' + id + '" class="mfr mfr-file"></div>' +
+            '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
+        }
     })
     .use(require('markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))

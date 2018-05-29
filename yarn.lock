@@ -2892,7 +2892,7 @@ markdown-it-ins-del@^0.1.1:
 
 "markdown-it-mfr@git://github.com/johnetordoff/markdown-it-mfr.git#develop":
   version "0.0.1"
-  resolved "git://github.com/johnetordoff/markdown-it-mfr.git#4ad2cbe05d3fbc0d38fa8c138d7ddc7a4da8dc1a"
+  resolved "git://github.com/johnetordoff/markdown-it-mfr.git#develop"
 
 markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
