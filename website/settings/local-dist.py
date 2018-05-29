@@ -59,6 +59,7 @@ USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+MAILGUN_API_KEY = 'mailkimp'
 
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False

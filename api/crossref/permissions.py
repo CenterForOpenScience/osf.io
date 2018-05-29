@@ -22,6 +22,6 @@ class RequestComesFromMailgun(permissions.BasePermission):
             ),
             digestmod=hashlib.sha256,
         ).hexdigest()
-        if signature != data['signature']:
+        if signature != data.get('signature', None):
             raise PermissionDenied('Invalid headers on incoming mail')
         return True

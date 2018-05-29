@@ -607,6 +607,7 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
 
@@ -655,7 +656,7 @@ class PreprintFactory(DjangoModelFactory):
 
             create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
             mock_create_identifier = create_task_patcher.start()
-            if is_published:
+            if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
             instance.set_published(is_published, auth=auth)
