@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import urlparse
+import logging
 
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
@@ -13,6 +14,7 @@ from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
+from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
 from website.preprints.tasks import on_preprint_updated
@@ -23,8 +25,13 @@ from website import settings, mails
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
+from osf.models.spam import SpamMixin
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
+logger = logging.getLogger(__name__)
+
+class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
+    SPAM_CHECK_FIELDS = set()
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -201,11 +208,70 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
+        if saved_fields:
+            request, user_id = get_request_and_user_id()
+            request_headers = {}
+            if not isinstance(request, DummyRequest):
+                request_headers = {
+                    k: v
+                    for k, v in get_headers_from_request(request).items()
+                    if isinstance(v, basestring)
+                }
+            self.check_spam(self.node.creator, saved_fields, request_headers)
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
         return ret
+
+    def _get_spam_content(self, saved_fields):
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
+        content = []
+        for field in spam_fields:
+            content.append((getattr(self.node, field, None) or '').encode('utf-8'))
+        if self.node.all_tags.exists():
+            content.extend(map(lambda name: name.encode('utf-8'), self.node.all_tags.values_list('name', flat=True)))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.node.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers,
+        )
+        logger.info("Preprint ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self.node._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        self.node._check_spam_user(user)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(PreprintService, self).flag_spam()
+        self.node.flag_spam()
+
+    def confirm_spam(self, save=False):
+        super(PreprintService, self).confirm_spam(save=save)
+        self.node.confirm_spam(save=save)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
