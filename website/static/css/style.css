@@ -843,3 +843,13 @@ table.add-links {
     height: 350px;
     max-height: 500px;
 }
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
+}

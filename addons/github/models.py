@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import itertools
 import os
 import urlparse
 
@@ -228,6 +227,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
             if owner == user:
                 ret.update({'repo_names': self.get_folders()})
+
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
