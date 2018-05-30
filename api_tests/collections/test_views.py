@@ -1370,7 +1370,7 @@ class TestCollectionNodeLinkDetail:
             pointed_project, user_one)
         assert collection.guid_links.filter(_id=pointed_project._id).exists()
         url = '/{}collections/{}/node_links/{}/'.format(
-            API_BASE, collection._id, pointer._id)
+            API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
@@ -3746,7 +3746,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def url(self, collection, cgm):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm._id)
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
     @pytest.fixture()
     def payload(self):
@@ -3789,11 +3789,11 @@ class TestCollectedMetaDetail:
         collection.save()
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,
@@ -3854,7 +3854,7 @@ class TestCollectedMetaDetail:
 
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,

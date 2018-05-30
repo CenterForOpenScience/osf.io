@@ -13,10 +13,11 @@ from api.registrations.serializers import RegistrationSerializer
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.collections.serializers import CollectedMetaSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
+from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectedGuidMetadata
 
-from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
@@ -624,3 +625,15 @@ class SearchInstitutions(BaseSearchView):
     doc_type = 'institution'
     view_category = 'search'
     view_name = 'search-institution'
+
+
+class SearchCollections(BaseSearchView):
+    """
+    """
+
+    model_class = CollectedGuidMetadata
+    serializer_class = CollectedMetaSerializer
+
+    doc_type = 'collectionSubmission'
+    view_category = 'search'
+    view_name = 'search-collected-metadata'
