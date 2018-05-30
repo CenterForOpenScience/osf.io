@@ -200,7 +200,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             # current user has push access, we have to make extra requests to
             # find them
             try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
                 repo_data = [
                     {
                         'addon': 'github',
@@ -209,7 +208,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                         'name': repo.name,
                         'path': os.path.join(repo.owner.login, repo.name)
                     }
-                    for repo in repos]
+                    for repo in connection.repos()]
             except GitHubError:
                 repo_data = []
             return repo_data
