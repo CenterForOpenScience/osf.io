@@ -1,6 +1,8 @@
 import mock
 import pytest
+import datetime
 
+from django.utils import timezone
 from rest_framework import exceptions
 
 from api.base.settings.defaults import API_BASE
@@ -434,13 +436,24 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.primary_file != file_for_project
 
+    def test_update_original_publication_date(self, app, user, preprint, url):
+        date = timezone.now() - datetime.timedelta(days=365)
+        update_payload = build_preprint_update_payload(
+            preprint._id, attributes={'original_publication_date': str(date)}
+        )
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+        assert res.status_code == 200
+
+        preprint.reload()
+        assert preprint.original_publication_date == date
+
     def test_update_article_doi(self, app, user, preprint, url):
         new_doi = '10.1234/ASDFASDF'
         assert preprint.article_doi != new_doi
-        update_subjects_payload = build_preprint_update_payload(
+        update_payload = build_preprint_update_payload(
             preprint._id, attributes={'doi': new_doi})
 
-        res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
 
         preprint.reload()

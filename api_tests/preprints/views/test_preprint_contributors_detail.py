@@ -278,7 +278,7 @@ class TestPreprintContributorDetail:
 
 
 @pytest.mark.django_db
-class TestNodeContributorOrdering:
+class TestPreprintContributorOrdering:
 
     @pytest.fixture()
     def contribs(self, user):
@@ -566,7 +566,7 @@ class TestNodeContributorOrdering:
 
 
 @pytest.mark.django_db
-class TestNodeContributorUpdate:
+class TestPreprintContributorUpdate:
 
     @pytest.fixture()
     def contrib(self):
@@ -981,7 +981,7 @@ class TestNodeContributorUpdate:
 
 
 @pytest.mark.django_db
-class TestNodeContributorPartialUpdate:
+class TestPreprintContributorPartialUpdate:
 
     @pytest.fixture()
     def contrib(self):
@@ -1052,7 +1052,7 @@ class TestNodeContributorPartialUpdate:
 
 
 @pytest.mark.django_db
-class TestNodeContributorDelete:
+class TestPreprintContributorDelete:
 
     @pytest.fixture()
     def user_write_contrib(self):

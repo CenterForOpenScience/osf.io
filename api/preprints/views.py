@@ -83,8 +83,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     serializer_class = PreprintSerializer
 
@@ -125,8 +125,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         JSONAPIMultipleRelationshipsParserForRegularJSON,
     )
 
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     serializer_class = PreprintSerializer
 
@@ -158,7 +158,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = PreprintCitationSerializer
@@ -183,7 +183,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeCitationStyleSerializer
@@ -268,6 +268,9 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         PreprintPublishedOrAdmin,
     )
 
+    required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
+
     view_category = 'preprints'
     view_name = 'preprint-contributors'
     serializer_class = PreprintContributorsSerializer
@@ -323,6 +326,9 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-contributor-detail'
     serializer_class = PreprintContributorDetailSerializer
+
+    required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
 
     def get_resource(self):
         return self.get_preprint()
@@ -427,8 +433,8 @@ class PreprintProvidersList(NodeProvidersList, PreprintMixin):
         PreprintFilesPermissions,
     )
 
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+    required_read_scopes = [CoreScopes.PREPRINT_FILE_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_FILE_WRITE]
 
     serializer_class = PreprintProviderSerializer
     view_category = 'preprints'
@@ -451,6 +457,9 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         base_permissions.TokenHasScope,
         PreprintFilesPermissions,
     )
+    required_read_scopes = [CoreScopes.PREPRINT_FILE_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_FILE_WRITE]
+
     view_category = 'preprints'
     view_name = 'preprint-files'
 
