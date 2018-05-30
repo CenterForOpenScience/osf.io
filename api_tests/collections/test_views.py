@@ -3819,7 +3819,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, save=True)  # has referent perms
+        project_one.add_contributor(user_two, save=True)  # has referent (read, write) perms
 
         res = app.patch_json_api(
             url,
@@ -3835,6 +3835,13 @@ class TestCollectedMetaDetail:
             expect_errors=True
         )
         assert res.status_code == 403
+
+        project_one.add_contributor(user_two, permissions='admin', save=True)  # has referent admin perms
+        res = app.delete_json_api(
+            url,
+            auth=user_two.auth,
+        )
+        assert res.status_code == 204
 
     def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
