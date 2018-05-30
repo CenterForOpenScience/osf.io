@@ -3,14 +3,12 @@ from transitions import Machine
 
 from api.preprint_providers.workflows import Workflows
 from framework.auth import Auth
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
 from osf.models.preprintlog import PreprintLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
 from website.mails import mails
-from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
@@ -87,7 +85,6 @@ class ReviewsMachine(BaseMachine):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.machineable.date_published = now
             self.machineable.is_published = True
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self.machineable._id}, celery=True)
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()

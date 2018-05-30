@@ -185,7 +185,7 @@ class BaseFileSerializer(JSONAPISerializer):
         kind='file'
     )
     comments = FileCommentRelationshipField(related_view='nodes:node-comments',
-                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_view_kwargs={'node_id': '<target._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
@@ -324,7 +324,7 @@ class FileSerializer(BaseFileSerializer):
             related_view_kwargs={'node_id': '<target._id>'},
             help_text='The project that this file belongs to'
         ),
-        min_version='2.0', max_version='2.6'
+        min_version='2.0', max_version='2.7'
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 

@@ -16,6 +16,7 @@ from rest_framework.mixins import RetrieveModelMixin
 from api.base import utils
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
+from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
@@ -186,6 +187,16 @@ class HideIfWithdrawal(ConditionalField):
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
+
+
+class HideIfWikiDisabled(ConditionalField):
+    """
+    If wiki is disabled, don't show relationship field, only available in version 2.8
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        return not utils.is_deprecated(request.version, '2.8', '2.8') and 'wiki' not in instance.get_addon_names()
 
 
 class HideIfNotNodePointerLog(ConditionalField):
@@ -602,11 +613,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 elif utils.is_falsy(show_related_counts):
                     continue
                 elif self.field_name in field_counts_requested:
-                    meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 else:
                     continue
             elif key == 'projects_in_common':
@@ -614,9 +625,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     continue
                 if not self.context['request'].query_params.get('show_projects_in_common', False):
                     continue
-                meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
             else:
-                meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -808,10 +819,6 @@ class FileCommentRelationshipField(RelationshipField):
             raise SkipField
         return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
 
-    def lookup_attribute(self, obj, lookup_field):
-        if lookup_field == '<node._id>':
-            lookup_field = '<target._id>'
-        return super(FileCommentRelationshipField, self).lookup_attribute(obj, lookup_field)
 
 class TargetField(ser.Field):
     """
@@ -886,9 +893,9 @@ class TargetField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        referent = value if isinstance(value, AbstractNode) or isinstance(value, Preprint) else value.referent
-        return {'links': {self.link_type: {'href': referent.get_absolute_url(), 'meta': meta}}}
+        meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+        obj = getattr(value, 'referent', value)
+        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -1159,7 +1166,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = utils.rapply(self.validated_data, sanitize.strip_html)
+            self._validated_data = functional.rapply(self.validated_data, sanitize.strip_html)
 
         for data in self._validated_data:
             data.pop('type', None)
@@ -1392,7 +1399,7 @@ class JSONAPISerializer(BaseAPISerializer):
         return ret
 
     def sanitize_data(self):
-        return utils.rapply(self.validated_data, sanitize.strip_html)
+        return functional.rapply(self.validated_data, sanitize.strip_html)
 
 
 class JSONAPIRelationshipSerializer(BaseAPISerializer):

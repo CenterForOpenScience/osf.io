@@ -2,7 +2,6 @@
 import urllib
 import furl
 import urlparse
-import collections
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
@@ -189,26 +188,6 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwar
     url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
-
-
-# Function courtesy of @brianjgeiger and @abought
-def rapply(data, func, *args, **kwargs):
-    """Recursively apply a function to all values in an iterable
-    :param dict | list | basestring data: iterable to apply func to
-    :param function func:
-    """
-    if isinstance(data, collections.Mapping):
-        return {
-            key: rapply(value, func, *args, **kwargs)
-            for key, value in data.iteritems()
-        }
-    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
-        desired_type = type(data)
-        return desired_type(
-            rapply(item, func, *args, **kwargs) for item in data
-        )
-    else:
-        return func(data, *args, **kwargs)
 
 def assert_resource_type(obj, resource_tuple):
     assert type(resource_tuple) is tuple, 'resources must be passed in as a tuple.'

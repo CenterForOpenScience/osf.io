@@ -464,7 +464,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
+                logo = preprint_provider._id
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -535,7 +535,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     # Email users for projects, or for components where they are not contributors on the parent node.
     if contributor.is_registered and (isinstance(node, Preprint) or
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
-        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
+        mimetype = 'html'
         preprint_provider = None
         logo = None
         if email_template == 'preprint':
@@ -546,8 +546,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
-
+                logo = preprint_provider._id
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))

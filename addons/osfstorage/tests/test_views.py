@@ -32,7 +32,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory, PreprintFactory, ApiOAuth2PersonalTokenFactory
+from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -68,7 +68,7 @@ class TestGetMetadataHook(HookTestCase):
     def test_empty(self):
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': self.node_settings.get_root()._id},
+            {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
             {},
             self.node
         )
@@ -98,7 +98,7 @@ class TestGetMetadataHook(HookTestCase):
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': record.parent._id},
+            {'fid': record.parent._id, 'user_id': self.user._id},
             {},
             self.node
         )
@@ -116,6 +116,10 @@ class TestGetMetadataHook(HookTestCase):
 
         res_date_modified = parse_datetime(res_data.pop('modified'))
         res_date_created = parse_datetime(res_data.pop('created'))
+
+        # latestVersionSeen should not be present in record.serialize, because it has to do
+        # with the user making the request itself, which isn't important when serializing the record
+        expected_data['latestVersionSeen'] = None
 
         assert_equal(res_date_modified, expected_date_modified)
         assert_equal(res_date_created, expected_date_created)

@@ -18,7 +18,7 @@ DROP_NODE_PROVIDER_PARTIAL_INDEX = """
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0100_update_preprint_model_for_divorce'),
+        ('osf', '0105_update_preprint_model_for_divorce'),
     ]
 
     operations = [

@@ -120,6 +120,11 @@ class PreprintError(OSFError):
 
 
 class PreprintStateError(PreprintError):
-    """Raised when the Preprint's state is not suitable for the requested action
+    """Raised when the Preprint's state is not suitable for the requested action"""
+    pass
+
+class BlacklistedEmailError(OSFError):
+    """Raised if a user tries to register an email that is included
+    in the blacklisted domains list
     """
     pass

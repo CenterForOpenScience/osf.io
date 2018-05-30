@@ -18,7 +18,6 @@ from django.contrib.contenttypes.models import ContentType
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
-from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -37,7 +36,7 @@ from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, MetaSchema,
-                        Guid)
+                        Guid, FileVersionUserMetadata)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -344,43 +343,23 @@ DOWNLOAD_ACTIONS = set([
 @must_be_signed
 @no_auto_transaction
 def create_preprint_waterbutler_log(payload, **kwargs):
-    with transaction.atomic():
-        try:
-            auth = payload['auth']
-            # Don't log download actions, but do update analytics
-            user = OSFUser.load(auth['id'])
-            if payload['action'] in DOWNLOAD_ACTIONS:
-                preprint = Preprint.load(payload['metadata']['nid'])
-                if not preprint.is_contributor(user):
-                    url = furl.furl(payload['request_meta']['url'])
-                    version = url.args.get('version') or url.args.get('revision')
-                    path = payload['metadata']['path'].lstrip('/')
-                    if payload['action_meta']['is_mfr_render']:
-                        update_analytics(preprint, path, version, 'view')
-                    else:
-                        update_analytics(preprint, path, version, 'download')
+    # Bring up to date with create_waterbutler_log, if needed.
+    pass
 
-                return {'status': 'success'}
-            action = LOG_ACTION_MAP[payload['action']]
-        except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
 
-        if user is None:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        preprint = Preprint.load(payload['metadata']['nid'])
-        if preprint:
-            action = LOG_ACTION_MAP[payload['action']]
-            user = OSFUser.load(payload['auth']['id'])
-            metadata = payload['metadata']
-            preprint.create_waterbutler_log(payload['auth'], action, metadata)
-
-            with transaction.atomic():
-                file_signals.file_updated.send(target=preprint, user=user, event_type=action, payload=payload)
-
-            return {'status': 'success'}
-        else:
-            raise HTTPError(httplib.NOT_FOUND)
+# TODO: Use this to mark file versions as seen when
+# MFR callback endpoint is implemented
+def mark_file_version_as_seen(user, path, version):
+    """
+    Mark a file version as seen by the given user.
+    If no version is included, default to the most recent version.
+    """
+    file_to_update = OsfStorageFile.objects.get(_id=path)
+    if version:
+        file_version = file_to_update.versions.get(identifier=version)
+    else:
+        file_version = file_to_update.versions.order_by('-created').first()
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
 
 
 @must_be_signed
@@ -390,25 +369,16 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions, but do update analytics
             user = OSFUser.load(auth['id'])
+            if user is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
+            # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
-                if not node.is_contributor(user):
-                    url = furl.furl(payload['request_meta']['url'])
-                    version = url.args.get('version') or url.args.get('revision')
-                    path = payload['metadata']['path'].lstrip('/')
-                    if payload['action_meta']['is_mfr_render']:
-                        update_analytics(node, path, version, 'view')
-                    else:
-                        update_analytics(node, path, version, 'download')
-
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
@@ -700,7 +670,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
-    project_safe = markupsafe.escape(getattr(target, 'project_or_component', target))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -709,9 +678,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         node_addon = target.get_addon(provider)
 
         if not isinstance(node_addon, BaseStorageAddon):
+            object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
             raise HTTPError(httplib.BAD_REQUEST, data={
                 'message_short': 'Bad Request',
-                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
+                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
             })
 
         if not node_addon.has_auth:

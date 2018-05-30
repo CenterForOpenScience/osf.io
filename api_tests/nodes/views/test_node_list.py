@@ -192,7 +192,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_three(self):
-        return ProjectFactory(title='Unique Test Title', is_public=True)
+        return ProjectFactory(title='Unique Test Title', description='three', is_public=True)
 
     @pytest.fixture()
     def user_one_private_project(self, user_one):
@@ -3210,6 +3210,25 @@ class TestNodeBulkDelete:
             {'id': public_project_parent._id, 'type': 'nodes'},
             {'id': public_component._id, 'type': 'nodes'}
         ]}
+        res = app.delete_json_api(
+            url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
+    # Regression test for PLAT-859
+    def test_bulk_delete_project_with_already_deleted_component(
+            self, app, user_one,
+            public_project_parent,
+            public_project_one,
+            public_component, url):
+
+        public_component.is_deleted = True
+        public_component.save()
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_project_one._id, 'type': 'nodes'}
+        ]}
+
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204

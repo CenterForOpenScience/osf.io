@@ -2683,6 +2683,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         log_date = date or timezone.now()
 
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(node=self).update(root_target=None)
+
         # Add log to parent
         self.add_remove_node_log(auth=auth, date=log_date)
 
@@ -2860,6 +2863,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise ValidationError('The home wiki page cannot be deleted.')
         page.deleted = timezone.now()
         page.save()
+
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,

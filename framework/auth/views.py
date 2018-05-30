@@ -28,7 +28,7 @@ from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
 from website.util import web_url_for
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 
@@ -761,7 +761,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     mails.send_mail(
         email,
         mail_template,
-        'plain',
+        'html',
         user=user,
         confirmation_url=confirmation_url,
         email=email,
@@ -828,6 +828,11 @@ def register_user(**kwargs):
                     email=markupsafe.escape(request.json['email1'])
                 )
             )
+        )
+    except BlacklistedEmailError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=language.BLACKLISTED_EMAIL)
         )
     except ValidationError as e:
         raise HTTPError(

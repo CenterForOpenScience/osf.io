@@ -1410,8 +1410,8 @@ class TestSetPreprintFile(OsfTestCase):
     def test_deleted_file_creates_orphan(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_false(self.preprint.is_preprint_orphan)
-        sself.preprint.primary_file = None
-        self.preprint.save()
+        self.file.is_deleted = True
+        self.file.save()
         assert_true(self.preprint.is_preprint_orphan)
 
     def test_preprint_created_date(self):
@@ -1603,13 +1603,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
-        assert self.preprint.identifiers.count() == 0
-        self.preprint.set_published(True, auth=self.auth, save=True)
-
-        assert mock_get_and_set_identifiers.called
-
     def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory()
         preprint = PreprintFactory(provider=new_provider)
@@ -1618,6 +1611,22 @@ class TestPreprintIdentifiers(OsfTestCase):
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 
         assert doi == ideal_doi
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_update_or_create_preprint_identifiers(self, mock_get_identifiers):
+        self.preprint.is_published = True
+        update_or_create_preprint_identifiers(self.preprint)
+        assert mock_get_identifiers.called
+        assert mock_get_identifiers.call_count == 1
+
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_or_create_preprint_identifiers_ezid(self, mock_update_ezid):
+        published_preprint = PreprintFactory(is_published=True, creator=self.user)
+        update_or_create_preprint_identifiers(published_preprint)
+        assert mock_update_ezid.called
+        assert mock_update_ezid.call_count == 1
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
@@ -2042,16 +2051,23 @@ class TestPreprintConfirmationEmails(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_creator_gets_email(self, send_mail):
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
-
+        domain = self.preprint.provider.domain or settings.DOMAIN
         send_mail.assert_called_with(
             self.user.email,
-            mails.PREPRINT_CONFIRMATION_DEFAULT,
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
             user=self.user,
-            node=self.preprint.node,
-            preprint=self.preprint,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            mimetype='html',
+            provider_url='{}preprints/{}'.format(domain, self.preprint.provider._id),
+            domain=domain,
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            workflow=None,
+            reviewable=self.preprint,
+            is_creator=True,
+            provider_name=self.preprint.provider.name,
+            no_future_emails=[],
+            logo=settings.OSF_PREPRINTS_LOGO,
         )
-
         assert_equals(send_mail.call_count, 1)
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)

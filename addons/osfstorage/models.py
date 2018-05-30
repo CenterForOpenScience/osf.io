@@ -7,7 +7,9 @@ from django.db import models, connection
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
-from addons.base.models import BaseNodeSettings, BaseStorageAddon
+from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from osf.utils.fields import EncryptedJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from framework.auth.core import Auth
 from osf.models.mixins import Loggable
@@ -17,6 +19,8 @@ from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import api_url_for
+from website import settings as website_settings
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -85,7 +89,7 @@ class OsfStorageFileNode(BaseFileNode):
         """
         inst = cls.load(path.strip('/'))
         # Use _id as odms default comparison mucks up sometimes
-        if inst and inst.target._id == target._id:
+        if inst and inst.target.id == target.id:
             return inst
 
         # Dont raise anything a 404 will be raised later
@@ -177,36 +181,37 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if isinstance(self.target, AbstractNode) and self.is_checked_out and self.checkout != user:
+        target = self.target
+        if isinstance(target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if self.target.has_permission(user, permissions.ADMIN):
+            if target.has_permission(user, permissions.ADMIN):
                 # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and self.target.draft_registrations_active.filter(
+                if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
                         registration_schema__name='Prereg Challenge').exists():
                     raise exceptions.FileNodeCheckedOutError()
             else:
                 raise exceptions.FileNodeCheckedOutError()
 
-        if not self.target.has_permission(user, permissions.WRITE):
+        if not target.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
 
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
             self.checkout = checkout
-            if isinstance(self.target, Loggable):
-                self.target.add_log(
+            if isinstance(target, Loggable):
+                target.add_log(
                     action=action,
                     params={
                         'kind': self.kind,
-                        'project': self.target.parent_id,
-                        'node': self.target._id,
+                        'project': target.parent_id,
+                        'node': target._id,
                         'urls': {
                             # web_url_for unavailable -- called from within the API, so no flask app
-                            'download': '/project/{}/files/{}/{}/?action=download'.format(self.target._id,
+                            'download': '/project/{}/files/{}/{}/?action=download'.format(target._id,
                                                                                           self.provider,
                                                                                           self._id),
-                            'view': '/project/{}/files/{}/{}'.format(self.target._id, self.provider, self._id)},
+                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id)},
                         'path': self.materialized_path
                     },
                     auth=Auth(user),
@@ -215,7 +220,7 @@ class OsfStorageFileNode(BaseFileNode):
             if save:
                 self.save()
 
-    def save(self, *args, **kwargs):
+    def save(self):
         self._path = ''
         self._materialized_path = ''
         return super(OsfStorageFileNode, self).save()
@@ -310,21 +315,26 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def add_tag_log(self, action, tag, auth):
-        if isinstance(self.target, AbstractNode):
-            node = self.target
-            node.add_log(
+        if isinstance(self.target, Loggable):
+            target = self.target
+            params = {
+                'urls': {
+                    'download': '/{}/files/osfstorage/{}/?action=download'.format(target._id, self._id),
+                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            }
+            if isinstance(target, AbstractNode):
+                params['parent_node'] = target.parent_id
+                params['node'] = target._id
+
+            target.add_log(
                 action=action,
-                params={
-                    'parent_node': node.parent_id,
-                    'node': node._id,
-                    'urls': {
-                        'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
-                        'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
-                    'path': self.materialized_path,
-                    'tag': tag,
-                },
+                params=params,
                 auth=auth,
             )
+        else:
+            raise NotImplementedError('Cannot add a tag log to a {}'.format(self.target.__class__.__name__))
 
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
@@ -417,7 +427,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     @property
     def is_preprint_primary(self):
         if hasattr(self.target, 'primary_file') and self.target.primary_file:
-            for child in self.children.all():
+            for child in self.children.all().prefetch_related('target'):
                 if getattr(child.target, 'primary_file', None):
                     if child.is_preprint_primary:
                         return True
@@ -431,12 +441,38 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
+class Region(models.Model):
+    _id = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=200)
+    waterbutler_credentials = EncryptedJSONField(default=dict)
+    waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    class Meta:
+        unique_together = ('_id', 'name')
+
+class UserSettings(BaseUserSettings):
+    default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+
+    def on_add(self):
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        self.default_region = default_region
+        self.save()
+
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
+
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
     root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
+
+    region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
@@ -449,6 +485,10 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         if self.root_node:
             return
 
+        creator_user_settings = UserSettings.objects.get(owner=self.owner.creator)
+        self.user_settings = creator_user_settings
+        self.region_id = creator_user_settings.default_region_id
+
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
@@ -459,9 +499,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         self.root_node = root
         self.save()
 
+    def before_fork(self, node, user):
+        pass
+
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
+        clone.user_settings = self.user_settings
+        clone.region_id = self.region_id
+
         clone.save()
         if not self.root_node:
             self.on_add()
@@ -480,7 +526,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        return dict(settings.WATERBUTLER_SETTINGS, **{
+        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': api_url_for(
@@ -488,11 +534,11 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 guid=self.owner._id,
                 _absolute=True,
                 _internal=True
-            )
+            ),
         })
 
     def serialize_waterbutler_credentials(self):
-        return settings.WATERBUTLER_CREDENTIALS
+        return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
         params = {

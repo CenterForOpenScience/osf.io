@@ -1,3 +1,4 @@
+import mock
 import pytest
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
@@ -121,24 +122,25 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
 
     @pytest.fixture()
     def expected_reviewables(self, provider, user):
-        preprints = [
-            PreprintFactory(
-                is_published=False,
-                provider=provider,
-                project=ProjectFactory(is_public=True)),
-            PreprintFactory(
-                is_published=False,
-                provider=provider,
-                project=ProjectFactory(is_public=True)),
-            PreprintFactory(
-                is_published=False,
-                provider=provider,
-                project=ProjectFactory(is_public=True)), ]
-        preprints[0].run_submit(user)
-        preprints[0].run_accept(user, 'comment')
-        preprints[1].run_submit(user)
-        preprints[2].run_submit(user)
-        return preprints
+        with mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers'):
+            preprints = [
+                PreprintFactory(
+                    is_published=False,
+                    provider=provider,
+                    project=ProjectFactory(is_public=True)),
+                PreprintFactory(
+                    is_published=False,
+                    provider=provider,
+                    project=ProjectFactory(is_public=True)),
+                PreprintFactory(
+                    is_published=False,
+                    provider=provider,
+                    project=ProjectFactory(is_public=True)), ]
+            preprints[0].run_submit(user)
+            preprints[0].run_accept(user, 'comment')
+            preprints[1].run_submit(user)
+            preprints[2].run_submit(user)
+            return preprints
 
     @pytest.fixture
     def user(self):

@@ -19,6 +19,7 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
+from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
@@ -27,9 +28,10 @@ from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, MetaSchema, QuickFilesNode
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode
+from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -318,10 +320,12 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
+        wb_url = settings.WATERBUTLER_URL + '?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
                                          action_meta={'is_mfr_render': False},
+                                         request_meta={'url': wb_url},
                                          action=action)
             nlogs = self.node.logs.count()
             res = self.app.put_json(
@@ -333,76 +337,7 @@ class TestAddonLogs(OsfTestCase):
             assert_equal(res.status_code, 200)
 
         self.node.reload()
-        assert_equal(self.file.get_download_count(), 0) # contrib don't count as download
         assert_equal(self.node.logs.count(), nlogs)
-
-
-    def test_action_downloads_non_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        download_actions=('download_file', 'download_zip')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.node._id},
-                                         action_meta={'is_mfr_render': False},
-                                         request_meta={'url': request_url},
-                                         action=action,
-                                         auth={'id': self.user_non_contrib._id})
-            nlogs = self.node.logs.count()
-            res = self.app.put_json(
-                url,
-                payload,
-                headers={'Content-Type': 'application/json'},
-                expect_errors=False,
-            )
-            assert_equal(res.status_code, 200)
-
-        self.node.reload()
-        assert_equal(self.file.get_download_count(), 2)
-        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
-
-
-    def test_action_download_mfr_views_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     action_meta={'is_mfr_render': True})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 0) # contribs don't count as views
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
-
-    def test_action_download_mfr_views_non_contrib(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     request_meta={'url': request_url},
-                                     action_meta={'is_mfr_render': True},
-                                     auth={'id': self.user_non_contrib._id})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 1)
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()
@@ -1269,6 +1204,8 @@ class TestViewUtils(OsfTestCase):
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
+        self.mock_api_credentials_are_valid.start()
 
     def configure_addon(self):
         self.user.add_addon('github')
