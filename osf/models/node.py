@@ -1692,7 +1692,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None, excluded_node_ids=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1714,6 +1714,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # and point them towards the registration
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
+
+        excluded_node_ids = excluded_node_ids or []
 
         registered = original.clone()
         registered.recast('osf.registration')
@@ -1760,12 +1762,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Register child nodes
-            if not node_relation.is_node_link:
+            if not node_relation.is_node_link and node_contained._id not in excluded_node_ids:
                 node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
                     parent=registered,
+                    excluded_node_ids=excluded_node_ids
                 )
             else:
                 # Copy linked nodes

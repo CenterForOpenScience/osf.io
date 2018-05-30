@@ -1,6 +1,8 @@
 import pytz
 import json
 
+from osf.models import Node
+
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -231,13 +233,32 @@ class BaseRegistrationSerializer(NodeSerializer):
         registration_choice = validated_data.pop('registration_choice', 'immediate')
         embargo_lifted = validated_data.pop('lift_embargo', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        children = validated_data.pop('children', None)
+        if children:
+            parent_node = draft.branched_from
+
+            # Validate to make sure we aren't registering nodes without registering their parents
+            # and all nodes have the same root.
+            child_nodes = Node.objects.filter(guids___id__in=children)
+            if child_nodes.count() != len(children):
+                    raise exceptions.ValidationError('Some child nodes could not be found.')
+
+            for node in child_nodes:
+                if node.parent_node and node.parent_node not in list(child_nodes) + [parent_node]:
+                    raise exceptions.ValidationError('Some child nodes could not be found. All nodes'
+                                                     ' must be have parents that are being registered'
+                                                     ' or be the root.')
+
+            excluded_node_ids = [node._id for node in parent_node.get_descendants_recursive() if node not in child_nodes]
+        else:
+            excluded_node_ids = []
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
         except ValidationValueError as e:
             raise exceptions.ValidationError(e.message)
 
-        registration = draft.register(auth, save=True)
+        registration = draft.register(auth, save=True, excluded_node_ids=excluded_node_ids)
 
         if registration_choice == 'embargo':
             if not embargo_lifted:
@@ -317,6 +338,7 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    children = ser.ListField(write_only=True, required=False)
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):
