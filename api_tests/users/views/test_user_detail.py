@@ -2,6 +2,7 @@
 import mock
 import pytest
 import urlparse
+import datetime as dt
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
@@ -916,6 +917,7 @@ class TestUserUpdate:
         user_one.reload()
         assert res.status_code == 200
         assert user_one.accepted_terms_of_service is not None
+        assert isinstance(user_one.accepted_terms_of_service, dt.datetime)
 
     def test_update_accepted_tos_false(
             self, app, user_one, url_user_one):
