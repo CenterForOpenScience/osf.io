@@ -834,13 +834,9 @@ def _view_project(node, auth, primary=False,
         ]
     }
 
-    region_list = get_storage_region_list(user)
-
     # Default should be at top of list for UI and for the project overview page the default region
     # for a component is that of the it's parent node.
-    default_region = node.osfstorage_region
-    default_storage_region = {'name': default_region.name, '_id': default_region._id}
-    region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))
+    region_list = get_storage_region_list(user, node=node)
 
     data.update({'storage_regions': region_list})
 
