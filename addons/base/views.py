@@ -134,6 +134,8 @@ permission_map = {
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
+    'render': 'read',
+    'export': 'read',
     'upload': 'write',
     'delete': 'write',
     'copy': 'write',
