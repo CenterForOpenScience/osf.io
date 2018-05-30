@@ -100,7 +100,7 @@ def count_node_wiki_pages():
         )
     )
     # NodeWikiPages whose Guid was repointed to a WikiPage
-    node_wiki_page_count = NodeWikiPage.objects.filter(guids___id=None).count()
+    node_wiki_page_count = NodeWikiPage.objects.filter(guids___id=None, uids___id__isnull=False).count()
     assert wiki_values_count_without_dupes == node_wiki_page_count, (
         'NodeWikiPage count mismatch: # items in Node.wiki_pages_versions: {}, NodeWikiPage.objects.count(): {}, Difference: {}'.format(
             wiki_values_count_without_dupes,

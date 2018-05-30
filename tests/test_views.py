@@ -33,7 +33,7 @@ from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
@@ -251,6 +251,19 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
+    def test_check_can_access_invalid_access_requests_enabled(self):
+        noncontrib = AuthUserFactory()
+        assert self.project.access_requests_enabled
+        with assert_raises(TemplateHTTPError):
+            check_can_access(self.project, noncontrib)
+
+    def test_check_can_access_invalid_access_requests_disabled(self):
+        noncontrib = AuthUserFactory()
+        self.project.access_requests_enabled = False
+        self.project.save()
+        with assert_raises(HTTPError):
+            check_can_access(self.project, noncontrib)
+
 
 class TestProjectViews(OsfTestCase):
 
@@ -278,6 +291,25 @@ class TestProjectViews(OsfTestCase):
         )
         self.project2.add_contributor(self.user2, auth=Auth(self.user1))
         self.project2.save()
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_tos_status_message(self, mock_push_status_message):
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_true(mock_push_status_message.called)
+        assert_equal('terms_of_service', mock_push_status_message.mock_calls[0][2]['id'])
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_no_tos_status_message(self, mock_push_status_message):
+        self.user1.accepted_terms_of_service = timezone.now()
+        self.user1.save()
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_false(mock_push_status_message.called)
 
     def test_node_setting_with_multiple_matched_institution_email_domains(self):
         # User has alternate emails matching more than one institution's email domains
@@ -1540,6 +1572,116 @@ class TestUserAccount(OsfTestCase):
         error_strings = [e[1][0] for e in mock_push_status_message.mock_calls]
         assert_in(error_message, error_strings)
 
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_rate_limiting(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'invalid old password',
+            'new_password': 'this is a new password',
+            'confirm_password': 'this is a new password',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 1
+        assert_true(200, res.status_code)
+        # Make a second request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len( mock_push_status_message.mock_calls) == 2)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[1][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 2
+
+        # Make a third request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len( mock_push_status_message.mock_calls) == 3)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[2][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 3
+
+        # Make a fourth request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(mock_push_status_message.called)
+        error_strings = mock_push_status_message.mock_calls[3][2]
+        assert_in('Too many failed attempts', error_strings['message'])
+        self.user.reload()
+        # Too many failed requests within a short window.  Throttled.
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 3
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_rate_limiting_not_imposed_if_old_password_correct(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'password',
+            'new_password': 'short',
+            'confirm_password': 'short',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        assert_true(200, res.status_code)
+        # Make a second request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len(mock_push_status_message.mock_calls) == 2)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[1][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+        # Make a third request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(len(mock_push_status_message.mock_calls) == 3)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[2][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+        # Make a fourth request
+        res = self.app.post(url, post_data, auth=self.user.auth, expect_errors=True)
+        assert_true(mock_push_status_message.called)
+        assert_true(len(mock_push_status_message.mock_calls) == 4)
+        assert_true('Password should be at least eight characters' == mock_push_status_message.mock_calls[3][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_old_password_invalid_attempts_reset_if_password_successfully_reset(self, mock_push_status_message):
+        assert self.user.change_password_last_attempt is None
+        assert self.user.old_password_invalid_attempts == 0
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': 'invalid old password',
+            'new_password': 'this is a new password',
+            'confirm_password': 'this is a new password',
+        }
+        correct_post_data = {
+            'old_password': 'password',
+            'new_password': 'thisisanewpassword',
+            'confirm_password': 'thisisanewpassword',
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(len( mock_push_status_message.mock_calls) == 1)
+        assert_true('Old password is invalid' == mock_push_status_message.mock_calls[0][1][0])
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 1
+        assert_true(200, res.status_code)
+
+        # Make a second request that successfully changes password
+        res = self.app.post(url, correct_post_data, auth=self.user.auth, expect_errors=True)
+        self.user.reload()
+        assert self.user.change_password_last_attempt is not None
+        assert self.user.old_password_invalid_attempts == 0
+
     def test_password_change_invalid_old_password(self):
         self.test_password_change_invalid(
             old_password='invalid old password',
@@ -1579,13 +1721,17 @@ class TestUserAccount(OsfTestCase):
             error_message='Passwords cannot be blank',
         )
 
+    def test_password_change_invalid_empty_string_new_password(self):
+        self.test_password_change_invalid_blank_password('password', '', 'new password')
+
     def test_password_change_invalid_blank_new_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', password, 'new password')
+        self.test_password_change_invalid_blank_password('password', '      ', 'new password')
+
+    def test_password_change_invalid_empty_string_confirm_password(self):
+        self.test_password_change_invalid_blank_password('password', 'new password', '')
 
     def test_password_change_invalid_blank_confirm_password(self):
-        for password in ('', '      '):
-            self.test_password_change_invalid_blank_password('password', 'new password', password)
+        self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
@@ -1874,9 +2020,12 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
+            mimetype='html',
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
@@ -2106,7 +2255,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE_DEFAULT
+            mail=mails.INVITE_DEFAULT,
+            can_change_preferences=False,
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2133,6 +2283,8 @@ class TestUserInviteViews(OsfTestCase):
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
             branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
@@ -2434,7 +2586,7 @@ class TestClaimViews(OsfTestCase):
     def test_posting_to_claim_form_removes_all_unclaimed_data(self, mock_update_search_nodes):
         # user has multiple unclaimed records
         p2 = ProjectFactory(creator=self.referrer)
-        self.user.add_unclaimed_record(node=p2, referrer=self.referrer,
+        self.user.add_unclaimed_record(p2, referrer=self.referrer,
                                        given_name=fake.name())
         self.user.save()
         assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
@@ -2923,6 +3075,7 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+        assert_equal(user.accepted_terms_of_service, None)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -2940,6 +3093,40 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_with_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': True
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_true(user.accepted_terms_of_service)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_without_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': False
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_equal(user.accepted_terms_of_service, None)
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_register_scrubs_username(self, _):
@@ -4326,7 +4513,7 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/robots.txt')
         assert_equal(res.status_code, 200)
         assert_in('User-agent', res)
-        assert_in('text/plain', res.headers['Content-Type'])
+        assert_in('html', res.headers['Content-Type'])
 
     def test_favicon(self):
         res = self.app.get('/favicon.ico')

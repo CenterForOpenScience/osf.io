@@ -39,11 +39,17 @@ a {
 /* Footer
 -------------------------------------------------- */
 .footer {
-    text-shadow: 0 1px 0 #fff;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    padding-top: 10px;
+    margin-top: 20px;
+    text-shadow: 0 1px 0 #FFF;
     width: 100%;
-    color: #555;
+    color: #515151;
+    text-align: center;
+    background-color: #efefef;
+}
+
+.footer a {
+    color: #2d6a9f;
 }
 
 
@@ -675,6 +681,11 @@ span.ball-pulse-small>div {
 }
 
 /* To be added to osf-style: generic dropdown-menu */
+
+.generic-dropdown .dropdown-menu {
+    /* Prevents dropdowns from obscuring navs and subnavs */
+    z-index: 98;
+}
 .generic-dropdown ul.dropdown-menu > li > a {
     color: #000;
 }
@@ -685,7 +696,7 @@ span.ball-pulse-small>div {
     background-color: #D9D9D9;
 }
 
-.generic-dropdown button {
+.generic-dropdown button.dropdown-toggle-sm {
     padding: 4px 12px;
     line-height: 0;
 }
@@ -697,6 +708,10 @@ span.ball-pulse-small>div {
 
 .generic-dropdown a {
     color: #333;
+}
+
+.generic-dropdown li .disabled {
+    opacity: 0.65;
 }
 
 /* Table
@@ -761,6 +776,10 @@ table.add-links {
     }
 }
 
+.generic-dropdown.dropdown.pull-right .fa {
+    padding-right: 0px;
+}
+
 .generic-dropdown .fa {
     padding-right: 7px;
     width: 20px;
@@ -800,4 +819,22 @@ table.add-links {
 /* Prevents comment from overlapping with counter*/
 .comment-box {
     padding-bottom: 25px;
+}
+
+/* Collection list */
+
+.collections-container {
+    margin-bottom: 20px;
+}
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
+
+/* Override jumbotron to be a bit smaller.
+   Used for the updated terms of service banner on all pages. */
+.jumbotron {
+    padding: 10px 40px 10px 40px;
+    margin-bottom: 0;
 }

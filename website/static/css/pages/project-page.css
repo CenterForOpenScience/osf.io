@@ -248,3 +248,11 @@ li.addon-categories a{
     position: relative;
     top: 45px;
 }
+
+#shareButtonsPopover {
+    text-align: left;
+}
+
+#shareButtonsPopover a {
+    display: block;
+}

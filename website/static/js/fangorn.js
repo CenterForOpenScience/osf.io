@@ -1493,7 +1493,14 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
                 }
             };
         }
-        return m('span', attrs, nameTitle);
+
+        var titleRow = m('span', attrs, nameTitle);
+
+        if  (item.data.extra.latestVersionSeen && item.data.extra.latestVersionSeen.seen === false && col.data === 'name') {
+            titleRow = m('strong', [titleRow]);
+        }
+
+        return titleRow;
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.' + classNameOption, {href: '/' + item.data.nodeID.toString() + toUrl}, nameTitle);
