@@ -36,3 +36,5 @@ pydevd==0.0.6
 
 # n+1 query detection
 nplusone==0.8.2
+
+django-eraserhead==0.1.5

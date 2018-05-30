@@ -271,3 +271,8 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# Set to True to enable Django Eraserhead
+ERASERHEAD_ENABLED = False
+# Will display full traceback. Recommend setting a base path to filter tracebacks.
+ERASERHEAD_TRACEBACK_BASE_PATH = None
