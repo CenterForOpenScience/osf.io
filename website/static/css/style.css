@@ -838,3 +838,8 @@ table.add-links {
     padding: 10px 40px 10px 40px;
     margin-bottom: 0;
 }
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
