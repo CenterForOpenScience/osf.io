@@ -314,7 +314,7 @@ class TestNodeDetail:
         url = url_public
         res = app.get(url)
         assert res.json['meta'].get('templated_by_count', False) is False
-        url = url + '?meta[templated_by_count]=true'
+        url = url + '?related_counts=true'
         res = app.get(url)
         assert res.json['meta']['templated_by_count'] == 0
         ProjectFactory(title='template copy', template_node=project_public, creator=user)

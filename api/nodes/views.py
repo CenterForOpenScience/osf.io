@@ -337,7 +337,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()
-        show_counts = is_truthy(self.request.query_params.get('meta[templated_by_count]', False))
+        show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             node = self.get_object()
             context['meta'] = {
