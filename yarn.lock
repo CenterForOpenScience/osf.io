@@ -2890,9 +2890,9 @@ markdown-it-ins-del@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/markdown-it-ins-del/-/markdown-it-ins-del-0.1.1.tgz#8b421d8e788ee84a1d572eb3fcc0028ce431c9ea"
 
-"markdown-it-mfr@git://github.com/johnetordoff/markdown-it-mfr.git#develop":
+"markdown-it-atrules@git://github.com/johnetordoff/markdown-it-atrules.git#develop":
   version "0.0.1"
-  resolved "git://github.com/johnetordoff/markdown-it-mfr.git#develop"
+  resolved "git://github.com/johnetordoff/markdown-it-atrules.git#develop"
 
 markdown-it-sanitizer@~0.3.0:
   version "0.3.2"

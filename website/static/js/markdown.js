@@ -42,11 +42,11 @@ var getMfrUrl = function (guid) {
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
     linkify: true
-    }).use(require('markdown-it-mfr'), {
+    }).use(require('markdown-it-atrules'), {
         type: 'osf',
         pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5})\/\?action=download|(^[a-zA-Z0-9]{5}$)/,
         format(assetID) {
-          var id = '__markdown-it-mfr-' + (new Date()).getTime();
+          var id = '__markdown-it-atrules-' + (new Date()).getTime();
           return '<div id="' + id + '" class="mfr mfr-file"></div>' +
             '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
         }

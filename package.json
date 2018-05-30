@@ -51,7 +51,7 @@
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
     "markdown-it-video": "~0.5.1",
-    "markdown-it-mfr": "git://github.com/johnetordoff/markdown-it-mfr.git#develop",
+    "markdown-it-atrules": "git://github.com/johnetordoff/markdown-it-atrules.git#develop",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",
     "moment": "^2.14.1",
