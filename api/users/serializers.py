@@ -41,6 +41,9 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
+    writeable_method_fields = frozenset([
+        'accepted_terms_of_service',
+    ])
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -55,7 +58,7 @@ class UserSerializer(JSONAPISerializer):
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
-    accepted_terms_of_service = ShowIfCurrentUser(ser.BooleanField(required=False))
+    accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
     links = HideIfDisabled(LinksField(
         {
@@ -115,6 +118,9 @@ class UserSerializer(JSONAPISerializer):
     def get_can_view_reviews(self, obj):
         group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
         return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
+
+    def get_accepted_terms_of_service(self, obj):
+        return bool(obj.accepted_terms_of_service)
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
