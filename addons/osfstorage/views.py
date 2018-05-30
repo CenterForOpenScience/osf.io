@@ -97,9 +97,9 @@ def osfstorage_update_metadata(payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_get_revisions(file_node, payload, **kwargs):
+def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(kwargs['target'], Auth(private_key=request.args.get('view_only')))
+    is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
 
     counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
@@ -114,7 +114,7 @@ def osfstorage_get_revisions(file_node, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(kwargs['target'], file_node, version, index=version_count - idx - 1, anon=is_anon)
+            utils.serialize_revision(target, file_node, version, index=version_count - idx - 1, anon=is_anon)
             for idx, version in enumerate(qs)
         ]
     }
