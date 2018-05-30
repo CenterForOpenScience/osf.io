@@ -241,6 +241,7 @@ if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
     # Required to interact with Google Cloud Storage
     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
     GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
