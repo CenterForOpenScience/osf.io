@@ -144,7 +144,7 @@ def revert(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0077_citationstyle_parent_style'),
+        ('osf', '0106_citationstyle_parent_style'),
     ]
 
     operations = [
