@@ -9,6 +9,7 @@ var getExtension = function(filename) {
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var imageFolder = 'Wiki images';
 
+
 var autoIncrementFileName = function(name, nameList) {
     var num = 1;
     var newName;
@@ -182,7 +183,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
      * Also adds a second cursor that follows around the mouse cursor and signifies where the image/link will
      * be inserted
      */
-    element.addEventListener('dragover', function(event) {
+    $(element).find('.ace_scroller')[0].addEventListener('dragover', function(event) {
         event.preventDefault();
         event.stopPropagation();
         if (!editor.marker.active) {
