@@ -111,10 +111,10 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.hasPreprints = ko.observable(false);
     self.preprintMessage = ko.computed(function() {
         if (self.isPreprint && self.hasPreprints()) {
-            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>, and one or more\
-               of its ' + self.termForChildren() + ' also contains a <strong>preprint</strong>. Deleting\
-               this ' + self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong>\
-               in its ' + self.termForChildren() + '. This action is irreversible.';
+            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>, and one or more of its ' +
+               self.termForChildren() + ' also contains a <strong>preprint</strong>. Deleting this ' +
+               self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong> in its ' +
+               self.termForChildren() + '. This action is irreversible.';
         }
 
         if (self.isPreprint && !self.hasPreprints()) {
