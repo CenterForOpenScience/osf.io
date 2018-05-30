@@ -5,7 +5,7 @@ from api.base.serializers import JSONAPISerializer, RelationshipField, IDField, 
 
 class RegistrationIdentifierSerializer(JSONAPISerializer):
 
-    category = ser.CharField(read_only=True)
+    category = ser.SerializerMethodField()
 
     filterable_fields = frozenset(['category'])
 
@@ -22,6 +22,11 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'identifiers'
+
+    def get_category(self, obj):
+        if obj.category == 'datacite_doi':
+            return 'doi'
+        return obj.category
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

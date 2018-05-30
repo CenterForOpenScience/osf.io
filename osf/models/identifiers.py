@@ -14,7 +14,7 @@ class Identifier(ObjectIDMixin, BaseModel):
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     referent = GenericForeignKey()
     # category: e.g. 'ark', 'doi'
-    category = models.CharField(max_length=10)  # longest was 3, 8/19/2016
+    category = models.CharField(max_length=20)  # longest was 3, 8/19/2016
     # value: e.g. 'FK424601'
     value = models.CharField(max_length=50)  # longest was 21, 8/19/2016
     deleted = NonNaiveDateTimeField(blank=True, null=True)
@@ -37,7 +37,10 @@ class IdentifierMixin(models.Model):
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
         content_type = ContentType.objects.get_for_model(self)
-        return Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type, deleted__isnull=True).first()
+        found_identifier = Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type, deleted__isnull=True).first()
+        if category == 'doi' and not found_identifier:
+            found_identifier = Identifier.objects.filter(object_id=self.id, category='datacite_doi', content_type=content_type, deleted__isnull=True).first()
+        return found_identifier
 
     def get_identifier_value(self, category):
         identifier = self.get_identifier(category)
