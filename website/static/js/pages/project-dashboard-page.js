@@ -349,4 +349,18 @@ $(document).ready(function () {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }
+
+    // Show or hide collection details
+    if ($('.collection-details').length) {
+        $('.collection-details').each( function() {
+            var caret = '#' + $(this).attr('id') + '-toggle';
+            $(this).on('hidden.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-up')
+                       .addClass('fa-angle-down');
+            }).on('shown.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-down')
+                        .addClass('fa-angle-up');
+            });
+        });
+    }
 });

@@ -13,6 +13,8 @@ from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
+from website.notifications.emails import get_user_subscriptions
+from website.notifications import utils
 from website.preprints.tasks import on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
@@ -207,19 +209,33 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
+        recipient = self.node.creator
+        event_type = utils.find_subscription_type('global_reviews')
+        user_subscriptions = get_user_subscriptions(recipient, event_type)
         if self.provider._id == 'osf':
-            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
             logo = self.provider._id
 
+        context = {
+            'domain': settings.DOMAIN,
+            'reviewable': self,
+            'workflow': self.provider.reviews_workflow,
+            'provider_url': '{domain}preprints/{provider_id}'.format(
+                            domain=self.provider.domain or settings.DOMAIN,
+                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
+            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+            'no_future_emails': user_subscriptions['none'],
+            'is_creator': True,
+            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+            'logo': logo,
+        }
+
         mails.send_mail(
-            auth.user.username,
-            email_template,
-            user=auth.user,
-            node=self.node,
-            preprint=self,
-            logo=logo,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            recipient.username,
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+            mimetype='html',
+            user=recipient,
+            **context
         )

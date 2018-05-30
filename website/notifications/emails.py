@@ -63,15 +63,16 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
 
     for recipient in recipients:
         subscriptions = get_user_subscriptions(recipient, event_type)
+        context['is_creator'] = recipient == node.creator
         for notification_type in subscriptions:
             if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
-                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template, **context)
+                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template=template, **context)
                 sent_users.append(recipient._id)
 
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, template=None, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -84,7 +85,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
-
     if notification_type == 'none':
         return
 
@@ -104,14 +104,14 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
         message = mails.render_message(template, **context)
-
         digest = NotificationDigest(
             timestamp=timestamp,
             send_type=notification_type,
             event=event,
             user=recipient,
             message=message,
-            node_lineage=node_lineage_ids
+            node_lineage=node_lineage_ids,
+            provider=abstract_provider
         )
         digest.save()
 

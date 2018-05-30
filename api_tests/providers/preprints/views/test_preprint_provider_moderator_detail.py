@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -17,9 +17,10 @@ class TestPreprintProviderModeratorDetail:
         GroupHelper(pp).update_provider_auth_groups()
         return pp
 
-    @pytest.fixture()
-    def url(self, provider):
-        return '/{}preprint_providers/{}/moderators/{{}}/'.format(API_BASE, provider._id)
+    @pytest.fixture(params=['/{}preprint_providers/{}/moderators/{{}}/', '/{}providers/preprints/{}/moderators/{{}}/'])
+    def url(self, provider, request):
+        url = request.param
+        return url.format(API_BASE, provider._id)
 
     @pytest.fixture()
     def admin(self, provider):
@@ -154,11 +155,19 @@ class TestPreprintProviderModeratorDetail:
         assert res.status_code == 403
 
         res = app.delete_json_api(url.format(moderator._id), auth=moderator.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body
 
     def test_admin_delete_moderator(self, app, url, moderator, admin, provider):
         res = app.delete_json_api(url.format(moderator._id), auth=admin.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body
 
     def test_admin_delete_admin(self, app, url, moderator, admin, provider):
         # Make mod an admin
@@ -169,4 +178,8 @@ class TestPreprintProviderModeratorDetail:
 
         # Admin delete admin
         res = app.delete_json_api(url.format(moderator._id), auth=admin.auth)
-        assert res.status_code == 204
+        assert res.status_code in [200, 204]
+        if res.status_code == 200:
+            assert 'meta' in res.json
+        else:
+            assert not res.body

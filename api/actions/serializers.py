@@ -157,7 +157,7 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     provider = RelationshipField(
         read_only=True,
-        related_view='preprint_providers:preprint_provider-detail',
+        related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<target.provider._id>'},
         filter_key='target__provider___id',
     )

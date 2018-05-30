@@ -821,7 +821,16 @@ table.add-links {
     padding-bottom: 25px;
 }
 
+/* Collection list */
 
+.collections-container {
+    margin-bottom: 20px;
+}
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
 
 /* Override jumbotron to be a bit smaller.
    Used for the updated terms of service banner on all pages. */

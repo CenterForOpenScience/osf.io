@@ -752,17 +752,23 @@ class TestPreprintConfirmationEmails(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_creator_gets_email(self, send_mail):
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
-
+        domain = self.preprint.provider.domain or settings.DOMAIN
         send_mail.assert_called_with(
             self.user.email,
-            mails.PREPRINT_CONFIRMATION_DEFAULT,
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
             user=self.user,
-            node=self.preprint.node,
-            preprint=self.preprint,
+            mimetype='html',
+            provider_url='{}preprints/{}'.format(domain, self.preprint.provider._id),
+            domain=domain,
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            workflow=None,
+            reviewable=self.preprint,
+            is_creator=True,
+            provider_name=self.preprint.provider.name,
+            no_future_emails=[],
             logo=settings.OSF_PREPRINTS_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
-
         assert_equals(send_mail.call_count, 1)
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
