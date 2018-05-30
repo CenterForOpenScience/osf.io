@@ -33,6 +33,7 @@ from framework.sentry import log_exception
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
+from osf.models.collection import CollectedGuidMetadata
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
@@ -436,6 +437,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_original(self):
         return not self.is_registration and not self.is_fork
+
+    @property
+    def is_collected(self):
+        """is included in a collection"""
+        return self.collecting_metadata_qs.exists()
+
+    @property
+    def collecting_metadata_qs(self):
+        return CollectedGuidMetadata.objects.filter(
+            guid=self.guids.first(),
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+    @property
+    def collecting_metadata_list(self):
+        return list(self.collecting_metadata_qs)
 
     @property
     def is_preprint(self):
@@ -1272,7 +1290,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+        contributor.add_unclaimed_record(self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
@@ -1284,7 +1302,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise
 
             contributor.add_unclaimed_record(
-                node=self, referrer=auth.user, given_name=fullname, email=email
+                self, referrer=auth.user, given_name=fullname, email=email
             )
 
             contributor.save()

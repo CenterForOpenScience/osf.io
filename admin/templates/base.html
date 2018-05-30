@@ -158,6 +158,7 @@
               <div class="collapse" id="collapsePreprintProviders">
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'preprint_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      <li><a href="{% url 'preprint_providers:whitelist' %}"><i class='fa fa-link'></i><span> Whitelist</span> </a></li>
                       {% if perms.osf.change_preprintprovider %}
                       <li><a href="{% url 'preprint_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}

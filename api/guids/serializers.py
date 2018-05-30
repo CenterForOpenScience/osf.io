@@ -1,11 +1,12 @@
 import urlparse
 
+from django.urls import resolve, reverse
+
+from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField)
+from api.base.utils import absolute_reverse
 from osf.models import OSFUser, AbstractNode, Registration, Guid, BaseFileNode
 from website import settings as website_settings
 
-from api.base.utils import absolute_reverse
-
-from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField)
 
 def get_type(record):
     if isinstance(record, Registration):
@@ -71,3 +72,15 @@ class GuidSerializer(JSONAPISerializer):
         if not isinstance(obj.referent, BaseFileNode):
             return obj.referent.absolute_url
         return urlparse.urljoin(website_settings.DOMAIN, '/{}/'.format(obj._id))
+
+    def to_representation(self, obj):
+        if self.context['view'].kwargs.get('is_embedded'):
+            # Force the referent to serialize instead.
+            obj = obj.referent
+            ser = resolve(reverse(
+                get_related_view(obj),
+                kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')}
+            )).func.cls.serializer_class()
+            [ser.context.update({k: v}) for k, v in self.context.iteritems()]
+            return ser.to_representation(obj)
+        return super(GuidSerializer, self).to_representation(obj)

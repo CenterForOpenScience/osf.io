@@ -13,7 +13,8 @@ from website.notifications.tasks import get_users_emails, send_users_email, grou
 from website.notifications import constants
 from website.notifications import emails
 from website.notifications import utils
-from website import mails, settings
+from website import mails
+from website.profile.utils import get_profile_image_url
 from website.project.signals import contributor_removed, node_deleted
 from website.reviews import listeners
 from website.util import api_url_for
@@ -1477,7 +1478,7 @@ class TestSendEmails(NotificationTestCase):
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
         mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
-                                      node, time_now, None, new_mentions=[node.creator._id])
+                                      node, time_now, template=None, new_mentions=[node.creator._id], is_creator=(user == node.creator))
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
@@ -1878,3 +1879,67 @@ class TestNotificationsReviews(OsfTestCase):
     def test_reviews_notification(self, mock_notify):
         listeners.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
         assert_true(mock_notify.called)
+
+
+class QuerySetMatcher(object):
+    def __init__(self, some_obj):
+        self.some_obj = some_obj
+
+    def __eq__(self, other):
+        return list(self.some_obj) == list(other)
+
+
+class TestNotificationsReviewsModerator(OsfTestCase):
+
+    def setUp(self):
+        super(TestNotificationsReviewsModerator, self).setUp()
+        self.provider = factories.PreprintProviderFactory(_id='engrxiv')
+        self.preprint = factories.PreprintFactory(provider=self.provider)
+        self.submitter = factories.UserFactory()
+        self.moderator_transacitonal = factories.UserFactory()
+        self.moderator_digest= factories.UserFactory()
+
+        self.context_info = {
+            'referrer': self.submitter,
+            'domain': 'osf.io',
+            'reviewable': self.preprint,
+            'workflow': 'pre-moderation',
+            'provider_contact_email': settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
+        self.action = factories.ReviewActionFactory()
+        self.subscription = NotificationSubscription.load(self.provider._id+'_new_pending_submissions')
+        self.subscription.add_user_to_subscription(self.moderator_transacitonal, 'email_transactional')
+        self.subscription.add_user_to_subscription(self.moderator_digest, 'email_digest')
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_reviews_submit_notification(self, mock_store):
+        time_now = timezone.now()
+        self.context_info['message'] = u'submitted {}.'.format(self.context_info['reviewable'].node.title)
+        self.context_info['profile_image_url'] = get_profile_image_url(self.context_info['referrer'])
+        self.context_info['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                                         self.context_info[
+                                                                                             'reviewable'].provider._id,
+                                                                                         self.context_info[
+                                                                                             'reviewable']._id)
+        listeners.reviews_submit_notification_moderators(self, time_now, self.context_info)
+        subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
+        digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
+        instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
+        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
+                                      'email_digest',
+                                      'new_pending_submissions',
+                                      self.context_info['referrer'],
+                                      self.context_info['reviewable'].node,
+                                      time_now,
+                                      abstract_provider=self.context_info['reviewable'].provider,
+                                      **self.context_info)
+
+        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
+                                   'email_transactional',
+                                   'new_pending_submissions',
+                                   self.context_info['referrer'],
+                                   self.context_info['reviewable'].node,
+                                   time_now,
+                                   abstract_provider=self.context_info['reviewable'].provider,
+                                   **self.context_info)

@@ -1,13 +1,35 @@
 from django.db import IntegrityError
+from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Registration
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, AbstractProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from framework.exceptions import PermissionsError
+from osf.utils.permissions import WRITE
+from website.exceptions import NodeStateError
+
+
+class ProviderRelationshipField(RelationshipField):
+    def get_object(self, provider_id):
+        return AbstractProvider.load(provider_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
+
+class GuidRelationshipField(RelationshipField):
+    def get_object(self, _id):
+        return Guid.load(_id)
+
+    def to_internal_value(self, data):
+        guid = self.get_object(data)
+        return {'guid': guid}
 
 
 class CollectionSerializer(JSONAPISerializer):
@@ -24,8 +46,24 @@ class CollectionSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
+    is_promoted = ser.BooleanField(read_only=True, default=False)
+    is_public = ser.BooleanField(read_only=False, default=False)
+    status_choices = ser.ListField(
+        child=ser.CharField(max_length=31),
+        default=list()
+    )
+    collected_type_choices = ser.ListField(
+        child=ser.CharField(max_length=31),
+        default=list()
+    )
 
     links = LinksField({})
+
+    provider = ProviderRelationshipField(
+        related_view='providers:collection-providers:collection-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True
+    )
 
     node_links = RelationshipField(
         related_view='collections:node-pointers',
@@ -99,6 +137,101 @@ class CollectionDetailSerializer(CollectionSerializer):
     Overrides CollectionSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+
+    class Meta:
+        type_ = 'collected-metadata'
+
+    filterable_fields = frozenset([
+        'id',
+        'collected_type',
+        'date_created',
+        'date_modified',
+        'subjects',
+        'status',
+    ])
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+    collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<collection._id>'},
+    )
+    guid = RelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+    )
+    collected_type = ser.CharField(required=False)
+    status = ser.CharField(required=False)
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'collected-metadata:collected-metadata-detail',
+            kwargs={
+                'collection_id': obj.collection._id,
+                'cgm_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    def update(self, obj, validated_data):
+        if validated_data and 'subjects' in validated_data:
+            auth = get_user_auth(self.context['request'])
+            subjects = validated_data.pop('subjects', None)
+            try:
+                obj.set_subjects(subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=e.message)
+            except (ValueError, NodeStateError) as e:
+                raise exceptions.ValidationError(detail=e.message)
+        if 'status' in validated_data:
+            obj.status = validated_data.pop('status')
+        if 'collected_type' in validated_data:
+            obj.collected_type = validated_data.pop('collected_type')
+        obj.save()
+        return obj
+
+class CollectedMetaCreateSerializer(CollectedMetaSerializer):
+    # Makes guid writeable only on create
+    guid = GuidRelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+        read_only=False,
+        required=True,
+    )
+
+    def create(self, validated_data):
+        subjects = validated_data.pop('subjects', None)
+        collection = validated_data.pop('collection', None)
+        creator = validated_data.pop('creator', None)
+        guid = validated_data.pop('guid')
+        if not collection:
+            raise exceptions.ValidationError('"collection" must be specified.')
+        if not creator:
+            raise exceptions.ValidationError('"creator" must be specified.')
+        if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
+            raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        try:
+            obj = collection.collect_object(guid.referent, creator, **validated_data)
+        except ValidationError as e:
+            raise InvalidModelValueError(e.message)
+        if subjects:
+            auth = get_user_auth(self.context['request'])
+            try:
+                obj.set_subjects(subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=e.message)
+            except (ValueError, NodeStateError) as e:
+                raise exceptions.ValidationError(detail=e.message)
+        return obj
 
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
