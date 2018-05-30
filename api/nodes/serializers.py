@@ -219,7 +219,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
-    templated_by_count = ser.SerializerMethodField(help_text='How many projects have used this as a template.')
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
@@ -481,9 +480,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_forks_count(self, obj):
         return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
-
-    def get_templated_by_count(self, obj):
-        return obj.templated_list.count()
 
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user

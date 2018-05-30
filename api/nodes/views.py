@@ -335,6 +335,16 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             raise ValidationError(err.message)
         node.save()
 
+    def get_renderer_context(self):
+        context = super(NodeDetail, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('meta[templated_by_count]', False))
+        if show_counts:
+            node = self.get_object()
+            context['meta'] = {
+                'templated_by_count': node.templated_list.count(),
+            }
+        return context
+
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_list).

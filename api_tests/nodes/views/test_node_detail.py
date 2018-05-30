@@ -311,12 +311,16 @@ class TestNodeDetail:
         assert 'wikis' in res.json['data']['relationships']
 
     def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
-        res = app.get(url_public)
-        assert res.json['data']['attributes']['templated_by_count'] == 0
+        url = url_public
+        res = app.get(url)
+        assert res.json['meta'].get('templated_by_count', False) is False
+        url = url + '?meta[templated_by_count]=true'
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 0
         ProjectFactory(title='template copy', template_node=project_public, creator=user)
         project_public.reload()
-        res = app.get(url_public)
-        assert res.json['data']['attributes']['templated_by_count'] == 1
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 1
 
     def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
         url = url_public + '?related_counts=true'
