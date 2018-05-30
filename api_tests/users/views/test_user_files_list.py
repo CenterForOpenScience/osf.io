@@ -26,9 +26,9 @@ class TestUserQuickFiles:
         osfstorage = quickfiles.get_addon('osfstorage')
         root = osfstorage.get_root()
 
-        root.append_file('Follow.txt')
-        root.append_file('The.txt')
-        root.append_file('Buzzards.txt')
+        root.append_file('Follow.txt', with_version=True)
+        root.append_file('The.txt', with_version=True)
+        root.append_file('Buzzards.txt', with_version=True)
 
     @pytest.fixture()
     def url(self, user):
@@ -130,3 +130,12 @@ class TestUserQuickFiles:
 
         assert 'upload' in file_detail_json['links']
         assert file_detail_json['links']['upload'] == waterbutler_url
+
+    def test_get_files_order_matches_serialization(self, app, user, url):
+        res = app.get(url)
+        node_json = res.json['data']
+        date_modified_list = [file['attributes']['date_modified'] for file in node_json]
+
+        for i in range(len(date_modified_list) - 1):
+            if date_modified_list[i] > date_modified_list[i + 1]:
+                assert False

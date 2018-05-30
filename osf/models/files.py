@@ -541,8 +541,16 @@ class Folder(models.Model):
         if save:
             self.save()
 
-    def append_file(self, name, path=None, materialized_path=None, save=True):
-        return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
+    def append_file(self, name, path=None, materialized_path=None, save=True, with_version=False):
+        child = self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
+
+        if with_version:
+            version = FileVersion(identifier='1')
+            if save:
+                version.save()
+                child.versions.add(version)
+
+        return child
 
     def append_folder(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, Folder, path=path, materialized_path=materialized_path, save=save)

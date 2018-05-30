@@ -1,3 +1,6 @@
+import pytz
+import datetime
+
 from django.apps import apps
 
 from api.addons.views import AddonSettingsMixin
@@ -282,8 +285,6 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         base_permissions.TokenHasScope,
     )
 
-    ordering = ('-last_touched')
-
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
@@ -301,9 +302,28 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
 
         return files_list.children.prefetch_related('node__guids', 'versions', 'tags').include('guids')
 
+    def get_date_modified(self, obj):
+        mod_dt = None
+        if obj.provider == 'osfstorage' and obj.versions.exists():
+            # Each time an osfstorage file is added or uploaded, a new version object is created with its
+            # date_created equal to the time of the update.  The external_modified is the modified date
+            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
+            # so prefer to use the created of the latest version.
+            mod_dt = obj.versions.first().created
+        elif obj.provider != 'osfstorage' and obj.history:
+            mod_dt = obj.history[-1].get('modified', None)
+
+        if self.request.version >= '2.2' and obj.is_file and mod_dt:
+            return datetime.datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
+
+        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
+
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        # Obviously we'd like to sort this using the builtin django sort, but the way
+        # get_date_modified is used in the serializer in dependent on the request context
+        # so we have to sort this way to main the same order the appears after serialization.
+        return sorted(self.get_queryset_from_request(), key=lambda x: self.get_date_modified(x))
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
