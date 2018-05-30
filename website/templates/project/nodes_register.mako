@@ -1,23 +1,3 @@
-<script type="text/html" id="registrationChoiceModal">
-<ul data-bind="foreach: preRegisterPrompts">
-  <li data-bind="html: $data"></li>
-</ul>
-<div class="form-group">
-  <label class="control-label">Registration choice</label>
-  <select class="form-control" data-bind="options: registrationOptions,
-                                          value: registrationChoice,
-                                          optionsText: 'message',
-                                          optionsValue: 'value'"></select>
-</div>
-<span data-bind="visible: showEmbargoDatePicker">
-  <div class="form-group">
-    <label class="control-label">
-      Embargo End Date
-    </label>
-    <input type="text" class="form-control"
-           data-bind="datePicker: {value: $root.pikaday, valid: $root.embargoEndDate.isValid}">
-  </div>
-</span>
 <div id="nodesRegister" class="modal fade">
     <div class="modal-dialog modal-md">
         <div style="display: none;" data-bind="visible: true">
@@ -107,12 +87,3 @@
         </div>
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-
-<em class="text-danger" data-bind="validationMessage: $root.embargoEndDate"></em>
-<div class="modal-footer">
-  <button class="btn btn-default" data-bind="click: close">Cancel</button>
-  <button class="btn btn-success" data-bind="click: register, enable: canRegister">
-    Submit
-  </button>
-</div>
-</script>

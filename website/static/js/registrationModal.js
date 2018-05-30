@@ -21,7 +21,6 @@ var MAKE_EMBARGO = {
 };
 
 var RegistrationViewModel = function(confirm, prompts, validator) {
-
     var self = this;
 
 
