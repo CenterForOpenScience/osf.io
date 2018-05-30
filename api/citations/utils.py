@@ -9,7 +9,7 @@ from citeproc.source.json import CiteProcJSON
 
 from framework.exceptions import HTTPError
 from framework.auth import utils
-from osf.models import PreprintService
+from osf.models import PreprintService, CitationStyle
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
@@ -87,7 +87,17 @@ def render_citation(node, style='apa'):
 
     custom = CUSTOM_CITATIONS.get(style, False)
     path = os.path.join(BASE_PATH, 'static', custom) if custom else os.path.join(CITATION_STYLES_PATH, style)
-    bib_style = CitationStylesStyle(path, validate=False)
+
+    try:
+        bib_style = CitationStylesStyle(path, validate=False)
+    except ValueError:
+        citation_style = CitationStyle.load(style)
+        if citation_style is not None and citation_style.has_parent_style:
+            parent_style = citation_style.parent_style
+            parent_path = os.path.join(CITATION_STYLES_PATH, parent_style)
+            bib_style = CitationStylesStyle(parent_path, validate=False)
+        else:
+            raise ValueError('Unable to find a dependent or independent parent style related to {}.csl'.format(style))
 
     bibliography = CitationStylesBibliography(bib_style, bib_source, formatter.plain)
 

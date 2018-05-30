@@ -1,6 +1,5 @@
 import os
 import json
-from nose.tools import *
 
 from api.citations.utils import render_citation
 from osf_tests.factories import UserFactory
