@@ -76,10 +76,24 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
+def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None):
+    if not request:
+        # for backwards compat with existing get_object_or_error usages
+        raise TypeError('request is a required argument')
+
     obj = query = None
+    model_cls = model_or_qs
     select_for_update = check_select_for_update(request)
-    if isinstance(query_or_pk, basestring):
+
+    if isinstance(model_or_qs, QuerySet):
+        # they passed a queryset
+        model_cls = model_or_qs.model
+        try:
+            obj = model_or_qs.select_for_update().get() if select_for_update else model_or_qs.get()
+        except model_cls.DoesNotExist:
+            raise NotFound
+
+    elif isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name

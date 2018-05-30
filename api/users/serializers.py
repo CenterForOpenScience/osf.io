@@ -90,6 +90,12 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
+    default_region = RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
+        read_only=True
+    )
+
     class Meta:
         type_ = 'users'
 

@@ -412,6 +412,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.merged_by is not None
 
     @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        user_settings = self.get_addon('osfstorage')
+        return Region.objects.get(id=user_settings.default_region_id)
+
+    @property
     def unconfirmed_emails(self):
         # Handle when email_verifications field is None
         email_verifications = self.email_verifications or {}
