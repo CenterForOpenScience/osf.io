@@ -9,7 +9,7 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer,
-                                  HideIfWikiDisabled)
+                                  HideIfWikiDisabled, ShowIfAdminScope)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -212,6 +212,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
+    analytics_key = ShowIfAdminScope(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '

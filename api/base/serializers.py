@@ -135,6 +135,13 @@ class ShowIfCurrentUser(ConditionalField):
         return request and request.user == instance
 
 
+class ShowIfAdminScope(ConditionalField):
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        return request and utils.has_admin_scope(request)
+
+
 class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
