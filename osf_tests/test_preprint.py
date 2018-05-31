@@ -1371,6 +1371,38 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.reload()
         assert_true(self.preprint.is_published)
 
+    @assert_preprint_logs(PreprintLog.SUPPLEMENTAL_NODE_ADDED, 'preprint')
+    def test_set_supplemental_node(self):
+        assert_false(self.preprint.is_published)
+        project = ProjectFactory(creator=self.preprint.creator)
+        self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
+        self.preprint.reload()
+        assert self.preprint.node == project
+
+    def test_set_supplemental_node_deleted(self):
+        project = ProjectFactory(creator=self.preprint.creator)
+        with assert_raises(ValueError):
+            project.is_deleted= True
+            project.save()
+            self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
+
+    def test_set_supplemental_node_preprint_permissions(self):
+        project = ProjectFactory(creator=self.preprint.creator)
+        with assert_raises(PermissionsError):
+            user = AuthUserFactory()
+            auth = Auth(user=user)
+            self.preprint.set_supplemental_node(project, auth=auth, save=True)
+
+    def test_set_supplemental_node_node_permissions(self):
+        with assert_raises(PermissionsError):
+            project_two = ProjectFactory()
+            self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)
+
+    def test_set_supplemental_node_already_has_a_preprint(self):
+        with assert_raises(ValueError):
+            project_two = ProjectFactory(creator=self.preprint.creator)
+            preprint = PreprintFactory(project=project_two, provider=self.preprint.provider)
+            self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)
 
     def test_preprint_made_public(self):
         # Testing for migrated preprints, that may have had is_public = False
@@ -1407,11 +1439,11 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(AttributeError):
             self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
 
-    def test_deleted_file_creates_orphan(self):
+    def test_removing_primary_file_creates_orphan(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_false(self.preprint.is_preprint_orphan)
-        self.file.is_deleted = True
-        self.file.save()
+        self.preprint.primary_file = None
+        self.preprint.save()
         assert_true(self.preprint.is_preprint_orphan)
 
     def test_preprint_created_date(self):

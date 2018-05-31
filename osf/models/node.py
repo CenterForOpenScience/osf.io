@@ -451,6 +451,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
     @property
+    def is_supplemental_node_for_preprint(self):
+        return self.preprints.filter(
+            is_published=True,
+            is_public=True,
+            deleted__isnull=True,
+            primary_file__isnull=False,
+            primary_file__deleted_on__isnull=True).exclude(machine_state='DefaultStates.INITIAL.value').exists()
+
+    @property
     def has_submitted_preprint(self):
         return self.preprints.exclude(machine_state=DefaultStates.INITIAL.value).exists()
 

@@ -37,8 +37,8 @@
             <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
         </p>
         <p>
-            If you have been erroneously associated with "${reviewable.title}", then you may visit the ${reviewable.provider.preprint_word}'s
-            "Contributors" page and remove yourself as a contributor.
+            If you have been erroneously associated with "${reviewable.title}", then you may visit the ${reviewable.provider.preprint_word}
+            and remove yourself as a contributor.
         </p>
         <p>
             For more information about ${reviewable.provider.name}, visit

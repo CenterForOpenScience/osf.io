@@ -119,8 +119,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'description': preprint.description or '',
         'is_deleted': (
             not preprint.verified_publishable or
-            preprint.tags.filter(name='qatest').exists() or
-            (preprint.deleted or False)
+            preprint.tags.filter(name='qatest').exists()
         ),
         'date_updated': preprint.modified.isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
@@ -193,6 +192,4 @@ def send_desk_share_preprint_error(preprint, resp, retries):
         preprint=preprint,
         resp=resp,
         retries=retries,
-        can_change_preferences=False,
-        logo=settings.OSF_PREPRINTS_LOGO
     )

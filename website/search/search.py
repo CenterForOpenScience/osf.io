@@ -46,7 +46,6 @@ def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
 
 @requires_search
 def update_preprint(preprint, index=None, bulk=False, async=True, saved_fields=None):
-    # TODO UPDATE THIS TO MAKE PREPRINT SPECIFIC
     kwargs = {
         'index': index,
         'bulk': bulk
@@ -76,8 +75,6 @@ def delete_node(node, index=None):
     doc_type = node.project_or_component
     if node.is_registration:
         doc_type = 'registration'
-    elif node.is_preprint:
-        doc_type = 'preprint'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
 @requires_search

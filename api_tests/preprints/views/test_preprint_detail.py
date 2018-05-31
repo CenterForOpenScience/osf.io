@@ -309,7 +309,7 @@ class TestPreprintUpdate:
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 409
+        assert res.status_code == 400
         assert 'Only one preprint per provider can be submitted for a node' in res.json['errors'][0]['detail']
         preprint.reload()
         assert preprint.node is None

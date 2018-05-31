@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import urlparse
 import logging
 import re
@@ -14,7 +13,6 @@ from django.core.exceptions import ValidationError
 
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.analytics import increment_user_activity_counters
 
@@ -30,19 +28,19 @@ from osf.utils import sanitize
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
-from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
+from website.preprints.tasks import on_preprint_updated
 from website.project import signals as project_signals
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
-from website.identifiers.tasks import update_ezid_metadata_on_change
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
 from addons.osfstorage.mixins import UploadMixin
-from addons.osfstorage.models import OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFolder, Region
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 from framework.auth.core import get_user
 from framework.sentry import log_exception
@@ -100,6 +98,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     # For legacy preprints
     migrated = NonNaiveDateTimeField(null=True, blank=True)
+    region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.CASCADE)
     groups = {
         'read': ('read_preprint',),
         'write': ('read_preprint', 'write_preprint',),
@@ -380,8 +379,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 save=False,
             )
 
-            # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
             self._send_preprint_confirmation(auth)
 
         if save:
@@ -424,7 +421,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.on_update(first_save, saved_fields)
 
         if first_save:
+            self._set_default_region()
             self.update_group_permissions()
+
             self.add_log(
                 action=PreprintLog.CREATED,
                 params={
@@ -434,8 +433,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 save=False,
             )
             self._add_creator_as_contributor()
-
         return ret
+
+    def _set_default_region(self):
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        self.region = default_region
+        self.save()
 
     def _add_creator_as_contributor(self):
         self.add_contributor(self.creator, permission='admin', visible=True, log=False, save=True)
@@ -534,6 +537,35 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 self.save()
             self.update_search()
             return True
+
+    def set_supplemental_node(self, node, auth, save=False):
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('You must have write permissions to set a supplemental node.')
+
+        if not node.has_permission(auth.user, 'write'):
+            raise PermissionsError('You must have write permissions on the supplemental node to attach.')
+
+        node_preprints = node.preprints.filter(provider=self.provider)
+        if node_preprints.exists():
+            raise ValueError('Only one preprint per provider can be submitted for a node. Check preprint `{}`.'.format(node_preprints.first()._id))
+
+        if node.is_deleted:
+            raise ValueError('Cannot attach a deleted project to a preprint.')
+
+        self.node = node
+
+        self.add_log(
+            action=PreprintLog.SUPPLEMENTAL_NODE_ADDED,
+            params={
+                'preprint': self._id,
+                'node': self.node._id,
+            },
+            auth=auth,
+            save=False,
+        )
+
+        if save:
+            self.save()
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
@@ -801,9 +833,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         self.save()
         self.update_search()
-        # send signal to remove this user from project subscriptions
-        if self.is_published:
-            project_signals.contributor_removed.send(self, user=contributor)
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1162,9 +1191,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 if isinstance(v, basestring)
             }
 
-        if self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id))
-
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
@@ -1270,23 +1296,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     def update_search(self):
         from website import search
-
         try:
             search.search.update_preprint(self, bulk=False, async=True)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
-
-    WATERBUTLER_CREDENTIALS = {
-        'storage': {}
-    }
-
-    WATERBUTLER_SETTINGS = {
-        'storage': {
-            'provider': 'filesystem',
-            'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
-        }
-    }
 
     def create_root_folder(self):
         if self.root_folder:
@@ -1299,7 +1313,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     def serialize_waterbutler_settings(self):
         root_folder = self.create_root_folder()
-        return dict(self.WATERBUTLER_SETTINGS, **{
+        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self._id,
             'rootId': root_folder._id,
             'baseUrl': api_url_for(
@@ -1311,7 +1325,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         })
 
     def serialize_waterbutler_credentials(self):
-        return self.WATERBUTLER_CREDENTIALS
+        return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
         user = OSFUser.load(auth['id'])
@@ -1354,11 +1368,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.is_public = False
         else:
             return False
-
-        # Update existing identifiers
-        if self.preprint_doi:
-            doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_ezid_metadata_on_change.s(self._id, status=doi_status))
 
         if log:
             action = PreprintLog.MADE_PUBLIC if permissions == 'public' else PreprintLog.MADE_PRIVATE

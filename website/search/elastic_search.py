@@ -301,8 +301,6 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
-    elif node.is_preprint:
-        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -378,7 +376,6 @@ def serialize_node(node, category):
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
-        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
         for wiki in node.get_wiki_pages_latest():
@@ -409,12 +406,13 @@ def serialize_preprint(preprint, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': preprint.is_public,
+        'published': preprint.verified_publishable,
         'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
         'description': preprint.description,
         'url': preprint.url,
         'date_created': preprint.created,
         'license': serialize_node_license_record(preprint.license),
-        'boost': 2,  # This is for making registered projects less relevant
+        'boost': 2,  # More relevant than a registration
         'extra_search_terms': clean_splitters(preprint.title),
     }
 
@@ -438,12 +436,11 @@ def update_node(node, index=None, bulk=False, async=False):
         else:
             client().index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
 
-
 @requires_search
 def update_preprint(preprint, index=None, bulk=False, async=False):
-    from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q(preprint=preprint)):
+    file_ = preprint.primary_file
+    if file_ and file_.target == preprint:
         update_file(file_, index=index)
 
     is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
@@ -705,8 +702,6 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
     if not category:
         if node.is_registration:
             category = 'registration'
-        elif node.is_preprint:
-            category = 'preprint'
         else:
             category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])

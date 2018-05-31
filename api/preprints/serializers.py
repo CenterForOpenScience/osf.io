@@ -217,17 +217,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
         if 'node' in validated_data:
             node = validated_data.pop('node', None)
-            if not node.has_permission(auth.user, 'admin'):
-                raise exceptions.PermissionDenied
-
-            node_preprints = node.preprints.filter(provider=preprint.provider)
-            if node_preprints.exists():
-                raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
-
-            if node.is_deleted:
-                raise exceptions.ValidationError('Cannot attach a deleted project to a preprint.')
-
-            preprint.node = node
+            self.set_field(preprint.set_supplemental_node, node, auth)
             save_preprint = True
 
         if 'subjects' in validated_data:

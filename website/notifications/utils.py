@@ -2,6 +2,7 @@ import collections
 
 from django.apps import apps
 from django.db.models import Q
+
 from framework.postcommit_tasks.handlers import run_postcommit
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
@@ -58,11 +59,10 @@ def from_subscription_key(key):
 
 @signals.contributor_removed.connect
 def remove_contributor_from_subscriptions(node, user):
-    """ Remove contributor from preprint subscriptions or node subscriptions (unless the user is an
-        admin on any of node's parent projects).
+    """ Remove contributor from node subscriptions unless the user is an
+        admin on any of node's parent projects.
     """
-    Preprint = apps.get_model('osf.Preprint')
-    if isinstance(node, Preprint) or user._id not in node.admin_contributor_ids:
+    if user._id not in node.admin_contributor_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
@@ -91,7 +91,6 @@ def remove_subscription_task(node_id):
 
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.
-
     :param node: Node to separate based on permissions
     :param user_ids: List of ids, will also take and return User instances
     :return: list of subbed, list of removed user ids
@@ -113,7 +112,6 @@ def separate_users(node, user_ids):
 
 def users_to_remove(source_event, source_node, new_node):
     """Find users that do not have permissions on new_node.
-
     :param source_event: such as _file_updated
     :param source_node: Node instance where a subscription currently resides
     :param new_node: Node instance where a sub or new sub will be.
@@ -140,7 +138,6 @@ def users_to_remove(source_event, source_node, new_node):
 
 def move_subscription(remove_users, source_event, source_node, new_event, new_node):
     """Moves subscription from old_node to new_node
-
     :param remove_users: dictionary of lists of users to remove from the subscription
     :param source_event: A specific guid event <guid>_file_updated
     :param source_node: Instance of Node
@@ -175,7 +172,6 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
 def get_configured_projects(user):
     """Filter all user subscriptions for ones that are on parent projects
      and return the node objects.
-
     :param user: OSFUser object
     :return: list of node objects for projects with no parent
     """
@@ -225,19 +221,15 @@ def get_all_user_subscriptions(user, extra=None):
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """ Get all Subscription objects for a node that the user is subscribed to
-
     :param user: OSFUser object
     :param node: Node object
     :param user_subscriptions: all Subscription objects that the user is subscribed to
     :return: list of Subscription objects for a node that the user is subscribed to
     """
-    Preprint = apps.get_model('osf.Preprint')
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    if isinstance(node, Preprint):
-        return user_subscriptions.filter(user__isnull=True, preprint=node)
-    else:
-        return user_subscriptions.filter(user__isnull=True, node=node)
+    return user_subscriptions.filter(user__isnull=True, node=node)
+
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page
@@ -434,15 +426,17 @@ def subscribe_user_to_global_notifications(user):
 
 def subscribe_user_to_notifications(node, user):
     """ Update the notification settings for the creator or contributors
-
     :param user: User to subscribe to notifications
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    Node = apps.get_model('osf.Node')
-    if isinstance(node, Node) and node.is_collection:
+    Preprint = apps.get_model('osf.Preprint')
+    if isinstance(node, Preprint):
+        raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
+
+    if node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
-    if isinstance(node, Node) and node.is_deleted:
+    if node.is_deleted:
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
@@ -460,7 +454,7 @@ def subscribe_user_to_notifications(node, user):
             # If no subscription for component and creator is the user, do not create subscription
             # If no subscription exists for the component, this means that it should adopt its
             # parent's settings
-            if not(isinstance(node, Node) and node and node.parent_node and not subscription and node.creator == user):
+            if not(node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
                     # Need to save here in order to access m2m fields

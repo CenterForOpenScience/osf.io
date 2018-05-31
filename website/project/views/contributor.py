@@ -550,7 +550,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
-        elif node.is_preprint:
+        elif node.is_supplemental_node_for_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
             logo = settings.OSF_PREPRINTS_LOGO
         else:
