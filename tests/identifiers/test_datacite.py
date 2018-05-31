@@ -23,6 +23,7 @@ class MockDataciteClient(object):
     def __init__(self, *arg, **kwargs):
         pass
 
+    url = 'https://mds.fake.datacite.org'
     metadata_get = mock.Mock(return_value=datacite_metadata_response())
     metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/yvzp4)')
 
@@ -39,12 +40,11 @@ class TestDataCiteClient:
 
     @responses.activate
     @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
-    @mock.patch('website.settings.DATACITE_URL', 'https://mds.fake.datacite.org')
     def test_datacite_create_identifiers(self, datacite_client, datacite_node_metadata):
         responses.add(
             responses.Response(
                 responses.POST,
-                settings.DATACITE_URL + '/metadata',
+                MockDataciteClient.url + '/metadata',
                 body='OK',
                 status=200
             )
@@ -56,12 +56,11 @@ class TestDataCiteClient:
 
     @responses.activate
     @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
-    @mock.patch('website.settings.DATACITE_URL', 'https://mds.fake.datacite.org')
     def test_datacite_change_status_identifier(self, datacite_client, datacite_node_metadata):
         responses.add(
             responses.Response(
                 responses.POST,
-                settings.DATACITE_URL + '/metadata',
+                MockDataciteClient.url + '/metadata',
                 body='OK',
                 status=200
             )
@@ -81,20 +80,20 @@ class TestDataCiteClient:
         root = lxml.etree.fromstring(metadata_xml, parser=parser)
         xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
         expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
-        assert_equal(root.attrib[xsi_location], expected_location)
+        assert root.attrib[xsi_location] == expected_location
 
         identifier = root.find('{%s}identifier' % schema40.ns[None])
-        assert_equal(identifier.attrib['identifierType'], 'DOI')
-        assert_equal(identifier.text, settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id))
+        assert identifier.attrib['identifierType'] == 'DOI'
+        assert identifier.text == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
 
         creators = root.find('{%s}creators' % schema40.ns[None])
-        assert_equal(len(creators.getchildren()), len(registration.visible_contributors))
+        assert len(creators.getchildren()) == len(registration.visible_contributors)
 
         publisher = root.find('{%s}publisher' % schema40.ns[None])
-        assert_equal(publisher.text, 'Open Science Framework')
+        assert publisher.text == 'Open Science Framework'
 
         pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
-        assert_equal(pub_year.text, str(registration.registered_date.year))
+        assert pub_year.text == str(registration.registered_date.year)
 
     def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
         visible_contrib = AuthUserFactory()
@@ -115,12 +114,12 @@ class TestDataCiteClient:
 
         metadata_xml = datacite_client.build_metadata(registration)
         # includes visible contrib name
-        assert_in(u'<givenName>{}</givenName>'.format(visible_contrib.given_name), metadata_xml)
-        assert_in(u'<familyName>{}</familyName>'.format(visible_contrib.family_name), metadata_xml)
+        assert u'<givenName>{}</givenName>'.format(visible_contrib.given_name) in metadata_xml
+        assert u'<familyName>{}</familyName>'.format(visible_contrib.family_name) in metadata_xml
 
         # doesn't include invisible contrib name
-        assert_not_in(u'<givenName>{}</givenName>'.format(invisible_contrib.given_name), metadata_xml)
-        assert_not_in(u'<familyName>{}</familyName>'.format(invisible_contrib.family_name), metadata_xml)
+        assert u'<givenName>{}</givenName>'.format(invisible_contrib.given_name) not in metadata_xml
+        assert u'<familyName>{}</familyName>'.format(invisible_contrib.family_name) not in metadata_xml
 
 
 @pytest.mark.django_db
@@ -149,12 +148,8 @@ class TestDataCiteViews(OsfTestCase):
             auth=self.user.auth,
         )
         self.node.reload()
-        assert_equal(
-            res.json['doi'],
-            self.node.get_identifier_value('doi')
-        )
-
-        assert_equal(res.status_code, 201)
+        assert res.json['doi'] == self.node.get_identifier_value('doi')
+        assert res.status_code == 201
 
     @responses.activate
     @mock.patch('website.identifiers.utils.get_doi_client', return_value=DataCiteClient())
@@ -169,7 +164,7 @@ class TestDataCiteViews(OsfTestCase):
             ),
         )
 
-        assert_equal(res_doi.status_code, 302)
+        assert res_doi.status_code == 302
         assert_urls_equal(res_doi.headers['Location'], self.node.absolute_url)
 
     @responses.activate
@@ -184,6 +179,4 @@ class TestDataCiteViews(OsfTestCase):
             ),
             expect_errors=True,
         )
-        assert_equal(res.status_code, 404)
-
-
+        assert res.status_code == 404
