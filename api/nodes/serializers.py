@@ -75,6 +75,12 @@ def update_institutions(node, new_institutions, user, post=False):
         node.add_affiliated_institution(inst, user)
 
 
+class RegionRelationshipField(RelationshipField):
+
+    def to_internal_value(self, data):
+        return {'region': data}
+
+
 class NodeTagField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
@@ -319,10 +325,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     ))
 
-    region = RelationshipField(
+    region = RegionRelationshipField(
         related_view='regions:region-detail',
-        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
-        read_only=True
+        related_view_kwargs={'region_id': 'get_region_id'},
+        read_only=False
     )
 
     affiliated_institutions = RelationshipField(
@@ -473,14 +479,27 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'node': node_comments
         }
 
+    def get_region_id(self, obj):
+        try:
+            # use the annotated valud if possible
+            region = obj.region
+        except AttributeError:
+            # use computed property if region annotation does not exist
+            # i.e. after creating a node
+            region = obj.osfstorage_region
+        return region._id
+
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
         Node = apps.get_model('osf.Node')
         tag_instances = []
         affiliated_institutions = None
+        region_id = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
+        if 'region' in validated_data:
+            region_id = validated_data.pop('region')
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -530,11 +549,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             node.subjects.add(parent.subjects.all())
             node.save()
 
-        region_id = self.context.get('region_id')
+        if not region_id:
+            region_id = self.context.get('region_id')
         if region_id:
             node_settings = node.get_addon('osfstorage')
-            node_settings.region_id = region_id
-            node_settings.save()
+            node_settings.set_region(region_id)
 
         return node
 
@@ -550,6 +569,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if 'tags' in validated_data:
                 new_tags = set(validated_data.pop('tags', []))
                 node.update_tags(new_tags, auth=auth)
+            if 'region' in validated_data:
+                validated_data.pop('region')
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
                 validated_data['node_license'] = license_details

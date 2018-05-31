@@ -5,7 +5,7 @@ import urlparse
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Exists, Q
+from django.db.models import OuterRef, Exists, Q, QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -140,7 +140,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
 
 def default_node_list_queryset(model_cls):
     assert model_cls in {Node, Registration}
-    return model_cls.objects.filter(is_deleted=False)
+    return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
@@ -153,7 +153,8 @@ def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
-    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
+    qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
+    return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)

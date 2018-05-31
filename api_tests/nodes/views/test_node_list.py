@@ -1220,6 +1220,25 @@ class TestNodeCreate:
             new_component.contributors
         ) == len(parent_project.contributors)
 
+    def test_create_project_with_region_relationship(
+            self, app, user_one, region, private_project, url):
+        private_project['data']['relationships'] = {
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        project = AbstractNode.load(res.json['data']['id'])
+
+        node_settings = project.get_addon('osfstorage')
+        assert node_settings.region_id == region.id
+
     def test_create_project_with_region_query_param(
             self, app, user_one, region, private_project, url_with_region_query_param):
         res = app.post_json_api(

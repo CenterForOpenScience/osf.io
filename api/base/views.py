@@ -3,6 +3,7 @@ from collections import defaultdict
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
+from django.db.models import F
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -524,7 +525,15 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return (
+            self.get_node().linked_nodes
+            .filter(is_deleted=False)
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
+            .exclude(region=None)
+            .exclude(type='osf.collection', region=None)
+            .can_view(user=auth.user, private_link=auth.private_link)
+            .order_by('-modified')
+        )
 
 
 class WaterButlerMixin(object):
