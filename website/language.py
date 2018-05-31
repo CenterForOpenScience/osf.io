@@ -16,6 +16,43 @@ WELCOME_MESSAGE = '''
 <p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 '''
 
+TERMS_OF_SERVICE = """
+<div style="text-align: center">
+    <div>
+        <h4>We've updated our <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>. Please read them carefully.</h4>
+        <h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
+    </div>
+    <button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
+</div>
+<script>
+    $('#accept').on('change', function() {{
+        $('#continue').prop('disabled', !$('#accept').prop('checked'));
+    }});
+
+    $('#continue').on('click', function() {{
+        var accepted = $('#accept').prop('checked');
+        $.ajax({{
+            url: '{}v2/users/me/',
+            type: 'PATCH',
+            contentType: 'application/json',
+            xhrFields: {{
+                withCredentials: true
+            }},
+            data: JSON.stringify({{
+                'data': {{
+                    'id': '{}',
+                    'type': 'users',
+                    'attributes': {{
+                        'accepted_terms_of_service': accepted
+                    }}
+                }}
+            }})
+        }});
+    }});
+
+</script>
+"""
+
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address.'''
@@ -104,10 +141,11 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your registration, but the projects that they link to will not be '
-    u'registered. If you wish to register the linked projects, you must fork '
-    u'them from the original project before registering.'
+    u'This {category} contains links to other projects. These links will be '
+    u'copied into your registration, but the projects that they link to will '
+    u'not be registered. If you wish to register the linked projects, they '
+    u'must be registered separately. Learn more about <a href="http://help.osf.io'
+    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (

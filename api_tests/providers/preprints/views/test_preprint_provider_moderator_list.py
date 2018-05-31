@@ -2,7 +2,7 @@ import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -18,9 +18,10 @@ class TestPreprintProviderModeratorList:
         GroupHelper(pp).update_provider_auth_groups()
         return pp
 
-    @pytest.fixture()
-    def url(self, provider):
-        return '/{}preprint_providers/{}/moderators/'.format(API_BASE, provider._id)
+    @pytest.fixture(params=['/{}preprint_providers/{}/moderators/', '/{}providers/preprints/{}/moderators/'])
+    def url(self, provider, request):
+        url = request.param
+        return url.format(API_BASE, provider._id)
 
     @pytest.fixture()
     def admin(self, provider):
@@ -109,6 +110,23 @@ class TestPreprintProviderModeratorList:
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
         assert mock_mail.call_count == 0
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_list_post_admin_failure_unreg_moderator(self, mock_mail, app, url, moderator, nonmoderator, admin, provider):
+        unreg_user = {'full_name': 'Son Goku', 'email': 'goku@dragonball.org'}
+        # test_user_with_no_moderator_admin_permissions
+        payload = self.create_payload(permission_group='moderator', **unreg_user)
+        res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert mock_mail.assert_not_called()
+
+        # test_user_with_moderator_admin_permissions
+        payload = self.create_payload(permission_group='moderator', **unreg_user)
+        res = app.post_json_api(url, payload, auth=admin.auth)
+
+        assert res.status_code == 201
+        assert mock_mail.assert_called_once()
+        assert mock_mail.call_args[0][0] == unreg_user['email']
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_list_post_admin_failure_invalid_group(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):

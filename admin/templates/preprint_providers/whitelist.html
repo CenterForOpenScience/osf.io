@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>Whitelist of SHARE Preprint Providers</title>
+{% endblock title %}
+{% block content %}
+    <h2 data-bind="text: pageTitle()"></h2>
+    <!-- ko if: isLoading() -->
+        <a>Loading...</a>
+    <!-- /ko -->
+
+    <!-- ko ifnot: isLoading() -->
+        <a data-bind="click: switchPage, text: linkText"></a>
+        <div data-bind="ifnot: isDetailPage">
+            <button type="submit" data-bind="click: submit">Add</button>
+            <div id="sharePreprintProviders">
+                <ul data-bind="foreach: preprintProviders">
+                    <li>
+                        <input type="checkbox" data-bind="value: name, checked: $parent.providersAdded">
+                        <span data-bind="text: name"></span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div data-bind="if: isDetailPage">
+            <div id="sharePreprintProviders">
+                <ul data-bind="foreach: providersWhitelisted">
+                    <li>
+                        <input type="checkbox" data-bind="value: name, checked: $parent.providersRemoved">
+                        <span data-bind="text: name"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <input type="submit" value="Delete" id="delete_button" data-bind="click:submit, visible: providersRemoved().length > 0" class="btn btn-danger"/>
+        </div>
+    <!-- /ko -->
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'whitelist-page' %}
+    {% csrf_token %}
+    <script>
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        window.templateVars = {
+            "shareApiUrl" : "{{ share_api_url }}",
+            "apiV2Url" : "{{ api_v2_url }}"
+        }
+    </script>
+{% endblock %}

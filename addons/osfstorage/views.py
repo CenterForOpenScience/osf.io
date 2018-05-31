@@ -168,7 +168,7 @@ def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
     user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
-    user_pk = OSFUser.objects.filter(guids___id=user_id).values_list('pk', flat=True).get()
+    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''

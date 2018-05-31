@@ -17,7 +17,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, PreprintService
+from osf.models import AbstractNode, OSFUser, PreprintService, PreprintProvider
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
@@ -183,7 +183,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
         # Add unclaimed record if necessary
         if not contributor.is_registered:
-            contributor.add_unclaimed_record(node=node, referrer=auth.user,
+            contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
             contributor.save()
@@ -765,7 +765,7 @@ def claim_user_form(auth, **kwargs):
                     'account on the project to which you were invited.'
                 ))
 
-            user.register(username=username, password=password)
+            user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
             # Clear unclaimed records
             user.unclaimed_records = {}
             user.verification_key = generate_verification_key()
@@ -773,8 +773,15 @@ def claim_user_form(auth, **kwargs):
             # Authenticate user and redirect to project page
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
+            provider = PreprintProvider.load(pid)
+            redirect_url = None
+            if provider:
+                redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
+            else:
+                redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
+
             return redirect(cas.get_login_url(
-                web_url_for('resolve_guid', guid=pid, _absolute=True),
+                redirect_url,
                 username=user.username,
                 verification_key=user.verification_key
             ))
@@ -813,10 +820,7 @@ def invite_contributor_post(node, **kwargs):
     # Check if email is in the database
     user = get_user(email=email)
     if user:
-        if user.is_registered:
-            msg = 'User is already in database. Please go back and try your search again.'
-            return {'status': 400, 'message': msg}, 400
-        elif node.is_contributor(user):
+        if node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         elif not user.is_confirmed:

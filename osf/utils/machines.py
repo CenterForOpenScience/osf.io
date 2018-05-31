@@ -1,7 +1,7 @@
 from django.utils import timezone
 from transitions import Machine
 
-from api.preprint_providers.workflows import Workflows
+from api.providers.workflows import Workflows
 from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
@@ -110,6 +110,7 @@ class ReviewsMachine(BaseMachine):
         )
         recipients = list(self.machineable.node.contributors)
         reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
+        reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
 
     def notify_resubmit(self, ev):
         context = self.get_context()

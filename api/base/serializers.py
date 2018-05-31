@@ -797,6 +797,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return relationship
 
 
+class TypedRelationshipField(RelationshipField):
+    """ Overrides get_url to inject a typed namespace.
+
+        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+    """
+
+    def get_url(self, obj, view_name, request, format):
+        if len(view_name.split(':')) == 2:
+            untyped_view = view_name
+            view_parts = view_name.split(':')
+            try:
+                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
+            except AttributeError:
+                # List Serializer, use the child's type
+                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            self.view_name = view_name = ':'.join(view_parts)
+            for k, v in self.views.items():
+                if v == untyped_view:
+                    self.views[k] = view_name
+        return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
+
+
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':

@@ -99,6 +99,7 @@ def render_citation(node, style='apa'):
     cit = unicode(bib[0] if len(bib) else '')
 
     title = csl['title'] if csl else node.csl['title']
+    title = title.rstrip('.')
     if cit.count(title) == 1:
         i = cit.index(title)
         prefix = clean_up_common_errors(cit[0:i])
@@ -121,7 +122,6 @@ def render_citation(node, style='apa'):
 
     return cit
 
-
 def apa_reformat(node, cit):
     new_csl = cit.split('(')
     contributors_list = list(node.visible_contributors)
@@ -142,8 +142,8 @@ def apa_reformat(node, cit):
         new_apa += ' & ' + last_one
     # handle 8 or more contributors
     else:
-        name_list = [apa_name(process_name(node, x)) for x in contributors_list[:5]]
-        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[-1]))
+        name_list = [apa_name(process_name(node, x)) for x in contributors_list[:6]]
+        new_apa = ' '.join(name_list) + ' \xe2\x80\xa6 '.decode('utf-8') + apa_name(process_name(node, contributors_list[-1]))
 
     cit = new_apa.rstrip(', ') + ' '
     for x in new_csl[1:]:
@@ -158,7 +158,7 @@ def apa_name(name):
     if name['given_name']:
         apa += ' ' + name['given_name'][0] + '.'
         if name['middle_names']:
-            apa += ' ' + name['middle_names'][0] + '.'
+            apa += middle_name_splitter(name['middle_names'], add_periods=True)
         apa += ','
     if name['suffix']:
         apa += ' ' + name['suffix'] + ','
@@ -168,7 +168,8 @@ def apa_name(name):
 def mla_reformat(node, cit):
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
-    retrive_from = cit.split('Open')[-1]
+    cit = remove_extra_period_after_right_quotation(cit)
+    cit_minus_authors = cit.split('.', 1)[1]
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
@@ -176,8 +177,8 @@ def mla_reformat(node, cit):
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True).rstrip(' ')
-    # handle more than one contributor  but less than 5 contributors
+        new_mla = mla_name(name, initial=True).rstrip(' ')[:-1]
+    # handle more than one contributor but less than 5 contributors
     elif contributors_list_length in range(1, 5):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
         rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
@@ -186,18 +187,21 @@ def mla_reformat(node, cit):
             rest_part = ', '.join(rest_ones)
             new_mla = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one
         else:
-            new_mla = first_one + 'and ' + last_one
+            new_mla = first_one + ' and ' + last_one
     # handle 5 or more contributors
     else:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True) + ' et al. '
+        new_mla = mla_name(name, initial=True)[:-1] + ' et al.'
 
-    cit = new_mla
-    cit += u' \u201c' + node.title.title() + u'.\u201d Open' + retrive_from
-    return cit
+    if new_mla[-1] != '.':
+        new_mla = new_mla + '.'
+    return new_mla + cit_minus_authors
 
+def remove_extra_period_after_right_quotation(cit):
+    return cit.encode('utf-8').replace('\xe2\x80\x9d.', '\xe2\x80\x9d').decode('utf-8')
 
 def chicago_reformat(node, cit):
+    cit = remove_extra_period_after_right_quotation(cit)
     new_csl = cit.split('20')
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
@@ -208,7 +212,7 @@ def chicago_reformat(node, cit):
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
-        new_chi = mla_name(name, initial=True) + ' '
+        new_chi = mla_name(name, initial=True)[:-1] + '. '
     # handle more than one contributor  but less than 11 contributors
     elif contributors_list_length in range(1, 11):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
@@ -216,9 +220,10 @@ def chicago_reformat(node, cit):
         last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
-            new_chi = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one + ' '
+            new_chi = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one + '. '
         else:
-            new_chi = first_one + 'and ' + last_one + ' '
+
+            new_chi = first_one[:-1] + ', and ' + last_one + '. '
     # handle 11 or more contributors
     else:
         new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
@@ -241,7 +246,7 @@ def mla_name(name, initial=False):
         if name['given_name']:
             mla += ' ' + name['given_name']
             if name['middle_names']:
-                mla += ' ' + name['middle_names'][0] + '.'
+                mla += middle_name_splitter(name['middle_names'])
             mla += ','
         if name['suffix']:
             mla += ' ' + name['suffix']
@@ -250,9 +255,20 @@ def mla_name(name, initial=False):
         if name['given_name']:
             mla += name['given_name']
             if name['middle_names']:
-                mla += ' ' + name['middle_names'][0]
+                mla += middle_name_splitter(name['middle_names'])
         if name['family_name']:
             mla += ' ' + name['family_name']
         if name['suffix']:
             mla += ' ' + name['suffix']
     return mla
+
+def middle_name_splitter(middle_names, add_periods=False):
+    initials = ''
+    if middle_names:
+        middle_names = middle_names.strip()
+    middle_names_arr = middle_names.split(' ')
+    for name in middle_names_arr:
+        initials += ' ' + name[0]
+        if add_periods:
+            initials += '.'
+    return initials

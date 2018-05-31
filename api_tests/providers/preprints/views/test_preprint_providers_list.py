@@ -9,3 +9,10 @@ class TestReviewProviderFilters(ReviewProviderFilterMixin):
     @pytest.fixture()
     def url(self):
         return '/{}preprint_providers/'.format(API_BASE)
+
+
+class TestReviewProviderFiltersForGeneralizedEndpoint(ReviewProviderFilterMixin):
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}providers/preprints/'.format(API_BASE)
