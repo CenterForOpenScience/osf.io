@@ -1372,9 +1372,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert res.status_code == 201
         assert 'default' == kwargs['email_template']
 
-    @mock.patch('website.project.signals.contributor_added.send')
-    def test_add_contributor_signal_if_preprint(
-            self, mock_send, app, user, user_two, url_project_contribs):
+    def test_add_contributor_signal_preprint_email_disallowed(
+            self, app, user, user_two, url_project_contribs):
         url = '{}?send_email=preprint'.format(url_project_contribs)
         payload = {
             'data': {
@@ -1391,10 +1390,9 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
+        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'preprint is not a valid email preference.'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
@@ -1431,9 +1429,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert res.status_code == 201
         assert 'default' == kwargs['email_template']
 
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_add_unregistered_contributor_signal_if_preprint(
-            self, mock_send, app, user, url_project_contribs):
+    def test_add_unregistered_contributor_signal_preprint_email_disallowed(
+            self, app, user, url_project_contribs):
         url = '{}?send_email=preprint'.format(url_project_contribs)
         payload = {
             'data': {
@@ -1444,10 +1441,9 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
+        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'preprint is not a valid email preference.'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(

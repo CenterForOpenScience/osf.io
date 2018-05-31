@@ -1511,9 +1511,9 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         assert mock_mail.call_count == 0
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_publishing_preprint_sends_emails_to_contributors(
-            self, mock_ezid, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
+            self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
         url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permission='write', save=True)
@@ -1530,7 +1530,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert contributor_added in mock_signal.signals_sent()
-        assert mock_ezid.called
+        assert mock_update.called
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_contributor_added_signal_not_specified(

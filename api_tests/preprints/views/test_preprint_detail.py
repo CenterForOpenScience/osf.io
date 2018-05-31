@@ -168,18 +168,6 @@ class TestPreprintDetail:
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url) in link
 
-    def test_preprint_node_is_public_property_deprecation(self, app, user, preprint, url):
-        preprint.node = ProjectFactory(creator=user, is_public=True)
-        preprint.save()
-
-        res = app.get(url + '?version=2.7', auth=user.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['node_is_public'] is True
-
-        res = app.get(url + '?version=2.8', auth=user.auth)
-        assert res.status_code == 200
-        assert 'node_in_public' not in res.json['data']['attributes']
-
 
 @pytest.mark.django_db
 class TestPreprintDelete:
@@ -309,7 +297,7 @@ class TestPreprintUpdate:
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 409
         assert 'Only one preprint per provider can be submitted for a node' in res.json['errors'][0]['detail']
         preprint.reload()
         assert preprint.node is None
@@ -483,7 +471,7 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.title != new_title
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_update_description_and_title(
             self, mock_preprint_updated, app, user, preprint, url):
         new_title = 'Brother Nero'
@@ -509,8 +497,8 @@ class TestPreprintUpdate:
         assert preprint.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_update_tags(self, mock_on_preprint_updated, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -533,11 +521,11 @@ class TestPreprintUpdate:
                     'name',
                     flat=True))
         ) == new_tags
-        assert mock_update_ezid.called
+        assert mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_update_contributors(
-            self, mock_update_ezid, app, user, preprint, url):
+            self, mock_update_preprint, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
@@ -569,11 +557,12 @@ class TestPreprintUpdate:
         assert new_user in preprint.contributors
         assert preprint.has_permission(new_user, 'write')
         assert PreprintContributor.objects.get(preprint=preprint, user=new_user).visible is True
-        assert mock_update_ezid.called
+        assert mock_update_preprint.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
-
-        #   test_write_contrib_cannot_set_primary_file
+        preprint.node = None
+        preprint.save()
+        #   test_write_contrib_can_attempt_to_set_primary_file
         read_write_contrib = AuthUserFactory()
         preprint.add_contributor(
             read_write_contrib,
@@ -584,7 +573,7 @@ class TestPreprintUpdate:
 
         data = {
             'data': {
-                'type': 'primary_file',
+                'type': 'preprints',
                 'id': preprint._id,
                 'attributes': {},
                 'relationships': {
@@ -602,7 +591,7 @@ class TestPreprintUpdate:
             url, data,
             auth=read_write_contrib.auth,
             expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 200
 
     #   test_noncontrib_cannot_set_primary_file
         non_contrib = AuthUserFactory()
@@ -611,7 +600,7 @@ class TestPreprintUpdate:
 
         data = {
             'data': {
-                'type': 'primary_file',
+                'type': 'preprints',
                 'id': preprint._id,
                 'attributes': {},
                 'relationships': {
@@ -631,10 +620,10 @@ class TestPreprintUpdate:
             expect_errors=True)
         assert res.status_code == 403
 
-    def test_contribs_cannot_set_subjects(
+    def test_write_contribs_can_set_subjects(
             self, app, user, preprint, subject, url):
 
-        # def test_write_contrib_cannot_set_subjects(self, app, user, preprint,
+        # def test_write_contrib_can_set_subjects(self, app, user, preprint,
         # subject, url):
         write_contrib = AuthUserFactory()
         preprint.add_contributor(
@@ -649,6 +638,28 @@ class TestPreprintUpdate:
         res = app.patch_json_api(
             url, update_subjects_payload,
             auth=write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        assert preprint.subjects.filter(_id=subject._id).exists()
+
+    def test_contribs_cannot_set_subjects(
+            self, app, user, preprint, subject, url):
+        # def test_read_contrib_can_set_subjects(self, app, user, preprint,
+        # subject, url):
+        read_contrib = AuthUserFactory()
+        preprint.add_contributor(
+            read_contrib,
+            permission='read',
+            auth=Auth(user), save=True)
+
+        assert not preprint.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = build_preprint_update_payload(
+            preprint._id, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(
+            url, update_subjects_payload,
+            auth=read_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -682,7 +693,8 @@ class TestPreprintUpdate:
 
     def test_update_published_does_not_make_node_public(
             self, app, user):
-        unpublished = PreprintFactory(creator=user, is_published=False)
+        project = ProjectFactory(creator=user)
+        unpublished = PreprintFactory(creator=user, is_published=False, project=project)
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
@@ -694,7 +706,7 @@ class TestPreprintUpdate:
         assert unpublished.node.is_public is False
         assert unpublished.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_update_preprint_task_called_on_api_update(
             self, mock_on_preprint_updated, app, user, preprint, url):
         update_doi_payload = build_preprint_update_payload(
@@ -895,7 +907,7 @@ class TestPreprintUpdateLicense:
             self, write_contrib, read_contrib, non_contrib,
             preprint, cc0_license, url, make_payload, make_request):
 
-        #   test_write_contrib_cannot_update_license
+        #   test_write_contrib_can_update_license
         data = make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
@@ -905,8 +917,10 @@ class TestPreprintUpdateLicense:
             url, data,
             auth=write_contrib.auth,
             expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'User must be an admin to update a preprint.'
+        assert res.status_code == 200
+        preprint.reload()
+
+        assert preprint.license.node_license == cc0_license
 
     #   test_read_contrib_cannot_update_license
         data = make_payload(

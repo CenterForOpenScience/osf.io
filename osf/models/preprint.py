@@ -287,8 +287,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return ret
 
     def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, 'admin'):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
@@ -321,8 +321,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         if not self.root_folder:
             raise PreprintStateError('Preprint needs a root folder.')
 
-        if not self.has_permission(auth.user, 'admin'):
-            raise PermissionsError('Only admins can change a preprint\'s primary file.')
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('Must have admin or write permissions to change a preprint\'s primary file.')
 
         if preprint_file.target != self or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
@@ -1046,6 +1046,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
+
         # Called so validation does not have to wait until save.
         validate_title(title)
 
@@ -1077,6 +1080,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
         """
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
+
         original = self.description
         new_description = sanitize.strip_html(description)
         if original == new_description:
@@ -1122,7 +1128,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         user = user or auth.user
 
         return (
-            (user and self.has_permission(user, 'admin'))
+            (user and self.has_permission(user, 'write'))
         )
 
     # TODO: Remove save parameter
@@ -1357,8 +1363,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
         """
-        if auth and not self.has_permission(auth.user, 'admin'):
-            raise PermissionsError('Must be an admin to change privacy settings.')
+        if auth and not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('Must have admin or write permissions to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
                 # TODO: Should say will review within a certain agreed upon time period.

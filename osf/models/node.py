@@ -481,25 +481,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.preprints.filter(is_published=True)
 
     @property
-    def preprint_url(self):
-        node_linked_preprint = self.linked_preprint
-        if node_linked_preprint:
-            return node_linked_preprint.url
-
-    @property
-    def linked_preprint(self):
-        if self.is_preprint:
-            try:
-                # if multiple preprints per project are supported on the front end this needs to change.
-                published_preprint = self.published_preprints_queryset.first()
-                if published_preprint:
-                    return published_preprint
-                else:
-                    return self.preprints.get_queryset()[0]
-            except IndexError:
-                pass
-
-    @property
     def is_collection(self):
         """For v1 compat"""
         return False

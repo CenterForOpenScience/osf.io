@@ -637,8 +637,6 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_published(is_published, auth=auth)
             create_task_patcher.stop()
 
-        if not instance.is_published:
-            instance._has_abandoned_preprint = True
         instance.save()
         return instance
 

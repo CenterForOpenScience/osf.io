@@ -119,6 +119,10 @@ class FilterMixin(object):
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
+        field = serializer_class._declared_fields[field_name]
+        # You cannot filter on deprecated fields.
+        if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
+            raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):

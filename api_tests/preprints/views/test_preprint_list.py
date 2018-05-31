@@ -386,7 +386,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_true(preprint.is_public)
         assert_true(preprint.is_published)
 
-    def test_non_authorized_user(self):
+    def test_non_authorized_user_on_supplemental_node(self):
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)
         res = self.app.post_json_api(
@@ -397,7 +397,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 403)
 
-    def test_read_write_user_not_admin(self):
+    def test_write_user_on_supplemental_node(self):
         assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)
@@ -406,7 +406,19 @@ class TestPreprintCreate(ApiTestCase):
             public_project_payload,
             auth=self.other_user.auth,
             expect_errors=True)
+        # Users can create a preprint with a supplemental node that they have write perms to
+        assert_equal(res.status_code, 201)
 
+    def test_read_user_on_supplemental_node(self):
+        self.public_project.set_permissions(self.other_user, ['read'], save=True)
+        assert_in(self.other_user, self.public_project.contributors)
+        public_project_payload = build_preprint_create_payload(
+            self.public_project._id, self.provider._id)
+        res = self.app.post_json_api(
+            self.url,
+            public_project_payload,
+            auth=self.other_user.auth,
+            expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_file_is_not_in_node(self):
@@ -455,7 +467,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.other_user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 409)
 
     def test_publish_preprint_fails_with_no_primary_file(self):
         no_file_payload = build_preprint_create_payload(

@@ -9,7 +9,7 @@ import pytz
 from framework.exceptions import PermissionsError
 from website import settings, mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
 from framework.auth import Auth
@@ -78,6 +78,7 @@ class TestPreprint:
         assert preprint.deleted is None
         assert preprint.root_folder is not None
 
+
 class TestPreprintProperties:
     def test_contributors(self, preprint):
         assert len(preprint.contributors) == 1
@@ -100,7 +101,7 @@ class TestPreprintProperties:
     def test_is_preprint_orphan(self, preprint):
         assert preprint.is_preprint_orphan is False
         preprint.primary_file = None
-        preprint.primary_file.save()
+        preprint.save()
         assert preprint.is_preprint_orphan is True
 
     def test_has_submitted_preprint(self, preprint):
@@ -172,14 +173,6 @@ class TestPreprintSubjects:
 
         assert preprint.get_subjects()[0][0]['text'] == subject.text
         assert preprint.get_subjects()[0][0]['id'] == subject._id
-
-    def test_nonadmin_cannot_set_subjects(self, preprint, subject, write_contrib):
-        initial_subjects = list(preprint.subjects.all())
-        with pytest.raises(PermissionsError):
-            preprint.set_subjects([[subject._id]], auth=Auth(write_contrib))
-
-        preprint.reload()
-        assert initial_subjects == list(preprint.subjects.all())
 
     def test_admin_can_set_subjects(self, preprint, subject):
         initial_subjects = list(preprint.subjects.all())
@@ -747,6 +740,7 @@ class TestPermissionMethods:
         preprint.add_contributor(
             contributor=contributor, auth=auth)
         preprint.save()
+        # write contribs can now edit preprints
         assert bool(preprint.can_edit(contributor_auth)) is True
         assert bool(preprint.can_edit(other_guy_auth)) is False
 
@@ -890,14 +884,14 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_check_spam_only_public_preprint_by_default(self, mock_update_ezid, preprint, user):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_check_spam_only_public_preprint_by_default(self, mock_preprint_updated, preprint, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is False
-        assert mock_update_ezid.called
+        assert mock_preprint_updated.called
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_skips_ham_user(self, preprint, user):
@@ -920,8 +914,8 @@ class TestPreprintSpam:
     @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_update_ezid, mock_send_mail, preprint, user):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -945,13 +939,13 @@ class TestPreprintSpam:
                 assert preprint2.is_public is False
                 preprint3.reload()
                 assert preprint3.is_public is True
-        assert mock_update_ezid.called
+        assert mock_preprint_updated.called
 
     @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_update_ezid, mock_send_mail, preprint, user):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -961,33 +955,36 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is True
                 assert preprint.is_public is True
 
-        assert mock_update_ezid.called
+        assert mock_preprint_updated.called
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_flag_spam_make_preprint_private(self, mock_update_ezid, preprint):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_flag_spam_make_preprint_private(self, mock_preprint_updated, preprint):
         assert preprint.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             preprint.flag_spam()
+            preprint.save()
         assert preprint.is_spammy
         assert preprint.is_public is False
 
-        assert mock_update_ezid.called
+        assert mock_preprint_updated.called
 
-    def test_flag_spam_do_not_make_preprint_private(self, preprint):
+    def test_flag_spam_do_not_make_preprint_private(self,  preprint):
         assert preprint.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
             preprint.flag_spam()
+            preprint.save()
         assert preprint.is_spammy
         assert preprint.is_public
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_confirm_spam_makes_preprint_private(self, mock_update_ezid, preprint):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_confirm_spam_makes_preprint_private(self, mock_preprint_updated, preprint):
         assert preprint.is_public
         preprint.confirm_spam()
+        preprint.save()
         assert preprint.is_spammy
         assert preprint.is_public is False
 
-        assert mock_update_ezid.called
+        assert mock_preprint_updated.called
 
 
 # copied from tests/test_models.py
@@ -1386,18 +1383,6 @@ class TestSetPreprintFile(OsfTestCase):
             project.save()
             self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
 
-    def test_set_supplemental_node_preprint_permissions(self):
-        project = ProjectFactory(creator=self.preprint.creator)
-        with assert_raises(PermissionsError):
-            user = AuthUserFactory()
-            auth = Auth(user=user)
-            self.preprint.set_supplemental_node(project, auth=auth, save=True)
-
-    def test_set_supplemental_node_node_permissions(self):
-        with assert_raises(PermissionsError):
-            project_two = ProjectFactory()
-            self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)
-
     def test_set_supplemental_node_already_has_a_preprint(self):
         with assert_raises(ValueError):
             project_two = ProjectFactory(creator=self.preprint.creator)
@@ -1466,41 +1451,41 @@ class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
         super(TestPreprintPermissions, self).setUp()
         self.user = AuthUserFactory()
+        self.noncontrib = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
+        self.read_contrib = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.preprint = PreprintFactory(project=self.project, is_published=False, creator=self.user)
         self.preprint.add_contributor(self.write_contrib, permission=WRITE)
+        self.preprint.add_contributor(self.read_contrib, permission=READ)
 
-    def test_nonadmin_cannot_set_subjects(self):
-        initial_subjects = list(self.preprint.subjects.all())
-        with assert_raises(PermissionsError):
-            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib))
-
-        self.preprint.reload()
-        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
-
-    def test_nonadmin_cannot_set_file(self):
-        initial_file = self.preprint.primary_file
-        file = OsfStorageFile.create(
+        self.file = OsfStorageFile.create(
             target=self.preprint,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
-        file.save()
+        self.file.save()
 
+    def test_noncontrib_cannot_set_subjects(self):
+        initial_subjects = list(self.preprint.subjects.all())
         with assert_raises(PermissionsError):
-            self.preprint.set_primary_file(file, auth=Auth(self.write_contrib), save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.noncontrib))
+        self.preprint.reload()
+        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
+
+    def test_read_cannot_set_subjects(self):
+        initial_subjects = list(self.preprint.subjects.all())
+        with assert_raises(PermissionsError):
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.read_contrib))
 
         self.preprint.reload()
-        assert_equal(initial_file._id, self.preprint.primary_file._id)
+        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
 
-    def test_nonadmin_cannot_publish(self):
-        assert_false(self.preprint.is_published)
-
-        with assert_raises(PermissionsError):
-            self.preprint.set_published(True, auth=Auth(self.write_contrib), save=True)
-
-        assert_false(self.preprint.is_published)
+    def test_write_can_set_subjects(self):
+        initial_subjects = list(self.preprint.subjects.all())
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib))
+        self.preprint.reload()
+        assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
 
     def test_admin_can_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
@@ -1509,20 +1494,31 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.reload()
         assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
 
+    def test_noncontrib_cannot_set_file(self):
+        initial_file = self.preprint.primary_file
+        with assert_raises(PermissionsError):
+            self.preprint.set_primary_file(self.file, auth=Auth(self.noncontrib), save=True)
+        self.preprint.reload()
+        assert_equal(initial_file._id, self.preprint.primary_file._id)
+
+    def test_read_contrib_cannot_set_file(self):
+        initial_file = self.preprint.primary_file
+        with assert_raises(PermissionsError):
+            self.preprint.set_primary_file(self.file, auth=Auth(self.read_contrib), save=True)
+        self.preprint.reload()
+        assert_equal(initial_file._id, self.preprint.primary_file._id)
+
+    def test_write_contrib_can_set_file(self):
+        initial_file = self.preprint.primary_file
+        self.preprint.set_primary_file(self.file, auth=Auth(self.write_contrib), save=True)
+        self.preprint.reload()
+        assert_equal(self.file._id, self.preprint.primary_file._id)
+
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
-        file = OsfStorageFile.create(
-            target=self.preprint,
-            path='/panda.txt',
-            name='panda.txt',
-            materialized_path='/panda.txt')
-        file.save()
-
-        self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
-
+        self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
         self.preprint.reload()
-        assert_not_equal(initial_file._id, self.preprint.primary_file._id)
-        assert_equal(file._id, self.preprint.primary_file._id)
+        assert_equal(self.file._id, self.preprint.primary_file._id)
 
     def test_primary_file_must_target_preprint(self):
         file = OsfStorageFile.create(
@@ -1534,6 +1530,30 @@ class TestPreprintPermissions(OsfTestCase):
 
         with assert_raises(ValueError):
             self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
+
+    def test_non_admin_cannot_publish(self):
+        assert_false(self.preprint.is_published)
+
+        with assert_raises(PermissionsError):
+            self.preprint.set_published(True, auth=Auth(self.noncontrib), save=True)
+
+        assert_false(self.preprint.is_published)
+
+    def test_read_cannot_publish(self):
+        assert_false(self.preprint.is_published)
+
+        with assert_raises(PermissionsError):
+            self.preprint.set_published(True, auth=Auth(self.read_contrib), save=True)
+
+        assert_false(self.preprint.is_published)
+
+    def test_write_cannot_publish(self):
+        assert_false(self.preprint.is_published)
+
+        with assert_raises(PermissionsError):
+            self.preprint.set_published(True, auth=Auth(self.write_contrib), save=True)
+
+        assert_false(self.preprint.is_published)
 
     def test_admin_can_publish(self):
         assert_false(self.preprint.is_published)
@@ -1553,6 +1573,142 @@ class TestPreprintPermissions(OsfTestCase):
             self.preprint.set_published(False, auth=Auth(self.user), save=True)
 
         assert_in('Cannot unpublish', e.exception.message)
+
+    def test_set_title_permissions(self):
+        original_title = self.preprint.title
+        new_title = 'My new preprint title'
+
+        # noncontrib
+        with assert_raises(PermissionsError):
+            self.preprint.set_title(new_title, auth=Auth(self.noncontrib), save=True)
+        assert_equal(self.preprint.title, original_title)
+
+        # read
+        with assert_raises(PermissionsError):
+            self.preprint.set_title(new_title, auth=Auth(self.read_contrib), save=True)
+        assert_equal(self.preprint.title, original_title)
+
+        # write
+        self.preprint.set_title(new_title, auth=Auth(self.write_contrib), save=True)
+        assert_equal(self.preprint.title, new_title)
+
+        # admin
+        self.preprint.title = original_title
+        self.preprint.save()
+        self.preprint.set_title(new_title, auth=Auth(self.user), save=True)
+        assert_equal(self.preprint.title, new_title)
+
+    def test_set_abstract_permissions(self):
+        original_abstract = self.preprint.description
+        new_abstract = 'This is my preprint abstract'
+
+        # noncontrib
+        with assert_raises(PermissionsError):
+            self.preprint.set_description(new_abstract, auth=Auth(self.noncontrib), save=True)
+        assert_equal(self.preprint.description, original_abstract)
+
+        # read
+        with assert_raises(PermissionsError):
+            self.preprint.set_description(new_abstract, auth=Auth(self.read_contrib), save=True)
+        assert_equal(self.preprint.description, original_abstract)
+
+        # write
+        self.preprint.set_description(new_abstract, auth=Auth(self.write_contrib), save=True)
+        assert_equal(self.preprint.description, new_abstract)
+
+        # admin
+        self.preprint.description = original_abstract
+        self.preprint.save()
+        self.preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
+        assert_equal(self.preprint.description, new_abstract)
+
+    def test_set_privacy(self):
+        # Not currently exposed, but adding is_public field for legacy preprints and spam
+        self.preprint.is_public = False
+        self.preprint.save()
+
+        # noncontrib
+        with assert_raises(PermissionsError):
+            self.preprint.set_privacy('public', auth=Auth(self.noncontrib), save=True)
+        assert_false(self.preprint.is_public)
+
+        # read
+        with assert_raises(PermissionsError):
+            self.preprint.set_privacy('public', auth=Auth(self.read_contrib), save=True)
+        assert_false(self.preprint.is_public)
+
+        # write
+        self.preprint.set_privacy('public', auth=Auth(self.write_contrib), save=True)
+        assert_true(self.preprint.is_public)
+
+        # admin
+        self.preprint.is_public = False
+        self.preprint.save()
+        self.preprint.set_privacy('public', auth=Auth(self.user), save=True)
+        assert_true(self.preprint.is_public)
+
+    def test_set_supplemental_node_project_permissions(self):
+        # contributors have proper permissions on preprint, but not supplementary_node
+        self.preprint.node = None
+        self.preprint.save()
+
+        project = ProjectFactory(creator=self.preprint.creator)
+        project.add_contributor(self.read_contrib, ['read'], save=True)
+        project.add_contributor(self.write_contrib, ['read', 'write'], save=True)
+
+        self.preprint.add_contributor(self.read_contrib, 'admin', save=True)
+        self.preprint.add_contributor(self.write_contrib, 'admin', save=True)
+        self.preprint.add_contributor(self.noncontrib, 'admin', save=True)
+
+        # noncontrib
+        with assert_raises(PermissionsError):
+            self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
+        assert self.preprint.node is None
+
+        # read
+        with assert_raises(PermissionsError):
+            self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
+        assert self.preprint.node is None
+
+        # write
+        self.preprint.set_supplemental_node(project, auth=Auth(self.write_contrib), save=True)
+        assert self.preprint.node == project
+
+        # admin
+        self.preprint.node = None
+        self.preprint.save()
+        self.preprint.set_supplemental_node(project, auth=Auth(self.user), save=True)
+        assert self.preprint.node == project
+
+    def test_set_supplemental_node_preprint_permissions(self):
+        # contributors have proper permissions on the supplementary node, but not the preprint
+        self.preprint.node = None
+        self.preprint.save()
+
+        project = ProjectFactory(creator=self.preprint.creator)
+        project.add_contributor(self.read_contrib, ['read', 'write', 'admin'], save=True)
+        project.add_contributor(self.write_contrib, ['read', 'write', 'admin'], save=True)
+        project.add_contributor(self.noncontrib, ['read', 'write', 'admin'], save=True)
+
+        # noncontrib
+        with assert_raises(PermissionsError):
+            self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
+        assert self.preprint.node is None
+
+        # read
+        with assert_raises(PermissionsError):
+            self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
+        assert self.preprint.node is None
+
+        # write
+        self.preprint.set_supplemental_node(project, auth=Auth(self.write_contrib), save=True)
+        assert self.preprint.node == project
+
+        # admin
+        self.preprint.node = None
+        self.preprint.save()
+        self.preprint.set_supplemental_node(project, auth=Auth(self.user), save=True)
+        assert self.preprint.node == project
 
 
 class TestPreprintProvider(OsfTestCase):

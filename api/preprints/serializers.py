@@ -92,7 +92,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ShowIfVersion(ser.BooleanField(read_only=True, source='node.is_public'), min_version=2.0, max_version=2.7)
+    node_is_public = ShowIfVersion(ser.BooleanField(read_only=True, source='node__is_public'), min_version=2.0, max_version=2.7)
     preprint_doi_created = VersionedDateTimeField(read_only=True)
 
     contributors = RelationshipField(
@@ -181,8 +181,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.has_permission(auth.user, 'admin'):
-            raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+        if not preprint.has_permission(auth.user, 'write'):
+            raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
@@ -275,6 +275,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
         except (ValueError, ValidationError, NodeStateError) as e:
+            if 'Only one preprint per provider can be submitted for a node' in e.message:
+                raise Conflict(e.message)
             raise exceptions.ValidationError(detail=e.message)
 
 

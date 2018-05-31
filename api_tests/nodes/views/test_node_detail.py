@@ -1004,9 +1004,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_ezid_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_set_node_with_preprint_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user,
+    def test_set_node_with_preprint_private(
+            self, app, user,
             project_public, url_public, make_node_payload):
         target_object = PreprintFactory(project=project_public)
 
@@ -1019,9 +1018,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        # Turning project private no longer turns an associated preprint private
-        mock_update_ezid_metadata.assert_called_with(
-            target_object._id, status='public')
+        # Turning supplemental_project private no longer turns preprint private
+        assert target_object.is_public
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects

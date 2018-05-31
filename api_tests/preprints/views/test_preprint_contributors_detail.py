@@ -1195,18 +1195,13 @@ class TestPreprintContributorDelete:
             visible=True,
             save=True)
 
-        # Disconnect contributor_removed so that we don't check in files
-        # We can remove this when StoredFileNode is implemented in
-        # osf-models
-        with disconnected_from_listeners(contributor_removed):
-            res = app.delete(
-                url_user_non_contrib,
-                auth=user_non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'User must be an admin to update a preprint.'
+        res = app.delete(
+            url_user_non_contrib,
+            auth=user_non_contrib.auth)
+        assert res.status_code == 204
 
         preprint.reload()
-        assert user_non_contrib in preprint.contributors
+        assert user_non_contrib not in preprint.contributors
 
     # @assert_logs(PreprintLog.CONTRIB_REMOVED, 'preprint')
     def test_remove_self_contributor_not_unique_admin(
@@ -1216,11 +1211,8 @@ class TestPreprintContributorDelete:
                 user_write_contrib,
                 permissions.ADMIN,
                 save=True)
-            # Disconnect contributor_removed so that we don't check in files
-            # We can remove this when StoredFileNode is implemented in
-            # osf-models
-            with disconnected_from_listeners(contributor_removed):
-                res = app.delete(url_user, auth=user.auth)
+
+            res = app.delete(url_user, auth=user.auth)
             assert res.status_code == 204
 
             preprint.reload()
@@ -1234,13 +1226,10 @@ class TestPreprintContributorDelete:
                 user_write_contrib,
                 permissions.ADMIN,
                 save=True)
-            # Disconnect contributor_removed so that we don't check in files
-            # We can remove this when StoredFileNode is implemented in
-            # osf-models
-            with disconnected_from_listeners(contributor_removed):
-                res = app.delete(
-                    url_user_write_contrib,
-                    auth=user_write_contrib.auth)
+
+            res = app.delete(
+                url_user_write_contrib,
+                auth=user_write_contrib.auth)
             assert res.status_code == 204
 
             preprint.reload()

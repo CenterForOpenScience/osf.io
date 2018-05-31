@@ -32,8 +32,8 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
                 )
                 return user_has_permissions
         else:
-            if not obj.has_permission(auth.user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+            if not obj.has_permission(auth.user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
             return True
 
 
@@ -49,8 +49,15 @@ class ContributorDetailPermissions(PreprintPublishedOrAdmin):
         assert_resource_type(obj, self.acceptable_models)
         context = request.parser_context['kwargs']
         preprint = self.load_resource(context, view)
+        auth = get_user_auth(request)
+        user = OSFUser.load(context['user_id'])
 
-        return super(ContributorDetailPermissions, self).has_object_permission(request, view, preprint)
+        if request.method in permissions.SAFE_METHODS:
+            return super(ContributorDetailPermissions, self).has_object_permission(request, view, preprint)
+        elif request.method == 'DELETE':
+            return preprint.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
+        else:
+            return preprint.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class PreprintIdentifierDetailPermissions(PreprintPublishedOrAdmin):
