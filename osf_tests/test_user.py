@@ -1095,7 +1095,7 @@ class TestTagging:
         tag_name = fake.word()
         user.add_system_tag(tag_name)
 
-        assert tag_name in user.system_tags
+        assert tag_name.lower() in user.system_tags
 
 class TestCitationProperties:
 
