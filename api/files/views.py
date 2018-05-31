@@ -44,8 +44,9 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
-        if obj.node.is_quickfiles and obj.node.creator.is_disabled:
-            raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
+        if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
+            if obj.target.creator.is_disabled:
+                raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
 
         if check_permissions:
             # May raise a permission denied
