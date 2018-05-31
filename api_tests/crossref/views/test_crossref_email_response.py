@@ -97,7 +97,7 @@ class TestCrossRefEmailResponse:
         url = '/{}_/crossref/email/'.format(API_BASE).replace('/v2', '')
         response = app.post(url, mailgun_response, expect_errors=True)
 
-        assert response.status_code == 403
+        assert response.status_code == 400
 
     def test_error_response_sends_message_does_not_set_doi(self, app, preprint, error_xml):
         mailgun_response = self.mailgun_response(error_xml)
