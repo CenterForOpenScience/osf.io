@@ -97,13 +97,13 @@ class TestIdentifierDetail:
         assert data_node['attributes']['value'] == identifier_node.value
 
     def test_identifier_preprint_detail_datacite_doi(self, app, user):
-        """ Make sure dois with the temporary category datacite_doi show up
+        """ Make sure dois with the temporary category legacy_doi show up
         with the category doi for now, until the proper migration happens
         """
         preprint = PreprintFactory(set_doi=False)
         doi_value = '10.123/datacitedoi/woo'
-        preprint.set_identifier_value(category='datacite_doi', value=doi_value)
-        identifier = preprint.identifiers.filter(category='datacite_doi').first()
+        preprint.set_identifier_value(category='legacy_doi', value=doi_value)
+        identifier = preprint.identifiers.filter(category='legacy_doi').first()
         url = '/{}identifiers/{}/'.format(API_BASE, identifier._id)
 
         res = app.get(url, auth=user.auth)

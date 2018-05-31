@@ -170,7 +170,7 @@ class TestIdentifierModel(OsfTestCase):
         node.set_identifier_value('doi', 'FK424601')
         assert_equal(node.csl['DOI'], 'FK424601')
 
-    def test_get_identifier_for_doi_returns_datacite_doi(self):
-        identifier = IdentifierFactory(category='datacite_doi', value='hello')
+    def test_get_identifier_for_doi_returns_legacy_doi(self):
+        identifier = IdentifierFactory(category='legacy_doi', value='hello')
         preprint = identifier.referent
         assert preprint.get_identifier_value('doi') == 'hello'

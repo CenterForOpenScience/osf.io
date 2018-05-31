@@ -24,7 +24,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         type_ = 'identifiers'
 
     def get_category(self, obj):
-        if obj.category == 'datacite_doi':
+        if obj.category == 'legacy_doi':
             return 'doi'
         return obj.category
 

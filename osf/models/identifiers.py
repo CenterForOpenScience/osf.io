@@ -39,7 +39,7 @@ class IdentifierMixin(models.Model):
         content_type = ContentType.objects.get_for_model(self)
         found_identifier = Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type, deleted__isnull=True).first()
         if category == 'doi' and not found_identifier:
-            found_identifier = Identifier.objects.filter(object_id=self.id, category='datacite_doi', content_type=content_type, deleted__isnull=True).first()
+            found_identifier = Identifier.objects.filter(object_id=self.id, category='legacy_doi', content_type=content_type, deleted__isnull=True).first()
         return found_identifier
 
     def get_identifier_value(self, category):
