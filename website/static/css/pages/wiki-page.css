@@ -340,3 +340,8 @@ select.form-control {
     top:50%;
     z-index: 1;
 }
+
+#wikiViewRender > .table {
+    display: inherit;
+    overflow-y: scroll;
+}

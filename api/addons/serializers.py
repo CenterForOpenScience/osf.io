@@ -19,10 +19,11 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        if obj['addon'] in ('s3', 'figshare', ):
+        if obj['addon'] in ('s3', 'figshare', 'github', 'mendeley'):
             # These addons don't currently support linking anything other
             # than top-level objects.
             return
+
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],

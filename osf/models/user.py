@@ -9,6 +9,7 @@ from os.path import splitext
 
 from flask import Request as FlaskRequest
 from framework import analytics
+from guardian.shortcuts import get_perms
 
 # OSF imports
 import itsdangerous
@@ -354,6 +355,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
+
+    # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
+    accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     objects = OSFUserManager()
 
@@ -827,12 +831,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Legacy methods
 
     @classmethod
-    def create(cls, username, password, fullname):
-        validate_email(username)  # Raises ValidationError if spam address
+    def create(cls, username, password, fullname, accepted_terms_of_service=None):
+        validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
             fullname=fullname,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         user.update_guessed_names()
         user.set_password(password)
@@ -857,19 +862,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
+                mimetype='html',
                 user=self,
+                can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           do_confirm=True, campaign=None):
+                           do_confirm=True, campaign=None, accepted_terms_of_service=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        user = cls.create(username, password, fullname)
+        user = cls.create(username, password, fullname, accepted_terms_of_service)
         user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
         if external_identity:
@@ -1121,7 +1127,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
-    def register(self, username, password=None):
+    def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
         """
         self.username = username
@@ -1132,6 +1138,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = timezone.now()
+        if accepted_terms_of_service:
+            self.accepted_terms_of_service = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
@@ -1164,7 +1172,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
             unregistered_user = None
 
@@ -1345,20 +1353,29 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, node, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param Node node: Node this unclaimed user was added to.
+        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
         :returns: The added record
         """
-        if not node.can_edit(user=referrer):
-            raise PermissionsError(
-                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
-            )
-        project_id = str(node._id)
+
+        from osf.models.provider import AbstractProvider
+        if isinstance(claim_origin, AbstractProvider):
+            if not bool(get_perms(referrer, claim_origin)):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                )
+        else:
+            if not claim_origin.can_edit(user=referrer):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to project {0}'.format(claim_origin._primary_key)
+                )
+
+        pid = str(claim_origin._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
@@ -1366,7 +1383,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             clean_email = None
         verification_key = generate_verification_key(verification_type='claim')
         try:
-            record = self.unclaimed_records[node._id]
+            record = self.unclaimed_records[claim_origin._id]
         except KeyError:
             record = None
         if record:
@@ -1378,7 +1395,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'expires': verification_key['expires'],
             'email': clean_email,
         }
-        self.unclaimed_records[project_id] = record
+        self.unclaimed_records[pid] = record
         return record
 
     def get_unclaimed_record(self, project_id):
@@ -1496,6 +1513,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def add_default_user_addons(sender, instance, created, **kwargs):
+    if created:
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if 'user' in addon.added_default:
+                instance.add_addon(addon.short_name)
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):

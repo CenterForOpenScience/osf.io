@@ -190,7 +190,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     model_class = apps.get_model('osf.AbstractNode')
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
@@ -275,7 +274,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         id_list = [x.id for x in resource_object_list]
 
         if NodeRelation.objects.filter(
-            parent__in=resource_object_list
+            parent__in=resource_object_list,
+            child__is_deleted=False
         ).exclude(child__in=resource_object_list, is_node_link=False).exists():
             raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
@@ -1334,19 +1334,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
             operation['value'] = Guid.load(operation['value'])
 
     def get_queryset(self):
-        comments = self.get_queryset_from_request()
-        for comment in comments:
-            # Deleted root targets still appear as tuples in the database,
-            # but need to be None in order for the query to be correct.
-            if comment.root_target:
-                if hasattr(comment.root_target.referent, 'is_deleted') and comment.root_target.referent.is_deleted:
-                    comment.root_target = None
-                    comment.save()
-                # Temporary while there are both 'is_deleted' and 'deleted' attributes on referents
-                if comment.root_target and hasattr(comment.root_target.referent, 'deleted') and comment.root_target.referent.deleted:
-                    comment.root_target = None
-                    comment.save()
-        return comments
+        return self.get_queryset_from_request()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -1813,7 +1801,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     view_name = 'node-view-only-link-detail'
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT':
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
             return NodeViewOnlyLinkUpdateSerializer
         return NodeViewOnlyLinkSerializer
 

@@ -122,7 +122,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         pointer = obj.get('pointer', None)
         if pointer:
-            pointer_node = AbstractNode.objects.get(guids___id=pointer['id'])
+            pointer_node = AbstractNode.objects.get(guids___id=pointer['id'], guids___id__isnull=False)
             if not pointer_node.is_deleted:
                 if pointer_node.is_public or (user.is_authenticated and pointer_node.has_permission(user, osf_permissions.READ)):
                     pointer['title'] = pointer_node.title

@@ -126,7 +126,7 @@ class TestViewOnlyLinksUpdate:
                 'name': 'updated vol name'
             }
         }
-        res = app.put_json_api(url, {'data': payload}, auth=user.auth)
+        res = app.patch_json_api(url, {'data': payload}, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'updated vol name'

@@ -96,6 +96,8 @@ class CoreScopes(object):
 
     INSTITUTION_READ = 'institutions_read'
 
+    SCOPES_READ = 'scopes_read'
+
     SEARCH = 'search_read'
 
     ACTIONS_READ = 'actions_read'
@@ -122,6 +124,9 @@ class CoreScopes(object):
 
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
+
+    COLLECTED_META_READ = 'collected_meta_read'
+    COLLECTED_META_WRITE = 'collected_meta_write'
 
     GUIDS_READ = 'guids.base_read'
 
@@ -184,8 +189,8 @@ class ComposedScopes(object):
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
-    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ,) + NODE_METADATA_READ
-    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, CoreScopes.COLLECTED_META_READ,) + NODE_METADATA_READ
+    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.COLLECTED_META_WRITE)
 
     # Privileges relating to editing content uploaded under that node
     NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ)
@@ -210,7 +215,7 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
