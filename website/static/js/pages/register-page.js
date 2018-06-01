@@ -3,7 +3,6 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var registrationUtils = require('js/registrationUtils');
-var NodesRegister = require('js/nodesRegister').NodesRegister;
 
 var ctx = window.contextVars;
 var node = ctx.node;
@@ -12,7 +11,6 @@ $(function() {
     // opt into tooltip
     $('[data-toggle="tooltip"]').tooltip();
 
-    new NodesRegister('#nodesRegister', node);
     var viewModel;
     var selector;
     var editor = new registrationUtils.RegistrationEditor({
