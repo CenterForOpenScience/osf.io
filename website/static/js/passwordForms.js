@@ -167,6 +167,16 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
             email: true
         });
 
+        self.acceptedTermsOfService = ko.observable(false).extend({
+            required: true,
+            validation: {
+                validator: function(val, other) {
+                    return val;
+                },
+                'message': 'This field is required.'
+            }
+        });
+
         self.password.extend({
             validation: {
                 validator: function(val, other) {
@@ -220,6 +230,16 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             }
         });
 
+        self.acceptedTermsOfService = ko.observable(false).extend({
+            required: true,
+            validation: {
+                validator: function(val) {
+                    return val;
+                },
+                'message': 'This field is required.'
+            }
+        });
+
         // Call constructor after declaring observables so that validatedFields is populated correctly
         self.super.constructor.call(this, submitUrl);
 
@@ -245,7 +265,8 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             password: self.password,
             fullName: self.fullName,
             email1: self.email1,
-            email2: self.email2
+            email2: self.email2,
+            acceptedTermsOfService: self.acceptedTermsOfService
         };
     },
     submitSuccess: function(response) {

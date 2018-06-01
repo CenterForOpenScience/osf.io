@@ -23,7 +23,7 @@
                                 <tr>
                                     <td style="border-collapse: collapse;">
                                         % if context.get('logo', settings.OSF_LOGO) not in settings.OSF_LOGO_LIST:
-                                            <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/${settings.OSF_ASSETS_COMMIT_HASH}/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                            <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                         %else:
                                             <img src="https://osf.io/static/img/${context.get('logo', settings.OSF_LOGO)}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                         % endif

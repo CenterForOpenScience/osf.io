@@ -521,18 +521,18 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        return dict(settings.WATERBUTLER_SETTINGS, **{
+        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': self.owner.api_url_for(
                 'osfstorage_get_metadata',
                 _absolute=True,
                 _internal=True
-            )
+            ),
         })
 
     def serialize_waterbutler_credentials(self):
-        return settings.WATERBUTLER_CREDENTIALS
+        return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
         params = {

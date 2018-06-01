@@ -560,8 +560,7 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_update_published(self, mock_get_identifiers, app, user):
+    def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
@@ -569,11 +568,9 @@ class TestPreprintUpdate:
         app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
-        assert mock_get_identifiers.called
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_update_published_makes_node_public(
-            self, mock_get_identifiers, app, user):
+            self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)

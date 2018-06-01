@@ -11,7 +11,7 @@
     <br>
     https://osf.io/settings/account/<br>
     <br>
-    If you need additional help or have questions, let us know at .<br>
+    If you need additional help or have questions, let us know at ${osf_contact_email}.<br>
     <br>
     Sincerely yours,<br>
     <br>

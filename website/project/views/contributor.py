@@ -17,7 +17,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, PreprintService
+from osf.models import AbstractNode, OSFUser, PreprintService, PreprintProvider
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
@@ -183,7 +183,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
         # Add unclaimed record if necessary
         if not contributor.is_registered:
-            contributor.add_unclaimed_record(node=node, referrer=auth.user,
+            contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
             contributor.save()
@@ -464,7 +464,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
+                logo = preprint_provider._id
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -538,7 +538,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and \
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
-        mimetype = 'plain'  # TODO - remove this and other mimetype references after [#PLAT-338] is merged
+        mimetype = 'html'
         preprint_provider = None
         logo = None
         if email_template == 'preprint':
@@ -549,7 +549,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = 'preprints_assets/{}/wide_white'.format(preprint_provider.name.lower())
+                logo = preprint_provider._id
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
@@ -765,7 +765,7 @@ def claim_user_form(auth, **kwargs):
                     'account on the project to which you were invited.'
                 ))
 
-            user.register(username=username, password=password)
+            user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
             # Clear unclaimed records
             user.unclaimed_records = {}
             user.verification_key = generate_verification_key()
@@ -773,8 +773,15 @@ def claim_user_form(auth, **kwargs):
             # Authenticate user and redirect to project page
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
+            provider = PreprintProvider.load(pid)
+            redirect_url = None
+            if provider:
+                redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
+            else:
+                redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
+
             return redirect(cas.get_login_url(
-                web_url_for('resolve_guid', guid=pid, _absolute=True),
+                redirect_url,
                 username=user.username,
                 verification_key=user.verification_key
             ))

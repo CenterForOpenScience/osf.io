@@ -813,11 +813,13 @@ def register_user(**kwargs):
         if campaign and campaign not in campaigns.get_campaigns():
             campaign = None
 
+        accepted_terms_of_service = timezone.now() if json_data.get('acceptedTermsOfService') else None
         user = framework_auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
             campaign=campaign,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
@@ -983,6 +985,8 @@ def external_login_email_post():
                 user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
+            if not user.accepted_terms_of_service and form.accepted_terms_of_service.data:
+                user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
@@ -1004,12 +1008,14 @@ def external_login_email_post():
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
+            accepted_terms_of_service = timezone.now() if form.accepted_terms_of_service.data else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
                 password=None,
                 fullname=fullname,
                 external_identity=external_identity,
-                campaign=None
+                campaign=None,
+                accepted_terms_of_service=accepted_terms_of_service
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
