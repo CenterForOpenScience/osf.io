@@ -245,7 +245,6 @@ class BaseRegistrationSerializer(NodeSerializer):
             if child_nodes.count() != len(children):
                     raise exceptions.ValidationError('Some child nodes could not be found.')
 
-
             # Second check that all children have a parent being registered. The exception being
             #  the root node of the registration.
             for node in child_nodes:
