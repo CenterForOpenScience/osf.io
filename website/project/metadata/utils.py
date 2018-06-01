@@ -27,6 +27,7 @@ def serialize_meta_schemas(meta_schemas):
 
 def serialize_draft_registration(draft, auth=None):
     from website.project.utils import serialize_node  # noqa
+    from api.base.utils import absolute_reverse
 
     node = draft.branched_from
 
@@ -43,7 +44,7 @@ def serialize_draft_registration(draft, auth=None):
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
-            'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
+            'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),
             'registrations': node.web_url_for('node_registrations')
         },
