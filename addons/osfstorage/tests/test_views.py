@@ -1099,10 +1099,6 @@ class TestMoveHook(HookTestCase):
     def test_move_file_out_of_node(self):
         folder = self.root_node.append_folder('A long time ago')
         file = folder.append_file('in a galaxy')
-        # project having a preprint should not block other moves
-        preprint_file = self.root_node.append_file('far')
-        self.node.preprint_file = preprint_file
-        self.node.save()
 
         project = ProjectFactory(creator=self.user)
         project_settings = project.get_addon('osfstorage')
@@ -1123,32 +1119,6 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 200)
-
-
-    def test_within_node_move_while_preprint(self):
-
-        file = self.root_node.append_file('Self Control')
-        self.node.preprint_file = file
-        self.node.save()
-        folder = self.root_node.append_folder('Frank Ocean')
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': self.root_node.target._id},
-            payload={
-                'source': file._id,
-                'target': self.root_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': folder._id,
-                    'target': folder.target._id,
-                    'name': folder.name,
-                }
-            },
-            target=self.node,
             method='post_json',
             expect_errors=True,
         )
