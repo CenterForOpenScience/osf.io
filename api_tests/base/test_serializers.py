@@ -143,7 +143,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             if field not in visible_on_withdrawals and field not in non_registration_fields:
                 assert_true(
                     isinstance(reg_field, base_serializers.HideIfWithdrawal) or
-                    isinstance(reg_field, base_serializers.ShowIfVersion)
+                    isinstance(reg_field, base_serializers.ShowIfVersion) or
+                    isinstance(reg_field, base_serializers.ShowIfAdminScope)
                 )
 
     def test_hide_if_registration_fields(self):
