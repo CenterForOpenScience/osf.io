@@ -55,21 +55,6 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
-def get_doi_client(target_object):
-    """ Get the approprite DOI creation client for the target object requested.
-    :param target_object: object to request a DOI for.
-    :return: client appropriate for that target object.
-             If credentials for that target object aren't set, return None
-    """
-    from website.identifiers.clients import DataCiteClient, CrossRefClient
-    from osf.models import PreprintService, AbstractNode
-
-    if isinstance(target_object, PreprintService) and settings.CROSSREF_DEPOSIT_URL:
-        return CrossRefClient()
-    if isinstance(target_object, AbstractNode) and settings.DATACITE_URL:
-        return DataCiteClient()
-
-
 def request_identifiers(target_object):
     """Request identifiers for the target object using the appropriate client.
 
@@ -80,7 +65,7 @@ def request_identifiers(target_object):
                  only_doi - boolean; only include the DOI (and not the ARK) identifier
                             when processing this response in get_or_create_identifiers
     """
-    client = get_doi_client(target_object)
+    client = target_object.get_doi_client()
     if not client:
         return
 
@@ -135,7 +120,7 @@ def get_or_create_identifiers(target_object):
     exists = response_dict['already_exists']
     only_doi = response_dict['only_doi']
     if exists:
-        client = get_doi_client(target_object)
+        client = target_object.get_doi_client()
         doi = client.build_doi(target_object)
         suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
         if not only_doi:

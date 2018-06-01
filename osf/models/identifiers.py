@@ -34,6 +34,12 @@ class IdentifierMixin(models.Model):
     for model objects.
     """
 
+    def get_doi_client(self):
+        """Return a BaseIdentifierClient if proper
+        settings are configured, else return None
+        """
+        raise NotImplementedError()
+
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
         content_type = ContentType.objects.get_for_model(self)

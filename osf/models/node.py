@@ -63,6 +63,7 @@ from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
+from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
 from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
@@ -2964,6 +2965,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    def get_doi_client(self):
+        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
+            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
+        else:
+            return None
 
 class Node(AbstractNode):
     """

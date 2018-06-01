@@ -4,26 +4,21 @@ from __future__ import absolute_import
 import re
 import datetime
 
-from website.util.client import BaseClient
+from website.identifiers.clients.base import AbstractIndentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
 
 
-class DataCiteClient(BaseClient):
-
-    BASE_URL = settings.DATACITE_URL
+class DataCiteClient(AbstractIndentifierClient):
 
     @property
     def _client(self):
         return DataCiteMDSClient(
-            url=settings.DATACITE_URL,
+            url=self.base_url,
             username=settings.DATACITE_USERNAME,
             password=settings.DATACITE_PASSWORD,
-            prefix=settings.DATACITE_PREFIX
+            prefix=self.prefix
         )
-
-    def build_doi(self, node):
-        return settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id)
 
     def build_metadata(self, node):
         """Return the formatted datacite metadata XML as a string.

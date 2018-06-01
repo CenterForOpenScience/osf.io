@@ -6,7 +6,6 @@ import responses
 from nose.tools import *  # noqa
 
 from website import settings
-from website.app import init_addons, init_app
 from website.identifiers.clients import crossref
 
 from osf.models import NodeLicense
@@ -22,7 +21,7 @@ from framework.django.handlers import handlers as django_handlers
 
 @pytest.fixture()
 def crossref_client():
-    return crossref.CrossRefClient()
+    return crossref.CrossRefClient(base_url='http://test.osf.crossref.test')
 
 @pytest.fixture()
 def preprint():
@@ -46,12 +45,11 @@ def preprint():
 class TestCrossRefClient:
 
     @responses.activate
-    @mock.patch('website.identifiers.clients.crossref.CrossRefClient.BASE_URL', 'https://test.test.osf.io')
     def test_crossref_create_identifiers(self, preprint, crossref_client, crossref_preprint_metadata, crossref_success_response):
         responses.add(
             responses.Response(
                 responses.POST,
-                'https://test.test.osf.io',
+                crossref_client.base_url,
                 body=crossref_success_response,
                 content_type='text/html;charset=ISO-8859-1',
                 status=200
@@ -64,12 +62,11 @@ class TestCrossRefClient:
         assert res['doi'] == doi
 
     @responses.activate
-    @mock.patch('website.identifiers.clients.crossref.CrossRefClient.BASE_URL', 'https://test.test.osf.io')
     def test_crossref_change_status_identifier(self,  crossref_client, crossref_preprint_metadata, crossref_success_response):
         responses.add(
             responses.Response(
                 responses.POST,
-                'https://test.test.osf.io',
+                crossref_client.base_url,
                 body=crossref_success_response,
                 content_type='text/html;charset=ISO-8859-1',
                 status=200

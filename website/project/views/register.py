@@ -33,8 +33,6 @@ from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
-from website.identifiers.utils import get_doi_client
-
 from .node import _view_project
 
 @must_be_valid_project
@@ -215,7 +213,7 @@ def project_before_register(auth, node, **kwargs):
 
 def osf_admin_change_status_identifier(node, status):
     if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        client = get_doi_client(node)
+        client = node.get_doi_client()
         doi = client.build_doi(node)
         metadata = client.build_metadata(node)
         client.change_status_identifier(status, doi, metadata)

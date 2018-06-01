@@ -29,7 +29,10 @@ class MockDataciteClient(object):
 
 @pytest.fixture()
 def datacite_client():
-    return DataCiteClient()
+    return DataCiteClient(
+        base_url = 'https://mds.fake.datacite.org',
+        prefix=settings.DATACITE_PREFIX
+    )
 
 @pytest.fixture()
 def registration():
@@ -44,7 +47,7 @@ class TestDataCiteClient:
         responses.add(
             responses.Response(
                 responses.POST,
-                MockDataciteClient.url + '/metadata',
+                datacite_client.base_url + '/metadata',
                 body='OK',
                 status=200
             )
@@ -60,7 +63,7 @@ class TestDataCiteClient:
         responses.add(
             responses.Response(
                 responses.POST,
-                MockDataciteClient.url + '/metadata',
+                datacite_client.base_url + '/metadata',
                 body='OK',
                 status=200
             )
@@ -130,53 +133,58 @@ class TestDataCiteViews(OsfTestCase):
         super(TestDataCiteViews, self).setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
+        self.client = DataCiteClient(base_url = 'https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
 
     @responses.activate
-    @mock.patch('website.identifiers.utils.get_doi_client', return_value=DataCiteClient())
-    @mock.patch('website.settings.DATACITE_URL', 'https://test.test.osf.io')
-    def test_datacite_create_identifiers_not_exists(self, mock_client):
+    def test_datacite_create_identifiers_not_exists(self):
         responses.add(
             responses.Response(
                 responses.POST,
-                settings.DATACITE_URL + '/metadata',
+                self.client.base_url + '/metadata',
                 body='OK (10.5072/FK2osf.io/cq695)',
                 status=201,
             )
         )
-        res = self.app.post(
-            self.node.api_url_for('node_identifiers_post'),
-            auth=self.user.auth,
-        )
+        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
+            mock_get_doi.return_value = self.client
+            res = self.app.post(
+                self.node.api_url_for('node_identifiers_post'),
+                auth=self.user.auth,
+            )
         self.node.reload()
         assert res.json['doi'] == self.node.get_identifier_value('doi')
         assert res.status_code == 201
 
     @responses.activate
-    @mock.patch('website.identifiers.utils.get_doi_client', return_value=DataCiteClient())
-    def test_datacite_get_by_identifier(self, mock_client):
+    def test_datacite_get_by_identifier(self):
         self.node.set_identifier_value('doi', 'FK424601')
         self.node.set_identifier_value('ark', 'fk224601')
-        res_doi = self.app.get(
-            self.node.web_url_for(
-                'get_referent_by_identifier',
-                category='doi',
-                value=self.node.get_identifier_value('doi'),
-            ),
-        )
+
+        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
+            mock_get_doi.return_value = self.client
+
+            res_doi = self.app.get(
+                self.node.web_url_for(
+                    'get_referent_by_identifier',
+                    category='doi',
+                    value=self.node.get_identifier_value('doi'),
+                ),
+            )
 
         assert res_doi.status_code == 302
         assert_urls_equal(res_doi.headers['Location'], self.node.absolute_url)
 
     @responses.activate
-    @mock.patch('website.identifiers.utils.get_doi_client', return_value=DataCiteClient())
-    def test_datacite_get_by_identifier_not_found(self, mock_client):
+    def test_datacite_get_by_identifier_not_found(self):
         self.node.set_identifier_value('doi', 'FK424601')
-        res = self.app.get(
-            self.node.web_url_for(
-                'get_referent_by_identifier',
-                category='doi',
-                value='fakedoi',
-            ),
-            expect_errors=True,
-        )
+        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
+            mock_get_doi.return_value = self.client
+            res = self.app.get(
+                self.node.web_url_for(
+                    'get_referent_by_identifier',
+                    category='doi',
+                    value='fakedoi',
+                ),
+                expect_errors=True,
+            )
         assert res.status_code == 404

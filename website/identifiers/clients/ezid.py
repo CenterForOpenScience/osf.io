@@ -1,24 +1,18 @@
 # -*- coding: utf-8 -*-
 import furl
 from website.identifiers import utils
-# from website.util.client import BaseClient
+from website.util.client import BaseClient
 from website.identifiers.clients import DataCiteClient
-from website import settings
 
 
-class EzidClient(DataCiteClient):
-
-    BASE_URL = 'https://ezid.cdlib.org'
-    DOI_NAMESPACE = settings.EZID_DOI_NAMESPACE
+class EzidClient(BaseClient, DataCiteClient):
+    """Inherits _make_request from BaseClient"""
 
     def _build_url(self, *segments, **query):
-        url = furl.furl(self.BASE_URL)
+        url = furl.furl(self.base_url)
         url.path.segments.extend(segments)
         url.args.update(query)
         return url.url
-
-    def build_doi(self, object):
-        return settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=object._id)
 
     @property
     def _default_headers(self):

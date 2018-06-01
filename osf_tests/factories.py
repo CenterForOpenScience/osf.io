@@ -566,9 +566,8 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    from website.identifiers.utils import get_doi_client
     from website.identifiers.clients import EzidClient
-    client = get_doi_client(preprint)
+    client = preprint.get_doi_client()
 
     if isinstance(client, EzidClient):
         doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)

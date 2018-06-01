@@ -2,11 +2,9 @@
 import furl
 import lxml
 import time
-import requests
-from framework.exceptions import HTTPError
 
 from website.identifiers.metadata import remove_control_characters
-from website.util.client import BaseClient
+from website.identifiers.clients.base import AbstractIndentifierClient
 from website import settings
 
 
@@ -20,9 +18,10 @@ XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
 
 
-class CrossRefClient(BaseClient):
+class CrossRefClient(AbstractIndentifierClient):
 
-    BASE_URL = settings.CROSSREF_DEPOSIT_URL
+    def __init__(self, base_url):
+        self.base_url = base_url
 
     def build_doi(self, preprint):
         from osf.models import PreprintProvider
@@ -133,17 +132,8 @@ class CrossRefClient(BaseClient):
         ]
         return elements
 
-    def _make_request(self, method, url, **kwargs):
-        expects = kwargs.pop('expects', None)
-        throws = kwargs.pop('throws', None)
-        response = requests.request(method, url, **kwargs)
-        if expects and response.status_code not in expects:
-            raise throws if throws else HTTPError(response.status_code, message=response.content)
-
-        return response
-
     def _build_url(self, **query):
-        url = furl.furl(self.BASE_URL)
+        url = furl.furl(self.base_url)
         url.args.update(query)
         return url.url
 
