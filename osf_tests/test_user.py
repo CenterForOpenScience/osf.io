@@ -7,7 +7,6 @@ import urlparse
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
-from django.test import modify_settings
 from django.utils import timezone
 import mock
 import itsdangerous
