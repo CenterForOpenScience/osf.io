@@ -356,6 +356,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         self.is_published = published
 
         if published:
+            if not self.title:
+                raise ValueError('Preprint needs a title; cannot publish.')
             if not (self.primary_file and self.primary_file.target == self):
                 raise ValueError('Preprint is not a valid preprint; cannot publish.')
             if not self.provider:
@@ -378,7 +380,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 auth=auth,
                 save=False,
             )
-
             self._send_preprint_confirmation(auth)
 
         if save:

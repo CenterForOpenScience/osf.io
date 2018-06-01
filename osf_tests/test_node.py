@@ -48,7 +48,6 @@ from osf_tests.factories import (
     UnregUserFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
-    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     NodeRelationFactory,
@@ -4168,13 +4167,3 @@ class TestAdminImplicitRead(object):
 
         assert lvl1component in qs
         assert project not in qs
-
-
-class TestPreprintProperties:
-
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        # TODO - is this going away?
-        assert node.preprint_url == published.url

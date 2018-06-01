@@ -194,7 +194,26 @@ class TestPreprintDelete:
             Preprint.objects.all().values_list(
                 'pk', flat=True))
         assert unpublished_preprint.pk in previous_ids
-        assert unpublished_preprint.pk not in remaining_ids
+        assert unpublished_preprint.pk in remaining_ids
+        # Preprints are no longer deleted, but marked as deleted.
+        unpublished_preprint.reload()
+        assert unpublished_preprint.deleted is not None
+
+    def test_delete_permissions(
+            self, app, user, url, unpublished_preprint):
+        write_contrib = AuthUserFactory()
+        unpublished_preprint.add_contributor(write_contrib, 'write', save=True)
+
+        res = app.delete(url.format(unpublished_preprint._id), auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.delete(url.format(unpublished_preprint._id), expect_errors=True)
+        assert res.status_code == 401
+
+        read_contrib = AuthUserFactory()
+        unpublished_preprint.add_contributor(read_contrib, 'read', save=True)
+        res = app.delete(url.format(unpublished_preprint._id), auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_cannot_delete_published(self, app, user, published_preprint, url):
         previous_ids = list(
@@ -212,6 +231,8 @@ class TestPreprintDelete:
         assert res.status_code == 409
         assert previous_ids == remaining_ids
         assert published_preprint.pk in remaining_ids
+        published_preprint.reload()
+        assert published_preprint.deleted is None
 
     def test_deletes_only_requested_document(
             self, app, user, published_preprint,
@@ -227,8 +248,14 @@ class TestPreprintDelete:
         assert unpublished_preprint.pk in previous_ids
         assert published_preprint.pk in previous_ids
 
-        assert unpublished_preprint.pk not in remaining_ids
+        assert unpublished_preprint.pk in remaining_ids
         assert published_preprint.pk in remaining_ids
+
+        unpublished_preprint.reload()
+        published_preprint.reload()
+
+        assert unpublished_preprint.deleted is not None
+        assert published_preprint.deleted is None
 
 
 @pytest.mark.django_db
@@ -251,7 +278,6 @@ class TestPreprintUpdate:
             preprint._id, attributes={'article_doi': '10.123/456/789'})
 
         noncontrib = AuthUserFactory()
-
         res = app.patch_json_api(
             url,
             update_doi_payload,
@@ -261,6 +287,89 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_doi_payload, expect_errors=True)
         assert res.status_code == 401
+
+        read_contrib = AuthUserFactory()
+        preprint.add_contributor(read_contrib, 'read', save=True)
+        res = app.patch_json_api(
+            url,
+            update_doi_payload,
+            auth=read_contrib.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_update_preprint_permission_write_contrib(self, app, preprint, url):
+        write_contrib = AuthUserFactory()
+        preprint.add_contributor(write_contrib, 'write', save=True)
+
+        doi = '10.123/456/789'
+        original_publication_date = '2013-12-11 10:09:08.070605+00:00'
+        license_record = {
+            'year': '2015',
+            'copyright_holders': ['Tonya Bateman']
+        }
+        license = NodeLicense.objects.filter(name='No license').first()
+        title = 'My Preprint Title'
+        description = 'My Preprint Description'
+        tags = ['test tag']
+        node = ProjectFactory(creator=write_contrib)
+        new_file = test_utils.create_test_preprint_file(
+            preprint, write_contrib, filename='shook_that_mans_hand.pdf')
+
+        update_payload = build_preprint_update_payload(
+            preprint._id, attributes={
+                'original_publication_date': original_publication_date,
+                'doi': doi,
+                'license_record': license_record,
+                'title': title,
+                'description': description,
+                'tags': tags,
+            }, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}},
+            'primary_file': {'data': {'type': 'file', 'id': new_file._id}},
+                'license': {'data': {'type': 'licenses', 'id': license._id}}}
+        )
+
+        res = app.patch_json_api(
+            url,
+            update_payload,
+            auth=write_contrib.auth,
+        )
+
+        assert res.status_code == 200
+        preprint.reload()
+
+        assert preprint.article_doi == doi
+        assert str(preprint.original_publication_date) == original_publication_date
+        assert preprint.license.node_license == license
+        assert preprint.license.year == license_record['year']
+        assert preprint.license.copyright_holders == license_record['copyright_holders']
+        assert preprint.title == title
+        assert preprint.description == description
+        assert preprint.tags.first().name == tags[0]
+        assert preprint.node == node
+        assert preprint.primary_file == new_file
+
+    def test_update_published_write_contrib(self, app, preprint, url):
+        preprint.is_published = False
+        preprint.save()
+
+        write_contrib = AuthUserFactory()
+        preprint.add_contributor(write_contrib, 'write', save=True)
+
+        update_payload = build_preprint_update_payload(
+            preprint._id, attributes={
+                'is_published': 'true'
+            }
+        )
+
+        res = app.patch_json_api(
+            url,
+            update_payload,
+            auth=write_contrib.auth,
+            expect_errors=True)
+
+        assert res.status_code == 403
+        assert preprint.is_published is False
 
     def test_update_node(self, app, user, preprint, url):
         assert preprint.node is None

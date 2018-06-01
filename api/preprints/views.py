@@ -2,6 +2,7 @@ import re
 
 from rest_framework import generics
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
@@ -42,6 +43,7 @@ from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeProvidersList, NodeProvider
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
+    PreprintPublishedOrWrite,
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions
@@ -118,7 +120,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        PreprintPublishedOrAdmin,
+        PreprintPublishedOrWrite,
     )
     parser_classes = (
         JSONAPIMultipleRelationshipsParser,
@@ -139,7 +141,9 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     def perform_destroy(self, instance):
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
-        Preprint.delete(instance)
+        # Marking preprints as deleted, will later become withdrawn?
+        instance.deleted = timezone.now()
+        instance.save()
 
     def get_parser_context(self, http_request):
         """

@@ -1437,15 +1437,7 @@ class TestSetPreprintFile(OsfTestCase):
 
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
-
-    def test_non_admin_update_file(self):
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.preprint.primary_file._id, self.file._id)
-
-        with assert_raises(PermissionsError):
-            self.preprint.set_primary_file(self.file_two, auth=self.read_write_user_auth, save=True)
-        assert_equal(self.preprint.primary_file._id, self.file._id)
-
+        
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
