@@ -12,7 +12,6 @@ class UploadMixin(models.Model):
         abstract = True
 
 
-# hopefully this works; if not, then override save in UploadMixin
 @receiver(post_save, sender='osf.Preprint')
 def create_file_node(sender, instance, **kwargs):
     if instance.root_folder:

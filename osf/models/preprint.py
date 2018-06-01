@@ -330,6 +330,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         existing_file = self.primary_file
         self.primary_file = preprint_file
 
+        self.primary_file.move_under(self.root_folder)
+        self.primary_file.save()
+
         # only log if updating the preprint file, not adding for the first time
         if existing_file:
             self.add_log(
@@ -1326,7 +1329,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             return self.root_folder
 
         # Note: The "root" node will always be "named" empty string
-        root_folder = OsfStorageFolder(name='', target=self)
+        root_folder = OsfStorageFolder(name='', target=self, is_root=True)
         root_folder.save()
         return root_folder
 

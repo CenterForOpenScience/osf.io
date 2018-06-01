@@ -11,7 +11,7 @@ from nose.tools import *  # noqa
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.utils.fields import EncryptedJSONField
-from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -21,7 +21,7 @@ import datetime
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
-from website.files.exceptions import FileNodeCheckedOutError
+from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 
 @pytest.mark.django_db
@@ -239,6 +239,15 @@ class TestOsfstorageFileNode(StorageTestCase):
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
 
+    def test_delete_preprint_primary_file(self):
+            user = UserFactory()
+            preprint = PreprintFactory(creator=user)
+            preprint.save()
+            file = preprint.files.all()[0]
+
+            with assert_raises(FileNodeIsPrimaryFile):
+                file.delete()
+
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')
         assert_equals('/Test', child.materialized_path)
@@ -260,6 +269,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_not_equal(copied, to_copy)
         assert_equal(copied.parent, copy_to)
         assert_equal(to_copy.parent, self.node_settings.get_root())
+
+    def test_copy_node_file_to_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+
+        to_copy = self.node_settings.get_root().append_file('Carp')
+        copy_to = preprint.root_folder
+
+        copied = to_copy.copy_under(copy_to)
+        assert_equal(copied.parent, copy_to)
+        assert_equal(copied.target, preprint)
 
     def test_move_nested(self):
         new_project = ProjectFactory()
@@ -307,6 +328,32 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
+
+    def test_move_preprint_primary_file_to_node(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        move_to = self.node_settings.get_root().append_folder('Cloud')
+        with assert_raises(FileNodeIsPrimaryFile):
+            moved = to_move.move_under(move_to, name='Tuna')
+
+    def test_move_preprint_primary_file_within_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        folder = OsfStorageFolder(name='foofolder', target=preprint)
+        folder.save()
+
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        moved = to_move.move_under(folder, name='Tuna')
+        assert preprint.primary_file == to_move
+        assert to_move.parent == folder
+        assert folder.target == preprint
 
     @unittest.skip
     def test_move_folder(self):

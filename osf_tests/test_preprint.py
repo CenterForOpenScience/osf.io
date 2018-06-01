@@ -304,6 +304,17 @@ class TestPreprintCreation:
 
         assert preprint.region.id == user.get_addon('osfstorage').default_region_id
 
+    def test_root_folder_created_automatically(self, fake):
+        user = UserFactory()
+        preprint = Preprint(
+            title=fake.bs,
+            creator=user,
+            provider=PreprintProviderFactory()
+        )
+        preprint.save()
+        assert preprint.root_folder is not None
+        assert preprint.root_folder.is_root is True
+
 
 # Copied from osf_tests/test_node.py
 class TestContributorMethods:
