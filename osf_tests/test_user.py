@@ -7,6 +7,7 @@ import urlparse
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
+from django.test import modify_settings
 from django.utils import timezone
 import mock
 import itsdangerous
@@ -697,7 +698,13 @@ class TestChangePassword:
         assert mock_send_mail.called is False
 
     @mock.patch('website.mails.send_mail')
-    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user):
+    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user, settings):
+        # NOTE: settings fixture comes from pytest-django.
+        # changes get reverted after tests run
+        settings.PASSWORD_HASHERS = (
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+        )
         raw_password = 'password'
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
         user.check_password(raw_password)
