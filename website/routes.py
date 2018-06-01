@@ -58,6 +58,7 @@ from website.identifiers import views as identifier_views
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
+EMBER_ASSET_ROUTE_PREFIXES = ['assets', 'engines-dist', 'fonts', 'img']
 
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
@@ -226,13 +227,13 @@ def ember_app(path=None):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             break
-        if 'asset_prefixes' in EXTERNAL_EMBER_APPS[k]:
-            for asset_prefix in EXTERNAL_EMBER_APPS[k]['asset_prefixes']:
-                if request.path.strip('/').startswith(asset_prefix):
-                    ember_app = EXTERNAL_EMBER_APPS[k]
-                    strip_prefix = False
-                    fp = asset_prefix + '/' + fp
-                    break
+
+    for asset_prefix in EMBER_ASSET_ROUTE_PREFIXES:
+        if request.path.strip('/').startswith(asset_prefix) and EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            ember_app = EXTERNAL_EMBER_APPS['ember_osf_web']
+            strip_prefix = False
+            fp = asset_prefix + '/' + fp
+            break
 
     if not ember_app:
         raise HTTPError(http.NOT_FOUND)
@@ -364,13 +365,7 @@ def make_url_map(app):
                     notemplate
                 )
             ])
-            EXTERNAL_EMBER_APPS['ember_osf_web']['asset_prefixes'] = [
-                'assets',
-                'fonts',
-                'img',
-                'engines-dist',
-            ]
-            for asset_prefix in EXTERNAL_EMBER_APPS['ember_osf_web']['asset_prefixes']:
+            for asset_prefix in EMBER_ASSET_ROUTE_PREFIXES:
                 process_rules(app, [
                     Rule(
                         '/<path:path>',
