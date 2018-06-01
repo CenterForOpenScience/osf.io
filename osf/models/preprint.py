@@ -40,7 +40,6 @@ from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
 from addons.osfstorage.mixins import UploadMixin
 from addons.osfstorage.models import OsfStorageFolder, Region
-from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 from framework.auth.core import get_user
 from framework.sentry import log_exception
@@ -437,8 +436,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return ret
 
     def _set_default_region(self):
-        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
-        self.region = default_region
+        user_settings = self.creator.get_addon('osfstorage')
+        self.region_id = user_settings.default_region_id
         self.save()
 
     def _add_creator_as_contributor(self):

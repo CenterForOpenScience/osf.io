@@ -293,6 +293,17 @@ class TestPreprintCreation:
         assert params['preprint'] == preprint._id
         assert_datetime_equal(first_log.created, preprint.created)
 
+    def test_default_region_set_to_user_settings_osfstorage_default(self, fake):
+        user = UserFactory()
+        preprint = Preprint(
+            title=fake.bs,
+            creator=user,
+            provider=PreprintProviderFactory()
+        )
+        preprint.save()
+
+        assert preprint.region.id == user.get_addon('osfstorage').default_region_id
+
 
 # Copied from osf_tests/test_node.py
 class TestContributorMethods:
@@ -1437,7 +1448,7 @@ class TestSetPreprintFile(OsfTestCase):
 
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
-        
+
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
