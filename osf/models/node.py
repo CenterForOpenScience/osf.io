@@ -228,7 +228,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'is_public',
         'is_deleted',
         'node_license',
-        'preprint_file',
     }
 
     # Node fields that trigger a check to the spam filter on save
@@ -457,7 +456,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             is_public=True,
             deleted__isnull=True,
             primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True).exclude(machine_state='DefaultStates.INITIAL.value').exists()
+            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).exists()
 
     @property
     def has_submitted_preprint(self):

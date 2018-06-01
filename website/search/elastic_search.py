@@ -26,6 +26,7 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models import Preprint
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -56,7 +57,7 @@ DOC_TYPE_TO_MODEL = {
     'user': OSFUser,
     'file': BaseFileNode,
     'institution': Institution,
-    'preprint': AbstractNode,
+    'preprint': Preprint,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -245,8 +246,10 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
+        elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
+        elif result.get('category') in {'preprint'}:
+            result = format_preprint_result(result)
         elif not result.get('category'):
             continue
         ret.append(result)
@@ -277,7 +280,34 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
-        'preprint_url': result.get('preprint_url'),
+    }
+
+    return formatted_result
+
+
+def format_preprint_result(result):
+    parent_info = None
+    formatted_result = {
+        'contributors': result['contributors'],
+        # TODO: Remove unescape_entities when mako html safe comes in
+        'title': unescape_entities(result['title']),
+        'url': result['url'],
+        'is_component': False if parent_info is None else True,
+        'parent_title': unescape_entities(parent_info.get('title')) if parent_info else None,
+        'parent_url': parent_info.get('url') if parent_info is not None else None,
+        'tags': result['tags'],
+        'is_registration': False,
+        'is_retracted': False,
+        'is_pending_retraction': False,
+        'embargo_end_date': None,
+        'is_pending_embargo': False,
+        'description': unescape_entities(result['description']),
+        'category': result.get('category'),
+        'date_created': result.get('created'),
+        'date_registered': None,
+        'n_wikis': 0,
+        'license': result.get('license'),
+        'affiliated_institutions': result.get('node.affiliated_institutions') if result.get('node') else None,
     }
 
     return formatted_result
@@ -299,6 +329,8 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 
 
 def get_doctype_from_node(node):
+    if isinstance(node, Preprint):
+        return 'preprint'
     if node.is_registration:
         return 'registration'
     elif node.parent_node is None:
@@ -399,7 +431,7 @@ def serialize_preprint(preprint, category):
                 'fullname': x['fullname'],
                 'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in preprint._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
             .values('fullname', 'guids___id', 'is_active')
         ],
         'title': preprint.title,
@@ -438,13 +470,13 @@ def update_node(node, index=None, bulk=False, async=False):
 
 @requires_search
 def update_preprint(preprint, index=None, bulk=False, async=False):
+    from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    file_ = preprint.primary_file
-    if file_ and file_.target == preprint:
+    for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
         update_file(file_, index=index)
 
     is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if preprint.deleted or not preprint.is_public or (preprint.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
+    if not preprint.verified_publishable or (preprint.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
         delete_doc(preprint._id, preprint, category='preprint', index=index)
     else:
         category = 'preprint'
@@ -570,7 +602,7 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
     ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'deleted', None) or getattr(target, 'archiving', False):
+    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False):
         client().delete(
             index=index,
             doc_type='file',
@@ -579,6 +611,17 @@ def update_file(file_, index=None, delete=False):
             ignore=[404]
         )
         return
+
+    if isinstance(target, Preprint):
+        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_:
+            client().delete(
+                index=index,
+                doc_type='file',
+                id=file_._id,
+                refresh=True,
+                ignore=[404]
+            )
+            return
 
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)

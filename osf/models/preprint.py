@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import functools
 import urlparse
 import logging
 import re
@@ -383,6 +384,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
         if save:
             self.save()
+        self.update_search()
 
     def set_preprint_license(self, license_detail, auth, save=False):
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
@@ -774,6 +776,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             )
         if save:
             self.save()
+        self.update_search()
 
     def replace_contributor(self, old, new):
         try:
@@ -1299,6 +1302,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             for preprint in user.preprints.all():
                 if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
                     preprint.set_privacy('private', log=False, save=True)
+
+    @classmethod
+    def bulk_update_search(cls, preprints, index=None):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, preprints, index=index)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def update_search(self):
         from website import search

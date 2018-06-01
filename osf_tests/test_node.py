@@ -36,6 +36,7 @@ from osf.models import (
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError
+from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -46,6 +47,7 @@ from osf_tests.factories import (
     NodeLogFactory,
     UserFactory,
     UnregUserFactory,
+    PreprintFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
     NodeLicenseRecordFactory,
@@ -81,6 +83,10 @@ def auth(user):
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
+@pytest.fixture()
+def preprint(user):
+    return PreprintFactory(creator=user)
 
 
 class TestParentNode:
@@ -4167,3 +4173,25 @@ class TestAdminImplicitRead(object):
 
         assert lvl1component in qs
         assert project not in qs
+
+
+class TestNodeProperties:
+    def test_is_supplemental_node_for_preprint(self, project, preprint, user):
+        # If no preprints, is False
+        assert project.is_supplemental_node_for_preprint is False
+
+        # A published preprint attached to a project is True
+        preprint.node = project
+        preprint.save()
+        assert project.is_supplemental_node_for_preprint is True
+
+        # Abandoned preprint is False
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        assert project.is_supplemental_node_for_preprint is False
+
+        # Unpublished preprint is False
+        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.is_published = False
+        preprint.save()
+        assert project.is_supplemental_node_for_preprint is False

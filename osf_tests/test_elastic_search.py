@@ -16,7 +16,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
+from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode, Preprint
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -196,6 +196,179 @@ class TestProject(OsfTestCase):
             self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
+
+
+class TestPreprint(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreprint, self).setUp()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
+        self.user = factories.UserFactory(fullname='John Deacon')
+        self.preprint = Preprint(
+            title='Red Special',
+            creator=self.user,
+            provider=factories.PreprintProviderFactory()
+        )
+        self.preprint.save()
+        self.file = OsfStorageFile.create(
+            target=self.preprint,
+            path='/panda.txt',
+            name='panda.txt',
+            materialized_path='/panda.txt')
+        self.file.save()
+        self.published_preprint = factories.PreprintFactory(creator=self.user)
+
+    def test_new_preprint_unsubmitted(self):
+        # Verify that an unsubmitted preprint is not present in Elastic Search.
+        docs = query(self.preprint.title)['results']
+        assert_equal(len(docs), 0)
+
+    def test_new_preprint_unpublished(self):
+        # Verify that an unpublished preprint is not present in Elastic Search.
+        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False)
+        docs = query(self.preprint.title)['results']
+        assert_equal(len(docs), 0)
+
+    def test_unsubmitted_preprint_primary_file(self):
+        # Unpublished preprint's primary_file not showing up in Elastic Search
+        with run_celery_tasks():
+            self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
+        docs = query(self.preprint.title)['results']
+        assert_equal(len(docs), 0)
+
+    def test_publish_preprint(self):
+        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False)
+        with run_celery_tasks():
+            self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
+        docs = query(self.preprint.title)['results']
+        # Both preprint and primary_file showing up in Elastic
+        assert_equal(len(docs), 2)
+
+    def test_preprint_title_change(self):
+        with run_celery_tasks():
+            new_title = 'My new preprint title'
+            self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
+        docs = query(new_title)['results']
+        # Both preprint and primary_file showing up in Elastic
+        assert_equal(len(docs), 2)
+
+    def test_preprint_description_change(self):
+        with run_celery_tasks():
+            new_abstract = 'My preprint abstract'
+            self.published_preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
+        docs = query(self.published_preprint.title)['results']
+        # Both preprint and primary_file showing up in Elastic
+        assert_equal(len(docs), 2)
+        assert_equal(docs[0]['description'], new_abstract)
+
+    def test_set_preprint_private(self):
+        # Not currently an option for users, but can be used for spam
+        with run_celery_tasks():
+            self.published_preprint.set_privacy('private', auth=Auth(self.user), save=True)
+        docs = query(self.published_preprint.title)['results']
+        # Both preprint and primary_file showing up in Elastic
+        assert_equal(len(docs), 0)
+
+    def test_set_primary_file(self):
+        # Only primary_file should be in index, if primary_file is changed, other files are removed from index.
+        self.file = OsfStorageFile.create(
+            target=self.published_preprint,
+            path='/panda.txt',
+            name='panda.txt',
+            materialized_path='/panda.txt')
+        self.file.save()
+
+        with run_celery_tasks():
+            self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
+        docs = query(self.published_preprint.title)['results']
+        assert_equal(len(docs), 2)
+        assert_equal(docs[1]['name'], self.file.name)
+
+    def test_set_license(self):
+        license_details = {
+            'id': 'NONE',
+            'year': '2015',
+            'copyrightHolders': ['Iron Man']
+        }
+        with run_celery_tasks():
+            self.published_preprint.set_preprint_license(license_details, Auth(self.user), save=True)
+        docs = query(self.published_preprint.title)['results']
+        assert_equal(len(docs), 2)
+        assert_equal(docs[0]['license']['copyright_holders'][0], 'Iron Man')
+        assert_equal(docs[0]['license']['name'], 'No license')
+
+    def test_add_tags(self):
+
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+
+        with run_celery_tasks():
+            for tag in tags:
+                docs = query('tags:"{}"'.format(tag))['results']
+                assert_equal(len(docs), 0)
+                self.published_preprint.add_tag(tag, Auth(self.user), save=True)
+
+        for tag in tags:
+            docs = query('tags:"{}"'.format(tag))['results']
+            assert_equal(len(docs), 1)
+
+    def test_remove_tag(self):
+
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+
+        for tag in tags:
+            self.published_preprint.add_tag(tag, Auth(self.user), save=True)
+            self.published_preprint.remove_tag(tag, Auth(self.user), save=True)
+            docs = query('tags:"{}"'.format(tag))['results']
+            assert_equal(len(docs), 0)
+
+    def test_add_contributor(self):
+        # Add a contributor, then verify that project is found when searching
+        # for contributor.
+        user2 = factories.UserFactory(fullname='Adam Lambert')
+
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 0)
+        with run_celery_tasks():
+            self.published_preprint.add_contributor(user2, save=True)
+
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 1)
+
+    def test_remove_contributor(self):
+        # Add and remove a contributor, then verify that project is not found
+        # when searching for contributor.
+        user2 = factories.UserFactory(fullname='Brian May')
+
+        self.published_preprint.add_contributor(user2, save=True)
+        self.published_preprint.remove_contributor(user2, Auth(self.user))
+
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 0)
+
+    def test_hide_contributor(self):
+        user2 = factories.UserFactory(fullname='Brian May')
+        self.published_preprint.add_contributor(user2)
+        with run_celery_tasks():
+            self.published_preprint.set_visible(user2, False, save=True)
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 0)
+        with run_celery_tasks():
+            self.published_preprint.set_visible(user2, True, save=True)
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 1)
+
+    def test_tag_aggregation(self):
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+
+        with run_celery_tasks():
+            for tag in tags:
+                self.published_preprint.add_tag(tag, Auth(self.user), save=True)
+
+        docs = query(self.published_preprint.title)['tags']
+        assert len(docs) == 3
+        for doc in docs:
+            assert doc['key'] in tags
 
 
 class TestNodeSearch(OsfTestCase):
@@ -828,6 +1001,9 @@ class TestSearchMigration(OsfTestCase):
             title=settings.ELASTIC_INDEX,
             creator=self.user,
             is_public=True
+        )
+        self.preprint = factories.PreprintFactory(
+            creator=self.user
         )
 
     def test_first_migration_no_remove(self):

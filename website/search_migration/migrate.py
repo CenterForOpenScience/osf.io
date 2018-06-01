@@ -7,7 +7,9 @@ from math import ceil
 import logging
 
 from django.db import connection
+from django.db.models import Q
 from elasticsearch import helpers
+from framework.database import paginated
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -16,11 +18,12 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.search import update_institution
+from osf.utils.workflows import DefaultStates
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +90,23 @@ def migrate_nodes(index, delete, increment=10000):
             es_args={'raise_on_error': False},  # ignore 404s
             spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
         logger.info('{} nodes marked deleted'.format(total_nodes))
+
+def migrate_preprints(index, delete):
+    logger.info('Migrating preprints to index: {}'.format(index))
+    preprint_query = Q(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False,
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+    total = Preprint.objects.filter(preprint_query).count()
+    increment = 100
+    total_pages = (total // increment) + 1
+    pages = paginated(Preprint, query=preprint_query, increment=increment, each=False, include=['preprintcontributor__user__guids'])
+    for page_number, page in enumerate(pages):
+        logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
+        Preprint.bulk_update_search(page, index=index)
+
+    logger.info('Preprints migrated: {}'.format(total))
+    if delete:
+        logger.info('Preparing to delete old preprint documents')
+        # TODO implement
 
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
@@ -159,6 +179,7 @@ def migrate(delete, remove=False, index=None, app=None):
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
+    migrate_preprints(new_index, delete=delete)
 
     set_up_alias(index, new_index)
 
