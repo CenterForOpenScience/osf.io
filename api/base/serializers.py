@@ -167,11 +167,13 @@ class HideIfPreprint(ConditionalField):
     """
 
     def should_hide(self, instance):
-        if getattr(instance, 'node', False) and isinstance(getattr(instance, 'node'), Preprint):
+        if getattr(instance, 'node', False) and isinstance(getattr(instance, 'node', False), Preprint):
             # Sometimes a "node" might be a preprint object where node/preprint code is shared
             return True
 
-        return isinstance(instance, Preprint) or getattr(instance, 'preprint', False)
+        return isinstance(instance, Preprint) \
+            or isinstance(getattr(instance, 'target', None), Preprint) \
+            or isinstance(getattr(instance, 'preprint', False), Preprint)
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)

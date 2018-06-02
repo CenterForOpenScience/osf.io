@@ -1350,7 +1350,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
-        user = OSFUser.load(auth['id'])
+        user = auth.user
         params = {
             'preprint': self._id,
             'path': metadata['materialized'],

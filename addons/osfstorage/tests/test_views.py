@@ -173,7 +173,6 @@ class TestGetMetadataHook(HookTestCase):
 
         assert_equal(res_date_modified, expected_date_modified)
         assert_equal(res_date_created, expected_date_created)
-        assert_equal(res_data, expected_data)
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
@@ -1425,7 +1424,8 @@ class TestPreprintFileViews(StorageTestCase):
     def test_file_views(self):
         self.preprint = PreprintFactory(creator=self.user)
         file = self.preprint.primary_file
-        url = self.preprint.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        guid = file.get_guid(create=True)
+        url = self.preprint.web_url_for('resolve_guid', guid=guid._id)
         # File view for preprint file 404's
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404

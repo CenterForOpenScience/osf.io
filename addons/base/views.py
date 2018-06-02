@@ -222,20 +222,20 @@ def check_preprint_access(preprint, auth, action, cas_resp):
 
     if cas_resp:
         if permission == 'read':
-            if preprint.is_public:
+            if preprint.verified_publishable:
                 return True
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+            required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_READ
         else:
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+            required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_WRITE
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
     if permission == 'read':
-        if preprint.has_permission(auth.user, 'read'):
+        if preprint.can_view(auth):
             return True
 
-    if permission == 'write' and preprint.has_permission(auth.user, 'write'):
+    if permission == 'write' and preprint.can_edit(auth):
         return True
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -310,6 +310,7 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
+    node = node or preprint
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
@@ -317,10 +318,10 @@ def get_auth(auth, **kwargs):
             'credentials': credentials,
             'settings': waterbutler_settings,
             'callback_url': node.api_url_for(
-                ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
+                ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
                 _absolute=True,
                 _internal=True
-            ) if node else preprint.api_url_for(('create_preprint_waterbutler_log'), _absolute=True, _internal=True)
+            )
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
@@ -340,12 +341,6 @@ DOWNLOAD_ACTIONS = set([
     'download_zip',
 ])
 
-@must_be_signed
-@no_auto_transaction
-def create_preprint_waterbutler_log(payload, **kwargs):
-    # Bring up to date with create_waterbutler_log, if needed.
-    pass
-
 
 # TODO: Use this to mark file versions as seen when
 # MFR callback endpoint is implemented
@@ -364,7 +359,7 @@ def mark_file_version_as_seen(user, path, version):
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project(quickfiles_valid=True)
+@must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
@@ -376,13 +371,15 @@ def create_waterbutler_log(payload, **kwargs):
             # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
+                if not node:
+                    node = Preprint.load(payload['metadata'].get('nid'))
                 return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
-        node = kwargs['node'] or kwargs['project']
+        node = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or Preprint.load(kwargs.get('pid'))
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
@@ -410,6 +407,8 @@ def create_waterbutler_log(payload, **kwargs):
 
             destination_node = node  # For clarity
             source_node = AbstractNode.load(payload['source']['nid'])
+            if not source_node:
+                source_node = Preprint.load(payload['metadata'].get('nid'))
 
             source = source_node.get_addon(payload['source']['provider'])
             destination = node.get_addon(payload['destination']['provider'])
@@ -479,7 +478,7 @@ def create_waterbutler_log(payload, **kwargs):
         else:
             try:
                 metadata = payload['metadata']
-                node_addon = node.get_addon(payload['provider'])
+                node_addon = node if isinstance(node, Preprint) else node.get_addon(payload['provider'])
             except KeyError:
                 raise HTTPError(httplib.BAD_REQUEST)
 
@@ -491,7 +490,9 @@ def create_waterbutler_log(payload, **kwargs):
             node_addon.create_waterbutler_log(auth, action, metadata)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+        if not isinstance(node, Preprint):
+            # Preprints not getting emails about file updates for now
+            file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
@@ -755,6 +756,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
+    if isinstance(target, Preprint):
+        # Cannot currently view preprint files in file view
+        raise HTTPError(httplib.NOT_FOUND, data={
+            'message_short': 'File Not Found',
+            'message_long': 'The requested file could not be found.'
+        })
+
     return addon_view_file(auth, target, file_node, version)
 
 

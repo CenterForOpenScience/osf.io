@@ -1,10 +1,15 @@
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import jwe
+import jwt
 import mock
+import furl
+import time
 import urlparse
 import datetime
 from django.utils import timezone
 import pytest
 import pytz
+import itsdangerous
 
 from framework.exceptions import PermissionsError
 from website import settings, mails
@@ -12,12 +17,13 @@ from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
-from framework.auth import Auth
+from framework.auth import Auth, cas, signing
 from framework.celery_tasks import handlers
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject
+from addons.base import views
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf_tests.utils import MockShareResponse
@@ -2274,3 +2280,260 @@ class TestPreprintConfirmationEmails(OsfTestCase):
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert_equals(send_mail.call_count, 2)
+
+
+class TestPreprintOsfStorage(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintOsfStorage, self).setUp()
+        self.user = UserFactory()
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.preprint = PreprintFactory(creator=self.user)
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+
+    def test_create_log(self):
+        action = 'file_added'
+        path = 'pizza.nii'
+        nlog = self.preprint.logs.count()
+        self.preprint.create_waterbutler_log(
+            auth=Auth(user=self.user),
+            action=action,
+            metadata={'path': path, 'materialized': path, 'kind': 'file'},
+        )
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlog + 1)
+        assert_equal(
+            self.preprint.logs.latest().action,
+            '{0}_{1}'.format('osf_storage', action),
+        )
+        assert_equal(
+            self.preprint.logs.latest().params['path'],
+            path
+        )
+
+    def build_url(self, **kwargs):
+        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
+            action='download',
+            nid=self.preprint._id,
+            provider='osf_storage'), **kwargs),
+            'exp': timezone.now() + datetime.timedelta(seconds=500),
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        return self.preprint.api_url_for('get_auth', **options)
+
+    def test_auth_download(self):
+        url = self.build_url(cookie=self.cookie)
+        res = self.app.get(url, auth=Auth(user=self.user))
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        assert_equal(data['credentials'], self.preprint.serialize_waterbutler_credentials())
+        assert_equal(data['settings'], self.preprint.serialize_waterbutler_settings())
+        expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl.furl(data['callback_url'])
+        observed_url.port = expected_url.port
+        assert_equal(expected_url, observed_url)
+
+
+class TestCheckPreprintAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckPreprintAuth, self).setUp()
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+
+    def test_has_permission(self):
+        res = views.check_preprint_access(self.preprint, Auth(user=self.user), 'upload', None)
+        assert_true(res)
+
+    def test_not_has_permission_read_published(self):
+        res = views.check_preprint_access(self.preprint, Auth(), 'download', None)
+        assert_true(res)
+
+    def test_not_has_permission_logged_in(self):
+        user2 = AuthUserFactory()
+        self.preprint.is_published = False
+        self.preprint.save()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_preprint_access(self.preprint, Auth(user=user2), 'download', None)
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_not_has_permission_not_logged_in(self):
+        self.preprint.is_published = False
+        self.preprint.save()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_preprint_access(self.preprint, Auth(), 'download', None)
+        assert_equal(exc_info.exception.code, 401)
+
+
+class TestPreprintOsfStorageLogs(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreprintOsfStorageLogs, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_non_contrib = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.preprint = PreprintFactory(creator=self.user)
+        self.file = OsfStorageFile.create(
+            target=self.preprint,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+
+    def build_payload(self, metadata, **kwargs):
+        options = dict(
+            auth={'id': self.user._id},
+            action='create',
+            provider='osfstorage',
+            metadata=metadata,
+            time=time.time() + 1000,
+        )
+        options.update(kwargs)
+        options = {
+            key: value
+            for key, value in options.iteritems()
+            if value is not None
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        return {
+            'payload': message,
+            'signature': signature,
+        }
+
+    def test_add_log(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        nlogs = self.preprint.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs + 1)
+
+    def test_add_log_missing_args(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth=None)
+        nlogs = self.preprint.logs.count()
+        res = self.app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs)
+
+    def test_add_log_no_user(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
+        nlogs = self.preprint.logs.count()
+        res = self.app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs)
+
+    def test_add_log_bad_action(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, action='dance')
+        nlogs = self.preprint.logs.count()
+        res = self.app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs)
+
+    def test_action_file_rename(self):
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(
+            action='rename',
+            metadata={
+                'path': 'foo',
+                'nid': self.preprint._id,
+                'materialized': 'foo',
+                'kind': 'file'
+            },
+            source={
+                'materialized': 'foo',
+                'provider': 'osfstorage',
+                'node': {'_id': self.preprint._id},
+                'name': 'new.txt',
+                'kind': 'file',
+            },
+            destination={
+                'path': 'foo',
+                'materialized': 'foo',
+                'provider': 'osfstorage',
+                'node': {'_id': self.preprint._id},
+                'name': 'old.txt',
+                'kind': 'file',
+            },
+        )
+        self.app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'}
+        )
+        self.preprint.reload()
+
+        assert_equal(
+            self.preprint.logs.latest().action,
+            'osf_storage_addon_file_renamed',
+        )
+
+    def test_action_downloads_contrib(self):
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        download_actions=('download_file', 'download_zip')
+        wb_url = settings.WATERBUTLER_URL + '?version=1'
+        for action in download_actions:
+            payload = self.build_payload(metadata={'path': '/testfile',
+                                                   'nid': self.preprint._id},
+                                         action_meta={'is_mfr_render': False},
+                                         request_meta={'url': wb_url},
+                                         action=action)
+            nlogs = self.preprint.logs.count()
+            res = self.app.put_json(
+                url,
+                payload,
+                headers={'Content-Type': 'application/json'},
+                expect_errors=False,
+            )
+            assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs)
+
+    def test_add_file_osfstorage_log(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        nlogs = self.preprint.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs + 1)
+        assert('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+
+    def test_add_folder_osfstorage_log(self):
+        path = 'pizza'
+        url = self.preprint.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        nlogs = self.preprint.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.preprint.reload()
+        assert_equal(self.preprint.logs.count(), nlogs + 1)
+        assert('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
