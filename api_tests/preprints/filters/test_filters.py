@@ -1,6 +1,6 @@
 import pytest
 
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,

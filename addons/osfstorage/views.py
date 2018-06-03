@@ -97,9 +97,9 @@ def osfstorage_update_metadata(payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_get_revisions(file_node, payload, **kwargs):
+def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(kwargs['target'], Auth(private_key=request.args.get('view_only')))
+    is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
 
     counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
@@ -114,7 +114,7 @@ def osfstorage_get_revisions(file_node, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(kwargs['target'], file_node, version, index=version_count - idx - 1, anon=is_anon)
+            utils.serialize_revision(target, file_node, version, index=version_count - idx - 1, anon=is_anon)
             for idx, version in enumerate(qs)
         ]
     }
@@ -168,7 +168,7 @@ def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
     user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
-    user_pk = OSFUser.objects.filter(guids___id=user_id).values_list('pk', flat=True).get()
+    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''

@@ -31,7 +31,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))

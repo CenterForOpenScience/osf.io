@@ -88,7 +88,6 @@ class OsfStorageFileNode(BaseFileNode):
         Just manually assert that node is equal to node.
         """
         inst = cls.load(path.strip('/'))
-        # Use _id as odms default comparison mucks up sometimes
         if inst and inst.target.id == target.id:
             return inst
 
@@ -387,7 +386,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 
-    is_root = models.NullBooleanField(default=None)
+    is_root = models.NullBooleanField()
 
     objects = OsfStorageFolderManager()
 

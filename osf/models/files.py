@@ -224,6 +224,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return guids
 
+    def has_permission(self, user, perm):
+        return self.node and self.node.has_permission(user, perm)
+
     def to_storage(self, **kwargs):
         storage = super(BaseFileNode, self).to_storage(**kwargs)
         if 'trashed' not in self.type.lower():

@@ -434,6 +434,12 @@ class ListFilterMixin(FilterMixin):
                 else self.model_class.primary_identifier_name
             )
             operation['op'] = 'in'
+        if field_name == 'subjects':
+            if Subject.objects.filter(_id=operation['value']).exists():
+                operation['source_field_name'] = 'subjects___id'
+            else:
+                operation['source_field_name'] = 'subjects__text'
+                operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

@@ -8,13 +8,13 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
 
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.mixins import GuardianMixin
+from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 
-class CollectedGuidMetadata(BaseModel):
+class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
     class Meta:
@@ -30,6 +30,10 @@ class CollectedGuidMetadata(BaseModel):
     @cached_property
     def _id(self):
         return self.guid._id
+
+    def save(self, *args, **kwargs):
+        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
+        return super(CollectedGuidMetadata, self).save(*args, **kwargs)
 
 class Collection(GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
@@ -111,6 +115,9 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)
         return ret
+
+    def has_permission(self, user, perm):
+        return user.has_perms(self.groups[perm], self)
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
         """ Adds object to collection, creates CollectedGuidMetadata reference

@@ -11,14 +11,14 @@ from django.views.generic import ListView, DetailView, View, CreateView, DeleteV
 from django.core.management import call_command
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
-from osf.models.provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
@@ -415,3 +415,28 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
         kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
+
+
+class SharePreprintProviderWhitelist(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+    template_name = 'preprint_providers/whitelist.html'
+
+    def post(self, request):
+        providers_added = json.loads(request.body).get('added')
+        if len(providers_added) != 0:
+            for item in providers_added:
+                WhitelistedSHAREPreprintProvider.objects.get_or_create(provider_name=item)
+        return HttpResponse(200)
+
+    def delete(self, request):
+        providers_removed = json.loads(request.body).get('removed')
+        if len(providers_removed) != 0:
+            for item in providers_removed:
+                WhitelistedSHAREPreprintProvider.objects.get(provider_name=item).delete()
+        return HttpResponse(200)
+
+    def get(self, request):
+        share_api_url = settings.SHARE_URL
+        api_v2_url = settings.API_DOMAIN + settings.API_BASE
+        return render(request, self.template_name, {'share_api_url': share_api_url, 'api_v2_url': api_v2_url})

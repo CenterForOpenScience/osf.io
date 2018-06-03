@@ -18,6 +18,9 @@ from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
+from website.views import find_bookmark_collection
+
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
@@ -57,6 +60,8 @@ from osf_tests.factories import (
     SessionFactory,
     SubjectFactory,
     TagFactory,
+    CollectionFactory,
+    CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
@@ -4195,3 +4200,124 @@ class TestNodeProperties:
         preprint.is_published = False
         preprint.save()
         assert project.is_supplemental_node_for_preprint is False
+
+    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
+        node = ProjectFactory(is_public=True)
+        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
+        PreprintFactory(project=node, is_published=False, filename='file2.txt')
+        assert node.preprint_url == published.url
+
+class TestCollectionProperties:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collector(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider(self):
+        return CollectionProviderFactory()
+
+    @pytest.fixture()
+    def collection_one(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_two(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_public(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+
+    @pytest.fixture()
+    def public_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=True)
+
+    @pytest.fixture()
+    def private_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=False)
+
+    @pytest.fixture()
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    def test_collection_project_views(
+            self, user, node, collection_one, collection_two, collection_public,
+            public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
+
+        # test_collection_properties
+        assert not node.is_collected
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        assert node.is_collected
+        assert len(node.collecting_metadata_list) == 3
+
+        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_expected = {collection_one._id, collection_two._id, collection_public._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+
+        assert ids_not_expected.isdisjoint(ids_actual)
+        assert ids_actual == ids_expected
+
+    def test_permissions_collection_project_views(
+            self, user, node, contrib, collection_one, collection_two,
+            collection_public, public_non_provided_collection, private_non_provided_collection,
+            bookmark_collection, collector):
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        ## test_not_logged_in_user_only_sees_public_collection_info
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
+        node.add_contributor(contributor=contrib, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
+        node.add_contributor(contributor=collector, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
+        assert ids_actual == ids_expected
+
+        ## test_node_contrib_cannot_see_public_bookmark_collections
+        bookmark_collection_public = bookmark_collection
+        bookmark_collection_public.is_public = True
+        bookmark_collection_public.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        assert bookmark_collection_public._id not in ids_actual

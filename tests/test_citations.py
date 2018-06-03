@@ -122,7 +122,7 @@ class CitationsUserTestCase(OsfTestCase):
         referrer = UserFactory()
         project = NodeFactory(creator=referrer)
         user = UnregUserFactory()
-        user.add_unclaimed_record(resource=project,
+        user.add_unclaimed_record(project,
             given_name=user.fullname, referrer=referrer,
             email=fake_email())
         user.save()

@@ -10,7 +10,7 @@ from guardian.shortcuts import assign_perm, get_perms, remove_perm
 
 from include import IncludeQuerySet
 
-from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
@@ -598,7 +598,7 @@ class ReviewProviderMixin(models.Model):
         return counts
 
     def add_to_group(self, user, group):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
         user_id = user.id
@@ -610,7 +610,7 @@ class ReviewProviderMixin(models.Model):
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         _group = GroupHelper(self).get_group(group)
         if group == 'admin':
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
@@ -703,12 +703,17 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        PreprintService = apps.get_model('osf.PreprintService')
+        CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
-        if getattr(self, 'is_collection', False):
-            raise NodeStateError('Collections may not have subjects')
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change subjects.')
+        if isinstance(self, (AbstractNode, PreprintService)):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, CollectedGuidMetadata):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
