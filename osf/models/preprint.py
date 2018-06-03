@@ -681,7 +681,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(resource=self, referrer=auth.user,
+        contributor.add_unclaimed_record(claim_origin=self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
@@ -693,7 +693,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 raise
 
             contributor.add_unclaimed_record(
-                resource=self, referrer=auth.user, given_name=fullname, email=email
+                claim_origin=self, referrer=auth.user, given_name=fullname, email=email
             )
 
             contributor.save()
@@ -1331,6 +1331,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         # Note: The "root" node will always be "named" empty string
         root_folder = OsfStorageFolder(name='', target=self, is_root=True)
         root_folder.save()
+
+        self.root_folder = root_folder
+        self.save()
         return root_folder
 
     def serialize_waterbutler_settings(self):

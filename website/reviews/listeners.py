@@ -12,7 +12,7 @@ def reviews_notification(self, creator, template, context, action):
     from website.notifications.emails import notify_global_event
     recipients = list(action.target.contributors)
     time_now = action.created if action is not None else timezone.now()
-    node = action.target.node
+    node = action.target
     notify_global_event(
         event='global_reviews',
         sender_user=creator,
@@ -62,7 +62,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
     # Set message
-    context['message'] = u'submitted {}.'.format(context['reviewable'].node.title)
+    context['message'] = u'submitted {}.'.format(context['reviewable'].title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
@@ -72,7 +72,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
                         'email_transactional',
                         'new_pending_submissions',
                         context['referrer'],
-                        context['reviewable'].node,
+                        context['reviewable'],
                         timestamp,
                         abstract_provider=context['reviewable'].provider,
                         **context)
@@ -82,7 +82,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
                         'email_digest',
                         'new_pending_submissions',
                         context['referrer'],
-                        context['reviewable'].node,
+                        context['reviewable'],
                         timestamp,
                         abstract_provider=context['reviewable'].provider,
                         **context)

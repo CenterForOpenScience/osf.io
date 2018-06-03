@@ -1300,7 +1300,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(resource=self, referrer=auth.user,
+        contributor.add_unclaimed_record(claim_origin=self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
@@ -1312,7 +1312,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise
 
             contributor.add_unclaimed_record(
-                resource=self, referrer=auth.user, given_name=fullname, email=email
+                claim_origin=self, referrer=auth.user, given_name=fullname, email=email
             )
 
             contributor.save()

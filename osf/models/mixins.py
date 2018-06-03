@@ -704,11 +704,11 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         AbstractNode = apps.get_model('osf.AbstractNode')
-        PreprintService = apps.get_model('osf.PreprintService')
+        Preprint = apps.get_model('osf.Preprint')
         CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
-        if isinstance(self, (AbstractNode, PreprintService)):
+        if isinstance(self, (AbstractNode, Preprint)):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
         elif isinstance(self, CollectedGuidMetadata):

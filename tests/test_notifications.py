@@ -1915,7 +1915,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_submit_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info['message'] = u'submitted {}.'.format(self.context_info['reviewable'].node.title)
+        self.context_info['message'] = u'submitted {}.'.format(self.context_info['reviewable'].title)
         self.context_info['profile_image_url'] = get_profile_image_url(self.context_info['referrer'])
         self.context_info['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info[
