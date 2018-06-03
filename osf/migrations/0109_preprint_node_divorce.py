@@ -14,7 +14,7 @@ from guardian.shortcuts import assign_perm, get_perms, remove_perm
 from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
 from osf.models import OSFUser
-from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from osf.models import Preprint
 
 node_preprint_logs = [
@@ -44,8 +44,7 @@ def pull_preprint_date_modified_from_node(node, preprint):
 
 def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
-    PreprintTags = apps.get_model('osf', "Preprint_Tags")
-
+    PreprintTags = apps.get_model('osf', 'Preprint_Tags')
 
     preprints = []
     files = []
@@ -58,18 +57,27 @@ def reverse_func(apps, schema_editor):
         preprint.description = ''
         preprint.creator = None
         preprint.article_doi = ''
+        preprint.is_public = True
+        preprint.update_modified = False
+        preprint.region_id = None
+        preprint.spam_status = ''
+        preprint.spam_pro_tip = ''
+        preprint.spam_data = {}
+        preprint.date_last_reported = None
+        preprint.reports = {}
 
+        preprint.root_folder = None
+        preprint_file = preprint.primary_file
         preprint_file.target = node
         node.preprint_file = preprint_file
+        preprint_file.parent = NodeSettings.objects.get(owner=node).root_folder
 
-        preprint.primary_file = None
-        preprint.is_public = True
         preprint.deleted = None
         preprint.migrated = None
 
         preprints.append(preprint)
-        files.append(preprint_file)
         nodes.append(node)
+        files.append(preprint_file)
 
         # Deleting the particular preprint admin/read/write groups will remove the users from the groups
         # and their permission to these preprints
@@ -79,10 +87,9 @@ def reverse_func(apps, schema_editor):
 
     PreprintContributor.objects.all().delete()
     PreprintTags.objects.all().delete()
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified', 'primary_file'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports', 'root_folder'])
     bulk_update(nodes, update_fields=['preprint_file'])
     bulk_update(files)
-
 
 def batch(iterable, size):
     sourceiter = iter(iterable)
@@ -97,7 +104,8 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     Preprint = apps.get_model('osf', 'Preprint')
     AbstractNode = apps.get_model('osf', 'AbstractNode')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
-    PreprintTags = apps.get_model('osf', "Preprint_Tags")
+    PreprintTags = apps.get_model('osf', 'Preprint_Tags')
+    NodeSettings = apps.get_model('addons_osfstorage', 'NodeSettings')
 
     contributors = []
     preprints = []
@@ -107,22 +115,34 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
     for preprint in Preprint.objects.filter(node__isnull=False).select_related('node'):
         node = preprint.node
-        preprint_file = OsfStorageFile.objects.get(id=node.preprint_file.id)
-        deleted_log = node.logs.filter(action='project_deleted').first()
         preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
         preprint.title = node.title
         preprint.description = node.description
         preprint.creator = node.logs.filter(action='preprint_initiated').first().user
         preprint.article_doi = node.preprint_article_doi
+        preprint.is_public = node.is_public
+        preprint.modified = pull_preprint_date_modified_from_node(node, preprint)
+        preprint.update_modified = False
+        preprint.region_id = NodeSettings.objects.get(owner=node).region_id
+        preprint.spam_status = node.spam_status
+        preprint.spam_pro_tip = node.spam_pro_tip
+        preprint.spam_data = node.spam_data
+        preprint.date_last_reported = node.date_last_reported
+        preprint.reports = node.reports
+
+        root_folder = OsfStorageFolder(name='', target=preprint, is_root=True)
+        root_folder.save()
+        preprint.root_folder = root_folder
+        preprint_file = OsfStorageFile.objects.get(id=node.preprint_file.id)
         preprint_file.target = preprint
         preprint.primary_file_id = preprint_file.id
-        node.preprint_file = None
+        preprint_file.parent = root_folder
 
-        preprint.is_public = node.is_public
+        deleted_log = node.logs.filter(action='project_deleted').first()
         preprint.deleted = deleted_log.date if deleted_log else None
+
         preprint.migrated = datetime.datetime.now()
-        preprint.date_modified = pull_preprint_date_modified_from_node(node, preprint)
 
         # use bulk create
         admin = []
@@ -132,7 +152,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         for tag in node.tags.all():
             tags.append(PreprintTags(preprint_id=preprint.id, tag_id=tag.id))
 
-        for contrib in preprint.node.contributor_set.all():
+        for contrib in node.contributor_set.all():
             # make a PreprintContributor that points to the pp instead of the node
             # because there's a throughtable, relations are designated
             # solely on the through model, and adds on the related models
@@ -160,7 +180,6 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
         preprints.append(preprint)
         files.append(preprint_file)
-        nodes.append(node)
 
     batch_size = 1000
     for batchiter in batch(contributors, batch_size):
@@ -170,8 +189,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     for batchiter in batch(tags, batch_size):
         PreprintTags.objects.bulk_create(batchiter)
 
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'deleted', 'migrated', 'modified', 'primary_file'])
-    bulk_update(nodes, update_fields=['preprint_file'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports', 'root_folder'])
     bulk_update(files)
 
 group_format = 'preprint_{self.id}_{group}'
