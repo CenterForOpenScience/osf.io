@@ -4,7 +4,6 @@ import hmac
 import hashlib
 
 from osf_tests import factories
-from api.base.settings.defaults import API_BASE
 from website import settings
 
 
@@ -94,14 +93,14 @@ class TestCrossRefEmailResponse:
 
     def test_wrong_request_context_raises_permission_error(self, app, error_xml):
         mailgun_response = self.mailgun_response(error_xml)
-        url = '/{}_/crossref/email/'.format(API_BASE).replace('/v2', '')
+        url = '/_/crossref/email/'
         response = app.post(url, mailgun_response, expect_errors=True)
 
         assert response.status_code == 400
 
     def test_error_response_sends_message_does_not_set_doi(self, app, preprint, error_xml):
         mailgun_response = self.mailgun_response(error_xml)
-        url = '/{}_/crossref/email/'.format(API_BASE).replace('/v2', '')
+        url = '/_/crossref/email/'
 
         assert not preprint.get_identifier_value('doi')
 
@@ -113,7 +112,7 @@ class TestCrossRefEmailResponse:
 
     def test_success_response_sets_doi(self, app, preprint, success_xml):
         mailgun_response = self.mailgun_response(success_xml)
-        url = '/{}_/crossref/email/'.format(API_BASE).replace('/v2', '')
+        url = '/_/crossref/email/'
 
         assert not preprint.get_identifier_value('doi')
 

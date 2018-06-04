@@ -26,9 +26,9 @@ class RequestComesFromMailgun(permissions.BasePermission):
             digestmod=hashlib.sha256,
         ).hexdigest()
         if 'signature' not in data:
-            exc = 'Signature required in request body'
-            sentry.log_exception(exc)
-            raise ParseError(exc)
+            error_message = 'Signature required in request body'
+            sentry.log_message(error_message)
+            raise ParseError(error_message)
         if not hmac.compare_digest(unicode(signature), unicode(data['signature'])):
             raise ParseError('Invalid signature')
         return True
