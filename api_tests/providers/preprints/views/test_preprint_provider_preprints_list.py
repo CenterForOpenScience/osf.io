@@ -109,6 +109,20 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual
 
+    def test_node_is_public_deprecated_filter(
+            self, app, user, preprint_one, preprint_two,
+            preprint_three, url):
+
+        preprint_one.node.is_public = False
+        preprint_one.node.save()
+        preprint_two.node.is_public = True
+        preprint_two.node.save()
+        preprint_three.node.is_public = True
+        preprint_three.node.save()
+
+        res = app.get(url + '&filter[node_is_public]=True', auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
 
 class TestPreprintProviderPreprintListFilteringByReviewableFields(
         ReviewableFilterMixin):

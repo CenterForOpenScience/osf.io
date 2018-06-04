@@ -1930,7 +1930,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                       'email_digest',
                                       'new_pending_submissions',
                                       self.context_info['referrer'],
-                                      self.context_info['reviewable'].node,
+                                      self.context_info['reviewable'],
                                       time_now,
                                       abstract_provider=self.context_info['reviewable'].provider,
                                       **self.context_info)
@@ -1939,7 +1939,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                    'email_transactional',
                                    'new_pending_submissions',
                                    self.context_info['referrer'],
-                                   self.context_info['reviewable'].node,
+                                   self.context_info['reviewable'],
                                    time_now,
                                    abstract_provider=self.context_info['reviewable'].provider,
                                    **self.context_info)

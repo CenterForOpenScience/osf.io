@@ -37,7 +37,7 @@ node_preprint_logs = [
 ]
 
 def pull_preprint_date_modified_from_node(node, preprint):
-    latest_log_date = node.logs.filter(action__in=node_preprint_logs).order_by('date').first().date
+    latest_log_date = node.logs.filter(action__in=node_preprint_logs).order_by('date').last().date
     if preprint.modified < latest_log_date:
         return latest_log_date
     return preprint.modified
@@ -45,22 +45,27 @@ def pull_preprint_date_modified_from_node(node, preprint):
 def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     PreprintTags = apps.get_model('osf', 'Preprint_Tags')
+    NodeSettings = apps.get_model('addons_osfstorage', 'NodeSettings')
 
     preprints = []
     files = []
     nodes = []
     for preprint in Preprint.objects.filter(node__isnull=False).select_related('node'):
-        preprint_file = OsfStorageFile.objects.get(id=preprint.primary_file.id)
         node = preprint.node
+        modified_field = Preprint._meta.get_field('modified')
+        modified_field.auto_now = False
+        preprint.modified = pull_preprint_date_modified_from_node(node, preprint)
+
+        node_modified_field = AbstractNode._meta.get_field('modified')
+        node_modified_field.auto_now = False
 
         preprint.title = 'Untitled'
         preprint.description = ''
         preprint.creator = None
         preprint.article_doi = ''
         preprint.is_public = True
-        preprint.update_modified = False
         preprint.region_id = None
-        preprint.spam_status = ''
+        preprint.spam_status = None
         preprint.spam_pro_tip = ''
         preprint.spam_data = {}
         preprint.date_last_reported = None
@@ -70,7 +75,7 @@ def reverse_func(apps, schema_editor):
         preprint_file = preprint.primary_file
         preprint_file.target = node
         node.preprint_file = preprint_file
-        preprint_file.parent = NodeSettings.objects.get(owner=node).root_folder
+        preprint_file.parent_id = NodeSettings.objects.get(owner_id=node.id).root_node_id
 
         preprint.deleted = None
         preprint.migrated = None
@@ -101,11 +106,11 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
 
-    Preprint = apps.get_model('osf', 'Preprint')
     AbstractNode = apps.get_model('osf', 'AbstractNode')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     PreprintTags = apps.get_model('osf', 'Preprint_Tags')
     NodeSettings = apps.get_model('addons_osfstorage', 'NodeSettings')
+    # OsfStorageFolder = apps.get_model('osf', 'OsfStorageFolder')
 
     contributors = []
     preprints = []
@@ -117,7 +122,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         node = preprint.node
         preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
-        modified_field = Preprint._meta.get_field('modified ')
+        modified_field = Preprint._meta.get_field('modified')
         modified_field.auto_now = False
         preprint.modified = pull_preprint_date_modified_from_node(node, preprint)
 
@@ -127,8 +132,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         preprint.article_doi = node.preprint_article_doi
         preprint.is_public = node.is_public
 
-        preprint.update_modified = False
-        preprint.region_id = NodeSettings.objects.get(owner=node).region_id
+        preprint.region_id = NodeSettings.objects.get(owner_id=node.id).region_id
         preprint.spam_status = node.spam_status
         preprint.spam_pro_tip = node.spam_pro_tip
         preprint.spam_data = node.spam_data
@@ -195,7 +199,6 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
     bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports', 'root_folder'])
     bulk_update(files)
-    modified_field.auto_now = True
 
 group_format = 'preprint_{self.id}_{group}'
 
