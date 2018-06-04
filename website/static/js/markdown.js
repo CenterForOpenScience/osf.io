@@ -44,9 +44,9 @@ var markdown = new MarkdownIt('commonmark', {
     linkify: true
     }).use(require('markdown-it-atrules'), {
         type: 'osf',
-        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{5})\/\?action=download|(^[a-zA-Z0-9]{5}$)/,
+        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{1,})\/\?action=download|(^[a-zA-Z0-9]{1,}$)/,
         format(assetID) {
-          var id = '__markdown-it-atrules-' + (new Date()).getTime();
+          var id = '__markdown-it-atrules-' + (new Date()).getTime() + Math.random() ;
           return '<div id="' + id + '" class="mfr mfr-file"></div>' +
             '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
         }
