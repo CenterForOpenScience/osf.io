@@ -1,131 +1,16 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-
 from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 
 from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError, PermissionsError
-from framework.sessions import session
-from requests_oauthlib import OAuth2Session
-from flask import request
 
-from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-from requests.exceptions import HTTPError as RequestsHTTPError
 
-from addons.weko.client import connect_or_error
 from addons.weko.serializer import WEKOSerializer
 from addons.weko.utils import WEKONodeLogger
-from addons.weko import settings as weko_settings
-from website.util import web_url_for
-
-OAUTH2 = 2
-
-class WEKOProvider(ExternalProvider):
-    """An alternative to `ExternalProvider` not tied to OAuth"""
-
-    name = 'WEKO'
-    short_name = 'weko'
-    serializer = WEKOSerializer
-
-    client_id = None
-    client_secret = None
-    auth_url_base = None
-    callback_url = None
-
-    def get_repo_auth_url(self, repoid):
-        """The URL to begin the OAuth dance.
-
-        This property method has side effects - it at least adds temporary
-        information to the session so that callbacks can be associated with
-        the correct user.  For OAuth1, it calls the provider to obtain
-        temporary credentials to start the flow.
-        """
-
-        # create a dict on the session object if it's not already there
-        if session.data.get('oauth_states') is None:
-            session.data['oauth_states'] = {}
-
-        repo_settings = weko_settings.REPOSITORIES[repoid]
-
-        assert self._oauth_version == OAUTH2
-        # build the URL
-        oauth = OAuth2Session(
-            repo_settings['client_id'],
-            redirect_uri=web_url_for('weko_oauth_callback',
-                                     repoid=repoid,
-                                     _absolute=True),
-            scope=self.default_scopes,
-        )
-
-        url, state = oauth.authorization_url(repo_settings['authorize_url'])
-
-        # save state token to the session for confirmation in the callback
-        session.data['oauth_states'][self.short_name] = {'state': state}
-
-        session.save()
-        return url
-
-    def repo_auth_callback(self, user, repoid, **kwargs):
-        """Exchange temporary credentials for permanent credentials
-
-        This is called in the view that handles the user once they are returned
-        to the OSF after authenticating on the external service.
-        """
-
-        if 'error' in request.args:
-            return False
-
-        repo_settings = weko_settings.REPOSITORIES[repoid]
-
-        # make sure the user has temporary credentials for this provider
-        try:
-            cached_credentials = session.data['oauth_states'][self.short_name]
-        except KeyError:
-            raise PermissionsError('OAuth flow not recognized.')
-
-        assert self._oauth_version == OAUTH2
-        state = request.args.get('state')
-
-        # make sure this is the same user that started the flow
-        if cached_credentials.get('state') != state:
-            raise PermissionsError('Request token does not match')
-
-        try:
-            callback_url = web_url_for('weko_oauth_callback', repoid=repoid,
-                                       _absolute=True)
-            response = OAuth2Session(
-                repo_settings['client_id'],
-                redirect_uri=callback_url,
-            ).fetch_token(
-                repo_settings['access_token_url'],
-                client_secret=repo_settings['client_secret'],
-                code=request.args.get('code'),
-            )
-        except (MissingTokenError, RequestsHTTPError):
-            raise HTTPError(http.SERVICE_UNAVAILABLE)
-        # pre-set as many values as possible for the ``ExternalAccount``
-        info = self._default_handle_callback(response)
-        # call the hook for subclasses to parse values from the response
-        info.update(self.handle_callback(repoid, response))
-
-        return self._set_external_account(user, info)
-
-    def handle_callback(self, repoid, response):
-        """View called when the OAuth flow is completed.
-        """
-        repo_settings = weko_settings.REPOSITORIES[repoid]
-        connection = connect_or_error(repo_settings['host'],
-                                      response.get('access_token'))
-        login_user = connection.get_login_user('unknown')
-        return {
-            'provider_id': '{}:{}'.format(repoid, login_user),
-            'display_name': login_user + '@' + repoid
-        }
+from addons.weko.provider import WEKOProvider
 
 
 class WEKOFileNode(BaseFileNode):
@@ -231,18 +116,21 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        provider_id = self.external_account.provider_id
-        login_user = provider_id[provider_id.index(':') + 1:]
-        return {'token': self.external_account.oauth_key,
-                'user_id': login_user}
+        provider = WEKOProvider(self.external_account)
+        if provider.repoid is not None:
+            return {'token': self.external_account.oauth_key,
+                    'user_id': provider.userid}
+        else:
+            return {'password': provider.password,
+                    'user_id': provider.username}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('WEKO is not configured')
+        provider = WEKOProvider(self.external_account)
         return {
-            'host': self.external_account.oauth_key,
             'nid': self.owner._id,
-            'url': weko_settings.REPOSITORIES[self.external_account.provider_id.split(':')[0]]['host'],
+            'url': provider.sword_url,
             'index_id': self.index_id,
             'index_title': self.index_title,
         }

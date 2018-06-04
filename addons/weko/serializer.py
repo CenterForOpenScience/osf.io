@@ -60,6 +60,7 @@ class WEKOSerializer(OAuthAddonSerializer):
             'auth': api_url_for('weko_oauth_connect',
                                 repoid='<repoid>'),
             'set': node.api_url_for('weko_set_config'),
+            'create': node.api_url_for('weko_add_user_account'),
             'importAuth': node.api_url_for('weko_import_auth'),
             'deauthorize': node.api_url_for('weko_deauthorize_node'),
             'accounts': api_url_for('weko_account_list'),

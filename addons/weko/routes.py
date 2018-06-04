@@ -30,6 +30,14 @@ api_routes = {
             json_renderer,
         ),
         Rule(
+            [
+                '/settings/weko/accounts/',
+            ],
+            'post',
+            views.weko_add_user_account,
+            json_renderer,
+        ),
+        Rule(
             '/settings/weko/accounts/',
             'get',
             views.weko_account_list,

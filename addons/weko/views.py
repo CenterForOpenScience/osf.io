@@ -11,11 +11,14 @@ from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from django.core.exceptions import ValidationError
+from osf.models import ExternalAccount
 
 from addons.base import generic_views
 from addons.weko import client
 from addons.weko.serializer import WEKOSerializer
 from addons.weko import settings as weko_settings
+from addons.weko.provider import REPOID_BASIC_AUTH, WEKOProvider
 from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -130,6 +133,59 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
     node_addon.set_folder(index, auth)
 
     return {'index': index.title}, http.OK
+
+@must_be_logged_in
+def weko_add_user_account(auth, **kwargs):
+    """Verifies new external account credentials and adds to user's list"""
+    try:
+        sword_url = request.json['sword_url']
+        access_key = request.json['access_key']
+        secret_key = request.json['secret_key']
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not (sword_url and access_key and secret_key):
+        return {
+            'message': 'All the fields above are required.'
+        }, http.BAD_REQUEST
+
+    try:
+        user_info = client.connect_or_error(sword_url,
+                                            username=access_key,
+                                            password=secret_key).get_login_user()
+    except (HTTPError, IOError):
+        user_info = None
+    if not user_info:
+        return {
+            'message': ('Unable to access account.\n'
+                'Check to make sure that the above credentials are valid, '
+                'and that they have permission to list indices.')
+        }, http.BAD_REQUEST
+
+    provider = WEKOProvider(account=None, host=sword_url,
+                            username=access_key, password=secret_key)
+    try:
+        provider.account.save()
+    except ValidationError:
+        # ... or get the old one
+        provider.account = ExternalAccount.objects.get(
+            provider=SHORT_NAME,
+            provider_id='{}:{}:{}'.format(REPOID_BASIC_AUTH, sword_url,
+                                          access_key).lower()
+        )
+        if provider.account.oauth_key != secret_key:
+            provider.account.oauth_key = secret_key
+            provider.account.save()
+    assert provider.account is not None
+
+    if not auth.user.external_accounts.filter(id=provider.account.id).exists():
+        auth.user.external_accounts.add(provider.account)
+
+    # Ensure WEKO is enabled.
+    auth.user.get_or_add_addon('weko', auth=auth)
+    auth.user.save()
+
+    return {}
 
 ## Crud ##
 
