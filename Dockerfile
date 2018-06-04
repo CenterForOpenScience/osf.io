@@ -9,6 +9,8 @@ ENV GOSU_VERSION=1.10 \
 RUN set -ex \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www \
+    && apt-get update \
+    && apt-get install -y gnupg2 \
     # GOSU
     && gpg --keyserver hkp://pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && for key in \
@@ -31,7 +33,6 @@ RUN set -ex \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
     # Install dependancies
-    && apt-get update \
     && apt-get install -y \
         git \
         libev4 \
