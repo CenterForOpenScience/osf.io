@@ -11,6 +11,8 @@ from website import settings
 class TestCrossRefEmailResponse:
 
     def create_mailgun_request_context(self, response_data):
+        if not settings.MAILGUN_API_KEY:
+            raise Exception('Must have mailgun API key set to run this test.')
         data = {
             'X-Mailgun-Sscore': 0,
             'signature': hmac.new(
@@ -74,6 +76,26 @@ class TestCrossRefEmailResponse:
             </doi_batch_diagnostic>
         """.format(preprint._id, preprint._id)
 
+    @pytest.fixture()
+    def update_success_xml(self, preprint):
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <doi_batch_diagnostic status="completed" sp="cs3.crossref.org">
+            <submission_id>1390757455</submission_id>
+            <batch_id>{}</batch_id>
+            <record_diagnostic status="Success">
+                <doi>10.31219/FK2osf.io/{}</doi>
+                <msg>Successfully updated</msg>
+            </record_diagnostic>
+            <batch_data>
+                <record_count>1</record_count>
+                <success_count>1</success_count>
+                <warning_count>0</warning_count>
+                <failure_count>0</failure_count>
+            </batch_data>
+        </doi_batch_diagnostic>
+        """.format(preprint._id, preprint._id)
+
     def mailgun_response(self, response):
         return {
             'From': ['CrossRef <admin@crossref.org>'],
@@ -122,3 +144,17 @@ class TestCrossRefEmailResponse:
 
         assert not mock_send_mail.called
         assert preprint.get_identifier_value('doi')
+
+    def test_update_success_response(self, app, preprint, update_success_xml):
+        preprint.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id))
+        update_xml = self.update_success_xml(preprint)
+        mailgun_response = self.mailgun_response(update_xml)
+        url = '/_/crossref/email'
+
+        with mock.patch.object(preprint, 'set_identifier_value') as mock_set_identifier_value:
+            with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+                context_data = self.create_mailgun_request_context(response_data=mailgun_response)
+                app.post(url, context_data)
+
+        assert not mock_send_mail.called
+        assert not mock_set_identifier_value.called
