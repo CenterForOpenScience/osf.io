@@ -13,7 +13,7 @@ from framework.exceptions import PermissionsError
 from osf.models.mixins import ReviewableMixin
 from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import ReviewStates
 from osf.utils.permissions import ADMIN
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
@@ -163,7 +163,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = DefaultStates.ACCEPTED.value
+            self.machine_state = ReviewStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
             # This preprint will have a tombstone page when it's withdrawn.

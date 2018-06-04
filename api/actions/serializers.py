@@ -14,7 +14,7 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from osf.exceptions import InvalidTriggerError
 from osf.models import PreprintService, NodeRequest
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
 
@@ -154,6 +154,9 @@ class ReviewActionSerializer(BaseActionSerializer):
     ])
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
+    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
@@ -178,6 +181,22 @@ class ReviewActionSerializer(BaseActionSerializer):
         related_view_kwargs={'preprint_id': '<target._id>'},
         filter_key='target__guids___id',
     )
+
+    def create(self, validated_data):
+        trigger = validated_data.get('trigger')
+        if trigger != ReviewTriggers.WITHDRAW.value:
+            return super(ReviewActionSerializer, self).create(validated_data)
+        user = validated_data.pop('user')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        try:
+            return target.run_withdraw(user=user, comment=comment)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(e.message)
+        else:
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+
 
 class NodeRequestActionSerializer(BaseActionSerializer):
     class Meta:
