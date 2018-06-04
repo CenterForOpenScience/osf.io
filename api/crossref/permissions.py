@@ -3,7 +3,7 @@ import hmac
 import hashlib
 
 from rest_framework import permissions
-from rest_framework.exceptions import ParseError
+from rest_framework import exceptions
 
 from framework import sentry
 from website import settings
@@ -16,7 +16,11 @@ class RequestComesFromMailgun(permissions.BasePermission):
     https://documentation.mailgun.com/en/latest/user_manual.html#webhooks
     """
     def has_permission(self, request, view):
+        if request.method != 'POST':
+            raise exceptions.MethodNotAllowed(method=request.method)
         data = request.data
+        if not data:
+            raise exceptions.ParseError('Correct headers not returned with request')
         signature = hmac.new(
             key=settings.MAILGUN_API_KEY,
             msg='{}{}'.format(
@@ -28,7 +32,7 @@ class RequestComesFromMailgun(permissions.BasePermission):
         if 'signature' not in data:
             error_message = 'Signature required in request body'
             sentry.log_message(error_message)
-            raise ParseError(error_message)
+            raise exceptions.ParseError(error_message)
         if not hmac.compare_digest(unicode(signature), unicode(data['signature'])):
-            raise ParseError('Invalid signature')
+            raise exceptions.ParseError('Invalid signature')
         return True
