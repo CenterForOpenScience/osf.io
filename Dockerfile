@@ -11,9 +11,9 @@ RUN set -ex \
     && chown www-data:www-data /var/www \
     && apt-get update \
     && apt-get install -y gnupg2 \
-    # GOSU
-    && gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && for key in \
+      # GOSU
+      B42F6819007F00F88E364FD4036A9C25BF357DD4 \
       # https://github.com/nodejs/docker-node/blob/9c25cbe93f9108fd1e506d14228afe4a3d04108f/8.2/Dockerfile
       # gpg keys listed at https://github.com/nodejs/node#release-team
       # Node
@@ -28,10 +28,11 @@ RUN set -ex \
       # Yarn
       6A010C5166006599AA17F08146C2130DFD2497F5 \
     ; do \
-      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
-    done \
+      gpg --keyserver hkp://ipv4.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$key" \
+      gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://keyserver.pgp.com:80 --recv-keys "$key" \
+    ; done \
     # Install dependancies
     && apt-get install -y \
         git \
