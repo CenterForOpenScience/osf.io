@@ -117,12 +117,16 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         node = preprint.node
         preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
+        modified_field = Preprint._meta.get_field('modified ')
+        modified_field.auto_now = False
+        preprint.modified = pull_preprint_date_modified_from_node(node, preprint)
+
         preprint.title = node.title
         preprint.description = node.description
         preprint.creator = node.logs.filter(action='preprint_initiated').first().user
         preprint.article_doi = node.preprint_article_doi
         preprint.is_public = node.is_public
-        preprint.modified = pull_preprint_date_modified_from_node(node, preprint)
+
         preprint.update_modified = False
         preprint.region_id = NodeSettings.objects.get(owner=node).region_id
         preprint.spam_status = node.spam_status
@@ -191,6 +195,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
     bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports', 'root_folder'])
     bulk_update(files)
+    modified_field.auto_now = True
 
 group_format = 'preprint_{self.id}_{group}'
 
