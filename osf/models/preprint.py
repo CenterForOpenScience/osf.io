@@ -1116,7 +1116,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return (self.verified_publishable or
             (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
             self.has_permission(auth.user, 'admin') or
-            (self.is_contributor(auth.user) and self.machine_state != DefaultStates.INITIAL.value)
+            (self.is_contributor(auth.user) and self.has_submitted_preprint)
         )
 
     def can_edit(self, auth=None, user=None):
@@ -1134,7 +1134,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         user = user or auth.user
 
         return (
-            (user and self.has_permission(user, 'write'))
+            user and ((self.has_permission(user, 'write') and self.has_submitted_preprint) or self.has_permission(user, 'admin'))
         )
 
     # TODO: Remove save parameter

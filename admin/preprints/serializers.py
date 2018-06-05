@@ -17,6 +17,7 @@ def serialize_preprint(preprint):
         'is_public': preprint.is_public,
         'creator': preprint.creator._id,
         'deleted': preprint.deleted,
+        'verified_publishable': preprint.verified_publishable,
     }
 
 def serialize_simple_user_and_preprint_permissions(preprint, user):

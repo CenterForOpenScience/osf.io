@@ -494,11 +494,33 @@ class ListFilterMixin(FilterMixin):
         return getattr(serializer, serializer_method_name)
 
 
-class PreprintFilterMixin(ListFilterMixin):
+class PreprintQueryBaseMixin():
+
+    def build_preprint_permissions_query(self, auth_user, allow_contribs=True):
+        no_user_query = Q(
+            is_published=True,
+            is_public=True,
+            primary_file__isnull=False,
+            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+
+        if auth_user:
+            admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
+            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            if allow_contribs:
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(auth_user, 'read_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
+                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = (no_user_query | admin_user_query | reviews_user_query)
+        else:
+            query = no_user_query
+
+        return query
+
+
+class PreprintFilterMixin(ListFilterMixin, PreprintQueryBaseMixin):
     """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
        Subclasses must define `get_default_queryset()`.
-
     """
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
@@ -516,21 +538,6 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        no_user_query = Q(
-            is_published=True,
-            is_public=True,
-            primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
-
-        if auth_user:
-            admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
-            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(auth_user, 'read_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
-                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (no_user_query | admin_user_query | reviews_user_query)
-        else:
-            query = no_user_query
+        query = self.build_preprint_permissions_query(auth_user, allow_contribs)
 
         return base_queryset.filter(query & Q(deleted__isnull=True)).distinct('id', 'created')

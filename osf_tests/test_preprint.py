@@ -2341,11 +2341,11 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_preprint_access(self.preprint, Auth(user=self.user), 'upload', None)
+        res = views.check_access(self.preprint, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_not_has_permission_read_published(self):
-        res = views.check_preprint_access(self.preprint, Auth(), 'download', None)
+        res = views.check_access(self.preprint, Auth(), 'download', None)
         assert_true(res)
 
     def test_not_has_permission_logged_in(self):
@@ -2353,14 +2353,14 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint.is_published = False
         self.preprint.save()
         with assert_raises(HTTPError) as exc_info:
-            views.check_preprint_access(self.preprint, Auth(user=user2), 'download', None)
+            views.check_access(self.preprint, Auth(user=user2), 'download', None)
         assert_equal(exc_info.exception.code, 403)
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
         with assert_raises(HTTPError) as exc_info:
-            views.check_preprint_access(self.preprint, Auth(), 'download', None)
+            views.check_access(self.preprint, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
 

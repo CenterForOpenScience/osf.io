@@ -141,6 +141,18 @@ class TestPreprintReindex(AdminTestCase):
         nt.assert_true(mock_reindex_preprint.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
+    @mock.patch('website.search.search.update_preprint')
+    @mock.patch('website.search.elastic_search.bulk_update_nodes')
+    def test_reindex_preprint_elastic(self, mock_update_search, mock_bulk_update_preprints):
+        count = AdminLogEntry.objects.count()
+        view = views.PreprintReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_update_search.called)
+        nt.assert_true(mock_bulk_update_preprints.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
 
 class TestPreprintDeleteView(AdminTestCase):
     def setUp(self):
@@ -284,3 +296,29 @@ class TestRemoveContributor(AdminTestCase):
 
         response = self.view.as_view()(request, guid=self.preprint._id, user_id=self.user._id)
         nt.assert_equal(response.status_code, 200)
+
+
+class TestPreprintConfirmHamSpamViews(AdminTestCase):
+    def setUp(self):
+        super(TestPreprintConfirmHamSpamViews, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+
+    def test_confirm_node_as_ham(self):
+        view = views.PreprintConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        self.preprint.refresh_from_db()
+        nt.assert_true(self.preprint.spam_status == 4)
+
+    def test_confirm_node_as_spam(self):
+        nt.assert_true(self.preprint.is_public)
+        view = views.PreprintConfirmSpamView()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        self.preprint.refresh_from_db()
+        nt.assert_true(self.preprint.spam_status == 2)
+        nt.assert_false(self.preprint.is_public)

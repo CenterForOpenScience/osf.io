@@ -54,13 +54,6 @@ class HookTestCase(StorageTestCase):
             **kwargs
         )
 
-    def send_target_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
-        method = getattr(self.app, method)
-        return method(
-            target.api_url_for(view_name, **view_kwargs),
-            signing.sign_data(signing.default_signer, payload),
-            **kwargs
-        )
 
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
@@ -229,7 +222,6 @@ class TestUploadFileHook(HookTestCase):
         self.name = 'pízza.png'
         self.record = recursively_create_file(self.node_settings, self.name)
         self.auth = make_auth(self.user)
-        self.preprint = PreprintFactory()
 
     def send_upload_hook(self, parent, target=None, payload=None, **kwargs):
         return self.send_hook(
@@ -887,7 +879,7 @@ class TestDeleteHook(HookTestCase):
             payload={
                 'user': self.user._id
             },
-            target = self.node,
+            target=self.node,
             method='delete',
             **kwargs
         )

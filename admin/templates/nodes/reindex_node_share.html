@@ -1,7 +1,7 @@
-<form class="well" method="post" action="{% url 'nodes:reindex-share-node' guid=guid %}">
+<form class="well" method="post" action="{% url link guid=guid %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Are you sure you want to reindex this node (SHARE)? {{ guid }}</h3>
+        <h3>Are you sure you want to reindex this {{ resource_type }} (SHARE)? {{ guid }}</h3>
     </div>
     {% csrf_token %}
     <div class="modal-footer">

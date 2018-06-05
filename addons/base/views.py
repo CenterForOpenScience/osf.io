@@ -13,7 +13,6 @@ import furl
 import jwe
 import jwt
 
-
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 
@@ -149,7 +148,6 @@ permission_map = {
     'movefrom': 'write',
 }
 
-
 def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
@@ -159,12 +157,21 @@ def check_access(node, auth, action, cas_resp):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if cas_resp:
-        if permission == 'read':
-            if node.is_public:
-                return True
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+        if isinstance(node, Preprint):
+            if permission == 'read':
+                if node.verified_publishable:
+                    return True
+                required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_READ
+            else:
+                required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_WRITE
         else:
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+            if permission == 'read':
+                if node.is_public:
+                    return True
+                required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+            else:
+                required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
@@ -174,8 +181,9 @@ def check_access(node, auth, action, cas_resp):
             return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
-        if node.is_registration and node.registered_from.can_view(auth):
-            return True
+        if getattr(node, 'is_registration', False):
+            if node.registered_from.can_view(auth):
+                return True
     if permission == 'write' and node.can_edit(auth):
         return True
 
@@ -190,57 +198,30 @@ def check_access(node, auth, action, cas_resp):
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
     # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-    if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
-        parent = node.parent_node
-        while parent:
-            if parent.can_edit(auth):
+    if isinstance(node, AbstractNode):
+        if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
+            parent = node.parent_node
+            while parent:
+                if parent.can_edit(auth):
+                    return True
+                parent = parent.parent_node
+
+        # Users with the prereg admin permission should be allowed to download files
+        # from prereg challenge draft registrations.
+        try:
+            prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+            allowed_nodes = [node] + node.parents
+            prereg_draft_registration = DraftRegistration.objects.filter(
+                branched_from__in=allowed_nodes,
+                registration_schema=prereg_schema
+            )
+            if action == 'download' and \
+                        auth.user is not None and \
+                        prereg_draft_registration.count() > 0 and \
+                        auth.user.has_perm('osf.administer_prereg'):
                 return True
-            parent = parent.parent_node
-
-    # Users with the prereg admin permission should be allowed to download files
-    # from prereg challenge draft registrations.
-    try:
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        allowed_nodes = [node] + node.parents
-        prereg_draft_registration = DraftRegistration.objects.filter(
-            branched_from__in=allowed_nodes,
-            registration_schema=prereg_schema
-        )
-        if action == 'download' and \
-                    auth.user is not None and \
-                    prereg_draft_registration.count() > 0 and \
-                    auth.user.has_perm('osf.administer_prereg'):
-            return True
-    except MetaSchema.DoesNotExist:
-        pass
-
-    raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
-
-def check_preprint_access(preprint, auth, action, cas_resp):
-    """Verify that user can perform requested action on resource. Raise appropriate
-    error code if action cannot proceed.
-    """
-    permission = permission_map.get(action, None)
-    if permission is None:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if cas_resp:
-        if permission == 'read':
-            if preprint.verified_publishable:
-                return True
-            required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_READ
-        else:
-            required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_WRITE
-        if not cas_resp.authenticated \
-           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
-            raise HTTPError(httplib.FORBIDDEN)
-
-    if permission == 'read':
-        if preprint.can_view(auth):
-            return True
-
-    if permission == 'write' and preprint.can_edit(auth):
-        return True
+        except MetaSchema.DoesNotExist:
+            pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
@@ -305,7 +286,7 @@ def get_auth(auth, **kwargs):
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
-        check_preprint_access(preprint, auth, action, cas_resp)
+        check_access(preprint, auth, action, cas_resp)
 
     try:
         credentials = provider_settings.serialize_waterbutler_credentials() if node else preprint.serialize_waterbutler_credentials()

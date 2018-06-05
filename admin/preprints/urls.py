@@ -14,4 +14,10 @@ urlpatterns = [
         name='remove'),
     url(r'^(?P<guid>[a-z0-9]+)/restore/$', views.PreprintDeleteView.as_view(),
         name='restore'),
+    url(r'^(?P<guid>[a-z0-9]+)/confirm_spam/$', views.PreprintConfirmSpamView.as_view(),
+        name='confirm-spam'),
+    url(r'^(?P<guid>[a-z0-9]+)/confirm_ham/$', views.PreprintConfirmHamView.as_view(),
+        name='confirm-ham'),
+    url(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_preprint/$', views.PreprintReindexElastic.as_view(),
+        name='reindex-elastic-preprint'),
 ]

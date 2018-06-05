@@ -9,48 +9,79 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <a href="{% url 'preprints:search' %}"
-                   class="btn btn-primary col-md-1">
-                    <i class="fa fa-search"></i>
-                </a>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'preprints:search' %}"
+                       class="btn btn-primary">
+                        <i class="fa fa-search"></i>
+                    </a>
                     {% if perms.osf.delete_preprint %}
-                    {% if not serialized_preprint.deleted %}
-                    <span class="col-md-2">
-                        <a href="{% url 'preprints:remove' guid=serialized_preprint.id %}"
-                           data-toggle="modal" data-target="#deleteModal"
-                           class="btn btn-danger">
-                            Delete Preprint
+                        {% if not serialized_preprint.deleted %}
+                            <a href="{% url 'preprints:remove' guid=serialized_preprint.id %}"
+                               data-toggle="modal" data-target="#deleteModal"
+                               class="btn btn-danger">
+                                Delete Preprint
+                            </a>
+                            <div class="modal" id="deleteModal">
+                                <div class="modal-dialog">
+                                    <div class="modal-content"></div>
+                                     Data from above link
+                                </div>
+                            </div>
+                        {% else %}
+                            <form method="post" action="{% url 'preprints:restore' guid=serialized_preprint.id %}">
+                                {% csrf_token %}
+                                <input class="btn btn-success" type="submit"
+                                       value="Restore Preprint" />
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.osf.mark_spam %}
+                        <a href="{% url 'preprints:confirm-spam' guid=serialized_preprint.id %}"
+                           data-toggle="modal" data-target="#confirmSpamModal"
+                           class="btn btn-warning">
+                            Confirm Spam
                         </a>
-                        </span>
-                        <div class="modal" id="deleteModal">
+                        <div class="modal" id="confirmSpamModal">
                             <div class="modal-dialog">
                                 <div class="modal-content"></div>
-                                 Data from above link
+                                {# Data from above link #}
                             </div>
                         </div>
-                    {% else %}
-                        <span class="col-md-2">
-                        <form method="post" action="{% url 'preprints:restore' guid=serialized_preprint.id %}">
-                            {% csrf_token %}
-                            <input class="btn btn-success" type="submit"
-                                   value="Restore Preprint" />
-                        </form>
-                    </span>
-                {% endif %}
-                {% endif %}
-            <span class="col-md-2">
-                <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
-                   data-toggle="modal" data-target="#confirmReindexSharePreprint"
-                   class="btn btn-default">
-                    SHARE Reindex
-                </a>
-            </span>
-            <div class="modal" id="confirmReindexSharePreprint">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                    {# Data from above link #}
+                        <a href="{% url 'preprints:confirm-ham' guid=serialized_preprint.id %}"
+                           data-toggle="modal" data-target="#confirmHamModal"
+                           class="btn btn-default">
+                            Confirm <strong>Not</strong> Spam
+                        </a>
+                        <div class="modal" id="confirmHamModal">
+                            <div class="modal-dialog">
+                                <div class="modal-content"></div>
+                                {# Data from above link #}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
+                       data-toggle="modal" data-target="#confirmReindexSharePreprint"
+                       class="btn btn-default">
+                        SHARE Reindex
+                    </a>
+                    <div class="modal" id="confirmReindexSharePreprint">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
+                    <a href="{% url 'preprints:reindex-elastic-preprint' guid=serialized_preprint.id %}"
+                       data-toggle="modal" data-target="#confirmReindexElasticNode"
+                       class="btn btn-default">
+                        Elastic Reindex
+                    </a>
+                    <div class="modal" id="confirmReindexElasticNode">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
         <div class="row">
@@ -140,7 +171,10 @@
                         <td>{{ serialized_preprint.date_published }} UTC</td>
                     </tr>
                     {%  endif %}
-
+                    <tr>
+                        <td>Verified Publishable</td>
+                        <td>{{ serialized_preprint.verified_publishable }}</td>
+                    </tr>
                     <tr>
                         <td>Creator</td>
                         <td>

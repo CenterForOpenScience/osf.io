@@ -8,7 +8,6 @@ from django.core.management.sql import emit_post_migrate_signal
 from osf.models import OSFUser
 
 
-
 def unmigrate_preprint_service_permissions(state, schema):
     emit_post_migrate_signal(2, False, 'default')
 
@@ -33,6 +32,10 @@ def add_users_to_renamed_permission(old_perm, new_perm):
             user.user_permissions.add(new_perm)
 
 def migrate_preprint_service_permissions(state, schema):
+    """
+    Django permissions on the preprint model have new names.  Need to create these new permission groups
+    and move everyone from the old groups to the new ones.
+    """
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
     # Old permission groups
