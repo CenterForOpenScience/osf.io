@@ -5,6 +5,7 @@ import httplib as http
 import os
 import re
 from lxml import etree
+import logging
 
 from flask import request
 from flask import redirect
@@ -30,6 +31,8 @@ from website.util import rubeus, api_url_for
 from website.util.sanitize import assert_clean
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
+
+logger = logging.getLogger('addons.weko.views')
 
 SHORT_NAME = 'weko'
 FULL_NAME = 'WEKO'
@@ -154,6 +157,7 @@ def weko_add_user_account(auth, **kwargs):
                                             username=access_key,
                                             password=secret_key).get_login_user()
     except (HTTPError, IOError):
+        logging.exception('Connection error')
         user_info = None
     if not user_info:
         return {
