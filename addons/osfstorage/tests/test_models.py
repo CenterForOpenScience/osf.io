@@ -578,6 +578,31 @@ class TestNodeSettingsModel(StorageTestCase):
 
         assert region.waterbutler_credentials == new_test_creds
 
+    def test_storage_usage(self):
+        file_node = OsfStorageFile(name='test', node=self.node_settings.owner)
+        file_node.save()
+
+        first_version = factories.FileVersionFactory(
+            size=1024,
+            content_type='application/json',
+            modified=timezone.now(),
+        )
+
+        file_node.versions.add(first_version)
+        file_node.save()
+
+        assert self.project.get_addon('osfstorage').storage_usage == 1024
+
+        second_version = factories.FileVersionFactory(
+            size=1000,
+            content_type='application/json',
+            modified=timezone.now(),
+        )
+
+        file_node.versions.add(second_version)
+        file_node.save()
+
+        assert self.project.get_addon('osfstorage').storage_usage == 2024
 
 @pytest.mark.django_db
 class TestOsfStorageFileVersion(StorageTestCase):

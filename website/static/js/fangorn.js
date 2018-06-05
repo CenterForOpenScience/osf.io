@@ -1510,8 +1510,11 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
-}
+    if(item.data.storageUsage) {
+        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' ' + $osf.humanFileSize(item.data.storageUsage, true) , '/', 'fg-file-links');
+    }
+
+     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');}
 
 function _fangornVersionColumn(item, col) {
     var tb = this;
