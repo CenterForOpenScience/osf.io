@@ -118,7 +118,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%d %b %Y')
+        date = timezone.now().date().strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -131,7 +131,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%d %b %Y')
+        date = timezone.now().date().strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -146,7 +146,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%d %b %Y')
+        date = timezone.now().date().strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -176,7 +176,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %d')
+        date = timezone.now().date().strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B. ({}). {} {}'.format(
                 date,
                 self.node.title,
@@ -212,7 +212,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
                 date.strftime('%Y'),
                 self.node.title,
                 self.published_preprint.provider.name,
-                date.strftime('%B %d'),
+                date.strftime('%B %-d'),
                 'doi:' + self.published_preprint.article_doi
                 )
         )
