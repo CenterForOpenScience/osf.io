@@ -122,7 +122,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'user_id': provider.userid}
         else:
             return {'password': provider.password,
-                    'user_id': provider.username}
+                    'user_id': provider.userid}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
