@@ -449,7 +449,6 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
-    storage_usage = models.PositiveIntegerField(default=0)
 
     @property
     def folder_name(self):
@@ -540,12 +539,11 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def storage_usage(self):
-        file_versions = BaseFileNode.active.filter(provider='osfstorage',
-                                                   node_id=self.owner,
+        file_versions = OsfStorageFile.objects.filter(provider='osfstorage',
+                                                   node_id=self.owner_id,
                                                    versions__isnull=False).values_list('versions',
                                                                                        flat=True)
 
         sum = FileVersion.objects.filter(id__in=file_versions).aggregate(sum=models.Sum('size'))['sum']
 
         return sum or 0  # An empty queryset will produce a None instead of 0
-
