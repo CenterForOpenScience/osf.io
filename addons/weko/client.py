@@ -63,7 +63,6 @@ class Connection(object):
         self.password = password
 
     def get_login_user(self, default_user=None):
-        logger.info('{}: {}'.format(self.host, self._requests_args()))
         resp = requests.get(self.host + 'servicedocument.php',
                             **self._requests_args())
         if resp.status_code != 200:
