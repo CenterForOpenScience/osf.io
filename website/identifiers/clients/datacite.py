@@ -4,12 +4,12 @@ from __future__ import absolute_import
 import re
 import datetime
 
-from website.identifiers.clients.base import AbstractIndentifierClient
+from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
 
 
-class DataCiteClient(AbstractIndentifierClient):
+class DataCiteClient(AbstractIdentifierClient):
 
     @property
     def _client(self):
@@ -61,6 +61,9 @@ class DataCiteClient(AbstractIndentifierClient):
 
         # Generate DataCite XML from dictionary.
         return schema40.tostring(data)
+
+    def build_doi(self, object):
+        return settings.DOI_FORMAT.format(prefix=self.prefix, guid=object._id)
 
     def get_identifier(self, identifier):
         self._client.doi_get(identifier)

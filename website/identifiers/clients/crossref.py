@@ -3,8 +3,10 @@ import furl
 import lxml
 import time
 
+import requests
+
 from website.identifiers.metadata import remove_control_characters
-from website.identifiers.clients.base import AbstractIndentifierClient
+from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
 
@@ -18,7 +20,7 @@ XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
 
 
-class CrossRefClient(AbstractIndentifierClient):
+class CrossRefClient(AbstractIdentifierClient):
 
     def __init__(self, base_url):
         self.base_url = base_url
@@ -165,7 +167,7 @@ class CrossRefClient(AbstractIndentifierClient):
         # CROSSREF_DEPOSITOR_EMAIL, to test locally create your own mailgun account and forward the
         # message to the 'crossref' endpoint. You use ngrok to tunnel out so your local enviroment
         # can replicate the whole process.
-        self._make_request(
+        requests.request(
             'POST',
             self._build_url(
                 operation='doMDUpload',

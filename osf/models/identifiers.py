@@ -24,7 +24,7 @@ class Identifier(ObjectIDMixin, BaseModel):
 
     def remove(self, save=True):
         """Mark an identifier as deleted, which excludes it from being returned in get_identifier"""
-        self.deleted = timezone.now
+        self.deleted = timezone.now()
         if save:
             self.save()
 

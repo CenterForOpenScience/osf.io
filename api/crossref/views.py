@@ -48,7 +48,7 @@ class ParseCrossRefConfirmation(APIView):
         else:
             # Set the DOI on the preprint if this is not just a metadata update
             if success and not updated:
-                logger.info('Success email recieved from CrossRef for preprint {}'.format())
+                logger.info('Success email received from CrossRef for preprint {}'.format(preprint._id))
                 if not preprint.get_identifier_value('doi'):
                     preprint.set_identifier_value(category='doi', value=registered_doi)
 

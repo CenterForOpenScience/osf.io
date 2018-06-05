@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import furl
+import requests
+
+from website import settings
 from website.identifiers import utils
 from website.util.client import BaseClient
 from website.identifiers.clients import DataCiteClient
@@ -18,6 +21,9 @@ class EzidClient(BaseClient, DataCiteClient):
     def _default_headers(self):
         return {'Content-Type': 'text/plain; charset=UTF-8'}
 
+    def build_doi(self):
+        return settings.DOI_FORMAT.format(prefix=self.prefix, guid=object._id)
+
     def get_identifier(self, identifier):
         resp = self._make_request(
             'GET',
@@ -27,7 +33,7 @@ class EzidClient(BaseClient, DataCiteClient):
         return utils.from_anvl(resp.content.strip('\n'))
 
     def create_identifier(self, metadata, doi):
-        resp = self._make_request(
+        resp = requests.request(
             'PUT',
             self._build_url('id', doi),
             data=utils.to_anvl(metadata or {}),

@@ -10,7 +10,24 @@ from website import settings
 @pytest.mark.django_db
 class TestCrossRefEmailResponse:
 
-    def create_mailgun_request_context(self, response_data):
+    def make_mailgun_payload(self, crossref_response):
+
+        mailgun_payload = {
+            'From': ['CrossRef <admin@crossref.org>'],
+            'To': ['test@test.osf.io'],
+            'subject': ['CrossRef submission ID: 1390671938'],
+            'from': ['CrossRef <test-admin@crossref.org>'],
+            'Date': ['Fri, 27 Apr 2018 11:38:00 -0400 (EDT)'],
+            'body-plain': [crossref_response.strip()],
+            'Mime-Version': ['1.0'],
+            'timestamp': '123',
+            'recipient': ['test@test.osf.io'],
+            'sender': ['test-admin@crossref.org'],
+            'Content-Type': [u'text/plain; charset="UTF-8"'],
+            'Subject': [u'CrossRef submission ID: 1390671938'],
+            'token': 'secret'
+        }
+
         if not settings.MAILGUN_API_KEY:
             raise Exception('Must have mailgun API key set to run this test.')
         data = {
@@ -18,13 +35,13 @@ class TestCrossRefEmailResponse:
             'signature': hmac.new(
                 key=settings.MAILGUN_API_KEY,
                 msg='{}{}'.format(
-                    response_data['timestamp'],
-                    response_data['token']
+                    mailgun_payload['timestamp'],
+                    mailgun_payload['token']
                 ),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }
-        data.update(response_data)
+        data.update(mailgun_payload)
         data = {
             key: value
             for key, value in data.iteritems()
@@ -45,7 +62,7 @@ class TestCrossRefEmailResponse:
            <batch_id>{}</batch_id>
            <record_diagnostic status="Failure">
               <doi />
-              <msg></msg>
+              <msg>Error: cvc-complex-type.2.4.a: Invalid content was found starting with element 'program'</msg>
            </record_diagnostic>
            <batch_data>
               <record_count>1</record_count>
@@ -96,64 +113,43 @@ class TestCrossRefEmailResponse:
         </doi_batch_diagnostic>
         """.format(preprint._id, preprint._id)
 
-    def mailgun_response(self, response):
-        return {
-            'From': ['CrossRef <admin@crossref.org>'],
-            'To': ['test@test.osf.io'],
-            'subject': ['CrossRef submission ID: 1390671938'],
-            'from': ['CrossRef <test-admin@crossref.org>'],
-            'Date': ['Fri, 27 Apr 2018 11:38:00 -0400 (EDT)'],
-            'body-plain': [response.strip()],
-            'Mime-Version': ['1.0'],
-            'timestamp': '123',
-            'recipient': ['test@test.osf.io'],
-            'sender': ['test-admin@crossref.org'],
-            'Content-Type': [u'text/plain; charset="UTF-8"'],
-            'Subject': [u'CrossRef submission ID: 1390671938'],
-            'token': 'secret'
-        }
+    @pytest.fixture()
+    def url(self):
+        return '/_/crossref/email/'
 
-    def test_wrong_request_context_raises_permission_error(self, app, error_xml):
-        mailgun_response = self.mailgun_response(error_xml)
-        url = '/_/crossref/email/'
+    def test_wrong_request_context_raises_permission_error(self, app, url, error_xml):
+        mailgun_response = self.make_mailgun_payload(error_xml)
+        mailgun_response.pop('signature')
         response = app.post(url, mailgun_response, expect_errors=True)
 
         assert response.status_code == 400
 
-    def test_error_response_sends_message_does_not_set_doi(self, app, preprint, error_xml):
-        mailgun_response = self.mailgun_response(error_xml)
-        url = '/_/crossref/email/'
-
+    def test_error_response_sends_message_does_not_set_doi(self, app, url, preprint, error_xml):
         assert not preprint.get_identifier_value('doi')
 
         with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
-            context_data = self.create_mailgun_request_context(response_data=mailgun_response)
+            context_data = self.make_mailgun_payload(crossref_response=error_xml)
             app.post(url, context_data)
         assert mock_send_mail.called
         assert not preprint.get_identifier_value('doi')
 
-    def test_success_response_sets_doi(self, app, preprint, success_xml):
-        mailgun_response = self.mailgun_response(success_xml)
-        url = '/_/crossref/email/'
-
+    def test_success_response_sets_doi(self, app, url, preprint, success_xml):
         assert not preprint.get_identifier_value('doi')
 
         with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
-            context_data = self.create_mailgun_request_context(response_data=mailgun_response)
+            context_data = self.make_mailgun_payload(crossref_response=success_xml)
             app.post(url, context_data)
 
         assert not mock_send_mail.called
         assert preprint.get_identifier_value('doi')
 
-    def test_update_success_response(self, app, preprint, update_success_xml):
+    def test_update_success_response(self, app, preprint, url, update_success_xml):
         preprint.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id))
         update_xml = self.update_success_xml(preprint)
-        mailgun_response = self.mailgun_response(update_xml)
-        url = '/_/crossref/email'
 
         with mock.patch.object(preprint, 'set_identifier_value') as mock_set_identifier_value:
             with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
-                context_data = self.create_mailgun_request_context(response_data=mailgun_response)
+                context_data = self.make_mailgun_payload(crossref_response=update_xml)
                 app.post(url, context_data)
 
         assert not mock_send_mail.called

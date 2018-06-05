@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-import requests
 
-from framework.exceptions import HTTPError
-from website import settings
-
-
-class AbstractIndentifierClient(object):
+class AbstractIdentifierClient(object):
 
     def __init__(self, base_url, prefix):
         self.base_url = base_url
@@ -17,17 +12,9 @@ class AbstractIndentifierClient(object):
         raise NotImplementedError()
 
     def build_doi(self, object):
-        """Method this client uses to build a DOI"""
-        return settings.DOI_FORMAT.format(prefix=self.prefix, guid=object._id)
-
-    def _make_request(self, method, url, **kwargs):
-        expects = kwargs.pop('expects', None)
-        throws = kwargs.pop('throws', None)
-        response = requests.request(method, url, **kwargs)
-        if expects and response.status_code not in expects:
-            raise throws if throws else HTTPError(response.status_code, message=response.content)
-
-        return response
+        """Method this client uses to build a DOI
+        """
+        raise NotImplementedError()
 
     def create_identifier(self, metadata, doi):
         """ Make a request to register the given identifier

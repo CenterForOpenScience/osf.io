@@ -47,7 +47,6 @@ USE_CELERY = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
-MAILGUN_API_KEY = 'mailkimp'
 
 # Session
 COOKIE_NAME = 'osf'
