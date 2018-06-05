@@ -28,7 +28,7 @@
                         </div>
 
                         <!-- for Basic Auth -->
-                        <div class="col-sm-6" data-bind="visible: selectedRepo() == 'Other Repository(Basic Auth)'">
+                        <div class="col-sm-6" data-bind="visible: selectedRepo() == 'Other Repository (Basic Auth)'">
                             <div class="form-group">
                                 <label for="wekoAddon">WEKO SWORD URL</label>
                                 <input class="form-control" data-bind="value: swordUrl" id="sword_url" name="sword_url" ${'disabled' if disabled else ''} />
