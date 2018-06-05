@@ -32,10 +32,16 @@ class CrossRefClient(AbstractIndentifierClient):
     def build_metadata(self, preprint, **kwargs):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
-        :param preprint -- the preprint
+        :param preprint -- the preprint, or list of preprints to build metadata for
         """
 
-        doi = self.build_doi(preprint)
+        is_batch = False
+        if isinstance(preprint, list):
+            is_batch = True
+            preprints = preprint
+        else:
+            preprints = [preprints]
+
         if kwargs.get('status', '') == 'unavailable':
             return ''
 
@@ -44,9 +50,12 @@ class CrossRefClient(AbstractIndentifierClient):
             'xsi': XSI},
         )
 
+        timestamp = str(int(time.time()))
+        batch_id = timestamp if is_batch else preprint._id
+
         head = element.head(
-            element.doi_batch_id(preprint._id),
-            element.timestamp(str(int(time.time()))),
+            element.doi_batch_id(batch_id),
+            element.timestamp(timestamp),
             element.depositor(
                 element.depositor_name(CROSSREF_DEPOSITOR_NAME),
                 element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
@@ -54,6 +63,24 @@ class CrossRefClient(AbstractIndentifierClient):
             element.registrant('Center for Open Science')
         )
 
+        body = element.body()
+        for preprint in preprints:
+            body.append(self.build_posted_content(preprint, element))
+
+        root = element.doi_batch(
+            head,
+            body,
+            version=CROSSREF_SCHEMA_VERSION
+        )
+        root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
+        return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
+
+    def build_posted_content(self, preprint, element):
+        """Build the <posted_content> element for a single preprint
+        preprint - preprint to build posted_content for
+        element - namespace element to use when building parts of the XML structure
+        """
+        doi = self.build_doi(preprint)
         posted_content = element.posted_content(
             element.group_title(preprint.provider.name),
             element.contributors(*self._crossref_format_contributors(element, preprint)),
@@ -95,13 +122,7 @@ class CrossRefClient(AbstractIndentifierClient):
         ]
         posted_content.append(element.doi_data(*doi_data))
 
-        root = element.doi_batch(
-            head,
-            element.body(posted_content),
-            version=CROSSREF_SCHEMA_VERSION
-        )
-        root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
-        return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
+        return posted_content
 
     def _crossref_format_contributors(self, element, preprint):
         contributors = []
