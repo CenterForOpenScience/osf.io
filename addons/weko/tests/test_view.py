@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory
 from framework.exceptions import HTTPError
 
 from addons.base.tests.views import (
