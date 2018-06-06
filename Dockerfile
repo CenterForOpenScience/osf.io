@@ -144,10 +144,12 @@ RUN yarn install --frozen-lockfile \
 COPY ./tasks/ ./tasks/
 COPY ./website/settings/ ./website/settings/
 COPY ./api/base/settings/ ./api/base/settings/
+COPY ./api/timestamp/ ./api/timestamp/
 COPY ./website/__init__.py ./website/__init__.py
 COPY ./addons.json ./addons.json
 RUN mv ./website/settings/local-dist.py ./website/settings/local.py \
     && mv ./api/base/settings/local-dist.py ./api/base/settings/local.py \
+    && mv ./api/timestamp/local-dist.py ./api/timestamp/local.py \
     && sed 's/DEBUG_MODE = True/DEBUG_MODE = False/' -i ./website/settings/local.py
 
 COPY ./webpack* ./
@@ -216,6 +218,6 @@ RUN for module in \
     ; do \
         touch $file && chmod o+w $file \
     ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py
+    && rm ./website/settings/local.py ./api/base/settings/local.py ./api/timestamp/local.py
 
 CMD ["gosu", "nobody", "invoke", "--list"]
