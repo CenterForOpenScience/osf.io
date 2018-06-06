@@ -3,9 +3,9 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 
-require('css/donate-banner.css');
+require('css/scheduled-banner.css');
 
-var DonateBanner = {
+var ScheduledBanner = {
     controller: function() {
         var self = this;
         self.banner = m.prop();
@@ -50,28 +50,28 @@ var BannerDisplay = {
         var color = args.banner.attributes.color;
         var link = args.banner.attributes.link;
         var name = args.banner.attributes.name;
+        $('.scheduled-banner-background')[0].style.backgroundColor = color;
 
-        $('.donate-banner-background')[0].style.backgroundColor = color;
+        m_args = !!link ? ['a', Object.assign({href: link}, {
+            onclick: function() {
+                $osf.trackClick('link', 'click', 'Banner - ' + name);
+            },
+            target: '_blank'
+        })] : ['', ''];
 
         return m('.row',
             [
-                m('a', {
-                        href: link,
-                        onclick: function () {
-                            $osf.trackClick('link', 'click', 'Banner - ' + name);
-                          },
-                        target : '_blank'
-                    },
+                m.apply(null, m_args.concat([
                     m('.col-sm-md-lg-12.hidden-xs',
-                        m('img.donate-banner.img-responsive.banner-image', {'src': defaultPhoto, 'alt': defaultAltText})
+                        m('img.img-responsive.banner-image', {'src': defaultPhoto, 'alt': defaultAltText})
                     ),
                     m('.col-xs-12.hidden-sm.hidden-md.hidden-lg',
-                        m('img.donate-banner.img-responsive.banner-image', {'src': mobilePhoto, 'alt': mobileAltText})
+                        m('img.img-responsive.banner-image', {'src': mobilePhoto, 'alt': mobileAltText})
                     )
-                ),
+                ])),
             ]
         );
     }
 };
 
-module.exports = DonateBanner;
+module.exports = ScheduledBanner;
