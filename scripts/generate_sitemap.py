@@ -17,6 +17,7 @@ import tempfile
 from framework import sentry
 from framework.celery_tasks import app as celery_app
 from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
+from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -197,9 +198,11 @@ class Sitemap(object):
         progress.stop()
 
         # Preprint urls
+
         objs = (Preprint.objects
-                    .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
-                    .select_related('node', 'provider', 'node__preprint_file'))
+                    .filter(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False, primary_file__deleted_on__isnull=True)
+                    .exclude(machine_state=DefaultStates.INITIAL.value)
+                    .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
         osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:

@@ -181,7 +181,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.has_permission(auth.user, 'write'):
+        if not preprint.has_permission(auth.user, osf_permissions.WRITE):
             raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
         published = validated_data.pop('is_published', None)

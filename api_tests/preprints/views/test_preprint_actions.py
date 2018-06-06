@@ -28,7 +28,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         else:
             preprint.add_contributor(
                 user,
-                permission=osf_permissions.ADMIN)
+                permissions=osf_permissions.ADMIN)
         return user
 
     @pytest.fixture()

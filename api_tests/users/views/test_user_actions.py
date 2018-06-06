@@ -73,7 +73,7 @@ class TestReviewActionCreateRelated(object):
             provider=provider,
             is_published=False)
         preprint.add_contributor(
-            node_admin, permission=osf_permissions.ADMIN)
+            node_admin, permissions=osf_permissions.ADMIN)
         return preprint
 
     @pytest.fixture()

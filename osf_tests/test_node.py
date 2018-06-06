@@ -1955,7 +1955,7 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
@@ -1983,7 +1983,7 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):

@@ -291,7 +291,7 @@ class TestPreprintContributorOrdering:
             if contrib._id != user._id:
                 preprint.add_contributor(
                     contrib,
-                    permission=permissions.WRITE,
+                    permissions=permissions.WRITE,
                     visible=True,
                     save=True
                 )
@@ -577,7 +577,7 @@ class TestPreprintContributorUpdate:
         preprint = PreprintFactory(creator=user)
         preprint.add_contributor(
             contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=True,
             save=True)
         return preprint
@@ -992,7 +992,7 @@ class TestPreprintContributorPartialUpdate:
         preprint = PreprintFactory(creator=user)
         preprint.add_contributor(
             contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=True,
             save=True)
         return preprint
@@ -1029,7 +1029,7 @@ class TestPreprintContributorPartialUpdate:
         user_read_contrib = AuthUserFactory()
         preprint.add_contributor(
             user_read_contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=False,
             save=True)
         url_read_contrib = '/{}preprints/{}/contributors/{}/'.format(
@@ -1067,7 +1067,7 @@ class TestPreprintContributorDelete:
         preprint = PreprintFactory(creator=user)
         preprint.add_contributor(
             user_write_contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=True, save=True)
         return preprint
 
@@ -1157,7 +1157,7 @@ class TestPreprintContributorDelete:
             url_user_non_contrib):
         preprint.add_contributor(
             user_non_contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=True,
             save=True)
 
@@ -1191,7 +1191,7 @@ class TestPreprintContributorDelete:
             preprint, url_user_non_contrib):
         preprint.add_contributor(
             user_non_contrib,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             visible=True,
             save=True)
 

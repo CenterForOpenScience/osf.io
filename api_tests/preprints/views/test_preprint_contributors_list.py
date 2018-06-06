@@ -112,7 +112,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             perm = random.choice(users.keys())
             user_two = AuthUserFactory()
 
-            preprint_unpublished.add_contributor(user_two, permission=perm)
+            preprint_unpublished.add_contributor(user_two, permissions=perm)
             users[perm].append(user_two._id)
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
@@ -146,7 +146,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     #   test_return_unpublished_contributor_list_logged_in_read_contributor
         read_contrib = AuthUserFactory()
-        preprint_unpublished.add_contributor(read_contrib, permission='read', save=True)
+        preprint_unpublished.add_contributor(read_contrib, permissions='read', save=True)
         res = app.get(url_unpublished, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
@@ -720,7 +720,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published, data_user_three, url_published):
         preprint_published.add_contributor(
             user_two,
-            permission='write',
+            permissions='write',
             auth=Auth(user),
             save=True)
         res = app.post_json_api(url_published, data_user_three,
@@ -965,7 +965,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_unpublished, data_user_three, url_unpublished):
         preprint_unpublished.add_contributor(
             user_two,
-            permission=permissions.WRITE,
+            permissions=permissions.WRITE,
             auth=Auth(user))
         res = app.post_json_api(
             url_unpublished, data_user_three,
@@ -1516,7 +1516,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
         url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
         user_two = AuthUserFactory()
-        preprint_unpublished.add_contributor(user_two, permission='write', save=True)
+        preprint_unpublished.add_contributor(user_two, permissions='write', save=True)
         payload = {
             'data': {
                 'id': preprint_unpublished._id,
@@ -1627,7 +1627,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
             payload_one, payload_two, url_published):
         preprint_published.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         res = app.post_json_api(
             url_published,
@@ -1680,7 +1680,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 
     #   test_preprint_contributor_bulk_create_logged_in_read_only_contrib_unpublished_preprint
         preprint_unpublished.add_contributor(
-            user_two, permission=permissions.READ, save=True)
+            user_two, permissions=permissions.READ, save=True)
         res = app.post_json_api(
             url_unpublished,
             {'data': [payload_two]},
@@ -1814,11 +1814,11 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         preprint_published.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         preprint_published.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         return preprint_published
 
@@ -1834,11 +1834,11 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         preprint_unpublished.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         preprint_unpublished.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         return preprint_unpublished
 
@@ -2258,12 +2258,12 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
         )
         preprint_published.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True
         )
         preprint_published.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True
         )
         return preprint_published
@@ -2280,11 +2280,11 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
         )
         preprint_unpublished.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         preprint_unpublished.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         return preprint_unpublished
 
@@ -2617,11 +2617,11 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
         )
         preprint_published.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         preprint_published.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         return preprint_published
 
@@ -2637,11 +2637,11 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
         )
         preprint_unpublished.add_contributor(
             user_two,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         preprint_unpublished.add_contributor(
             user_three,
-            permission=permissions.READ,
+            permissions=permissions.READ,
             visible=True, save=True)
         return preprint_unpublished
 

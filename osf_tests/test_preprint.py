@@ -163,7 +163,7 @@ class TestPreprintSubjects:
     @pytest.fixture()
     def write_contrib(self, preprint):
         write_contrib = AuthUserFactory()
-        preprint.add_contributor(write_contrib, auth=Auth(preprint.creator), permission='write')
+        preprint.add_contributor(write_contrib, auth=Auth(preprint.creator), permissions='write')
         preprint.save()
         return write_contrib
 
@@ -343,8 +343,8 @@ class TestContributorMethods:
         user2 = UserFactory()
         preprint.add_contributors(
             [
-                {'user': user1, 'permission': ADMIN, 'visible': True},
-                {'user': user2, 'permission': WRITE, 'visible': False}
+                {'user': user1, 'permissions': ADMIN, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': False}
             ],
             auth=auth
         )
@@ -478,8 +478,8 @@ class TestContributorMethods:
         user2 = UserFactory()
         preprint.add_contributors(
             [
-                {'user': user1, 'permission': WRITE, 'visible': True},
-                {'user': user2, 'permission': WRITE, 'visible': True}
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
             ],
             auth=auth
         )
@@ -521,11 +521,11 @@ class TestContributorMethods:
         # User has admin permissions because they are the creator
         # Cannot lower permissions
         with pytest.raises(PreprintStateError):
-            preprint.add_contributor(user, permission=WRITE)
+            preprint.add_contributor(user, permissions=WRITE)
 
     def test_update_contributor(self, preprint, auth):
         new_contrib = AuthUserFactory()
-        preprint.add_contributor(new_contrib, permission=WRITE, auth=auth)
+        preprint.add_contributor(new_contrib, permissions=WRITE, auth=auth)
 
         assert set(preprint.get_permissions(new_contrib)) == set(['read_preprint', 'write_preprint'])
         assert preprint.get_visible(new_contrib) is True
@@ -543,7 +543,7 @@ class TestContributorMethods:
         non_admin = AuthUserFactory()
         preprint.add_contributor(
             non_admin,
-            permission=WRITE,
+            permissions=WRITE,
             auth=auth
         )
         with pytest.raises(PermissionsError):
@@ -713,7 +713,7 @@ class TestPermissionMethods:
 
     def test_remove_permission_not_granted(self, preprint, auth):
         contrib = UserFactory()
-        preprint.add_contributor(contrib, permission=WRITE, auth=auth)
+        preprint.add_contributor(contrib, permissions=WRITE, auth=auth)
         with pytest.raises(ValueError):
             preprint.remove_permission(contrib, ADMIN)
 
@@ -738,7 +738,7 @@ class TestPermissionMethods:
     def test_set_permissions_raises_error_if_only_admins_permissions_are_reduced(self, preprint):
         # creator is the only admin
         with pytest.raises(PreprintStateError) as excinfo:
-            preprint.set_permissions(preprint.creator, permission=WRITE)
+            preprint.set_permissions(preprint.creator, permissions=WRITE)
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
 
     def test_add_permission_with_admin_also_grants_read_and_write(self, preprint):
@@ -805,7 +805,7 @@ class TestPermissionMethods:
         creator = UserFactory()
         preprint = PreprintFactory(creator=creator)
         contrib = UserFactory()
-        preprint.add_contributor(contrib, permission='admin', auth=Auth(user=creator))
+        preprint.add_contributor(contrib, permissions='admin', auth=Auth(user=creator))
         preprint.save()
         assert creator in preprint.contributors.all()
         # Creator is removed from project
@@ -939,7 +939,7 @@ class TestPreprintSpam:
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
@@ -969,7 +969,7 @@ class TestPreprintSpam:
                 assert preprint3.is_public is True
         assert mock_preprint_updated.called
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
@@ -1022,21 +1022,21 @@ class TestManageContributors:
         reg_user1 = UserFactory()
         #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
         #for other contributors is removed ensuring there is always at least one visible contributor
-        preprint.add_contributor(contributor=user, permission=ADMIN, auth=auth)
-        preprint.add_contributor(contributor=reg_user1, permission=ADMIN, auth=auth)
+        preprint.add_contributor(contributor=user, permissions=ADMIN, auth=auth)
+        preprint.add_contributor(contributor=reg_user1, permissions=ADMIN, auth=auth)
 
         preprint.manage_contributors(
             user_dicts=[
-                {'id': user._id, 'permission': ADMIN, 'visible': True},
-                {'id': reg_user1._id, 'permission': ADMIN, 'visible': False},
+                {'id': user._id, 'permissions': ADMIN, 'visible': True},
+                {'id': reg_user1._id, 'permissions': ADMIN, 'visible': False},
             ],
             auth=auth,
             save=True
         )
         preprint.manage_contributors(
             user_dicts=[
-                {'id': user._id, 'permission': ADMIN, 'visible': False},
-                {'id': reg_user1._id, 'permission': ADMIN, 'visible': True},
+                {'id': user._id, 'permissions': ADMIN, 'visible': False},
+                {'id': reg_user1._id, 'permissions': ADMIN, 'visible': True},
             ],
             auth=auth,
             save=True
@@ -1048,8 +1048,8 @@ class TestManageContributors:
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         preprint.add_contributors(
             [
-                {'user': reg_user1, 'permission': ADMIN, 'visible': True},
-                {'user': reg_user2, 'permission': ADMIN, 'visible': False},
+                {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
         print(preprint.visible_contributor_ids)
@@ -1060,12 +1060,12 @@ class TestManageContributors:
 
     def test_manage_contributors_cannot_remove_last_admin_contributor(self, auth, preprint):
         user2 = UserFactory()
-        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.add_contributor(contributor=user2, permissions=WRITE, auth=auth)
         preprint.save()
         with pytest.raises(PreprintStateError) as excinfo:
             preprint.manage_contributors(
                 user_dicts=[{'id': user2._id,
-                             'permission': WRITE,
+                             'permissions': WRITE,
                              'visible': True}],
                 auth=auth,
                 save=True
@@ -1082,17 +1082,17 @@ class TestManageContributors:
             user_dicts=[
                 {
                     'id': user2._id,
-                    'permission': WRITE,
+                    'permissions': WRITE,
                     'visible': True,
                 },
                 {
                     'id': user3._id,
-                    'permission': WRITE,
+                    'permissions': WRITE,
                     'visible': True,
                 },
                 {
                     'id': user._id,
-                    'permission': ADMIN,
+                    'permissions': ADMIN,
                     'visible': True,
                 },
             ],
@@ -1103,18 +1103,18 @@ class TestManageContributors:
 
     def test_manage_contributors_logs_when_users_reorder(self, preprint, user, auth):
         user2 = UserFactory()
-        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.add_contributor(contributor=user2, permissions=WRITE, auth=auth)
         preprint.save()
         preprint.manage_contributors(
             user_dicts=[
                 {
                     'id': user2._id,
-                    'permission': WRITE,
+                    'permissions': WRITE,
                     'visible': True,
                 },
                 {
                     'id': user._id,
-                    'permission': ADMIN,
+                    'permissions': ADMIN,
                     'visible': True,
                 },
             ],
@@ -1129,18 +1129,18 @@ class TestManageContributors:
 
     def test_manage_contributors_logs_when_permissions_change(self, preprint, user, auth):
         user2 = UserFactory()
-        preprint.add_contributor(contributor=user2, permission=WRITE, auth=auth)
+        preprint.add_contributor(contributor=user2, permissions=WRITE, auth=auth)
         preprint.save()
         preprint.manage_contributors(
             user_dicts=[
                 {
                     'id': user._id,
-                    'permission': ADMIN,
+                    'permissions': ADMIN,
                     'visible': True,
                 },
                 {
                     'id': user2._id,
-                    'permission': READ,
+                    'permissions': READ,
                     'visible': True,
                 },
             ],
@@ -1156,8 +1156,8 @@ class TestManageContributors:
     def test_manage_contributors_new_contributor(self, preprint, user, auth):
         user = UserFactory()
         users = [
-            {'id': user._id, 'permission': READ, 'visible': True},
-            {'id': preprint.creator._id, 'permission': [READ, WRITE, ADMIN], 'visible': True},
+            {'id': user._id, 'permissions': READ, 'visible': True},
+            {'id': preprint.creator._id, 'permissions': [READ, WRITE, ADMIN], 'visible': True},
         ]
         with pytest.raises(ValueError) as excinfo:
             preprint.manage_contributors(
@@ -1175,12 +1175,12 @@ class TestManageContributors:
         user = UserFactory()
         preprint.add_contributor(
             user,
-            permission=ADMIN,
+            permissions=ADMIN,
             save=True
         )
         users = [
-            {'id': preprint.creator._id, 'permission': 'read', 'visible': True},
-            {'id': user._id, 'permission': 'read', 'visible': True},
+            {'id': preprint.creator._id, 'permissions': 'read', 'visible': True},
+            {'id': user._id, 'permissions': 'read', 'visible': True},
         ]
         with pytest.raises(PreprintStateError):
             preprint.manage_contributors(
@@ -1191,12 +1191,12 @@ class TestManageContributors:
         unregistered = UnregUserFactory()
         preprint.add_contributor(
             unregistered,
-            permission=ADMIN,
+            permissions=ADMIN,
             save=True
         )
         users = [
-            {'id': preprint.creator._id, 'permission': READ, 'visible': True},
-            {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
+            {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
+            {'id': unregistered._id, 'permissions': ADMIN, 'visible': True},
         ]
         with pytest.raises(PreprintStateError):
             preprint.manage_contributors(
@@ -1208,10 +1208,10 @@ class TestManageContributors:
         nonactive_admin = UserFactory()
         noncontrib = UserFactory()
         preprint = PreprintFactory(creator=user)
-        preprint.add_contributor(read, auth=auth, permission=READ)
-        preprint.add_contributor(write, auth=auth, permission=WRITE)
-        preprint.add_contributor(admin, auth=auth, permission=ADMIN)
-        preprint.add_contributor(nonactive_admin, auth=auth, permission=ADMIN)
+        preprint.add_contributor(read, auth=auth, permissions=READ)
+        preprint.add_contributor(write, auth=auth, permissions=WRITE)
+        preprint.add_contributor(admin, auth=auth, permissions=ADMIN)
+        preprint.add_contributor(nonactive_admin, auth=auth, permissions=ADMIN)
         preprint.save()
 
         nonactive_admin.is_disabled = True
@@ -1252,8 +1252,8 @@ class TestContributorOrdering:
         user2 = UserFactory()
         preprint.add_contributors(
             [
-                {'user': user1, 'permission': WRITE, 'visible': True},
-                {'user': user2, 'permission': WRITE, 'visible': True}
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
             ],
             auth=auth
         )
@@ -1375,7 +1375,7 @@ class TestSetPreprintFile(OsfTestCase):
             materialized_path='/pandapanda.txt')
         self.file_two.save()
 
-        self.preprint.add_contributor(self.read_write_user, permission=WRITE)
+        self.preprint.add_contributor(self.read_write_user, permissions=WRITE)
         self.project.save()
 
     @assert_preprint_logs(PreprintLog.PUBLISHED, 'preprint')
@@ -1476,8 +1476,8 @@ class TestPreprintPermissions(OsfTestCase):
         self.read_contrib = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.preprint = PreprintFactory(project=self.project, is_published=False, creator=self.user)
-        self.preprint.add_contributor(self.write_contrib, permission=WRITE)
-        self.preprint.add_contributor(self.read_contrib, permission=READ)
+        self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
+        self.preprint.add_contributor(self.read_contrib, permissions=READ)
 
         self.file = OsfStorageFile.create(
             target=self.preprint,
@@ -2213,8 +2213,8 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 3
 
-        data = [{'id': self.admin._id, 'permission': 'admin', 'visible': True},
-                {'id': user._id, 'permission': 'write', 'visible': False}]
+        data = [{'id': self.admin._id, 'permissions': 'admin', 'visible': True},
+                {'id': user._id, 'permissions': 'write', 'visible': False}]
 
         self.preprint.manage_contributors(data, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 4
@@ -2253,7 +2253,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.write_contrib = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
-        self.preprint.add_contributor(self.write_contrib, permission=WRITE)
+        self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
         self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
 
     @mock.patch('website.mails.send_mail')

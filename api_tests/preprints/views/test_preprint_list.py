@@ -726,7 +726,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False)
-        preprint.add_contributor(user_write_contrib, permission='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
         return preprint
 
     def test_unpublished_visible_to_admins(
@@ -816,7 +816,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(user_write_contrib, permission='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
         return preprint
 
     def test_unpublished_visible_to_admins(
@@ -891,7 +891,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.INITIAL.value)
-        preprint.add_contributor(user_write_contrib, permission='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
         return preprint
 
     def test_unpublished_visible_to_admins(

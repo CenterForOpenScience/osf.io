@@ -675,7 +675,7 @@ class TestPreprintUpdate:
         read_write_contrib = AuthUserFactory()
         preprint.add_contributor(
             read_write_contrib,
-            permission='write',
+            permissions='write',
             auth=Auth(user), save=True)
         new_file = test_utils.create_test_preprint_file(
             preprint, user, filename='lovechild_reason.pdf')
@@ -737,7 +737,7 @@ class TestPreprintUpdate:
         write_contrib = AuthUserFactory()
         preprint.add_contributor(
             write_contrib,
-            permission='write',
+            permissions='write',
             auth=Auth(user), save=True)
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
@@ -759,7 +759,7 @@ class TestPreprintUpdate:
         read_contrib = AuthUserFactory()
         preprint.add_contributor(
             read_contrib,
-            permission='read',
+            permissions='read',
             auth=Auth(user), save=True)
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
@@ -871,11 +871,11 @@ class TestPreprintUpdateLicense:
         preprint = PreprintFactory(
             creator=admin_contrib,
             provider=preprint_provider)
-        preprint.add_contributor(write_contrib, permission='write', auth=Auth(admin_contrib))
+        preprint.add_contributor(write_contrib, permissions='write', auth=Auth(admin_contrib))
         preprint.add_contributor(
             read_contrib,
             auth=Auth(admin_contrib),
-            permission='read')
+            permissions='read')
         preprint.save()
         return preprint
 
@@ -1354,7 +1354,7 @@ class TestPreprintDetailPermissions:
             is_published=True,
             is_public=False,
             machine_state='accepted')
-        fact.add_contributor(write_contrib, permission='write')
+        fact.add_contributor(write_contrib, permissions='write')
         fact.is_public = False
         fact.save()
         return fact
@@ -1369,7 +1369,7 @@ class TestPreprintDetailPermissions:
             is_published=True,
             is_public=True,
             machine_state='accepted')
-        fact.add_contributor(write_contrib, permission='write')
+        fact.add_contributor(write_contrib, permissions='write')
         return fact
 
     @pytest.fixture()
@@ -1552,7 +1552,7 @@ class TestPreprintDetailPermissions:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
-        unpublished.add_contributor(write_contrib, permission='write', save=True)
+        unpublished.add_contributor(write_contrib, permissions='write', save=True)
         res = app.get(url, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -1598,7 +1598,7 @@ class TestReviewsPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=False,
             machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(write_contrib, permission='write')
+        preprint.add_contributor(write_contrib, permissions='write')
         preprint.save()
         return preprint
 
@@ -1624,7 +1624,7 @@ class TestReviewsPreprintDetailPermissions:
             is_published=False,
             is_public=False,
             machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(write_contrib, permission='write')
+        preprint.add_contributor(write_contrib, permissions='write')
         return preprint
 
     @pytest.fixture()

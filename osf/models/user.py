@@ -1355,7 +1355,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param Node or Preprint, resource: Resourcer this unclaimed user was added to.
+        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.

@@ -940,11 +940,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             contributor_dict = {'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
             'bibliographic': bibliographic, 'index': index, 'save': True}
 
-            if isinstance(node, AbstractNode):
-                contributor_dict['permissions'] = permissions
-            else:
-                contributor_dict['permission'] = permissions
-
+            contributor_dict['permissions'] = permissions
             contributor_obj = node.add_contributor_registered_or_not(
                 **contributor_dict
             )

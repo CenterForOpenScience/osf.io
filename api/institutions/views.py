@@ -116,7 +116,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
         institution = self.get_institution()
         return (
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
-            .select_related('node_license', 'preprint_file')
+            .select_related('node_license')
             .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
         )
 
