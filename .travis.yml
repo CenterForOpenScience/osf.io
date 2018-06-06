@@ -164,5 +164,5 @@ branches:
   except:
     - /^[0-9]/
 
-notifications:
-  flowdock: 0221882cdda034c0e9ac2a0e766053dd
+#notifications:
+#  flowdock: 0221882cdda034c0e9ac2a0e766053dd
