@@ -255,7 +255,7 @@ class TestReviewActionCreateRoot(object):
                 preprint.machine_state = from_state
                 preprint.is_published = False
                 preprint.date_published = None
-                preprint.date_retracted = None
+                preprint.date_withdrawn = None
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)

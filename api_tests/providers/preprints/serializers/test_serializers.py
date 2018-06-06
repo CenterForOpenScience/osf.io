@@ -21,10 +21,10 @@ class TestRetractedPreprintSerialization:
             'is_published', 'is_preprint_orphan', 'license_record',
             'preprint_doi_created'
         }
-        hide_if_not_withdrawal_fields = {'retraction_justification'}
+        hide_if_not_withdrawal_fields = {'withdrawal_justification'}
         always_show_fields = {
             'date_created', 'date_modified', 'date_published', 'original_publication_date',
-            'doi', 'title', 'description', 'date_retracted', 'tags'}
+            'doi', 'title', 'description', 'date_withdrawn', 'tags'}
 
         # test_non_retracted
         req = make_drf_request_with_version()
@@ -40,7 +40,7 @@ class TestRetractedPreprintSerialization:
         assert hide_if_withdrawal_fields.issubset(attributes)
 
         # test_retracted
-        preprint.date_retracted = timezone.now()
+        preprint.date_withdrawn = timezone.now()
         preprint.save()
         preprint.reload()
 

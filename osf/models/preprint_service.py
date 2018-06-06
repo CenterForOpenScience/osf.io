@@ -48,8 +48,8 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
-    date_retracted = NonNaiveDateTimeField(default=None, null=True, blank=True)
-    retraction_justification = models.TextField(default='', blank=True)
+    date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)
 
     class Meta:
@@ -73,7 +73,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     @property
     def is_retracted(self):
-        return self.date_retracted is not None
+        return self.date_withdrawn is not None
 
     @property
     def article_doi(self):

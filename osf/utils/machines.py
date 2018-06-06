@@ -104,8 +104,8 @@ class ReviewsMachine(BaseMachine):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
     def perform_withdraw(self, ev):
-        self.machineable.date_retracted = self.action.created if self.action is not None else timezone.now()
-        self.machineable.retraction_justification = ev.kwargs.get('comment', '')
+        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
+        self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
         context = self.get_context()
