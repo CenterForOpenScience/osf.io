@@ -276,7 +276,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         if NodeRelation.objects.filter(
             parent__in=resource_object_list,
             child__is_deleted=False
-        ).exclude(child__in=resource_object_list, is_node_link=False).exists():
+        ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
             raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
         remove_addons(auth, resource_object_list)
