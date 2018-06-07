@@ -161,7 +161,7 @@ class PreprintProvider(AbstractProvider):
 
     @property
     def landing_url(self):
-        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self.name.lower())
+        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self._id)
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)

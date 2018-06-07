@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -20,6 +19,7 @@
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
+                            <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
                         % endif
 
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
@@ -107,7 +107,15 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                            <span data-bind="stopBinding: true">
+                                <span id="deleteNode">
+                                    <button
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
                     % endif
                     </div>
                 </div>
@@ -135,6 +143,39 @@
                 </div>
             % endif
         % endif ## End create vols
+
+        % if 'admin' in user['permissions']:  ## Begin enable request access
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="enableRequestAccessAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Access Requests</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form id="enableRequestAccessForm">
+                            <div>
+                                <label class="break-word">
+                                    <input
+                                            type="checkbox"
+                                            name="projectAccess"
+                                            class="project-access-select"
+                                            data-bind="checked: enabled"
+                                    />
+                                    Allow users to request access to this project.
+                                </label>
+                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                    <p data-bind="text: requestAccessMessage"></p>
+                                </div>
+                                <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                    <p data-bind="text: requestAccessMessage"></p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            % endif
+        % endif ## End enable request access
+
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
                 <div class="panel panel-default">
@@ -473,6 +514,7 @@
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
+      window.contextVars.node.requestProjectAccessEnabled = ${node['access_requests_enabled'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
       window.contextVars.wiki = window.contextVars.wiki || {};
       window.contextVars.wiki.isEnabled = ${wiki_enabled | sjson, n };

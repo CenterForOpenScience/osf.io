@@ -94,6 +94,9 @@ class CoreScopes(object):
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
 
+    ALERTS_READ = 'alerts_read'
+    ALERTS_WRITE = 'alerts_write'
+
     INSTITUTION_READ = 'institutions_read'
 
     SEARCH = 'search_read'
@@ -142,8 +145,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
@@ -197,10 +200,12 @@ class ComposedScopes(object):
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
-                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ)
+                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
+                        CoreScopes.NODE_REQUESTS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
-                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE)
+                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
+                             CoreScopes.NODE_REQUESTS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ

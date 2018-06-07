@@ -64,14 +64,6 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-#  collections-sync:
-#    src: '../ember-osf-collections'
-#    sync_strategy: 'native_osx'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
-
 #  sharejs-sync:
 #    src: '../sharejs'
 #    sync_strategy: 'native_osx'

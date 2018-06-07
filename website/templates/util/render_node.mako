@@ -59,15 +59,18 @@
                 % endif
                 % if summary['primary'] and summary['logged_in'] and summary['is_contributor'] and not summary['is_registration']:
                     <div class="generic-dropdown dropdown pull-right">
-                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
-                            <span class="glyphicon glyphicon-option-horizontal"></span>
+                        <button class="btn btn-default dropdown-toggle dropdown-toggle-sm" type="button" data-toggle="dropdown">
+                            <span class="fa fa-ellipsis-h"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-right">
                             <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
                             <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
                             % if summary['is_admin']:
                             <li>
-                                <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
+                                <a tabindex="-1"
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n}, '${summary['api_url']}')"
+                                    type="button">
                                     Delete
                                 </a>
                             </li>

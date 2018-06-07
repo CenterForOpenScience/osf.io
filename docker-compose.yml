@@ -19,8 +19,6 @@ volumes:
     external: false
   reviews_dist_vol:
     external: false
-  collections_dist_vol:
-    external: false
   mfr_requirements_vol:
     external: false
   mfr_requirements_local_bin_vol:
@@ -347,33 +345,6 @@ services:
       - reviews_dist_vol:/code/dist
     stdin_open: true
 
-  ###############
-  # Collections #
-  ###############
-
-  collections:
-    image: quay.io/centerforopenscience/osf-collections:develop-local
-    command:
-      - /bin/bash
-      - -c
-      - yarn --frozen-lockfile &&
-        yarn start --host 0.0.0.0 --port 4204 --live-reload-port 41957
-    restart: unless-stopped
-    depends_on:
-      - api
-      - web
-    environment:
-      - BACKEND=local
-    expose:
-      - 4204
-      - 41957
-    ports:
-      - 4204:4204
-      - 41957:41957
-    volumes:
-      - collections_dist_vol:/code/dist
-    stdin_open: true
-
   #######
   # OSF #
   #######
@@ -535,5 +506,4 @@ services:
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
-      - collections_dist_vol:/collections
     stdin_open: true

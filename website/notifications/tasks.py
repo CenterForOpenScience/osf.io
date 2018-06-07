@@ -76,7 +76,7 @@ def _send_reviews_moderator_emails(send_type):
                 provider_name=provider.name,
                 reviews_submissions_url='{}reviews/preprints/{}'.format(settings.DOMAIN, provider._id),
                 notification_settings_url='{}reviews/preprints/{}/notifications'.format(settings.DOMAIN, provider._id),
-                is_reviews_moderator_notificaiton=True,
+                is_reviews_moderator_notification=True,
                 is_admin=GroupHelper(provider).get_group('admin').user_set.filter(id=user.id).exists()
             )
         remove_notifications(email_notification_ids=notification_ids)

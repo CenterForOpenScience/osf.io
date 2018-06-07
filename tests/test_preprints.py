@@ -23,7 +23,7 @@ from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
 
@@ -43,6 +43,27 @@ class TestPreprintFactory(OsfTestCase):
     def test_preprint_is_public(self):
         assert_true(self.preprint.node.is_public)
 
+
+class TestPreprintSpam(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreprintSpam, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user, is_public=True)
+        self.preprint_one = PreprintFactory(creator=self.user, project=self.node)
+        self.preprint_two = PreprintFactory(creator=self.user, project=self.node, filename='preprint_file_two.txt')
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_preprints_get_marked_as_spammy_if_node_is_spammy(self):
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.node.check_spam(self.user, None, None)
+        self.preprint_one.reload()
+        self.preprint_two.reload()
+        assert_true(self.preprint_one.is_spammy)
+        assert_true(self.preprint_two.is_spammy)
 
 class TestSetPreprintFile(OsfTestCase):
 
@@ -311,13 +332,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
-        assert self.preprint.identifiers.count() == 0
-        self.preprint.set_published(True, auth=self.auth, save=True)
-
-        assert mock_get_and_set_identifiers.called
-
     def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory()
         preprint = PreprintFactory(provider=new_provider)
@@ -326,6 +340,22 @@ class TestPreprintIdentifiers(OsfTestCase):
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 
         assert doi == ideal_doi
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_update_or_create_preprint_identifiers(self, mock_get_identifiers):
+        self.preprint.is_published = True
+        update_or_create_preprint_identifiers(self.preprint)
+        assert mock_get_identifiers.called
+        assert mock_get_identifiers.call_count == 1
+
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_or_create_preprint_identifiers_ezid(self, mock_update_ezid):
+        published_preprint = PreprintFactory(is_published=True, creator=self.user)
+        update_or_create_preprint_identifiers(published_preprint)
+        assert mock_update_ezid.called
+        assert mock_update_ezid.call_count == 1
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
@@ -729,6 +759,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert not mock_async.called
         assert mock_mail.called
 
+
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super(TestPreprintConfirmationEmails, self).setUp()
@@ -756,7 +787,8 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             reviewable=self.preprint,
             is_creator=True,
             provider_name=self.preprint.provider.name,
-            no_future_emails=[]
+            no_future_emails=[],
+            logo=settings.OSF_PREPRINTS_LOGO,
         )
         assert_equals(send_mail.call_count, 1)
 

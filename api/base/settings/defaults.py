@@ -153,6 +153,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
         '2.7',
+        '2.8',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -239,8 +240,10 @@ if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
     # Required to interact with Google Cloud Storage
     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
     GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
 else:
     DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
+    
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')

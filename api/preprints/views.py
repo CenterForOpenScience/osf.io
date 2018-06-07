@@ -43,14 +43,15 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except PreprintService.DoesNotExist:
             raise NotFound
 
-        if preprint.node.is_deleted:
+        if preprint.node.is_deleted or (preprint.is_retracted and not preprint.ever_public):
             raise NotFound
+
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)

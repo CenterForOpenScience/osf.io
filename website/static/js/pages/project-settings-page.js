@@ -83,12 +83,9 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    if(ctx.node.childExists){
-        new NodesDelete.NodesDelete('#nodesDelete', ctx.node);
-    }else{
-        $('#deleteNode').on('click', function() {
-            ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
-        });
+    var selector = '#deleteNode';
+    if ($(selector).length){
+        new NodesDelete.DeleteManager(selector);
     }
 
     // TODO: Knockout-ify me
@@ -128,35 +125,68 @@ $(document).ready(function() {
     });
 });
 
+
+var subscribeViewModel = function(viewModel, options) {
+    /**
+     * @param {Object} options: Options including `messageObservable`, `name` (the name of the setting),
+     *                          `updateUrl` (endpoint used to make the update request), and `objectToUpdate`
+     **/
+    viewModel.enabled.subscribe(function(newValue) {
+        var self = this;
+        var payload = {};
+        payload[options.objectToUpdate] = newValue;
+        $osf.postJSON(ctx.node.urls.api + options.updateUrl, payload
+        ).done(function(response) {
+            if (newValue) {
+                viewModel[options.messageObservable](options.name + ' enabled');
+            }
+            else {
+                viewModel[options.messageObservable](options.name + ' disabled');
+            }
+            //Give user time to see message before reload.
+            setTimeout(function(){window.location.reload();}, 1500);
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to update settings');
+            Raven.captureMessage('Could not update settings.', {
+                extra: {
+                    url: ctx.node.urls.api + options.updateUrl, status: status, error: error
+                }
+            });
+            setTimeout(function(){window.location.reload();}, 1500);
+        });
+        return true;
+    }, viewModel);
+};
+
+
 var WikiSettingsViewModel = {
     enabled: ko.observable(ctx.wiki.isEnabled), // <- this would get set in the mako template, as usual
     wikiMessage: ko.observable('')
 };
 
-WikiSettingsViewModel.enabled.subscribe(function(newValue) {
-    var self = this;
-    $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
-    ).done(function(response) {
-        if (newValue) {
-            self.wikiMessage('Wiki Enabled');
-        }
-        else {
-            self.wikiMessage('Wiki Disabled');
-        }
-        //Give user time to see message before reload.
-        setTimeout(function(){window.location.reload();}, 1500);
-    }).fail(function(xhr, status, error) {
-        $osf.growl('Error', 'Unable to update wiki');
-        Raven.captureMessage('Could not update wiki.', {
-            extra: {
-                url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
-            }
-        });
-        setTimeout(function(){window.location.reload();}, 1500);
-    });
-    return true;
-}, WikiSettingsViewModel);
+subscribeViewModel(WikiSettingsViewModel, {
+    messageObservable: 'wikiMessage',
+    name: 'Wiki',
+    updateUrl: 'settings/addons/',
+    objectToUpdate:'wiki'
+});
 
 if ($('#selectWikiForm').length) {
     $osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
+}
+
+var RequestAccessSettingsViewModel = {
+    enabled: ko.observable(ctx.node.requestProjectAccessEnabled), // <- this would get set in the mako template, as usual
+    requestAccessMessage: ko.observable('')
+};
+
+subscribeViewModel(RequestAccessSettingsViewModel, {
+    messageObservable: 'requestAccessMessage',
+    name: 'Request access',
+    updateUrl: 'settings/requests/',
+    objectToUpdate: 'accessRequestsEnabled'
+});
+
+if ($('#enableRequestAccessForm').length) {
+    $osf.applyBindings(RequestAccessSettingsViewModel, '#enableRequestAccessForm');
 }

@@ -2,6 +2,7 @@ import mock
 import pytest
 
 from rest_framework import exceptions
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -97,6 +98,31 @@ class TestPreprintDetail:
             deleted_preprint_url, expect_errors=True)
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
+
+    def test_retracted_preprint(self, app, user, preprint, url, data):
+        # test_retracted_fields
+        assert not data['attributes']['date_retracted']
+        assert 'retraction_justification' not in data['attributes']
+        assert 'ever_public' not in data['attributes']
+
+        ## retracted and not ever_public (False by default)
+        preprint.date_retracted = timezone.now()
+        preprint.retraction_justification = 'assumptions no longer apply'
+        preprint.save()
+        assert preprint.is_retracted
+        assert not preprint.ever_public
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+
+        ## retracted and ever_public (True)
+        preprint.ever_public = True
+        preprint.save()
+        res = app.get(url)
+        data = res.json['data']
+        assert data['attributes']['date_retracted']
+        assert 'retraction_justification' in data['attributes']
+        assert 'assumptions no longer apply' == data['attributes']['retraction_justification']
+        assert 'date_retracted' in data['attributes']
 
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
@@ -560,8 +586,7 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_update_published(self, mock_get_identifiers, app, user):
+    def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
@@ -569,11 +594,9 @@ class TestPreprintUpdate:
         app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
-        assert mock_get_identifiers.called
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_update_published_makes_node_public(
-            self, mock_get_identifiers, app, user):
+            self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
