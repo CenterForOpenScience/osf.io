@@ -444,45 +444,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return list(self.collecting_metadata_qs)
 
     @property
-    def is_preprint(self):
-        # TODO: This is a temporary implementation.
-        if not self.preprint_file_id or not self.is_public:
-            return False
-        if self.preprint_file.target == self:
-            return self.has_submitted_preprint
-        else:
-            self._is_preprint_orphan = True
-            return False
+    def has_submitted_preprint(self):
+        # Attached to a submitted preprint
+        return self.preprints.filter(
+            deleted__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).exists()
 
     @property
-    def is_supplemental_node_for_preprint(self):
+    def has_published_preprint(self):
+        # Attached to a published preprint - anyone can view this preprint
+        return self.published_preprints_queryset.exists()
+
+    @property
+    def published_preprints_queryset(self):
         return self.preprints.filter(
             is_published=True,
             is_public=True,
             deleted__isnull=True,
             primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).exists()
-
-    @property
-    def has_submitted_preprint(self):
-        return self.preprints.exclude(machine_state=DefaultStates.INITIAL.value).exists()
-
-    @property
-    def is_preprint_orphan(self):
-        """For v1 compat"""
-        if (not self.is_preprint) and self._is_preprint_orphan:
-            return True
-        if self.preprint_file:
-            return self.preprint_file.is_deleted
-        return False
-
-    @property
-    def has_published_preprint(self):
-        return self.published_preprints_queryset.exists()
-
-    @property
-    def published_preprints_queryset(self):
-        return self.preprints.filter(is_published=True)
+            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value)
 
     @property
     def preprint_url(self):
@@ -492,16 +471,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def linked_preprint(self):
-        if self.is_preprint:
-            try:
-                # if multiple preprints per project are supported on the front end this needs to change.
-                published_preprint = self.published_preprints_queryset.first()
-                if published_preprint:
-                    return published_preprint
-                else:
-                    return self.preprints.get_queryset()[0]
-            except IndexError:
-                pass
+        try:
+            # if multiple preprints per project are supported on the front end this needs to change.
+            published_preprint = self.published_preprints_queryset.first()
+            if published_preprint:
+                return published_preprint
+            else:
+                return self.preprints.get_queryset()[0]
+        except IndexError:
+            pass
 
     @property
     def is_collection(self):
@@ -1199,12 +1177,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'allowed_operations': ['read']
         })
 
-    def save_node_preprints(self):
-        if self.preprint_file:
-            Preprint = apps.get_model('osf.Preprint')
-            for preprint in Preprint.objects.filter(node_id=self.id, is_published=True):
-                preprint.save()
-
     @property
     def private_links_active(self):
         return self.private_links.filter(is_deleted=False)
@@ -1803,15 +1775,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if isinstance(v, basestring)
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
-
-        if self.preprint_file:
-            # avoid circular imports
-            from website.preprints.tasks import on_preprint_updated
-            Preprint = apps.get_model('osf.Preprint')
-            # .preprints wouldn't return a single deleted preprint
-            for preprint in Preprint.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
-
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.

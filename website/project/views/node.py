@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, PreprintContributor
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -687,6 +687,14 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
+    try:
+        if node.linked_preprint is None:
+            preprint_contributor = None
+        else:
+            preprint_contributor = node.linked_preprint.preprintcontributor_set.get(user=user)
+    except PreprintContributor.DoesNotExist:
+        preprint_contributor = None
+
     parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
@@ -780,7 +788,8 @@ def _view_project(node, auth, primary=False,
             },
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'is_preprint': node.is_preprint,
+            'has_published_preprint': node.has_published_preprint,
+            'has_submitted_preprint': node.has_submitted_preprint,
             'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
             'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
             'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
@@ -788,9 +797,6 @@ def _view_project(node, auth, primary=False,
                 'name': node_linked_preprint.provider.name,
                 'workflow': node_linked_preprint.provider.reviews_workflow
             } if node_linked_preprint else {},
-            'is_preprint_orphan': node.is_preprint_orphan,
-            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
-            'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
         },
@@ -809,6 +815,7 @@ def _view_project(node, auth, primary=False,
         },
         'user': {
             'is_contributor': bool(contributor),
+            'is_preprint_contributor': bool(preprint_contributor),
             'is_admin': bool(contributor) and contributor.admin,
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': bool(contributor) and contributor.write and not node.is_registration,

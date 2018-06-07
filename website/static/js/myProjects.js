@@ -119,7 +119,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
 
     // TODO Use sparse fields on preprints, users/contributors already added
     if (this.type === 'preprints') {
-        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
+        link = link ? link : $osf.apiV2Url('users/me/preprints/', { query : { 'embed' : ['contributors'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
     this.nextLink = link ?
@@ -503,6 +503,9 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
+                if (item.data.type === 'preprints') {
+                    return [];
+                }
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
@@ -1896,9 +1899,14 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var resourceType = item.type;
             var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
-            category = item.attributes.category === '' ? 'Uncategorized' : item.attributes.category;
+            if (resourceType === 'preprints') {
+                category = 'Preprint';
+            } else {
+                category = item.attributes.category === '' ? 'Uncategorized' : item.attributes.category;
+            }
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
@@ -1912,7 +1920,7 @@ var Information = {
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'open-information-tab');
                         }}, 'Information')),
-                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
+                        resourceType === 'preprints' ? '' : m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
                             args.getCurrentLogs();
                             $osf.trackClick('myProjects', 'information-panel', 'open-activity-tab');
                         }}, 'Activity'))
@@ -1920,8 +1928,8 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
-                                item.embeds.preprints ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',  // TODO: update once preprint node divorce is finished
-                                item.embeds.preprints && item.embeds.preprints.data[0].attributes.reviews_state && item.embeds.preprints.data[0].attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.embeds.preprints.data[0].attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
+                                resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
+                                resourceType === 'preprints' && item.attributes.is_published === true ? m('.text-capitalize', 'Published: ' + item.attributes.is_published) : '',
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', [
                                   m('span', 'Category: '),
@@ -1945,7 +1953,7 @@ var Information = {
                             ]) : ''
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
-                            m.component(ActivityLogs, args)
+                            item.type !== 'preprints' ? m.component(ActivityLogs, args) : ''
                         ])
                     ])
                 ])

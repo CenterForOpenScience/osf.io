@@ -40,8 +40,8 @@ function _poTitleColumn(item) {
     var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints';
     if (item.data.archiving) { // TODO check if this variable will be available
         return m('span', {'class': 'registration-archiving'}, title + ' [Archiving]');
-    } else if (node.embeds.preprints && isMypreprintsCollection){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.embeds.preprints.data[0].links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
+    } else if (node.type === 'preprints' && isMypreprintsCollection){
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
         }}, title) ];
@@ -340,7 +340,7 @@ var tbOptions = {
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
         var isMypreprintsCollection = this.options.currentView().collection.data.nodeType === 'preprints';
-        var iconType = item.data.embeds.preprints && isMypreprintsCollection ? 'preprint' : item.data.attributes.category;
+        var iconType = item.data.type === 'preprints' && isMypreprintsCollection ? 'preprint' : item.data.attributes.category;
         return m('i.' + iconmap.projectComponentIcons[iconType]);
     },
     resolveToggle : _poResolveToggle,

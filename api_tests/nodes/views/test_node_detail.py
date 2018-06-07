@@ -1145,7 +1145,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_ezid_metadata_on_change.called
+        assert not mock_update_ezid_metadata_on_change.called
 
     @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(

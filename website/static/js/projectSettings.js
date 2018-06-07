@@ -155,16 +155,11 @@ request.fail(function(xhr, textStatus, err) {
  * Pulls a random name from the scientist list to use as confirmation string
  *  Ignores case and whitespace
  */
-var getConfirmationCode = function(nodeType, isPreprint) {
-
-    var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
-        nodeType + ' will also delete your preprint. This action is irreversible.</p>';
+var getConfirmationCode = function(nodeType) {
 
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
-    var message = '<p>It will no longer be available to other contributors on the project.' +
-        (isPreprint ? preprint_message : '');
-
+    var message = '<p>It will no longer be available to other contributors on the project.';
     $osf.confirmDangerousAction({
         title: 'Are you sure you want to delete this ' + nodeType + '?',
         message: message,

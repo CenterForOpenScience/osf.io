@@ -7,8 +7,6 @@
         prefix = ''
     if node.get('is_registration', False):
         return prefix + 'registration'
-    elif node.get('is_preprint', False):
-        return prefix + 'preprint'
     elif parent_node['exists']:
         return prefix + 'component'
     else:
@@ -199,8 +197,6 @@
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
-            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
-            preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },

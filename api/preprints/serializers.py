@@ -94,6 +94,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     node_is_public = ShowIfVersion(ser.BooleanField(read_only=True, source='node__is_public'), min_version=2.0, max_version=2.7)
     preprint_doi_created = VersionedDateTimeField(read_only=True)
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this preprint.')
 
     contributors = RelationshipField(
         related_view='preprints:preprint-contributors',
@@ -168,6 +170,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_article_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        all_perms = ['read', 'write', 'admin']
+        user_perms = []
+        for p in all_perms:
+            if obj.has_permission(user, p):
+                user_perms.append(p)
+        return user_perms
 
     def get_preprint_doi_url(self, obj):
         doi_identifier = obj.get_identifier('doi')

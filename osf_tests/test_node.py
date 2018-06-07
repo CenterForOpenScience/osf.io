@@ -4181,25 +4181,25 @@ class TestAdminImplicitRead(object):
 
 
 class TestNodeProperties:
-    def test_is_supplemental_node_for_preprint(self, project, preprint, user):
+    def test_has_published_preprint(self, project, preprint, user):
         # If no preprints, is False
-        assert project.is_supplemental_node_for_preprint is False
+        assert project.has_published_preprint is False
 
         # A published preprint attached to a project is True
         preprint.node = project
         preprint.save()
-        assert project.is_supplemental_node_for_preprint is True
+        assert project.has_published_preprint is True
 
         # Abandoned preprint is False
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
-        assert project.is_supplemental_node_for_preprint is False
+        assert project.has_published_preprint is False
 
         # Unpublished preprint is False
         preprint.machine_state = DefaultStates.ACCEPTED.value
         preprint.is_published = False
         preprint.save()
-        assert project.is_supplemental_node_for_preprint is False
+        assert project.has_published_preprint is False
 
     def test_preprint_url_does_not_return_unpublished_preprint_url(self):
         node = ProjectFactory(is_public=True)

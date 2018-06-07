@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 
 var ComponentActions = {};
 
-ComponentActions.deleteNode = function(childExists, nodeType, isPreprint, nodeApiUrl) {
+ComponentActions.deleteNode = function(childExists, nodeType, nodeApiUrl) {
 
     if(childExists){
         $osf.growl(
@@ -15,14 +15,9 @@ ComponentActions.deleteNode = function(childExists, nodeType, isPreprint, nodeAp
             30000
         );
     } else {
-
-        var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
-        nodeType + ' will also delete your preprint. This action is irreversible.</p>';
-
         // It's possible that the XHR request for contributors has not finished before getting to this
         // point; only construct the HTML for the list of contributors if the contribs list is populated
         var message = '<p>It will no longer be available to other contributors on the project.' +
-        (isPreprint ? preprint_message : '');
 
         $osf.confirmDangerousAction({
             title: 'Are you sure you want to delete this ' + nodeType + '?',
