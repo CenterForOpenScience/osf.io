@@ -36,13 +36,12 @@ class CrossRefClient(AbstractIdentifierClient):
 
         :param preprint -- the preprint, or list of preprints to build metadata for
         """
-
         is_batch = False
         if isinstance(preprint, list):
             is_batch = True
             preprints = preprint
         else:
-            preprints = [preprints]
+            preprints = [preprint]
 
         if kwargs.get('status', '') == 'unavailable':
             return ''
@@ -176,7 +175,6 @@ class CrossRefClient(AbstractIdentifierClient):
                 fname='{}.xml'.format(filename)
             ),
             files={'file': ('{}.xml'.format(filename), metadata)},
-            expects=(200, )
         )
 
         # Don't wait for response to confirm doi because it arrives via email.

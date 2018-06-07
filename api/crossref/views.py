@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
 from framework.auth.views import mails
+from framework import sentry
 from osf.models import PreprintService
 from website import settings
 
@@ -31,38 +32,40 @@ class ParseCrossRefConfirmation(APIView):
 
     def post(self, request):
         crossref_email_content = lxml.etree.fromstring(str(request.POST['body-plain']))
-        record_status = crossref_email_content.get('status').lower()
-        batch_status = crossref_email_content.find('record_diagnostic').get('status').lower()
-        preprint_guid = crossref_email_content.find('batch_id').text
-        preprint = PreprintService.load(preprint_guid)
-        registered_doi = crossref_email_content.find('record_diagnostic/doi').text
-        message = crossref_email_content.find('record_diagnostic/msg').text.lower()
+        status = crossref_email_content.get('status').lower()  # from element doi_batch_diagnostic
+        record_count = int(crossref_email_content.find('batch_data/record_count').text)
+        records = crossref_email_content.xpath('//record_diagnostic')
+        dois_processed = 0
 
-        record_count = crossref_email_content.find('batch_data/record_count').text
+        if status == 'completed':
+            for record in records:
+                doi = getattr(record.find('doi'), 'text', None)
+                guid = doi.split('/')[-1] if doi else None
+                if record.get('status').lower() == 'success':
+                    preprint = PreprintService.load(guid)
+                    preprint.set_identifier_value(category='doi', value=doi)
 
-        success = record_status == 'completed' and batch_status == 'success'
-        updated = success and message == 'successfully updated'
+                    logger.info('Success email received from CrossRef for preprint {}'.format(preprint._id))
+                    dois_processed += 1
 
-        if not preprint and record_count > 1:
-            logger.info('No preprint with this GUID could be found, perhaps it is a batch update!')
-        else:
-            # Set the DOI on the preprint if this is not just a metadata update
-            if success and not updated:
-                logger.info('Success email received from CrossRef for preprint {}'.format(preprint._id))
-                if not preprint.get_identifier_value('doi'):
-                    preprint.set_identifier_value(category='doi', value=registered_doi)
-
-            elif updated:
-                logger.info('Metadata for preprint {} successfully updated with CrossRef'.format(preprint_guid))
-
+        if dois_processed != record_count or status != 'completed':
+            if record_count > 1:
+                # For batch errors, log a message to sentry with the original crossref email content
+                sentry.log_message(
+                    message='There was an error processing a batch update of DOIs from Crossref',
+                    extra_data={
+                        'original_xml': request.POST['body-plain']
+                    }
+                )
             else:
-                logger.error('Error submitting metdata for preprint {} with CrossRef, email sent to help desk'.format(preprint_guid))
+                preprint = PreprintService.load(crossref_email_content.find('batch_id').text)
                 mails.send_mail(
                     to_addr=settings.OSF_SUPPORT_EMAIL,
                     mail=mails.CROSSREF_ERROR,
                     preprint=preprint,
-                    doi=registered_doi or settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id),
+                    doi=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id),
                     email_content=request.POST['body-plain'],
                 )
+                logger.error('Error submitting metdata for preprint {} with CrossRef, email sent to help desk'.format(preprint._id))
 
         return HttpResponse('Mail received', status=200)

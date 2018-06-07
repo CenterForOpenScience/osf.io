@@ -2,6 +2,7 @@ import mock
 import pytest
 import hmac
 import hashlib
+import lxml.etree
 
 from osf_tests import factories
 from website import settings
@@ -11,7 +12,6 @@ from website import settings
 class TestCrossRefEmailResponse:
 
     def make_mailgun_payload(self, crossref_response):
-
         mailgun_payload = {
             'From': ['CrossRef <admin@crossref.org>'],
             'To': ['test@test.osf.io'],
@@ -28,8 +28,8 @@ class TestCrossRefEmailResponse:
             'token': 'secret'
         }
 
-        if not settings.MAILGUN_API_KEY:
-            raise Exception('Must have mailgun API key set to run this test.')
+        # temporarily override MAILGUN_API_KEY
+        settings.MAILGUN_API_KEY = 'notsosecret'
         data = {
             'X-Mailgun-Sscore': 0,
             'signature': hmac.new(
@@ -113,6 +113,36 @@ class TestCrossRefEmailResponse:
         </doi_batch_diagnostic>
         """.format(preprint._id, preprint._id)
 
+    def build_batch_success_xml(self, preprint_list):
+        preprint_count = len(preprint_list)
+        base_xml_string = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <doi_batch_diagnostic status="completed" sp="cs3.crossref.org">
+            <submission_id>1390758391</submission_id>
+            <batch_id>1528233706</batch_id>
+            <batch_data>
+                <record_count>{}</record_count>
+                <success_count>{}</success_count>
+                <warning_count>0</warning_count>
+                <failure_count>0</failure_count>
+            </batch_data>
+        </doi_batch_diagnostic>
+        """.format(preprint_count, preprint_count)
+        base_xml = lxml.etree.fromstring(base_xml_string.strip())
+        provider_prefix = preprint_list[0].provider.doi_prefix
+        for preprint in preprint_list:
+            record_diagnostic = lxml.etree.Element('record_diagnostic')
+            record_diagnostic.attrib['status'] = 'Success'
+            doi = lxml.etree.Element('doi')
+            doi.text = settings.DOI_FORMAT.format(prefix=provider_prefix, guid=preprint._id)
+            msg = lxml.etree.Element('msg')
+            msg.text = 'Successfully updated'
+            record_diagnostic.append(doi)
+            record_diagnostic.append(msg)
+            base_xml.append(record_diagnostic)
+
+        return lxml.etree.tostring(base_xml, pretty_print=False)
+
     @pytest.fixture()
     def url(self):
         return '/_/crossref/email/'
@@ -144,13 +174,26 @@ class TestCrossRefEmailResponse:
         assert preprint.get_identifier_value('doi')
 
     def test_update_success_response(self, app, preprint, url, update_success_xml):
-        preprint.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id))
+        initial_value = 'TempDOIValue'
+        preprint.set_identifier_value(category='doi', value=initial_value)
         update_xml = self.update_success_xml(preprint)
 
-        with mock.patch.object(preprint, 'set_identifier_value') as mock_set_identifier_value:
-            with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
-                context_data = self.make_mailgun_payload(crossref_response=update_xml)
-                app.post(url, context_data)
+        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+            context_data = self.make_mailgun_payload(crossref_response=update_xml)
+            app.post(url, context_data)
 
         assert not mock_send_mail.called
-        assert not mock_set_identifier_value.called
+        assert preprint.get_identifier_value(category='doi') != initial_value
+
+    def test_success_batch_response(self, app, url):
+        provider = factories.PreprintProviderFactory()
+        provider.doi_prefix = '10.123yeah'
+        provider.save()
+        preprint_list = [factories.PreprintFactory(set_doi=False, provider=provider) for _ in range(5)]
+
+        xml_response = self.build_batch_success_xml(preprint_list)
+        context_data = self.make_mailgun_payload(xml_response)
+        app.post(url, context_data)
+
+        for preprint in preprint_list:
+            assert preprint.get_identifier_value('doi') == settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=preprint._id)
