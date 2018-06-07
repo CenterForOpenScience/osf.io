@@ -45,6 +45,9 @@ class PostgreSQLFailoverRouter(object):
                     return name
                 cur.close()
                 conn.close()
+
+            if not settings.RETRY_DB_CONNECTION:
+                return None
             logger.error('A writable db wasn\'t found. Trying again in 10 seconds')
             time.sleep(10)
         return None

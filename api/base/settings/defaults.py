@@ -32,6 +32,7 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+RETRY_DB_CONNECTION = False
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
