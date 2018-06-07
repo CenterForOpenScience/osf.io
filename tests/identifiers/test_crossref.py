@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import mock
 import lxml
 import pytest
@@ -17,6 +18,10 @@ from osf_tests.factories import (
 )
 from framework.flask import rm_handlers
 from framework.django.handlers import handlers as django_handlers
+
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+FIXTURES = os.path.join(HERE, 'fixtures')
 
 
 @pytest.fixture()
@@ -39,6 +44,18 @@ def preprint():
     preprint = PreprintFactory(provider=provider, project=node, is_published=True, license_details=license_details)
     preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
     return preprint
+
+@pytest.fixture()
+def crossref_preprint_metadata():
+    with open(os.path.join(FIXTURES, 'crossref_preprint_metadata.xml'), 'r') as fp:
+        return fp.read()
+
+@pytest.fixture()
+def crossref_success_response():
+    return """
+        \n\n\n\n<html>\n<head><title>SUCCESS</title>\n</head>\n<body>\n<h2>SUCCESS</h2>\n<p>
+        Your batch submission was successfully received.</p>\n</body>\n</html>\n
+        """
 
 
 @pytest.mark.django_db

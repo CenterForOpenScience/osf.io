@@ -14,18 +14,13 @@ from website.identifiers.clients import DataCiteClient
 from website.identifiers import metadata
 
 from tests.base import OsfTestCase
-from tests.identifiers.conftest import datacite_metadata_response
 from tests.test_addons import assert_urls_equal
 from osf_tests.factories import AuthUserFactory, RegistrationFactory
 
-class MockDataciteClient(object):
 
-    def __init__(self, *arg, **kwargs):
-        pass
+HERE = os.path.dirname(os.path.abspath(__file__))
+FIXTURES = os.path.join(HERE, 'fixtures')
 
-    url = 'https://mds.fake.datacite.org'
-    metadata_get = mock.Mock(return_value=datacite_metadata_response())
-    metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/yvzp4)')
 
 @pytest.fixture()
 def datacite_client():
@@ -37,6 +32,27 @@ def datacite_client():
 @pytest.fixture()
 def registration():
     return RegistrationFactory()
+
+@pytest.fixture()
+def datacite_node_metadata():
+    with open(os.path.join(FIXTURES, 'datacite_node_metadata.xml'), 'r') as fp:
+        return fp.read()
+
+@pytest.fixture()
+def datacite_metadata_response():
+    with open(os.path.join(FIXTURES, 'datacite_post_metadata_response.xml'), 'r') as fp:
+        return fp.read()
+
+
+class MockDataciteClient(object):
+
+    def __init__(self, *arg, **kwargs):
+        pass
+
+    url = 'https://mds.fake.datacite.org'
+    metadata_get = mock.Mock(return_value=datacite_metadata_response())
+    metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/yvzp4)')
+
 
 @pytest.mark.django_db
 class TestDataCiteClient:
