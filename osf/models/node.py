@@ -1752,7 +1752,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     parent=registered,
                     excluded_node_ids=excluded_node_ids
                 )
-            else:
+            elif node_contained._id not in excluded_node_ids:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
                     is_node_link=True,
