@@ -94,10 +94,6 @@ class TestEZIDClient(OsfTestCase):
             res.json['doi'],
             self.registration.get_identifier_value('doi')
         )
-        assert_equal(
-            res.json['ark'],
-            self.registration.get_identifier_value('ark')
-        )
         assert_equal(res.status_code, 201)
 
     @responses.activate

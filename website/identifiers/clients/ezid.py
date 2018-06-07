@@ -5,7 +5,7 @@ import requests
 from website import settings
 from website.identifiers import utils
 from website.util.client import BaseClient
-from website.identifiers.clients import DataCiteClient
+from website.identifiers.clients import DataCiteClient, exceptions
 
 
 class EzidClient(BaseClient, DataCiteClient):
@@ -21,7 +21,7 @@ class EzidClient(BaseClient, DataCiteClient):
     def _default_headers(self):
         return {'Content-Type': 'text/plain; charset=UTF-8'}
 
-    def build_doi(self):
+    def build_doi(self, object):
         return settings.DOI_FORMAT.format(prefix=self.prefix, guid=object._id)
 
     def get_identifier(self, identifier):
@@ -37,8 +37,12 @@ class EzidClient(BaseClient, DataCiteClient):
             'PUT',
             self._build_url('id', doi),
             data=utils.to_anvl(metadata or {}),
-            expects=(201, ),
         )
+        if resp.status_code != 201:
+            if 'identifier already exists' in resp.content:
+                raise exceptions.IdentifierAlreadyExists()
+            else:
+                raise exceptions.ClientResponseError(resp)
         resp = utils.from_anvl(resp.content)
         return dict(
             [each.strip('/') for each in pair.strip().split(':')]

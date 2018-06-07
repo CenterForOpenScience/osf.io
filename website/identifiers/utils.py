@@ -5,6 +5,7 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
+from website.identifiers.clients import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -74,16 +75,15 @@ def request_identifiers(target_object):
     already_exists = False
     only_doi = True
     try:
-        idenifiers = client.create_identifier(metadata, doi)
-    except HTTPError as error:
+        identifiers = client.create_identifier(metadata, doi)
+    except exceptions.IdentifierAlreadyExists as error:
+        identifiers = client.get_identifier(doi)
         already_exists = True
-        if 'identifier already exists' not in error.message.lower():
-            raise
-
-        idenifiers = client.get_identifier(doi)
         only_doi = False
+    except exceptions.ClientResponseError as error:
+        raise HTTPError(error.response.status_code)
     return {
-        'doi': idenifiers.get('doi'),
+        'doi': identifiers.get('doi'),
         'already_exists': already_exists,
         'only_doi': only_doi
     }
@@ -117,18 +117,13 @@ def get_or_create_identifiers(target_object):
     Moved from website/project/views/register.py for use by other modules
     """
     response_dict = request_identifiers(target_object)
-    exists = response_dict['already_exists']
-    only_doi = response_dict['only_doi']
-    if exists:
+    ark = target_object.get_identifier(category='ark')
+    doi = response_dict['doi']
+    if not doi:
         client = target_object.get_doi_client()
         doi = client.build_doi(target_object)
-        suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
-        if not only_doi:
-            return {
-                'doi': doi.replace('doi:', ''),
-                'ark': '{0}{1}'.format(settings.EZID_ARK_NAMESPACE.replace('ark:', ''), suffix),
-            }
-        else:
-            return {'doi': doi.replace('doi:', '')}
-    else:
-        return {'doi': response_dict['doi']}
+    response = {'doi': doi}
+    if ark:
+        response['ark'] = ark.value
+
+    return response
