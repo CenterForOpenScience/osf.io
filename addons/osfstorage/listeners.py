@@ -7,5 +7,4 @@ from website.project.signals import contributor_removed
 def checkin_files_by_user(node, user):
     ''' Listens to a contributor being removed to check in all of their files
     '''
-    from addons.osfstorage.models import OsfStorageFileNode
-    OsfStorageFileNode.objects.filter(node=node, checkout=user).update(checkout=None)
+    node.files.filter(checkout=user).update(checkout=None)

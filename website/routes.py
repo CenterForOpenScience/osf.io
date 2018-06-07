@@ -1227,6 +1227,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/<guid>/files/<provider>/<path:path>/',
                 '/project/<pid>/files/<provider>/<path:path>/',
                 '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
@@ -1242,6 +1243,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/<guid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],

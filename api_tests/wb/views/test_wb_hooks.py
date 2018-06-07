@@ -28,7 +28,7 @@ def quickfiles_file(user, quickfiles_node):
 
 @pytest.fixture()
 def quickfiles_folder(quickfiles_node):
-    return OsfStorageFolder.objects.get(node=quickfiles_node)
+    return OsfStorageFolder.objects.get_root(target=quickfiles_node)
 
 @pytest.fixture()
 def node(user):
@@ -80,11 +80,11 @@ class TestMove():
     def payload(self, file, folder, root_node, user):
         return {
             'source': file._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder._id,
-                'node': folder.node._id,
+                'target': folder.target._id,
                 'name': folder.name,
             }
         }
@@ -110,11 +110,11 @@ class TestMove():
         file.save()
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -134,7 +134,7 @@ class TestMove():
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'node': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -154,7 +154,7 @@ class TestMove():
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'node': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -170,11 +170,11 @@ class TestMove():
         folder_two = node_two_root_node.append_folder('To There')
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -186,11 +186,11 @@ class TestMove():
         node.save()
         signed_payload = sign_payload({
             'source': file._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder._id,
-                'node': folder.node._id,
+                'target': folder.target._id,
                 'name': folder.name,
             }
         })
@@ -198,14 +198,14 @@ class TestMove():
         assert res.status_code == 200
 
     def test_can_move_file_out_of_quickfiles_node(self, app, quickfiles_move_url, quickfiles_file, quickfiles_node, quickfiles_folder, node, user):
-        dest_folder = OsfStorageFolder.objects.get(node=node)
+        dest_folder = OsfStorageFolder.objects.get_root(target=node)
         signed_payload = sign_payload({
             'source': quickfiles_folder._id,
-            'node': quickfiles_node._id,
+            'target': quickfiles_node._id,
             'user': user._id,
             'destination': {
                 'parent': dest_folder._id,
-                'node': node._id,
+                'target': node._id,
                 'name': quickfiles_file.name,
             }
         })
@@ -236,11 +236,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': '',
                 }
             }
@@ -254,11 +254,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': '',
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'hello.txt',
                 }
             }
@@ -271,10 +271,10 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'hello.txt',
                 }
             }
@@ -287,11 +287,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'new_file_name',
                 }
             }
@@ -315,11 +315,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'test_file',
                 }
             }
@@ -332,11 +332,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': '12345',
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'test_file',
                 }
             }
@@ -348,11 +348,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': '12345',
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'test_file',
                 }
             }
@@ -365,11 +365,11 @@ class TestMove():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'test_file',
                 }
             }
@@ -392,11 +392,11 @@ class TestCopy():
     def payload(self, file, folder, root_node, user):
         return {
             'source': file._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder._id,
-                'node': folder.node._id,
+                'target': folder.target._id,
                 'name': folder.name,
             }
         }
@@ -421,11 +421,11 @@ class TestCopy():
         file.save()
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -440,11 +440,11 @@ class TestCopy():
 
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -459,11 +459,11 @@ class TestCopy():
         folder_two = node_two_root_node.append_folder('To There')
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -477,11 +477,11 @@ class TestCopy():
         folder_two = node_two_root_node.append_folder('To There')
         signed_payload = sign_payload({
             'source': folder._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.node._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -493,11 +493,11 @@ class TestCopy():
         node.save()
         signed_payload = sign_payload({
             'source': file._id,
-            'node': root_node._id,
+            'target': root_node._id,
             'user': user._id,
             'destination': {
                 'parent': folder._id,
-                'node': folder.node._id,
+                'target': folder.target._id,
                 'name': folder.name,
             }
         })
@@ -505,14 +505,14 @@ class TestCopy():
         assert res.status_code == 201
 
     def test_can_copy_file_out_of_quickfiles_node(self, app, quickfiles_copy_url, quickfiles_file, quickfiles_node, quickfiles_folder, node, user):
-        dest_folder = OsfStorageFolder.objects.get(node=node)
+        dest_folder = OsfStorageFolder.objects.get_root(target=node)
         signed_payload = sign_payload({
             'source': quickfiles_folder._id,
-            'node': quickfiles_node._id,
+            'target': quickfiles_node._id,
             'user': user._id,
             'destination': {
                 'parent': dest_folder._id,
-                'node': node._id,
+                'target': node._id,
                 'name': quickfiles_file.name,
             }
         })
@@ -523,11 +523,11 @@ class TestCopy():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': '',
                 }
             }
@@ -545,7 +545,7 @@ class TestCopy():
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'node': folder.target._id,
                     'name': 'hello.txt',
                 }
             }
@@ -558,10 +558,10 @@ class TestCopy():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'hello.txt',
                 }
             }
@@ -584,11 +584,11 @@ class TestCopy():
         signed_payload = sign_payload(
             {
                 'source': file._id,
-                'node': root_node._id,
+                'target': root_node._id,
                 'user': user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': 'test_file',
                 }
             }

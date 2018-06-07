@@ -8,8 +8,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
+from osf.models.nodelog import NodeLog
 from osf.models.mixins import ReviewableMixin
-from osf.models import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import ADMIN
@@ -107,7 +107,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
+        if preprint_file.target != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
         existing_file = self.node.preprint_file
@@ -138,7 +138,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         self.is_published = published
 
         if published:
-            if not (self.node.preprint_file and self.node.preprint_file.node == self.node):
+            if not (self.node.preprint_file and self.node.preprint_file.target == self.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

@@ -79,7 +79,7 @@ class ReviewsMachine(BaseMachine):
         now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.machineable.in_public_reviews_state
         if should_publish and not self.machineable.is_published:
-            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.node == self.machineable.node):
+            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.target == self.machineable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

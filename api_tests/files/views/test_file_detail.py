@@ -188,9 +188,9 @@ class TestFileView:
             self, app, user, file_url, node):
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
-        assert 'node' in res.json['data']['relationships'].keys()
+        assert 'target' in res.json['data']['relationships'].keys()
         expected_url = node.api_v2_url
-        actual_url = res.json['data']['relationships']['node']['links']['related']['href']
+        actual_url = res.json['data']['relationships']['target']['links']['related']['href']
         assert expected_url in actual_url
 
     def test_file_has_comments_link(self, app, user, file, file_url):

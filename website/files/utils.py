@@ -11,7 +11,7 @@ def copy_files(src, target_node, parent=None, name=None):
 
     cloned = src.clone()
     cloned.parent = parent
-    cloned.node = target_node
+    cloned.target = target_node
     cloned.name = name or cloned.name
     cloned.copied_from = src
 
