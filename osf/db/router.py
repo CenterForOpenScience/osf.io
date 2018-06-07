@@ -1,6 +1,10 @@
+import time
 from django.conf import settings
 import psycopg2
 
+
+import logging
+logger = logging.getLogger(__name__)
 
 class PostgreSQLFailoverRouter(object):
     """
@@ -24,18 +28,30 @@ class PostgreSQLFailoverRouter(object):
         Finds the first database that's writeable and returns the configuration name.
         :return: :str: name of database config or None
         """
-        for name, dsn in self.DSNS.iteritems():
-            conn = self._get_conn(dsn)
-            cur = conn.cursor()
-            cur.execute('SHOW transaction_read_only;')  # 'on' for slaves, 'off' for masters
-            row = cur.fetchone()
-            if row[0] == u'off':
+        conn = False
+        while not conn:
+            for name, dsn in self.DSNS.iteritems():
+                try:
+                    conn = self._get_conn(dsn)
+                except Exception as ex:
+                    conn = False
+                    continue
+                cur = conn.cursor()
+                cur.execute('SHOW transaction_read_only;')  # 'on' for slaves, 'off' for masters
+                row = cur.fetchone()
+                if row[0] == u'off':
+                    cur.close()
+                    conn.close()
+                    return name
                 cur.close()
                 conn.close()
-                return name
-            cur.close()
-            conn.close()
+
+            if not settings.RETRY_DB_CONNECTION:
+                return None
+            logger.error('A writable db wasn\'t found. Trying again in 10 seconds')
+            time.sleep(10)
         return None
+
 
     def _get_dsns(self):
         """
@@ -65,6 +81,7 @@ class PostgreSQLFailoverRouter(object):
         :param hints: hints to help choosing a database (disused)
         :return:
         """
+
         if not self.CACHED_MASTER:
             exit()
         return self.CACHED_MASTER

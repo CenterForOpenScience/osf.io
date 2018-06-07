@@ -12,6 +12,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if DEBUG:
+    RETRY_DB_CONNECTION = True
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
