@@ -24,8 +24,8 @@ var UserProfile = oop.defclass({
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
-        this.defaultStorageLocation = ko.observable();
-        this.storageLocations = ko.observableArray();
+        this.defaultRegion = ko.observable();
+        this.availableRegions = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
             var emails = this.emails();
@@ -152,8 +152,8 @@ var UserProfileClient = oop.defclass({
         }
 
         profile.id(data.profile.id);
-        profile.defaultStorageLocation(data.profile.default_storage_location);
-        profile.storageLocations(data.profile.storage_locations);
+        profile.defaultRegion(data.profile.default_region);
+        profile.availableRegions(data.profile.available_regions);
         profile.emails(
             ko.utils.arrayMap(data.profile.emails, function (emailData){
                 var email = new UserEmail({
@@ -362,7 +362,7 @@ var UpdateDefaultStorageLocation = oop.defclass({
         this.client.fetch().done(
             function(profile) {
                 this.profile(profile);
-                this.locationSelected(this.profile().defaultStorageLocation());
+                this.locationSelected(this.profile().defaultRegion());
             }.bind(this)
         );
 

@@ -168,12 +168,12 @@ def home():
             for inst in all_institutions
         ]
         user = OSFUser.load(user_id)
-        region_list = get_storage_region_list(user)
+        available_regions = get_storage_region_list(user)
 
         return {
             'home': True,
             'dashboard_institutions': dashboard_institutions,
-            'storage_locations': region_list
+            'available_regions': available_regions
         }
     else:  # Logged out: return landing page
         return {
@@ -404,16 +404,17 @@ def legacy_share_v1_search(**kwargs):
 
 
 def get_storage_region_list(user, node=False):
-    if user:
-        default_storage_region = user.get_addon('osfstorage').default_region
-        default_storage_region = {'name': default_storage_region.name, '_id': default_storage_region._id}
-        region_list = list(Region.objects.all().values('_id', 'name'))
-        region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))  # default should be at top of list for UI.
-        if node:
-            default_region = node.osfstorage_region
-            default_storage_region = {'name': default_region.name, '_id': default_region._id}
-            region_list.insert(0, region_list.pop(region_list.index(default_storage_region)))
+    if not user: # Preserves legacy frontend test behavior
+        return []
 
-        return region_list
+    if node:
+        default_region = node.osfstorage_region
+    else:
+        default_region = user.get_addon('osfstorage').default_region
 
-    return []
+    available_regions = list(Region.objects.order_by('name').values('_id', 'name'))
+    default_region = {'name': default_region.name, '_id': default_region._id}
+    available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
+
+    return available_regions
+

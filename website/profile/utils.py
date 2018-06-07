@@ -87,14 +87,14 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             merged_by = None
 
-        default_storage_region = user.get_addon('osfstorage').default_region
-        region_list = [region for region in Region.objects.all().values('_id', 'name')]
+        default_region = user.get_addon('osfstorage').default_region
+        available_regions = [region for region in Region.objects.all().values('_id', 'name')]
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
-            'storage_locations': region_list,
-            'default_storage_location': {'name': default_storage_region.name, '_id': default_storage_region._id},
+            'available_regions': available_regions,
+            'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
         })
         if include_node_counts:
