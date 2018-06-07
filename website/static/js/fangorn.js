@@ -1511,7 +1511,7 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 function _fangornTitleColumn(item, col) {
     var tb = this;
     if(item.data.storageUsage) {
-        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' ' + $osf.humanFileSize(item.data.storageUsage, true) , '/', 'fg-file-links');
+        return _fangornTitleColumnHelper(tb, item, col, [m('span', item.data.name), m('span.text-muted.p-l-xs', $osf.humanFileSize(item.data.storageUsage, true))], '/', 'fg-file-links');
     }
 
      return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');}
