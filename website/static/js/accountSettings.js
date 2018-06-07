@@ -381,6 +381,13 @@ var UpdateDefaultStorageLocation = oop.defclass({
                 'Your attempt to change your default storage location has failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                 'danger'
             );
+            Raven.captureMessage('Error updating default storage location ', {
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
+            });
         }.bind(this));
         return request;
     },
