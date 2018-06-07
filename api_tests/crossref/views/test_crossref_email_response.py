@@ -197,3 +197,15 @@ class TestCrossRefEmailResponse:
 
         for preprint in preprint_list:
             assert preprint.get_identifier_value('doi') == settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=preprint._id)
+
+    def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint, update_success_xml):
+        legacy_value = 'IAmALegacyDOI'
+        preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
+        update_xml = self.update_success_xml(preprint)
+
+        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+            context_data = self.make_mailgun_payload(crossref_response=update_xml)
+            app.post(url, context_data)
+
+        assert not mock_send_mail.called
+        assert preprint.identifiers.get(category='legacy_doi').deleted

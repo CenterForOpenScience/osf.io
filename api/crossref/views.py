@@ -48,6 +48,11 @@ class ParseCrossRefConfirmation(APIView):
                     logger.info('Success email received from CrossRef for preprint {}'.format(preprint._id))
                     dois_processed += 1
 
+                    # Mark legacy DOIs overwritten by newly batch confirmed crossref DOIs
+                    legacy_doi = preprint.get_identifier(category='legacy_doi')
+                    if legacy_doi:
+                        legacy_doi.remove()
+
         if dois_processed != record_count or status != 'completed':
             if record_count > 1:
                 # For batch errors, log a message to sentry with the original crossref email content

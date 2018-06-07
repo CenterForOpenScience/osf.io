@@ -421,3 +421,8 @@ CROSSREF_ERROR = Mail(
     'crossref_doi_error',
     subject='There was an error creating a DOI for the preprint ${preprint._id}'
 )
+
+CROSSREF_CSV = Mail(
+    'crossref_csv',
+    subject='Here is a CSV of DOIs related to crossref: ${csv_type}'
+)
