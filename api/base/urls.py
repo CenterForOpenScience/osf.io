@@ -27,7 +27,6 @@ urlpatterns = [
                 url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
-                url(r'^_assets/', include('api.assets.urls', namespace='assets')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
