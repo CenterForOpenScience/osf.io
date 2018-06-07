@@ -55,7 +55,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     var flatNodes = _flattenNodeTree(nodeTree);
     $.each(flatNodes, function(_, nodeMeta) {
         nodesOriginal[nodeMeta.node.id] = {
-            selected: false,
+            selected: true,
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
@@ -64,7 +64,6 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         };
     });
     nodesOriginal[nodeTree.node.id].isRoot = true;
-    nodesOriginal[nodeTree.node.id].selected = true;
     nodesOriginal[nodeTree.node.id].disabled = true; // The user must register the root.
     return nodesOriginal;
 }
@@ -76,27 +75,6 @@ function expandOnLoad() {
     for (var i = 0; i < tb.treeData.children.length; i++) {
         var parent = tb.treeData.children[i];
         tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        var parent = children[i].parent();
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    openAncestors(tb, children[0]);
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
     }
 }
 
@@ -374,10 +352,8 @@ RegistrationViewModel.prototype.clear = function() {
 RegistrationViewModel.prototype.selectAll = function() {
     var nodesState = ko.toJS(this.nodesState());
     for (var node in nodesState) {
-        if (nodesState[node].isAdmin) {
-            nodesState[node].selected = true;
-            nodesState[node].changed = nodesState[node].selected !== this.nodesOriginal[node].selected;
-        }
+        nodesState[node].selected = true;
+        nodesState[node].changed = nodesState[node].selected !== this.nodesOriginal[node].selected;
     }
     this.nodesState(nodesState);
     m.redraw(true);
@@ -386,7 +362,7 @@ RegistrationViewModel.prototype.selectAll = function() {
 RegistrationViewModel.prototype.selectNone = function() {
     var nodesState = ko.toJS(this.nodesState());
     for (var node in nodesState) {
-        if (nodesState[node].isAdmin && !nodesState[node].isRoot) {
+        if (!nodesState[node].isRoot) {
             nodesState[node].selected = false;
             nodesState[node].changed = nodesState[node].selected !== this.nodesOriginal[node].selected;
         }
