@@ -238,7 +238,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         id = None
         if region__id:
             try:
-                id = Region.objects.get(_id=region__id).id
+                id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
                 raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
 
@@ -638,7 +638,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         id = None
         if region__id:
             try:
-                id = Region.objects.get(_id=region__id).id
+                id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
                 raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
 
