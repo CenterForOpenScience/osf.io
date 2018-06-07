@@ -8,8 +8,6 @@ from django.db import migrations
 from django.apps import apps
 from django.core.paginator import Paginator
 
-from osf.models import OSFUser
-from addons.osfstorage.models import Region, UserSettings as OsfStorageUserSettings
 from addons.osfstorage.settings import DEFAULT_REGION_NAME, DEFAULT_REGION_ID
 from website.settings import WATERBUTLER_URL
 
@@ -18,7 +16,10 @@ logger = logging.getLogger(__file__)
 osfstorage_config = apps.get_app_config('addons_osfstorage')
 
 
-def add_osfstorage_addon(*args):
+def add_osfstorage_addon(apps, *args):
+    OSFUser = apps.get_model('osf', 'OSFUser')
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    OsfStorageUserSettings = apps.get_model('addons_osfstorage', 'UserSettings')
 
     default_region, created = Region.objects.get_or_create(
         _id=DEFAULT_REGION_ID,
@@ -52,7 +53,9 @@ def add_osfstorage_addon(*args):
     logger.info('Created UserSettings for {} users'.format(total_users))
 
 
-def remove_osfstorage_addon(*args):
+def remove_osfstorage_addon(apps, *args):
+    OSFUser = apps.get_model('osf', 'OSFUser')
+    Region = apps.get_model('addons_osfstorage', 'Region')
     OsfStorageUserSettings = osfstorage_config.user_settings
 
     region = Region.objects.filter(
@@ -68,6 +71,7 @@ def remove_osfstorage_addon(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('addons_osfstorage', '0004_storage_region_models'),
         ('osf', '0098_merge_20180416_1807'),
     ]
 

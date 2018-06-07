@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from osf.models import PreprintService
@@ -7,7 +8,8 @@ from osf_tests.factories import PreprintFactory, AuthUserFactory
 @pytest.mark.django_db
 class TestReviewable:
 
-    def test_state_changes(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_state_changes(self, _):
         user = AuthUserFactory()
         preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
         assert preprint.machine_state == DefaultStates.INITIAL.value

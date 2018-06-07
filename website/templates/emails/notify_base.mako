@@ -22,7 +22,7 @@
                                     <tr>
                                         <td style="border-collapse: collapse;">
                                             % if context.get('logo', settings.OSF_LOGO) not in settings.OSF_LOGO_LIST:
-                                                <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/${settings.OSF_ASSETS_COMMIT_HASH}/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                                <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                             %else:
                                                 <img src="https://osf.io/static/img/${context.get('logo', settings.OSF_LOGO)}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                             % endif
@@ -47,12 +47,22 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
-                                % if context.get('can_change_node_preferences', False) and node:
-                                    this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
-                                % endif
-                                your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
-                            </p>
+                            % if context.get('is_reviews_moderator_notification', False):
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
+                                  % if not context.get('referrer', False):
+                                        You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
+                                    % endif
+                                    To change your moderation notification preferences,
+                                    visit your <a href=${notification_settings_url}>notification settings</a>.
+                                </p>
+                            % else:
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
+                                    % if context.get('can_change_node_preferences', False) and node:
+                                        this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
+                                    % endif
+                                    your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
+                                </p>
+                            % endif
                         </td>
                     </tr>
                 </tbody>

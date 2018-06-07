@@ -13,6 +13,7 @@ sudo: false
 
 cache:
   yarn: true
+  pip: true
   directories:
     - $HOME/.cache
     - node_modules

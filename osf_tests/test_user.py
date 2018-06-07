@@ -41,6 +41,7 @@ from .factories import (
     ExternalAccountFactory,
     InstitutionFactory,
     NodeFactory,
+    PreprintProviderFactory,
     ProjectFactory,
     SessionFactory,
     TagFactory,
@@ -857,7 +858,24 @@ class TestUnregisteredUser:
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
         given_name = 'Fredd Merkury'
-        user.add_unclaimed_record(node=project,
+        user.add_unclaimed_record(project,
+            given_name=given_name, referrer=referrer,
+            email=email)
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def provider(self, referrer):
+        provider = PreprintProviderFactory()
+        provider.add_to_group(referrer, 'moderator')
+        provider.save()
+        return provider
+
+    @pytest.fixture()
+    def unreg_moderator(self, referrer, provider, email):
+        user = UnregUserFactory()
+        given_name = 'Freddie Merkkury'
+        user.add_unclaimed_record(provider,
             given_name=given_name, referrer=referrer,
             email=email)
         user.save()
@@ -881,7 +899,8 @@ class TestUnregisteredUser:
         assert bool(u.password) is True
         assert len(u.email_verifications.keys()) == 1
 
-    def test_add_unclaimed_record(self, unreg_user, email, referrer, project):
+    def test_add_unclaimed_record(self, unreg_user, unreg_moderator, email, referrer, provider, project):
+        # test_unreg_contrib
         data = unreg_user.unclaimed_records[project._primary_key]
         assert data['name'] == 'Fredd Merkury'
         assert data['referrer_id'] == referrer._id
@@ -889,7 +908,16 @@ class TestUnregisteredUser:
         assert data['email'] == email
         assert data == unreg_user.get_unclaimed_record(project._primary_key)
 
-    def test_get_claim_url(self, unreg_user, project):
+        # test_unreg_moderator
+        data = unreg_moderator.unclaimed_records[provider._id]
+        assert data['name'] == 'Freddie Merkkury'
+        assert data['referrer_id'] == referrer._id
+        assert 'token' in data
+        assert data['email'] == email
+        assert data == unreg_moderator.get_unclaimed_record(provider._id)
+
+    def test_get_claim_url(self, unreg_user, unreg_moderator, project, provider):
+        # test_unreg_contrib
         uid = unreg_user._primary_key
         pid = project._primary_key
         token = unreg_user.get_unclaimed_record(pid)['token']
@@ -899,16 +927,37 @@ class TestUnregisteredUser:
             '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
         )
 
-    def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user):
+        # test_unreg_moderator
+        uid = unreg_moderator._id
+        pid = provider._id
+        token = unreg_moderator.get_unclaimed_record(pid)['token']
+        domain = settings.DOMAIN
+        assert (
+            unreg_moderator.get_claim_url(pid, external=True) ==
+            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+        )
+
+    def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user, unreg_moderator):
         with pytest.raises(ValueError):
             unreg_user.get_claim_url('invalidinput')
+            unreg_moderator.get_claim_url('invalidinput')
 
-    def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self, referrer, unreg_user):
-        project = NodeFactory()  # referrer isn't a contributor to this project
-        with pytest.raises(PermissionsError):
-            unreg_user.add_unclaimed_record(node=project,
+    def test_cant_add_unclaimed_record_if_referrer_has_no_permissions(self, referrer, unreg_moderator, unreg_user, provider):
+        # test_referrer_is_not_contrib
+        project = NodeFactory()
+        with pytest.raises(PermissionsError) as e:
+            unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
+        assert e.value.message == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+
+        # test_referrer_is_not_admin_or_moderator
+        referrer = UserFactory()
+        with pytest.raises(PermissionsError) as e:
+            unreg_moderator.add_unclaimed_record(provider,
+                given_name='hodor', referrer=referrer)
+            unreg_user.save()
+        assert e.value.message == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
@@ -933,10 +982,16 @@ class TestUnregisteredUser:
         user.register(username=email, password='killerqueen')
         assert user.emails.filter(address=email).exists()
 
-    def test_verify_claim_token(self, unreg_user, project):
+    def test_verify_claim_token(self, unreg_user, unreg_moderator, project, provider):
+        # test_unreg_contrib
         valid = unreg_user.get_unclaimed_record(project._primary_key)['token']
         assert bool(unreg_user.verify_claim_token(valid, project_id=project._primary_key)) is True
         assert bool(unreg_user.verify_claim_token('invalidtoken', project_id=project._primary_key)) is False
+
+        # test_unreg_moderator
+        valid = unreg_moderator.get_unclaimed_record(provider._id)['token']
+        assert bool(unreg_moderator.verify_claim_token(valid, project_id=provider._id)) is True
+        assert bool(unreg_moderator.verify_claim_token('invalidtoken', project_id=provider._id)) is False
 
     def test_verify_claim_token_with_no_expiration_date(self, unreg_user, project):
         # Legacy records may not have an 'expires' key
@@ -1040,7 +1095,7 @@ class TestTagging:
         tag_name = fake.word()
         user.add_system_tag(tag_name)
 
-        assert tag_name in user.system_tags
+        assert tag_name.lower() in user.system_tags
 
 class TestCitationProperties:
 
@@ -1055,7 +1110,7 @@ class TestCitationProperties:
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
-        user.add_unclaimed_record(node=project,
+        user.add_unclaimed_record(project,
             given_name=user.fullname, referrer=referrer,
             email=email)
         user.save()

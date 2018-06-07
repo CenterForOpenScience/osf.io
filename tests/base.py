@@ -149,7 +149,7 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
         from website.search import elastic_search
