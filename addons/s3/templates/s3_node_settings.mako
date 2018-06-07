@@ -42,6 +42,11 @@
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">
+                    <strong>Current Host:</strong>
+                    <span data-bind="if: providerHostname">
+                        <a data-bind="attr: {href: providerHostname}, text: providerHostname">s3.amazonaws.com</a>
+                    </span>
+                    <br>
                     <strong>Current Bucket:</strong>
                     <span data-bind="if: folderName">
                         <a data-bind="attr: {href: urls().files}, text: folderName"></a>
@@ -56,6 +61,7 @@
                                        css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
                                        <span data-bind="text: toggleChangeText"></span></button>
                     <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
+                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openChangeHostname" class="btn btn-success" id="changeHostname">Change hostname</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">

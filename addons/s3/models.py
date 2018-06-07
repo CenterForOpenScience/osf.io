@@ -45,6 +45,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
+    hostname = models.TextField(blank=True, null=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
@@ -132,6 +133,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {
             'access_key': self.external_account.oauth_key,
             'secret_key': self.external_account.oauth_secret,
+            'hostname': self.hostname
         }
 
     def serialize_waterbutler_settings(self):
@@ -139,7 +141,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
         return {
             'bucket': self.folder_id,
-            'encrypt_uploads': self.encrypt_uploads
+            'encrypt_uploads': self.encrypt_uploads,
+            'hostname': self.hostname
         }
 
     def create_waterbutler_log(self, auth, action, metadata):

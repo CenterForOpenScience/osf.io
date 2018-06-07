@@ -75,6 +75,15 @@ api_routes = {
             views.create_bucket,
             json_renderer
         ),
+        Rule(
+            [
+                '/project/<pid>/s3/hostname/',
+                '/project/<pid>/node/<nid>/s3/hostname/',
+            ],
+            'post',
+            views.put_hostname,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1',
 }

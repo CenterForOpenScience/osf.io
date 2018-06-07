@@ -121,6 +121,25 @@ def s3_add_user_account(auth, **kwargs):
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_addon('s3', 'node')
 @must_have_permission('write')
+def put_hostname(auth, node_addon, **kwargs):
+
+    hostname = request.json.get('hostname', False)
+
+    if not hostname:
+        return {
+            'message': 'No hostname was provided',
+            'title': 'Invalid hostname',
+        }, httplib.BAD_REQUEST
+
+    node_addon.hostname = hostname
+    node_addon.save()
+
+    return {}
+
+
+@must_be_addon_authorizer(SHORT_NAME)
+@must_have_addon('s3', 'node')
+@must_have_permission('write')
 def create_bucket(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
     bucket_location = request.json.get('bucket_location', '')

@@ -661,6 +661,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
     # the auth header is also pass to support basic auth
+    if file_node.__class__.__name__ == 'S3File':
+        extras.update({"hostname": node.addons_s3_node_settings.hostname})
     version = file_node.touch(
         request.headers.get('Authorization'),
         **dict(

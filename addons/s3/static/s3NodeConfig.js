@@ -16,11 +16,14 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     bucketLocations: s3Settings.bucketLocations,
 
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
+        console.log("alskjdflkjbadf")
         var self = this;
         self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
+        self.providerHostname = ko.observable('');
+
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -46,6 +49,41 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             },
             tbOpts
         );
+    },
+
+    updateFromData: function(data) {
+        var self = this;
+        var ret = $.Deferred();
+        var applySettings = function(settings){
+            self.providerHostname(settings.providerHostname)
+            self.ownerName(settings.ownerName);
+            self.nodeHasAuth(settings.nodeHasAuth);
+            self.userIsOwner(settings.userIsOwner);
+            self.userHasAuth(settings.userHasAuth);
+            self.folder(settings.folder || {
+                name: null,
+                path: null,
+                id: null
+            });
+            self.library(settings.library || {
+                name: null,
+                path: null,
+                id: null
+            });
+            self.urls(settings.urls);
+            self._updateCustomFields(settings);
+            self.afterUpdate();
+            ret.resolve();
+        };
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
+            self.fetchFromServer()
+                .done(applySettings)
+                .fail(ret.reject);
+        }
+        else{
+            applySettings(data);
+        }
+        return ret.promise();
     },
 
     connectAccount: function() {
@@ -128,6 +166,17 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.messageClass('text-info');
         self.secretKey(null);
         self.accessKey(null);
+    },
+
+    putHostname: function(self, providerHostname) {
+        return $osf.postJSON(
+            self.urls().putHostname,
+            {
+                hostname: self.providerHostname()
+            }
+        ).done(function() {
+            self.changeMessage('THA HOSTNAME BIN UPDATED');
+        });
     },
 
     createBucket: function(self, bucketName, bucketLocation) {
@@ -248,6 +297,57 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                             });
                         } else {
                             self.createBucket(self, bucketName, bucketLocation);
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    openChangeHostname: function() {
+        var self = this;
+
+        bootbox.dialog({
+            title: 'Enter the hostname',
+            message:
+                    '<div class="row"> ' +
+                        '<div class="col-md-12"> ' +
+                            '<p>This is the url at which the s3-compatible api can be reached</p>' +
+                            '<form class="form-horizontal" onsubmit="return false"> ' +
+                                '<div class="form-group"> ' +
+                                    '<label class="col-md-4 control-label" for="bucketName">Hostname</label> ' +
+                                    '<div class="col-md-8"> ' +
+                                        '<input id="providerHostname" name="providerHostname" type="text" placeholder="Enter hostname" class="form-control" autofocus> ' +
+                                        '<div>' +
+                                            '<span id="bucketModalErrorMessage" ></span>' +
+                                        '</div>'+
+                                    '</div>' +
+                                '</div>' +
+                            '</form>' +
+                            '<span>For more information on s3-compatible hostnames, click ' +
+                                '<a href="http://help.osf.io/m/addons/l/524149#BucketLocations">here</a>' +
+                            '</span>' +
+                        '</div>' +
+                    '</div>',
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default'
+                },
+                confirm: {
+                    label: 'Change hostname',
+                    className: 'btn-success',
+                    callback: function () {
+                        var providerHostname = $('#providerHostname').val();
+
+                        if (!providerHostname) {
+                            var errorMessage = $('#bucketModalErrorMessage');
+                            errorMessage.text('Bucket name cannot be empty');
+                            errorMessage[0].classList.add('text-danger');
+                            return false;
+                        } else {
+                            self.providerHostname(providerHostname);
+                            self.putHostname(self);
                         }
                     }
                 }
