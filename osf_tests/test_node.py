@@ -3017,23 +3017,6 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
-class TestDOIValidation:
-
-    def test_validate_bad_doi(self):
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='nope').save()
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
-
-    def test_validate_good_doi(self, node):
-        doi = '10.11038/nwooo1170'
-        node.preprint_article_doi = doi
-        node.save()
-        assert node.preprint_article_doi == doi
-
-
 class TestLogMethods:
 
     @pytest.fixture()

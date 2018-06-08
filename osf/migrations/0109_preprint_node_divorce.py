@@ -46,6 +46,7 @@ def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     PreprintTags = apps.get_model('osf', 'Preprint_Tags')
     NodeSettings = apps.get_model('addons_osfstorage', 'NodeSettings')
+    AbstractNode = apps.get_model('osf', 'AbstractNode')
 
     preprints = []
     files = []

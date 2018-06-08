@@ -41,7 +41,7 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.validators import validate_doi, validate_title
+from osf.models.validators import validate_title
 from framework.auth.core import Auth
 from addons.wiki import utils as wiki_utils
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -391,16 +391,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
 
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
-
-    # Preprint fields
-    preprint_file = models.ForeignKey('osf.BaseFileNode',
-                                      on_delete=models.SET_NULL,
-                                      null=True, blank=True)
-    preprint_article_doi = models.CharField(max_length=128,
-                                            validators=[validate_doi],
-                                            null=True, blank=True)
-    _is_preprint_orphan = models.NullBooleanField(default=False)
-    _has_abandoned_preprint = models.BooleanField(default=False)
 
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
