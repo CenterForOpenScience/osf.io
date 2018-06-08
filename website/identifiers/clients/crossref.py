@@ -43,8 +43,6 @@ class CrossRefClient(AbstractIdentifierClient):
         else:
             preprints = [preprint]
 
-        if kwargs.get('status', '') == 'unavailable':
-            return ''
 
         element = lxml.builder.ElementMaker(nsmap={
             None: CROSSREF_NAMESPACE,
@@ -63,10 +61,10 @@ class CrossRefClient(AbstractIdentifierClient):
             ),
             element.registrant('Center for Open Science')
         )
-
+        status = kwargs.get('status')
         body = element.body()
         for preprint in preprints:
-            body.append(self.build_posted_content(preprint, element))
+            body.append(self.build_posted_content(preprint, element, status))
 
         root = element.doi_batch(
             head,
@@ -76,47 +74,51 @@ class CrossRefClient(AbstractIdentifierClient):
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
 
-    def build_posted_content(self, preprint, element):
+    def build_posted_content(self, preprint, element, status=''):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
         """
-        doi = self.build_doi(preprint)
         posted_content = element.posted_content(
             element.group_title(preprint.provider.name),
-            element.contributors(*self._crossref_format_contributors(element, preprint)),
-            element.titles(element.title(preprint.node.title)),
             element.posted_date(*self._crossref_format_date(element, preprint.date_published)),
-            element.item_number('osf.io/{}'.format(preprint._id)),
             type='preprint'
         )
 
-        if preprint.node.description:
-            posted_content.append(
-                element.abstract(element.p(preprint.node.description), xmlns=JATS_NAMESPACE))
+        if status == 'public':
+            posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
+            posted_content.append(element.titles(element.title(preprint.node.title)))
+            posted_content.append(element.titles(element.title(preprint.node.title)))
 
-        if preprint.license and preprint.license.node_license.url:
-            posted_content.append(
-                element.program(
-                    element.license_ref(preprint.license.node_license.url,
-                                        start_date=preprint.date_published.strftime('%Y-%m-%d')),
-                    xmlns=CROSSREF_ACCESS_INDICATORS
-                )
-            )
+            if preprint.node.description:
+                posted_content.append(
+                    element.abstract(element.p(preprint.node.description), xmlns=JATS_NAMESPACE))
 
-        if preprint.node.preprint_article_doi:
-            posted_content.append(
-                element.program(
-                    element.related_item(
-                        element.intra_work_relation(
-                            preprint.node.preprint_article_doi,
-                            **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
-                        ),
-                        xmlns=CROSSREF_RELATIONS
+            if preprint.license and preprint.license.node_license.url:
+                posted_content.append(
+                    element.program(
+                        element.license_ref(preprint.license.node_license.url,
+                                            start_date=preprint.date_published.strftime('%Y-%m-%d')),
+                        xmlns=CROSSREF_ACCESS_INDICATORS
                     )
                 )
-            )
 
+            if preprint.node.preprint_article_doi:
+                posted_content.append(
+                    element.program(
+                        element.related_item(
+                            element.intra_work_relation(
+                                preprint.node.preprint_article_doi,
+                                **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
+                            ),
+                            xmlns=CROSSREF_RELATIONS
+                        )
+                    )
+                )
+        else:
+            posted_content.append(element.titles(element.title('')))
+
+        doi = self.build_doi(preprint)
         doi_data = [
             element.doi(doi),
             element.resource(settings.DOMAIN + preprint._id)

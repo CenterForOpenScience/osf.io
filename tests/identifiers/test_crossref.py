@@ -129,3 +129,21 @@ class TestCrossRefClient:
         metadata_date_parts = [elem.text for elem in root.find('.//{%s}posted_date' % crossref.CROSSREF_NAMESPACE)]
         preprint_date_parts = preprint.date_published.strftime('%Y-%m-%d').split('-')
         assert set(metadata_date_parts) == set(preprint_date_parts)
+
+    def test_metadata_for_deleted_node(self, crossref_client, preprint):
+        preprint.node.is_public = False
+        preprint.node.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, status='unavailable')
+        root = lxml.etree.fromstring(crossref_xml)
+
+        # body
+        assert not root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert root.find(".//{%s}group_title" % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
+        assert not root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text
+        assert not root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE)
+        assert not root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS)
+
+        assert root.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE).text == settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
+        assert not root.find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE)
