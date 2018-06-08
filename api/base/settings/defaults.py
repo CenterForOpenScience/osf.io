@@ -208,6 +208,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
+    'querycount.middleware.QueryCountMiddleware',
 )
 
 TEMPLATES = [

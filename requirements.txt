@@ -98,3 +98,6 @@ ciso8601==1.0.5
 # Reviews requirements
 transitions==0.6.1
 enum34==1.1.6
+
+# Prints DB query counts to runserver console output
+django-querycount==0.7.0
