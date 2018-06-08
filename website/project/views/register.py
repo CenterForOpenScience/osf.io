@@ -211,12 +211,9 @@ def project_before_register(auth, node, **kwargs):
     }
 
 
-def osf_admin_change_status_identifier(node, status):
-    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        client = node.get_doi_client()
-        doi = client.build_doi(node)
-        metadata = client.build_metadata(node)
-        client.change_status_identifier(status, doi, metadata)
+def osf_admin_change_status_identifier(node):
+    if node.get_identifier_value('doi'):
+        node.request_identifier_update(category='doi')
 
 
 def get_referent_by_identifier(category, value):

@@ -69,13 +69,11 @@ def request_identifiers(target_object):
     client = target_object.get_doi_client()
     if not client:
         return
-
     doi = client.build_doi(target_object)
-    metadata = client.build_metadata(target_object)
     already_exists = False
     only_doi = True
     try:
-        identifiers = client.create_identifier(metadata, doi)
+        identifiers = target_object.request_identifier(category='doi')
     except exceptions.IdentifierAlreadyExists as error:
         identifiers = client.get_identifier(doi)
         already_exists = True
