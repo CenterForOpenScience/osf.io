@@ -40,6 +40,14 @@ class IdentifierMixin(models.Model):
         """
         raise NotImplementedError()
 
+    def request_identifier(self, category):
+        client = self.get_doi_client()
+        return client.create_identifier(self, category)
+
+    def request_identifier_update(self, category):
+        client = self.get_doi_client()
+        return client.update_identifier(self, category)
+
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
         content_type = ContentType.objects.get_for_model(self)
