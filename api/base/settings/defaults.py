@@ -241,9 +241,9 @@ if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
     GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-osf-cdn')
     GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
-else:
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
     DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
-    
+
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')

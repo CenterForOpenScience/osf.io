@@ -63,13 +63,7 @@ class ProviderSerializer(JSONAPISerializer):
         return obj.external_url
 
     def get_assets(self, obj):
-        asset_list = []
-        for asset in obj.asset_files.all():
-            asset_list.append((asset.name, asset.file.url))
-        if len(asset_list) == 0:
-            return None
-        else:
-            return dict(asset_list)
+        return {asset.name: asset.file.url for asset in obj.asset_files.all()} or None
 
 
 class CollectionProviderSerializer(ProviderSerializer):
