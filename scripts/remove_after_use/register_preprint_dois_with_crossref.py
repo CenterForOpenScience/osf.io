@@ -32,7 +32,7 @@ def register_existing_preprints_with_crossref(dry=True):
     legacy_doi identifier as deleted.
     """
     paginator = Paginator(
-        PreprintService.objects.filter(identifiers__category='legacy_doi', identifiers__deleted__isnull=True).order_by('pk')[:10],
+        PreprintService.objects.filter(identifiers__category='legacy_doi', identifiers__deleted__isnull=True).order_by('pk'),
         PAGE_SIZE
     )
     client = CrossRefClient(base_url=settings.CROSSREF_URL)
@@ -69,8 +69,7 @@ def register_existing_preprints_with_crossref(dry=True):
         if dry:
             logger.info('Here is the bulk metadata I would have sent:\n {}'.format(bulk_preprint_metadata))
         else:
-            # doi is used as a filename for create_identifier - in this case, use a unique filename instead
-            client.create_identifier(metadata=bulk_preprint_metadata, doi='osf_dois_{}.xml'.format(page_num))
+            client.bulk_create(metadata=bulk_preprint_metadata, filename='osf_dois_{}.xml'.format(page_num))
             logger.info('Just sent off XML to crossref for {} preprints'.format(len(page.object_list)))
 
         if page.has_next():
