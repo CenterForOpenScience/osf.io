@@ -515,17 +515,20 @@ class TestPublicNodes(OsfTestCase):
             self.consolidate_auth = Auth(user=self.user)
             self.project = factories.ProjectFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )
             self.component = factories.NodeFactory(
                 parent=self.project,
+                description='',
                 title=self.title,
                 creator=self.user,
                 is_public=True
             )
             self.registration = factories.RegistrationFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )

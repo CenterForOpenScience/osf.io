@@ -228,7 +228,7 @@ def add_users_to_group(group, user_list):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0108_add_preprint_partial_index'),
+        ('osf', '0109_add_preprint_partial_index'),
     ]
 
     operations = [
