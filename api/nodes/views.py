@@ -233,17 +233,15 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     def get_serializer_context(self):
         context = super(NodeList, self).get_serializer_context()
-        region__id = self.request.query_params.get('region', None)
-        id = None
-        if region__id:
+        region_id = self.request.query_params.get('region', None)
+        if region_id:
             try:
-                id = Region.objects.get(_id=region__id).id
+                region = Region.objects.get(_id=region_id)
             except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
-
-        context.update({
-            'region_id': id
-        })
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
+            context.update({
+                'region_id': region.id
+            })
         return context
 
     # overrides ListBulkCreateJSONAPIView
@@ -636,6 +634,19 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
+
+    def get_serializer_context(self):
+        context = super(NodeChildrenList, self).get_serializer_context()
+        region_id = self.request.query_params.get('region', None)
+        if region_id:
+            try:
+                region = Region.objects.get(_id=region_id)
+            except Region.DoesNotExist:
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
+            context.update({
+                'region_id': region.id
+            })
+        return context
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):

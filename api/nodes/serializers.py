@@ -23,6 +23,7 @@ from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.osfstorage.models import Region
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
@@ -77,8 +78,16 @@ def update_institutions(node, new_institutions, user, post=False):
 
 class RegionRelationshipField(RelationshipField):
 
+    def get_object(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+        return region
+
     def to_internal_value(self, data):
-        return {'region': data}
+        region = self.get_object(data)
+        return {'region_id': region.id}
 
 
 class NodeTagField(ser.Field):
@@ -498,8 +507,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         region_id = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'region' in validated_data:
-            region_id = validated_data.pop('region')
+        if 'region_id' in validated_data:
+            region_id = validated_data.pop('region_id')
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -553,7 +562,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             region_id = self.context.get('region_id')
         if region_id:
             node_settings = node.get_addon('osfstorage')
-            node_settings.set_region(region_id)
+            node_settings.region_id = region_id
+            node_settings.save()
 
         return node
 
