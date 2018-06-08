@@ -59,7 +59,7 @@ function Submissions(data) {
                 {
                     data: 'author',  // Data field name
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); },
+                    custom: function() { return m('a', { href: item.data.authorUrl, target : '_blank' }, item.data.author); },
                     filter : true
                 },
                 {

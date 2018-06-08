@@ -107,8 +107,8 @@ def requires_search(func):
         if client() is not None:
             try:
                 return func(*args, **kwargs)
-            except ConnectionError:
-                raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
+            except ConnectionError as e:
+                raise exceptions.SearchUnavailableError(str(e))
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:

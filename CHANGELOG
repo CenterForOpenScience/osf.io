@@ -2,6 +2,52 @@
 Changelog
 *********
 
+0.142.0 (2018-05-29)
+====================
+- Add UI with metadata when a project is in a public collection
+- Add /v2/providers/<type> routes, version out /preprint_providers/
+- Add post-submission call-to-action emails for preprints
+- Add moderation notifications
+- Add SHARE source whitelist to admin app
+- Extend collections API with new fields and relations
+- Normalize other moderation emails
+- Fix: moderators added through UI can now set their password
+- Fix: only update SHARE with preprint data once per update
+
+0.141.0 (2018-05-22)
+====================
+
+- Store storage region on users and node-osfstorage addons.
+- Add HTML formatting to all transactional emails.
+- API: Add folder/project listing functionality to node settings endpoints
+for GitHub, Zotero, and Mendeley addons.
+- API: Optimize comment listing views.
+- Optimize a number of GUID queries.
+- Update a number of dependencies that were blocking Python 3 upgrade.
+- Lots of bug fixes.
+
+0.140.0 (2018-04-27)
+====================
+
+- Users can request to be a contributor on projects.
+- Include "Create view-only link" button on Project Overview page.
+
+0.139.0 (2018-04-18)
+====================
+
+- Add CC-BY-NC-ND and CC-BY-SA 4.0 license options for preprint providers.
+- Optimize meetings page.
+- Upgrade Dropbox client version.
+- Add field to PreprintProvider to toggle Hypothesis commenting.
+- Fix using django-waffle with groups.
+- Fix bug that caused project to be unreachable if it had a deleted BitBucket addon.
+- Fix incorrect OSF Meeting instructions.
+- Remove unused fonts and styles from landing page.
+- Hide hierarchy on search results if parent is priate.
+- API: Fix /data/relationships/referent/type for /guids/<registration-id>/?resolve=false endpoint.
+- API: Optimize node delete endpoint.
+- Admin: Fix typos.
+
 0.138.0 (2018-04-05)
 ====================
 

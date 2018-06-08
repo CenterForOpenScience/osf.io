@@ -108,3 +108,10 @@ class InvalidTriggerError(Exception):
 class InvalidTransitionError(Exception):
     def __init__(self, machine, transition):
         self.message = 'Machine "{}" received invalid transitions: "{}" expected but not defined'.format(machine, transition)
+
+
+class BlacklistedEmailError(OSFError):
+    """Raised if a user tries to register an email that is included
+    in the blacklisted domains list
+    """
+    pass

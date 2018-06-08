@@ -7,6 +7,7 @@ from include import IncludeManager
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils import permissions
 
 
 class BaseAction(ObjectIDMixin, BaseModel):
@@ -36,3 +37,9 @@ class ReviewAction(BaseAction):
 
 class NodeRequestAction(BaseAction):
     target = models.ForeignKey('NodeRequest', related_name='actions', on_delete=models.CASCADE)
+    permissions = models.CharField(
+        max_length=5,
+        choices=[(permission, permission.title()) for permission in permissions.PERMISSIONS],
+        default=permissions.READ
+    )
+    visible = models.BooleanField(default=True)

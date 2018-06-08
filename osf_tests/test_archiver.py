@@ -17,8 +17,6 @@ from mock import call
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from scripts.stuck_registration_audit import find_failed_registrations
-
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
@@ -40,7 +38,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
-from osf.models import MetaSchema
+from osf.models import MetaSchema, Registration
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -855,6 +853,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
             results={},
+            can_change_preferences=False,
             url=url,
         )
         mock_send_mail.assert_has_calls([
@@ -886,6 +885,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             stat_result={},
+            can_change_preferences=False,
             url=url,
         )
         mock_send_mail.assert_has_calls([
@@ -1199,7 +1199,7 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
             archive_job.save()
             pending.append(reg)
-        failed = find_failed_registrations()
+        failed = Registration.find_failed_registrations()
         assert_equal(len(failed), 5)
         assert_items_equal([f._id for f in failed], failures)
         for pk in legacy:
@@ -1355,9 +1355,10 @@ def test_archiver_uncaught_error_mail_renders():
     user = src.creator
     job = factories.ArchiveJobFactory()
     mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
-    assert mail.text(
+    assert mail.html(
         user=user,
         src=src,
         results=job.target_addons.all(),
         url=settings.INTERNAL_DOMAIN + src._id,
+        can_change_preferences=False,
     )

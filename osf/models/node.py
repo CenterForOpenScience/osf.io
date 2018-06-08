@@ -33,6 +33,7 @@ from framework.sentry import log_exception
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
+from osf.models.collection import CollectedGuidMetadata
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
@@ -163,6 +164,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             '''], params=(user, ))
 
         return qs
+
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
@@ -435,6 +437,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_original(self):
         return not self.is_registration and not self.is_fork
+
+    @property
+    def is_collected(self):
+        """is included in a collection"""
+        return self.collecting_metadata_qs.exists()
+
+    @property
+    def collecting_metadata_qs(self):
+        return CollectedGuidMetadata.objects.filter(
+            guid=self.guids.first(),
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+    @property
+    def collecting_metadata_list(self):
+        return list(self.collecting_metadata_qs)
 
     @property
     def is_preprint(self):
@@ -1183,6 +1202,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
+
+            # If there are pending access requests for this user, mark them as accepted
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -1265,7 +1290,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+        contributor.add_unclaimed_record(self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
@@ -1277,7 +1302,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise
 
             contributor.add_unclaimed_record(
-                node=self, referrer=auth.user, given_name=fullname, email=email
+                self, referrer=auth.user, given_name=fullname, email=email
             )
 
             contributor.save()
@@ -2440,7 +2465,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     to_addr=user.username,
                     mail=mails.SPAM_USER_BANNED,
                     user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
                 )
             user.save()
 
@@ -2631,6 +2657,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth)
         return updated
 
+    def add_remove_node_log(self, auth, date):
+        node_to_log = self.parent_node if self.parent_node else self
+        log_action = NodeLog.NODE_REMOVED if self.parent_node else NodeLog.PROJECT_DELETED
+        node_to_log.add_log(
+            log_action,
+            params={
+                'project': self._primary_key,
+            },
+            auth=auth,
+            log_date=date,
+            save=True,
+        )
+
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
 
@@ -2647,38 +2686,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True):
+        if Node.objects.get_children(self, active=True).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
-        for addon in self.get_addons():
-            message = addon.after_delete(self, auth.user)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+        remove_addons(auth, [self])
 
         log_date = date or timezone.now()
 
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(node=self).update(root_target=None)
+
         # Add log to parent
-        if self.parent_node:
-            self.parent_node.add_log(
-                NodeLog.NODE_REMOVED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
-        else:
-            self.add_log(
-                NodeLog.PROJECT_DELETED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
+        self.add_remove_node_log(auth=auth, date=log_date)
 
         self.is_deleted = True
         self.deleted_date = date
@@ -2855,6 +2875,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         page.deleted = timezone.now()
         page.save()
 
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
+
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2964,6 +2987,19 @@ class Node(AbstractNode):
         permissions = (
             ('view_node', 'Can view node details'),
         )
+
+
+def remove_addons(auth, resource_object_list):
+    for config in AbstractNode.ADDONS_AVAILABLE:
+        try:
+            settings_model = config.node_settings
+        except LookupError:
+            settings_model = None
+
+        if settings_model:
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
+            for addon in addon_list:
+                addon.after_delete(auth.user)
 
 
 ##### Signal listeners #####

@@ -289,6 +289,24 @@ class CollectionFactory(DjangoModelFactory):
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
 
+
+class CollectionProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.CollectionProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
@@ -412,8 +430,6 @@ class RegistrationApprovalFactory(SanctionFactory):
     user = factory.SubFactory(UserFactory)
 
 class EmbargoTerminationApprovalFactory(DjangoModelFactory):
-
-    FACTORY_STRATEGY = factory.base.CREATE_STRATEGY
 
     @classmethod
     def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
@@ -630,7 +646,7 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)

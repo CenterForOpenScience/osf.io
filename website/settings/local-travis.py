@@ -29,12 +29,10 @@ PREPRINT_PROVIDER_DOMAINS = {
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
-        'url': '/ember_osf_web/',
         'server': 'http://localhost:4200',
         'path': os.environ.get('HOME') + '/ember_osf_web/'
     },
     'preprints': {
-        'url': '/preprints/',
         'server': 'http://localhost:4201',
         'path': os.environ.get('HOME') + '/preprints/'
     }

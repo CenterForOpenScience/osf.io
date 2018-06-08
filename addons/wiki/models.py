@@ -93,7 +93,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     @property
     def is_current(self):
-        return not self.wiki_page.deleted and self.identifier == self.wiki_page.current_version_number
+        return not self.wiki_page.deleted and self.id == self.wiki_page.versions.order_by('-created').first().id
 
     def html(self, node):
         """The cleaned HTML of the page"""
@@ -160,7 +160,10 @@ class WikiVersion(ObjectIDMixin, BaseModel):
                 if isinstance(v, basestring)
             }
         user = OSFUser.load(user_id)
-        return self.wiki_page.node.check_spam(user, ['wiki_pages_latest'], request_headers)
+        if user:
+            return self.wiki_page.node.check_spam(user, ['wiki_pages_latest'], request_headers)
+        else:
+            return False
 
     def clone_version(self, wiki_page, user):
         """Clone a node wiki page.
@@ -223,7 +226,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def current_version_number(self):
-        return self.versions.count()
+        return self.versions.order_by('-created').values_list('identifier', flat=True).first() or 0
 
     @property
     def url(self):
@@ -235,12 +238,13 @@ class WikiPage(GuidMixin, BaseModel):
         return version
 
     def get_version(self, version=None):
-        try:
-            if version:
-                return self.versions.get(identifier=version)
-            return self.versions.last()
-        except (WikiVersion.DoesNotExist, ValueError):
-            raise VersionNotFoundError(version)
+        if version:
+            ret = self.versions.filter(identifier=version).order_by('-created').first()
+            if not ret:
+                raise VersionNotFoundError(version)
+            return ret
+        else:
+            return self.versions.order_by('-created').first()
 
     def get_versions(self):
         return self.versions.all().order_by('-created')

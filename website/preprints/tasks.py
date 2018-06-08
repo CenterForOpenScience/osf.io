@@ -17,7 +17,7 @@ from website.identifiers.utils import request_identifiers_from_ezid, parse_ident
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(ignore_results=True)
+@celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=60)
 def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
@@ -26,14 +26,20 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
-        status = 'public' if preprint.verified_publishable else 'unavailable'
+        update_or_create_preprint_identifiers(preprint)
+    if update_share:
+        update_preprint_share(preprint, old_subjects, share_type)
+
+def update_or_create_preprint_identifiers(preprint):
+    status = 'public' if preprint.verified_publishable else 'unavailable'
+    if preprint.is_published and not preprint.get_identifier('doi'):
+        get_and_set_preprint_identifiers(preprint)
+    else:
         try:
             update_ezid_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
-    if update_share:
-        update_preprint_share(preprint, old_subjects, share_type)
 
 def update_preprint_share(preprint, old_subjects=None, share_type=None):
     if settings.SHARE_URL:
@@ -64,17 +70,6 @@ def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
     data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
     try:
-        resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-            'data': {
-                'type': 'NormalizedData',
-                'attributes': {
-                    'tasks': [],
-                    'raw': None,
-                    'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
-                }
-            }
-        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
-        logger.debug(resp.content)
         resp.raise_for_status()
     except Exception as e:
         if resp.status_code >= 500:
@@ -177,10 +172,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     return [node.serialize() for node in visited]
 
 
-@celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint_id):
-    PreprintService = apps.get_model('osf.PreprintService')
-    preprint = PreprintService.load(preprint_id)
+def get_and_set_preprint_identifiers(preprint):
     ezid_response = request_identifiers_from_ezid(preprint)
     if ezid_response is None:
         return
@@ -195,4 +187,6 @@ def send_desk_share_preprint_error(preprint, resp, retries):
         preprint=preprint,
         resp=resp,
         retries=retries,
+        can_change_preferences=False,
+        logo=settings.OSF_PREPRINTS_LOGO
     )

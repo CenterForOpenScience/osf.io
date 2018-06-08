@@ -65,6 +65,8 @@
     "node_created":     "${user} created ${node}",
     "node_forked":  "${user} created fork from ${forked_from}",
     "node_removed":  "${user} removed ${node}",
+    "node_access_requests_enabled": "${user} enabled access requests for ${node}",
+    "node_access_requests_disabled": "${user} disabled access requests for ${node}",
     "license_changed" : "${user} updated the license of ${node} ${license}",
     "file_tag_added": "${user} added tag ${tag} to ${path} in OSF Storage in ${node}",
     "file_tag_removed": "${user} removed tag ${tag} from ${path} in OSF Storage in ${node}",

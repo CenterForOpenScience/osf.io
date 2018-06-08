@@ -9,7 +9,7 @@ from urllib3.exceptions import MaxRetryError
 
 from framework.auth import Auth
 from website.util import api_url_for
-from box.client import BoxClientException
+from boxsdk.exception import BoxAPIException
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
 from addons.base.tests import views as views_testing
@@ -19,7 +19,8 @@ from addons.box.serializer import BoxSerializer
 from addons.box.tests.utils import (
     BoxAddonTestCase,
     MockBox,
-    patch_client
+    patch_client,
+    mock_responses
 )
 
 mock_client = MockBox()
@@ -86,10 +87,11 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         self.patcher_refresh.stop()
 
     def test_box_list_folders(self):
-        with patch_client('addons.box.models.BoxClient'):
+        with mock.patch('addons.box.models.Client.folder') as folder_mock:
+            folder_mock.return_value.get.return_value = mock_responses['folder']
             url = self.project.api_url_for('box_folder_list', folder_id='foo')
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
             assert_equal(len(res.json), len(expected))
             first = res.json[0]
@@ -105,63 +107,42 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         assert_equal(len(res.json), 1)
 
     def test_box_list_folders_if_folder_is_none_and_folders_only(self):
-        with patch_client('addons.box.models.BoxClient'):
+        with patch_client('addons.box.models.Client'):
             self.node_settings.folder_name = None
             self.node_settings.save()
             url = api_url_for('box_folder_list',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
             assert_equal(len(res.json), len(expected))
 
     def test_box_list_folders_folders_only(self):
-        with patch_client('addons.box.models.BoxClient'):
+        with patch_client('addons.box.models.Client'):
             url = self.project.api_url_for('box_folder_list', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
             assert_equal(len(res.json), len(expected))
 
     def test_box_list_folders_doesnt_include_root(self):
-        with patch_client('addons.box.models.BoxClient'):
+        with mock.patch('addons.box.models.Client.folder') as folder_mock:
+            folder_mock.return_value.get.return_value = mock_responses['folder']
             url = self.project.api_url_for('box_folder_list', folder_id=0)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
 
             assert_equal(len(res.json), len(expected))
 
-    @mock.patch('addons.box.models.BoxClient.get_folder')
-    def test_box_list_folders_deleted(self, mock_metadata):
-        # Example metadata for a deleted folder
-        mock_metadata.return_value = {
-            u'bytes': 0,
-            u'contents': [],
-            u'hash': u'e3c62eb85bc50dfa1107b4ca8047812b',
-            u'icon': u'folder_gray',
-            u'is_deleted': True,
-            u'is_dir': True,
-            u'modified': u'Sat, 29 Mar 2014 20:11:49 +0000',
-            u'path': u'/tests',
-            u'rev': u'3fed844002c12fc',
-            u'revision': 67033156,
-            u'root': u'box',
-            u'size': u'0 bytes',
-            u'thumb_exists': False
-        }
-        url = self.project.api_url_for('box_folder_list', folder_id='foo')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.NOT_FOUND)
-
-    @mock.patch('addons.box.models.BoxClient.get_folder')
+    @mock.patch('addons.box.models.Client.folder')
     def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
-        mock_metadata.side_effect = BoxClientException(status_code=404, message='File not found')
+        mock_metadata.side_effect = BoxAPIException(status=404, message='File not found')
         url = self.project.api_url_for('box_folder_list', folder_id='lolwut')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('addons.box.models.BoxClient.get_folder')
+    @mock.patch('addons.box.models.Client.folder')
     def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
         url = self.project.api_url_for('box_folder_list', folder_id='fo')

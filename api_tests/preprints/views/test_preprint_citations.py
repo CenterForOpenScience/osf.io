@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from api.base.settings.defaults import API_BASE
+from django.utils import timezone
 from api.citations.utils import display_absolute_url
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
@@ -93,3 +94,125 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
             '%Y, %B %-d')
         assert_true(
             expected_date in res.json['data']['attributes']['citation'])
+
+
+class TestPreprintCitationContentMLA(ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintCitationContentMLA, self).setUp()
+        self.admin_contributor = AuthUserFactory()
+        self.published_preprint = PreprintFactory(
+            creator=self.admin_contributor)
+        self.node = self.published_preprint.node
+        self.node.title = "My Preprint"
+        self.node.save()
+
+        self.admin_contributor.given_name = 'Grapes'
+        self.admin_contributor.middle_names = ' Coffee Beans '
+        self.admin_contributor.family_name = 'McGee'
+        self.admin_contributor.save()
+        self.published_preprint_url = '/{}preprints/{}/citation/modern-language-association/'.format(
+                     API_BASE, self.published_preprint._id)
+
+    def test_citation_contains_correctly_formats_middle_names(self):
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
+                self.node.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+    def test_citation_no_repeated_periods(self):
+        self.node.title = 'A Study of Coffee.'
+        self.node.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
+                self.node.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+    def test_citation_osf_provider(self):
+        self.node.title = 'A Study of Coffee.'
+        self.node.save()
+        self.published_preprint.provider.name = 'Open Science Framework'
+        self.published_preprint.provider.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
+                self.node.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+
+class TestPreprintCitationContentAPA(ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintCitationContentAPA, self).setUp()
+        self.admin_contributor = AuthUserFactory()
+        self.published_preprint = PreprintFactory(
+            creator=self.admin_contributor)
+        self.node = self.published_preprint.node
+
+        self.admin_contributor.given_name = 'Grapes'
+        self.admin_contributor.middle_names = ' Coffee Beans '
+        self.admin_contributor.family_name = 'McGee'
+        self.admin_contributor.save()
+        self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
+                     API_BASE, self.published_preprint._id)
+
+    def test_api_citation_particulars(self):
+        self.node.title = 'A Study of Coffee.'
+        self.node.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B. ({}). {} {}'.format(
+                date,
+                self.node.title,
+                'http://doi.org/' + self.published_preprint.article_doi
+                )
+        )
+
+
+class TestPreprintCitationContentChicago(ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintCitationContentChicago, self).setUp()
+        self.admin_contributor = AuthUserFactory()
+        self.published_preprint = PreprintFactory(
+            creator=self.admin_contributor)
+        self.node = self.published_preprint.node
+
+        self.admin_contributor.given_name = 'Grapes'
+        self.admin_contributor.middle_names = ' Coffee Beans '
+        self.admin_contributor.family_name = 'McGee'
+        self.admin_contributor.save()
+        self.published_preprint_url = '/{}preprints/{}/citation/chicago-author-date/'.format(
+                     API_BASE, self.published_preprint._id)
+
+    def test_api_citation_particulars(self):
+        self.node.title = 'A Study of Coffee.'
+        self.node.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes C B. {}. “{}” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                self.node.title,
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
