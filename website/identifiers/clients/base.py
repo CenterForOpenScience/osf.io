@@ -2,10 +2,6 @@
 
 class AbstractIdentifierClient(object):
 
-    def __init__(self, base_url, prefix):
-        self.base_url = base_url
-        self.prefix = prefix
-
     def build_metadata(self, object):
         """ Build the metadata object used to register the object
         with the specified client"""
@@ -16,12 +12,12 @@ class AbstractIdentifierClient(object):
         """
         raise NotImplementedError()
 
-    def create_identifier(self, metadata, doi):
+    def create_identifier(self, object, status='public'):
         """ Make a request to register the given identifier
         with the client"""
         raise NotImplementedError()
 
-    def change_status_identifier(self, status, identifier):
+    def update_identifier(self, object):
         """Register a change in metadata with the given client
         """
         raise NotImplementedError()

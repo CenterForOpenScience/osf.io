@@ -11,9 +11,10 @@ from datacite import DataCiteMDSClient, schema40
 
 class DataCiteClient(AbstractIdentifierClient):
 
-    @property
-    def _client(self):
-        return DataCiteMDSClient(
+    def __init__(self, base_url, prefix, client=None):
+        self.base_url = base_url
+        self.prefix = prefix
+        self._client = client or DataCiteMDSClient(
             url=self.base_url,
             username=settings.DATACITE_USERNAME,
             password=settings.DATACITE_PASSWORD,
@@ -68,12 +69,24 @@ class DataCiteClient(AbstractIdentifierClient):
     def get_identifier(self, identifier):
         self._client.doi_get(identifier)
 
-    def create_identifier(self, metadata, doi=None):
-        resp = self._client.metadata_post(metadata)
+    def create_identifier(self, node, category):
+        if category == 'doi':
+            metadata = self.build_metadata(node)
+            resp = self._client.metadata_post(metadata)
 
-        # Typical response: 'OK (10.5072/FK2osf.io/cq695)' to doi 10.5072/FK2osf.io/cq695
-        doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
-        return {'doi': doi}
+            # Typical response: 'OK (10.5072/FK2osf.io/cq695)' to doi 10.5072/FK2osf.io/cq695
+            doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
+            return {'doi': doi}
+        else:
+            raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
-    def change_status_identifier(self, status, metadata, identifier=None):
-        return self.create_identifier(metadata)
+    def update_identifier(self, node, category):
+        if not node.is_public or node.is_deleted:
+            if category == 'doi':
+                doi = self.build_doi(node)
+                self._client.metadata_delete(doi)
+                return {'doi': doi}
+            else:
+                raise NotImplementedError('Removing metadata not supported for {}'.format(category))
+        else:
+            return self.create_identifier(node, category)

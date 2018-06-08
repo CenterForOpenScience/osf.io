@@ -11,11 +11,12 @@ from datacite import schema40
 from website import settings
 from website.app import init_addons
 from website.identifiers.clients import DataCiteClient
+from website.identifiers.clients.datacite import DataCiteMDSClient
 from website.identifiers import metadata
 
 from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
-from osf_tests.factories import AuthUserFactory, RegistrationFactory
+from osf_tests.factories import AuthUserFactory, RegistrationFactory, ProjectFactory
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -23,20 +24,25 @@ FIXTURES = os.path.join(HERE, 'fixtures')
 
 
 @pytest.fixture()
-def datacite_client():
+def datacite_client(registration):
+    class MockDataciteClient(object):
+        def __init__(self, *arg, **kwargs):
+            pass
+
+        url = 'https://mds.fakedatacite.org'
+        metadata_get = mock.Mock(return_value=datacite_metadata_response())
+        metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/{})'.format(registration._id))
+        metadata_delete = mock.Mock(return_value='OK heeeeeeey')
+
     return DataCiteClient(
         base_url = 'https://mds.fake.datacite.org',
-        prefix=settings.DATACITE_PREFIX
+        prefix=settings.DATACITE_PREFIX,
+        client=MockDataciteClient()
     )
 
 @pytest.fixture()
 def registration():
-    return RegistrationFactory()
-
-@pytest.fixture()
-def datacite_node_metadata():
-    with open(os.path.join(FIXTURES, 'datacite_node_metadata.xml'), 'r') as fp:
-        return fp.read()
+    return RegistrationFactory(is_public=True)
 
 @pytest.fixture()
 def datacite_metadata_response():
@@ -44,51 +50,28 @@ def datacite_metadata_response():
         return fp.read()
 
 
-class MockDataciteClient(object):
-
-    def __init__(self, *arg, **kwargs):
-        pass
-
-    url = 'https://mds.fake.datacite.org'
-    metadata_get = mock.Mock(return_value=datacite_metadata_response())
-    metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/yvzp4)')
-
-
 @pytest.mark.django_db
 class TestDataCiteClient:
 
-    @responses.activate
-    @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
-    def test_datacite_create_identifiers(self, datacite_client, datacite_node_metadata):
-        responses.add(
-            responses.Response(
-                responses.POST,
-                datacite_client.base_url + '/metadata',
-                body='OK',
-                status=200
-            )
-        )
-        identifiers = datacite_client.create_identifier(datacite_node_metadata)
+    def test_datacite_create_identifiers(self, registration, datacite_client):
+        identifiers = datacite_client.create_identifier(node=registration, category='doi')
+        datacite_node_metadata = datacite_client.build_metadata(node=registration)
 
-        assert identifiers['doi'] == '10.5072/FK2osf.io/yvzp4'
-        MockDataciteClient.metadata_post.assert_called_with(datacite_node_metadata)
+        assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
+        datacite_client._client.metadata_post.assert_called_with(datacite_node_metadata)
 
-    @responses.activate
-    @mock.patch('website.identifiers.clients.datacite.DataCiteMDSClient', MockDataciteClient)
-    def test_datacite_change_status_identifier(self, datacite_client, datacite_node_metadata):
-        responses.add(
-            responses.Response(
-                responses.POST,
-                datacite_client.base_url + '/metadata',
-                body='OK',
-                status=200
-            )
-        )
+    def test_datacite_update_doi_public_registration(self, registration, datacite_client):
+        identifiers = datacite_client.update_identifier(registration, category='doi')
+        datacite_node_metadata = datacite_client.build_metadata(registration)
 
-        identifiers = datacite_client.change_status_identifier(status=None, metadata=datacite_node_metadata)
+        assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
+        datacite_client._client.metadata_post.assert_called_with(datacite_node_metadata)
 
-        assert identifiers['doi'] == '10.5072/FK2osf.io/yvzp4'
-        MockDataciteClient.metadata_post.assert_called_with(datacite_node_metadata)
+    def test_datacite_update_doi_status_unavailable(self, datacite_client):
+        node = ProjectFactory(is_public=False)
+        datacite_client.update_identifier(node, category='doi')
+
+        assert datacite_client._client.metadata_delete.called
 
     def test_datacite_build_doi(self, registration, datacite_client):
         assert datacite_client.build_doi(registration) == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)

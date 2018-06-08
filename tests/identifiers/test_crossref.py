@@ -17,11 +17,6 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from framework.flask import rm_handlers
-from framework.django.handlers import handlers as django_handlers
-
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-FIXTURES = os.path.join(HERE, 'fixtures')
 
 
 @pytest.fixture()
@@ -46,11 +41,6 @@ def preprint():
     return preprint
 
 @pytest.fixture()
-def crossref_preprint_metadata():
-    with open(os.path.join(FIXTURES, 'crossref_preprint_metadata.xml'), 'r') as fp:
-        return fp.read()
-
-@pytest.fixture()
 def crossref_success_response():
     return """
         \n\n\n\n<html>\n<head><title>SUCCESS</title>\n</head>\n<body>\n<h2>SUCCESS</h2>\n<p>
@@ -62,24 +52,23 @@ def crossref_success_response():
 class TestCrossRefClient:
 
     @responses.activate
-    def test_crossref_create_identifiers(self, preprint, crossref_client, crossref_preprint_metadata, crossref_success_response):
+    def test_crossref_create_identifiers(self, preprint, crossref_client, crossref_success_response):
         responses.add(
             responses.Response(
                 responses.POST,
                 crossref_client.base_url,
                 body=crossref_success_response,
                 content_type='text/html;charset=ISO-8859-1',
-                status=200
-            )
+                status=200,
+            ),
         )
-
-        doi = crossref_client.build_doi(preprint)
-        res = crossref_client.create_identifier(doi=doi, metadata=crossref_preprint_metadata)
+        res = crossref_client.create_identifier(preprint=preprint, category='doi')
+        doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
 
         assert res['doi'] == doi
 
     @responses.activate
-    def test_crossref_change_status_identifier(self,  crossref_client, crossref_preprint_metadata, crossref_success_response):
+    def test_crossref_update_identifier(self,  preprint, crossref_client, crossref_success_response):
         responses.add(
             responses.Response(
                 responses.POST,
@@ -89,11 +78,10 @@ class TestCrossRefClient:
                 status=200
             )
         )
-        res = crossref_client.change_status_identifier(status=None,
-                                                       metadata=crossref_preprint_metadata,
-                                                       identifier='10.123test/FK2osf.io/jf36m')
+        res = crossref_client.update_identifier(preprint, category='doi')
+        doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
 
-        assert res['doi'] == '10.123test/FK2osf.io/jf36m'
+        assert res['doi'] == doi
 
     def test_crossref_build_doi(self, crossref_client, preprint):
         doi_prefix = preprint.provider.doi_prefix
@@ -101,7 +89,7 @@ class TestCrossRefClient:
         assert crossref_client.build_doi(preprint) == settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)
 
     def test_crossref_build_metadata(self, crossref_client, preprint):
-        test_email = 'test-email'
+        test_email = 'test-email@osf.io'
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
             crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
@@ -130,9 +118,22 @@ class TestCrossRefClient:
         preprint_date_parts = preprint.date_published.strftime('%Y-%m-%d').split('-')
         assert set(metadata_date_parts) == set(preprint_date_parts)
 
+    @responses.activate
     def test_metadata_for_deleted_node(self, crossref_client, preprint):
-        preprint.node.is_public = False
-        preprint.node.save()
+        responses.add(
+            responses.Response(
+                responses.POST,
+                crossref_client.base_url,
+                body=crossref_success_response,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200
+            )
+        )
+
+        with mock.patch('osf.models.PreprintService.get_doi_client') as mock_get_doi_client:
+            mock_get_doi_client.return_value = crossref_client
+            preprint.node.is_public = False
+            preprint.node.save()
 
         crossref_xml = crossref_client.build_metadata(preprint, status='unavailable')
         root = lxml.etree.fromstring(crossref_xml)
