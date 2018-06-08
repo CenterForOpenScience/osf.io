@@ -38,6 +38,8 @@ var getMfrUrl = function (guid) {
     return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
 };
 
+var mfrId = 0;
+
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
@@ -46,9 +48,9 @@ var markdown = new MarkdownIt('commonmark', {
         type: 'osf',
         pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{1,})\/\?action=download|(^[a-zA-Z0-9]{1,}$)/,
         format: function(assetID) {
-          var id = '__markdown-it-atrules-' + (new Date()).getTime() + Math.random() ;
-          return '<div id="' + id + '" class="mfr mfr-file"></div>' +
-            '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
+             var id = '__markdown-it-atrules-' + mfrId++;
+             return '<div id="' + id + '" class="mfr mfr-file"></div>' +
+                 '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
         }
     })
     .use(require('markdown-it-video'))
