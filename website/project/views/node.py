@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, CollectedGuidMetadata
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -695,6 +695,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -875,6 +876,7 @@ def serialize_collections(cgms, auth):
         'status': cgm.status,
         'type': cgm.collected_type,
         'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.asset_files.get(name='favicon-16x16').file.url
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
