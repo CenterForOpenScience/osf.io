@@ -96,3 +96,5 @@ POPULAR_LINKS_NODE = 'hiyah'
 POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
+
+DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'

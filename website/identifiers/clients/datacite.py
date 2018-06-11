@@ -87,6 +87,6 @@ class DataCiteClient(AbstractIdentifierClient):
                 self._client.metadata_delete(doi)
                 return {'doi': doi}
             else:
-                raise NotImplementedError('Removing metadata not supported for {}'.format(category))
+                raise NotImplementedError('Updating metadata not supported for {}'.format(category))
         else:
             return self.create_identifier(node, category)

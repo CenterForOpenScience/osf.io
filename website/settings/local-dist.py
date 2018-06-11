@@ -118,3 +118,5 @@ OSF_PREPRINTS_LOGO = 'osf_preprints'
 OSF_MEETINGS_LOGO = 'osf_meetings'
 OSF_PREREG_LOGO = 'osf_prereg'
 OSF_REGISTRIES_LOGO = 'osf_registries'
+
+DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
