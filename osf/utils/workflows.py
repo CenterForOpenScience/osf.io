@@ -39,6 +39,18 @@ ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
 ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
 
+
+CHRONOS_STATUS_STATES = [
+    ('DRAFT', 1),
+    ('SUBMITTED', 2),
+    ('ACCEPTED', 3),
+    ('PUBLISHED', 4),
+    ('CANCELLED', 5),
+]
+
+ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_STATES)
+
+
 DEFAULT_TRANSITIONS = [
     {
         'trigger': DefaultTriggers.SUBMIT.value,
