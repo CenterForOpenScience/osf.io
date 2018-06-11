@@ -14,94 +14,101 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <div class="row">
-            <a href="{% url 'nodes:search' %}"
-               class="btn btn-primary col-md-1">
-                <i class="fa fa-search"></i>
-            </a>
-            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1">
-                View Logs
-            </a>
-            {%  if perms.osf.delete_node %}
-                {% if not node.is_registration %}
-                    {% if not node.deleted %}
-                        <span class="col-md-1">
-                        <a href="{% url 'nodes:remove' guid=node.id %}"
-                           data-toggle="modal" data-target="#deleteModal"
-                           class="btn btn-danger">
-                            Delete Node
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
+                    <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary">View Logs</a>
+                    {%  if perms.osf.delete_node %}
+                        {% if not node.is_registration %}
+                            {% if not node.deleted %}
+                                <a href="{% url 'nodes:remove' guid=node.id %}"
+                                   data-toggle="modal" data-target="#deleteModal"
+                                   class="btn btn-danger">
+                                    Delete Node
+                                </a>
+                                <div class="modal" id="deleteModal">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content"></div>
+                                        {# Data from above link #}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <form method="post"
+                                      action="{% url 'nodes:restore' guid=node.id %}">
+                                    {% csrf_token %}
+                                    <input class="btn btn-success" type="submit"
+                                           value="Restore Node" />
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            {% if node.is_stuck_registration %}
+                                <a href="{% url 'nodes:restart-stuck-registrations' guid=node.id %}"
+                                   data-toggle="modal" data-target="#confirmRestartRegistration"
+                                   class="btn btn-warning">
+                                    Restart Registration
+                                </a>
+                            {% endif %}
+
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.osf.mark_spam %}
+                        <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
+                           data-toggle="modal" data-target="#confirmSpamModal"
+                           class="btn btn-warning">
+                            Confirm Spam
                         </a>
-                        </span>
-                        <div class="modal" id="deleteModal">
+                        <div class="modal" id="confirmSpamModal">
                             <div class="modal-dialog">
                                 <div class="modal-content"></div>
                                 {# Data from above link #}
                             </div>
                         </div>
-                    {% else %}
-                        <span class="col-md-2">
-                        <form method="post"
-                              action="{% url 'nodes:restore' guid=node.id %}">
-                            {% csrf_token %}
-                            <input class="btn btn-success" type="submit"
-                                   value="Restore Node" />
-                        </form>
-                        </span>
+                        <a href="{% url 'nodes:confirm-ham' guid=node.id %}"
+                           data-toggle="modal" data-target="#confirmHamModal"
+                           class="btn btn-default">
+                            Confirm <strong>Not</strong> Spam
+                        </a>
+                        <div class="modal" id="confirmHamModal">
+                            <div class="modal-dialog">
+                                <div class="modal-content"></div>
+                                {# Data from above link #}
+                            </div>
+                        </div>
                     {% endif %}
-                {% endif %}
-                {% endif %}
-            {% if perms.osf.mark_spam %}
-            <span class="col-md-2">
-                <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
-                   data-toggle="modal" data-target="#confirmSpamModal"
-                   class="btn btn-warning">
-                    Confirm Spam
-                </a>
-            </span>
-            <div class="modal" id="confirmSpamModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                    {# Data from above link #}
-                </div>
-            </div>
-            <span class="col-md-2">
-                <a href="{% url 'nodes:confirm-ham' guid=node.id %}"
-                   data-toggle="modal" data-target="#confirmHamModal"
-                   class="btn btn-default">
-                    Confirm <strong>Not</strong> Spam
-                </a>
-            </span>
-            <div class="modal" id="confirmHamModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                    {# Data from above link #}
-                </div>
-            </div>
-            {% endif %}
-            <span class="col-md-2">
-                <a href="{% url 'nodes:reindex-share-node' guid=node.id %}"
-                   data-toggle="modal" data-target="#confirmReindexShareNode"
-                   class="btn btn-default">
-                    SHARE Reindex
-                </a>
-            </span>
-            <div class="modal" id="confirmReindexShareNode">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                    {# Data from above link #}
-                </div>
-            </div>
-            <span class="col-md-1">
-                <a href="{% url 'nodes:reindex-elastic-node' guid=node.id %}"
-                   data-toggle="modal" data-target="#confirmReindexElasticNode"
-                   class="btn btn-default">
-                    Elastic Reindex
-                </a>
-            </span>
-            <div class="modal" id="confirmReindexElasticNode">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                    {# Data from above link #}
+                    <a href="{% url 'nodes:reindex-share-node' guid=node.id %}"
+                       data-toggle="modal" data-target="#confirmReindexShareNode"
+                       class="btn btn-default">
+                        SHARE Reindex
+                    </a>
+                    <div class="modal" id="confirmReindexShareNode">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
+                    <div class="modal" id="confirmRestartRegistration">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
+                    <a href="{% url 'nodes:reindex-elastic-node' guid=node.id %}"
+                       data-toggle="modal" data-target="#confirmReindexElasticNode"
+                       class="btn btn-default">
+                        Elastic Reindex
+                    </a>
+                    <div class="modal" id="confirmReindexElasticNode">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

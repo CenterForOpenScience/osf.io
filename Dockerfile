@@ -1,4 +1,4 @@
-FROM python:2.7-slim
+FROM python:2.7-slim-jessie
 
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \
@@ -29,7 +29,7 @@ RUN set -ex \
       6A010C5166006599AA17F08146C2130DFD2497F5 \
     ; do \
       gpg --keyserver hkp://ipv4.pool.sks-keyservers.net:80 --recv-keys "$key" || \
-      gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$key" \
+      gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$key" || \
       gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" || \
       gpg --keyserver hkp://keyserver.pgp.com:80 --recv-keys "$key" \
     ; done \
