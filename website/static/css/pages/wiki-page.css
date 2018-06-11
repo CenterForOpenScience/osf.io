@@ -343,5 +343,5 @@ select.form-control {
 
 #wikiViewRender > .table {
     display: inherit;
-    overflow-y: scroll;
+    overflow-y: hidden;
 }

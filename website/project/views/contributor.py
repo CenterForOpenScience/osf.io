@@ -820,10 +820,7 @@ def invite_contributor_post(node, **kwargs):
     # Check if email is in the database
     user = get_user(email=email)
     if user:
-        if user.is_registered:
-            msg = 'User is already in database. Please go back and try your search again.'
-            return {'status': 400, 'message': msg}, 400
-        elif node.is_contributor(user):
+        if node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         elif not user.is_confirmed:
