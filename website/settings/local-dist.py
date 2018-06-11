@@ -59,7 +59,6 @@ USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
-MAILGUN_API_KEY = 'mailkimp'
 
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -120,3 +119,15 @@ OSF_PREREG_LOGO = 'osf_prereg'
 OSF_REGISTRIES_LOGO = 'osf_registries'
 
 DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
+
+# Uncomment for local DOI creation testing
+# datacite
+# DATACITE_USERNAME = 'changeme'
+# DATACITE_PASSWORD = 'changeme'
+# DATACITE_URL = 'https://mds.test.datacite.org'
+
+# crossref
+# CROSSREF_USERNAME = 'changeme'
+# CROSSREF_PASSWORD = 'changeme'
+# CROSSREF_URL = https://test.crossref.org/servlet/deposit
+# CROSSREF_DEPOSITOR_EMAIL = 'changeme'  # This email will receive confirmation/error messages from CrossRef on submission
