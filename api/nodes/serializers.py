@@ -490,7 +490,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_region_id(self, obj):
         try:
-            # use the annotated valud if possible
+            # use the annotated value if possible
             region = obj.region
         except AttributeError:
             # use computed property if region annotation does not exist

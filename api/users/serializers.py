@@ -127,11 +127,10 @@ class UserSerializer(JSONAPISerializer):
 
     def get_default_region_id(self, obj):
         try:
-            # use the annotated valud if possible
+            # use the annotated value if possible
             region = obj.default_region
         except AttributeError:
             # use computed property if region annotation does not exist
-            # i.e. after creating a node
             region = obj.osfstorage_region
         return region._id
 

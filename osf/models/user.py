@@ -508,7 +508,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         user_settings = self.get_addon('osfstorage')
-        return Region.objects.get(id=user_settings.region_id)
+        return Region.objects.get(id=user_settings.default_region_id)
 
     @property
     def contributor_to(self):
