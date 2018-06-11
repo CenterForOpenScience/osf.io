@@ -46,7 +46,7 @@ class CitationsNodeTestCase(OsfTestCase):
         assert_equal(
             self.node.csl,
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': self.node.creator.given_name,
                     'family': self.node.creator.family_name,
@@ -68,7 +68,7 @@ class CitationsNodeTestCase(OsfTestCase):
         assert_equal(
             self.node.csl,
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': self.node.creator.given_name,
