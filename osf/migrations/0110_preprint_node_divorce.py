@@ -37,10 +37,18 @@ node_preprint_logs = [
 ]
 
 def pull_preprint_date_modified_from_node(node, preprint):
-    latest_log_date = node.logs.filter(action__in=node_preprint_logs).order_by('date').last().date
-    if preprint.modified < latest_log_date:
-        return latest_log_date
+    # Abandoned preprint nodes may not have preprint logs
+    latest_preprint_log = node.logs.filter(action__in=node_preprint_logs).order_by('date').last()
+    if latest_preprint_log and preprint.modified < latest_preprint_log.date:
+        return latest_preprint_log.date
     return preprint.modified
+
+def fetch_preprint_creator(node, preprint):
+    # Abandoned preprint nodes may not have preprint logs
+    preprint_published_log = node.logs.filter(action='preprint_initiated').first()
+    if preprint_published_log:
+        return OSFUser.objects.get(id=preprint_published_log.user.id)
+    return OSFUser.objects.get(id=node.creator.id)
 
 def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
@@ -120,7 +128,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     nodes = []
 
     for preprint in Preprint.objects.filter(node__isnull=False).select_related('node'):
-        node = preprint.node
+        node = AbstractNode.objects.get(id=preprint.node.id)
         preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
         modified_field = Preprint._meta.get_field('modified')
@@ -129,7 +137,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
 
         preprint.title = node.title
         preprint.description = node.description
-        preprint.creator = node.logs.filter(action='preprint_initiated').first().user
+        preprint.creator = fetch_preprint_creator(node, preprint)
         preprint.article_doi = node.preprint_article_doi
         preprint.is_public = node.is_public
 

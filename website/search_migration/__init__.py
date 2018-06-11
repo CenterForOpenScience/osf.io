@@ -272,7 +272,7 @@ FROM osf_abstractnode AS N
       SELECT FALSE AS PENDING
     ) END)
             ) REGISTRATION_APPROVAL ON TRUE
-WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND is_public IS TRUE
   AND is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -645,7 +645,7 @@ WHERE NOT (name IS NOT NULL
       AND name != ''
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
-                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -693,5 +693,36 @@ FROM osf_osfuser AS U
 WHERE is_active != TRUE
   AND id > {page_start}
   AND id <= {page_end}
+LIMIT 1;
+"""
+
+JSON_DELETE_PREPRINTS_SQL = """
+SELECT json_agg(
+    json_build_object(
+        '_type', 'preprint'
+        , '_index', '{index}'
+        , '_id', PREPRINT_GUID._id
+        , '_op_type', 'delete'
+    )
+)
+FROM osf_preprint as P
+    LEFT JOIN LATERAL (
+        SELECT _id
+        FROM osf_guid
+        WHERE object_id = P.id
+        AND content_type_id = ANY (SELECT id
+                                   FROM django_content_type
+                                   WHERE model='preprint')
+       LIMIT 1
+       ) PREPRINT_GUID ON TRUE
+   LEFT OUTER JOIN osf_basefilenode F ON (P.primary_file_id = F.id)
+WHERE P.is_published = FALSE
+    OR P.is_public = FALSE
+    OR P.primary_file_id IS NULL
+    OR F.deleted_on IS NOT NULL
+    OR P.machine_state = 'initial'
+    OR P.deleted IS NOT NULL
+    AND P.id > {page_start}
+    AND P.id <= {page_end}
 LIMIT 1;
 """

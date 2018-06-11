@@ -292,8 +292,8 @@ def format_preprint_result(result):
         # TODO: Remove unescape_entities when mako html safe comes in
         'title': unescape_entities(result['title']),
         'url': result['url'],
-        'is_component': False if parent_info is None else True,
-        'parent_title': unescape_entities(parent_info.get('title')) if parent_info else None,
+        'is_component': False,
+        'parent_title': None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': False,
@@ -307,7 +307,7 @@ def format_preprint_result(result):
         'date_registered': None,
         'n_wikis': 0,
         'license': result.get('license'),
-        'affiliated_institutions': result.get('node.affiliated_institutions') if result.get('node') else None,
+        'affiliated_institutions': None,
     }
 
     return formatted_result
@@ -636,10 +636,11 @@ def update_file(file_, index=None, delete=False):
     file_guid = file_.get_guid(create=False)
     if file_guid:
         guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
+    # File URL's not provided for preprint files, because the File Detail Page is blocked
     file_doc = {
         'id': file_._id,
-        'deep_url': file_deep_url,
-        'guid_url': guid_url,
+        'deep_url': None if isinstance(target, Preprint) else file_deep_url,
+        'guid_url': None if isinstance(target, Preprint) else guid_url,
         'tags': list(file_.tags.filter(system=False).values_list('name', flat=True)),
         'name': file_.name,
         'category': 'file',
@@ -743,7 +744,9 @@ def create_index(index=None):
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
     if not category:
-        if node.is_registration:
+        if isinstance(node, Preprint):
+            category = 'preprint'
+        elif node.is_registration:
             category = 'registration'
         else:
             category = node.project_or_component

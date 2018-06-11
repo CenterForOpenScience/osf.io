@@ -143,6 +143,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
             raise Conflict('Published preprints cannot be deleted.')
         # Marking preprints as deleted, will later become withdrawn?
         instance.deleted = timezone.now()
+        instance.update_search()
         instance.save()
 
     def get_parser_context(self, http_request):

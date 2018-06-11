@@ -700,7 +700,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             )
         if save:
             self.save()
-
+        self.update_search()
         return True
 
     def can_view(self, auth):
