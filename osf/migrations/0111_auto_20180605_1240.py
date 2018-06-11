@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0108_auto_20180530_1310'),
+        ('osf', '0110_set_ever_public'),
     ]
 
     operations = [
@@ -55,5 +55,15 @@ class Migration(migrations.Migration):
             model_name='reviewaction',
             name='trigger',
             field=models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'), ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')], max_length=31),
+        ),
+        migrations.RenameField(
+            model_name='preprintservice',
+            old_name='date_retracted',
+            new_name='date_withdrawn',
+        ),
+        migrations.RenameField(
+            model_name='preprintservice',
+            old_name='retraction_justification',
+            new_name='withdrawal_justification',
         ),
     ]
