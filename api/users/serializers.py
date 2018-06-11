@@ -8,7 +8,7 @@ from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink, ShowIfCurrentUser
+    WaterbutlerLink, ShowIfCurrentUser, DevOnly
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
@@ -57,8 +57,8 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    jobs = ser.ListField(child=ser.DictField(), read_only=True)
-    schools = ser.ListField(child=ser.DictField(), read_only=True)
+    employment = DevOnly(ser.ListField(child=ser.DictField(), source='jobs', read_only=True))
+    education = DevOnly(ser.ListField(child=ser.DictField(), source='schools', read_only=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
