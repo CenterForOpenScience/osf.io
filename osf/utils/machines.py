@@ -87,6 +87,7 @@ class ReviewsMachine(BaseMachine):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.machineable.date_published = now
             self.machineable.is_published = True
+            self.machineable.ever_public = True
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()

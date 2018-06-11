@@ -46,6 +46,10 @@ class TestPreprintDetail:
         return PreprintFactory(creator=user)
 
     @pytest.fixture()
+    def preprint_pre_mod(self, user):
+        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+
+    @pytest.fixture()
     def unpublished_preprint(self, user):
         return PreprintFactory(creator=user, is_published=False)
 
@@ -99,25 +103,29 @@ class TestPreprintDetail:
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_retracted_preprint(self, app, user, preprint, url, data):
+    def test_withdrawn_preprint(self, app, user, preprint_pre_mod):
         # test_retracted_fields
+        url = '/{}preprints/{}/'.format(API_BASE, preprint_pre_mod._id)
+        res = app.get(url, auth=user.auth)
+        data = res.json['data']
+
         assert not data['attributes']['date_retracted']
         assert 'retraction_justification' not in data['attributes']
         assert 'ever_public' not in data['attributes']
 
-        ## retracted and not ever_public (False by default)
-        preprint.date_retracted = timezone.now()
-        preprint.retraction_justification = 'assumptions no longer apply'
-        preprint.save()
-        assert preprint.is_retracted
-        assert not preprint.ever_public
+        ## retracted and not ever_public
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.date_retracted = timezone.now()
+        preprint_pre_mod.retraction_justification = 'assumptions no longer apply'
+        preprint_pre_mod.save()
+        assert preprint_pre_mod.is_retracted
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
         ## retracted and ever_public (True)
-        preprint.ever_public = True
-        preprint.save()
-        res = app.get(url)
+        preprint_pre_mod.ever_public = True
+        preprint_pre_mod.save()
+        res = app.get(url, auth=user.auth)
         data = res.json['data']
         assert data['attributes']['date_retracted']
         assert 'retraction_justification' in data['attributes']

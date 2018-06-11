@@ -6,6 +6,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
@@ -165,6 +166,9 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
             self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
+            # This preprint will have a tombstone page when it's withdrawn.
+            self.ever_public = True
+
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
                 params={
@@ -225,6 +229,9 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
                     if isinstance(v, basestring)
                 }
             self.check_spam(self.node.creator, saved_fields, request_headers)
+        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
+            raise ValidationError('Cannot set "ever_public" to False')
+
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
