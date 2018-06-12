@@ -433,6 +433,15 @@ class TestRelationshipField:
         assert_in('extra', meta)
         assert_equal(meta['extra'], 'foo')
 
+    def test_serializing_empty_to_one(self):
+        req = make_drf_request_with_version(version='2.0')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+        # This node is not registered_from another node hence it is an empty-to-one.
+        assert_equal(data['relationships']['registered_from']['data'], None)
+
     def test_self_and_related_fields(self):
         req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
