@@ -1887,8 +1887,6 @@ CUSTOM_CITATIONS = {
     'bluebook-inline': 'bluebook'
 }
 
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
-
 #Email templates logo
 OSF_LOGO = 'osf_logo'
 OSF_PREPRINTS_LOGO = 'osf_preprints'

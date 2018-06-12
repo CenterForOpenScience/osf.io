@@ -14,6 +14,7 @@ from framework import sentry
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
+from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -74,6 +75,18 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     @property
     def readable_type(self):
         raise NotImplementedError
+
+    def get_asset_url(self, name):
+        """ Helper that returns an associated ProviderAssetFile's url, or None
+
+        :param str name: Name to perform lookup by
+        :returns str|None: url of file
+        """
+        try:
+            return self.asset_files.get(name=name).file.url
+        except ProviderAssetFile.DoesNotExist:
+            return None
+
 
 class CollectionProvider(AbstractProvider):
     primary_collection = models.ForeignKey('Collection', related_name='+',
