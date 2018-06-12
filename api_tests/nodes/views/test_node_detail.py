@@ -96,6 +96,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -107,6 +108,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -118,6 +120,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -129,6 +132,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -153,6 +157,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
@@ -290,6 +295,18 @@ class TestNodeDetail:
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert '{}identifiers/'.format(url_public) in link
+
+    def test_node_shows_wiki_relationship_based_on_disabled_status_and_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
+        project_public.delete_addon('wiki', auth=Auth(user))
+        project_public.save()
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' not in res.json['data']['relationships']
+        url = url_public + '?version=2.7'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
 
 
 @pytest.mark.django_db

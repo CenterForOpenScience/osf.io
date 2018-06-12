@@ -275,9 +275,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -308,9 +306,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -346,17 +342,20 @@ class TestPublicNodes(OsfTestCase):
             self.consolidate_auth = Auth(user=self.user)
             self.project = factories.ProjectFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )
             self.component = factories.NodeFactory(
                 parent=self.project,
+                description='',
                 title=self.title,
                 creator=self.user,
                 is_public=True
             )
             self.registration = factories.RegistrationFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )
@@ -414,7 +413,7 @@ class TestPublicNodes(OsfTestCase):
             self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
-        assert_equal(docs[0]['parent_title'], '-- private project --')
+        assert_false(docs[0]['parent_title'])
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):

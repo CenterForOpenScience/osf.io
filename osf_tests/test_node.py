@@ -18,6 +18,9 @@ from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
+from website.views import find_bookmark_collection
+
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
@@ -35,7 +38,6 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
 from framework.auth.core import Auth
 
@@ -57,9 +59,11 @@ from osf_tests.factories import (
     SessionFactory,
     SubjectFactory,
     TagFactory,
+    CollectionFactory,
+    CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
 
 pytestmark = pytest.mark.django_db
@@ -551,7 +555,7 @@ class TestNodeMODMCompat:
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
-        assert node in Node.objects.filter(guids___id=node._id)
+        assert node in Node.objects.filter(guids___id=node._id, guids___id__isnull=False)
 
 
 # copied from tests/test_models.py
@@ -2852,26 +2856,34 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.wiki_pages_versions == {}
-        assert fork.wiki_pages_current == {}
+        assert fork.get_wiki_pages_latest().exists() is False
+        assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
     def test_forking_clones_project_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user, is_public=True)
         # TODO: Unmock when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            wiki = NodeWikiFactory(node=project)
-            current_wiki = NodeWikiFactory(node=project, version=2)
+            wiki_page = WikiFactory(
+                user=user,
+                node=project,
+            )
+            wiki = WikiVersionFactory(
+                wiki_page=wiki_page,
+            )
+            current_wiki = WikiVersionFactory(wiki_page=wiki_page, identifier=2)
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
-        assert registration_wiki_current.node == fork
-        assert registration_wiki_current._id != current_wiki._id
+        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        assert fork_wiki_current.wiki_page.node == fork
+        assert fork_wiki_current._id != current_wiki._id
+        assert fork_wiki_current.identifier == 2
 
-        registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
-        assert registration_wiki_version.node == fork
-        assert registration_wiki_version._id != wiki._id
+        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        assert fork_wiki_version.wiki_page.node == fork
+        assert fork_wiki_version._id != wiki._id
+        assert fork_wiki_version.identifier == 1
 
 class TestContributorOrdering:
 
@@ -3787,10 +3799,13 @@ class TestTemplateNode:
         new = project.use_as_template(
             auth=auth
         )
-        assert 'template' in project.wiki_pages_current
-        assert 'template' in project.wiki_pages_versions
-        assert new.wiki_pages_current == {}
-        assert new.wiki_pages_versions == {}
+        assert project.get_wiki_page('template').page_name == 'template'
+        latest_version = project.get_wiki_version('template')
+        assert latest_version.identifier == 1
+        assert latest_version.is_current is True
+
+        assert new.get_wiki_page('template') is None
+        assert new.get_wiki_version('template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)
@@ -4167,3 +4182,118 @@ class TestPreprintProperties:
         published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
         PreprintFactory(project=node, is_published=False, filename='file2.txt')
         assert node.preprint_url == published.url
+
+class TestCollectionProperties:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collector(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider(self):
+        return CollectionProviderFactory()
+
+    @pytest.fixture()
+    def collection_one(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_two(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_public(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+
+    @pytest.fixture()
+    def public_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=True)
+
+    @pytest.fixture()
+    def private_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=False)
+
+    @pytest.fixture()
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    def test_collection_project_views(
+            self, user, node, collection_one, collection_two, collection_public,
+            public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
+
+        # test_collection_properties
+        assert not node.is_collected
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        assert node.is_collected
+        assert len(node.collecting_metadata_list) == 3
+
+        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_expected = {collection_one._id, collection_two._id, collection_public._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+
+        assert ids_not_expected.isdisjoint(ids_actual)
+        assert ids_actual == ids_expected
+
+    def test_permissions_collection_project_views(
+            self, user, node, contrib, collection_one, collection_two,
+            collection_public, public_non_provided_collection, private_non_provided_collection,
+            bookmark_collection, collector):
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        ## test_not_logged_in_user_only_sees_public_collection_info
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
+        node.add_contributor(contributor=contrib, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
+        node.add_contributor(contributor=collector, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
+        assert ids_actual == ids_expected
+
+        ## test_node_contrib_cannot_see_public_bookmark_collections
+        bookmark_collection_public = bookmark_collection
+        bookmark_collection_public.is_public = True
+        bookmark_collection_public.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        assert bookmark_collection_public._id not in ids_actual

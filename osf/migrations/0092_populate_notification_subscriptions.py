@@ -1,17 +1,15 @@
 import logging
 
 from django.db import migrations
-from django.apps import apps
 from django.contrib.auth.models import Group
 
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 
 logger = logging.getLogger(__file__)
 
-NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
-PreprintProvider = apps.get_model('osf', 'PreprintProvider')
-
-def populate_provider_notification_subscriptions(*args):
+def populate_provider_notification_subscriptions(apps, schema_editor):
+    NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
+    PreprintProvider = apps.get_model('osf', 'PreprintProvider')
     for provider in PreprintProvider.objects.all():
         helper = GroupHelper(provider)
         try:
@@ -27,7 +25,8 @@ def populate_provider_notification_subscriptions(*args):
             # add user to subscription list but set their notification to none by default
             instance.add_user_to_subscription(user, 'email_transactional', save=True)
 
-def revert(*args):
+def revert(apps, schema_editor):
+    NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
     # The revert of this migration deletes all NotificationSubscription instances
     NotificationSubscription.objects.filter(provider__isnull=False).delete()
 

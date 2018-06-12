@@ -45,7 +45,7 @@
                     <option>-----</option>
                         % if is_owner:
                             % for repo_name in repo_names:
-                                <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
+                                <option value="${repo_name['path']}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name['path']}</option>
                             % endfor
                         % else:
                             <option selected>${github_repo_full_name}</option>

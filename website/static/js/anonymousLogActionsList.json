@@ -65,6 +65,8 @@
     "node_created" : "A user created a project",
     "node_forked" : "A user created fork from a project",
     "node_removed" : "A user removed a project",
+    "node_access_requests_enabled": "A user enabled access requests for a project",
+    "node_access_requests_disabled": "A user disabled access requests for a project",
     "license_changed" : "A user updated the license of a project",
     "file_tag_added": "A user added a tag to a file in OSF Storage in a project",
     "file_tag_removed": "A user removed tag from a file in OSF Storage in a project",

@@ -47,9 +47,20 @@ def find_neglected_prereg_within_reminder_limit():
 
     already_queued = [entry['draft_id'] for entry in queue_data]
 
+    ## If project has been deleted since last time the script ran remove reminder email from queue.
+    drafts_for_deleted_projects = list(DraftRegistration.objects
+                                   .filter(_id__in=already_queued)
+                                   .exclude(branched_from__is_deleted=False)
+                                   .values_list('_id', flat=True))
+
+    QueuedMail.objects.filter(
+        email_type=PREREG_REMINDER_TYPE,
+        data__draft_id__in=drafts_for_deleted_projects).delete()
+
     return DraftRegistration.objects.filter(
         deleted__isnull=True,
         registered_node=None,
+        branched_from__is_deleted=False,
         registration_schema=get_prereg_schema(),
         datetime_initiated__lte=timezone.now()-settings.PREREG_WAIT_TIME,
         datetime_initiated__gte=timezone.now()-settings.PREREG_AGE_LIMIT,

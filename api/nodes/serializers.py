@@ -8,7 +8,8 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
                                   JSONAPISerializer, LinksField, ValuesListField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff, BaseAPISerializer)
+                                  WaterbutlerLink, relationship_diff, BaseAPISerializer,
+                                  HideIfWikiDisabled)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -269,10 +270,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'}
     )
 
-    wikis = RelationshipField(
+    wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
@@ -765,6 +766,12 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
+
+    def get_current_user_is_contributor(self, obj):
+        user = self.context['request'].user
+        user = None if user.is_anonymous else user
+        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -1128,7 +1135,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
+        related_view='metaschemas:registration-metaschema-detail',
         related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
     )
 

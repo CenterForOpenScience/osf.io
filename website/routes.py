@@ -2,12 +2,17 @@
 from __future__ import absolute_import
 import os
 import httplib as http
+import requests
+import urlparse
+import waffle
 
 from flask import request
 from flask import send_from_directory
+from flask import Response
+from flask import stream_with_context
 from django.core.urlresolvers import reverse
 
-from geoip import geolite2
+from geolite2 import geolite2
 
 from framework import status
 from framework import sentry
@@ -51,15 +56,30 @@ from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 from website.ember_osf_web.decorators import ember_flag_is_active
+from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
+EMBER_ASSET_ROUTE_PREFIXES = ['assets', 'engines-dist', 'fonts', 'img']
+
+def set_status_message(user):
+    if user and not user.accepted_terms_of_service:
+        status.push_status_message(
+            message=language.TERMS_OF_SERVICE.format(settings.API_DOMAIN, user._id),
+            kind='default',
+            dismissible=True,
+            trust=True,
+            jumbotron=True,
+            id='terms_of_service',
+            extra={}
+        )
 
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
     user = _get_current_user()
+    set_status_message(user)
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
@@ -83,8 +103,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
+            'continent': (location or {}).get('continent', {}).get('code', None),
+            'country': (location or {}).get('country', {}).get('iso_code', None),
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
@@ -124,12 +144,14 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
+        'institutional_landing_flag': waffle.flag_is_active(request, settings.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
+        'footer_links': settings.FOOTER_LINKS,
     }
 
 
@@ -177,7 +199,7 @@ def robots():
     return send_from_directory(
         settings.STATIC_FOLDER,
         robots_file,
-        mimetype='text/plain'
+        mimetype='html'
     )
 
 def sitemap_file(path):
@@ -198,10 +220,37 @@ def ember_app(path=None):
     """Serve the contents of the ember application"""
     ember_app_folder = None
     fp = path or 'index.html'
-    for k in settings.EXTERNAL_EMBER_APPS.keys():
+
+    ember_app = None
+    strip_prefix = True
+
+    for k in EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
-            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
+            ember_app = EXTERNAL_EMBER_APPS[k]
             break
+
+    for asset_prefix in EMBER_ASSET_ROUTE_PREFIXES:
+        if request.path.strip('/').startswith(asset_prefix) and EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            ember_app = EXTERNAL_EMBER_APPS['ember_osf_web']
+            strip_prefix = False
+            fp = asset_prefix + '/' + fp
+            break
+
+    if not ember_app:
+        raise HTTPError(http.NOT_FOUND)
+
+    if settings.PROXY_EMBER_APPS:
+        if strip_prefix:
+            path = request.path[len(ember_app['path']):]
+        else:
+            path = request.path
+        url = urlparse.urljoin(ember_app['server'], path)
+        resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+        return Response(resp.content, resp.status_code, headers)
+
+    ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
 
     if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
@@ -281,7 +330,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+        for prefix in EXTERNAL_EMBER_APPS.keys():
             process_rules(app, [
                 Rule(
                     [
@@ -308,7 +357,7 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+        if EXTERNAL_EMBER_APPS.get('ember_osf_web'):
             process_rules(app, [
                 Rule(
                     ember_osf_web_views.routes,
@@ -317,6 +366,30 @@ def make_url_map(app):
                     notemplate
                 )
             ])
+            for asset_prefix in EMBER_ASSET_ROUTE_PREFIXES:
+                process_rules(app, [
+                    Rule(
+                        '/<path:path>',
+                        'get',
+                        ember_app,
+                        json_renderer,
+                        endpoint_suffix='__' + asset_prefix
+                    )
+                ], prefix='/' + asset_prefix)
+            if 'routes' in EXTERNAL_EMBER_APPS['ember_osf_web']:
+                for route in EXTERNAL_EMBER_APPS['ember_osf_web']['routes']:
+                    process_rules(app, [
+                        Rule(
+                            [
+                                '/',
+                                '/<path:path>',
+                            ],
+                            'get',
+                            ember_osf_web_views.use_ember_app,
+                            notemplate,
+                            endpoint_suffix='__' + route
+                        )
+                    ], prefix='/' + route)
 
     ### Base ###
 
@@ -1645,6 +1718,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/settings/requests/',
+                '/project/<pid>/node/<nid>/settings/requests/',
+            ],
+            'post',
+            project_views.node.configure_requests,
+            json_renderer,
+        ),
+
         # Invite Users
         Rule(
             [
@@ -1661,9 +1744,6 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
-        from flask import stream_with_context, Response
-        import requests
-
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')

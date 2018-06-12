@@ -12,6 +12,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
+from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
     OSFUser, MetaSchema, RegistrationApproval,
@@ -19,6 +20,7 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
+from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
@@ -65,9 +67,17 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
 
+    @staticmethod
+    def find_failed_registrations():
+        expired_if_before = datetime.datetime.utcnow() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+        node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
+        root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
+        stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+        return stuck_regs
+
     @property
     def registered_schema_id(self):
-        if self.registered_schema:
+        if self.registered_schema.exists():
             return self.registered_schema.first()._id
         return None
 
@@ -75,6 +85,10 @@ class Registration(AbstractNode):
     def is_registration(self):
         """For v1 compat."""
         return True
+
+    @property
+    def is_stuck_registration(self):
+        return self in self.find_failed_registrations()
 
     @property
     def is_collection(self):
@@ -374,6 +388,15 @@ class Registration(AbstractNode):
             super(Registration, self).remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def delete_node_wiki(self, name_or_page, auth):
+        raise NodeStateError('Registered wiki pages cannot be deleted.')
+
+    def rename_node_wiki(self, name, new_name, auth):
+        raise NodeStateError('Registered wiki pages cannot be renamed.')
+
+    def update_node_wiki(self, name, content, auth):
+        raise NodeStateError('Registered wiki pages cannot be edited.')
 
     class Meta:
         # custom permissions for use in the OSF Admin App

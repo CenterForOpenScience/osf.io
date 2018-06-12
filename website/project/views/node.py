@@ -17,7 +17,7 @@ from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
-from api.base.utils import rapply
+from osf.utils.functional import rapply
 
 from website import language
 
@@ -378,6 +378,7 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['access_requests'] = utils.serialize_access_requests(node)
     ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
@@ -392,6 +393,34 @@ def configure_comments(node, **kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
     node.save()
+
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def configure_requests(node, **kwargs):
+    access_requests_enabled = request.get_json().get('accessRequestsEnabled')
+    node.access_requests_enabled = access_requests_enabled
+    if node.access_requests_enabled:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    else:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    node.save()
+    return {'access_requests_enabled': access_requests_enabled}, 200
 
 
 ##############################################################################
@@ -418,6 +447,9 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    access_request = node.requests.filter(creator=auth.user).exclude(machine_state='accepted')
+    ret['user']['access_request_state'] = access_request.get().machine_state if access_request else None
 
     addons_widget_data = {
         'wiki': None,
@@ -572,7 +604,8 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, kind='success', trust=False)
+    id = '{}_deleted'.format(node.project_or_component)
+    status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
@@ -632,7 +665,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_page('home', None)
+    wiki_page = node.get_wiki_version('home', None)
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -648,6 +681,7 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+
     try:
         contributor = node.contributor_set.get(user=user)
     except Contributor.DoesNotExist:
@@ -727,6 +761,8 @@ def _view_project(node, auth, primary=False,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
+            'is_collected': node.is_collected,
+            'collections': serialize_collections(node.collecting_metadata_list, auth),
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
@@ -755,7 +791,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -829,6 +866,17 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
+
+def serialize_collections(cgms, auth):
+    return [{
+        'title': cgm.collection.title,
+        'name': cgm.collection.provider.name,
+        'url': '/{}/'.format(cgm.collection._id),
+        'status': cgm.status,
+        'type': cgm.collected_type,
+        'is_public': cgm.collection.is_public,
+    } for cgm in cgms if cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
 def serialize_children(child_list, nested, indent=0):
     """

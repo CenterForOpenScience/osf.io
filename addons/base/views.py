@@ -35,7 +35,7 @@ from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema,
-                        Guid)
+                        Guid, FileVersionUserMetadata)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -134,6 +134,8 @@ permission_map = {
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
+    'render': 'read',
+    'export': 'read',
     'upload': 'write',
     'delete': 'write',
     'copy': 'write',
@@ -303,23 +305,45 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
+DOWNLOAD_ACTIONS = set([
+    'download_file',
+    'download_zip',
+])
+
+
+# TODO: Use this to mark file versions as seen when
+# MFR callback endpoint is implemented
+def mark_file_version_as_seen(user, path, version):
+    """
+    Mark a file version as seen by the given user.
+    If no version is included, default to the most recent version.
+    """
+    file_to_update = OsfStorageFile.objects.get(_id=path)
+    if version:
+        file_version = file_to_update.versions.get(identifier=version)
+    else:
+        file_version = file_to_update.versions.order_by('-created').first()
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions
-            if payload['action'] in ('download_file', 'download_zip'):
+            # Don't log download actions, but do update analytics
+            if payload['action'] in DOWNLOAD_ACTIONS:
+                node = AbstractNode.load(payload['metadata']['nid'])
                 return {'status': 'success'}
+
+            user = OSFUser.load(auth['id'])
+            if user is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        user = OSFUser.load(auth['id'])
-        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
@@ -670,7 +694,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format) != extension:
+        if format and '.{}'.format(format.lower()) != extension.lower():
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))

@@ -15,6 +15,7 @@ from api.base.serializers import HideIfProviderCommentsPrivate
 from osf.exceptions import InvalidTriggerError
 from osf.models import PreprintService, NodeRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils import permissions
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -116,9 +117,11 @@ class BaseActionSerializer(JSONAPISerializer):
         user = validated_data.pop('user')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+        permissions = validated_data.pop('permissions', '')
+        visible = validated_data.pop('visible', '')
         try:
             if trigger == DefaultTriggers.ACCEPT.value:
-                return target.run_accept(user, comment)
+                return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
             if trigger == DefaultTriggers.REJECT.value:
                 return target.run_reject(user, comment)
             if trigger == DefaultTriggers.EDIT_COMMENT.value:
@@ -154,7 +157,7 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     provider = RelationshipField(
         read_only=True,
-        related_view='preprint_providers:preprint_provider-detail',
+        related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<target.provider._id>'},
         filter_key='target__provider___id',
     )
@@ -187,3 +190,6 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         related_view='requests:node-request-detail',
         related_view_kwargs={'request_id': '<target._id>'},
     )
+
+    permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)

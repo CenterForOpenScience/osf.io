@@ -44,7 +44,7 @@ var mfrId = 0;
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
     linkify: true
-    }).use(require('markdown-it-atrules'), {
+    }).use(require('@centerforopenscience/markdown-it-atrules'), {
         type: 'osf',
         pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{1,})\/\?action=download|(^[a-zA-Z0-9]{1,}$)/,
         format: function(assetID) {

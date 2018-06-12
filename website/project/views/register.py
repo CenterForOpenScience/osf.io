@@ -12,6 +12,7 @@ from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
+from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
 from website.exceptions import NodeStateError
 from website.project.decorators import (
@@ -236,6 +237,8 @@ def get_referent_by_identifier(category, value):
 @must_be_signed
 @must_be_registration
 def registration_callbacks(node, payload, *args, **kwargs):
+    if payload.get('action', None) in DOWNLOAD_ACTIONS:
+        return {'status': 'success'}
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:

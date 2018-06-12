@@ -23,9 +23,11 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -143,6 +145,10 @@ def update_user(auth):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
+            except BlacklistedEmailError:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long=language.BLACKLISTED_EMAIL)
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -171,11 +177,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username,
-                            osf_contact_email=settings.OSF_CONTACT_EMAIL)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -288,14 +298,31 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
+    # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+    if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+        user.reset_old_password_invalid_attempts()
+
+    # There have been more than 3 failed attempts and throttle hasn't expired.
+    if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+        push_status_message(
+            message='Too many failed attempts. Please wait a while before attempting to change your password.',
+            kind='warning',
+            trust=False
+        )
+        return redirect(web_url_for('user_account'))
+
     try:
         user.change_password(old_password, new_password, confirm_password)
+        if user.verification_key_v2:
+            user.verification_key_v2['expires'] = timezone.now()
         user.save()
     except ChangePasswordError as error:
         for m in error.messages:
             push_status_message(m, kind='warning', trust=False)
     else:
         push_status_message('Password updated successfully.', kind='success', trust=False)
+
+    user.save()
 
     return redirect(web_url_for('user_account'))
 
@@ -745,6 +772,7 @@ def request_export(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
@@ -765,6 +793,7 @@ def request_deactivation(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True
