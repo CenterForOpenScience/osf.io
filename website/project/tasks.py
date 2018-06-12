@@ -34,6 +34,9 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
         node.update_search()
         update_node_share(node)
 
+    if node.get_identifier_value('doi'):
+        node.request_identifier_update(category='doi')
+
 def update_node_share(node):
     # Wrapper that ensures share_url and token exist
     if settings.SHARE_URL:
