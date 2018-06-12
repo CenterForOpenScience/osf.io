@@ -140,6 +140,11 @@ class TestNodeList:
         res = app.get('{}?sort=title'.format(url))
         assert res.status_code == 200
 
+    def test_node_list_embed_region(self, app, url, public_project):
+        res = app.get('{}?embed=region'.format(url))
+        assert res.status_code == 200
+        assert res.json['data'][0]['embeds']['region']['data']['id'] == 'us-east-1'
+
 
 @pytest.mark.django_db
 class TestNodeFiltering:
@@ -1234,10 +1239,8 @@ class TestNodeCreate:
             url, private_project, auth=user_one.auth
         )
         assert res.status_code == 201
-        project = AbstractNode.load(res.json['data']['id'])
-
-        node_settings = project.get_addon('osfstorage')
-        assert node_settings.region_id == region.id
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
 
     def test_create_project_with_region_query_param(
             self, app, user_one, region, private_project, url_with_region_query_param):

@@ -491,12 +491,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_region_id(self, obj):
         try:
             # use the annotated value if possible
-            region = obj.region
+            region_id = obj.region
         except AttributeError:
             # use computed property if region annotation does not exist
             # i.e. after creating a node
-            region = obj.osfstorage_region
-        return region._id
+            region_id = obj.osfstorage_region._id
+        return region_id
 
     def create(self, validated_data):
         request = self.context['request']
