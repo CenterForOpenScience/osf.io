@@ -14,7 +14,7 @@ from guardian.shortcuts import assign_perm, get_perms, remove_perm
 from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
 from osf.models import OSFUser
-from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, BaseFileNode
 from osf.models import Preprint
 
 node_preprint_logs = [
@@ -49,6 +49,25 @@ def fetch_preprint_creator(node, preprint):
     if preprint_published_log:
         return OSFUser.objects.get(id=preprint_published_log.user.id)
     return OSFUser.objects.get(id=node.creator.id)
+
+def fetch_preprint_file(node, preprint):
+    root_folder = OsfStorageFolder(name='', target=preprint, is_root=True)
+    root_folder.save()
+    preprint.root_folder = root_folder
+    preprint_file = None
+    if node.preprint_file:
+        try:
+            preprint_file = BaseFileNode.objects.get(id=node.preprint_file.id)
+        except BaseFileNode.DoesNotExist:
+            preprint_file = None
+
+    if preprint_file:
+        preprint_file.target = preprint
+        preprint_file.parent = root_folder
+        preprint.primary_file_id = preprint_file.id
+    else:
+        preprint.primary_file_id = None
+    return preprint_file
 
 def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
@@ -126,8 +145,12 @@ def divorce_preprints_from_nodes(apps, schema_editor):
     tags = []
     files = []
     nodes = []
+    count = Preprint.objects.filter(node__isnull=False).count()
+    print "Count is {}".format(count)
+    i = 1
 
     for preprint in Preprint.objects.filter(node__isnull=False).select_related('node'):
+        i += 1
         node = AbstractNode.objects.get(id=preprint.node.id)
         preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
@@ -148,13 +171,7 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         preprint.date_last_reported = node.date_last_reported
         preprint.reports = node.reports
 
-        root_folder = OsfStorageFolder(name='', target=preprint, is_root=True)
-        root_folder.save()
-        preprint.root_folder = root_folder
-        preprint_file = OsfStorageFile.objects.get(id=node.preprint_file.id)
-        preprint_file.target = preprint
-        preprint.primary_file_id = preprint_file.id
-        preprint_file.parent = root_folder
+        preprint_file = fetch_preprint_file(node, preprint)
 
         deleted_log = node.logs.filter(action='project_deleted').first()
         preprint.deleted = deleted_log.date if deleted_log else None
@@ -196,7 +213,11 @@ def divorce_preprints_from_nodes(apps, schema_editor):
         add_users_to_group(Group.objects.get(name=format_group(preprint, 'read')), read)
 
         preprints.append(preprint)
-        files.append(preprint_file)
+        if preprint_file is not None:
+            files.append(preprint_file)
+
+        if i%100 == 0:
+            print '{}/{}'.format(i, count)
 
     batch_size = 1000
     for batchiter in batch(contributors, batch_size):
