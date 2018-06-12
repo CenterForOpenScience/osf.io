@@ -936,7 +936,7 @@ class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     def get_queryset(self):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        node_relation_subquery = NodeRelation.objects.filter(child=node, is_node_link=True).values_list('parent', flat=True)
+        node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
         return Node.objects.filter(id__in=Subquery(node_relation_subquery), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link)
 
 
@@ -959,7 +959,7 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
     def get_queryset(self):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        node_relation_subquery = NodeRelation.objects.filter(child=node, is_node_link=True).values_list('parent', flat=True)
+        node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
         return Registration.objects.filter(id__in=Subquery(node_relation_subquery), retraction__isnull=True).can_view(user=auth.user, private_link=auth.private_link)
 
 

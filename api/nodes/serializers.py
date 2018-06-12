@@ -25,8 +25,7 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode, PrivateLink,
-                        NodeRelation)
+                        MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -474,10 +473,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return count
 
     def get_linked_by_nodes_count(self, obj):
-        return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
+        return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
 
     def get_linked_by_registrations_count(self, obj):
-        return NodeRelation.objects.filter(child=obj, is_node_link=True, parent__type='osf.registration', parent__retraction__isnull=True).count()
+        return obj._parents.filter(is_node_link=True, parent__type='osf.registration', parent__retraction__isnull=True).count()
 
     def get_forks_count(self, obj):
         return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
