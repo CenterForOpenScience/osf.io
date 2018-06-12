@@ -685,7 +685,7 @@ class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         }
 
 
-class MockConnection():
+class MockConnection(object):
 
     def get_dataverses(self):
 
