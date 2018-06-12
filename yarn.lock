@@ -6,6 +6,10 @@
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.0.0.tgz#0d9ffad911347e711e788d2217abf24d31294432"
 
+"@centerforopenscience/markdown-it-atrules@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-atrules/-/markdown-it-atrules-0.1.0.tgz#73c6c9a3a818330201c3c15cd3a5796d3619ca9b"
+
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
@@ -2889,10 +2893,6 @@ macaddress@^0.2.8:
 markdown-it-ins-del@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/markdown-it-ins-del/-/markdown-it-ins-del-0.1.1.tgz#8b421d8e788ee84a1d572eb3fcc0028ce431c9ea"
-
-"markdown-it-atrules@git://github.com/johnetordoff/markdown-it-atrules.git#develop":
-  version "0.0.1"
-  resolved "git://github.com/johnetordoff/markdown-it-atrules.git#develop"
 
 markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
