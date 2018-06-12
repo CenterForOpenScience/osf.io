@@ -2,11 +2,6 @@
 
 class AbstractIdentifierClient(object):
 
-    def build_metadata(self, object):
-        """ Build the metadata object used to register the object
-        with the specified client"""
-        raise NotImplementedError()
-
     def build_doi(self, object):
         """Method this client uses to build a DOI
         """

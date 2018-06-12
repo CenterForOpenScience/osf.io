@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
 from framework.auth.views import mails
-from framework import sentry
 from osf.models import PreprintService
 from website import settings
 
@@ -54,23 +53,15 @@ class ParseCrossRefConfirmation(APIView):
                         legacy_doi.remove()
 
         if dois_processed != record_count or status != 'completed':
-            if record_count > 1:
-                # For batch errors, log a message to sentry with the original crossref email content
-                sentry.log_message(
-                    message='There was an error processing a batch update of DOIs from Crossref',
-                    extra_data={
-                        'original_xml': request.POST['body-plain']
-                    }
-                )
-            else:
-                preprint = PreprintService.load(crossref_email_content.find('batch_id').text)
-                mails.send_mail(
-                    to_addr=settings.OSF_SUPPORT_EMAIL,
-                    mail=mails.CROSSREF_ERROR,
-                    preprint=preprint,
-                    doi=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id),
-                    email_content=request.POST['body-plain'],
-                )
-                logger.error('Error submitting metdata for preprint {} with CrossRef, email sent to help desk'.format(preprint._id))
+            first_guid = crossref_email_content.find('batch_id').text.split(',')[0]
+            preprint = PreprintService.load(first_guid)
+            mails.send_mail(
+                to_addr=settings.OSF_SUPPORT_EMAIL,
+                mail=mails.CROSSREF_ERROR,
+                preprint=preprint,
+                doi=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id),
+                email_content=request.POST['body-plain'],
+            )
+            logger.error('Error submitting metadata for preprint {} with CrossRef, email sent to help desk'.format(preprint._id))
 
         return HttpResponse('Mail received', status=200)

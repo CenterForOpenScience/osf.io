@@ -32,7 +32,10 @@ def register_existing_preprints_with_crossref(dry=True):
     legacy_doi identifier as deleted.
     """
     paginator = Paginator(
-        PreprintService.objects.filter(identifiers__category='legacy_doi', identifiers__deleted__isnull=True).order_by('pk'),
+        PreprintService.objects.filter(
+            identifiers__category='legacy_doi',
+            identifiers__deleted__isnull=True
+        ).select_related('provider').order_by('pk'),
         PAGE_SIZE
     )
     client = CrossRefClient(base_url=settings.CROSSREF_URL)
@@ -80,8 +83,7 @@ def register_existing_preprints_with_crossref(dry=True):
 
     conversion_filename = 'legacy_to_crossref_preprint_dois.csv'
     if dry:
-        with open(conversion_filename, 'w') as f:
-            f.write(conversion_output.getvalue())
+        print(conversion_output.getvalue())
     else:
         # Create gzip files for the conversion CSV, send an email with that as an attachment
         conversion_gzip = io.BytesIO()
@@ -117,7 +119,7 @@ def register_existing_preprints_with_crossref(dry=True):
                 message='This CSV contains the DOIs that appear to have NONE in the DOI value, and should be investigated further.',
                 attachment_name=error_filename,
                 attachment_content=error_gzip.getvalue(),
-                csv_type='DOIs that may have errored and have not ben converted',
+                csv_type='DOIs that may have errored and have not been converted',
                 celery=False  # for the non-JSON-serializable attachment
             )
 

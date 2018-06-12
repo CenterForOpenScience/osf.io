@@ -36,7 +36,7 @@ class CrossRefClient(AbstractIdentifierClient):
     def build_metadata(self, preprint, status='public', **kwargs):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
-        :param preprint -- the preprint, or list of preprints to build metadata for
+        :param preprint: the preprint, or list of preprints to build metadata for
         """
         is_batch = False
         if isinstance(preprint, list):
@@ -50,12 +50,13 @@ class CrossRefClient(AbstractIdentifierClient):
             'xsi': XSI},
         )
 
-        timestamp = str(int(time.time()))
-        batch_id = timestamp if is_batch else preprint._id
+        # batch_id is used to get the guid of preprints for error messages down the line
+        # but there is a size limit -- for bulk requests, include only the first 5 guids
+        batch_id = ','.join([prep._id for prep in preprints[:5]])
 
         head = element.head(
             element.doi_batch_id(batch_id),
-            element.timestamp(timestamp),
+            element.timestamp(str(int(time.time()))),
             element.depositor(
                 element.depositor_name(CROSSREF_DEPOSITOR_NAME),
                 element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)

@@ -20,7 +20,7 @@ class RequestComesFromMailgun(permissions.BasePermission):
             raise exceptions.MethodNotAllowed(method=request.method)
         data = request.data
         if not data:
-            raise exceptions.ParseError('Correct headers not returned with request')
+            raise exceptions.ParseError('Request body is empty')
         signature = hmac.new(
             key=settings.MAILGUN_API_KEY,
             msg='{}{}'.format(

@@ -424,5 +424,5 @@ CROSSREF_ERROR = Mail(
 
 CROSSREF_CSV = Mail(
     'crossref_csv',
-    subject='Here is a CSV of DOIs related to crossref: ${csv_type}'
+    subject='[auto] Here is a CSV of DOIs related to crossref: ${csv_type}'
 )

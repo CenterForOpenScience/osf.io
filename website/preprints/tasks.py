@@ -172,10 +172,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     return [node.serialize() for node in visited]
 
 
-@celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint_id):
-    PreprintService = apps.get_model('osf.PreprintService')
-    preprint = PreprintService.load(preprint_id)
+def get_and_set_preprint_identifiers(preprint):
     identifiers = request_identifiers(preprint)
     if identifiers is None:
         return
