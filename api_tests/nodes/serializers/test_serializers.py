@@ -56,8 +56,7 @@ class TestNodeSerializer:
         assert 'parent' in relationships
         assert 'affiliated_institutions' in relationships
         assert 'registrations' in relationships
-        # Not a fork, so forked_from is removed entirely
-        assert 'forked_from' not in relationships
+        assert relationships['forked_from']['data'] is None
         parent_link = relationships['parent']['links']['related']['href']
         assert urlparse(
             parent_link).path == '/{}nodes/{}/'.format(API_BASE, parent._id)
@@ -118,9 +117,18 @@ class TestNodeRegistrationSerializer:
 
         # Relationships
         relationships = data['relationships']
+
+        # Null relationships
+        assert relationships['forked_from']['data'] is None
+        assert relationships['parent']['data'] is None
+        assert relationships['license']['data'] is None
+        assert relationships['template_node']['data'] is None
+
+        # Relationships with data
         relationship_urls = {
-            k: v['links']['related']['href'] for k,
-            v in relationships.items()}
+            k: v['links']['related']['href'] for k, v
+            in relationships.items() if v != {'data': None}}
+
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(
