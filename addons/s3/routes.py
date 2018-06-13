@@ -81,7 +81,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/s3/hostname/',
             ],
             'post',
-            views.put_hostname,
+            views.put_host,
             json_renderer
         ),
     ],

@@ -61,17 +61,28 @@ def s3_folder_list(node_addon, **kwargs):
 def s3_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     try:
+        host = request.json['host']
+        port = int(request.json['port'])
+        encrypted = request.json['encrypted']
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not (access_key and secret_key):
+    if not (access_key and secret_key and host and port):
         return {
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
 
-    user_info = utils.get_user_info(access_key, secret_key)
+    user_info = utils.get_user_info(
+        host,
+        port,
+        access_key,
+        secret_key,
+        encrypted
+    )
+    import pdb
+    pdb.set_trace()
     if not user_info:
         return {
             'message': ('Unable to access account.\n'
@@ -79,7 +90,13 @@ def s3_add_user_account(auth, **kwargs):
                 'and that they have permission to list buckets.')
         }, httplib.BAD_REQUEST
 
-    if not utils.can_list(access_key, secret_key):
+    if not utils.can_list(
+        host,
+        port,
+        access_key,
+        secret_key,
+        encrypted
+    ):
         return {
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
@@ -90,22 +107,39 @@ def s3_add_user_account(auth, **kwargs):
         account = ExternalAccount(
             provider=SHORT_NAME,
             provider_name=FULL_NAME,
+            host=host,
+            port=port,
+            encrypted=encrypted,
             oauth_key=access_key,
             oauth_secret=secret_key,
             provider_id=user_info.id,
             display_name=user_info.display_name,
         )
         account.save()
-    except ValidationError:
+    except ValidationError as err:
+        import pdb
+        pdb.set_trace()
         # ... or get the old one
         account = ExternalAccount.objects.get(
             provider=SHORT_NAME,
-            provider_id=user_info.id
+            provider_id=user_info.id,
+            host=host,
+            port=port
         )
-        if account.oauth_key != access_key or account.oauth_secret != secret_key:
+        if (
+            account.oauth_key != access_key or
+            account.oauth_secret != secret_key or
+            account.host != host or
+            account.port != port or
+            account.encrypted != encrypted
+        ):
             account.oauth_key = access_key
             account.oauth_secret = secret_key
+            account.host = host
+            account.port = port
+            account.encrypted = encrypted
             account.save()
+
     assert account is not None
 
     if not auth.user.external_accounts.filter(id=account.id).exists():
@@ -121,17 +155,17 @@ def s3_add_user_account(auth, **kwargs):
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_addon('s3', 'node')
 @must_have_permission('write')
-def put_hostname(auth, node_addon, **kwargs):
+def put_host(auth, node_addon, **kwargs):
 
-    hostname = request.json.get('hostname', False)
+    host = request.json.get('host', False)
 
-    if not hostname:
+    if not host:
         return {
-            'message': 'No hostname was provided',
-            'title': 'Invalid hostname',
+            'message': 'No host was provided',
+            'title': 'Invalid host',
         }, httplib.BAD_REQUEST
 
-    node_addon.hostname = hostname
+    node_addon.host = host
     node_addon.save()
 
     return {}

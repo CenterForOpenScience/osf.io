@@ -15,7 +15,7 @@ class S3Serializer(StorageAddonSerializer):
         result = {
             'accounts': node.api_url_for('s3_account_list'),
             'createBucket': node.api_url_for('create_bucket'),
-            'putHostname': node.api_url_for('put_hostname'),
+            'putHost': node.api_url_for('put_host'),
             'importAuth': node.api_url_for('s3_import_auth'),
             'create': node.api_url_for('s3_add_user_account'),
             'deauthorize': node.api_url_for('s3_deauthorize_node'),
@@ -42,7 +42,7 @@ class S3Serializer(StorageAddonSerializer):
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-            'providerHostname': node_settings.hostname
+            'providerHost': node_settings.host
         }
 
         if node_settings.has_auth:
@@ -68,6 +68,12 @@ class S3Serializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client=None):
         if user_settings:
             for account in user_settings.external_accounts.all():
-                if utils.can_list(account.oauth_key, account.oauth_secret):
+                if utils.can_list(
+                    account.host,
+                    account.port,
+                    account.oauth_key,
+                    account.oauth_secret,
+                    account.encrypted
+                ):
                     return True
         return False

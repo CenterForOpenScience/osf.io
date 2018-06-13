@@ -45,7 +45,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
-    hostname = models.TextField(blank=True, null=True)
+    host = models.TextField(blank=True, null=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
@@ -57,7 +57,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
-        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+        if not bucket_exists(
+            self.external_account.host,
+            self.external_account.port,
+            self.external_account.oauth_key,
+            self.external_account.oauth_secret,
+            self.external_account.encrypted,
+            folder_id
+        ):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
@@ -65,8 +72,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.folder_id = str(folder_id)
 
         bucket_location = get_bucket_location_or_error(
+            self.external_account.host,
+            self.external_account.port,
             self.external_account.oauth_key,
             self.external_account.oauth_secret,
+            self.external_account.encrypted,
             folder_id
         )
         try:
@@ -133,7 +143,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {
             'access_key': self.external_account.oauth_key,
             'secret_key': self.external_account.oauth_secret,
-            'hostname': self.hostname
+            'host': self.external_account.host,
+            'port': self.external_account.port,
+            'encrypted': self.external_account.encrypted
         }
 
     def serialize_waterbutler_settings(self):
@@ -142,7 +154,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {
             'bucket': self.folder_id,
             'encrypt_uploads': self.encrypt_uploads,
-            'hostname': self.hostname
         }
 
     def create_waterbutler_log(self, auth, action, metadata):

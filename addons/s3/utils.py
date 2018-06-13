@@ -10,15 +10,34 @@ from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.s3.settings import BUCKET_LOCATIONS
 
 
-def connect_s3(access_key=None, secret_key=None, node_settings=None):
+def connect_s3(
+    host=None,
+    port=None,
+    access_key=None,
+    secret_key=None,
+    encrypted=None,
+    node_settings=None
+):
     """Helper to build an S3Connection object
     Can be used to change settings on all S3Connections
     See: CallingFormat
     """
     if node_settings is not None:
         if node_settings.external_account is not None:
-            access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
+            host = node_settings.external_account.host
+            port = node_settings.external_account.port
+            access_key = node_settings.external_account.oauth_key
+            secret_key = node_settings.external_account.oauth_secret
+            encrypted = node_settings.external_account.encrypted
+
+    connection = S3Connection(
+        access_key,
+        secret_key,
+        is_secure=encrypted,
+        port=port,
+        calling_format=OrdinaryCallingFormat(),
+        host=host
+    )
     return connection
 
 
@@ -50,18 +69,30 @@ def validate_bucket_name(name):
     )
 
 
-def create_bucket(node_settings, bucket_name, location=''):
-    return connect_s3(node_settings=node_settings).create_bucket(bucket_name, location=location)
+def create_bucket(
+    node_settings,
+    bucket_name,
+    location=''
+):
+    return connect_s3(
+        node_settings=node_settings
+    ).create_bucket(bucket_name, location=location)
 
 
-def bucket_exists(access_key, secret_key, bucket_name):
+def bucket_exists(host, port, access_key, secret_key, encrypted, bucket_name):
     """Tests for the existance of a bucket and if the user
     can access it with the given keys
     """
     if not bucket_name:
         return False
 
-    connection = connect_s3(access_key, secret_key)
+    connection = connect_s3(
+        host,
+        port,
+        access_key,
+        secret_key,
+        encrypted
+    )
 
     if bucket_name != bucket_name.lower():
         # Must use ordinary calling format for mIxEdCaSe bucket names
@@ -70,45 +101,83 @@ def bucket_exists(access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        connect_s3(access_key, secret_key).head_bucket(bucket_name)
+        connect_s3(
+            host,
+            port,
+            access_key,
+            secret_key,
+            encrypted
+        ).head_bucket(bucket_name)
     except exception.S3ResponseError as e:
-        if e.status not in (301, 302):
+        if e.status not in {301, 302}:
             return False
     return True
 
 
-def can_list(access_key, secret_key):
+def can_list(host, port, access_key, secret_key, encrypted):
     """Return whether or not a user can list
     all buckets accessable by this keys
     """
     # Bail out early as boto does not handle getting
     # Called with (None, None)
-    if not (access_key and secret_key):
+    if not (host and port and access_key and secret_key):
         return False
 
     try:
-        connect_s3(access_key, secret_key).get_all_buckets()
+        connect_s3(
+            host,
+            port,
+            access_key,
+            secret_key,
+            encrypted
+        ).get_all_buckets()
     except exception.S3ResponseError:
         return False
     return True
 
-def get_user_info(access_key, secret_key):
+def get_user_info(
+    host,
+    port,
+    access_key,
+    secret_key,
+    encrypted
+):
     """Returns an S3 User with .display_name and .id, or None
     """
-    if not (access_key and secret_key):
+    if not (host and port and access_key and secret_key):
         return None
 
     try:
-        return connect_s3(access_key, secret_key).get_all_buckets().owner
+        return connect_s3(
+            host,
+            port,
+            access_key,
+            secret_key,
+            encrypted
+        ).get_all_buckets().owner
+        
     except exception.S3ResponseError:
         return None
     return None
 
-def get_bucket_location_or_error(access_key, secret_key, bucket_name):
+def get_bucket_location_or_error(
+    host,
+    port,
+    access_key,
+    secret_key,
+    encrypted,
+    bucket_name
+):
     """Returns the location of a bucket or raises AddonError
     """
     try:
-        connection = connect_s3(access_key, secret_key)
+        connection = connect_s3(
+            host,
+            port,
+            access_key,
+            secret_key,
+            encrypted
+        )
     except:
         raise InvalidAuthError()
 
@@ -119,6 +188,12 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connect_s3(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
+        return connect_s3(
+            host,
+            port,
+            access_key,
+            secret_key,
+            encrypted
+        ).get_bucket(bucket_name, validate=False).get_location()
     except exception.S3ResponseError:
         raise InvalidFolderError()

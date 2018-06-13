@@ -22,7 +22,8 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
-        self.providerHostname = ko.observable('');
+        self.host = ko.observable('');
+        self.port = ko.observable('');
 
         // Treebeard config
         self.treebeardOptions = $.extend(
@@ -55,7 +56,7 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         var self = this;
         var ret = $.Deferred();
         var applySettings = function(settings){
-            self.providerHostname(settings.providerHostname)
+            self.host(settings.host)
             self.ownerName(settings.ownerName);
             self.nodeHasAuth(settings.nodeHasAuth);
             self.userIsOwner(settings.userIsOwner);
@@ -168,11 +169,11 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.accessKey(null);
     },
 
-    putHostname: function(self, providerHostname) {
+    putHost: function(self, host) {
         return $osf.postJSON(
-            self.urls().putHostname,
+            self.urls().putHost,
             {
-                hostname: self.providerHostname()
+                host: self.host()
             }
         ).done(function() {
             self.changeMessage('THA HOSTNAME BIN UPDATED');
@@ -346,8 +347,8 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                             errorMessage[0].classList.add('text-danger');
                             return false;
                         } else {
-                            self.providerHostname(providerHostname);
-                            self.putHostname(self);
+                            self.host(providerHostname);
+                            self.putHost(self);
                         }
                     }
                 }

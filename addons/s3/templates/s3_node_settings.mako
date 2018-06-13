@@ -43,8 +43,8 @@
             <div class="col-md-12">
                 <p class="break-word">
                     <strong>Current Host:</strong>
-                    <span data-bind="if: providerHostname">
-                        <a data-bind="attr: {href: providerHostname}, text: providerHostname">s3.amazonaws.com</a>
+                    <span data-bind="if: host">
+                        <a data-bind="attr: {href: host}, text: host">s3.amazonaws.com</a>
                     </span>
                     <br>
                     <strong>Current Bucket:</strong>
