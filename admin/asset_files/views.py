@@ -10,7 +10,7 @@ from osf.models.storage import ProviderAssetFile
 
 class ProviderAssetFileList(PermissionRequiredMixin, ListView):
     paginate_by = 25
-    template_name = 'asset_files/list.html'
+    template_name = 'osf/providerassetfile_list.html'
     ordering = 'name'
     permission_required = 'osf.view_asset_files'
     raise_exception = True
@@ -48,7 +48,7 @@ class AssetFileMixin(object):
 
 class ProviderAssetFileDisplay(AssetFileMixin, PermissionRequiredMixin, DetailView):
     permission_required = 'osf.view_asset_files'
-    template_name = 'asset_files/detail.html'
+    template_name = 'osf/providerassetfile_form.html'
     form_class = ProviderAssetFileForm
     raise_exception = True
     model = ProviderAssetFile
@@ -72,7 +72,7 @@ class ProviderAssetFileChangeForm(AssetFileMixin, PermissionRequiredMixin, Updat
 class ProviderAssetFileDelete(AssetFileMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_asset_files'
     raise_exception = True
-    template_name = 'asset_files/confirm_delete.html'
+    template_name = 'osf/providerassetfile_confirm_delete.html'
     success_url = reverse_lazy('asset_files:list')
 
 
@@ -92,7 +92,7 @@ class ProviderAssetFileDetail(PermissionRequiredMixin, View):
 class ProviderAssetFileCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_asset_files'
     raise_exception = True
-    template_name = 'asset_files/create.html'
+    template_name = 'osf/providerassetfile_create.html'
     success_url = reverse_lazy('asset_files:list')
     model = ProviderAssetFile
     form_class = ProviderAssetFileForm
