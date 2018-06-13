@@ -13,7 +13,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
-from osf.models import OSFUser, QuickFilesNode
+from osf.models import OSFUser, QuickFilesNode, Registration, PreprintService
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -72,17 +72,20 @@ class UserSerializer(JSONAPISerializer):
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'projects_in_common': 'get_projects_in_common'},
+        related_meta={'projects_in_common': 'get_projects_in_common',
+                      'count': 'get_node_count'}
     ))
 
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_quickfiles_count'}
     ))
 
     registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_registration_count'}
     ))
 
     institutions = HideIfDisabled(RelationshipField(
@@ -90,11 +93,13 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_institutions_count'}
     ))
 
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_preprint_count'}
     ))
 
     class Meta:
@@ -116,6 +121,21 @@ class UserSerializer(JSONAPISerializer):
             'user_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
+
+    def get_node_count(self, obj):
+        return obj.nodes.count()
+
+    def get_quickfiles_count(self, obj):
+        return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
+
+    def get_registration_count(self, obj):
+        return Registration.objects.filter(contributor__user__id=obj.id).count()
+
+    def get_preprint_count(self, obj):
+        return PreprintService.objects.filter(node___contributors__guids___id=obj._id).count()
+
+    def get_institutions_count(self, obj):
+        return obj.affiliated_institutions.all().count()
 
     def get_can_view_reviews(self, obj):
         group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
