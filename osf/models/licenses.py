@@ -76,6 +76,10 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     def license_id(self):
         return self.node_license.license_id if self.node_license else None
 
+    @property
+    def url(self):
+        return self.node_license.url if self.node_license else None
+
     def to_json(self):
         return serialize_node_license_record(self)
 
