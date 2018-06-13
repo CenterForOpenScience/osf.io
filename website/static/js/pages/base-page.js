@@ -218,7 +218,7 @@ $(function() {
     var alertsSelector = '.dismissible-alerts';
     if ($(alertsSelector).length > 0 && window.contextVars.currentUser) {
         for (var i = 0; i < $(alertsSelector).length; i++) {
-            var selectorId = '#' + $(alertsSelector)[i]['id'];
+            var selectorId = '#' + $(alertsSelector)[i].id;
             new AlertManager(selectorId);
         }
     }
