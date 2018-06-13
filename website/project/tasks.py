@@ -34,7 +34,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
         node.update_search()
         update_node_share(node)
 
-    if node.get_identifier_value('doi'):
+    if node.get_identifier_value('doi') and bool(node.IDENTIFIER_UPDATE_FIELDS.intersection(saved_fields)):
         node.request_identifier_update(category='doi')
 
 def update_node_share(node):
