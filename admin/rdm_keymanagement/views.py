@@ -2,25 +2,24 @@
 
 from __future__ import unicode_literals
 
-import json
+#import json
 
-from django.core import serializers
+#from django.core import serializers
 from django.shortcuts import redirect
-from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponse, JsonResponse
-from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
+#from django.forms.models import model_to_dict
+#from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse
+from django.views.generic import ListView, View
+#from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from django.contrib.auth.mixins import UserPassesTestMixin
 
-from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 
 from admin.base import settings
-from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm
-from osf.models import Institution, Node, OSFUser
+#from admin.base.forms import ImportFileForm
+#from admin.institutions.forms import InstitutionForm
+from osf.models import Institution, OSFUser
 from osf.models import RdmUserKey
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 
@@ -85,7 +84,7 @@ class RemoveUserKeyList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
         inst = self.kwargs['institution_id']
         query = OSFUser.objects.filter(affiliated_institutions=inst,
-                                       is_active=False,date_disabled__isnull=False)
+                                       is_active=False, date_disabled__isnull=False)
         remove_key_users = []
         for user in query:
             if RdmUserKey.objects.filter(guid=user.id, delete_flag=0).exists():
@@ -120,4 +119,3 @@ class RemoveUserKey(RdmPermissionMixin, UserPassesTestMixin, View):
             update_data.save()
 
         return HttpResponse('')
-

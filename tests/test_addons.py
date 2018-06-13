@@ -190,6 +190,51 @@ class TestAddonLogs(OsfTestCase):
         }
 
     @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_add_log_timestamptoken(self, mock_perform):
+        from osf.models import RdmFileTimestamptokenVerifyResult
+        from api_tests.utils import create_test_file
+        from website.views import userkey_generation
+        result_list1_count = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id).count()
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        userkey_generation(self.user._id)
+        file_node = create_test_file(node=self.node, user=self.user, filename=path)
+        file_node._path = '/' + path
+        file_node.save()
+        metadata = {
+            'path': path,
+            'provider': 'osfstorage',
+            'name': path,
+            'materialized': '/' + path,
+            'extra': {
+                'version': 1
+            }
+        }
+        payload = self.build_payload(metadata=metadata)
+        nlogs = self.node.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+
+        result_list2 = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
+        assert_equal(result_list1_count + 1, result_list2.count())
+        assert_true(mock_perform.called, 'perform not called')
+
+        ## tearDown
+        import os
+        from api.base import settings as api_settings
+        from osf.models import RdmUserKey
+        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PRIVATE_KEY_VALUE)
+        pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
+        os.remove(pvt_key_path)
+        rdmuserkey_pvt_key.delete()
+
+        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PUBLIC_KEY_VALUE)
+        pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
+        os.remove(pub_key_path)
+        rdmuserkey_pub_key.delete()
+
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
     def test_add_log(self, mock_perform):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')

@@ -7,7 +7,7 @@ def update_user_token(**kwargs):
     uid = kwargs.get('uid')
     token = kwargs.get('token')
     success = "False"
-    if Guid.objects.filter(_id=uid).exists() and token != None:
+    if Guid.objects.filter(_id=uid).exists() and token is not None:
         obj = Guid.objects.get(_id=uid)
         user_id = getattr(obj, "object_id")
         if RdmFcmDevice.objects.filter(device_token=token).exists():
@@ -19,4 +19,3 @@ def update_user_token(**kwargs):
     return {
         'success': success,
     }
-

@@ -16,7 +16,7 @@ def user_addons(auth):
     addon_settings = addon_utils.get_addons_by_config_type('accounts', user)
     # RDM
     rdm_addons_utils.update_with_rdm_addon_settings(addon_settings, user)
-    
+
     ret = {}
     for addon in addon_settings:
         ret[addon['addon_short_name']] = {
@@ -32,7 +32,7 @@ def user_addons(auth):
 @must_be_logged_in
 def import_admin_account(auth, addon_name=None):
     user = auth.user
-    
+
     institution_id = rdm_utils.get_institution_id(user)
     rdm_addon_option = rdm_addons_utils.get_rdm_addon_option(institution_id, addon_name)
 

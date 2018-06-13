@@ -2,31 +2,31 @@
 
 import uuid
 from collections import defaultdict
-from urlparse import parse_qsl
-import requests
-from requests.compat import urlparse, urlunparse, urlencode, urljoin
+#from urlparse import parse_qsl
+#import requests
+from requests.compat import urljoin
 from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.core.urlresolvers import reverse
+#from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
-from django.http import HttpResponse, Http404, HttpResponseForbidden
-from django.http.response import JsonResponse
+from django.http import HttpResponse
+#from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 import flask
 from werkzeug.datastructures import ImmutableMultiDict
 
 import osf
 import addons
-from osf.models import RdmAddonOption, ExternalAccount
+#from osf.models import RdmAddonOption, ExternalAccount
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_addons.api_v1.views import disconnect
 from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
-from admin.base import settings as admin_settings
-from . import CALLBACK_SECRET_TOKEN
+#from admin.base import settings as admin_settings
+#from . import CALLBACK_SECRET_TOKEN
 
 class RdmAddonRequestContextMixin(object):
     app = flask.Flask(__name__)
@@ -62,7 +62,7 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
-        
+
         # Session
         if not request.session.session_key:
             request.session.create()
@@ -157,4 +157,3 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
         user = self.request.user
         return disconnect(external_account_id, institution_id, user)
-
