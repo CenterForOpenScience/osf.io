@@ -4,10 +4,10 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
-import inspect
+#import inspect
 
 #from . import defaults
-import os
+#import os
 
 # openssl cmd const
 OPENSSL_MAIN_CMD = 'openssl'

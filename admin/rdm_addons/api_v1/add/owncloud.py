@@ -7,12 +7,12 @@ from furl import furl
 import requests
 from django.core.exceptions import ValidationError
 
-from osf.models import RdmAddonOption, ExternalAccount
+from osf.models import ExternalAccount
 from admin.rdm_addons.utils import get_rdm_addon_option
 
 import owncloud
 from addons.owncloud.models import OwnCloudProvider
-from addons.owncloud.serializer import OwnCloudSerializer
+#from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud import settings
 
 

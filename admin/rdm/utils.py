@@ -6,7 +6,7 @@
 MAGIC_INSTITUTION_ID = 0
 
 class RdmPermissionMixin(object):
-    
+
     @property
     def is_authenticated(self):
         """ログインしているかどうかを判定する。"""
@@ -22,7 +22,7 @@ class RdmPermissionMixin(object):
         if user.is_superuser:
             return True
         return False
-    
+
     @property
     def is_admin(self):
         """機関管理者かどうか判定する。"""
@@ -64,7 +64,8 @@ def get_institution_id(user):
 def get_dummy_institution():
     """ユーザがInstitutionに所属していない場合のために、
     ダミーのInstitutionモデルのオブジェクトを取得するする。"""
-    class DummyInstitution(object): pass
+    class DummyInstitution(object):
+        pass
     dummy_institution = DummyInstitution()
     dummy_institution.id = MAGIC_INSTITUTION_ID
     dummy_institution.name = ''

@@ -41,7 +41,7 @@ class SendForm(forms.ModelForm):
 
     class Meta:
         model = RdmAnnouncement
-        exclude = ['user','date_sent','is_success']
+        exclude = ['user', 'date_sent', 'is_success']
 
 class SettingsForm(forms.ModelForm):
 

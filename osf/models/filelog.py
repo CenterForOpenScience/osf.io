@@ -36,8 +36,8 @@ class FileLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
 
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED,
-               FILE_MOVED, FILE_COPIED,FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED,
-                FILE_RESTORED,PREPRINT_FILE_UPDATED,] + list(sum([
+               FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED,
+                FILE_RESTORED, PREPRINT_FILE_UPDATED, ] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
@@ -55,5 +55,3 @@ class FileLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-date']
         get_latest_by = 'date'
-
-

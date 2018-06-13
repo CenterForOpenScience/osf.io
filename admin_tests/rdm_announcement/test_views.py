@@ -6,10 +6,10 @@ from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory
 
 
-from admin.rdm_announcement.forms import PreviewForm, SendForm, SettingsForm
-from osf.models.rdm_announcement import RdmAnnouncementOption,RdmFcmDevice
+from admin.rdm_announcement.forms import PreviewForm, SettingsForm
+from osf.models.rdm_announcement import RdmAnnouncementOption
 from admin.rdm_announcement import views
-from admin_tests.utilities import setup_form_view, setup_user_view
+from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_announcement.test_forms import data
 
 option_data = dict(
@@ -52,14 +52,6 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
-
-    def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
-        self.request.user.is_active = True
-        self.request.user.is_registered = True
-        self.request.user.is_superuser = False
-        self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
 
     def test_non_admin_login(self):
         """統合管理者でも機関管理者でもないユーザのログインテスト"""
@@ -125,7 +117,7 @@ class TestIndexView(AdminTestCase):
         test_option = RdmAnnouncementOption.objects.create(**mod_data)
         test_option.save()
         mod_data2 = dict(data)
-        mod_data2.update({'announcement_type':'SNS (Twitter)'})
+        mod_data2.update({'announcement_type': 'SNS (Twitter)'})
         self.form = PreviewForm(mod_data2)
         ret = self.view.option_check(mod_data2)
         nt.assert_is_instance(test_option, RdmAnnouncementOption)
@@ -138,7 +130,7 @@ class TestIndexView(AdminTestCase):
         test_option = RdmAnnouncementOption.objects.create(**mod_data)
         test_option.save()
         mod_data2 = dict(data)
-        mod_data2.update({'announcement_type':'SNS (Facebook)'})
+        mod_data2.update({'announcement_type': 'SNS (Facebook)'})
         self.form = PreviewForm(mod_data2)
         ret = self.view.option_check(mod_data2)
         nt.assert_is_instance(test_option, RdmAnnouncementOption)
@@ -172,14 +164,6 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
-
-    def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
-        self.request.user.is_active = True
-        self.request.user.is_registered = True
-        self.request.user.is_superuser = False
-        self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
 
     def test_non_admin_login(self):
         """統合管理者でも機関管理者でもないユーザのログインテスト"""
@@ -320,14 +304,6 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
-    def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
-        self.request.user.is_active = True
-        self.request.user.is_registered = True
-        self.request.user.is_superuser = False
-        self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
-
     def test_non_active_user_login(self):
         """有効ではないユーザのログインテスト"""
         self.request.user.is_active = False
@@ -370,14 +346,6 @@ class TestSendView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
-
-    def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
-        self.request.user.is_active = True
-        self.request.user.is_registered = True
-        self.request.user.is_superuser = False
-        self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
 
     def test_non_admin_login(self):
         """統合管理者でも機関管理者でもないユーザのログインテスト"""

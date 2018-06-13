@@ -2,7 +2,7 @@
 # rdminfo logger
 import json
 import logging
-import sys
+#import sys
 
 class RdmLogger(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -20,14 +20,12 @@ class RdmLoggerFormatter:
         print formatter
         self.formatter = formatter or logging.Formatter(logging.BASIC_FORMAT)
 
-
     def format(self, record):
         if not getattr(record, "structual", False):
             return self.formatter.format(record)
         d = {"msg": record.msg, "level": record.levelname}
         d.update(record.kwargs)
         return json.dumps(d)
-
 
 
 def get_rdmlogger(name):
@@ -53,6 +51,3 @@ sh.setLevel(logging.INFO)
 sh.setFormatter(formatter)
 
 rdmlog.addHandler(sh)
-
-
-

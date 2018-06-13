@@ -14,4 +14,3 @@ class RdmTimestampGrantPattern(BaseModel):
 
     class Meta:
         unique_together = (('institution', 'node_guid'))
-

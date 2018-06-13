@@ -3,7 +3,7 @@
 from factory import SubFactory
 from factory.django import DjangoModelFactory
 from osf import models
-from osf_tests.factories import InstitutionFactory, UserFactory, ProjectFactory
+from osf_tests.factories import ProjectFactory
 import datetime
 
 class RdmStatisticsFactory(DjangoModelFactory):
@@ -17,5 +17,3 @@ class RdmStatisticsFactory(DjangoModelFactory):
     date_acquired = datetime.date.today() - datetime.timedelta(days=(1))
     project = SubFactory(ProjectFactory)
     storage_account_id = 'factory'
-
-

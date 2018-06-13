@@ -22,4 +22,3 @@ class RdmAddonNoInstitutionOption(BaseModel):
     is_allowed = models.BooleanField(default=True)
 
     external_accounts = models.ManyToManyField(ExternalAccount, blank=True)
-

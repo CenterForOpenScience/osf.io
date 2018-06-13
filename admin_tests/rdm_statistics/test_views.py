@@ -2,24 +2,23 @@
 
 from nose import tools as nt
 from django.test import RequestFactory
-from django.contrib.auth.models import Permission
-from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, Http404
+#from django.contrib.auth.models import Permission
+#from django.core.exceptions import PermissionDenied
+#from django.http import HttpResponse, Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
 )
-from admin_tests.utilities import setup_form_view, setup_user_view
+from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_statistics import factories as rdm_statistics_factories
 
-from osf.models.rdm_statistics import RdmStatistics
-from osf.models.user import OSFUser, Institution
+#from osf.models.rdm_statistics import RdmStatistics
+from osf.models.user import Institution
 
 from admin.rdm_statistics import views
-from admin.rdm.utils import MAGIC_INSTITUTION_ID
-
+#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 
 class TestInstitutionListViewStat(AdminTestCase):
@@ -335,7 +334,6 @@ class TestSendView(AdminTestCase):
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
 
-        
 
 class TestCreateCSV(AdminTestCase):
     """test ImageView"""
@@ -346,7 +344,7 @@ class TestCreateCSV(AdminTestCase):
         self.institution1 = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution1)
         self.kwargs = {'institution_id': self.institution1.id}
-        self.rdm_statistics = rdm_statistics_factories.RdmStatisticsFactory.create(institution=self.institution1, provider='s3',owaner=self.user)
+        self.rdm_statistics = rdm_statistics_factories.RdmStatisticsFactory.create(institution=self.institution1, provider='s3', owaner=self.user)
         self.rdm_statistics.save()
 
     def tearDown(self):

@@ -6,6 +6,12 @@
     >>> settings.ADMIN_BASE
     'admin/'
 """
+import os
+from urlparse import urlparse
+from website import settings as osf_settings
+from django.contrib import messages
+from api.base.settings import *  # noqa
+
 import warnings
 
 from .defaults import *  # noqa
@@ -18,12 +24,6 @@ except ImportError as error:
 """
 Django settings for the admin project.
 """
-
-import os
-from urlparse import urlparse
-from website import settings as osf_settings
-from django.contrib import messages
-from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
 # TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 

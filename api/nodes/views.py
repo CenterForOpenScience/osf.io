@@ -154,7 +154,7 @@ class NodeMixin(object):
 #        if 'timestampPattern' in self.request.data.keys():
 #            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
 #            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
-#            timestamp_pattern.save() 
+#            timestamp_pattern.save()
 
         if node is None:
             node = get_object_or_error(
@@ -239,7 +239,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
-            
+
             return nodes
         else:
             return self.get_queryset_from_request()
@@ -478,7 +478,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
-
 
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -1308,11 +1307,11 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon.config.short_name)
-            for addon
-            in self.get_node().get_addons()
-            if addon.config.has_hgrid_files
-            and addon.configured
+            self.get_provider_item(addon.config.short_name) for
+            addon in
+            self.get_node().get_addons() if
+            addon.config.has_hgrid_files and
+            addon.configured
         ]
 
 class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
@@ -1543,9 +1542,9 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
             # timestamp_pattern create
             for data in self.request.data['data']:
                 institution_id = Institution.objects.get(_id=data['id']).id
-                guid=kwargs['node_id']
-                timestampPattern, _ =  RdmTimestampGrantPattern.objects.get_or_create(\
-                                                           institution_id=institution_id, node_guid=guid)
+                guid = kwargs['node_id']
+                timestampPattern, _ = RdmTimestampGrantPattern.objects.get_or_create(
+                    institution_id=institution_id, node_guid=guid)
                 timestampPattern.save()
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)

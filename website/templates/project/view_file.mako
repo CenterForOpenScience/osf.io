@@ -28,6 +28,7 @@
 </div>
 <div class="row">
   <div class="col-sm-5">
+% if timestamp_verify_result_title:
     <h4 class="break-word">
     % if timestamp_verify_result_title == 'OK':
       <font color="green"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
@@ -35,6 +36,7 @@
       <font color="red"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
     % endif
     </h4>
+% endif
   </div>
 </div>
 <hr>
