@@ -43,7 +43,7 @@ from api.nodes.views import (
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
-    NodeLinkedRegistrationsList,
+    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -454,6 +454,16 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+
+class RegistrationLinkedByNodesList(NodeLinkedByNodesList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-nodes'
+
+
+class RegistrationLinkedByRegistrationsList(NodeLinkedByRegistrationsList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-registrations'
 
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):

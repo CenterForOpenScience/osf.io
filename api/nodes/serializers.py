@@ -9,7 +9,7 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer,
-                                  HideIfWikiDisabled)
+                                  HideIfWikiDisabled, ShowIfAdminScope)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -211,6 +211,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
+    analytics_key = ShowIfAdminScope(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -218,7 +219,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
-
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
@@ -287,7 +287,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'}
     )
 
     node_links = ShowIfVersion(RelationshipField(
@@ -296,6 +297,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     ), min_version='2.0', max_version='2.0')
+
+    linked_by_nodes = RelationshipField(
+        related_view='nodes:node-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    )
+
+    linked_by_registrations = RelationshipField(
+        related_view='nodes:node-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
@@ -458,6 +471,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if pointer.can_view(auth):
                 count += 1
         return count
+
+    def get_linked_by_nodes_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
+
+    def get_linked_by_registrations_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__type='osf.registration', parent__retraction__isnull=True).count()
+
+    def get_forks_count(self, obj):
+        return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
 
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user
