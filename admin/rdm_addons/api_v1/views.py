@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import os
 import json
 import httplib
 
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
-from django.core.exceptions import ValidationError
-from django.http import HttpResponse, Http404, HttpResponseForbidden, HttpResponseServerError
+from django.http import HttpResponse, Http404
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 import flask
 
-from osf.models import Institution, RdmAddonOption, ExternalAccount
+from osf.models import ExternalAccount
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from framework.auth import Auth
-import addons
-import admin
 
 
 class OAuthView(RdmPermissionMixin, UserPassesTestMixin, View):
