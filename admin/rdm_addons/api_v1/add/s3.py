@@ -5,7 +5,7 @@ import httplib
 from django.core.exceptions import ValidationError
 
 from framework.exceptions import HTTPError
-from osf.models import RdmAddonOption, ExternalAccount
+from osf.models import ExternalAccount
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.s3.views import SHORT_NAME, FULL_NAME
 from addons.s3.utils import get_user_info, can_list
