@@ -118,7 +118,7 @@
                             ${render_node_settings(addon)}
                         % endif
                         % if addon['addon_short_name'] == 'github':
-                            <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
+                            <div id='github-organization-repos-alert' class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
                                 <div class="alert alert-info alert-dismissible" role="alert">
                                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"
                                         data-bind="click: $root.dismiss.bind($root, 'githubOrgs')">
@@ -138,7 +138,7 @@
                             </div>
                         % endif
                         % if addon['addon_short_name'] == 'zotero':
-                            <div id='zotero-group-library-alert' class='scripted'>
+                            <div id='zotero-group-library-alert' class='scripted dismissible-alerts'>
                                 <div class="alert alert-info alert-dismissible" role="alert">
                                     <button type="button" id="zoteroWarningCancel" class="close" data-dismiss="alert" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>

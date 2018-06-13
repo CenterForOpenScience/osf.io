@@ -217,7 +217,10 @@ $(function() {
 
     var alertsSelector = '.dismissible-alerts';
     if ($(alertsSelector).length > 0 && window.contextVars.currentUser) {
-        new AlertManager(alertsSelector);
+        for (var i = 0; i < $(alertsSelector).length; i++) {
+            var selectorId = '#' + $(alertsSelector)[i]['id'];
+            new AlertManager(selectorId);
+        }
     }
 
     if (window.contextVars.keen){
