@@ -70,7 +70,7 @@ var AlertsViewModel = function() {
             self.loading(false);
         });
         request.fail(function(xhr, status, error){
-            self.loaded(false);
+            self.loading(false);
             $osf.growl('Error', 'Could not fetch alerts for this page. Please refresh page and try again.', 'danger');
             Raven.captureMessage('Error fetching user alerts', {
                 extra: {
