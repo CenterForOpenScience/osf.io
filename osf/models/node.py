@@ -27,7 +27,7 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework import status
-from framework.celery_tasks.handlers import enqueue_task
+from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from osf.exceptions import ValidationValueError
@@ -238,6 +238,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'description',
         'is_public',
+        'contributors',
         'is_deleted',
         'node_license'
     }
@@ -1238,6 +1239,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        auth=auth, email_template=send_email)
             self.update_search()
             self.save_node_preprints()
+
+            # enqueue on_node_updated to update DOI metadata when a contributor is added
+            if self.get_identifier_value('doi'):
+                request, user_id = get_request_and_user_id()
+                self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
+
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1472,6 +1479,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         project_signals.contributor_removed.send(self, user=contributor)
 
         self.save_node_preprints()
+
+        # enqueue on_node_updated to update DOI metadata when a contributor is removed
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -2389,6 +2401,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return ret
 
+    def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
+        """
+        If an earlier version of the on_node_updated task exists in the queue, update it
+        with the appropriate saved_fields. Otherwise, enqueue on_node_updated.
+
+        This ensures that on_node_updated is only queued once for a given node.
+        """
+        # All arguments passed as kwargs so that we can check signature.kwargs and update as necessary
+        task = get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == self._id)
+        if task:
+            # Ensure saved_fields is JSON-serializable by coercing it to a list
+            task.kwargs['saved_fields'] = list(set(task.kwargs['saved_fields']).union(saved_fields))
+        else:
+            enqueue_task(node_tasks.on_node_updated.s(node_id=self._id, user_id=user_id, first_save=first_save, saved_fields=saved_fields))
+
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
@@ -2399,7 +2426,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         if self.preprint_file:
             # avoid circular imports
