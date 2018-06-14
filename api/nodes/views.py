@@ -8,6 +8,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
@@ -100,6 +101,7 @@ from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
+from framework.exceptions import HTTPError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
@@ -114,6 +116,14 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 
+# This is used to rethrow v1 exceptions as v2
+HTTP_CODE_MAP = {
+    400: ValidationError(detail='This provider has made a bad request.'),
+    401: NotAuthenticated,
+    403: PermissionDenied,
+    404: NotFound,
+
+}
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -1149,7 +1159,17 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
 
-        return node_addon.get_folders(path=path, folder_id=folder_id)
+        #  Convert v1 errors to v2 as much as possible.
+        try:
+            return node_addon.get_folders(path=path, folder_id=folder_id)
+        except InvalidAuthError:
+            raise NotAuthenticated
+        except HTTPError as exc:
+            v2_exception = HTTP_CODE_MAP.get(exc.code)
+            if v2_exception:
+                raise v2_exception
+            else:
+                raise exc
 
 
 class NodeProvider(object):
