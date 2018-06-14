@@ -81,8 +81,8 @@ def client():
                 retry_on_timeout=True,
                 **settings.ELASTIC_KWARGS
             )
-            logging.getLogger('elasticsearch2').setLevel(logging.WARN)
-            logging.getLogger('elasticsearch2.trace').setLevel(logging.WARN)
+            logging.getLogger('elasticsearch').setLevel(logging.WARN)
+            logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
             logging.getLogger('urllib3').setLevel(logging.WARN)
             logging.getLogger('requests').setLevel(logging.WARN)
             CLIENT.cluster.health(wait_for_status='yellow')
