@@ -85,3 +85,4 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
 @unique
 class RequestTypes(ChoiceEnum):
     ACCESS = 'access'
+    WITHDRAWAL = 'withdrawal'
