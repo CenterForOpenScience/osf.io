@@ -94,6 +94,9 @@ class CoreScopes(object):
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
 
+    ALERTS_READ = 'alerts_read'
+    ALERTS_WRITE = 'alerts_write'
+
     INSTITUTION_READ = 'institutions_read'
 
     SCOPES_READ = 'scopes_read'
@@ -144,8 +147,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions

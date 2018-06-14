@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>Provider Asset File</title>
+{% endblock title %}
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        {% if perms.osf.delete_asset_file %}
+            <a class="btn btn-danger" href={% url 'asset_files:delete' object.id %}>Delete asset</a>
+        {% endif %}
+    </div>
+</div>
+{% if object.file %}
+    {% if embed_file %}
+    <br/>
+    <img src={{object.file.url}}>
+    <br/>
+    {% endif %}
+<b>Uploading a new file will overwrite this asset.</b>
+{% endif %}
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" class="btn btn-primary" value="Save">
+</form>
+{% endblock content %}

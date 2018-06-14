@@ -170,7 +170,7 @@ class HideIfDisabled(ConditionalField):
 
 class HideIfWithdrawal(ConditionalField):
     """
-    If registration is withdrawn, this field will return None.
+    If registration or preprint is withdrawn, this field will return None.
     """
 
     def should_hide(self, instance):
@@ -179,6 +179,10 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+class HideIfNotWithdrawal(ConditionalField):
+
+    def should_hide(self, instance):
+        return not instance.is_retracted
 
 class HideIfWikiDisabled(ConditionalField):
     """
