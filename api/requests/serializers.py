@@ -6,7 +6,7 @@ from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, VersionedDateTimeField, RelationshipField
 from osf.models import NodeRequest
-from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.utils.workflows import DefaultStates, NodeRequestTypes
 
 
 class NodeRequestSerializer(JSONAPISerializer):
@@ -21,7 +21,7 @@ class NodeRequestSerializer(JSONAPISerializer):
         'id'
     ])
     id = ser.CharField(source='_id', read_only=True)
-    request_type = ser.ChoiceField(read_only=True, required=False, choices=RequestTypes.choices())
+    request_type = ser.ChoiceField(read_only=True, required=False, choices=NodeRequestTypes.choices())
     machine_state = ser.ChoiceField(read_only=True, required=False, choices=DefaultStates.choices())
     comment = ser.CharField(required=False, allow_blank=True, max_length=65535)
     created = VersionedDateTimeField(read_only=True)
@@ -57,7 +57,7 @@ class NodeRequestSerializer(JSONAPISerializer):
         raise NotImplementedError()
 
 class NodeRequestCreateSerializer(NodeRequestSerializer):
-    request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
+    request_type = ser.ChoiceField(required=True, choices=NodeRequestTypes.choices())
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])

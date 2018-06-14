@@ -1,6 +1,6 @@
 import pytest
 
-from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.utils.workflows import DefaultStates, NodeRequestTypes
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -44,7 +44,7 @@ class NodeRequestTestMixin(object):
         node_request = NodeRequestFactory(
             creator=requester,
             target=project,
-            request_type=RequestTypes.ACCESS.value,
+            request_type=NodeRequestTypes.ACCESS.value,
             machine_state=DefaultStates.INITIAL.value
         )
         node_request.run_submit(requester)

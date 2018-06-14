@@ -4,7 +4,7 @@ from transitions import Machine
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
-from osf.models.action import ReviewAction, NodeRequestAction
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.models.nodelog import NodeLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
@@ -160,7 +160,7 @@ class ReviewsMachine(BaseMachine):
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
         }
 
-class RequestMachine(BaseMachine):
+class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
 
     def save_changes(self, ev):
@@ -230,5 +230,26 @@ class RequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node': self.machineable.target,
+            'requester': self.machineable.creator
+        }
+
+
+class PreprintRequestMachine(BaseMachine):
+    ActionClass = PreprintRequestAction
+
+    def save_changes(self, ev):
+        """ Handles preprint status changes and state transitions
+        """
+        pass
+
+    def notify_submit(self, ev):
+        raise NotImplementedError
+
+    def notify_accept_reject(self, ev):
+        raise NotImplementedError
+
+    def get_context(self):
+        return {
+            'preprint': self.machineable.target,
             'requester': self.machineable.creator
         }

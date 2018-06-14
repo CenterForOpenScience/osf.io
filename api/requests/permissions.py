@@ -5,7 +5,7 @@ from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
 from osf.models.action import NodeRequestAction
-from osf.models.mixins import RequestableMixin
+from osf.models.mixins import NodeRequestableMixin
 from osf.models.node import Node
 from osf.utils.workflows import DefaultTriggers
 from osf.utils import permissions as osf_permissions
@@ -22,7 +22,7 @@ class NodeRequestPermission(drf_permissions.BasePermission):
             target = obj.target
             node = obj.target.target
             trigger = request.data.get('trigger', None)
-        elif isinstance(obj, RequestableMixin):
+        elif isinstance(obj, NodeRequestableMixin):
             target = obj
             node = obj.target
             # Creating a Request is "submitting"
