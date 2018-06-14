@@ -94,7 +94,8 @@ LOG_WHITELIST = {
     'tag_added',
     'tag_removed',
     'wiki_deleted',
-    'wiki_updated'
+    'wiki_updated',
+    'node_access_requests_disabled',
 }
 
 # Require action, but recoverable from
