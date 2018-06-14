@@ -11,8 +11,8 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_ezid_metadata_on_change
-from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
+from website.identifiers.tasks import update_doi_metadata_on_change
+from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def update_or_create_preprint_identifiers(preprint):
         get_and_set_preprint_identifiers(preprint)
     else:
         try:
-            update_ezid_metadata_on_change(preprint._id, status=status)
+            update_doi_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
@@ -173,11 +173,10 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
 
 def get_and_set_preprint_identifiers(preprint):
-    ezid_response = request_identifiers_from_ezid(preprint)
-    if ezid_response is None:
+    identifiers = request_identifiers(preprint)
+    if identifiers is None:
         return
-    id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], save=True)
+    preprint.set_identifier_values(doi=identifiers['doi'], save=True)
 
 
 def send_desk_share_preprint_error(preprint, resp, retries):

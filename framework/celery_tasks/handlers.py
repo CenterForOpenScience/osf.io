@@ -42,6 +42,15 @@ def celery_teardown_request(error=None):
                 task.apply()
 
 
+def get_task_from_queue(name, predicate):
+    matches = [task for task in queue() if task.type.name == name and predicate(task)]
+    if len(matches) == 1:
+        return matches[0]
+    elif len(matches) > 1:
+        raise ValueError()
+    return False
+
+
 def enqueue_task(signature):
     """If working in a request context, push task signature to thread-local
     queue to run after request is complete; else run signature immediately.

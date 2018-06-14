@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
-import mock
-import responses
 from nose.tools import *  # noqa
 
 from django.db import IntegrityError
 
-from tests.base import OsfTestCase
-from osf_tests.factories import AuthUserFactory
-from osf_tests.factories import IdentifierFactory
-from osf_tests.factories import RegistrationFactory
-from osf_tests.factories import PreprintFactory, SubjectFactory, PreprintProviderFactory
-from tests.test_addons import assert_urls_equal
+from osf_tests.factories import (
+    SubjectFactory,
+    AuthUserFactory,
+    PreprintFactory,
+    IdentifierFactory,
+    RegistrationFactory,
+    PreprintProviderFactory
+)
 
-import furl
+from tests.base import OsfTestCase
+
 import lxml.etree
 
 from website import settings
-from website.identifiers.utils import to_anvl
 from website.identifiers import metadata
 from osf.models import Identifier, Subject, NodeLicense
 
@@ -35,40 +35,10 @@ class TestMetadataGeneration(OsfTestCase):
         self.node.add_contributor(visible_contrib2, visible=True)
         self.node.save()
 
-    def test_metadata_for_node_only_includes_visible_contribs(self):
-        metadata_xml = metadata.datacite_metadata_for_node(self.node, doi=self.identifier.value)
-        # includes visible contrib name
-        assert_in(u'{}, {}'.format(
-            self.visible_contrib.family_name, self.visible_contrib.given_name),
-            metadata_xml)
-        # doesn't include invisible contrib name
-        assert_not_in(self.invisible_contrib.family_name, metadata_xml)
-
-        assert_in(self.identifier.value, metadata_xml)
-
-    def test_metadata_for_node_has_correct_structure(self):
-        metadata_xml = metadata.datacite_metadata_for_node(self.node, doi=self.identifier.value)
-        root = lxml.etree.fromstring(metadata_xml)
-        xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
-        assert_equal(root.attrib[xsi_location], expected_location)
-
-        identifier = root.find('{%s}identifier' % metadata.NAMESPACE)
-        assert_equal(identifier.attrib['identifierType'], 'DOI')
-        assert_equal(identifier.text, self.identifier.value)
-
-        creators = root.find('{%s}creators' % metadata.NAMESPACE)
-        assert_equal(len(creators.getchildren()), len(self.node.visible_contributors))
-
-        publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
-        assert_equal(publisher.text, 'Open Science Framework')
-
-        pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
-        assert_equal(pub_year.text, str(self.node.registered_date.year))
-
-    def test_metadata_for_preprint_has_correct_structure(self):
+    # This test is not used as datacite is currently used for nodes, leaving here for future reference
+    def test_datacite_metadata_for_preprint_has_correct_structure(self):
         provider = PreprintProviderFactory()
-        license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
+        license =  NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {
             'id': license.license_id,
             'year': '2017',
@@ -112,7 +82,8 @@ class TestMetadataGeneration(OsfTestCase):
         rights = root.find('{%s}rightsList' % metadata.NAMESPACE).getchildren()[0]
         assert rights.text == preprint.license.name
 
-    def test_format_creators_for_preprint(self):
+    # This test is not used as datacite is currently used for nodes, leaving here for future reference
+    def test_datacite_format_creators_for_preprint(self):
         preprint = PreprintFactory(project=self.node, is_published=True)
 
         verified_user = AuthUserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
@@ -143,7 +114,8 @@ class TestMetadataGeneration(OsfTestCase):
         assert len(formatted_creators) == len(self.node.visible_contributors)
         assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
 
-    def test_format_subjects_for_preprint(self):
+    # This test is not used as datacite is currently used for nodes, leaving here for future reference
+    def test_datacite_format_subjects_for_preprint(self):
         subject = SubjectFactory()
         subject_1 = SubjectFactory(parent=subject)
         subject_2 = SubjectFactory(parent=subject)
@@ -198,120 +170,7 @@ class TestIdentifierModel(OsfTestCase):
         node.set_identifier_value('doi', 'FK424601')
         assert_equal(node.csl['DOI'], 'FK424601')
 
-
-class TestIdentifierViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestIdentifierViews, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.node = RegistrationFactory(creator=self.user, is_public=True)
-
-    @responses.activate
-    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_not_exists(self):
-        identifier = self.node._id
-        url = furl.furl('https://ezid.cdlib.org/id')
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
-        url.path.segments.append(doi)
-        responses.add(
-            responses.Response(
-                responses.PUT,
-                url.url,
-                body=to_anvl({
-                    'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
-                        doi=settings.DOI_NAMESPACE,
-                        ark=settings.ARK_NAMESPACE,
-                        ident=identifier,
-                    ),
-                }),
-                status=201,
-            )
-        )
-        res = self.app.post(
-            self.node.api_url_for('node_identifiers_post'),
-            auth=self.user.auth,
-        )
-        self.node.reload()
-        assert_equal(
-            res.json['doi'],
-            self.node.get_identifier_value('doi')
-        )
-        assert_equal(res.status_code, 201)
-
-    @responses.activate
-    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
-    def test_create_identifiers_exists(self):
-        identifier = self.node._id
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
-        url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append(doi)
-        responses.add(
-            responses.Response(
-                responses.PUT,
-                url.url,
-                body='identifier already exists',
-                status=400,
-            )
-        )
-
-        responses.add(
-            responses.Response(
-                responses.GET,
-                url.url,
-                body=to_anvl({
-                    'success': doi,
-                }),
-                status=200,
-            )
-        )
-        res = self.app.post(
-            self.node.api_url_for('node_identifiers_post'),
-            auth=self.user.auth,
-        )
-        self.node.reload()
-        assert_equal(
-            res.json['doi'],
-            self.node.get_identifier_value('doi')
-        )
-        assert_equal(
-            res.json['ark'],
-            self.node.get_identifier_value('ark')
-        )
-        assert_equal(res.status_code, 201)
-
-    def test_get_by_identifier(self):
-        self.node.set_identifier_value('doi', 'FK424601')
-        self.node.set_identifier_value('ark', 'fk224601')
-        res_doi = self.app.get(
-            self.node.web_url_for(
-                'get_referent_by_identifier',
-                category='doi',
-                value=self.node.get_identifier_value('doi'),
-            ),
-        )
-        assert_equal(res_doi.status_code, 302)
-        assert_urls_equal(res_doi.headers['Location'], self.node.absolute_url)
-        res_ark = self.app.get(
-            self.node.web_url_for(
-                'get_referent_by_identifier',
-                category='ark',
-                value=self.node.get_identifier_value('ark'),
-            ),
-        )
-        assert_equal(res_ark.status_code, 302)
-        assert_urls_equal(res_ark.headers['Location'], self.node.absolute_url)
-
-    def test_get_by_identifier_not_found(self):
-        self.node.set_identifier_value('doi', 'FK424601')
-        res = self.app.get(
-            self.node.web_url_for(
-                'get_referent_by_identifier',
-                category='doi',
-                value='fakedoi',
-            ),
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 404)
+    def test_get_identifier_for_doi_returns_legacy_doi(self):
+        identifier = IdentifierFactory(category='legacy_doi', value='hello')
+        preprint = identifier.referent
+        assert preprint.get_identifier_value('doi') == 'hello'
