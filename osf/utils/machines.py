@@ -133,6 +133,7 @@ class ReviewsMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         context = self.get_context()
         context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
+        context['comment'] = self.action.comment
         context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
         context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
