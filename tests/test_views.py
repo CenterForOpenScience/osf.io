@@ -108,7 +108,6 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        return
         original_user_count = OSFUser.objects.count()
         self.app.get('/error500', expect_errors=True)
         assert_equal(OSFUser.objects.count(), original_user_count)
