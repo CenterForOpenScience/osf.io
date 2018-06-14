@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import sys
+#import sys
 import os.path
 from io import BytesIO
-from cStringIO import StringIO
-import subprocess
-from pprint import pprint
+#from cStringIO import StringIO
+#import subprocess
+#from pprint import pprint
 import datetime
 import pytz
 import re
-import httplib
-import base64
+#import httplib
+#import base64
 import json
 import requests
 import urllib
 import csv
-from collections import OrderedDict
-import httplib2
+#from collections import OrderedDict
+#import httplib2
 import pandas as pd
 # from PIL import Image, ImageDraw
 import numpy as np
@@ -29,40 +29,38 @@ from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, Http404, HttpResponseForbidden
+from django.http import HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.core import mail
 from django.core.mail import EmailMessage
-from django.utils.functional import cached_property
+#from django.utils.functional import cached_property
 from django.template.loader import render_to_string
 # from OSF
 from osf.models import (
-    BaseFileNode,
-    Guid,
     Institution,
-    PreprintService,
     OSFUser,
     AbstractNode,
     RdmStatistics)
 from website import settings as website_settings
-from website.settings import DOMAIN, SUPPORT_EMAIL
-from website.util import waterbutler_api_url_for, paths
-from website import mails
-from addons.base import utils as addon_utils
-from framework.exceptions import HTTPError
+from website.settings import SUPPORT_EMAIL
+from website.util import waterbutler_api_url_for
+#from website import mails
+#from addons.base import utils as addon_utils
+#from framework.exceptions import HTTPError
 # for graph image and pdf
-import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import seaborn as sns
-from reportlab.pdfgen import canvas
+#from reportlab.pdfgen import canvas
 import pdfkit
 # from admin and rdm
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
+
+#import matplotlib as mpl
+#mpl.use('Agg')
 
 # DEBUG = True
 # constant
@@ -80,7 +78,7 @@ class InstitutionListViewStat(RdmPermissionMixin, UserPassesTestMixin, TemplateV
 
     def test_func(self):
         """権限等のチェック"""
-        user = self.request.user
+        #user = self.request.user
         # ログインチェック
         # if not user.is_authenticated:
         if not self.is_authenticated:
@@ -309,7 +307,7 @@ def create_image_string(provider, statistics_data):
     # 描画用データ
     # left = np.array(range(0, RANGE_STATISTICS))
     left = statistics_data.label
-    x_tk = statistics_data.label
+    #x_tk = statistics_data.label
     # print(left)
     if statistics_data.data_type == 'ext':
         data = statistics_data.df
@@ -333,7 +331,7 @@ def create_image_string(provider, statistics_data):
     ax.tick_params(labelsize=9)
     # ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(integer=True)) 
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(integer=True))
     canvas = FigureCanvasAgg(fig)
     png_output = BytesIO()
     canvas.print_png(png_output)
@@ -435,7 +433,7 @@ def convert_to_pdf(html_string, file=False):
 
 def get_start_date(end_date):
     start_date = end_date - datetime.timedelta(weeks=(RANGE_STATISTICS))\
-                 + datetime.timedelta(days=(1))
+        + datetime.timedelta(days=(1))
     return start_date
 
 def create_csv(request, **kwargs):
@@ -493,7 +491,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     def test_func(self):
         """権限等のチェック"""
-        user = self.request.user
+        #user = self.request.user
         institution_id = int(self.kwargs.get('institution_id'))
         # ログインチェック
         if not self.is_authenticated:
@@ -508,7 +506,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         # user = request.user
         graph_type = self.kwargs.get('graph_type')
         provider = self.kwargs.get('provider')
-        user = self.request.user
+        #user = self.request.user
         # user_id = self.kwargs.get('user_id')
         # user = OSFUser.objects.get(pk=user_id)
         # if OSFUser.objects.filter(pk=user_id).exists():
@@ -527,7 +525,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         # 描画用データ
         statistics_data = provider_data.get_data(data_type=graph_type)
         left = statistics_data.label
-        x_tk = statistics_data.label
+        #x_tk = statistics_data.label
         # print(left)
         if statistics_data.data_type == 'ext':
             data = statistics_data.df
@@ -574,7 +572,7 @@ class GatherView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         # simple authentication
-        access_token =  self.kwargs.get('access_token')
+        access_token = self.kwargs.get('access_token')
         if not simple_auth(access_token):
             response_hash = {"state": "fail", "error": 'access forbidden'}
             response_json = json.dumps(response_hash)
@@ -606,11 +604,11 @@ class GatherView(TemplateView):
                             self.count_project_files(node_id=guid._id, provider=provider, path=path, cookies=cookie)
                             if len(self.count_list) > 0:
                                 # print(node.id)
-                                regist_list = self.regist_database(node=node, guid=guid, owner=user, institution=institution,
-                                                provider=provider, date_acquired=current_date, count_list=self.count_list)
+                                self.regist_database(node=node, guid=guid, owner=user, institution=institution,
+                                             provider=provider, date_acquired=current_date, count_list=self.count_list)
                                 # self.stat_list.append([institution.name, user.id, guid._id, provider, regist_list])
-                                regist_list = self.regist_database(node=node, guid=guid, owner=user, institution=institution,
-                                                provider=provider, date_acquired=current_date, count_list=self.count_list)
+                                #regist_list = self.regist_database(node=node, guid=guid, owner=user, institution=institution,
+                                #                provider=provider, date_acquired=current_date, count_list=self.count_list)
                                 self.stat_list.append([institution.name, guid._id, provider])
             # print(self.stat_list)
             response_json = json.dumps(self.stat_list)
@@ -648,22 +646,22 @@ class GatherView(TemplateView):
                     'institution': institution,
                     'storage_account_id': guid._id,
                     'project_root_path': '/',
-                    'subtotal_file_number': number_sum[number_sum.index==ext]['type'].values[0], 
-                    'subtotal_file_size': ext_sum[ext_sum.index==ext]['size'].values[0],
+                    'subtotal_file_number': number_sum[number_sum.index == ext]['type'].values[0],
+                    'subtotal_file_size': ext_sum[ext_sum.index == ext]['size'].values[0],
                 },
             )
-            reg_list.append([node.id, owner.id,  provider, institution.name, ext, 
-                            number_sum[number_sum.index==ext]['type'].values[0], 
-                            ext_sum[ext_sum.index==ext]['size'].values[0],
-                            date_acquired.strftime('%Y-%m-%d') ])
+            reg_list.append([node.id, owner.id, provider, institution.name, ext,
+                            number_sum[number_sum.index == ext]['type'].values[0],
+                            ext_sum[ext_sum.index == ext]['size'].values[0],
+                            date_acquired.strftime('%Y-%m-%d')])
         # print(reg_list)
         return reg_list
 
     def gather(**kwargs):
         """gathering storage data"""
         # 機関ID
-        institution_id = int(kwargs['institution_id'])
-        user_id = int(kwargs['user_id'])
+        #institution_id = int(kwargs['institution_id'])
+        #user_id = int(kwargs['user_id'])
 
     def get_users(self):
         return OSFUser.objects.all()
@@ -676,19 +674,11 @@ class GatherView(TemplateView):
         nodes = AbstractNode.objects.all().select_related().filter(creator_id=user, category='project')
         return nodes
 
-    def get_providers(self):
-        providers = ExternalAccount.objects.distinct('provider').values('provider')
+#    def get_providers(self):
+#        providers = ExternalAccount.objects.distinct('provider').values('provider')
 
     def get_wb_url(self, path, node_id, provider, cookie):
-        url = waterbutler_api_url_for(
-            node_id=node_id,
-            _internal=True,
-            meta=True,
-            provider=provider,
-            path=path,
-            #cookie=user.get_or_create_cookie()
-            cookie=cookie
-        )
+        url = waterbutler_api_url_for(node_id=node_id, _internal=True, meta=True, provider=provider, path=path, cookie=cookie)
         return url
 
     def count_project_files(self, node_id, provider, path, cookies):
@@ -714,13 +704,14 @@ class GatherView(TemplateView):
         if 'data' in response_json.keys():
             for obj in response_json['data']:
                 root, ext = os.path.splitext(obj['id'])
-                if not ext: ext = 'none'
+                if not ext:
+                    ext = 'none'
                 if obj['attributes']['kind'] == 'file':
                     self.count_list.append(['file', obj['id'], obj['attributes']['size'], ext])
                 elif obj['attributes']['kind'] == 'folder':
-                    path = re.sub('^'+provider, '', obj['id'])
+                    path = re.sub('^' + provider, '', obj['id'])
                     self.count_list.append(['folder', obj['id'], obj['attributes']['size'], ext])
-                    self.count_project_files(provider=provider, node_id=node_id, path='/'+path, cookies=cookies)
+                    self.count_project_files(provider=provider, node_id=node_id, path='/' + path, cookies=cookies)
 
 def simple_auth(access_token):
     digest = hashlib.sha512(SITE_KEY).hexdigest()
@@ -758,12 +749,12 @@ def send_stat_mail(request, **kwargs):
         attachment_file_data = get_pdf_data(institution=institution)
         mail_data = {
             'subject': '[[GakuNin RDM]] [[' + institution.name + ']] statistic information at ' + current_date.strftime('%Y/%m/%d'),
-            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n'\
-                        + 'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
+            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n' +
+            'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data)
+        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
     response_json = json.dumps(response_hash)
     # response_json = json.dumps(mail_data)
     response = HttpResponse(response_json, content_type='application/json')
@@ -779,13 +770,13 @@ def send_error_mail(err):
         'subject': '[[GakuNin RDM]] ERROR in statistic information collection at ' + current_date.strftime('%Y/%m/%d'),
         'content': 'ERROR OCCURED at ' + current_date.strftime('%Y/%m/%d') + '.\r\nERROR: \r\n' + str(err),
     }
-    # ret = send_email(to_list=to_list, cc_list=cc_liset, data=mail_data)
+    send_email(to_list=to_list, cc_list=None, data=mail_data)
     response_hash = {"state": "fail", "error": str(err)}
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
-def send_email(to_list, cc_list, data, backend='smtp'):
+def send_email(to_list, cc_list, data, user, backend='smtp'):
     """send email to administrator"""
     ret = {"is_success": True, "error": ""}
     try:
@@ -838,7 +829,7 @@ def get_current_date(is_str=False):
         return current_datetime.strftime("%Y/%m/%d")
     else:
         return current_date
-    
+
 class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     """index view of statistics module."""
     template_name = 'rdm_statistics/mail.html'
@@ -847,7 +838,7 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 
     def test_func(self):
         """権限等のチェック"""
-        user = self.request.user
+#        user = self.request.user
         institution_id = int(self.kwargs.get('institution_id'))
         # ログインチェック
         if not self.is_authenticated:
@@ -885,13 +876,14 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        ret = send_email(to_list=to_list, cc_list=cc_liset, data=mail_data)
-        data = { 
+        ret = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
+        data = {
             'ret': ret,
             'mail_data': mail_data
-            }
+        }
         ctx['data'] = data
         return ctx
+
 
 SUFFIXES = {1000: ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
@@ -964,7 +956,7 @@ class IndexView(TemplateView):
         # for account_addon in accounts_addons:
         #     print(vars(account_addon.node_settings))
         js = []
-        filename = 'files.js'
+        #filename = 'files.js'
         # config_entry='files'
         # # for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
         # for addon_config in accounts_addons:
@@ -1050,7 +1042,7 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         provider_list = np.random.choice(addon_list, 3, replace=False)
         # provider = 'S3'
         TEST_TIMES = 2
-        TEST_RANGE = RANGE_STATISTICS*TEST_TIMES
+        TEST_RANGE = RANGE_STATISTICS * TEST_TIMES
         # RdmStatistics.objects.all().delete()
         # RdmStatistics.objects.filter(owner=user).delete()
         RdmStatistics.objects.filter(institution=institution).delete()
@@ -1062,13 +1054,13 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             ext_list = ['jpg', 'png', 'docx', 'xlsx']
             for ext_type in ext_list:
                 # print(ext_type)
-                x = np.random.randint(1000*TEST_RANGE/10, size=TEST_RANGE)
-                y = np.random.randint(100*TEST_RANGE/10, size=TEST_RANGE)
+                x = np.random.randint(1000 * TEST_RANGE / 10, size=TEST_RANGE)
+                y = np.random.randint(100 * TEST_RANGE / 10, size=TEST_RANGE)
                 count_list = np.sort(y)
                 size_list = np.sort(x)
                 for i in range(TEST_RANGE):
                     # print(i)
-                    date = current_date - datetime.timedelta(weeks=(TEST_RANGE-1-i))
+                    date = current_date - datetime.timedelta(weeks=(TEST_RANGE - 1 - i))
                     # print(date)
                     # RdmStatistics.objects.update_or_create(project_id=7,owner_id=user.id,institution_id=institution.id,
                     RdmStatistics.objects.create(project_id=7,
@@ -1079,7 +1071,7 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
                                                  project_root_path='/',
                                                  sextention_type=ext_type,
                                                  subtotal_file_number=count_list[i],
-                                                 subtotal_file_size=size_list[i], 
+                                                 subtotal_file_size=size_list[i],
                                                  date_acquired=date)
         return RdmStatistics.objects.all()
 
@@ -1090,7 +1082,7 @@ def test_mail(request, status=None):
     all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
     to_list = all_superusers_list
     cc_list = []
-    # attachment file 
+    # attachment file
     current_date = datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y/%m/%d %H:%M:%S")
     subject = 'test mail : ' + current_date
     content = 'test regular mail sending'
@@ -1114,7 +1106,3 @@ def test_mail(request, status=None):
     json_str = json.dumps(ret)
     response = HttpResponse(json_str, content_type='application/javascript; charset=UTF-8', status=status)
     return response
-
-
-
-
