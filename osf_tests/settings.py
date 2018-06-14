@@ -1,6 +1,8 @@
 # Use API settings.
 from api.base.settings import *  # noqa
 
+GUID_CHECK_BLACKLIST = False
+
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {
 #    'default': {

@@ -7,6 +7,7 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.conf import settings
 from django.db import models
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
@@ -27,16 +28,14 @@ def generate_guid(length=5):
     while True:
         guid_id = ''.join(random.sample(ALPHABET, length))
 
-        try:
+        if settings.GUID_CHECK_BLACKLIST:
             # is the guid in the blacklist
-            BlackListGuid.objects.get(guid=guid_id)
-        except BlackListGuid.DoesNotExist:
-            # it's not, check and see if it's already in the database
-            try:
-                Guid.objects.get(_id=guid_id)
-            except Guid.DoesNotExist:
-                # valid and unique guid
-                return guid_id
+            if BlackListGuid.objects.filter(guid=guid_id).exists():
+                continue
+
+        # it's not, check and see if it's already in the database
+        if not Guid.objects.filter(_id=guid_id).exists():
+            return guid_id
 
 
 def generate_object_id():
@@ -116,7 +115,7 @@ class BaseModel(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
-        if not kwargs.get('force_insert') and not kwargs.get('force_update'):
+        if not (kwargs.pop('no_clean', False) or kwargs.get('force_insert') or kwargs.get('force_update')):
             try:
                 self.full_clean()
             except DjangoValidationError as err:

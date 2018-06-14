@@ -88,8 +88,6 @@ class UserFactory(DjangoModelFactory):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -97,7 +95,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(no_clean=True)
                 else:
                     # This might lead to strange behavior
                     return
