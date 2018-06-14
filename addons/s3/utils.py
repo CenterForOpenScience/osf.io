@@ -155,7 +155,7 @@ def get_user_info(
             secret_key,
             encrypted
         ).get_all_buckets().owner
-        
+
     except exception.S3ResponseError:
         return None
     return None

@@ -116,9 +116,7 @@ def s3_add_user_account(auth, **kwargs):
             display_name=user_info.display_name,
         )
         account.save()
-    except ValidationError as err:
-        import pdb
-        pdb.set_trace()
+    except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
             provider=SHORT_NAME,
