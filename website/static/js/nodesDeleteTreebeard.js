@@ -109,7 +109,10 @@ function NodesDeleteTreebeard(divID, data, nodesState, nodesOriginal) {
                     sortInclude: false,
                     hideColumnTitles: false,
                     custom: function () {
-                        return m('span', item.data.node.title);
+                        return m('span', [
+                                  m('span', item.data.node.title),
+                                  item.data.node.is_preprint ? m('sup', '*') : m('')
+                            ]);
                     }
                 }
             );

@@ -275,7 +275,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B. ({}). {}. {}'.format(
                 date,
                 self.node.title,
-                'http://doi.org/' + self.published_preprint.article_doi
+                'https://doi.org/' + self.published_preprint.article_doi
                 )
         )
 
@@ -289,7 +289,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B., Junior. ({}). {}. {}'.format(
             date,
             self.node.title,
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 
@@ -304,7 +304,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. ({}). {}. {}'.format(
             date,
             self.node.title,
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 
@@ -318,7 +318,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
             date,
             self.node.title,
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 
@@ -334,7 +334,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
             date,
             'This Title Ends in a Period',
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 
@@ -356,7 +356,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
             date,
             self.node.title,
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 
@@ -378,7 +378,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
             date,
             self.node.title,
-            'http://doi.org/' + self.published_preprint.article_doi
+            'https://doi.org/' + self.published_preprint.article_doi
             )
         )
 

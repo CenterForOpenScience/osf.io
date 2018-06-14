@@ -64,7 +64,7 @@ services:
 ##      - emberosf
 ##    command:
 ##      - /bin/bash
-##      - -c 
+##      - -c
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&

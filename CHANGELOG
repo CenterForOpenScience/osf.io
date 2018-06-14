@@ -2,6 +2,19 @@
 Changelog
 *********
 
+0.144.0 (2018-06-13)
+====================
+- Allow deleting child components from component widget dropdown
+- Make preprints checkable for spam
+- Add fields required for preprint withdrawal
+- Add support for GC asset file storage
+- Index collection submissions with ES
+- Add new citation styles
+- Improve banners with dynamic links
+- Add workflow states/transitions for preprint withdrawal
+- Improve support for GitHub Organization repos
+- Fix required perms for removing a collected object
+
 0.143.0 (2018-06-11)
 ====================
 

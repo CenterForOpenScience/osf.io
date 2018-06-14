@@ -111,8 +111,7 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
         has_access = (
             repo is not None and (
-                'permissions' not in repo.to_json() or
-                repo.to_json()['permissions']['push']
+                repo.permissions and repo.permissions['push']
             )
         )
 
