@@ -9,6 +9,7 @@ var getExtension = function(filename) {
 var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 var imageFolder = 'Wiki images';
 
+
 var autoIncrementFileName = function(name, nameList) {
     var num = 1;
     var newName;
@@ -53,8 +54,8 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                 return file.attributes.name;
             });
             if (path) {
-                var newName;
                 $.each(files, function (i, file) {
+                    var newName = null;
                     if (fileNames.indexOf(file.name) !== -1) {
                         newName = autoIncrementFileName(file.name, fileNames);
                     }
@@ -63,7 +64,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                     if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
                         $osf.growl('Error', 'This file type cannot be embedded  (' + file.name + ')', 'danger');
                     } else {
-                        var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURI(name) + '&type=file';
+                        var waterbutlerURL = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + encodeURI(path) + '?name=' + encodeURIComponent(name) + '&type=file';
                         $osf.trackClick('wiki', 'dropped-image', ctx.node.id);
                         promises.push(
                             $.ajax({
@@ -182,7 +183,7 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
      * Also adds a second cursor that follows around the mouse cursor and signifies where the image/link will
      * be inserted
      */
-    element.addEventListener('dragover', function(event) {
+    $(element).find('.ace_scroller')[0].addEventListener('dragover', function(event) {
         event.preventDefault();
         event.stopPropagation();
         if (!editor.marker.active) {

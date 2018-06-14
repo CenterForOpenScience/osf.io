@@ -2483,6 +2483,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ))
         if is_spam:
             self._check_spam_user(user)
+            for preprint in self.preprints.get_queryset():
+                preprint.flag_spam()
+                preprint.save()
+
         return is_spam
 
     def _check_spam_user(self, user):

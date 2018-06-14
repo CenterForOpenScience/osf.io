@@ -2,6 +2,9 @@
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 import urlparse
+import pytest
+
+from django.core.exceptions import ValidationError
 
 from addons.osfstorage.models import OsfStorageFile
 from api_tests import utils as api_test_utils
@@ -42,6 +45,27 @@ class TestPreprintFactory(OsfTestCase):
     def test_preprint_is_public(self):
         assert_true(self.preprint.node.is_public)
 
+
+class TestPreprintSpam(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreprintSpam, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user, is_public=True)
+        self.preprint_one = PreprintFactory(creator=self.user, project=self.node)
+        self.preprint_two = PreprintFactory(creator=self.user, project=self.node, filename='preprint_file_two.txt')
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_preprints_get_marked_as_spammy_if_node_is_spammy(self):
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.node.check_spam(self.user, None, None)
+        self.preprint_one.reload()
+        self.preprint_two.reload()
+        assert_true(self.preprint_one.is_spammy)
+        assert_true(self.preprint_two.is_spammy)
 
 class TestSetPreprintFile(OsfTestCase):
 
@@ -763,3 +787,55 @@ class TestPreprintConfirmationEmails(OsfTestCase):
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert_equals(send_mail.call_count, 2)
+
+@pytest.mark.django_db
+class TestWithdrawnPreprint:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def preprint_pre_mod(self):
+        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_post_mod(self):
+        return PreprintFactory(provider__reviews_workflow='post-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint(self):
+        return PreprintFactory()
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
+        # test_ever_public
+
+        # non-moderated
+        assert preprint.ever_public
+
+        # pre-mod
+        preprint_pre_mod.run_submit(user)
+
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.run_reject(user, 'it')
+        preprint_pre_mod.reload()
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.run_accept(user, 'it')
+        preprint_pre_mod.reload()
+        assert preprint_pre_mod.ever_public
+
+        # post-mod
+        preprint_post_mod.run_submit(user)
+        assert preprint_post_mod.ever_public
+
+        # test_cannot_set_ever_public_to_False
+        preprint_pre_mod.ever_public = False
+        preprint_post_mod.ever_public = False
+        preprint.ever_public = False
+        with pytest.raises(ValidationError):
+            preprint.save()
+        with pytest.raises(ValidationError):
+            preprint_pre_mod.save()
+        with pytest.raises(ValidationError):
+            preprint_post_mod.save()

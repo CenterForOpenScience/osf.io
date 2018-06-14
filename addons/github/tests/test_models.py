@@ -3,6 +3,7 @@
 import mock
 import pytest
 import unittest
+from json import dumps
 
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
@@ -67,20 +68,16 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
-    def test_to_json(self, mock_org, mock_repos, mock_check_authorization):
+    def test_to_json(self, mock_repos, mock_check_authorization):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
-    def test_to_json_user_is_owner(self, mock_check_authorization, mock_org, mock_repos):
+    def test_to_json_user_is_owner(self, mock_check_authorization, mock_repos):
         mock_check_authorization.return_value = True
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         result = self.node_settings.to_json(self.user)
         assert_true(result['user_has_auth'])
         assert_equal(result['github_user'], 'abc')
@@ -89,12 +86,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(result.get('repo_names', None), [])
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
-    def test_to_json_user_is_not_owner(self, mock_check_authorization, mock_org, mock_repos):
+    def test_to_json_user_is_not_owner(self, mock_check_authorization, mock_repos):
         mock_check_authorization.return_value = True
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
         assert_false(result['user_has_auth'])
@@ -105,16 +100,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
-    def test_get_folders(self, mock_org, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json({'name': 'test',
+    def test_get_folders(self, mock_check_authorization, mock_repos):
+        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
                                                          'id': '12345',
                                                          'owner':
                                                              {'login': 'test name'}
-                                                         })
+                                                         }))
                                    ]
-        mock_org.return_value = {}
         result = self.node_settings.get_folders()
 
         assert_equal(len(result), 1)
@@ -125,16 +118,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
-    def test_get_folders_not_have_auth(self, mock_org, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json({'name': 'test',
+    def test_get_folders_not_have_auth(self, mock_repos, mock_check_authorization):
+        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
                                                          'id': '12345',
                                                          'owner':
                                                              {'login': 'test name'}
-                                                         })
+                                                         }))
                                    ]
-        mock_org.return_value = {}
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
             self.node_settings.get_folders()
@@ -194,7 +185,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': False})
+        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -206,7 +197,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': True})
+        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -216,7 +207,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': False})
+        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -226,7 +217,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': True})
+        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,

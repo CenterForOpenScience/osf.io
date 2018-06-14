@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, TypeField,
+    JSONAPISerializer, IDField, TypeField, HideIfWithdrawal, HideIfNotWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -77,37 +77,39 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
-    is_published = ser.BooleanField(required=False)
-    is_preprint_orphan = ser.BooleanField(read_only=True)
-    license_record = NodeLicenseSerializer(required=False, source='license')
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
+    date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
+    withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    is_published = HideIfWithdrawal(ser.BooleanField(required=False))
+    is_preprint_orphan = HideIfWithdrawal(ser.BooleanField(read_only=True))
+    license_record = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
-    preprint_doi_created = VersionedDateTimeField(read_only=True)
+    node_is_public = HideIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public'))
+    preprint_doi_created = HideIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
-    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
-    date_last_transitioned = VersionedDateTimeField(read_only=True)
+    reviews_state = HideIfWithdrawal(ser.CharField(source='machine_state', read_only=True, max_length=15))
+    date_last_transitioned = HideIfWithdrawal(VersionedDateTimeField(read_only=True))
 
-    citation = RelationshipField(
+    citation = HideIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-citation',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    identifiers = RelationshipField(
+    identifiers = HideIfWithdrawal(RelationshipField(
         related_view='preprints:identifier-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    node = NodeRelationshipField(
+    node = HideIfWithdrawal(NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False
-    )
+    ))
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
@@ -115,28 +117,27 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    provider = PreprintProviderRelationshipField(
+    provider = HideIfWithdrawal(PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    )
+    ))
 
-    files = RelationshipField(
+    files = HideIfWithdrawal(RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
-    primary_file = PrimaryFileRelationshipField(
+    primary_file = HideIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        lookup_url_kwarg='file_id',
         read_only=False
-    )
+    ))
 
-    review_actions = RelationshipField(
+    review_actions = HideIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
     links = LinksField(
         {
