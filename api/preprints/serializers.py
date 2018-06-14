@@ -132,7 +132,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     primary_file = HideIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        lookup_url_kwarg='file_id',
         read_only=False
     ))
 

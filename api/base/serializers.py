@@ -184,7 +184,7 @@ class HideIfWikiDisabled(ConditionalField):
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, '2.8', '2.8') and 'wiki' not in instance.get_addon_names()
+        return not utils.is_deprecated(request.version, '2.8', '2.8') and not instance.has_addon('wiki')
 
 
 class HideIfNotNodePointerLog(ConditionalField):

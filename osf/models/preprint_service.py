@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models.mixins import ReviewableMixin
-from osf.models import NodeLog
+from osf.models import NodeLog, OSFUser
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import ReviewStates
 from osf.utils.permissions import ADMIN
@@ -228,7 +228,9 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
                     for k, v in get_headers_from_request(request).items()
                     if isinstance(v, basestring)
                 }
-            self.check_spam(self.node.creator, saved_fields, request_headers)
+            user = OSFUser.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers)
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
 
