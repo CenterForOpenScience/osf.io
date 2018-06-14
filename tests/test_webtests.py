@@ -461,7 +461,7 @@ class TestSearching(OsfTestCase):
 
     def setUp(self):
         super(TestSearching, self).setUp()
-        import website.search.search as search
+        import website.search import search
         search.delete_all()
         self.user = AuthUserFactory()
         self.auth = self.user.auth

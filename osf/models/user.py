@@ -1202,8 +1202,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def update_search(self):
-        from website.search.search import update_user
-        update_user(self)
+        from website.search import search
+        search.update_user(self)
 
     def update_search_nodes_contributors(self):
         """

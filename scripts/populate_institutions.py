@@ -13,7 +13,7 @@ django.setup()
 from website import settings
 from website.app import init_app
 from osf.models import Institution
-from website.search.search import update_institution
+from website.search import search
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -34,13 +34,13 @@ def update_or_create(inst_data):
             setattr(inst, key, val)
         inst.save()
         print('Updated {}'.format(inst.name))
-        update_institution(inst)
+        search.update_institution(inst)
         return inst, False
     else:
         inst = Institution(**inst_data)
         inst.save()
         print('Added new institution: {}'.format(inst._id))
-        update_institution(inst)
+        search.update_institution(inst)
         return inst, True
 
 

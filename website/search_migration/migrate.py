@@ -9,7 +9,6 @@ import logging
 from django.db import connection
 from elasticsearch import helpers
 
-import website.search.search as search
 from website.search.elastic_search import client
 from website.search_migration import (
     JSON_UPDATE_NODES_SQL, JSON_DELETE_NODES_SQL,
@@ -21,7 +20,8 @@ from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
-from website.search.search import update_institution, bulk_update_collected_metadata
+from website.search.search import bulk_update_collected_metadata
+from website.search import search
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ def migrate_collected_metadata(index, delete):
 
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
-        update_institution(inst, index)
+        search.update_institution(inst, index)
 
 def migrate(delete, remove=False, index=None, app=None):
     """Reindexes relevant documents in ES

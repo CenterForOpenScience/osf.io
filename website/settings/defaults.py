@@ -474,7 +474,7 @@ class CeleryConfig:
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
-        'website.search.search',
+        'website.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
