@@ -901,3 +901,19 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+
+class ProviderAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProviderAssetFile
+
+    name = factory.Faker('word')
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        providers = kwargs.pop('providers', [])
+        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.providers = providers
+        instance.save()
+        return instance
