@@ -467,3 +467,25 @@ class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
                                     ' if the problem persists get a developer to fix it.')
 
         return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class RemoveStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
+    template_name = 'nodes/remove_registrations_modal.html'
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    context_object_name = 'node'
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
+
+    def post(self, request, *args, **kwargs):
+        from osf.management.commands.force_archive import verify
+        stuck_reg = self.get_object()
+        if verify(stuck_reg):
+                stuck_reg.delete_registration_tree(save=True)
+                messages.success(request, 'The registration has been deleted')
+        else:
+            messages.error(request, 'This registration may not technically be stuck,'
+                                    ' if the problem persists get a developer to fix it.')
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
