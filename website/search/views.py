@@ -18,7 +18,7 @@ from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
-import website.search.search as search
+from website.search import search
 from website.search.util import build_query
 
 logger = logging.getLogger(__name__)
