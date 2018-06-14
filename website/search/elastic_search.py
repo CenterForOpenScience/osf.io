@@ -16,7 +16,7 @@ import six
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.db.models import Q
-from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
@@ -81,8 +81,8 @@ def client():
                 retry_on_timeout=True,
                 **settings.ELASTIC_KWARGS
             )
-            logging.getLogger('elasticsearch').setLevel(logging.WARN)
-            logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
+            logging.getLogger('elasticsearch2').setLevel(logging.WARN)
+            logging.getLogger('elasticsearch2.trace').setLevel(logging.WARN)
             logging.getLogger('urllib3').setLevel(logging.WARN)
             logging.getLogger('requests').setLevel(logging.WARN)
             CLIENT.cluster.health(wait_for_status='yellow')

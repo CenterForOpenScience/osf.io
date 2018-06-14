@@ -1,5 +1,3 @@
-# custom exceptions for ElasticSearch
-
 class SearchException(Exception):
     pass
 
@@ -11,8 +9,14 @@ class IndexNotFoundError(SearchException):
 class MalformedQueryError(SearchException):
     pass
 
+
+class BulkUpdateError(SearchException):
+    pass
+
+
 class SearchUnavailableError(SearchException):
     pass
 
-class BulkUpdateError(SearchException):
+
+class SearchDisabledException(SearchUnavailableError):
     pass

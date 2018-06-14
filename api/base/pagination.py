@@ -15,7 +15,7 @@ from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
 from osf.models import AbstractNode, Comment, Guid
-from website.search.elastic_search import DOC_TYPE_TO_MODEL
+from website.search import search
 
 
 class JSONAPIPagination(pagination.PageNumberPagination):
@@ -224,7 +224,7 @@ class SearchPaginator(DjangoPaginator):
         super(SearchPaginator, self).__init__(object_list, per_page)
 
     def search_type_to_model(self, obj_id, obj_type):
-        model = DOC_TYPE_TO_MODEL[obj_type]
+        model = search.DOC_TYPE_TO_MODEL[obj_type]
         return model.load(obj_id)
 
     def _get_count(self):

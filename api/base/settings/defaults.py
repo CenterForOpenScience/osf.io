@@ -279,3 +279,7 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# Check if a GUID is in the GUID Blacklist before creating it
+# Disable to make tests a touch faster
+GUID_CHECK_BLACKLIST = True
