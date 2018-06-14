@@ -79,6 +79,12 @@ class CollectionProvider(AbstractProvider):
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
 
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_collectionprovider', 'Can view collection provider details'),
+        )
+
     @property
     def readable_type(self):
         return 'collection'
