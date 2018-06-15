@@ -26,6 +26,7 @@ class TestNodeSettings(unittest.TestCase):
         forward = registration.get_addon('forward')
         assert_equal(forward.url, 'http://frozen.pizza.reviews/')
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestSettingsValidation(unittest.TestCase):
 
     def setUp(self):
