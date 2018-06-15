@@ -4,7 +4,7 @@ import pytest
 import unittest
 
 from tests.base import get_default_metaschema
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 from framework.auth import Auth
 from addons.base.tests.models import (
