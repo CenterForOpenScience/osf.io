@@ -13,7 +13,7 @@ class TestSearchViews(OsfTestCase):
 
     def setUp(self):
         super(TestSearchViews, self).setUp()
-        import website.search.search as search
+        from website.search import search
         search.delete_all()
 
         robbie = factories.UserFactory(fullname='Robbie Williams')
