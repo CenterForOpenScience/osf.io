@@ -283,3 +283,6 @@ CLOUD_GATAWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
 INSTALLED_APPS += ('addons.s3compat',)
 ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
 ADDONS_OAUTH.append('s3compat')
+INSTALLED_APPS += ('addons.nextcloud',)
+ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
+ADDONS_OAUTH.append('nextcloud')

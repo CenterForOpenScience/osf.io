@@ -1,0 +1,11 @@
+{
+    "nextcloud_file_added" : "${user} added file ${path} to Nextcloud in ${node}",
+    "nextcloud_file_removed" : "${user} removed ${path_type} ${path} from Nextcloud in ${node}",
+    "nextcloud_file_updated" : "${user} updated file ${path} in Nextcloud in ${node}",
+    "nextcloud_folder_created" : "${user} created folder ${path} in Nextcloud in ${node}",
+    "nextcloud_folder_selected" : "${user} linked Nextcloud folder ${folder} to ${node}",
+    "nextcloud_node_authorized" : "${user} authorized the Nextcloud addon for ${node}",
+    "nextcloud_node_deauthorized" : "${user} deauthorized the Nextcloud addon for ${node}",
+    "nextcloud_node_deauthorized_no_user" : "Nextcloud addon for ${node} deauthorized"
+
+}
