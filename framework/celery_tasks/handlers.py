@@ -47,6 +47,10 @@ def enqueue_task(signature):
     queue to run after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
+
+    if settings.TESTING and settings.TEST_OPTIONS.DISABLE_ENQUEUE_TASK:
+        return
+
     if (
         context_stack.top is None and
         getattr(api_globals, 'request', None) is None

@@ -1914,3 +1914,20 @@ FOOTER_LINKS = {
     'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
     'github': 'https://www.github.com/centerforopenscience',
 }
+
+
+
+import collections
+class TestOptions(collections.defaultdict):
+
+    def __init__(self):
+        super(TestOptions, self).__init__(lambda: False)
+
+    def __getattr__(self, key):
+        return self[key]
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+TESTING = False
+TEST_OPTIONS = TestOptions()

@@ -28,7 +28,7 @@ def generate_guid(length=5):
     while True:
         guid_id = ''.join(random.sample(ALPHABET, length))
 
-        if settings.GUID_CHECK_BLACKLIST:
+        if not settings.TESTING and not settings.TESTING.DISABLE_GUID_BLACKLIST_CHECK:
             # is the guid in the blacklist
             if BlackListGuid.objects.filter(guid=guid_id).exists():
                 continue
@@ -114,8 +114,10 @@ class BaseModel(TimeStampedModel):
         return copy
 
     def save(self, *args, **kwargs):
+        clean = kwargs.pop('clean', not (settings.TESTING and settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN))
+
         # Make Django validate on save (like modm)
-        if not (kwargs.pop('no_clean', False) or kwargs.get('force_insert') or kwargs.get('force_update')):
+        if clean and not (kwargs.get('force_insert') or kwargs.get('force_update')):
             try:
                 self.full_clean()
             except DjangoValidationError as err:

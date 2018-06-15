@@ -9,7 +9,9 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
+from django.db.models.signals import post_save
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
@@ -43,6 +45,8 @@ def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
 
+
+# @factory.django.mute_signals(post_save)
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
@@ -95,7 +99,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save(no_clean=True)
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return

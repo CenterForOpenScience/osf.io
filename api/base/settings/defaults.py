@@ -51,6 +51,8 @@ AUTHENTICATION_BACKENDS = (
 # SECURITY WARNING: don't run with debug turned on in production!
 DEV_MODE = osf_settings.DEV_MODE
 DEBUG = osf_settings.DEBUG_MODE
+TESTING = osf_settings.TESTING
+TEST_OPTIONS = osf_settings.TEST_OPTIONS
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:

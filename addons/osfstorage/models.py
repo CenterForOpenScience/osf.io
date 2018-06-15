@@ -467,12 +467,12 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
-        self.save(no_clean=True)
+        self.save(clean=False)
         # Note: The "root" node will always be "named" empty string
         root = OsfStorageFolder(name='', node=self.owner)
         root.save()
         self.root_node = root
-        self.save(no_clean=True)
+        self.save(clean=False)
 
     def before_fork(self, node, user):
         pass
