@@ -6,6 +6,7 @@ import logging
 
 import requests
 
+from framework.auth.utils import impute_names
 from website.identifiers.metadata import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
@@ -132,6 +133,37 @@ class CrossRefClient(AbstractIdentifierClient):
 
         return posted_content
 
+    def _process_crossref_name(self, contributor):
+        # Adapted from logic used in `api/citations/utils.py`
+        # If the user has a family and given name, use those
+        if contributor.family_name and contributor.given_name:
+            given = contributor.given_name
+            middle = contributor.middle_names
+            family = contributor.family_name
+            suffix = contributor.suffix
+        else:
+            names = impute_names(contributor.fullname)
+            given = names.get('given')
+            middle = names.get('middle')
+            family = names.get('family')
+            suffix = names.get('suffix')
+
+        given_name = ' '.join([given, middle]).strip()
+        surname = ' '.join([family, suffix]).strip()
+
+        given_stripped = remove_control_characters(given_name)
+        # For crossref, given_name is not allowed to have numbers or question marks
+        given_processed = ''.join(
+            [char for char in given_stripped if (not char.isdigit() and char != '?')]
+        )
+        surname_processed = remove_control_characters(surname)
+
+        processed_names = {'surname': surname_processed or given_processed}
+        if given_processed and surname_processed:
+            processed_names['given_name'] = given_processed
+
+        return processed_names
+
     def _crossref_format_contributors(self, element, preprint):
         contributors = []
         for index, contributor in enumerate(preprint.node.visible_contributors):
@@ -139,13 +171,11 @@ class CrossRefClient(AbstractIdentifierClient):
                 sequence = 'first'
             else:
                 sequence = 'additional'
-
+            name_parts = self._process_crossref_name(contributor)
             person = element.person_name(sequence=sequence, contributor_role='author')
-            contributor_given_plus_middle = remove_control_characters(
-                ' '.join([contributor.given_name, contributor.middle_names]).strip()
-            )
-            person.append(element.given_name(contributor_given_plus_middle))
-            person.append(element.surname(remove_control_characters(contributor.family_name)))
+            if name_parts.get('given_name'):
+                person.append(element.given_name(name_parts['given_name']))
+            person.append(element.surname(name_parts['surname']))
             if contributor.suffix:
                 person.append(element.suffix(remove_control_characters(contributor.suffix)))
 
