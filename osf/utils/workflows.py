@@ -83,10 +83,6 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
 ]
 
 @unique
-class NodeRequestTypes(ChoiceEnum):
+class RequestTypes(ChoiceEnum):
     ACCESS = 'access'
-
-
-@unique
-class PreprintRequestTypes(ChoiceEnum):
     WITHDRAWAL = 'withdrawal'

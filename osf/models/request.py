@@ -5,7 +5,7 @@ from django.db import models
 from include import IncludeManager
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.workflows import NodeRequestTypes, PreprintRequestTypes
+from osf.utils.workflows import RequestTypes
 from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
 
 
@@ -30,10 +30,10 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
 class NodeRequest(AbstractRequest, NodeRequestableMixin):
 
     target = models.ForeignKey('AbstractNode', related_name='node_requests')
-    request_type = models.CharField(max_length=31, choices=NodeRequestTypes.choices())
+    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
 
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
 
     target = models.ForeignKey('PreprintService', related_name='preprint_requests')
-    request_type = models.CharField(max_length=31, choices=PreprintRequestTypes.choices())
+    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())

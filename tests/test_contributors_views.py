@@ -47,7 +47,7 @@ class TestContributorUtils(OsfTestCase):
         node_request = NodeRequestFactory(
             creator=new_user,
             target=self.project,
-            request_type=workflows.NodeRequestTypes.ACCESS.value,
+            request_type=workflows.RequestTypes.ACCESS.value,
             machine_state=workflows.DefaultStates.INITIAL.value
         )
         node_request.run_submit(new_user)

@@ -190,7 +190,7 @@ def serialize_access_requests(node):
             'comment': access_request.comment,
             'id': access_request._id
         } for access_request in node.requests.filter(
-            request_type=workflows.NodeRequestTypes.ACCESS.value,
+            request_type=workflows.RequestTypes.ACCESS.value,
             machine_state=workflows.DefaultStates.PENDING.value
         ).select_related('creator')
     ]
