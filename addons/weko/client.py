@@ -53,49 +53,60 @@ class Index(object):
 class Connection(object):
     host = None
     token = None
+    username = None
+    password = None
 
-    def __init__(self, host, token):
+    def __init__(self, host, token=None, username=None, password=None):
         self.host = host
         self.token = token
+        self.username = username
+        self.password = password
 
     def get_login_user(self, default_user=None):
-        headers = {'Authorization': 'Bearer ' + self.token}
-        resp = requests.get(self.host + 'servicedocument.php', headers=headers)
+        resp = requests.get(self.host + 'servicedocument.php',
+                            **self._requests_args())
         if resp.status_code != 200:
             resp.raise_for_status()
+        if self.username is not None:
+            default_user = self.username
         return resp.headers.get('X-WEKO-Login-User', default_user)
 
     def get(self, path):
-        headers = {'Authorization': 'Bearer ' + self.token}
-        resp = requests.get(self.host + path, headers=headers)
+        resp = requests.get(self.host + path, **self._requests_args())
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
         return tree
 
     def get_url(self, url):
-        headers = {'Authorization': 'Bearer ' + self.token}
-        resp = requests.get(url, headers=headers)
+        resp = requests.get(url, **self._requests_args())
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
         return tree
 
     def delete_url(self, url):
-        headers = {'Authorization': 'Bearer ' + self.token}
-        resp = requests.delete(url, headers=headers)
+        resp = requests.delete(url, **self._requests_args())
         if resp.status_code != 200:
             resp.raise_for_status()
 
     def post_url(self, url, stream, default_headers=None):
-        headers = {'Authorization': 'Bearer ' + self.token}
-        if default_headers is not None:
-            headers.update(default_headers)
-        resp = requests.post(url, headers=headers, data=stream)
+        resp = requests.post(url, data=stream,
+                             **self._requests_args(default_headers))
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
         return tree
+
+    def _requests_args(self, headers=None):
+        if self.token is not None:
+            headers = headers.copy() if headers is not None else {}
+            headers['Authorization'] = 'Bearer ' + self.token
+            return {'headers': headers}
+        elif headers is not None:
+            return {'auth': (self.username, self.password), 'headers': headers}
+        else:
+            return {'auth': (self.username, self.password)}
 
 
 def parse_index(desc):
@@ -103,9 +114,10 @@ def parse_index(desc):
                  index_id=desc.find('{%s}identifier' % DC_NAMESPACE).text,
                  about=desc.attrib['{%s}about' % RDF_NAMESPACE])
 
-def _connect(host, token):
+def connect(sword_url, token=None, username=None, password=None):
     try:
-        return Connection(host, token)
+        return Connection(sword_url, token=token,
+                          username=username, password=password)
     except ConnectionError:
         return None
 
@@ -114,21 +126,20 @@ def connect_from_settings(weko_settings, node_settings):
     if not (node_settings and node_settings.external_account):
         return None
 
-    host = weko_settings.REPOSITORIES[node_settings.external_account.provider_id.split(':')[0]]['host']
-    token = node_settings.external_account.oauth_key
+    from addons.weko.provider import WEKOProvider
+    provider = WEKOProvider(node_settings.external_account)
 
+    if provider.repoid is not None:
+        return connect(provider.sword_url, token=provider.token)
+    else:
+        return connect(provider.sword_url, username=provider.userid,
+                       password=provider.password)
+
+
+def connect_or_error(sword_url, token=None, username=None, password=None):
     try:
-        return Connection(host, token)
-    except UnauthorizedError:
-        return None
-
-
-def connect_or_error(host, token):
-    try:
-        connection = _connect(host, token)
-        if not connection:
-            raise HTTPError(http.SERVICE_UNAVAILABLE)
-        return connection
+        return Connection(sword_url, token=token,
+                          username=username, password=password)
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
@@ -137,10 +148,14 @@ def connect_from_settings_or_401(weko_settings, node_settings):
     if not (node_settings and node_settings.external_account):
         return None
 
-    host = weko_settings.REPOSITORIES[node_settings.external_account.provider_id.split(':')[0]]['host']
-    token = node_settings.external_account.oauth_key
+    from addons.weko.provider import WEKOProvider
+    provider = WEKOProvider(node_settings.external_account)
 
-    return connect_or_error(host, token)
+    if provider.repoid is not None:
+        return connect_or_error(provider.sword_url, token=provider.token)
+    else:
+        return connect_or_error(provider.sword_url, username=provider.userid,
+                                password=provider.password)
 
 
 def get_all_indices(connection):
