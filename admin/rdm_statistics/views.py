@@ -211,12 +211,12 @@ class ProviderData(object):
                     sum_number += entry.subtotal_file_number
                 size_row_list.append(sum_size)
                 number_row_list.append(sum_number)
-            self.size_df = self.size_df.append(pd.DataFrame({"left": self.left,
-                                                             "height": size_row_list,
-                                                             "type": ext}))
-            self.number_df = self.number_df.append(pd.DataFrame({"left": self.left,
-                                                                 "height": number_row_list,
-                                                                 "type": ext}))
+            self.size_df = self.size_df.append(pd.DataFrame({'left': self.left,
+                                                             'height': size_row_list,
+                                                             'type': ext}))
+            self.number_df = self.number_df.append(pd.DataFrame({'left': self.left,
+                                                                 'height': number_row_list,
+                                                                 'type': ext}))
         self.size_df.fillna(0)
         self.number_df.fillna(0)
 
@@ -227,24 +227,24 @@ class ProviderData(object):
         statistics_data.label = self.x_tk
         statistics_data.data_type = data_type
         if data_type == 'num':
-            number_df_sum = self.number_df.groupby("left", as_index=False).sum()
+            number_df_sum = self.number_df.groupby('left', as_index=False).sum()
             statistics_data.df = self.number_df
             number_sum_list = list(number_df_sum['height'].values.flatten())
-            statistics_data.title = "Number of files"
+            statistics_data.title = 'Number of files'
             statistics_data.y_label = 'File Numbers'
-            statistics_data.add("number", number_sum_list)
+            statistics_data.add('number', number_sum_list)
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEEEFF'
             statistics_data.image_string = create_image_string(statistics_data.provider,
                                                                statistics_data=statistics_data)
         elif data_type == 'size':
-            size_df_sum = self.size_df.groupby("left", as_index=False).sum()
+            size_df_sum = self.size_df.groupby('left', as_index=False).sum()
             statistics_data.df = self.size_df
             size_sum_list = list(size_df_sum['height'].values.flatten())
-            statistics_data.title = "Subtotal of file sizes"
+            statistics_data.title = 'Subtotal of file sizes'
             statistics_data.y_label = 'File Sizes'
-            # statistics_data.add("size", size_sum_list)
-            statistics_data.add("size", map(lambda x: approximate_size(x, True), size_sum_list))
+            # statistics_data.add('size', size_sum_list)
+            statistics_data.add('size', map(lambda x: approximate_size(x, True), size_sum_list))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
             statistics_data.image_string = create_image_string(statistics_data.provider, statistics_data=statistics_data)
@@ -270,7 +270,7 @@ class StatisticsData(object):
         self.data_type = ''
         self.graphstyle = 'darkgrid'
         self.background = '#CCCCFF'
-        self.title = ""
+        self.title = ''
         self.data = {}
         self.df = {}
         self.label = []
@@ -279,7 +279,7 @@ class StatisticsData(object):
         self.image_str = ''
 
     def add(self, ext, data):
-        "add data"
+        'add data'
         self.data[ext] = data
 
 
@@ -312,10 +312,10 @@ def create_image_string(provider, statistics_data):
     if statistics_data.data_type == 'ext':
         data = statistics_data.df
     else:
-        size_df_sum = statistics_data.df.groupby("left", as_index=False).sum()
+        size_df_sum = statistics_data.df.groupby('left', as_index=False).sum()
         size_sum_list = list(size_df_sum['height'].values.flatten())
-        data = pd.DataFrame({"left": left, "height": size_sum_list,
-                             "type": statistics_data.data_type})
+        data = pd.DataFrame({'left': left, 'height': size_sum_list,
+                             'type': statistics_data.data_type})
 
     # fig properties
     fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
@@ -323,7 +323,7 @@ def create_image_string(provider, statistics_data):
     # sns.set_palette("bright", 8)
     sns.set_style(statistics_data.graphstyle)
     fig.patch.set_facecolor(statistics_data.background)
-    ax = sns.pointplot(x="left", y="height", hue="type", data=data)
+    ax = sns.pointplot(x='left', y='height', hue='type', data=data)
     ax.set_xticklabels(labels=statistics_data.label, rotation=20)
     ax.set_xlabel(xlabel=statistics_data.x_label)
     ax.set_ylabel(ylabel=statistics_data.y_label)
@@ -530,22 +530,22 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         if statistics_data.data_type == 'ext':
             data = statistics_data.df
         else:
-            size_df_sum = statistics_data.df.groupby("left", as_index=False).sum()
+            size_df_sum = statistics_data.df.groupby('left', as_index=False).sum()
             size_sum_list = list(size_df_sum['height'].values.flatten())
             # print(size_sum_list)
-            data = pd.DataFrame({"left": left, "height": size_sum_list, "type": statistics_data.data_type})
+            data = pd.DataFrame({'left': left, 'height': size_sum_list, 'type': statistics_data.data_type})
             # print(data)
         # for key, item in statistics_data.data.items():
-        #     data = data.append(pd.DataFrame({"left": left, "height": item, "type": key}))
+        #     data = data.append(pd.DataFrame({'left': left, 'height': item, 'type': key}))
         # fig properties
         fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
         # palette変更
-        # sns.set_palette("bright", 8)
+        # sns.set_palette('bright', 8)
         # if graph_type == 'ext':
         #     sns.set_style('darkgrid')
         sns.set_style(statistics_data.graphstyle)
         fig.patch.set_facecolor(statistics_data.background)
-        ax = sns.pointplot(x="left", y="height", hue="type", data=data)
+        ax = sns.pointplot(x='left', y='height', hue='type', data=data)
         ax.set_xticklabels(labels=statistics_data.label, rotation=20)
         ax.set_xlabel(xlabel=statistics_data.x_label)
         ax.set_ylabel(ylabel=statistics_data.y_label)
@@ -553,7 +553,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         ax.tick_params(labelsize=9)
         ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         # ax.yaxis.set_minor_locator(ticker.MaxNLocator(integer=True))
-        response = HttpResponse(content_type="image/png")
+        response = HttpResponse(content_type='image/png')
         canvas = FigureCanvasAgg(fig)
         canvas.print_png(response)
         plt.close()
@@ -574,7 +574,7 @@ class GatherView(TemplateView):
         # simple authentication
         access_token = self.kwargs.get('access_token')
         if not simple_auth(access_token):
-            response_hash = {"state": "fail", "error": 'access forbidden'}
+            response_hash = {'state': 'fail', 'error': 'access forbidden'}
             response_json = json.dumps(response_hash)
             response = HttpResponse(response_json, content_type='application/json')
             return response
@@ -616,7 +616,7 @@ class GatherView(TemplateView):
             # statistics mail send
             send_stat_mail(request)
         except Exception as err:
-            response_hash = {"state": "fail", "error": str(err)}
+            response_hash = {'state': 'fail', 'error': str(err)}
             response_json = json.dumps(response_hash)
             response = HttpResponse(response_json, content_type='application/json')
             send_error_mail(err)
@@ -683,11 +683,11 @@ class GatherView(TemplateView):
 
     def count_project_files(self, node_id, provider, path, cookies):
         """recursive count"""
-        # print ("path : " + path)
+        # print ('path : ' + path)
         url_api = self.get_wb_url(node_id=node_id, provider=provider, path=path, cookie=cookies)
         # print(url_api)
         self.session.mount('http://', self.adapter)
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         # connect timeoutを10秒, read timeoutを30秒に設定
         res = self.session.get(url=url_api, headers=headers, timeout=(10.0, 30.0))
         # 404等のhttp status errorの場合はraise
@@ -771,14 +771,14 @@ def send_error_mail(err):
         'content': 'ERROR OCCURED at ' + current_date.strftime('%Y/%m/%d') + '.\r\nERROR: \r\n' + str(err),
     }
     send_email(to_list=to_list, cc_list=None, data=mail_data)
-    response_hash = {"state": "fail", "error": str(err)}
+    response_hash = {'state': 'fail', 'error': str(err)}
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
 def send_email(to_list, cc_list, data, user, backend='smtp'):
     """send email to administrator"""
-    ret = {"is_success": True, "error": ""}
+    ret = {'is_success': True, 'error': ''}
     try:
         if backend == 'smtp':
             connection = mail.get_connection(backend='django.core.mail.backends.smtp.EmailBackend')
@@ -797,8 +797,8 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         connection.send_messages([message])
         connection.close()
     except Exception as e:
-        ret["is_success"] = False
-        ret["error"] = "Email error: " + str(e)
+        ret['is_success'] = False
+        ret['error'] = 'Email error: ' + str(e)
     finally:
         return ret
 
@@ -826,7 +826,7 @@ def get_current_date(is_str=False):
     # print(current_datetime.year, current_datetime.month, current_datetime.day)
     current_date = datetime.date(current_datetime.year, current_datetime.month, current_datetime.day)
     if is_str:
-        return current_datetime.strftime("%Y/%m/%d")
+        return current_datetime.strftime('%Y/%m/%d')
     else:
         return current_date
 
@@ -850,7 +850,7 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         """コンテキスト取得"""
-        ret = {"is_success": True, "error": ""}
+        ret = {'is_success': True, 'error': ''}
         ctx = super(SendView, self).get_context_data(**kwargs)
         user = self.request.user
         institution_id = int(kwargs['institution_id'])
@@ -865,7 +865,7 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         if user.is_superuser:
             cc_list.remove(user.username)
         elif not user.is_staff:
-            ret["is_success"] = False
+            ret['is_success'] = False
             return ctx
         current_date = get_current_date()
         attachment_file_name = 'statistics' + current_date.strftime('%Y/%m/%d') + '.pdf'
@@ -889,7 +889,7 @@ SUFFIXES = {1000: ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
 
 def approximate_size(size, a_kilobyte_is_1024_bytes=True):
-    '''Convert a file size to human-readable form.
+    """Convert a file size to human-readable form.
 
     Keyword arguments:
     size -- file size in bytes
@@ -898,7 +898,7 @@ def approximate_size(size, a_kilobyte_is_1024_bytes=True):
 
     Returns: string
 
-    '''
+    """
     if size < 0:
         raise ValueError('number must be non-negative')
 
@@ -1077,13 +1077,13 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 
 def test_mail(request, status=None):
     """send email test """
-    ret = {"is_success": True, "error": ""}
+    ret = {'is_success': True, 'error': ''}
     # to list
     all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
     to_list = all_superusers_list
     cc_list = []
     # attachment file
-    current_date = datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y/%m/%d %H:%M:%S")
+    current_date = datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime('%Y/%m/%d %H:%M:%S')
     subject = 'test mail : ' + current_date
     content = 'test regular mail sending'
     try:
@@ -1101,8 +1101,8 @@ def test_mail(request, status=None):
         connection.send_messages([message])
         connection.close()
     except Exception as e:
-        ret["is_success"] = False
-        ret["error"] = "Email error: " + str(e)
+        ret['is_success'] = False
+        ret['error'] = 'Email error: ' + str(e)
     json_str = json.dumps(ret)
     response = HttpResponse(json_str, content_type='application/javascript; charset=UTF-8', status=status)
     return response

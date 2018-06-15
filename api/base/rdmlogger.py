@@ -7,9 +7,9 @@ import logging
 class RdmLogger(logging.LoggerAdapter):
     def process(self, msg, kwargs):
         information = {
-            "extra": {
-                "kwargs": kwargs,
-                "structual": True,
+            'extra': {
+                'kwargs': kwargs,
+                'structual': True,
             }
         }
         return msg, information
@@ -21,9 +21,9 @@ class RdmLoggerFormatter:
         self.formatter = formatter or logging.Formatter(logging.BASIC_FORMAT)
 
     def format(self, record):
-        if not getattr(record, "structual", False):
+        if not getattr(record, 'structual', False):
             return self.formatter.format(record)
-        d = {"msg": record.msg, "level": record.levelname}
+        d = {'msg': record.msg, 'level': record.levelname}
         d.update(record.kwargs)
         return json.dumps(d)
 

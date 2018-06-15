@@ -200,7 +200,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
 
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
@@ -221,7 +221,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
         ctx['project_title'] = absNodeData.title
         ctx['institution_id'] = self.kwargs['institution_id']
         ctx['web_api_url'] = self.web_api_url(guid._id)
-        return HttpResponse(json.dumps(ctx), content_type="application/json")
+        return HttpResponse(json.dumps(ctx), content_type='application/json')
 
     def web_url_path(self, node_id):
         return settings.osf_settings.DOMAIN + node_id + '/timestamp/json/'
@@ -244,7 +244,7 @@ class TimestampVerifyData(RdmPermissionMixin, View):
 
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_api_url(guid._id)
@@ -266,7 +266,7 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         response_json = web_api_response.json()
         web_api_response.close()
         response = response_json
-        return HttpResponse(json.dumps(response), content_type="application/json")
+        return HttpResponse(json.dumps(response), content_type='application/json')
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
@@ -283,7 +283,7 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
         ctx = super(AddTimeStampResultList, self).get_context_data(**kwargs)
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
@@ -323,7 +323,7 @@ class AddTimestampData(RdmPermissionMixin, View):
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
 
         url = None
@@ -346,7 +346,7 @@ class AddTimestampData(RdmPermissionMixin, View):
                 shutil.rmtree(tmp_dir)
             os.mkdir(tmp_dir)
             download_file_path = os.path.join(tmp_dir, request_data['file_name'][0])
-            with open(download_file_path, "wb") as fout:
+            with open(download_file_path, 'wb') as fout:
                 fout.write(res.content)
                 res.close()
 
@@ -362,8 +362,8 @@ class AddTimestampData(RdmPermissionMixin, View):
                 shutil.rmtree(tmp_dir)
             raise ValueError('Exception:{}'.format(err))
 
-        request_data.update({"result": result})
-        return HttpResponse(json.dumps(request_data), content_type="application/json")
+        request_data.update({'result': result})
+        return HttpResponse(json.dumps(request_data), content_type='application/json')
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
