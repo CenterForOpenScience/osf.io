@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, CollectedGuidMetadata
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
