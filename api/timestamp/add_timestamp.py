@@ -40,8 +40,8 @@ class AddTimestamp:
             retries = Retry(total=api_settings.REQUEST_TIME_OUT,
                             backoff_factor=1, status_forcelist=api_settings.ERROR_HTTP_STATUS)
             session = requests.Session()
-            session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
-            session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+            session.mount('http://', requests.adapters.HTTPAdapter(max_retries=retries))
+            session.mount('https://', requests.adapters.HTTPAdapter(max_retries=retries))
 
             res = requests.post(api_settings.TIME_STAMP_AUTHORITY_URL,
                                 headers=api_settings.REQUEST_HEADER, data=ts_request_file, stream=True)

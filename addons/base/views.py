@@ -436,7 +436,7 @@ def create_waterbutler_log(payload, **kwargs):
             metadata['path'] = metadata['path'].lstrip('/')
 
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
-                upload_file_add_timestamptoken(payload, node)
+               add_result = upload_file_add_timestamptoken(payload, node)
 
             node_addon.create_waterbutler_log(auth, action, metadata)
 
@@ -827,7 +827,7 @@ def upload_file_add_timestamptoken(payload, node):
         user_info = OSFUser.objects.get(id=guid.object_id)
         cookie = user_info.get_or_create_cookie()
         cookies = {settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         res_content = None
         if metadata['provider'] == 'osfstorage':
             res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
@@ -839,12 +839,12 @@ def upload_file_add_timestamptoken(payload, node):
         res.close()
 
         current_datetime = timezone.now()
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         #print(current_datetime_str)
         tmp_dir = 'tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
-        with open(download_file_path, "wb") as fout:
+        with open(download_file_path, 'wb') as fout:
             fout.write(res_content)
 
         addTimestamp = AddTimestamp()
@@ -874,14 +874,14 @@ def adding_timestamp(auth, node, file_node, version):
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         cookie = user_info.get_or_create_cookie()
         cookies = {settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
                            version=version.identifier, mode=None, _internal=False)),
                            headers=headers, cookies=cookies)
         tmp_dir = 'tmp_{}'.format(ret['user']['id'])
         os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
-        with open(tmp_file, "wb") as fout:
+        with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
         addTimestamp = AddTimestamp()
@@ -911,20 +911,20 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     #verify_title = None
     tmp_dir = 'tmp_{}'.format(guid)
     current_datetime = timezone.now()
-    current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+    current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
     tmp_dir = 'tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         cookie = user_info.get_or_create_cookie()
         cookies = {settings.COOKIE_NAME: cookie}
-        headers = {"content-type": "application/json"}
+        headers = {'content-type': 'application/json'}
         res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
                            version=version.identifier, mode=None, _internal=False)), headers=headers, cookies=cookies)
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
-        with open(tmp_file, "wb") as fout:
+        with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
         verifyCheck = TimeStampTokenVerifyCheck()

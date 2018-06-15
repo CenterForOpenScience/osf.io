@@ -60,14 +60,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_file_timestamp_check_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_file_timestamp_check_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -107,22 +107,22 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_timestamp_check_return_status_2.test_file_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_timestamp_check_return_status_2.test_file_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
         addTimestamp.add_timestamp(self.user._id, file_node._id, self.node._id, provider, os.path.join('/', filename), tmp_file, tmp_dir)
 
         ## File(tmp_file) update from outside the system
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -158,14 +158,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_file_timestamp_check_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -201,14 +201,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -246,14 +246,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -290,14 +290,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()

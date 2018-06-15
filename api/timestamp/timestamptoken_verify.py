@@ -64,7 +64,7 @@ class TimeStampTokenVerifyCheck:
     def get_filenameStruct(self, fsnode, fname):
         try:
             if fsnode.parent is not None:
-                fname = self.get_filenameStruct(fsnode.parent, fname) + "/" + fsnode.name
+                fname = self.get_filenameStruct(fsnode.parent, fname) + '/' + fsnode.name
             else:
                 fname = fsnode.name
         except Exception as err:
@@ -171,7 +171,7 @@ class TimeStampTokenVerifyCheck:
                 timestamptoken_file = guid + '.tsr'
                 timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
                 try:
-                    with open(timestamptoken_file_path, "wb") as fout:
+                    with open(timestamptoken_file_path, 'wb') as fout:
                         fout.write(verifyResult.timestamp_token)
 
                 except Exception as err:
@@ -215,7 +215,7 @@ class TimeStampTokenVerifyCheck:
         # RDMINFO: TimeStampVerify
         if provider == 'osfstorage':
             if not baseFileNode._path:
-                filename = self.get_filenameStruct(baseFileNode, "")
+                filename = self.get_filenameStruct(baseFileNode, '')
             else:
                 filename = baseFileNode._path
             filepath = baseFileNode.provider + filename
@@ -227,7 +227,7 @@ class TimeStampTokenVerifyCheck:
         ## RDM Logger ##
 #        import sys
         rdmlogger = RdmLogger(rdmlog, {})
-        rdmlogger.info("RDM Project", RDMINFO="TimeStampVerify", result_status=ret, user=guid, project=abstractNode.title, file_path=filepath, file_id=file_id)
+        rdmlogger.info('RDM Project', RDMINFO='TimeStampVerify', result_status=ret, user=guid, project=abstractNode.title, file_path=filepath, file_id=file_id)
         return {'verify_result': ret, 'verify_result_title': verify_result_title,
                 'operator_user': operator_user, 'operator_date': operator_date,
                 'filepath': filepath}

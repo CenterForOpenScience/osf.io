@@ -110,7 +110,7 @@ def collect_timestamp_trees(auth, node, **kwargs):
     api_url = util.api_v2_url(api_url_path(kwargs.get('pid')))
     cookie = user_info.get_or_create_cookie()
     cookies = {settings.COOKIE_NAME: cookie}
-    headers = {"content-type": "application/json"}
+    headers = {'content-type': 'application/json'}
     provider_json_res = None
     file_res = requests.get(api_url, headers=headers, cookies=cookies)
     provider_json_res = file_res.json()
@@ -178,7 +178,7 @@ def get_timestamp_error_data(auth, node, **kwargs):
         data = request.args.to_dict()
 
     cookies = {settings.COOKIE_NAME: auth.user.get_or_create_cookie()}
-    headers = {"content-type": "application/json"}
+    headers = {'content-type': 'application/json'}
     url = None
     tmp_dir = None
     result = None
@@ -196,7 +196,7 @@ def get_timestamp_error_data(auth, node, **kwargs):
         res = requests.get(url, headers=headers, cookies=cookies)
 #        tmp_dir='tmp_{}'.format(auth.user._id)
         current_datetime = datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         #print(current_datetime_str)
         tmp_dir = 'tmp_{}_{}_{}'.format(auth.user._id, file_node._id, current_datetime_str)
         #print(tmp_dir)
@@ -204,7 +204,7 @@ def get_timestamp_error_data(auth, node, **kwargs):
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])
-        with open(download_file_path, "wb") as fout:
+        with open(download_file_path, 'wb') as fout:
             fout.write(res.content)
             res.close()
 
@@ -236,7 +236,7 @@ def add_timestamp_token(auth, node, **kwargs):
         data = request.args.to_dict()
 
     cookies = {settings.COOKIE_NAME: auth.user.get_or_create_cookie()}
-    headers = {"content-type": "application/json"}
+    headers = {'content-type': 'application/json'}
     url = None
     tmp_dir = None
     try:
@@ -256,7 +256,7 @@ def add_timestamp_token(auth, node, **kwargs):
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])
-        with open(download_file_path, "wb") as fout:
+        with open(download_file_path, 'wb') as fout:
             fout.write(res.content)
             res.close()
 
@@ -285,7 +285,7 @@ def collect_timestamp_trees_to_json(auth, node, **kwargs):
     api_url = util.api_v2_url(api_url_path(kwargs.get('pid')))
     cookie = user_info.get_or_create_cookie()
     cookies = {settings.COOKIE_NAME: cookie}
-    headers = {"content-type": "application/json"}
+    headers = {'content-type': 'application/json'}
     provider_json_res = None
     file_res = requests.get(api_url, headers=headers, cookies=cookies)
     provider_json_res = file_res.json()
