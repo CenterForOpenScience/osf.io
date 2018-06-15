@@ -1523,7 +1523,7 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):
-    if created:
+    if created and not (settings.TESTING and settings.TEST_OPTIONS.DISABLE_BOOKMARK_COLLECTION_CREATION):
         new_bookmark_collection(instance)
 
 
@@ -1531,5 +1531,5 @@ def create_bookmark_collection(sender, instance, created, **kwargs):
 def create_quickfiles_project(sender, instance, created, **kwargs):
     from osf.models.quickfiles import QuickFilesNode
 
-    if created:
+    if created and not (settings.TESTING and settings.TEST_OPTIONS.DISABLE_QUICK_FILES_CREATION):
         QuickFilesNode.objects.create_for_user(instance)

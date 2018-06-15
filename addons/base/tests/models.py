@@ -2,6 +2,7 @@ import abc
 
 import mock
 import pytest
+from django.conf import settings
 from addons.base.tests.utils import MockFolder
 from django.utils import timezone
 from framework.auth import Auth
@@ -37,6 +38,8 @@ class OAuthAddonModelTestSuiteMixinBase(object):
 class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def setUp(self):
+        settings.TEST_OPTIONS.DISABLE_QUICK_FILES_CREATION = False
+
         self.node = ProjectFactory()
         self.user = self.node.creator
 

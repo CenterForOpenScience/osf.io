@@ -53,6 +53,7 @@ DEV_MODE = osf_settings.DEV_MODE
 DEBUG = osf_settings.DEBUG_MODE
 TESTING = osf_settings.TESTING
 TEST_OPTIONS = osf_settings.TEST_OPTIONS
+DEFAULT_TEST_OPTIONS = osf_settings.DEFAULT_TEST_OPTIONS
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:

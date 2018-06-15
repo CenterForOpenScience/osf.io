@@ -5,6 +5,7 @@ import unittest
 
 import pytest
 import pytz
+from django.conf import settings as dj_settings
 from django.utils import timezone
 from nose.tools import *  # noqa
 
@@ -611,6 +612,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         super(TestOsfStorageFileVersion, self).setUp()
         self.user = factories.AuthUserFactory()
         self.mock_date = datetime.datetime(1991, 10, 31, tzinfo=pytz.UTC)
+        dj_settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False
 
     def test_fields(self):
         version = factories.FileVersionFactory(
@@ -743,6 +745,8 @@ class TestOsfStorageFileVersion(StorageTestCase):
 @pytest.mark.django_db
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
+        dj_settings.TEST_OPTIONS.DISABLE_QUICK_FILES_CREATION = False
+
         super(TestOsfStorageCheckout, self).setUp()
         self.user = factories.AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)

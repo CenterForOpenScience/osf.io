@@ -19,6 +19,7 @@ from osf_tests.factories import (
 )
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
+from website import settings as osf_settings
 from website.exceptions import NodeStateError
 from addons.wiki import settings
 from addons.wiki import views
@@ -43,6 +44,7 @@ SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
+        osf_settings.TEST_OPTIONS.DISABLE_BOOKMARK_COLLECTION_CREATION = False
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -575,6 +577,8 @@ class TestWikiRename(OsfTestCase):
     def setUp(self):
         super(TestWikiRename, self).setUp()
 
+        osf_settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False
+
         creator = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=True, creator=creator)
@@ -763,6 +767,7 @@ class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
         super(TestWikiUuid, self).setUp()
+        osf_settings.TEST_OPTIONS.DISABLE_BOOKMARK_COLLECTION_CREATION = False
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.wname = 'foo.bar'
@@ -1308,6 +1313,7 @@ class TestPublicWiki(OsfTestCase):
 class TestWikiMenu(OsfTestCase):
 
     def setUp(self):
+        osf_settings.TEST_OPTIONS.DISABLE_BOOKMARK_COLLECTION_CREATION = False
         super(TestWikiMenu, self).setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)

@@ -86,6 +86,8 @@ class DbTestCase(unittest.TestCase):
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
 
+        settings.TEST_OPTIONS.update(settings.DEFAULT_TEST_OPTIONS)
+
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
@@ -97,6 +99,7 @@ class DbTestCase(unittest.TestCase):
         super(DbTestCase, cls).tearDownClass()
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
+        settings.TEST_OPTIONS.update(settings.DEFAULT_TEST_OPTIONS)
 
 
 class AppTestCase(unittest.TestCase):

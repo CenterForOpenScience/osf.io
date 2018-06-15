@@ -5,7 +5,7 @@ from faker import Factory
 
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from website import settings
+from website import settings as osf_settings
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
@@ -71,9 +71,30 @@ def disconnected_signals():
 @pytest.fixture(autouse=True)
 def patched_settings():
     """Patch settings for tests"""
-    settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-    settings.BCRYPT_LOG_ROUNDS = 1
+    osf_settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+    osf_settings.BCRYPT_LOG_ROUNDS = 1
 
 @pytest.fixture()
 def fake():
     return Factory.create()
+
+@pytest.fixture(autouse=True)
+def settings(settings):
+    settings.TEST_OPTIONS.update(settings.DEFAULT_TEST_OPTIONS)
+    yield settings
+    settings.TEST_OPTIONS.update(settings.DEFAULT_TEST_OPTIONS)
+
+
+@pytest.fixture
+def enable_quickfiles_creation(settings):
+    settings.TEST_OPTIONS.DISABLE_QUICK_FILES_CREATION = False
+
+
+@pytest.fixture
+def enable_bookmark_creation(settings):
+    settings.TEST_OPTIONS.DISABLE_BOOKMARK_COLLECTION_CREATION = False
+
+
+@pytest.fixture
+def enable_implicit_clean(settings):
+    settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False

@@ -3,9 +3,6 @@ from website import settings
 from api.base.settings import *  # noqa
 
 TESTING = settings.TESTING = True
-TEST_OPTIONS.DISABLE_ENQUEUE_TASK = True
-TEST_OPTIONS.DISABLE_GUID_BLACKLIST_CHECK = True
-TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = True
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {

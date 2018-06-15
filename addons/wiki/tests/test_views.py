@@ -5,6 +5,7 @@ import mock
 import pytz
 import datetime
 from django.utils import timezone
+from django.conf import settings
 
 from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
      PageCannotRenameError, PageConflictError, PageNotFoundError)
@@ -100,6 +101,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert self.project.get_wiki_version('second').content == 'Hola mundo'
 
     def test_update_name_invalid(self):
+        settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
         with pytest.raises(NameInvalidError):
@@ -191,6 +193,7 @@ class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):
         super(TestRenameNodeWiki, self).setUp()
+        settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
