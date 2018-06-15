@@ -17,6 +17,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from framework.flask import rm_handlers
+from framework.auth.utils import impute_names
 
 
 @pytest.fixture()
@@ -148,3 +149,44 @@ class TestCrossRefClient:
 
         assert root.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE).text == settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
         assert not root.find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE)
+
+    def test_process_crossref_name(self, crossref_client):
+        contributor = AuthUserFactory()
+
+        # Given name and no family name
+        contributor.given_name = 'Hey'
+        contributor.family_name = ''
+        contributor.save()
+        meta = crossref_client._process_crossref_name(contributor)
+        imputed_names = impute_names(contributor.fullname)
+        assert meta == {'surname': imputed_names['family'], 'given_name': imputed_names['given']}
+
+        # Just one name
+        contributor.fullname = 'Ke$ha'
+        contributor.given_name = ''
+        contributor.family_name = ''
+        contributor.save()
+        meta = crossref_client._process_crossref_name(contributor)
+        assert meta == {'surname': contributor.fullname}
+
+        # Number and ? in given name
+        contributor.fullname = 'Scotty2Hotty? Ronald Garland II'
+        contributor.given_name = ''
+        contributor.family_name = ''
+        contributor.save()
+        meta = crossref_client._process_crossref_name(contributor)
+        assert meta == {'given_name': 'ScottyHotty Ronald', 'surname': 'Garland II'}
+
+    def test_metadata_for_single_name_contributor_only_has_surname(self, crossref_client, preprint):
+        contributor = preprint.node.creator
+        contributor.fullname = 'Madonna'
+        contributor.given_name = ''
+        contributor.family_name = ''
+        contributor.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert contributors.find('.//{%s}surname' % crossref.CROSSREF_NAMESPACE).text == 'Madonna'
+        assert not contributors.find('.//{%s}given_name' % crossref.CROSSREF_NAMESPACE)
