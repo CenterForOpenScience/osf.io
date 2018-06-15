@@ -252,6 +252,7 @@ services:
       - web
     environment:
       - BACKEND=local
+      - ASSETS_PREFIX=/ember_osf_web/
     expose:
       - 4200
       - 41953
