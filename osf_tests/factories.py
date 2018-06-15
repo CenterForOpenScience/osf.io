@@ -11,7 +11,7 @@ import factory
 import pytz
 import factory.django
 from factory.django import DjangoModelFactory
-from django.db.models.signals import post_save
+# from django.db.models.signals import post_save
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
