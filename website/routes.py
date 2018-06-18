@@ -1318,7 +1318,7 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_quickfile,
             json_renderer
-        ), 
+        ),
         Rule(
             [
                 '/project/<pid>/timestamp/',
