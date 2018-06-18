@@ -371,6 +371,9 @@ CROSSREF_PASSWORD = None
 CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
 CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
 
+ECSARXIV_CROSSREF_USERNAME = None
+ECSARXIV_CROSSREF_PASSWORD = None
+
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
 

@@ -21,7 +21,7 @@ from website.notifications import utils
 from website.preprints.tasks import on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
-from website.identifiers.clients import CrossRefClient
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
@@ -218,6 +218,8 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     def get_doi_client(self):
         if settings.CROSSREF_URL:
+            if self.provider._id == 'ecsarxiv':
+                return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
             return CrossRefClient(base_url=settings.CROSSREF_URL)
         else:
             return None

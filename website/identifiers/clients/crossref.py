@@ -28,6 +28,9 @@ class CrossRefClient(AbstractIdentifierClient):
     def __init__(self, base_url):
         self.base_url = base_url
 
+    def get_credentials(self):
+        return (settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
+
     def build_doi(self, preprint):
         from osf.models import PreprintProvider
 
@@ -201,14 +204,15 @@ class CrossRefClient(AbstractIdentifierClient):
             metadata = self.build_metadata(preprint, status)
             doi = self.build_doi(preprint)
             filename = doi.split('/')[-1]
+            username, password = self.get_credentials()
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
             requests.request(
                 'POST',
                 self._build_url(
                     operation='doMDUpload',
-                    login_id=settings.CROSSREF_USERNAME,
-                    login_passwd=settings.CROSSREF_PASSWORD,
+                    login_id=username,
+                    login_passwd=password,
                     fname='{}.xml'.format(filename)
                 ),
                 files={'file': ('{}.xml'.format(filename), metadata)},
@@ -228,15 +232,22 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def bulk_create(self, metadata, filename):
         # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
+        username, password = self.get_credentials()
         requests.request(
             'POST',
             self._build_url(
                 operation='doMDUpload',
-                login_id=settings.CROSSREF_USERNAME,
-                login_passwd=settings.CROSSREF_PASSWORD,
+                login_id=username,
+                login_passwd=password,
                 fname='{}.xml'.format(filename)
             ),
             files={'file': ('{}.xml'.format(filename), metadata)},
         )
 
         logger.info('Sent a bulk update of metadata to CrossRef')
+
+
+class ECSArXivCrossRefClient(CrossRefClient):
+
+    def get_credentials(self):
+        return (settings.ECSARXIV_CROSSREF_USERNAME, settings.ECSARXIV_CROSSREF_PASSWORD)

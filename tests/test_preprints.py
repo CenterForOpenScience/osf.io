@@ -25,6 +25,7 @@ from osf.utils import permissions
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
@@ -349,6 +350,12 @@ class TestPreprintIdentifiers(OsfTestCase):
         assert mock_update_doi.called
         assert mock_update_doi.call_count == 1
 
+    @mock.patch('website.settings.CROSSREF_URL', 'http://test.osf.crossref.test')
+    def test_correct_doi_client_called(self):
+        osf_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
+        assert isinstance(osf_preprint.get_doi_client(), CrossRefClient)
+        ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
+        assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
