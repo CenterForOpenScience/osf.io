@@ -11,6 +11,7 @@ import itsdangerous
 import jwe
 import jwt
 import mock
+import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
@@ -235,6 +236,7 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @pytest.mark.usefixtures('enable_quickfiles_creation')
     def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
@@ -796,6 +798,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -815,6 +818,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -848,6 +852,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
         with mock.patch('addons.github.models.NodeSettings.is_private',
                         new_callable=mock.PropertyMock) as mock_is_private:

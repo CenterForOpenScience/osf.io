@@ -43,6 +43,7 @@ def post_to_quickfiles(quickfiles, user, flask_app, **kwargs):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestUserQuickFilesNodeFileCreation:
 
     def test_create_file(self, quickfiles, user, post_to_quickfiles):

@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import
 
+import pytest
 from django.db import connection
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
@@ -42,6 +43,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         assert_equal(res.status_code, 401)
         assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
 
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_valid_credential_authenticates_and_has_permissions(self):
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
@@ -72,6 +74,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         assert_equal(res.status_code, 401)
         assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
 
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_valid_credential_twofactor_valid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
@@ -82,6 +85,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)})
         assert_equal(res.status_code, 200)
 
+    @pytest.mark.usefixtures('enable_bookmark_creation')
     def test_valid_cookie(self):
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))

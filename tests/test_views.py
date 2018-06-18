@@ -124,6 +124,7 @@ class TestViewsAreAtomic(OsfTestCase):
         assert_equal(OSFUser.objects.count(), original_user_count + 1)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
@@ -265,6 +266,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
             check_can_access(self.project, noncontrib)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestProjectViews(OsfTestCase):
 
     def setUp(self):
@@ -1067,6 +1069,7 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(children, [])
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_implicit_clean', 'enable_enqueue_task')
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1765,6 +1768,7 @@ class TestUserAccount(OsfTestCase):
         assert_not_in("steward@james.com", unconfirmed_emails)
 
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
@@ -2310,6 +2314,7 @@ class TestUserInviteViews(OsfTestCase):
         assert_false(send_mail.called)
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_implicit_clean')
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -2688,6 +2693,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestPointerViews(OsfTestCase):
 
     def setUp(self):
@@ -3057,6 +3063,7 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -4018,6 +4025,7 @@ class TestAddonUserViews(OsfTestCase):
         assert_false(self.user.get_addon('github'))
 
 
+@pytest.mark.usefixtures('enable_enqueue_task')
 class TestConfigureMailingListViews(OsfTestCase):
 
     @classmethod
@@ -4303,6 +4311,7 @@ class TestWikiWidgetViews(OsfTestCase):
         assert_false(_should_show_wiki_widget(self.project, None))
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_implicit_clean')
 class TestProjectCreation(OsfTestCase):
 
     def setUp(self):
@@ -4805,7 +4814,8 @@ class TestIndexView(OsfTestCase):
             assert_in(self.inst_four._id, institution_ids)
             assert_not_in(self.inst_five._id, institution_ids)
 
-
+@pytest.mark.usefixtures('enable_quickfiles_creation')
+@mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super(TestResolveGuid, self).setUp()

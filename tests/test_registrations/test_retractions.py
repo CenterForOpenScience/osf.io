@@ -4,6 +4,7 @@ import datetime
 import httplib as http
 
 import mock
+import pytest
 from django.utils import timezone
 from django.db import DataError
 from nose.tools import *  # noqa
@@ -24,6 +25,7 @@ from website.exceptions import (
 from osf.models import Contributor, Retraction
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionModelsTestCase, self).setUp()
@@ -388,6 +390,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.is_retracted)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
@@ -551,6 +554,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         assert mock_update_share.called
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class RegistrationRetractionShareHook(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionShareHook, self).setUp()
@@ -595,6 +599,7 @@ class RegistrationRetractionShareHook(OsfTestCase):
         assert not mock_update_share.called
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
@@ -705,6 +710,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.retraction.is_rejected)
         assert_equal(res.status_code, http.OK)
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(ComponentRegistrationRetractionViewsTestCase, self).setUp()
@@ -758,6 +764,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionViewsTestCase, self).setUp()

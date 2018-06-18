@@ -24,6 +24,7 @@ from website import filters, settings
 
 pytestmark = pytest.mark.django_db
 
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_quickfiles_creation')
 class TestUserSerializers(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
@@ -80,6 +81,7 @@ class TestUserSerializers(OsfTestCase):
         assert_equal(d['number_public_projects'], len(public_projects))
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
@@ -199,6 +201,7 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(serialized_node['etal'])
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestViewProject(OsfTestCase):
 
     def setUp(self):
@@ -239,6 +242,7 @@ class TestViewProject(OsfTestCase):
 
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestViewProjectEmbeds(OsfTestCase):
 
     def setUp(self):

@@ -8,6 +8,7 @@ import unittest
 
 import markupsafe
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
@@ -76,6 +77,7 @@ class TestAnUnregisteredUser(OsfTestCase):
         assert_in('/login/', res.headers['Location'])
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_quickfiles_creation')
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -277,6 +279,7 @@ class TestAUser(OsfTestCase):
         assert_equal(td2.text, user2.display_absolute_url)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestComponents(OsfTestCase):
 
     def setUp(self):
@@ -356,6 +359,7 @@ class TestComponents(OsfTestCase):
         assert_in('Components', res)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
@@ -410,6 +414,7 @@ class TestPrivateLinkView(OsfTestCase):
         )
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_quickfiles_creation')
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -503,6 +508,7 @@ class TestSearching(OsfTestCase):
         assert_in('Foobar Component', res)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
@@ -549,6 +555,7 @@ class TestShortUrls(OsfTestCase):
         )
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_implicit_clean')
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -727,6 +734,7 @@ class TestConfirmingEmail(OsfTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
+@pytest.mark.usefixtures('enable_implicit_clean', 'enable_bookmark_creation')
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
@@ -767,6 +775,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_not_in(self.project, self.user.unclaimed_records)
 
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestExplorePublicActivity(OsfTestCase):
 
     def setUp(self):
@@ -1097,6 +1106,7 @@ class TestAUserProfile(OsfTestCase):
         assert_not_in(reg.nodes[0].title, res)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
         super(TestPreprintBannerView, self).setUp()

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import pytest
 import urlparse
 import pytest
 
@@ -360,6 +361,7 @@ class TestPreprintIdentifiers(OsfTestCase):
         assert mock_update_ezid.call_count == 1
 
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

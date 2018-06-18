@@ -98,3 +98,8 @@ def enable_bookmark_creation(settings):
 @pytest.fixture
 def enable_implicit_clean(settings):
     settings.TEST_OPTIONS.DISABLE_IMPLICIT_FULL_CLEAN = False
+
+
+@pytest.fixture
+def enable_enqueue_task(settings):
+    settings.TEST_OPTIONS.DISABLE_ENQUEUE_TASK = False
