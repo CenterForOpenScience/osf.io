@@ -92,8 +92,8 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     has_auth = bool(user_settings and user_settings.has_auth)
     if has_auth:
         repo = repo or connection.repo(node_settings.repo_id)
-        project_permissions = repo.permissions.get('project_access') or {}
-        group_permissions = repo.permissions.get('group_access') or {}
+        project_permissions = repo['permissions'].get('project_access') or {}
+        group_permissions = repo['permissions'].get('group_access') or {}
         has_access = (
             repo is not None and (
                 # See https://docs.gitlab.com/ee/api/members.html
@@ -105,7 +105,7 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     if sha:
         current_branch = connection.branches(node_settings.repo_id, branch)
         # TODO Will I ever return false?
-        is_head = sha == current_branch.commit['id']
+        is_head = sha == current_branch['commit']['id']
     else:
         is_head = True
 
