@@ -402,15 +402,16 @@ def test_addons(ctx, numprocesses=None):
     test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
 
 
-@task
-def test_varnish(ctx):
-    """Run the Varnish test suite."""
-    proc = apiserver(ctx, wait=False, autoreload=False)
-    try:
-        sleep(5)
-        test_module(ctx, module='api/caching/tests/test_caching.py')
-    finally:
-        proc.kill()
+# @task
+# def test_varnish(ctx):
+#     """Run the Varnish test suite."""
+#     proc = apiserver(ctx, wait=False, autoreload=False)
+#     try:
+#         sleep(5)
+#         test_module(ctx, module='api/caching/tests/test_caching.py')
+#     finally:
+#         proc.kill()
+
 
 
 @task
@@ -433,13 +434,18 @@ def test(ctx, all=False, syntax=False):
         test_admin(ctx)
         karma(ctx)
 
+@task
+def travis_setup(ctx):
+    ctx.run('npm install -g bower', echo=True)
+    ctx.run('npm install @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    ctx.run('bower install https://github.com/CenterForOpenScience/styles.git#f9893aff9043b3085fb46410c225d7241bafb835', echo=True)
 
 @task
 def test_travis_addons(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
-    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    travis_setup(ctx)
     flake(ctx)
     test_addons(ctx, numprocesses=numprocesses)
 
@@ -452,13 +458,13 @@ def test_travis_else(ctx, numprocesses=None):
     """
     # flake(ctx)
     # jshint(ctx)
-    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    travis_setup(ctx)
     test_else(ctx, numprocesses=numprocesses)
 
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None):
-    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    travis_setup(ctx)
     jshint(ctx)
     karma(ctx, travis=True)
     test_api1(ctx, numprocesses=numprocesses)
@@ -466,10 +472,9 @@ def test_travis_api1_and_js(ctx, numprocesses=None):
 
 @task
 def test_travis_api2(ctx, numprocesses=None):
-    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
     # assets(dev=True)
     # flake(ctx)
-    jshint(ctx)
+    travis_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses)
 
 
@@ -477,7 +482,7 @@ def test_travis_api2(ctx, numprocesses=None):
 def test_travis_api3_and_osf(ctx, numprocesses=None):
     # flake(ctx)
     # jshint(ctx)
-    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses)
 
 
