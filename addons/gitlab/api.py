@@ -63,9 +63,6 @@ class GitLabClient(object):
     def repos(self):
         return self.user().projects.list()
 
-    def user_repos(self, user):
-        return list(self.gitlab.getall(self.gitlab.getprojectsowned, per_page=100))
-
     def create_repo(self, repo, **kwargs):
         return self.gitlab.createproject(repo)
 
