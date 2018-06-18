@@ -439,6 +439,7 @@ def test_travis_addons(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
+    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
     flake(ctx)
     test_addons(ctx, numprocesses=numprocesses)
 
@@ -451,11 +452,13 @@ def test_travis_else(ctx, numprocesses=None):
     """
     # flake(ctx)
     # jshint(ctx)
+    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
     test_else(ctx, numprocesses=numprocesses)
 
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None):
+    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
     jshint(ctx)
     karma(ctx, travis=True)
     test_api1(ctx, numprocesses=numprocesses)
@@ -463,7 +466,8 @@ def test_travis_api1_and_js(ctx, numprocesses=None):
 
 @task
 def test_travis_api2(ctx, numprocesses=None):
-    assets(dev=True)
+    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
+    # assets(dev=True)
     # flake(ctx)
     jshint(ctx)
     test_api2(ctx, numprocesses=numprocesses)
@@ -473,6 +477,7 @@ def test_travis_api2(ctx, numprocesses=None):
 def test_travis_api3_and_osf(ctx, numprocesses=None):
     # flake(ctx)
     # jshint(ctx)
+    ctx.run('yarn add @centerforopenscience/list-of-licenses@1.1.0', echo=True)
     test_api3(ctx, numprocesses=numprocesses)
 
 
