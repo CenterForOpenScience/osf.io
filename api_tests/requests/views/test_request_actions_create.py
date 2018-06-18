@@ -10,7 +10,7 @@ from osf.utils import permissions
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
-        return '/{}actions/requests/'.format(API_BASE)
+        return '/{}actions/requests/nodes/'.format(API_BASE)
 
     def create_payload(self, _id=None, **attrs):
         payload = {

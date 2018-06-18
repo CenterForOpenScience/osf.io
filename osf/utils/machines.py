@@ -243,19 +243,19 @@ class PreprintRequestMachine(BaseMachine):
         """
         if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
             self.machineable.comment = self.action.comment
-        elif ev.event_name == DefaultTriggers.SUBMIT.value:
+        elif ev.event.name == DefaultTriggers.SUBMIT.value:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
-                self.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+                self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
         elif ev.event.name == DefaultTriggers.ACCEPT.value:
             # If moderator accepts the withdrawal request
-            self.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+            self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
         self.machineable.save()
 
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
         return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value \
-               and not self.machineable.target.ever_public
+            and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
         # TODO: [IN-284]
@@ -263,6 +263,18 @@ class PreprintRequestMachine(BaseMachine):
 
     def notify_accept_reject(self, ev):
         # TODO: [IN-331]
+        pass
+
+    def notify_edit_comment(self, ev):
+        """ Not presently required to notify for this event
+        """
+        pass
+
+    def notify_resubmit(self, ev):
+        """ Notify moderators that someone is requesting withdrawal again
+            Not presently required to notify for this event
+        """
+        # TODO
         pass
 
     def get_context(self):
