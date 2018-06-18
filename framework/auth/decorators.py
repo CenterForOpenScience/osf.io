@@ -142,7 +142,7 @@ def get_group_node(groupname):
     try:
         node = Node.objects.filter(group__name=groupname).get()
         return node
-    except:
+    except Exception:
         return None
 
 
@@ -161,10 +161,10 @@ def create_group_project(user, groupname):
     from osf.models.node import Node
     from osf.models.user import CGGroup
 
-    node = Node(title = groupname,
-                category = "project",
-                description = groupname,
-                creator = user)
+    node = Node(title=groupname,
+                category='project',
+                description=groupname,
+                creator=user)
     group, created = CGGroup.objects.get_or_create(name=groupname)
     node.group = group
     node.save()
@@ -176,7 +176,7 @@ def create_or_join_group_projects(user):
         group_admin = is_group_admin(user, groupname)
         node = get_group_node(groupname)
         if node is not None:  # exists
-            if node.is_deleted == True and group_admin:
+            if node.is_deleted is True and group_admin:
                 node.is_deleted = False   # re-enabled
                 node.save()
             if node.is_contributor(user):
