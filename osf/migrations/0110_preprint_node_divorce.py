@@ -114,7 +114,7 @@ def divorce_preprints_from_nodes_sql(state, schema):
         END;
         $$ LANGUAGE PLPGSQL;
 
-        UPDATE osf_preprint P -- Copies basic preprint properties from node_id
+        UPDATE osf_preprint P -- Copies basic preprint properties from node
         SET title = N.title,
             description = N.description,
             article_doi = N.preprint_article_doi,

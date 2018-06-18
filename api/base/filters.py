@@ -494,7 +494,7 @@ class ListFilterMixin(FilterMixin):
         return getattr(serializer, serializer_method_name)
 
 
-class PreprintQueryBaseMixin():
+class PreprintQueryBaseMixin(object):
 
     def build_preprint_permissions_query(self, auth_user, allow_contribs=True):
         no_user_query = Q(

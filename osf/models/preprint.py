@@ -32,6 +32,7 @@ from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
+from website.project import signals as project_signals
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
@@ -783,12 +784,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
     # Overrides ContributorMixin send_email default
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email='preprint', auth=None, log=True, save=False):
-            return super(Preprint, self).add_contributor(contributor, permissions, visible, send_email, auth, log, save)
+        contrib_to_add = super(Preprint, self).add_contributor(contributor=contributor, permissions=permissions, visible=visible, send_email=send_email, auth=auth, log=log, save=save)
+        if self._id and self.is_published and contrib_to_add:
+            project_signals.contributor_added.send(self,
+                                                   contributor=contributor,
+                                                   auth=auth, email_template=send_email)
+        return contrib_to_add
 
     # Overrides ContributorMixin send_email default
     def add_unregistered_contributor(self, fullname, email, auth, send_email='preprint',
                                      visible=True, permissions=None, save=False, existing_user=None):
-        return super(Preprint, self).add_unregistered_contributor(fullname, email, auth, send_email, visible, permissions, save, existing_user)
+        return super(Preprint, self).add_unregistered_contributor(fullname=fullname, email=email, auth=auth, send_email=send_email, visible=visible, permissions=permissions, save=save, existing_user=existing_user)
 
     # Overrides replace_contributor since users needed to be added to groups
     def replace_contributor(self, old, new):
@@ -812,6 +818,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             user__in=users,
             user__is_active=True,
             user__groups=(self.get_group('admin').id))
+
+    # Overrides ContributorMixin to run update_search
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
+        super(Preprint, self).set_visible(user, visible, log=log, auth=auth, save=save)
+        self.update_search()
 
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')

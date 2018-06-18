@@ -828,18 +828,22 @@ class ContributorMixin(models.Model):
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
         """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        Preprint = apps.get_model('osf.Preprint')
-        RecentlyAddedContributor = apps.get_model('osf.RecentlyAddedContributor')
-
-        MAX_RECENT_LENGTH = 15
-
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
-        if not self.is_contributor(contrib_to_add):
+        if self.is_contributor(contrib_to_add):
+            if permissions is None:
+                return False
+            # Permissions must be overridden if changed when contributor is
+            # added to parent he/she is already on a child of.
+            else:
+                self.set_permissions(contrib_to_add, permissions)
+                if save:
+                    self.save()
+                return False
+        else:
             kwargs = self.contributor_kwargs
             kwargs['user'] = contrib_to_add
             contributor_obj, created = self.contributor_class.objects.get_or_create(**kwargs)
@@ -857,27 +861,6 @@ class ContributorMixin(models.Model):
                 self.add_permission(contrib_to_add, permissions, save=True)
             contributor_obj.save()
 
-            if isinstance(self, AbstractNode):
-                # Add contributor to recently added list for user
-                if auth is not None:
-                    user = auth.user
-                    recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
-                        user=user,
-                        contributor=contrib_to_add
-                    )
-                    recently_added_contributor_obj.date_added = timezone.now()
-                    recently_added_contributor_obj.save()
-                    count = user.recently_added.count()
-                    if count > MAX_RECENT_LENGTH:
-                        difference = count - MAX_RECENT_LENGTH
-                        for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
-                            each.delete()
-
-                # If there are pending access requests for this user, mark them as accepted
-                pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
-                if pending_access_requests_for_user.exists():
-                    pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
-
             if log:
                 params = self.log_params
                 params['contributors'] = [contrib_to_add._id]
@@ -890,24 +873,8 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-            if self._id:
-                if not isinstance(self, Preprint) or self.is_published:
-                    project_signals.contributor_added.send(self,
-                                                           contributor=contributor,
-                                                           auth=auth, email_template=send_email)
             self.update_search()
-            return contrib_to_add, True
-
-        # Permissions must be overridden if changed when contributor is
-        # added to parent he/she is already on a child of.
-        elif self.is_contributor(contrib_to_add) and permissions is not None:
-            self.set_permissions(contrib_to_add, permissions)
-            if save:
-                self.save()
-
-            return False
-        else:
-            return False
+            return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors
@@ -998,7 +965,7 @@ class ContributorMixin(models.Model):
                 )
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+            contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
 
@@ -1094,8 +1061,8 @@ class ContributorMixin(models.Model):
                     auth=auth,
                     save=False
                 )
-                with transaction.atomic():
-                    if not isinstance(self, Preprint):
+                if not isinstance(self, Preprint):
+                    with transaction.atomic():
                         if ['read'] in permissions_changed.values():
                             project_signals.write_permissions_revoked.send(self)
         if visible is not None:
@@ -1165,9 +1132,6 @@ class ContributorMixin(models.Model):
         self.save()
         self.update_search()
 
-        if not isinstance(self, Preprint):
-            # send signal to remove this user from project subscriptions
-            project_signals.contributor_removed.send(self, user=contributor)
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1323,8 +1287,8 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-        with transaction.atomic():
-            if not isinstance(self, Preprint):
+        if not isinstance(self, Preprint):
+            with transaction.atomic():
                 if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                     project_signals.write_permissions_revoked.send(self)
 
@@ -1351,7 +1315,6 @@ class ContributorMixin(models.Model):
         return contributor.visible
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
-        Preprint = apps.get_model('osf.Preprint')
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         kwargs = self.contributor_kwargs
@@ -1383,9 +1346,6 @@ class ContributorMixin(models.Model):
             )
         if save:
             self.save()
-
-        if isinstance(self, Preprint):
-            self.update_search()
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.

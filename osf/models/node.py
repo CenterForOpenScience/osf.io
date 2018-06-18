@@ -59,7 +59,7 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, reduce_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -879,6 +879,47 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
+
+    # Overrides ContributorMixin
+    def add_contributor(self, contributor, permissions=None, visible=True,
+                        send_email='default', auth=None, log=True, save=False):
+        MAX_RECENT_LENGTH = 15
+        RecentlyAddedContributor = apps.get_model('osf.RecentlyAddedContributor')
+
+        contrib_to_add = super(AbstractNode, self).add_contributor(contributor=contributor, permissions=permissions, visible=visible, send_email=send_email, auth=auth, log=log, save=save)
+        # Add contributor to recently added list for user
+        if auth is not None and contrib_to_add:
+            user = auth.user
+            recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
+                user=user,
+                contributor=contrib_to_add
+            )
+            recently_added_contributor_obj.date_added = timezone.now()
+            recently_added_contributor_obj.save()
+            count = user.recently_added.count()
+            if count > MAX_RECENT_LENGTH:
+                difference = count - MAX_RECENT_LENGTH
+                for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
+                    each.delete()
+
+        # If there are pending access requests for this user, mark them as accepted
+        if contrib_to_add:
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
+
+        if self._id and contrib_to_add:
+            project_signals.contributor_added.send(self,
+                                                   contributor=contributor,
+                                                   auth=auth, email_template=send_email)
+        return contrib_to_add
+
+    # Overrides ContributorMixin
+    def remove_contributor(self, contributor, auth, log=True):
+        removed = super(AbstractNode, self).remove_contributor(contributor=contributor, auth=auth, log=log)
+        # send signal to remove this user from project subscriptions
+        project_signals.contributor_removed.send(self, user=contributor)
+        return removed
 
     @property
     def registrations_all(self):

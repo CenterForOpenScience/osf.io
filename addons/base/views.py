@@ -475,8 +475,8 @@ def create_waterbutler_log(payload, **kwargs):
 
             node_addon.create_waterbutler_log(auth, action, metadata)
 
-    with transaction.atomic():
-        if not isinstance(node, Preprint):
+    if not isinstance(node, Preprint):
+        with transaction.atomic():
             # Preprints not getting emails about file updates for now
             file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 

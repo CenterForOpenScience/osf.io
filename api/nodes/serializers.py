@@ -877,7 +877,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     def get_unregistered_contributor(self, obj):
         # SerializerMethodField works for both Node and Preprint contributors
-        unclaimed_records = obj.user.unclaimed_records.get(getattr(obj, 'preprint', getattr(obj, 'node', None))._id, None)
+        if hasattr(obj, 'preprint'):
+            unclaimed_records = obj.user.unclaimed_records.get(obj.preprint._id, None)
+        else:
+            unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
