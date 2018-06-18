@@ -9,7 +9,7 @@ import json
 import platform
 import subprocess
 import logging
-from time import sleep
+# from time import sleep
 
 import invoke
 from invoke import Collection
@@ -411,7 +411,6 @@ def test_addons(ctx, numprocesses=None):
 #         test_module(ctx, module='api/caching/tests/test_caching.py')
 #     finally:
 #         proc.kill()
-
 
 
 @task
