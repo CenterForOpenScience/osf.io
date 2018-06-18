@@ -16,7 +16,7 @@ from framework.auth import logout as osf_logout
 from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
-from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth
 from framework.auth.decorators import must_be_logged_in_without_checking_email
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha

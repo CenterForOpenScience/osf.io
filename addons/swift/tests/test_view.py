@@ -7,7 +7,7 @@ from swiftclient import exceptions as swift_exceptions
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin

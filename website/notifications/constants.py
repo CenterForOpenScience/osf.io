@@ -41,3 +41,4 @@ PROVIDERS = {
 }
 # install-addons.py
 PROVIDERS['s3compat'] = 'S3 Compatible Storage'
+PROVIDERS['nextcloud'] = 'Nextcloud'

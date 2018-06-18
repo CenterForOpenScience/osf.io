@@ -794,7 +794,7 @@ def make_url_map(app):
             OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
-         Rule(
+        Rule(
             '/settings/account/email',
             'get',
             profile_views.user_account_email,

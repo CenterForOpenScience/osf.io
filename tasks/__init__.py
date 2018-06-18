@@ -80,7 +80,6 @@ def reset_user(ctx, username=None):
     init_app(routes=False, set_backends=False)
 
     from osf.models import OSFUser
-    from osf.models import Guid
 
     if username is None:
         print 'usage: invoke reset_user -u <username>'
