@@ -1907,7 +1907,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
             return NodeRequestSerializer
 
     def get_default_queryset(self):
-        return self.get_node().requests.all()
+        return self.get_target().requests.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
