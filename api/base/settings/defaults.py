@@ -107,6 +107,10 @@ INSTALLED_APPS = (
     'addons.twofactor',
     'addons.wiki',
     'addons.zotero',
+    'addons.swift',
+    'addons.azureblobstorage',
+    'addons.weko',
+    'addons.jupyterhub'
 )
 
 # local development using https
@@ -252,7 +256,7 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive', 'swift', 'azureblobstorage', 'weko']
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
@@ -269,6 +273,16 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+### NII extensions
+LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)
+USER_TIMEZONE = osf_settings.USER_TIMEZONE
+USER_LOCALE = osf_settings.USER_LOCALE
+CLOUD_GATAWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
+# install-addons.py
+INSTALLED_APPS += ('addons.s3compat',)
+ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
+ADDONS_OAUTH.append('s3compat')
 
 # Timestamp(API) Settings
 # openssl cmd const
