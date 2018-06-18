@@ -63,9 +63,6 @@ class GitLabClient(object):
     def repos(self):
         return self.user().projects.list()
 
-    def create_repo(self, repo, **kwargs):
-        return self.gitlab.createproject(repo)
-
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
 
