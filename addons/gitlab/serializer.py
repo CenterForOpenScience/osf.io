@@ -13,7 +13,7 @@ class GitLabSerializer(StorageAddonSerializer):
         host = external_account.oauth_secret
         ret.update({
             'host': host,
-            'host_url': 'https://{0}'.format(host),
+            'host_url': host,
         })
 
         return ret

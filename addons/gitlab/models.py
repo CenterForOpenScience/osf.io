@@ -18,6 +18,8 @@ from osf.models.files import File, Folder, BaseFileNode
 from website import settings
 from website.util import web_url_for
 
+from gitlab import Project
+
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
@@ -152,7 +154,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def is_private(self):
         connection = GitLabClient(external_account=self.external_account)
-        return not connection.repo(repo_id=self.repo_id)['public']
+        return not connection.repo(self.repo_id).visibility == 'private'
 
     def to_json(self, user):
 
@@ -165,14 +167,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         if self.user_settings and self.user_settings.has_auth:
 
-            valid_credentials = False
             owner = self.user_settings.owner
             connection = GitLabClient(external_account=self.external_account)
 
             valid_credentials = True
             try:
-                repos = connection.repos()
-
+                repos = [repo.attributes for repo in connection.repos()]
             except GitLabError:
                 valid_credentials = False
 
@@ -207,7 +207,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': 'https://{}'.format(self.external_account.oauth_secret),
+            'host': self.external_account.oauth_secret,
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id
@@ -278,7 +278,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if not repo['public'] else 'public'
+        repo_permissions = 'private' if not repo.visibility == 'public' else 'public'
         if repo_permissions != node_permissions:
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the GitLab '
@@ -299,7 +299,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 message += (
                     ' The files in this GitLab repo can be viewed on GitLab '
                     '<u><a href="{url}">here</a></u>.'
-                ).format(url=repo['http_url_to_repo'])
+                ).format(url=repo.http_url_to_repo)
             messages.append(message)
             return messages
 
