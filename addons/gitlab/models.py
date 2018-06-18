@@ -277,20 +277,20 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except (ApiError, GitLabError):
             return
 
+        # GitLab has visibility types: public, private, internal.
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if not repo.visibility == 'public' else 'public'
-        if repo_permissions != node_permissions:
+        if repo.visibility != node_permissions:
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the GitLab '
-                'repo {user} / {repo} is {repo_perm}.'.format(
+                'repo {user} / {repo} has {repo_perm} visibility.'.format(
                     category=markupsafe.escape(node.project_or_component),
                     node_perm=markupsafe.escape(node_permissions),
-                    repo_perm=markupsafe.escape(repo_permissions),
+                    repo_perm=markupsafe.escape(repo.visibility),
                     user=markupsafe.escape(self.user),
                     repo=markupsafe.escape(self.repo),
                 )
             )
-            if repo_permissions == 'private':
+            if repo.visibility == 'private':
                 message += (
                     ' Users can view the contents of this private GitLab '
                     'repository through this public project.'

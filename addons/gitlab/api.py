@@ -2,6 +2,7 @@ import urllib
 import requests
 
 import gitlab
+from gitlab import Project
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
@@ -19,7 +20,7 @@ class GitLabClient(object):
         self.host = getattr(external_account, 'oauth_secret', None) or host or DEFAULT_HOSTS[0]
 
         if self.access_token:
-            self.gitlab = gitlab.Gitlab(self.host, token=self.access_token)
+            self.gitlab = gitlab.Gitlab(self.host, private_token=self.access_token)
         else:
             self.gitlab = gitlab.Gitlab(self.host)
 
@@ -30,7 +31,17 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        return self.gitlab.currentuser()
+        try:
+            self.gitlab.auth()
+        except requests.exceptions.MissingSchema as exc:
+            # The old client allowed us to use 'gitlab.com' instead of 'http://gitlab.com' this allows us to maintain backwards compatibility
+            if exc.args[0] == "Invalid URL 'gitlab.com/api/v4/user': No schema supplied. Perhaps you meant http://gitlab.com/api/v4/user?":
+                self.gitlab._url = 'http://gitlab.com/api/v4'
+                self.gitlab.auth()
+            else:
+                raise exc
+
+        return self.gitlab.users.get(self.gitlab.user.id)
 
     def repo(self, repo_id):
         """Get a single GitLab repo's info.
@@ -40,14 +51,17 @@ class GitLabClient(object):
         :param str repo_id: GitLab repository id
         :return: Dict of repo information
         """
-        rv = self.gitlab.getproject(repo_id)
 
-        if rv:
-            return rv
-        raise NotFoundError
+        try:
+            return Project(self.gitlab, repo_id)
+        except gitlab.GitlabGetError as exc:
+            if exc.code == 404:
+                raise NotFoundError
+            else:
+                raise exc
 
     def repos(self):
-        return list(self.gitlab.getall(self.gitlab.getprojects, per_page=100))
+        return self.user().projects.list()
 
     def user_repos(self, user):
         return list(self.gitlab.getall(self.gitlab.getprojectsowned, per_page=100))
@@ -66,9 +80,9 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return self.gitlab.getbranch(repo_id, branch)
+            return Project(self.gitlab, repo_id).branches.get(branch)
 
-        return self.gitlab.getbranches(repo_id) or []
+        return Project(self.gitlab, repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
