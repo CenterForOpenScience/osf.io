@@ -1562,6 +1562,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
+            self.update_or_enqueue_on_node_updated(auth.user._id, first_save=False, saved_fields={'node_license'})
 
         if save:
             self.save()

@@ -3408,9 +3408,22 @@ class TestOnNodeUpdate:
         new_person = UserFactory()
         node.add_contributor(new_person)
 
-        # Make sure there's just one on_node_updated task, and that is has contributors in the kwargs
+        # so will updating a license
+        new_license = NodeLicenseRecordFactory()
+        node.set_node_license(
+            {
+                'id': new_license.license_id,
+                'year': '2018',
+                'copyrightHolders': ['LeBron', 'Ladron']
+            },
+            Auth(node.creator),
+        )
+        node.save()
+
+        # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
+        assert 'node_license' in task.kwargs['saved_fields']
         mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
