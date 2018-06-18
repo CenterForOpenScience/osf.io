@@ -1,16 +1,15 @@
 import datetime
 import pytz
 import os
-from modularodm import Q
 from api.timestamp.add_timestamp import AddTimestamp
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
-from api.timestamp import local
+from api.base import settings as api_settings
 from osf.models import RdmFileTimestamptokenVerifyResult, Guid
 import shutil
 
 from nose import tools as nt
 from tests.base import ApiTestCase
-from osf_tests.factories import ProjectFactory ##AuthUserFactory,, UserFactory
+from osf_tests.factories import ProjectFactory  # AuthUserFactory,, UserFactory
 from api_tests.utils import create_test_file
 from framework.auth import Auth
 from website.views import userkey_generation
@@ -34,16 +33,16 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         from osf.models import RdmUserKey
 
         super(TestTimeStampTokenVerifyCheck, self).tearDown()
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
-        self.user.remove()
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
+        self.user.delete()
 
-        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=local.PRIVATE_KEY_VALUE)
-        pvt_key_path = os.path.join(local.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
+        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
+        pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
         os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
-        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=local.PUBLIC_KEY_VALUE)
-        pub_key_path = os.path.join(local.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
+        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
+        pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
         os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
@@ -56,19 +55,19 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_file_timestamp_check_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_file_timestamp_check_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -85,7 +84,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
 
@@ -103,27 +102,27 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_timestamp_check_return_status_2.test_file_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_timestamp_check_return_status_2.test_file_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
         addTimestamp.add_timestamp(self.user._id, file_node._id, self.node._id, provider, os.path.join('/', filename), tmp_file, tmp_dir)
 
         ## File(tmp_file) update from outside the system
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -136,7 +135,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 2)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
 
@@ -154,19 +153,19 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        with open(tmp_file, "wb") as fout:
-            fout.write("test_file_timestamp_check_context")
+        with open(tmp_file, 'wb') as fout:
+            fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -179,7 +178,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 3)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
 
@@ -197,19 +196,19 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -223,7 +222,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 4)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
 
@@ -241,20 +240,20 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node.delete()
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -267,7 +266,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 5)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
 
@@ -285,20 +284,20 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         self.node_settings = self.project.get_addon(provider)
 
         ## create file_node(BaseFileNode record)
-        filename='test_file_timestamp_check'
+        filename = 'test_file_timestamp_check'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node.delete()
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
-        #with open(tmp_file, "wb") as fout:
-        #    fout.write("test_file_timestamp_check_context")
+        #with open(tmp_file, 'wb') as fout:
+        #    fout.write('test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -312,8 +311,6 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 6)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
-
-

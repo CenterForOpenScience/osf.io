@@ -6,6 +6,12 @@
     >>> settings.ADMIN_BASE
     'admin/'
 """
+import os
+from urlparse import urlparse
+from website import settings as osf_settings
+from django.contrib import messages
+from api.base.settings import *  # noqa
+
 import warnings
 
 from .defaults import *  # noqa
@@ -18,12 +24,6 @@ except ImportError as error:
 """
 Django settings for the admin project.
 """
-
-import os
-from urlparse import urlparse
-from website import settings as osf_settings
-from django.contrib import messages
-from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
 # TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
@@ -286,10 +286,7 @@ if DEBUG:
     }
 
 FCM_SETTINGS = {
-    "FCM_SERVER_KEY": ""
-}
-FCM_SETTINGS = {
-    "FCM_SERVER_KEY": "AAAAT1Nts8k:APA91bFZVxB3F5ch_KYqFVrkCj8mLgigF1fV12fX8IthbhqzzZlxW2ez7VQ71MugXctLygLT_KceYJ5ee68-XGiH9kWL0wh0f8wWao6hYAPnihPpw8YK3Xnc4Hwqi-hwQwBQEcYwmqOU"
+    'FCM_SERVER_KEY': ''
 }
 
 TEST_DATABASE_NAME = 'test_suzuki'

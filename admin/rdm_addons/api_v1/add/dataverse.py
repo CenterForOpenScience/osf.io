@@ -4,7 +4,7 @@ import httplib
 
 from django.core.exceptions import ValidationError
 
-from osf.models import RdmAddonOption, ExternalAccount
+from osf.models import ExternalAccount
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.dataverse.models import DataverseProvider
 from addons.dataverse import client

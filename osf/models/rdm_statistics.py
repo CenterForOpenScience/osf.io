@@ -19,4 +19,3 @@ class RdmStatistics(BaseModel):
     subtotal_file_number = models.BigIntegerField(null=False)
     subtotal_file_size = models.FloatField(null=False)
     date_acquired = models.DateField(null=False)
-

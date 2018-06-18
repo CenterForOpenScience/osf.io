@@ -90,7 +90,7 @@ class Loggable(models.Model):
             filelog.save()
             ## RDM Logger ##
             rdmlogger = RdmLogger(rdmlog, {})
-            rdmlogger.info("RDM Project", RDMINFO="FileLog", action=action, user=user._id, project=original_node.title, file_path=params['path'])
+            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=params['path'])
 
         if log_date:
             log.date = log_date

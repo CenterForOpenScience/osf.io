@@ -1,7 +1,6 @@
 import datetime
 import pytz
 import os
-from modularodm import Q
 from api.timestamp.add_timestamp import AddTimestamp
 from osf.models import RdmFileTimestamptokenVerifyResult, Guid
 import shutil
@@ -30,38 +29,38 @@ class TestAddTimestamp(ApiTestCase):
         self.user.reload()
 
     def tearDown(self):
-        from api.timestamp import local
+        from api.base import settings as api_settings
         from osf.models import RdmUserKey
 
         super(TestAddTimestamp, self).tearDown()
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
-        self.user.remove()
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
+        self.user.delete()
 
-        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=local.PRIVATE_KEY_VALUE)
-        pvt_key_path = os.path.join(local.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
+        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
+        pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
         os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
-        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=local.PUBLIC_KEY_VALUE)
-        pub_key_path = os.path.join(local.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
+        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
+        pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
         os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_add_timestamp(self):
         ## create file_node
-        filename='test_file_add_timestamp'
+        filename = 'test_file_add_timestamp'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
-        with open(download_file_path, "wb") as fout:
-            fout.write("test_file_add_timestamp_context")
+        with open(download_file_path, 'wb') as fout:
+            fout.write('test_file_add_timestamp_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -74,8 +73,6 @@ class TestAddTimestamp(ApiTestCase):
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        osfuser_id = Guid.find_one(Q('_id', 'eq', self.user._id)).object_id
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.validation_user, osfuser_id)
-
-

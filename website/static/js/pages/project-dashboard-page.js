@@ -127,6 +127,103 @@ $(document).ready(function () {
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
+        //Download Log button
+
+        function ArrangeLogDownload(d){
+            var i, NodeLogs=[], x={};
+            for (i in d.data){
+                x={'date': new Date(d.data[i].attributes.date + "Z").toLocaleString(),
+                   'user': d.data[i].embeds.user.data.attributes.full_name,
+                   'project_id': d.data[i].attributes.params.params_node.id,
+                   'project_title': d.data[i].attributes.params.params_node.title,
+                   'action':  d.data[i].attributes.action,
+                   };
+                if (typeof d.data[i].attributes.params.contributors[0] !== 'undefined' && d.data[i].attributes.params.contributors[0] !== null) {
+                    x['targetUserFullId'] = d.data[i].attributes.params.contributors[0].id;
+                    x['targetUserFullName'] = d.data[i].attributes.params.contributors[0].full_name;
+                }
+                if (d.data[i].attributes.action.includes('checked')){
+                    x['item'] = d.data[i].attributes.params.kind;
+                    x['path'] = d.data[i].attributes.params.path;
+                }
+                if (d.data[i].attributes.action.includes('osf_storage')){
+                    x['path'] = d.data[i].attributes.params.path;
+                }
+                if (d.data[i].attributes.action.includes('addon')){
+                    x['addon'] = d.data[i].attributes.params.addon;
+                }
+                if (d.data[i].attributes.action.includes('tag')){
+                    x['tag'] = d.data[i].attributes.params.tag;
+                }
+                if (d.data[i].attributes.action.includes('wiki')){
+                    x['version'] = d.data[i].attributes.params.version;
+                    x['page'] = d.data[i].attributes.params.page;
+                }
+                NodeLogs = NodeLogs.concat(x);
+            }
+            $("<a />", {
+                "download": "NodeLogs_"+ node.id + "_" + $.now() + ".json", "href" : "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify({NodeLogs})),
+            }).appendTo("body")
+             .click(function() {
+                $(this).remove()
+            })[0].click()
+        }
+        $('#DownloadLog').on("click", function(){
+            var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
+            var query = { 'embed' : 'user'};
+            var urlMain = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/',{query: query});
+            var urlNodeLogs = urlMain + '&page[size]=1';
+            var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
+            promise.then(function (data) {
+                var pageSize = Math.ceil((Number(data.links.meta.total))/(Number(data.links.meta.per_page)));
+                if ( pageSize >= 2){
+                    urlNodeLogs =  urlMain + '&page[size]=' + pageSize.toString();
+                    promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
+                    promise.then(function(data){
+                        ArrangeLogDownload(data);
+                    });
+                }else{
+                    ArrangeLogDownload(data);
+                }
+            }, function(xhr, textStatus, error) {
+                Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+            });
+         });
+
+        // Refresh button
+        function RefreshLog(){
+            var LogSearchName = $('#LogSearchName').val();
+            if (LogSearchName == "") {
+                document.getElementById('LogSearchKeyUser').value = "";
+            }else{
+                var query = { 'filter[full_name]' : LogSearchName};
+                var urlUsers = $osf.apiV2Url('/users/');
+                var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlUsers});
+                promise.then(function (data) {
+                    var i;
+                    var total = Number(data.links.meta.total);
+                    document.getElementById('LogSearchKeyUser').value = "";
+                    for (i in data.data){
+                        if (LogSearchName == data.data[i].attributes.full_name){
+                            document.getElementById('LogSearchKeyUser').value = (total -Number(i)).toString();
+                        }
+                    }
+                    if(document.getElementById('LogSearchKeyUser').value == ""){$osf.growl('user not found','user:' + LogSearchName + ' is no activity','warning');}
+                }, function(xhr, textStatus, error) {
+                    Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                });
+            }
+            setTimeout(function(){m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));}, 350);
+        }
+        $('#RefreshLog').on("click", RefreshLog);
+        $('#LogSearchName,#LogSearchE,#LogSearchS').on("keypress", function(e){
+            var key = e.which;
+            if (key == 13){
+                RefreshLog();
+                return false;
+            }
+        });
+
         // Treebeard Files view
         var urlFilesGrid = nodeApiUrl + 'files/grid/';
         var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});

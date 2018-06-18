@@ -4,40 +4,39 @@ from __future__ import unicode_literals
 
 import json
 
-from django.core import serializers
+#from django.core import serializers
 from django.shortcuts import redirect
-from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponse, JsonResponse,Http404
-from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
+#from django.forms.models import model_to_dict
+#from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse
+from django.views.generic import ListView, View, TemplateView
+#from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import render,redirect
 from django.core.urlresolvers import reverse
 
 from admin.base import settings
-from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm
+#from admin.base.forms import ImportFileForm
+#from admin.institutions.forms import InstitutionForm
 from osf.models import Institution, Node, OSFUser, AbstractNode, BaseFileNode, RdmFileTimestamptokenVerifyResult, Guid
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
-from api.timestamp import local
+#from api.timestamp import local
+from api.base import settings as api_settings
 
-from website import util
+#from website import util
 
 import requests
 from datetime import datetime
 import time
-from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
+#from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
 from api.timestamp.add_timestamp import AddTimestamp
-from api.timestamp import local
+#from api.timestamp import local
 import os
 import shutil
-from django import forms
-from django.forms.widgets import HiddenInput, CheckboxInput
-from framework.auth import Auth
-from website.util import api_v2_url, waterbutler_api_url_for
-import pytz
+#from django import forms
+#from django.forms.widgets import HiddenInput, CheckboxInput
+#from framework.auth import Auth
+from website.util import waterbutler_api_url_for
 
 class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 
@@ -119,31 +118,31 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
         ctx = super(TimeStampAddList, self).get_context_data(**kwargs)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=absNodeData._id).order_by('provider', 'path')
-        guid = Guid.objects.get(object_id=self.kwargs['guid'],content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         provider_error_list = []
         provider = None
         error_list = []
         for data in data_list:
-            if data.inspection_result_status == local.TIME_STAMP_TOKEN_CHECK_SUCCESS:
-               continue;
+            if data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
+                continue
 
             if not provider:
-               provider = data.provider
+                provider = data.provider
             elif provider != data.provider:
-               provider_error_list.append({'provider': provider, 'error_list': error_list})
-               provider = data.provider
-               error_list = []
-               
-            if data.inspection_result_status == local.TIME_STAMP_TOKEN_CHECK_NG:
-                verify_result_title = local.TIME_STAMP_TOKEN_CHECK_NG_MSG #'NG'
-            elif data.inspection_result_status == local.TIME_STAMP_TOKEN_NO_DATA:
-                verify_result_title = local.TIME_STAMP_TOKEN_NO_DATA_MSG  #'TST missing(Retrieving Failed)'
-            elif data.inspection_result_status == local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
-                verify_result_title = local.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'TST missing(Unverify)'
-            elif data.inspection_result_status == local.FILE_NOT_EXISTS:
-                verify_result_title = local.FILE_NOT_EXISTS_MSG #'FILE missing'
+                provider_error_list.append({'provider': provider, 'error_list': error_list})
+                provider = data.provider
+                error_list = []
+
+            if data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_CHECK_NG:
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+            elif data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_NO_DATA:
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG  # 'TST missing(Retrieving Failed)'
+            elif data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
+            elif data.inspection_result_status == api_settings.FILE_NOT_EXISTS:
+                verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
             else:
-                verify_result_title = local.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'FILE missing(Unverify)'
+                verify_result_title = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'FILE missing(Unverify)'
 
             if not data.update_user:
                 operator_user = OSFUser.objects.get(id=data.create_user).fullname
@@ -162,11 +161,11 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
                               'version': base_file_data.current_version_number,
                               'operator_user': operator_user,
                               'operator_date': operator_date,
-                              'verify_result_title': verify_result_title} 
+                              'verify_result_title': verify_result_title}
             else:
-                
+
                 file_name = os.path.basename(data.path)
-                
+
                 error_info = {'file_name': file_name,
                               'file_path': data.path,
                               'file_kind': 'file',
@@ -200,9 +199,9 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
             ctx.update({key: json_data[key]})
 
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'],content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
 
@@ -211,7 +210,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
         source_user = self.request.user
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
 
         web_response = requests.get(web_url, headers=headers, cookies=cookies)
 
@@ -222,7 +221,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
         ctx['project_title'] = absNodeData.title
         ctx['institution_id'] = self.kwargs['institution_id']
         ctx['web_api_url'] = self.web_api_url(guid._id)
-        return HttpResponse(json.dumps(ctx), content_type="application/json")
+        return HttpResponse(json.dumps(ctx), content_type='application/json')
 
     def web_url_path(self, node_id):
         return settings.osf_settings.DOMAIN + node_id + '/timestamp/json/'
@@ -244,9 +243,9 @@ class TimestampVerifyData(RdmPermissionMixin, View):
             request_data.update({key: json_data[key]})
 
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'],content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_api_url(guid._id)
 
@@ -255,10 +254,10 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         source_user = self.request.user
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
 
-        web_api_response = requests.post(web_url + 'timestamp/timestamp_error_data/', 
-                                         headers=headers, cookies=cookies, 
+        web_api_response = requests.post(web_url + 'timestamp/timestamp_error_data/',
+                                         headers=headers, cookies=cookies,
                                          data=json.dumps(request_data))
 
         # Admin User
@@ -267,7 +266,7 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         response_json = web_api_response.json()
         web_api_response.close()
         response = response_json
-        return HttpResponse(json.dumps(response), content_type="application/json")
+        return HttpResponse(json.dumps(response), content_type='application/json')
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
@@ -283,23 +282,13 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(AddTimeStampResultList, self).get_context_data(**kwargs)
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'],content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
 
-        # Node Admin
-        admin_osfuser_list = list(absNodeData.get_admin_contributors(absNodeData.contributors))
-        source_user = self.request.user
-        self.request.user = admin_osfuser_list[0]
-        cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
-
         web_response = requests.get(web_url, headers=headers, cookies=cookies)
-
-        # Admin User
-        self.request.user = source_user
 
         ctx['provider_file_list'] = web_response.json()['provider_list']
         ctx['guid'] = self.kwargs['guid']
@@ -309,7 +298,7 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
         return ctx
 
     def web_url_path(self, node_id):
-        return settings.ADMIN_URL + '/timestampadd/' + self.kwargs['institution_id'] + '/nodes/' +  self.kwargs['guid'] + '/'
+        return settings.ADMIN_URL + '/timestampadd/' + self.kwargs['institution_id'] + '/nodes/' + self.kwargs['guid'] + '/'
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
@@ -333,45 +322,37 @@ class AddTimestampData(RdmPermissionMixin, View):
         source_user = self.request.user
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
-        cookies = {settings.osf_settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'],content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        cookies = {settings.osf_settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
 
         url = None
         tmp_dir = None
         data = RdmFileTimestamptokenVerifyResult.objects.get(file_id=request_data['file_id'][0])
         try:
             if request_data['provider'][0] == 'osfstorage':
-                url = waterbutler_api_url_for(data.project_id, 
-                                              data.provider, 
-                                              '/' + request_data['file_id'][0], 
-                                              version=request_data['version'][0], action='download',direct=None)
+                url = waterbutler_api_url_for(data.project_id,
+                                              data.provider,
+                                              '/' + request_data['file_id'][0],
+                                              version=request_data['version'][0], action='download', direct=None)
             else:
-                url = waterbutler_api_url_for(data.project_id, 
-                                              data.provider, 
-                                              '/' + request_data['file_id'][0], 
-                                              action='download',direct=None)
+                url = waterbutler_api_url_for(data.project_id,
+                                              data.provider,
+                                              '/' + request_data['file_id'][0],
+                                              action='download', direct=None)
             res = requests.get(url, headers=headers, cookies=cookies)
-
-            # Admin User
-            self.request.user = source_user
-
-            current_datetime = datetime.now(pytz.timezone('Asia/Tokyo'))
-            current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
-            #print(current_datetime_str)
-            tmp_dir = 'tmp_{}_{}_{}'.format(self.request.user._id, request_data['file_name'][0], current_datetime_str)
-
-#            tmp_dir = 'tmp_{}'.format(self.request.user._id)
-
+            tmp_dir = 'tmp_{}'.format(self.request.user._id)
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
             os.mkdir(tmp_dir)
             download_file_path = os.path.join(tmp_dir, request_data['file_name'][0])
-            with open(download_file_path, "wb") as fout:
+            with open(download_file_path, 'wb') as fout:
                 fout.write(res.content)
                 res.close()
 
             addTimestamp = AddTimestamp()
+            # Admin User
+            self.request.user = source_user
             result = addTimestamp.add_timestamp(self.request.user._id, request_data['file_id'][0],
                                                 guid._id, request_data['provider'][0], request_data['file_path'][0],
                                                 download_file_path, tmp_dir)
@@ -381,8 +362,8 @@ class AddTimestampData(RdmPermissionMixin, View):
                 shutil.rmtree(tmp_dir)
             raise ValueError('Exception:{}'.format(err))
 
-        request_data.update({"result": result})
-        return HttpResponse(json.dumps(request_data), content_type="application/json")
+        request_data.update({'result': result})
+        return HttpResponse(json.dumps(request_data), content_type='application/json')
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
@@ -390,6 +371,4 @@ class AddTimestampData(RdmPermissionMixin, View):
 
 def waterbutler_meta_parameter(self):
     # get waterbutler api parameter value
-    return {'meta=&_':int(time.mktime(datetime.now().timetuple()))}
-
-
+    return {'meta=&_': int(time.mktime(datetime.now().timetuple()))}

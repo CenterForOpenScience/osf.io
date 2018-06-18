@@ -1,5 +1,5 @@
 import datetime
-import pytz
+#import pytz
 import httplib
 import os
 import uuid
@@ -436,8 +436,8 @@ def create_waterbutler_log(payload, **kwargs):
             metadata['path'] = metadata['path'].lstrip('/')
 
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
-               add_result = upload_file_add_timestamptoken(payload, node)
-               
+                upload_file_add_timestamptoken(payload, node)
+
             node_addon.create_waterbutler_log(auth, action, metadata)
 
     with transaction.atomic():
@@ -697,9 +697,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         return dict(guid=guid._id)
 
     if action == 'addtimestamp':
-       add_timestamp_result = adding_timestamp(auth, node, file_node, version)
-       if add_timestamp_result == 0:
-            raise  HTTPError(httplib.BAD_REQUEST, data={
+        add_timestamp_result = adding_timestamp(auth, node, file_node, version)
+        if add_timestamp_result == 0:
+            raise HTTPError(httplib.BAD_REQUEST, data={
                 'message_short': 'Add TimestampError',
                 'message_long': 'AddTimestamp setting error.'
             })
@@ -730,7 +730,7 @@ def addon_view_file(auth, node, file_node, version):
         error = None
 
     ret = serialize_node(node, auth, primary=True)
-    verify_result = timestamptoken_verify(auth, node, 
+    verify_result = timestamptoken_verify(auth, node,
                                           file_node, version, ret['user']['id'])
 
     if file_node._id + '-' + version._id not in node.file_guid_to_share_uuids:
@@ -784,7 +784,7 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
-        'timestamp_verify_result': verify_result['verify_result'], 
+        'timestamp_verify_result': verify_result['verify_result'],
         'timestamp_verify_result_title': verify_result['verify_result_title']
     })
 
@@ -818,39 +818,40 @@ def upload_file_add_timestamptoken(payload, node):
 
     verify_result = 0
     tmp_dir = None
-    try:       
+    try:
         metadata = payload['metadata']
         file_node = BaseFileNode.resolve_class(metadata['provider'], BaseFileNode.FILE).get_or_create(node, metadata['path'])
+        file_node.save()
         auth_id = payload['auth']['id']
         guid = Guid.objects.get(_id=auth_id)
         user_info = OSFUser.objects.get(id=guid.object_id)
         cookie = user_info.get_or_create_cookie()
-        cookies = {settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
+        cookies = {settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
         res_content = None
         if metadata['provider'] == 'osfstorage':
-            res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', 
+            res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
                                 version=metadata['extra']['version'], direct=None, _internal=False)), headers=headers, cookies=cookies)
         else:
-            res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', mode=None, _internal=False)), 
+            res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', mode=None, _internal=False)),
                                 headers=headers, cookies=cookies)
         res_content = res.content
         res.close()
 
         current_datetime = timezone.now()
-        current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
         #print(current_datetime_str)
-        tmp_dir='tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
+        tmp_dir = 'tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
-        with open(download_file_path, "wb") as fout:
+        with open(download_file_path, 'wb') as fout:
             fout.write(res_content)
- 
+
         addTimestamp = AddTimestamp()
-        verify_result, verify_result_title, operator_user, operator_date, filepath = addTimestamp.add_timestamp(auth_id, metadata['path'], 
-                                                                            node._id, metadata['provider'], 
-                                                                            metadata['materialized'], 
-                                                                            download_file_path, tmp_dir)
+        verify_result, verify_result_title, operator_user, operator_date, filepath = addTimestamp.add_timestamp(auth_id, file_node._id,
+                                                                            node._id, metadata['provider'],
+            metadata['materialized'],
+            download_file_path, tmp_dir)
         shutil.rmtree(tmp_dir)
     except Exception as err:
         if tmp_dir:
@@ -866,25 +867,25 @@ def adding_timestamp(auth, node, file_node, version):
     from api.timestamp.add_timestamp import AddTimestamp
     import shutil
 
-    verify_result = 0
+    #verify_result = 0
     tmp_dir = None
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         cookie = user_info.get_or_create_cookie()
-        cookies = {settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', 
-                           version=version.identifier, mode=None, _internal=False)), 
+        cookies = {settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
+                           version=version.identifier, mode=None, _internal=False)),
                            headers=headers, cookies=cookies)
-        tmp_dir='tmp_{}'.format(ret['user']['id'])
+        tmp_dir = 'tmp_{}'.format(ret['user']['id'])
         os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
-        with open(tmp_file, "wb") as fout:
+        with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
         addTimestamp = AddTimestamp()
-        result = addTimestamp.add_timestamp(ret['user']['id'], 
+        result = addTimestamp.add_timestamp(ret['user']['id'],
                                             file_node._id,
                                             node._id, file_node.provider,
                                             file_node._path,
@@ -902,34 +903,33 @@ def adding_timestamp(auth, node, file_node, version):
 
 def timestamptoken_verify(auth, node, file_node, version, guid):
     from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
-    from api.timestamp import local
     import requests
     from osf.models import Guid
     import shutil
 
-    verify_result = 0
-    verify_title = None
-    tmp_dir='tmp_{}'.format(guid)
+    #verify_result = 0
+    #verify_title = None
+    tmp_dir = 'tmp_{}'.format(guid)
     current_datetime = timezone.now()
-    current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
-    tmp_dir='tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
+    current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
+    tmp_dir = 'tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         cookie = user_info.get_or_create_cookie()
-        cookies = {settings.COOKIE_NAME:cookie}
-        headers = {"content-type": "application/json"}
-        res = requests.get(file_node.generate_waterbutler_url(**dict(action='download', 
+        cookies = {settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
                            version=version.identifier, mode=None, _internal=False)), headers=headers, cookies=cookies)
         if not os.path.exists(tmp_dir):
-           os.mkdir(tmp_dir)
+            os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
-        with open(tmp_file, "wb") as fout:
+        with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
         verifyCheck = TimeStampTokenVerifyCheck()
-        result = verifyCheck.timestamp_check(ret['user']['id'],file_node._id,node._id,  
-                                             file_node.provider, file_node._path, 
+        result = verifyCheck.timestamp_check(ret['user']['id'], file_node._id, node._id,
+                                             file_node.provider, file_node._path,
                                              tmp_file, tmp_dir)
         shutil.rmtree(tmp_dir)
     except Exception as err:

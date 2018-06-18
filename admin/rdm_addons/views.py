@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import importlib
+#import importlib
 import os
 from mimetypes import MimeTypes
-import uuid
+#import uuid
 
-import django
+#import django
 from django.views.generic import TemplateView, View
-from django.views.decorators.csrf import csrf_exempt
+#from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.forms.models import model_to_dict
-import flask
+#import flask
 
-from osf.models import Institution, RdmAddonOption, OSFUser
+from osf.models import Institution, OSFUser
 from admin.base import settings as admin_settings
 from website import settings as website_settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
@@ -34,6 +34,8 @@ def init_app():
         except AssertionError:
             pass
     return app
+
+
 app = init_app()
 
 class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
@@ -115,7 +117,7 @@ class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
     """各アドオンのアイコン画像用のView"""
     raise_exception = True
-    
+
     def test_func(self):
         """権限等のチェック"""
         # ログインチェック
@@ -137,7 +139,7 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
 class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
     """各アドオンの使用を許可するかどうかを保存するためのView"""
     raise_exception = True
-    
+
     def test_func(self):
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
@@ -172,7 +174,7 @@ class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
 class AddonForceView(RdmPermissionMixin, UserPassesTestMixin, View):
     """各アドオンの使用を強制するかどうかを保存するためのView"""
     raise_exception = True
-    
+
     def test_func(self):
         """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))

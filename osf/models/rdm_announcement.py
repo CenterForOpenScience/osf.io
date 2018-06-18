@@ -27,4 +27,4 @@ class RdmAnnouncementOption(BaseModel):
 class RdmFcmDevice(BaseModel):
     user = models.ForeignKey('OSFUser', null=True)
     device_token = EncryptedTextField(blank=True, null=True)
-    date_created= NonNaiveDateTimeField(auto_now_add=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)

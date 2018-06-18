@@ -26,9 +26,9 @@ class PreviewForm(forms.Form):
         cleaned_data = super(PreviewForm, self).clean()
         announcement_type = cleaned_data.get('announcement_type')
         body = cleaned_data.get('body')
-        if announcement_type == "SNS (Twitter)" and len(body) > 140:
+        if announcement_type == 'SNS (Twitter)' and len(body) > 140:
             raise forms.ValidationError('Body should be at most 140 characters')
-        elif announcement_type == "Push notification" and len(body) > 2000:
+        elif announcement_type == 'Push notification' and len(body) > 2000:
             raise forms.ValidationError('Body should be at most 2000 characters')
         else:
             return cleaned_data
@@ -41,7 +41,7 @@ class SendForm(forms.ModelForm):
 
     class Meta:
         model = RdmAnnouncement
-        exclude = ['user','date_sent','is_success']
+        exclude = ['user', 'date_sent', 'is_success']
 
 class SettingsForm(forms.ModelForm):
 
