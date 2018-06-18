@@ -286,7 +286,7 @@ if DEBUG:
     }
 
 FCM_SETTINGS = {
-    'FCM_SERVER_KEY': 'AAAAT1Nts8k:APA91bFZVxB3F5ch_KYqFVrkCj8mLgigF1fV12fX8IthbhqzzZlxW2ez7VQ71MugXctLygLT_KceYJ5ee68-XGiH9kWL0wh0f8wWao6hYAPnihPpw8YK3Xnc4Hwqi-hwQwBQEcYwmqOU'
+    'FCM_SERVER_KEY': ''
 }
 
 TEST_DATABASE_NAME = 'test_suzuki'
