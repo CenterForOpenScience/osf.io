@@ -100,7 +100,7 @@ class InstitutionAuthentication(BaseAuthentication):
         created = False
         if USE_EPPN:
             # use user.eppn because user.username is not always ePPN.
-            user = get_user(eppn = eppn)
+            user = get_user(eppn=eppn)
             if user:
                 created = False
             else:
