@@ -86,8 +86,8 @@ def waterbutler_opt_hook(func):
     def wrapped(payload, *args, **kwargs):
         try:
             user = OSFUser.load(payload['user'])
-
-            dest_target = Guid.load(payload['destination']['target']).referent
+            # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
+            dest_target = Guid.load(payload['destination']['node']).referent
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 

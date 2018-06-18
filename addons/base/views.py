@@ -351,9 +351,9 @@ def create_waterbutler_log(payload, **kwargs):
             auth = payload['auth']
             # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
-                node = AbstractNode.load(payload['metadata']['nid'])
-                if not node:
-                    node = Preprint.load(payload['metadata'].get('nid'))
+                guid = Guid.load(payload['metadata'].get('nid'))
+                if guid:
+                    node = guid.referent
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
@@ -396,12 +396,19 @@ def create_waterbutler_log(payload, **kwargs):
             if not source_node:
                 source_node = Preprint.load(payload['metadata'].get('nid'))
 
-            source = source_node.get_addon(payload['source']['provider'])
-            destination = node.get_addon(payload['destination']['provider'])
+            if hasattr(source_node, 'get_addon'):
+                source = source_node.get_addon(payload['source']['provider'])
+            else:
+                source = None
+
+            if hasattr(node, 'get_addon'):
+                destination = node.get_addon(payload['destination']['provider'])
+            else:
+                destination = None
 
             payload['source'].update({
                 'materialized': payload['source']['materialized'].lstrip('/'),
-                'addon': source.config.full_name,
+                'addon': source.config.full_name if source else 'osfstorage',
                 'url': source_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['source']['path'].lstrip('/'),
@@ -416,7 +423,7 @@ def create_waterbutler_log(payload, **kwargs):
 
             payload['destination'].update({
                 'materialized': payload['destination']['materialized'].lstrip('/'),
-                'addon': destination.config.full_name,
+                'addon': destination.config.full_name if destination else 'osfstorage',
                 'url': destination_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['destination']['path'].lstrip('/'),
@@ -429,10 +436,15 @@ def create_waterbutler_log(payload, **kwargs):
                 }
             })
 
-            payload.update({
-                'node': destination_node._id,
-                'project': destination_node.parent_id,
-            })
+            if isinstance(node, Preprint):
+                payload.update({
+                    'preprint': destination_node._id,
+                })
+            else:
+                payload.update({
+                    'node': destination_node._id,
+                    'project': destination_node.parent_id,
+                })
 
             if not payload.get('errors'):
                 destination_node.add_log(
