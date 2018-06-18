@@ -25,8 +25,16 @@ def add_doi_prefix(*args, **kwargs):
         provider.save()
 
 
-def noop(*args, **kwargs):
-    pass
+def remove_doi_prefix(*args, **kwargs):
+    for key, _ in PREPRINT_DOI_NAMESPACE.iteritems():
+        provider = PreprintProvider.objects.filter(_id=key)
+        if not provider.exists():
+            logger.info('Could not find provider with _id {}, skipping for now...'.format(key))
+            continue
+        provider = provider.get()
+        provider.doi_prefix = ''
+        provider.save()
+
 
 class Migration(migrations.Migration):
 
@@ -35,5 +43,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_doi_prefix, noop)
+        migrations.RunPython(add_doi_prefix, remove_doi_prefix)
     ]
