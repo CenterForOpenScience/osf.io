@@ -31,16 +31,7 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        try:
-            self.gitlab.auth()
-        except requests.exceptions.MissingSchema as exc:
-            # The old client allowed us to use 'gitlab.com' instead of 'http://gitlab.com' this allows us to maintain backwards compatibility
-            if exc.args[0] == "Invalid URL 'gitlab.com/api/v4/user': No schema supplied. Perhaps you meant http://gitlab.com/api/v4/user?":
-                self.gitlab._url = 'http://gitlab.com/api/v4'
-                self.gitlab.auth()
-            else:
-                raise exc
-
+        self.gitlab.auth()
         return self.gitlab.users.get(self.gitlab.user.id)
 
     def repo(self, repo_id):
