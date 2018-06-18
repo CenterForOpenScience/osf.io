@@ -15,6 +15,7 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
 
     objects = IncludeManager()
 
+    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
     creator = models.ForeignKey('OSFUser', related_name='submitted_%(class)s')
     comment = models.TextField(null=True, blank=True)
 
@@ -22,18 +23,10 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
     def target(self):
         raise NotImplementedError()
 
-    @property
-    def request_type(self):
-        raise NotImplementedError()
-
 
 class NodeRequest(AbstractRequest, NodeRequestableMixin):
-
-    target = models.ForeignKey('AbstractNode', related_name='node_requests')
-    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
+    target = models.ForeignKey('AbstractNode', related_name='requests')
 
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
-
-    target = models.ForeignKey('PreprintService', related_name='preprint_requests')
-    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
+    target = models.ForeignKey('PreprintService', related_name='requests')
