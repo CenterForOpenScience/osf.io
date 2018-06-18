@@ -240,12 +240,29 @@ class PreprintRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles preprint status changes and state transitions
         """
-        pass
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+            self.machineable.comment = self.action.comment
+        self.machineable.save()
+
+        # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
+        if self.auto_approval_allowed(ev):
+            self.target.run_withdraw(user=self.machineable.creator, comment='Auto approval.')
+        # If moderator accepts the withdrawal request
+        elif ev.event.name == DefaultTriggers.ACCEPT.value:
+            self.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+
+    def auto_approval_allowed(self, ev):
+        # Returns True if the provider is pre-moderated and the preprint is never public.
+        return ev.event_name == DefaultTriggers.SUBMIT.value \
+               and self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value \
+               and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
+        # TODO: [IN-284]
         raise NotImplementedError
 
     def notify_accept_reject(self, ev):
+        # TODO: [IN-331]
         raise NotImplementedError
 
     def get_context(self):
