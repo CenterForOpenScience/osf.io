@@ -6,13 +6,13 @@
   <td style="border-collapse: collapse; line-height: 1.5;">
     Hello ${user.fullname},<br>
     <br>
-    This email is about your account on OSF. You have connected Mendeley to one or more of your projects.
+    You are receiving this email because you have connected Mendeley to your OSF account.
     <br>
     <br>
     Recently, Mendeley updated their terms of use to comply with new European data privacy laws. This will require you to reauthorize the connection your account has to this add-on. You 
     can do this quickly by navigating to your account settings page, 
     then click "Configure add-on accounts". Get there directly using <a href="${settings.DOMAIN}settings/addons/">this link</a>. 
-    From there, click <strong>Connect or Reauthorize Account</strong>. You will be redirected 
+    From there, click "Connect or Reauthorize Account". You will be redirected 
     to the Mendeley site to authorize the connection.
     <br>
     <br>
