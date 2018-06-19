@@ -12,6 +12,7 @@ from osf.utils import permissions as osf_permissions
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
@@ -37,6 +38,7 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestReviewActionCreateRelated(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {

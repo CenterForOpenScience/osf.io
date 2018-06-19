@@ -62,6 +62,7 @@ def test_comments_are_queryable_by_root_target():
 
 
 # copied from tests/test_comments.py
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestCommentModel:
 
     def test_create(self):

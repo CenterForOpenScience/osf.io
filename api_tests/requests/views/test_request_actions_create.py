@@ -7,6 +7,7 @@ from api_tests.requests.mixins import NodeRequestTestMixin
 from osf.utils import permissions
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):

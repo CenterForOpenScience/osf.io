@@ -152,6 +152,7 @@ def public_node_two_url(public_node_two):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures(
+    'enable_quickfiles_creation',
     'admin',
     'read_contrib',
     'write_contrib',
@@ -350,6 +351,7 @@ class TestNodeDetailViewOnlyLinks:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures(
+    'enable_quickfiles_creation',
     'admin',
     'read_contrib',
     'write_contrib',

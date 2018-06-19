@@ -1,3 +1,4 @@
+import pytest
 from nose.tools import *  # flake8: noqa
 import functools
 
@@ -12,6 +13,7 @@ from osf_tests.factories import (
 )
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestRegistrationEmbeds(ApiTestCase):
 
     def setUp(self):

@@ -30,6 +30,7 @@ def user_one():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestCollectionList:
 
     @pytest.fixture()
@@ -69,6 +70,7 @@ class TestCollectionList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_implicit_clean', 'enable_bookmark_creation')
 class TestCollectionCreate:
 
     @pytest.fixture()
@@ -514,6 +516,7 @@ class CollectionCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_implicit_clean', 'enable_bookmark_creation')
 class TestCollectionUpdate(CollectionCRUDTestCase):
 
     def test_update_collection_logged_in(
@@ -1587,6 +1590,7 @@ class TestReturnDeletedCollection:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestCollectionBulkCreate:
 
     @pytest.fixture()

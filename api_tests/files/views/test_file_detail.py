@@ -38,6 +38,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestFileView:
 
     @pytest.fixture()

@@ -141,6 +141,7 @@ class TestNodeList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_bookmark_creation')
 class TestNodeFiltering:
 
     @pytest.fixture()
@@ -899,6 +900,7 @@ class TestNodeFiltering:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_implicit_clean')
 class TestNodeCreate:
 
     @pytest.fixture()
@@ -3167,6 +3169,7 @@ class TestNodeBulkDeleteSkipUneditable:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestNodeListPagination:
 
     @pytest.fixture()

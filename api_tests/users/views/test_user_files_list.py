@@ -7,19 +7,16 @@ from api.base.settings.defaults import API_BASE
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
-
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-
-@pytest.fixture()
-def quickfiles(user):
-    return QuickFilesNode.objects.get(creator=user)
-
-
 @pytest.mark.django_db
 class TestUserQuickFiles:
+
+    @pytest.fixture
+    def user(self, enable_quickfiles_creation):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def quickfiles(self, user):
+        return QuickFilesNode.objects.get(creator=user)
 
     @pytest.fixture(autouse=True)
     def add_quickfiles(self, quickfiles):
@@ -105,12 +102,11 @@ class TestUserQuickFiles:
         assert file_detail_json['relationships']['user']['links']['related']['href'].split(
             '/')[-2] == user._id
 
-    def test_get_files_has_links(self, app, user, url):
+    def test_get_files_has_links(self, app, user, url, quickfiles):
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data'][0]
-        quickfiles_node = quickfiles(user)
         waterbutler_url = utils.waterbutler_api_url_for(
-            quickfiles_node._id,
+            quickfiles._id,
             'osfstorage',
             file_detail_json['attributes']['path']
         )

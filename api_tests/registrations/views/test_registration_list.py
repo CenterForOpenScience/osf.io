@@ -25,6 +25,7 @@ from website.views import find_bookmark_collection
 from osf.utils import permissions
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -111,6 +112,7 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.project._id, ids)
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestRegistrationFiltering(ApiTestCase):
 
     def setUp(self):

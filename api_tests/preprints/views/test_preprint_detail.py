@@ -132,6 +132,7 @@ class TestPreprintDetail:
         assert 'assumptions no longer apply' == data['attributes']['withdrawal_justification']
         assert 'date_withdrawn' in data['attributes']
 
+    @pytest.mark.usefixtures('enable_quickfiles_creation')
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
             API_BASE, preprint._id)
@@ -255,6 +256,7 @@ class TestPreprintDelete:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_enqueue_task')
 class TestPreprintUpdate:
 
     @pytest.fixture()

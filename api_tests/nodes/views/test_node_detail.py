@@ -1051,6 +1051,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestNodeDelete(NodeCRUDTestCase):
 
     def test_deletes_node_errors(

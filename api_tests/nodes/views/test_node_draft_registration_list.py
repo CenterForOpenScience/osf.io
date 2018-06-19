@@ -168,6 +168,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()

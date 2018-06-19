@@ -8,6 +8,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestInstitutionUsersList:
 
     def test_return_all_users(self, app):
