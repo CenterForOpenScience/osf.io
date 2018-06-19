@@ -416,8 +416,3 @@ ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
     subject='Your access request to an OSF project has been declined'
 )
-
-MENDELEY_REAUTH = Mail(
-    'mendeley_reauth',
-    subject='Important information about your OSF Account'
-)
