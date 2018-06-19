@@ -114,6 +114,10 @@ class CrossRefClient(AbstractIdentifierClient):
                         xmlns=CROSSREF_ACCESS_INDICATORS
                     )
                 )
+            else:
+                posted_content.append(
+                    element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
+                )
 
             if preprint.node.preprint_article_doi:
                 posted_content.append(
