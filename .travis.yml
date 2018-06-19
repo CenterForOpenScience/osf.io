@@ -34,7 +34,7 @@ env:
     - BOTO_CONFIG=/dev/null
   matrix:
     - TEST_BUILD="addons"
-    - TEST_BUILD="else"
+    - TEST_BUILD="website"
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
     - TEST_BUILD="api3_and_osf"

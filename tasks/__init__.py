@@ -310,7 +310,7 @@ OSF_TESTS = [
     'osf_tests',
 ]
 
-ELSE_TESTS = [
+WEBSITE_TESTS = [
     'tests',
 ]
 
@@ -361,10 +361,10 @@ def test_osf(ctx, numprocesses=None):
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
 @task
-def test_else(ctx, numprocesses=None):
+def test_website(ctx, numprocesses=None):
     """Run the old test suite."""
-    print('Testing modules "{}"'.format(ELSE_TESTS))
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(WEBSITE_TESTS))
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses)
 
 @task
 def test_api1(ctx, numprocesses=None):
@@ -402,17 +402,6 @@ def test_addons(ctx, numprocesses=None):
     test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
 
 
-# @task
-# def test_varnish(ctx):
-#     """Run the Varnish test suite."""
-#     proc = apiserver(ctx, wait=False, autoreload=False)
-#     try:
-#         sleep(5)
-#         test_module(ctx, module='api/caching/tests/test_caching.py')
-#     finally:
-#         proc.kill()
-
-
 @task
 def test(ctx, all=False, syntax=False):
     """
@@ -422,7 +411,7 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_else(ctx)  # /tests
+    test_website(ctx)  # /tests
     test_api1(ctx)
     test_api2(ctx)
     test_api3(ctx)  # also /osf_tests
@@ -450,7 +439,7 @@ def test_travis_addons(ctx, numprocesses=None):
 
 
 @task
-def test_travis_else(ctx, numprocesses=None):
+def test_travis_website(ctx, numprocesses=None):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
@@ -458,12 +447,13 @@ def test_travis_else(ctx, numprocesses=None):
     # flake(ctx)
     # jshint(ctx)
     travis_setup(ctx)
-    test_else(ctx, numprocesses=numprocesses)
+    test_website(ctx, numprocesses=numprocesses)
 
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None):
     travis_setup(ctx)
+    assets(dev=True)
     jshint(ctx)
     karma(ctx, travis=True)
     test_api1(ctx, numprocesses=numprocesses)
