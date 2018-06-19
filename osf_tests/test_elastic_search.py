@@ -7,6 +7,7 @@ import logging
 import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import pytest
 import mock
 
 from framework.auth.core import Auth
@@ -234,6 +235,7 @@ class TestCollectionsSearch(OsfTestCase):
             self.node_one.collecting_metadata_list[0].collection._id))
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
+@pytest.mark.usefixtures('enable_enqueue_task')
 class TestUserUpdate(OsfTestCase):
 
     def setUp(self):

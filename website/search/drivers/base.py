@@ -64,3 +64,9 @@ class SearchDriver(object):
     @abc.abstractmethod
     def create_index(self, index=None):
         raise NotImplementedError()
+
+
+class SearchMigrator(object):
+
+    def __init__(self):
+        pass

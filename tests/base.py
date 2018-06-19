@@ -149,29 +149,29 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = JSONAPITestApp()
 
 
-class SearchTestCase(unittest.TestCase):
+# class SearchTestCase(unittest.TestCase):
 
-    def setUp(self):
-        settings.ELASTIC_INDEX = uuid.uuid1().hex
-        settings.ELASTIC_TIMEOUT = 60
+#     def setUp(self):
+#         settings.ELASTIC_INDEX = uuid.uuid1().hex
+#         settings.ELASTIC_TIMEOUT = 60
 
-        from website.search import elastic_search
-        elastic_search.INDEX = settings.ELASTIC_INDEX
-        elastic_search.create_index(settings.ELASTIC_INDEX)
+#         from website.search import elastic_search
+#         elastic_search.INDEX = settings.ELASTIC_INDEX
+#         elastic_search.create_index(settings.ELASTIC_INDEX)
 
-        # NOTE: Super is called last to ensure the ES connection can be established before
-        #       the responses module patches the socket.
-        super(SearchTestCase, self).setUp()
+#         # NOTE: Super is called last to ensure the ES connection can be established before
+#         #       the responses module patches the socket.
+#         super(SearchTestCase, self).setUp()
 
-    def tearDown(self):
-        super(SearchTestCase, self).tearDown()
+#     def tearDown(self):
+#         super(SearchTestCase, self).tearDown()
 
-        from website.search import elastic_search
-        elastic_search.delete_index(settings.ELASTIC_INDEX)
+#         from website.search import elastic_search
+#         elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
 
-class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
+class OsfTestCase(DbTestCase, AppTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -179,7 +179,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -266,7 +266,7 @@ class ApiAddonTestCase(ApiTestCase):
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')
-class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase):
     pass
 
 class NotificationTestCase(OsfTestCase):

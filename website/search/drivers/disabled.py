@@ -18,7 +18,8 @@ class SearchDisabledDriver(base.SearchDriver):
         raise exceptions.SearchDisabledException()
 
     def _warn_disabled(self, method, *args, **kwargs):
-        logger.warning('Search is disabled. Call to `%s(%s, %s)`, ignored', method, args, kwargs)
+        if self._warnings:
+            logger.warning('Search is disabled. Call to `%s(%s, %s)`, ignored', method, args, kwargs)
 
     def update_node(self, node, index=None, bulk=False, async=True, saved_fields=None):
         self._warn_disabled('update_node', node)
