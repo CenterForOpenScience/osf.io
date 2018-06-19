@@ -15,9 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 def main(dry=True):
-    user = OSFUser.load('qrgl2')
-    qs = UserSettings.objects.filter(owner__is_active=True).select_related('owner')
-    pbar = progressbar.ProgressBar(maxval=qs.count()).start()
+    qs = UserSettings.objects.filter(owner__is_active=True).select_related('owner').order_by('pk')
+    count = qs.count()
+    pbar = progressbar.ProgressBar(maxval=count).start()
+    logger.info('Sending email to {} users'.format(count))
     for i, each in enumerate(qs):
         user = each.owner
         logger.info('Sending email to OSFUser {}'.format(user._id))
@@ -29,6 +30,7 @@ def main(dry=True):
                 user=user
             )
         pbar.update(i + 1)
+    logger.info('Sent email to {} users'.format(count))
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv
