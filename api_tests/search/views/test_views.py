@@ -1,5 +1,4 @@
 import pytest
-import uuid
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
@@ -14,23 +13,13 @@ from osf_tests.factories import (
     CollectionProviderFactory,
 )
 from osf_tests.utils import mock_archive
-from website import settings
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.search import elastic_search
-from website.search import search
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_search
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_enqueue_task')
 class ApiSearchTestCase:
-
-    @pytest.fixture(autouse=True)
-    def index(self):
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
-        elastic_search.INDEX = settings.ELASTIC_INDEX
-
-        search.create_index(elastic_search.INDEX)
-        yield
-        search.delete_index(elastic_search.INDEX)
 
     @pytest.fixture()
     def user(self):
@@ -734,12 +723,11 @@ class TestSearchUsers(ApiSearchTestCase):
 
 class TestSearchInstitutions(ApiSearchTestCase):
 
-    @pytest.fixture()
+    @pytest.fixture
     def url_institution_search(self):
         return '/{}search/institutions/'.format(API_BASE)
 
-    def test_search_institutions(
-            self, app, url_institution_search, user, institution):
+    def test_search_institutions(self, app, url_institution_search, user, institution):
 
         # test_search_institutions_no_auth
         res = app.get(url_institution_search)
