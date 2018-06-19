@@ -136,7 +136,8 @@ def requires_search(func):
 
 
 @requires_search
-def get_aggregations(query, doc_type):
+def get_aggregations(query, doc_type, index=None):
+    index = index or INDEX
     query['aggregations'] = {
         'licenses': {
             'terms': {
@@ -145,7 +146,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=index, doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -158,7 +159,8 @@ def get_aggregations(query, doc_type):
 
 
 @requires_search
-def get_counts(count_query, clean=True):
+def get_counts(count_query, clean=True, index=None):
+    index = index or INDEX
     count_query['aggregations'] = {
         'counts': {
             'terms': {
@@ -167,7 +169,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=index, doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -221,8 +223,8 @@ def search(query, index=None, doc_type='_all', raw=False):
         del count_query['query']['filtered']['filter']
     except KeyError:
         pass
-    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
-    counts = get_counts(count_query, index)
+    aggregations = get_aggregations(aggs_query, doc_type=doc_type, index=index)
+    counts = get_counts(count_query, index=index)
 
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
@@ -740,7 +742,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None, index=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -754,6 +756,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         most recent employment and education, profile_image URL of an OSF user
 
     """
+    index = index or INDEX
     start = (page * size)
     items = re.split(r'[\s-]+', query)
     exclude = exclude or []
@@ -770,7 +773,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
             ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
-    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size), index=index, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

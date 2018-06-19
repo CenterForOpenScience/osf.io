@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 class SearchDisabledDriver(base.SearchDriver):
 
+    @property
+    def migrator(self):
+        return SearchDisabledMigrator(self)
+
     def __init__(self, warnings=True):
         self._warnings = warnings
 
@@ -50,3 +54,12 @@ class SearchDisabledDriver(base.SearchDriver):
 
     def create_index(self, index=None):
         self._warn_disabled('create_index', index=index)
+
+
+class SearchDisabledMigrator(base.SearchMigrator):
+
+    def setup(self):
+        self._driver._warn_disabled('migrator.setup')
+
+    def teardown(self):
+        self._driver._warn_disabled('migrator.teardown')

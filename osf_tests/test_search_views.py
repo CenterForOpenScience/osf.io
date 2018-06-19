@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import pytest
 from nose.tools import *  # noqa PEP8 asserts
 
 from osf_tests import factories
@@ -9,12 +10,12 @@ from website.util import api_url_for
 from website.views import find_bookmark_collection
 
 
+@pytest.mark.enable_search
+@pytest.mark.usefixtures('enable_enqueue_task')
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
         super(TestSearchViews, self).setUp()
-        from website.search import search
-        search.delete_all()
 
         robbie = factories.UserFactory(fullname='Robbie Williams')
         self.project = factories.ProjectFactory(creator=robbie)
@@ -28,11 +29,6 @@ class TestSearchViews(OsfTestCase):
         self.project_private_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=False)
         self.project_public_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=True)
         self.project_public_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=True)
-
-    def tearDown(self):
-        super(TestSearchViews, self).tearDown()
-        import website.search.search as search
-        search.delete_all()
 
     def test_search_views(self):
         #Test search contributor
@@ -203,6 +199,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.json['results'][0]['social']['scholar'], 'http://scholar.google.com/citations?user={}'.format(user_two.given_name))
 
 
+@pytest.mark.usefixtures('enable_bookmark_creation')
 class TestODMTitleSearch(OsfTestCase):
     """ Docs from original method:
     :arg term: The substring of the title.

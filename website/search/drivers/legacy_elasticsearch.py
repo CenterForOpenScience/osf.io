@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 
 class LegacyElasticsearchDriver(base.SearchDriver):
 
+    @property
+    def migrator(self):
+        return LegacyElasticsearchMigrator(self)
+
     def __init__(self, default_index=None):
         self._default_index = default_index
 
@@ -24,11 +28,12 @@ class LegacyElasticsearchDriver(base.SearchDriver):
 
     def search_contributor(self, query, page=0, size=10, exclude=None, current_user=None):
         return elastic_search.search_contributor(
-            query=query,
-            page=page,
-            size=size,
+            current_user=current_user,
             exclude=exclude or [],
-            current_user=current_user
+            index=self._default_index,
+            page=page,
+            query=query,
+            size=size,
         )
 
     def update_node(self, node, index=None, bulk=False, async=True, saved_fields=None):
@@ -94,3 +99,12 @@ class LegacyElasticsearchDriver(base.SearchDriver):
 
     def create_index(self, index=None):
         elastic_search.create_index(index=index or self._default_index)
+
+
+class LegacyElasticsearchMigrator(base.SearchMigrator):
+
+    def setup(self):
+        self._driver.create_index()
+
+    def teardown(self):
+        self._driver.delete_index(self._driver._default_index)

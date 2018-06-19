@@ -1,16 +1,18 @@
 import logging
+import uuid
 
 import pytest
 from faker import Factory
 
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
+from website import search
 from website import settings as osf_settings
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
-from website import search
 from website.search.drivers.disabled import SearchDisabledDriver
+from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -108,5 +110,16 @@ def enable_enqueue_task(settings):
 
 
 @pytest.fixture(autouse=True)
-def disable_search():
-    search.search = SearchDisabledDriver(warnings=False)
+def _elasticsearch(request):
+    if request.node.get_marker('enable_search'):
+        driver = LegacyElasticsearchDriver('osf-test-{}'.format(uuid.uuid4()))
+    else:
+        driver = SearchDisabledDriver(warnings=False)
+
+    search._driver = driver
+
+    driver.migrator.setup()
+
+    yield driver
+
+    driver.migrator.teardown()

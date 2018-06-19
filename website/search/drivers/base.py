@@ -17,6 +17,10 @@ class SearchDriver(object):
         'user': models.OSFUser,
     }
 
+    @abc.abstractproperty
+    def migrator(self):
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def search(self, query, index=None, doc_type=None, raw=None):
         raise NotImplementedError()
@@ -68,5 +72,15 @@ class SearchDriver(object):
 
 class SearchMigrator(object):
 
-    def __init__(self):
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, driver):
+        self._driver = driver
+
+    @abc.abstractmethod
+    def setup(self):
+        pass
+
+    @abc.abstractmethod
+    def teardown(self):
         pass
