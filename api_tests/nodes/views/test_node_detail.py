@@ -994,6 +994,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_ezid_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
+    @pytest.mark.usefixtures('enable_enqueue_task')
     @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
     def test_set_node_with_preprint_private_updates_ezid(
             self, mock_update_ezid_metadata, app, user,
