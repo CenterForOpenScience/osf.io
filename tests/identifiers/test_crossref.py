@@ -17,6 +17,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from framework.flask import rm_handlers
+from framework.auth.core import Auth
 from framework.auth.utils import impute_names
 
 
@@ -190,3 +191,56 @@ class TestCrossRefClient:
 
         assert contributors.find('.//{%s}surname' % crossref.CROSSREF_NAMESPACE).text == 'Madonna'
         assert not contributors.find('.//{%s}given_name' % crossref.CROSSREF_NAMESPACE)
+
+    def test_metadata_contributor_orcid(self, crossref_client, preprint):
+        ORCID = '1234-5678-2345-6789'
+
+        # verified ORCID
+        contributor = preprint.node.creator
+        contributor.external_identity = {
+            'ORCID': {
+                ORCID: 'VERIFIED'
+            }
+        }
+        contributor.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'true'}
+
+        # unverified (only in profile)
+        contributor.external_identity = {}
+        contributor.social = {
+            'orcid': ORCID
+        }
+        contributor.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
+
+    def test_metadata_none_license_update(self, crossref_client, preprint):
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
+        assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get('start_date') == preprint.date_published.strftime('%Y-%m-%d')
+
+        license_detail = {
+            'copyrightHolders': ['The Carters'],
+            'id': 'NONE',
+            'year': '2018'
+        }
+
+        preprint.set_preprint_license(license_detail, Auth(preprint.node.creator), save=True)
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS) is None
+        assert root.find('.//{%s}program' % crossref.CROSSREF_ACCESS_INDICATORS).getchildren() == []

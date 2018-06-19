@@ -114,6 +114,10 @@ class CrossRefClient(AbstractIdentifierClient):
                         xmlns=CROSSREF_ACCESS_INDICATORS
                     )
                 )
+            else:
+                posted_content.append(
+                    element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
+                )
 
             if preprint.node.preprint_article_doi:
                 posted_content.append(
@@ -181,7 +185,13 @@ class CrossRefClient(AbstractIdentifierClient):
             person.append(element.surname(name_parts['surname']))
             if contributor.suffix:
                 person.append(element.suffix(remove_control_characters(contributor.suffix)))
-
+            if contributor.external_identity.get('ORCID'):
+                orcid = contributor.external_identity['ORCID'].keys()[0]
+                verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
+                if orcid and verified:
+                    person.append(
+                        element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true')
+                    )
             contributors.append(person)
 
         return contributors
