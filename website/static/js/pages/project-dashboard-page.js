@@ -97,6 +97,8 @@ var institutionLogos = {
 };
 
 
+var ArrangeLogDownload = function (){};
+var RefreshLog = function(){};
 $(document).ready(function () {
 
     var AddComponentButton = m.component(AddProject, {
@@ -129,46 +131,46 @@ $(document).ready(function () {
 
         //Download Log button
 
-        function ArrangeLogDownload(d){
+        ArrangeLogDownload = function (d){
             var i, NodeLogs=[], x={};
             for (i in d.data){
-                x={'date': new Date(d.data[i].attributes.date + "Z").toLocaleString(),
+                x={'date': new Date(d.data[i].attributes.date + 'Z').toLocaleString(),
                    'user': d.data[i].embeds.user.data.attributes.full_name,
                    'project_id': d.data[i].attributes.params.params_node.id,
                    'project_title': d.data[i].attributes.params.params_node.title,
                    'action':  d.data[i].attributes.action,
                    };
                 if (typeof d.data[i].attributes.params.contributors[0] !== 'undefined' && d.data[i].attributes.params.contributors[0] !== null) {
-                    x['targetUserFullId'] = d.data[i].attributes.params.contributors[0].id;
-                    x['targetUserFullName'] = d.data[i].attributes.params.contributors[0].full_name;
+                    x.targetUserFullId = d.data[i].attributes.params.contributors[0].id;
+                    x.targetUserFullName = d.data[i].attributes.params.contributors[0].full_name;
                 }
                 if (d.data[i].attributes.action.includes('checked')){
-                    x['item'] = d.data[i].attributes.params.kind;
-                    x['path'] = d.data[i].attributes.params.path;
+                    x.item = d.data[i].attributes.params.kind;
+                    x.path = d.data[i].attributes.params.path;
                 }
                 if (d.data[i].attributes.action.includes('osf_storage')){
-                    x['path'] = d.data[i].attributes.params.path;
+                    x.path = d.data[i].attributes.params.path;
                 }
                 if (d.data[i].attributes.action.includes('addon')){
-                    x['addon'] = d.data[i].attributes.params.addon;
+                    x.addon = d.data[i].attributes.params.addon;
                 }
                 if (d.data[i].attributes.action.includes('tag')){
-                    x['tag'] = d.data[i].attributes.params.tag;
+                    x.tag = d.data[i].attributes.params.tag;
                 }
                 if (d.data[i].attributes.action.includes('wiki')){
-                    x['version'] = d.data[i].attributes.params.version;
-                    x['page'] = d.data[i].attributes.params.page;
+                    x.version = d.data[i].attributes.params.version;
+                    x.page = d.data[i].attributes.params.page;
                 }
                 NodeLogs = NodeLogs.concat(x);
             }
-            $("<a />", {
-                "download": "NodeLogs_"+ node.id + "_" + $.now() + ".json", "href" : "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify({NodeLogs})),
-            }).appendTo("body")
+            $('<a />', {
+                'download': 'NodeLogs_'+ node.id + '_' + $.now() + '.json', 'href' : 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({NodeLogs})),
+            }).appendTo('body')
              .click(function() {
-                $(this).remove()
-            })[0].click()
-        }
-        $('#DownloadLog').on("click", function(){
+                $(this).remove();
+            })[0].click();
+        };
+        $('#DownloadLog').on('click', function(){
             var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
             var query = { 'embed' : 'user'};
             var urlMain = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/',{query: query});
@@ -191,10 +193,10 @@ $(document).ready(function () {
          });
 
         // Refresh button
-        function RefreshLog(){
+        RefreshLog =function (){
             var LogSearchName = $('#LogSearchName').val();
-            if (LogSearchName == "") {
-                document.getElementById('LogSearchKeyUser').value = "";
+            if (LogSearchName === '') {
+                document.getElementById('LogSearchKeyUser').value = '';
             }else{
                 var query = { 'filter[full_name]' : LogSearchName};
                 var urlUsers = $osf.apiV2Url('/users/');
@@ -202,23 +204,23 @@ $(document).ready(function () {
                 promise.then(function (data) {
                     var i;
                     var total = Number(data.links.meta.total);
-                    document.getElementById('LogSearchKeyUser').value = "";
+                    document.getElementById('LogSearchKeyUser').value = '';
                     for (i in data.data){
-                        if (LogSearchName == data.data[i].attributes.full_name){
+                        if (LogSearchName === data.data[i].attributes.full_name){
                             document.getElementById('LogSearchKeyUser').value = (total -Number(i)).toString();
                         }
                     }
-                    if(document.getElementById('LogSearchKeyUser').value == ""){$osf.growl('user not found','user:' + LogSearchName + ' is no activity','warning');}
+                    if(document.getElementById('LogSearchKeyUser').value === ''){$osf.growl('user not found','user:' + LogSearchName + ' is no activity','warning');}
                 }, function(xhr, textStatus, error) {
                     Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
                 });
             }
             setTimeout(function(){m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));}, 350);
-        }
-        $('#RefreshLog').on("click", RefreshLog);
-        $('#LogSearchName,#LogSearchE,#LogSearchS').on("keypress", function(e){
+        };
+        $('#RefreshLog').on('click', RefreshLog);
+        $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
             var key = e.which;
-            if (key == 13){
+            if (key === 13){
                 RefreshLog();
                 return false;
             }

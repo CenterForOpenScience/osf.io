@@ -17,11 +17,11 @@ var RdmAddonSettings = function() {
             console.log(addonName);
             var config = data[addonName];
             
-            if (config['is_forced']) {
+            if (config.is_forced) {
                 $h4.find('small').remove();
             }
-            if (config['has_external_accounts']) {
-                if (!config['is_forced']) {
+            if (config.has_external_accounts) {
+                if (!config.is_forced) {
                     $h4.append('<br>');
                 }
                 var small = '<small>' + 
