@@ -182,10 +182,10 @@ $(document).ready(function () {
                     urlNodeLogs =  urlMain + '&page[size]=' + pageSize.toString();
                     promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
                     promise.then(function(data){
-                        ArrangeLogDownload(data);
+                        new ArrangeLogDownload(data);
                     });
                 }else{
-                    ArrangeLogDownload(data);
+                    new ArrangeLogDownload(data);
                 }
             }, function(xhr, textStatus, error) {
                 Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
@@ -221,7 +221,7 @@ $(document).ready(function () {
         $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
             var key = e.which;
             if (key === 13){
-                RefreshLog();
+                new RefreshLog();
                 return false;
             }
         });
