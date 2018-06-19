@@ -118,8 +118,9 @@ def _elasticsearch(request):
 
     search._driver = driver
 
-    driver.migrator.setup()
+    try:
+        driver.migrator.setup()
 
-    yield driver
-
-    driver.migrator.teardown()
+        yield driver
+    finally:
+        driver.migrator.teardown()

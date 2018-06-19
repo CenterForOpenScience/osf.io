@@ -14,4 +14,7 @@ elif settings.SEARCH_ENGINE in ('elastic', 'legacy_elasticsearch'):
 else:
     raise RuntimeError('Unknown Search Engine "{}"'.format(settings.SEARCH_ENGINE))
 
-search = driver = LocalProxy(lambda: _driver)
+def _get_driver():
+    return _driver
+
+search = driver = LocalProxy(_get_driver)
