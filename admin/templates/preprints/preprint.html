@@ -196,35 +196,60 @@
                             </thead>
                             <tbody>
                             {% for user in serialized_preprint.contributors %}
-                            <tr>
-                                <td>
-                                    <a href="{{ user.id | reverse_user }}">
-                                        {{ user.id }}
-                                    </a>
-                                </td>
-                                <td>{{ user.name }}</td>
-                                <td>{{ user.permission|capfirst }}</td>
-                                {%  if perms.osf.change_preprint %}
+                                <tr>
                                     <td>
-                                        <a href="{% url 'preprints:remove_user' guid=serialized_preprint.id user_id=user.id %}"
-                                           data-toggle="modal"
-                                           data-target="#{{ user.id }}Modal"
-                                           class="btn btn-danger">
-                                            Remove
+                                        <a href="{{ user.id | reverse_user }}">
+                                            {{ user.id }}
                                         </a>
-                                        <div class="modal" id="{{ user.id }}Modal">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                {# from remove_preprintcontributor.html#}
+                                    </td>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.permission|capfirst }}</td>
+                                    {%  if perms.osf.change_preprint %}
+                                        <td>
+                                            <a href="{% url 'preprints:remove_user' guid=serialized_preprint.id user_id=user.id %}"
+                                               data-toggle="modal"
+                                               data-target="#{{ user.id }}Modal"
+                                               class="btn btn-danger">
+                                                Remove
+                                            </a>
+                                            <div class="modal" id="{{ user.id }}Modal">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                    {# from remove_preprintcontributor.html#}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                {% endif %}
-                            </tr>
+                                        </td>
+                                    {% endif %}
+                                </tr>
                             {% endfor %}
                             </tbody>
                             </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SPAM Pro Tip</td>
+                            <td>{{ preprint.spam_pro_tip }}</td>
+                        <td>
+                    </tr>
+                    <tr>
+                        <td>SPAM Status</td>
+                        <td>
+                            {% if preprint.spam_status == SPAM_STATUS.UNKNOWN %}
+                                <span class="label label-default">Unknown</span>
+                            {% elif preprint.spam_status == SPAM_STATUS.FLAGGED %}
+                                <span class="label label-warning">Flagged</span>
+                            {% elif preprint.spam_status == SPAM_STATUS.SPAM %}
+                                <span class="label label-danger">Spam</span>
+                            {% elif preprint.spam_status == SPAM_STATUS.HAM %}
+                                <span class="label label-success">Ham</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SPAM Data</td>
+                        <td>
+                            <pre>{{ preprint.spam_data }}</pre>
                         </td>
                     </tr>
                 </tbody>

@@ -308,15 +308,17 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
-    def test_deprecated_preprint_field(self, app, user, project_public, url_public):
-        PreprintFactory(project=project_public, creator=user)
-        res = app.get(url_public + '?version=2.7', auth=user.auth)
+    def test_preprint_field(self, app, user, project_public, url_public):
+        preprint = PreprintFactory(project=project_public, creator=user)
+        res = app.get(url_public, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        preprint.is_published = False
+        preprint.save()
+        res = app.get(url_public, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['preprint'] is False
-
-        res = app.get(url_public + '?version=2.8', auth=user.auth)
-        assert res.status_code == 200
-        assert 'preprint' not in res.json['data']['attributes']
 
 
 @pytest.mark.django_db

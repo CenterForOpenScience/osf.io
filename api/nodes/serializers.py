@@ -206,7 +206,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    preprint = ShowIfVersion(ser.SerializerMethodField(), min_version=2.0, max_version=2.7)
+    preprint = ser.BooleanField(read_only=True, source='has_published_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
@@ -398,9 +398,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_logs_count(self, obj):
         return obj.logs.count()
-
-    def get_preprint(self, obj):
-        return False
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])

@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 
+from osf.models import SpamStatus
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
 from osf.models.admin_log_entry import update_admin_log, REINDEX_ELASTIC, REINDEX_SHARE, PREPRINT_REMOVED, PREPRINT_RESTORED
 
@@ -67,6 +68,8 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
         return super(PreprintView, self).get_context_data(**kwargs)
 
 
