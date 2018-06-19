@@ -50,7 +50,7 @@ from .factories import (
     UserFactory,
 )
 from tests.base import OsfTestCase
-from tests.utils import mock_archive, run_celery_tasks
+from tests.utils import run_celery_tasks
 
 
 pytestmark = pytest.mark.django_db
