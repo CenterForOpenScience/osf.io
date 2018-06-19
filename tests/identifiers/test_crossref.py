@@ -192,6 +192,37 @@ class TestCrossRefClient:
         assert contributors.find('.//{%s}surname' % crossref.CROSSREF_NAMESPACE).text == 'Madonna'
         assert not contributors.find('.//{%s}given_name' % crossref.CROSSREF_NAMESPACE)
 
+    def test_metadata_contributor_orcid(self, crossref_client, preprint):
+        ORCID = '1234-5678-2345-6789'
+
+        # verified ORCID
+        contributor = preprint.node.creator
+        contributor.external_identity = {
+            'ORCID': {
+                ORCID: 'VERIFIED'
+            }
+        }
+        contributor.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'true'}
+
+        # unverified (only in profile)
+        contributor.external_identity = {}
+        contributor.social = {
+            'orcid': ORCID
+        }
+        contributor.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
 
     def test_metadata_none_license_update(self, crossref_client, preprint):
         crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
