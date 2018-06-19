@@ -70,8 +70,8 @@ def get_refs(addon, branch=None, sha=None, connection=None):
         repo = connection.repo(addon.repo_id)
         if repo is None:
             return None, None, None
-        branch = repo.default_branch
 
+        branch = repo.attributes['default_branch']
     # Get data from GitLab API if not registered
     branches = connection.branches(addon.repo_id)
 

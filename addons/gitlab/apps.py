@@ -48,7 +48,6 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'view': True,
         'private': node_settings.is_private
     }
-    print node_settings.external_account.oauth_secret
     urls = {
         'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,

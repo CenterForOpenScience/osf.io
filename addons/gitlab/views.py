@@ -263,7 +263,7 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
     """
     gitlab_data = {
         'user': gitlab.user,
-        'repo': gitlab.repo.attributes,
+        'repo': gitlab.repo,
     }
 
     urls = {}
