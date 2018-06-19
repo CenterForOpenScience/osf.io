@@ -7,6 +7,7 @@ import requests
 
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework import sentry
 
 from website import settings, mails
@@ -40,6 +41,20 @@ def update_or_create_preprint_identifiers(preprint):
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
+
+def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
+    task = get_task_from_postcommit_queue('website.preprints.tasks.on_preprint_updated', predicate=lambda task: task.kwargs['preprint_id'] == preprint_id)
+    if task:
+        task.kwargs['update_share'] = update_share or task.kwargs['update_share']
+        task.kwargs['share_type'] = share_type or task.kwargs['share_type']
+        task.kwargs['old_subjects'] = old_subjects or task.kwargs['share_type']
+    else:
+        enqueue_postcommit_task(
+            on_preprint_updated,
+            (),
+            {'preprint_id': preprint_id, 'old_subjects': old_subjects, 'update_share': update_share, 'share_type': share_type},
+            celery=True
+        )
 
 def update_preprint_share(preprint, old_subjects=None, share_type=None):
     if settings.SHARE_URL:
