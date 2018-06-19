@@ -462,6 +462,7 @@ class TestPreprintUpdate:
         ) == new_tags
         assert mock_update_ezid.called
 
+    @pytest.mark.usefixtures('enable_quickfiles_creation')
     @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
     def test_update_contributors(
             self, mock_update_ezid, app, user, preprint, url):

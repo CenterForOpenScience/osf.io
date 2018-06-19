@@ -51,6 +51,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         assert res.status_code == 403
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):

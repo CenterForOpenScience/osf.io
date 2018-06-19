@@ -1214,6 +1214,7 @@ class TestMergingUsers:
             merge_dupe()
             assert mock_signals.signals_sent() == set([user_merged])
 
+    @pytest.mark.usefixtures('enable_enqueue_task')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api, dupe, merge_dupe, request_context):
         list_name = 'foo'
@@ -1224,8 +1225,8 @@ class TestMergingUsers:
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
-        merge_dupe()
-        handlers.celery_teardown_request()
+        with run_celery_tasks():
+            merge_dupe()
         dupe.reload()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
         assert dupe.mailchimp_mailing_lists[list_name] is False
