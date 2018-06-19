@@ -16,6 +16,7 @@ def test_factory():
 
 # Copied from tests/test_models.py
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestPrivateLink:
 
     def test_node_scale(self):

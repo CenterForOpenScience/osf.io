@@ -50,6 +50,7 @@ from .factories import (
     UserFactory,
 )
 from tests.base import OsfTestCase
+from tests.utils import mock_archive, run_celery_tasks
 
 
 pytestmark = pytest.mark.django_db
@@ -68,6 +69,7 @@ def auth(user):
     return Auth(user)
 
 # Tests copied from tests/test_models.py
+@pytest.mark.usefixtures('enable_implicit_clean', 'enable_quickfiles_creation')
 class TestOSFUser:
 
     def test_create(self):
@@ -1151,6 +1153,7 @@ class TestCitationProperties:
         )
 
 # copied from tests/test_models.py
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_bookmark_creation', 'enable_implicit_clean')
 class TestMergingUsers:
 
     @pytest.fixture()
@@ -1377,6 +1380,7 @@ class TestDisablingUsers(OsfTestCase):
             self.user.disable_account()
 
 # Copied from tests/modes/test_user.py
+@pytest.mark.usefixtures('enable_bookmark_creation', 'enable_quickfiles_creation')
 class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
@@ -1518,6 +1522,7 @@ class TestUser(OsfTestCase):
 
 
 # Copied from tests/models/test_user.py
+@pytest.mark.usefixtures('enable_quickfiles_creation', 'enable_bookmark_creation', 'enable_implicit_clean')
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
@@ -1544,6 +1549,7 @@ class TestUserMerging(OsfTestCase):
         )
         self.project_with_unreg_contrib.save()
 
+    @pytest.mark.usefixtures('enable_enqueue_task')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
@@ -1690,10 +1696,10 @@ class TestUserMerging(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
-        # perform the merge
-        self.user.merge_user(other_user)
-        self.user.save()
-        handlers.celery_teardown_request()
+        with run_celery_tasks():
+            # perform the merge
+            self.user.merge_user(other_user)
+            self.user.save()
 
         self.user.reload()
 
@@ -1786,6 +1792,7 @@ class TestUserMerging(OsfTestCase):
         assert mock_notify.called is False
 
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):

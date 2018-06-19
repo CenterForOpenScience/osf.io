@@ -13,6 +13,7 @@ from tests.base import OsfTestCase
 pytestmark = pytest.mark.django_db
 
 
+@pytest.mark.usefixtures('enable_implicit_clean')
 class TestApiOAuth2Application(OsfTestCase):
     def setUp(self):
         super(TestApiOAuth2Application, self).setUp()

@@ -74,6 +74,7 @@ class TestNodeEmbargoTerminations:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestDraftRegistrationApprovals:
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
