@@ -453,7 +453,7 @@ def test_travis_website(ctx, numprocesses=None):
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None):
     travis_setup(ctx)
-    assets(dev=True)
+    assets(ctx, dev=True)
     jshint(ctx)
     karma(ctx, travis=True)
     test_api1(ctx, numprocesses=numprocesses)
