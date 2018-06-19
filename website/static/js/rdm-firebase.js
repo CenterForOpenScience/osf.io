@@ -1,10 +1,10 @@
 var config = {
-    apiKey: "AIzaSyAopB_dSUGin7xEjijI8KlT56VKcMHyBmk",
-    authDomain: "gakunin-rdm.firebaseapp.com",
-    databaseURL: "https://gakunin-rdm.firebaseio.com",
-    projectId: "gakunin-rdm",
-    storageBucket: "gakunin-rdm.appspot.com",
-    messagingSenderId: "340702114761"
+    apiKey: 'AIzaSyAopB_dSUGin7xEjijI8KlT56VKcMHyBmk',
+    authDomain: 'gakunin-rdm.firebaseapp.com',
+    databaseURL: 'https://gakunin-rdm.firebaseio.com',
+    projectId: 'gakunin-rdm',
+    storageBucket: 'gakunin-rdm.appspot.com',
+    messagingSenderId: '340702114761'
 };
 firebase.initializeApp(config);
 const messaging = firebase.messaging();
@@ -33,7 +33,7 @@ messaging.onMessage(function(payload) {
     var notificationInfo = payload.notification;
     var options = {
         body: notificationInfo.body,
-        icon: "/static/public/css/images/firebase-logo.png"
+        icon: '/static/public/css/images/firebase-logo.png'
     };
     var n = new Notification(notificationInfo.title,options);
     setTimeout(n.close.bind(n), 5000);
@@ -57,7 +57,7 @@ function sendTokenToServer(currentToken) {
         '/api/v1/firebase/usertoken/'+ user.id + '/' + currentToken,
         {},
         function(data){
-            if(data.success == "False"){
+            if(data.success === 'False'){
                 console.log('An error has occured.');
         }
     });
