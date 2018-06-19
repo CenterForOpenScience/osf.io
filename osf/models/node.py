@@ -906,6 +906,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if contrib_to_add:
             pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
             if pending_access_requests_for_user.exists():
+                permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
                 pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
 
         if self._id and contrib_to_add:
