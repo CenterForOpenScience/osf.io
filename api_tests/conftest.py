@@ -41,3 +41,7 @@ def app_init():
 @pytest.fixture()
 def fake():
     return Factory.create()
+
+# Used to disable osf_tests disconnected_signals
+def disconnected_signals():
+    pass
