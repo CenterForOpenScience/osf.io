@@ -20,9 +20,13 @@ var ExternalAccount = oop.defclass({
     constructor: function(data) {
         var self = this;
         self.name = data.display_name;
+        self.nickname = data.nickname;
         self.id = data.id;
         self.profileUrl = data.profile_url;
         self.providerName = data.provider_name;
+        self.host = data.host;
+        self.port = data.port;
+        self.encrypted = data.encrypted;
 
         self.connectedNodes = ko.observableArray();
 

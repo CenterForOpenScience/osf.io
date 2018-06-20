@@ -73,6 +73,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     # The user's name on the external service
     display_name = EncryptedTextField(blank=True, null=True)
+    nickname = models.CharField(max_length=255, blank=True, null=True)
     # A link to the user's profile on the external service
     profile_url = EncryptedTextField(blank=True, null=True)
 
@@ -87,7 +88,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     class Meta:
         unique_together = [
-            ('provider', 'provider_id',)
+            ('provider', 'provider_id', 'host', 'port')
         ]
 
 

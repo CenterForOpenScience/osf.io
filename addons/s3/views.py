@@ -60,6 +60,8 @@ def s3_folder_list(node_addon, **kwargs):
 @must_be_logged_in
 def s3_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
+    import pdb
+    pdb.set_trace()
     try:
         host = request.json['host']
         port = int(request.json['port'])
@@ -69,10 +71,12 @@ def s3_add_user_account(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not (access_key and secret_key and host and port):
+    if not any({access_key, secret_key, host, port}):
         return {
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
+
+    nickname = request.json.get('nickname', None)
 
     user_info = utils.get_user_info(
         host,
@@ -81,7 +85,6 @@ def s3_add_user_account(auth, **kwargs):
         secret_key,
         encrypted
     )
-    import pdb
     pdb.set_trace()
     if not user_info:
         return {
@@ -114,6 +117,7 @@ def s3_add_user_account(auth, **kwargs):
             oauth_secret=secret_key,
             provider_id=user_info.id,
             display_name=user_info.display_name,
+            nickname=nickname
         )
         account.save()
     except ValidationError:
@@ -124,18 +128,21 @@ def s3_add_user_account(auth, **kwargs):
             host=host,
             port=port
         )
+
         if (
             account.oauth_key != access_key or
             account.oauth_secret != secret_key or
             account.host != host or
             account.port != port or
-            account.encrypted != encrypted
+            account.encrypted != encrypted or
+            account.nickname != nickname
         ):
             account.oauth_key = access_key
             account.oauth_secret = secret_key
             account.host = host
             account.port = port
             account.encrypted = encrypted
+            account.nickname = nickname
             account.save()
 
     assert account is not None
@@ -146,6 +153,96 @@ def s3_add_user_account(auth, **kwargs):
     # Ensure S3 is enabled.
     auth.user.get_or_add_addon('s3', auth=auth)
     auth.user.save()
+
+    return {}
+
+@must_be_logged_in
+def s3_modify_user_account(auth, **kwargs):
+    """Verifies modifications to external account credentials"""
+    import pdb
+    try:
+        id = request.json['id']
+    except:
+        return {
+            'message': 'An ID is required to modify an account.'
+        }, httplib.BAD_REQUEST
+
+    try:
+        account = auth.user.external_accounts.get(_id=id)
+    except:
+        pdb.set_trace()
+        return {
+            'message': 'Attempted to modify an account that does not exist.'
+        }, httplib.BAD_REQUEST
+
+    assert account is not None
+
+    # Load the new values for the account, but let them be none if they weren't
+    # supplied in the request.
+    nickname = request.json.get('nickname', None)
+    host = request.json.get('host', None)
+    port = int(request.json.get('port', None))
+    access_key = request.json.get('access_key', None)
+    secret_key = request.json.get('secret_key', None)
+    encrypted = request.json.get('encrypted', None)
+
+    # Fill in the values that weren't provided in the request with the
+    # currently existing values from the account.
+    host = host if host else account.host
+    port = port if port is not None else account.port
+    access_key = access_key if access_key else account.oauth_key
+    secret_key = secret_key if secret_key else account.oauth_secret
+    encrypted = encrypted if encrypted else account.encrypted
+
+    # Get fresh user info from the provider - Need to demonstrate that the new
+    # credentials actually work.
+    user_info = utils.get_user_info(
+        host,
+        port,
+        access_key,
+        secret_key,
+        encrypted
+    )
+
+    # Don't tell the user a different account was accessed?
+    # Don't let the user be changed. A new external account must be created if
+    # the user is different.
+    if not user_info or account.provider_id != user_info.id:
+        return {
+            'message': ('Unable to access account.\n'
+                'Check to make sure that the above credentials and settings are valid for this user.')
+        }, httplib.BAD_REQUEST
+
+    # Confirm the user has needed permissions
+    if not utils.can_list(
+        host,
+        port,
+        access_key,
+        secret_key,
+        encrypted
+    ):
+        return {
+            'message': ('Unable to list buckets.\n'
+                'Listing buckets is required permission that can be changed via IAM')
+        }, httplib.BAD_REQUEST
+
+    # Probably this should happen in `account.save()` -
+    # Only if any fields are actually different we have to save.
+    if (
+        account.oauth_key != access_key or
+        account.oauth_secret != secret_key or
+        account.host != host or
+        account.port != port or
+        account.encrypted != encrypted or
+        account.nickname != nickname
+    ):
+        account.oauth_key = access_key
+        account.oauth_secret = secret_key
+        account.host = host
+        account.port = port
+        account.encrypted = encrypted
+        account.nickname = nickname
+        account.save()
 
     return {}
 

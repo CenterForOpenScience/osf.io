@@ -28,6 +28,7 @@ function ViewModel(url) {
     self.secretKey = ko.observable();
     self.host = ko.observable();
     self.port = ko.observable();
+    self.nickname = ko.observable();
     self.encrypted = ko.observable(true);
     self.account_url = '/api/v1/settings/s3/accounts/';
     self.accounts = ko.observableArray();
@@ -74,6 +75,7 @@ function ViewModel(url) {
                 encrypted: self.encrypted(),
                 access_key: self.accessKey,
                 secret_key: self.secretKey,
+                nickname: self.nickname
             })
         ).done(function() {
             self.clearModal();
@@ -138,6 +140,179 @@ function ViewModel(url) {
                 }
             }
         });
+    };
+
+    self.askModify = function(account) {
+
+        var nickname = account.nickname;
+        var host = account.host;
+        var port = account.port;
+        var access_key = '';
+        var secret_key = '';
+        var encrypted = account.encrypted;
+        var modify_modal = document.createElement('div')
+
+        modify_modal.className = 'modal fade in';
+        modify_modal.id = 'modify_modal';
+        modify_modal.style.display = 'block';
+        modify_modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        document.body.appendChild(modify_modal);
+        modify_modal.innerHTML =
+            '<div class="modal-dialog modal-lg">' +
+                '<div class="modal-content">' +
+                    '<div class="modal-header">' +
+                        '<h3>Modify Account</h3>' +
+                    '</div>' +
+                    '<div class="modal-body">' +
+                        '<div class="row">' +
+                            '<div class="col-sm-3"></div>' +
+
+                            '<div class="col-sm-6">' +
+                                '<div class="description">Leave the</div>' +
+                                '<div class="form-group nickname">' +
+                                    '<label for="s3Addon">Nickname</label>' +
+                                    '<input class="form-control" id="_nickname" name="_nickname" data-lpignore=true autocomplete=off />' +
+                                '</div>' +
+                                '<div class="form-group host">' +
+                                    '<label for="s3Addon">Host</label>' +
+                                    '<input class="form-control" id="_host" name="_host" data-lpignore=true autocomplete=off />' +
+                                '</div>' +
+
+                                '<div class="form-group port">' +
+                                    '<label for="s3Addon">Port</label>' +
+                                    '<input class="form-control" id="_port" name="_port" data-lpignore=true autocomplete=off />' +
+                                '</div>' +
+
+                                '<div class="form-group access_key">' +
+                                    '<label for="s3Addon">Access Key</label>' +
+                                    '<input class="form-control" id="access_key" name="access_key" data-lpignore=true autocomplete=off />' +
+                                '</div>' +
+                                '<div class="form-group secret_key">' +
+                                    '<label for="s3Addon">Secret Key</label>' +
+                                    '<input type="password" class="form-control" id="secret_key" name="secret_key" data-lpignore=true autocomplete=off />' +
+                                '</div>' +
+                                '<div class="form-group encrypted">' +
+                                    '<label class="form-check-label" for="encrypted">' +
+                                        'Use TLS Encryption<br>' +
+                                        '<input class="form-check-input" type="checkbox" id="encrypted" name="encrypted" data-lpignore=true autocomplete=off />' +
+                                    '</label>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="modal-footer">' +
+                        '<button class="btn btn-default cancel">' +
+                            'Cancel' +
+                        '</button>' +
+                        '<button class="btn btn-warning modify">' +
+                            'Modify' +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+
+        var nickname_input = modify_modal.querySelector('.form-group.nickname input');
+        nickname_input.addEventListener('input', function(ev) {
+            nickname = ev.target.value;
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            console.log('hi');
+            return false;
+        });
+        nickname_input.value = nickname;
+
+        var host_input = modify_modal.querySelector('.form-group.host input');
+        host_input.addEventListener('input', function(ev) {
+            host = ev.target.value;
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+        host_input.value = host;
+
+        var port_input = modify_modal.querySelector('.form-group.port input');
+        port_input.addEventListener('input', function(ev) {
+            port = ev.target.value;
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+        port_input.value = port;
+
+        var secret_key_input = modify_modal.querySelector('.form-group.secret_key input');
+        secret_key_input.addEventListener('input', function(ev) {
+            if (ev.target.value === '') {
+                secret_key = null;
+            } else {
+                secret_key = ev.target.value;
+            }
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+        secret_key_input.value = secret_key;
+
+        var access_key_input = modify_modal.querySelector('.form-group.access_key input');
+        access_key_input.addEventListener('input', function(ev) {
+            if (ev.target.value === '') {
+                access_key = null;
+            } else {
+                access_key = ev.target.value;
+            }
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+        access_key_input.value = access_key;
+
+        var encrypted_input = modify_modal.querySelector('.form-group.encrypted input');
+        encrypted_input.addEventListener('click', function(ev) {
+            encrypted = ev.target.checked;
+            //ev.preventDefault();
+            //ev.stopImmediatePropagation();
+            return false;
+        });
+        encrypted_input.checked = encrypted;
+
+        var submit_button = modify_modal.querySelector('.modal-footer button.modify');
+        submit_button.addEventListener('click', function(ev) {
+            osfHelpers.putJSON(self.account_url, {
+                id: account.id,
+                host: host,
+                port: port,
+                encrypted: encrypted,
+                access_key: access_key,
+                secret_key: secret_key,
+                nickname: nickname
+            }).done(function() {
+                self.clearModal();
+                $modal.modal('hide');
+                self.updateAccounts();
+                modify_modal.remove();
+            }).fail(function(error) {
+                self.changeMessage(language.userSettingsError, 'text-danger');
+                Raven.captureMessage('Error while updating addon account', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+                });
+            });
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+
+        var cancel_button = modify_modal.querySelector('.modal-footer button.cancel');
+        cancel_button.addEventListener('click', function(ev) {
+            modify_modal.remove();
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+        });
+
     };
 
     self.disconnectAccount = function(account) {

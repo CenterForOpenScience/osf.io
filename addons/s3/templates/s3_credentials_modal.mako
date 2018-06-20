@@ -14,6 +14,10 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
+                                <label for="s3Addon">Nickname</label>
+                                <input class="form-control" data-bind="value: nickname" id="_nickname" name="_nickname" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
                                 <label for="s3Addon">Host</label>
                                 <input class="form-control" data-bind="value: host" id="_host" name="_host" ${'disabled' if disabled else ''} />
                             </div>

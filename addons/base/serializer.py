@@ -111,6 +111,10 @@ class OAuthAddonSerializer(AddonSerializer):
             'provider_short_name': external_account.provider,
             'display_name': external_account.display_name,
             'profile_url': external_account.profile_url,
+            'host': external_account.host,
+            'port': external_account.port,
+            'nickname': external_account.nickname,
+            'encrypted': external_account.encrypted,
             'nodes': [
                 self.serialize_granted_node(node)
                 for node in self.user_settings.get_attached_nodes(
