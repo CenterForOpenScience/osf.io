@@ -1,9 +1,8 @@
 Hello OSF Support,<br>
 <br>
-There has been some trouble in registering a DOI or updating the metadata for the preprint ${preprint.absolute_url} with CrossRef.<br>
+An error occurred while registering a DOI or updating the metadata for preprint(s) with CrossRef.<br>
 <br>
-preprint guid: ${preprint._id}<br>
-doi: ${doi}<br>
+batch_id: ${batch_id}<br>
 <br>
 Here is the original content of the error message:<br>
 <pre>
