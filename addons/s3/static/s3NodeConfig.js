@@ -16,7 +16,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     bucketLocations: s3Settings.bucketLocations,
 
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
-        console.log("alskjdflkjbadf")
         var self = this;
         self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
         // Non-OAuth fields
@@ -56,7 +55,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         var self = this;
         var ret = $.Deferred();
         var applySettings = function(settings){
-            self.host(settings.host)
             self.ownerName(settings.ownerName);
             self.nodeHasAuth(settings.nodeHasAuth);
             self.userIsOwner(settings.userIsOwner);
@@ -167,17 +165,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.messageClass('text-info');
         self.secretKey(null);
         self.accessKey(null);
-    },
-
-    putHost: function(self, host) {
-        return $osf.postJSON(
-            self.urls().putHost,
-            {
-                host: self.host()
-            }
-        ).done(function() {
-            self.changeMessage('THA HOSTNAME BIN UPDATED');
-        });
     },
 
     createBucket: function(self, bucketName, bucketLocation) {
@@ -298,57 +285,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                             });
                         } else {
                             self.createBucket(self, bucketName, bucketLocation);
-                        }
-                    }
-                }
-            }
-        });
-    },
-
-    openChangeHostname: function() {
-        var self = this;
-
-        bootbox.dialog({
-            title: 'Enter the hostname',
-            message:
-                    '<div class="row"> ' +
-                        '<div class="col-md-12"> ' +
-                            '<p>This is the url at which the s3-compatible api can be reached</p>' +
-                            '<form class="form-horizontal" onsubmit="return false"> ' +
-                                '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketName">Hostname</label> ' +
-                                    '<div class="col-md-8"> ' +
-                                        '<input id="providerHostname" name="providerHostname" type="text" placeholder="Enter hostname" class="form-control" autofocus> ' +
-                                        '<div>' +
-                                            '<span id="bucketModalErrorMessage" ></span>' +
-                                        '</div>'+
-                                    '</div>' +
-                                '</div>' +
-                            '</form>' +
-                            '<span>For more information on s3-compatible hostnames, click ' +
-                                '<a href="http://help.osf.io/m/addons/l/524149#BucketLocations">here</a>' +
-                            '</span>' +
-                        '</div>' +
-                    '</div>',
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default'
-                },
-                confirm: {
-                    label: 'Change hostname',
-                    className: 'btn-success',
-                    callback: function () {
-                        var providerHostname = $('#providerHostname').val();
-
-                        if (!providerHostname) {
-                            var errorMessage = $('#bucketModalErrorMessage');
-                            errorMessage.text('Bucket name cannot be empty');
-                            errorMessage[0].classList.add('text-danger');
-                            return false;
-                        } else {
-                            self.host(providerHostname);
-                            self.putHost(self);
                         }
                     }
                 }

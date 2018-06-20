@@ -60,8 +60,6 @@ def s3_folder_list(node_addon, **kwargs):
 @must_be_logged_in
 def s3_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
-    import pdb
-    pdb.set_trace()
     try:
         host = request.json['host']
         port = int(request.json['port'])
@@ -85,7 +83,6 @@ def s3_add_user_account(auth, **kwargs):
         secret_key,
         encrypted
     )
-    pdb.set_trace()
     if not user_info:
         return {
             'message': ('Unable to access account.\n'
@@ -159,7 +156,6 @@ def s3_add_user_account(auth, **kwargs):
 @must_be_logged_in
 def s3_modify_user_account(auth, **kwargs):
     """Verifies modifications to external account credentials"""
-    import pdb
     try:
         id = request.json['id']
     except:
@@ -170,7 +166,6 @@ def s3_modify_user_account(auth, **kwargs):
     try:
         account = auth.user.external_accounts.get(_id=id)
     except:
-        pdb.set_trace()
         return {
             'message': 'Attempted to modify an account that does not exist.'
         }, httplib.BAD_REQUEST

@@ -15,7 +15,6 @@ class S3Serializer(StorageAddonSerializer):
         result = {
             'accounts': node.api_url_for('s3_account_list'),
             'createBucket': node.api_url_for('create_bucket'),
-            'putHost': node.api_url_for('put_host'),
             'importAuth': node.api_url_for('s3_import_auth'),
             'create': node.api_url_for('s3_add_user_account'),
             'deauthorize': node.api_url_for('s3_deauthorize_node'),
