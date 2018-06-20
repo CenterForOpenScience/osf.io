@@ -11,6 +11,7 @@ from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
+@pytest.mark.usefixtures('enable_quickfiles_creation')
 class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
