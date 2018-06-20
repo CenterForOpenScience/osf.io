@@ -1928,8 +1928,7 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
-                                resourceType === 'preprints' && item.attributes.date_withdrawn !== null ? m('.fangorn-preprint.p-xs.m-b-xs', 'This preprint has been withdrawn.') : '',
-                                resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
+                                resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' && item.attributes.reviews_state !== null ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : resourceType === 'preprints' && item.attributes.date_withdrawn !== null ? 'Status: Withdrawn' : '',  // is a preprint, has a state, provider uses moderation
                                 resourceType === 'preprints' && item.attributes.is_published === true ? m('.text-capitalize', 'Published: ' + item.attributes.is_published) : '',
                                 m('', 'Visibility: ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', [
@@ -1968,13 +1967,18 @@ var Information = {
                     $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
                 } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
-                    category = item.data.attributes.category === '' ? 'uncategorized' : item.data.attributes.category;
+                    var resourceType = item.data.type;
+                    if (resourceType === 'preprints') {
+                        category = 'Preprint';
+                    } else {
+                        category = item.data.attributes.category === '' ? 'Uncategorized' : item.data.attributes.category;
+                    }
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html, onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
                         }}, $osf.decodeText(item.data.attributes.title))),
                         m('p.db-info-meta.text-muted', [
-                            m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
+                            resourceType == 'preprints'? m('span', (item.data.attributes.is_published ? 'Published' : 'Unpublished') + ' ' + category) : m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
                             m('span', ', Last Modified on ' + item.data.date.local)
                         ])
                     ]);
