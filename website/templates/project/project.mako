@@ -324,32 +324,37 @@
 
 % if node['has_submitted_preprint'] and (user['is_preprint_contributor'] or node['has_published_preprint']):
 <div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice m-b-md p-md clearfix">
-            % if node['has_moderated_preprint']:
-                This project contains supplemental material for ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
-                ${node['preprint_state']} ${node['preprint_word']} on ${node['preprint_provider']['name']}
-                <% icon_tooltip = ''%>
-                % if node['preprint_state'] == 'pending':
-                    % if node['preprint_provider']['workflow'] == 'post-moderation':
-                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % else:
-                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+   <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
+       <div style="margin-top: 5px; margin-bottom: 5px;">
+           Has supplemental material for <a href="${node['preprint_url']}" target="_blank">${node['attached_preprint_title']}</a>
+           on ${node['preprint_provider']['name']}
+         &nbsp;<span id="metadatapreprint-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint"></span>
+       </div>
+       <div id="metadatapreprint" class="collection-details collapse">
+           <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
+                <li>
+                    Status:&nbsp;&nbsp;<b>${node['preprint_state'].capitalize()}</b>
+                    % if node['has_moderated_preprint']:
+                        <% icon_tooltip = ''%>
+                        % if node['preprint_state'] == 'pending':
+                            % if node['preprint_provider']['workflow'] == 'post-moderation':
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                            % else:
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                            % endif
+                        % elif node['preprint_state'] == 'accepted':
+                            <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
+                        % else:
+                            <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+                        % endif
+                        <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
                     % endif
-                % elif node['preprint_state'] == 'accepted':
-                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
-                % else:
-                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
-                % endif
-                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
-            % else:
-                This project contains supplemental material for a ${node['preprint_word']}.
-            % endif
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">Go to ${node['preprint_word']}</a>
-        </div>
-    </div>
+                </li>
+           </ul>
+       </div>
+   </div>
 </div>
 % endif
 

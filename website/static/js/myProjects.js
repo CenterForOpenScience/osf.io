@@ -1978,7 +1978,7 @@ var Information = {
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
                         }}, $osf.decodeText(item.data.attributes.title))),
                         m('p.db-info-meta.text-muted', [
-                            resourceType == 'preprints'? m('span', (item.data.attributes.is_published ? 'Published' : 'Unpublished') + ' ' + category) : m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
+                            resourceType === 'preprints'? m('span', (item.data.attributes.is_published ? 'Published' : 'Unpublished') + ' ' + category) : m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
                             m('span', ', Last Modified on ' + item.data.date.local)
                         ])
                     ]);

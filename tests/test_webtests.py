@@ -1119,23 +1119,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
     def test_public_project_abandoned_preprint(self):
         self.preprint.machine_state = 'initial'
@@ -1145,23 +1145,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
     def test_public_project_deleted_preprint(self):
         self.preprint.deleted = timezone.now()
@@ -1171,23 +1171,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
     def test_public_project_private_preprint(self):
         self.preprint.is_public = False
@@ -1197,23 +1197,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
     def test_public_project_orphaned_preprint(self):
         self.preprint.primary_file = None
@@ -1223,23 +1223,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
@@ -1249,23 +1249,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('This project contains supplemental material for a preprint.', res.body)
+        assert_in('Has supplemental material for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('This project contains supplemental material for a preprint.', res.body)
+        assert_not_in('Has supplemental material for', res.body)
 
     def test_public_project_pending_preprint_post_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1277,27 +1277,32 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
     def test_public_project_pending_preprint_pre_moderation(self):
@@ -1310,27 +1315,32 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('pending preprint on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Status:&nbsp;&nbsp;<b>Pending</b>', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
 if __name__ == '__main__':
