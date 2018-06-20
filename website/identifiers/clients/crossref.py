@@ -156,18 +156,18 @@ class CrossRefClient(AbstractIdentifierClient):
             suffix = names.get('suffix')
 
         given_name = ' '.join([given, middle]).strip()
-        surname = ' '.join([family, suffix]).strip()
-
         given_stripped = remove_control_characters(given_name)
         # For crossref, given_name is not allowed to have numbers or question marks
         given_processed = ''.join(
             [char for char in given_stripped if (not char.isdigit() and char != '?')]
         )
-        surname_processed = remove_control_characters(surname)
+        surname_processed = remove_control_characters(family)
 
         processed_names = {'surname': surname_processed or given_processed}
         if given_processed and surname_processed:
             processed_names['given_name'] = given_processed
+        if suffix:
+            processed_names['suffix'] = suffix
 
         return processed_names
 
@@ -183,8 +183,8 @@ class CrossRefClient(AbstractIdentifierClient):
             if name_parts.get('given_name'):
                 person.append(element.given_name(name_parts['given_name']))
             person.append(element.surname(name_parts['surname']))
-            if contributor.suffix:
-                person.append(element.suffix(remove_control_characters(contributor.suffix)))
+            if name_parts.get('suffix'):
+                person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
             if contributor.external_identity.get('ORCID'):
                 orcid = contributor.external_identity['ORCID'].keys()[0]
                 verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
