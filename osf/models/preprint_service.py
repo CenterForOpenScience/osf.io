@@ -245,7 +245,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects)
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
         return ret
 
     def _get_spam_content(self, saved_fields):
