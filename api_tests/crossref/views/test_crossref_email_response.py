@@ -4,6 +4,8 @@ import hmac
 import hashlib
 import lxml.etree
 
+from django.utils import timezone
+
 from osf_tests import factories
 from website import settings
 
@@ -136,7 +138,7 @@ class TestCrossRefEmailResponse:
             doi = lxml.etree.Element('doi')
             doi.text = settings.DOI_FORMAT.format(prefix=provider_prefix, guid=preprint._id)
             msg = lxml.etree.Element('msg')
-            msg.text = 'Successfully updated'
+            msg.text = 'Successfully added'
             record_diagnostic.append(doi)
             record_diagnostic.append(msg)
             base_xml.append(record_diagnostic)
@@ -170,8 +172,10 @@ class TestCrossRefEmailResponse:
             context_data = self.make_mailgun_payload(crossref_response=success_xml)
             app.post(url, context_data)
 
+        preprint.reload()
         assert not mock_send_mail.called
         assert preprint.get_identifier_value('doi')
+        assert preprint.preprint_doi_created
 
     def test_update_success_response(self, app, preprint, url, update_success_xml):
         initial_value = 'TempDOIValue'
@@ -184,6 +188,19 @@ class TestCrossRefEmailResponse:
 
         assert not mock_send_mail.called
         assert preprint.get_identifier_value(category='doi') != initial_value
+
+    def test_update_success_does_not_set_prerprint_doi_created(self, app, preprint, url, update_success_xml):
+        preprint.set_identifier_value(category='doi', value='test')
+        preprint.preprint_doi_created = timezone.now()
+        preprint.save()
+        update_xml = self.update_success_xml(preprint)
+
+        pre_created = preprint.preprint_doi_created
+        with mock.patch('framework.auth.views.mails.send_mail'):
+            context_data = self.make_mailgun_payload(crossref_response=update_xml)
+            app.post(url, context_data)
+
+        assert preprint.preprint_doi_created == pre_created
 
     def test_success_batch_response(self, app, url):
         provider = factories.PreprintProviderFactory()

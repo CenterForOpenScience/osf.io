@@ -40,11 +40,18 @@ class ParseCrossRefConfirmation(APIView):
             for record in records:
                 doi = getattr(record.find('doi'), 'text', None)
                 guid = doi.split('/')[-1] if doi else None
-                if record.get('status').lower() == 'success':
+                if record.get('status').lower() == 'success' and doi:
+                    msg = record.find('msg').text
+                    created = bool(msg == 'Successfully added')
                     preprint = PreprintService.load(guid)
-                    preprint.set_identifier_value(category='doi', value=doi)
+                    if created:
+                        # Sets preprint_doi_created and saves the preprint
+                        preprint.set_identifier_values(doi=doi, save=True)
+                    else:
+                        # Directly updates the identifier
+                        preprint.set_identifier_value(category='doi', value=doi)
 
-                    logger.info('Success email received from CrossRef for preprint {}'.format(preprint._id))
+                    logger.info('Creation success email received from CrossRef for preprint {}'.format(preprint._id))
                     dois_processed += 1
 
                     # Mark legacy DOIs overwritten by newly batch confirmed crossref DOIs
