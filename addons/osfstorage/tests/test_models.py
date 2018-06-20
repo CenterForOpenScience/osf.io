@@ -247,6 +247,32 @@ class TestOsfstorageFileNode(StorageTestCase):
 
             with assert_raises(FileNodeIsPrimaryFile):
                 file.delete()
+                
+    def test_delete_file_no_guid(self):
+        child = self.node_settings.get_root().append_file('Test')
+
+        assert_is(OsfStorageFileNode.load(child._id).guids.first(), None)
+
+        with mock.patch('osf.models.files.apps.get_model') as get_model:
+            child.delete()
+
+            assert_is(get_model.called, False)
+
+        assert_is(OsfStorageFileNode.load(child._id), None)
+
+    def test_delete_file_guids(self):
+        child = self.node_settings.get_root().append_file('Test')
+        guid = child.get_guid(create=True)
+
+        assert_is_not(OsfStorageFileNode.load(child._id).guids.first(), None)
+
+        with mock.patch('osf.models.files.apps.get_model') as get_model:
+            child.delete()
+
+            assert_is(get_model.called, True)
+            assert_is(get_model('osf.Comment').objects.filter.called, True)
+
+        assert_is(OsfStorageFileNode.load(child._id), None)
 
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')

@@ -2537,3 +2537,56 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlogs + 1)
         assert('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+
+
+@pytest.mark.django_db
+class TestWithdrawnPreprint:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def preprint_pre_mod(self):
+        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_post_mod(self):
+        return PreprintFactory(provider__reviews_workflow='post-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint(self):
+        return PreprintFactory()
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
+        # test_ever_public
+
+        # non-moderated
+        assert preprint.ever_public
+
+        # pre-mod
+        preprint_pre_mod.run_submit(user)
+
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.run_reject(user, 'it')
+        preprint_pre_mod.reload()
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.run_accept(user, 'it')
+        preprint_pre_mod.reload()
+        assert preprint_pre_mod.ever_public
+
+        # post-mod
+        preprint_post_mod.run_submit(user)
+        assert preprint_post_mod.ever_public
+
+        # test_cannot_set_ever_public_to_False
+        preprint_pre_mod.ever_public = False
+        preprint_post_mod.ever_public = False
+        preprint.ever_public = False
+        with pytest.raises(ValidationError):
+            preprint.save()
+        with pytest.raises(ValidationError):
+            preprint_pre_mod.save()
+        with pytest.raises(ValidationError):
+            preprint_post_mod.save()

@@ -10,6 +10,7 @@ from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
@@ -22,7 +23,7 @@ from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
@@ -51,10 +52,7 @@ logger = logging.getLogger(__name__)
 class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, UploadMixin,
         BaseModel, Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
     # Preprint fields that trigger a check to the spam filter on save
-    SPAM_CHECK_FIELDS = {
-        'title',
-        'description',
-    }
+    SPAM_CHECK_FIELDS = set()
 
     # Setting for ContributorMixin
     DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
@@ -74,7 +72,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     identifiers = GenericRelation(Identifier, related_query_name='preprints')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
-    # begin changes
+    date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    withdrawal_justification = models.TextField(default='', blank=True)
+    ever_public = models.BooleanField(default=False, blank=True)
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
@@ -161,12 +161,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
         return self.preprintcontributor_set
 
     @property
+    def is_retracted(self):
+        return self.date_withdrawn is not None
+
+    @property
     def verified_publishable(self):
         return self.is_published and \
             self.is_public and \
             self.has_submitted_preprint and not \
             self.deleted and not \
-            self.is_preprint_orphan
+            self.is_preprint_orphan and not \
+            self.is_retracted
 
     @property
     def preprint_doi(self):
@@ -413,8 +418,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = DefaultStates.ACCEPTED.value
+            self.machine_state = ReviewStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
+
+            # This preprint will have a tombstone page when it's withdrawn.
+            self.ever_public = True
 
             self.add_log(
                 action=PreprintLog.PUBLISHED,
@@ -834,6 +842,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
+
+        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
+            raise ValidationError('Cannot set "ever_public" to False')
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

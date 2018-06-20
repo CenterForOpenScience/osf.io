@@ -1,6 +1,7 @@
 <div id="nodesDelete" class="modal fade">
     <div class="modal-dialog modal-md">
         <div style="display: none;" data-bind="visible: true">
+            <!-- ko with: modal -->
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" data-bind="click: clear" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -8,7 +9,7 @@
                 </div>
                 <div class="modal-body">
                     <!-- select projects page -->
-                    <div data-bind="visible:page() === SELECT">
+                    <div data-bind="if: page() === SELECT">
                         <div class="row">
                             <div class="col-md-10">
                                 <div class="m-b-md box p-sm">
@@ -59,33 +60,41 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p data-bind="text:warning">
-                                <p>
+                                <p data-bind="html:warning">
+                                <p data-bind="css: {'text-danger' : (!canDelete() && atMaxLength())}">
                                     Type the following to continue: <strong data-bind="text: confirmationString"></strong>
                                 </p>
-                                <input id="bbConfirmTextDelete" class="form-control">
+                                <div contenteditable="true" data-bind="editableHTML: {observable: confirmInput, onUpdate: handleEditableUpdate}" class="form-control"></div>
                             </div>
                         </div>
+                    </div><!-- end projects changed warning page -->
+
+                    <div data-bind="if: page() === QUICKDELETE">
+                        <div>
+                            <p data-bind="html: message"></p>
+                            <p data-bind="css: {'text-danger' : (!canDelete() && atMaxLength())}">
+                                Type the following to continue: <strong data-bind="text: confirmationString"></strong>
+                            </p>
+                        </div>
+                        <div contenteditable="true" data-bind="editableHTML: {observable: confirmInput, onUpdate: handleEditableUpdate}" class="form-control"></div>
                     </div><!-- end projects changed warning page -->
                 </div><!-- end modal-body -->
 
                 <div class="modal-footer">
                     <!--ordering puts back button before cancel -->
-                <span data-bind="if: page() == CONFIRM">
-                    <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
-                </span>
-
-                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-
-                    <span data-bind="if: page() == SELECT">
-                      <a class="btn btn-primary" data-bind="css: { disabled: !nodesDeleted() }, click:confirmWarning" >Continue</a>
+                    <span data-bind="if: page() == CONFIRM">
+                        <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
                     </span>
-
-                    <span data-bind="if: page() == CONFIRM && (nodesChanged().length <= 100)">
-                      <a href="#" class="btn btn-danger" data-bind="click: confirmChanges, visible: nodesDeleted()" data-dismiss="modal">Delete</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                    <span data-bind="if: (page() === QUICKDELETE || (page() == CONFIRM && (nodesChanged().length <= 100)))">
+                        <a href="#" class="btn btn-danger" data-bind="css: { disabled: !canDelete() }, click: confirmChanges, visible: nodesDeleted()" data-dismiss="modal">Delete</a>
+                    </span>
+                    <span data-bind="if: page() == SELECT">
+                        <a class="btn btn-primary" data-bind="css: { disabled: !nodesDeleted() }, click:confirmWarning" >Continue</a>
                     </span>
                 </div><!-- end modal-footer -->
             </div><!-- end modal-content -->
+            <!-- /ko -->
         </div>
 
     </div><!-- end modal-dialog -->

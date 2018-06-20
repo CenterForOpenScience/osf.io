@@ -5,6 +5,7 @@ from api.base.settings.defaults import API_BASE
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
+from framework.auth import Auth
 from datetime import datetime
 from osf.utils.workflows import DefaultStates
 
@@ -351,15 +352,55 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.published_preprint_url = '/{}preprints/{}/citation/modern-language-association/'.format(
                      API_BASE, self.published_preprint._id)
 
-    def test_citation_contains_correctly_formats_middle_names(self):
+        self.second_contrib = AuthUserFactory()
+        self.second_contrib.given_name = 'Darla'
+        self.second_contrib.middle_names = 'Texas Toast'
+        self.second_contrib.family_name = 'Jenkins'
+        self.second_contrib.suffix = 'Junior'
+        self.second_contrib.save()
+
+        self.third_contrib = AuthUserFactory()
+        self.third_contrib.given_name = 'Lilith'
+        self.third_contrib.middle_names = 'Radar'
+        self.third_contrib.family_name = 'Schematics'
+        self.third_contrib.save()
+
+    def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = timezone.now().date().strftime('%-d %B %Y')
-        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
-                self.published_preprint.title,
-                self.published_preprint.provider.name,
-                date)
+        assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {}. Web.'.format(
+            self.published_preprint.title,
+            self.published_preprint.provider.name,
+            date)
+        )
+
+        # test_suffix
+        self.admin_contributor.suffix = 'Junior'
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C. B., Junior. “{}.” {}, {}. Web.'.format(
+            self.published_preprint.title,
+            self.published_preprint.provider.name,
+            date)
+        )
+
+        # test_no_middle_names
+        self.admin_contributor.suffix = ''
+        self.admin_contributor.middle_names = ''
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes. “{}.” {}, {}. Web.'.format(
+            self.published_preprint.title,
+            self.published_preprint.provider.name,
+            date)
         )
 
     def test_citation_no_repeated_periods(self):
@@ -369,7 +410,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = timezone.now().date().strftime('%-d %B %Y')
-        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
+        assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date)
@@ -384,7 +425,47 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = timezone.now().date().strftime('%-d %B %Y')
-        assert_equal(citation, u'McGee, Grapes C B. “{}” {}, {}. Web.'.format(
+        assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+    def test_two_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. “{}.” {}, {}. Web.'.format(
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+    def test_three_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C. B., et al. “{}.” {}, {}. Web.'.format(
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date)
+        )
+
+        # first name suffix
+        self.admin_contributor.suffix = 'Jr.'
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%-d %B %Y')
+        assert_equal(citation, u'McGee, Grapes C. B., Jr., et al. “{}.” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date)
@@ -398,26 +479,144 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             creator=self.admin_contributor)
+        self.node = self.published_preprint.node
+        self.published_preprint.title = 'A Study of Coffee'
+        self.published_preprint.save()
 
         self.admin_contributor.given_name = 'Grapes'
         self.admin_contributor.middle_names = ' Coffee Beans '
         self.admin_contributor.family_name = 'McGee'
         self.admin_contributor.save()
+
+        self.second_contrib = AuthUserFactory()
+        self.second_contrib.given_name = 'Darla'
+        self.second_contrib.middle_names = 'Texas Toast'
+        self.second_contrib.family_name = 'Jenkins'
+        self.second_contrib.suffix = 'Junior'
+        self.second_contrib.save()
+
+        self.third_contrib = AuthUserFactory()
+        self.third_contrib.given_name = 'Lilith'
+        self.third_contrib.middle_names = 'Radar'
+        self.third_contrib.family_name = 'Schematics'
+        self.third_contrib.save()
+
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
                      API_BASE, self.published_preprint._id)
 
-    def test_api_citation_particulars(self):
-        self.published_preprint.title = 'A Study of Coffee.'
+    def test_one_author(self):
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B. ({}). {}. {}'.format(
+                date,
+                self.published_preprint.title,
+                'https://doi.org/' + self.published_preprint.article_doi
+                )
+        )
+
+        # test_suffix
+        self.admin_contributor.suffix = 'Junior'
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B., Junior. ({}). {}. {}'.format(
+            date,
+            self.published_preprint.title,
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
+        )
+
+        # test_no_middle_names
+        self.admin_contributor.suffix = ''
+        self.admin_contributor.middle_names = ''
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. ({}). {}. {}'.format(
+            date,
+            self.published_preprint.title,
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
+        )
+
+    def test_two_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
         self.published_preprint.save()
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = timezone.now().date().strftime('%Y, %B %-d')
-        assert_equal(citation, u'McGee, G. C. B. ({}). {} {}'.format(
-                date,
-                self.published_preprint.title,
-                'http://doi.org/' + self.published_preprint.article_doi
-                )
+        assert_equal(citation, u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
+            date,
+            self.published_preprint.title,
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
+        )
+
+    def test_three_authors_and_title_with_period(self):
+        self.published_preprint.title = 'This Title Ends in a Period.'
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
+            date,
+            'This Title Ends in a Period',
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
+        )
+
+    def test_seven_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        for i in range(1,5):
+            new_user = AuthUserFactory()
+            new_user.given_name = 'James'
+            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.save()
+            self.published_preprint.add_contributor(new_user)
+        self.published_preprint.save()
+
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
+            date,
+            self.published_preprint.title,
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
+        )
+
+    def test_eight_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        for i in range(1,6):
+            new_user = AuthUserFactory()
+            new_user.given_name = 'James'
+            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.save()
+            self.published_preprint.add_contributor(new_user)
+        self.published_preprint.save()
+
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date().strftime('%Y, %B %-d')
+        assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
+            date,
+            self.published_preprint.title,
+            'https://doi.org/' + self.published_preprint.article_doi
+            )
         )
 
 
@@ -428,6 +627,9 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             creator=self.admin_contributor)
+        self.node = self.published_preprint.node
+        self.published_preprint.title = 'A Study of Coffee'
+        self.published_preprint.save()
 
         self.admin_contributor.given_name = 'Grapes'
         self.admin_contributor.middle_names = ' Coffee Beans '
@@ -436,14 +638,115 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         self.published_preprint_url = '/{}preprints/{}/citation/chicago-author-date/'.format(
                      API_BASE, self.published_preprint._id)
 
-    def test_api_citation_particulars(self):
-        self.published_preprint.title = 'A Study of Coffee.'
+        self.second_contrib = AuthUserFactory()
+        self.second_contrib.given_name = 'Darla'
+        self.second_contrib.middle_names = 'Texas Toast'
+        self.second_contrib.family_name = 'Jenkins'
+        self.second_contrib.suffix = 'Junior'
+        self.second_contrib.save()
+
+        self.third_contrib = AuthUserFactory()
+        self.third_contrib.given_name = 'Lilith'
+        self.third_contrib.middle_names = 'Radar'
+        self.third_contrib.family_name = 'Schematics'
+        self.third_contrib.save()
+
+    def test_one_author(self):
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes C. B. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
+        # test_suffix
+        self.admin_contributor.suffix = 'Junior'
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes C. B., Junior. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
+        # test_no_middle_names
+        self.admin_contributor.suffix = ''
+        self.admin_contributor.middle_names = ''
+        self.admin_contributor.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
+    def test_two_authors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
         self.published_preprint.save()
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = timezone.now().date()
-        assert_equal(citation, u'McGee, Grapes C B. {}. “{}” {}. {}. {}.'.format(
+        assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
+    def test_three_authors_and_title_with_period(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        self.published_preprint.title = 'This Preprint ends in a Period.'
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                'This Preprint Ends in a Period',
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
+    def test_eleven_contributors(self):
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.add_contributor(self.third_contrib)
+        for i in range(1,9):
+            new_user = AuthUserFactory()
+            new_user.given_name = 'James'
+            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.save()
+            self.published_preprint.add_contributor(new_user)
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        date = timezone.now().date()
+        assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, Lilith R. Schematics, James Taylor1, James Taylor2, James Taylor3, James Taylor4, et al. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,

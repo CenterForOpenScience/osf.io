@@ -15,7 +15,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0107_merge_20180608_0821'),
+        ('osf', '0113_merge_20180620_1013'),
     ]
 
     operations = [
@@ -82,31 +82,6 @@ class Migration(migrations.Migration):
             model_name='preprint',
             name='creator',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints_created', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='preprint',
-            name='date_last_reported',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprint',
-            name='reports',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, validators=[osf.models.spam._validate_reports]),
-        ),
-        migrations.AddField(
-            model_name='preprint',
-            name='spam_data',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
-        ),
-        migrations.AddField(
-            model_name='preprint',
-            name='spam_pro_tip',
-            field=models.CharField(blank=True, default=None, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprint',
-            name='spam_status',
-            field=models.IntegerField(blank=True, db_index=True, default=None, null=True),
         ),
         migrations.AddField(
             model_name='preprint',

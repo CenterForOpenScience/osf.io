@@ -83,12 +83,9 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    if(ctx.node.childExists){
-        new NodesDelete.NodesDelete('#nodesDelete', ctx.node);
-    }else{
-        $('#deleteNode').on('click', function() {
-            ProjectSettings.getConfirmationCode(ctx.node.nodeType);
-        });
+    var selector = '#deleteNode';
+    if ($(selector).length){
+        new NodesDelete.DeleteManager(selector);
     }
 
     // TODO: Knockout-ify me

@@ -25,6 +25,7 @@ from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAUL
 
 from osf.models import (
     AbstractNode,
+    Email,
     Node,
     Tag,
     NodeLog,
@@ -1159,6 +1160,16 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_fullname_email_exists_as_secondary(self, user, node):
+        registered_user = UserFactory()
+        secondary_email = 'secondary@test.test'
+        Email.objects.create(address=secondary_email, user=registered_user)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor = contributor_obj.user
+        assert contributor == registered_user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 

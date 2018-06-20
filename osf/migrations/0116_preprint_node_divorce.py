@@ -356,7 +356,7 @@ def divorce_preprints_from_nodes_sql(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0109_add_preprint_partial_index'),
+        ('osf', '0115_add_preprint_partial_index'),
     ]
 
     operations = [

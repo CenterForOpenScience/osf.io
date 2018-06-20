@@ -64,8 +64,9 @@ class PreprintMixin(NodeMixin):
         except Preprint.DoesNotExist:
             raise NotFound
 
-        if preprint.deleted:
+        if preprint.deleted or (preprint.is_retracted and not preprint.ever_public):
             raise NotFound
+
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)

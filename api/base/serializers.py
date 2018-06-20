@@ -181,7 +181,7 @@ class HideIfPreprint(ConditionalField):
 
 class HideIfWithdrawal(ConditionalField):
     """
-    If registration is withdrawn, this field will return None.
+    If registration or preprint is withdrawn, this field will return None.
     """
 
     def should_hide(self, instance):
@@ -190,6 +190,10 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+class HideIfNotWithdrawal(ConditionalField):
+
+    def should_hide(self, instance):
+        return not instance.is_retracted
 
 class HideIfWikiDisabled(ConditionalField):
     """
@@ -198,7 +202,7 @@ class HideIfWikiDisabled(ConditionalField):
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, '2.8', '2.8') and 'wiki' not in instance.get_addon_names()
+        return not utils.is_deprecated(request.version, '2.8', '2.8') and not instance.has_addon('wiki')
 
 
 class HideIfNotNodePointerLog(ConditionalField):

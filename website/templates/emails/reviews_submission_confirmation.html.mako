@@ -48,17 +48,17 @@
                                                     <tbody>
                                                         <tr>
                                                             <td>
-                                                                <a href="${'https://twitter.com/home?status=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}'.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                                <a href="${u'https://twitter.com/home?status=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}'.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
                                                                     <img src="${'{}static/img/fa-twitter-blue.png'.format(settings.DOMAIN)}" alt="twitter" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                                 </a>
                                                             </td>
                                                             <td>
-                                                                <a href="${'https://www.facebook.com/sharer/sharer.php?u={link}%3Futm_source%3Dnotification%26utm_medium%3Demail%26utm_campaign%3Dpreprint_submit'.format(link=reviewable.absolute_url)}" target="_blank">
+                                                                <a href="${u'https://www.facebook.com/sharer/sharer.php?u={link}%3Futm_source%3Dnotification%26utm_medium%3Demail%26utm_campaign%3Dpreprint_submit'.format(link=reviewable.absolute_url)}" target="_blank">
                                                                     <img src="${'{}static/img/fa-facebook-blue.png'.format(settings.DOMAIN)}" alt="facebook" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                                 </a>
                                                             </td>
                                                             <td>
-                                                                <a href="${'https://www.linkedin.com/shareArticle?mini=true&url={link}&summary=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}&title=I%20just%20posted%20a%20{word}&source='.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                                <a href="${u'https://www.linkedin.com/shareArticle?mini=true&url={link}&summary=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}&title=I%20just%20posted%20a%20{word}&source='.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
                                                                     <img src="${'{}static/img/fa-linkedin-blue.png'.format(settings.DOMAIN)}" alt="LinkedIn" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                                 </a>
                                                             </td>

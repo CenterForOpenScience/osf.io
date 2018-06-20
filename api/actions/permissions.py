@@ -6,15 +6,16 @@ from rest_framework import permissions as drf_permissions
 from api.base.utils import get_user_auth
 from osf.models.action import ReviewAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
-from osf.utils.workflows import DefaultTriggers
+from osf.utils.workflows import ReviewTriggers
 from osf.utils import permissions as osf_permissions
 
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {
-    DefaultTriggers.SUBMIT.value: None,
-    DefaultTriggers.ACCEPT.value: 'accept_submissions',
-    DefaultTriggers.REJECT.value: 'reject_submissions',
-    DefaultTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    ReviewTriggers.SUBMIT.value: None,
+    ReviewTriggers.ACCEPT.value: 'accept_submissions',
+    ReviewTriggers.REJECT.value: 'reject_submissions',
+    ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
+    ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
 }
 
 

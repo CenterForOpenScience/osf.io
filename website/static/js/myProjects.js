@@ -1928,9 +1928,10 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
+                                resourceType === 'preprints' && item.attributes.date_withdrawn !== null ? m('.fangorn-preprint.p-xs.m-b-xs', 'This preprint has been withdrawn.') : '',
                                 resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
                                 resourceType === 'preprints' && item.attributes.is_published === true ? m('.text-capitalize', 'Published: ' + item.attributes.is_published) : '',
-                                m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
+                                m('', 'Visibility: ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', [
                                   m('span', 'Category: '),
                                   m('span', { className : mHelpers.getIcon(category) }),

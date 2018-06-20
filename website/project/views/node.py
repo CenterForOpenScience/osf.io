@@ -1067,7 +1067,7 @@ def node_child_tree(user, node):
             'title': node.title,
             'is_public': node.is_public,
             'contributors': contributors,
-            'is_admin': is_admin
+            'is_admin': is_admin,
         },
         'user_id': user._id,
         'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

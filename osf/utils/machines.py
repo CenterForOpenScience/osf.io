@@ -7,7 +7,7 @@ from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction
 from osf.models.preprintlog import PreprintLog
 from osf.utils import permissions
-from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
@@ -73,24 +73,36 @@ class BaseMachine(Machine):
 class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
 
+    def __init__(self, *args, **kwargs):
+        kwargs['transitions'] = kwargs.get('transitions', REVIEWABLE_TRANSITIONS)
+        kwargs['states'] = kwargs.get('states', [s.value for s in ReviewStates])
+        super(ReviewsMachine, self).__init__(*args, **kwargs)
+
     def save_changes(self, ev):
         now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.machineable.in_public_reviews_state
-        if should_publish and not self.machineable.is_published:
+        if self.machineable.is_retracted:
+            pass  # Do not alter published state
+        elif should_publish and not self.machineable.is_published:
             if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
-                raise ValueError('Preprint is not a valid preprint; cannot publish.')
+                raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.machineable.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.machineable.date_published = now
             self.machineable.is_published = True
+            self.machineable.ever_public = True
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
 
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
+    def perform_withdraw(self, ev):
+        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
+        self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
         context = self.get_context()
@@ -129,6 +141,10 @@ class ReviewsMachine(BaseMachine):
             reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                                template='reviews_update_comment',
                                                action=self.action)
+
+    def notify_withdraw(self, ev):
+        # TODO [IN-284]: language
+        pass
 
     def get_context(self):
         return {

@@ -1704,7 +1704,7 @@ def make_url_map(app):
         )
     ], prefix='/api/v1')
 
-    # Set up static routing for addons
+    # Set up static routing for addons and providers
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
@@ -1712,6 +1712,11 @@ def make_url_map(app):
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
             return send_from_directory(addon_path, filename)
+
+        @app.route('/assets/<filename>')
+        def provider_static(filename):
+            assets_path = os.path.join(settings.BASE_PATH, 'assets')
+            return send_from_directory(assets_path, filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():
