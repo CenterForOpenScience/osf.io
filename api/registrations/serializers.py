@@ -295,6 +295,9 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_current_user_permissions(self, obj):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
+    def get_view_only_links_count(self, obj):
+        return obj.private_links.filter(is_deleted=False).count()
+
     def update(self, registration, validated_data):
         auth = Auth(self.context['request'].user)
         # Update tags
