@@ -176,7 +176,7 @@ class TestCrossRefClient:
         contributor.family_name = ''
         contributor.save()
         meta = crossref_client._process_crossref_name(contributor)
-        assert meta == {'given_name': 'ScottyHotty Ronald', 'surname': 'Garland II'}
+        assert meta == {'given_name': 'ScottyHotty Ronald', 'surname': 'Garland', 'suffix': 'II'}
 
     def test_metadata_for_single_name_contributor_only_has_surname(self, crossref_client, preprint):
         contributor = preprint.node.creator
