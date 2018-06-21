@@ -10,6 +10,7 @@ from addons.osfstorage.models import OsfStorageFile
 from api_tests import utils as api_test_utils
 from framework.auth import Auth
 from framework.celery_tasks import handlers
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf_tests.factories import (
@@ -26,7 +27,7 @@ from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
 
@@ -387,6 +388,27 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def tearDown(self):
         handlers.celery_before_request()
         super(TestOnPreprintUpdatedTask, self).tearDown()
+
+    def test_update_or_enqueue_on_preprint_updated(self):
+        first_subjects = [15]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=first_subjects,
+            saved_fields={'contributors': True}
+        )
+        second_subjects = [16, 17]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=second_subjects,
+            saved_fields={'title': 'Hello'}
+        )
+        updated_task = get_task_from_postcommit_queue(
+            'website.preprints.tasks.on_preprint_updated',
+            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
+        )
+        assert 'title' in updated_task.kwargs['saved_fields']
+        assert 'contributors' in  updated_task.kwargs['saved_fields']
+        assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
     def test_format_preprint(self):
         res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
