@@ -1128,6 +1128,106 @@ class TestNodeFiltering:
         assert 'One' in public_project_two.description
         assert public_project_three._id not in ids
 
+    def test_withdrawn_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        project_one = ProjectFactory(creator=user_one, is_public=True)
+        preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
+        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        project_two = ProjectFactory(creator=user_one, is_public=True)
+        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_two = PreprintFactory(creator=user_one, project=project_two)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [project_two._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [project_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs can see all withdrawn preprints
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = [project_one._id, project_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [project_one._id, project_two._id]
+        # Admin contribs can see all withdrawn preprints
+        res = app.get(url, auth=user_one.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+    def test_withdrawn_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        project_one = ProjectFactory(creator=user_one, is_public=True)
+        preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
+        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        project_two = ProjectFactory(creator=user_one, is_public=True)
+        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_two = PreprintFactory(creator=user_one, project=project_two)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [project_one._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [project_one._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs can see all withdrawn preprints
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = []
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = []
+        # Admin contribs can see all withdrawn preprints
+        res = app.get(url, auth=user_one.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
 
 @pytest.mark.django_db
 class TestNodeCreate:

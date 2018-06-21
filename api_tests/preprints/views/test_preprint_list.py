@@ -3,6 +3,7 @@ from nose.tools import *  # flake8: noqa
 import pytest
 import factory
 
+from django.utils import timezone
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -282,6 +283,50 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
             auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+    def test_filter_withdrawn_preprint(self, app, url, user):
+        preprint_one = PreprintFactory(is_published=False, creator=user)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public == False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        preprint_two = PreprintFactory(creator=user)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [preprint_two._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs can see all withdrawn preprints
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = [preprint_one._id, preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [preprint_one._id, preprint_two._id]
+        # Admin contribs can see all withdrawn preprints
+        res = app.get(url, auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
 
 
 class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):

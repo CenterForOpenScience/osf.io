@@ -98,7 +98,7 @@ def migrate_nodes(index, delete, increment=10000):
 def migrate_preprints(index, delete):
     logger.info('Migrating preprints to index: {}'.format(index))
     preprint_query = Q(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
     total = Preprint.objects.filter(preprint_query).count()
     increment = 100
     total_pages = (total // increment) + 1
@@ -123,7 +123,7 @@ def migrate_preprints(index, delete):
 def migrate_preprint_files(index, delete):
     logger.info('Migrating preprint files to index: {}'.format(index))
     preprint_query = Q(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
     valid_preprints = Preprint.objects.filter(preprint_query)
     valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
     total = valid_preprint_files.count()

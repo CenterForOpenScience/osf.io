@@ -792,6 +792,7 @@ def _view_project(node, auth, primary=False,
             'has_submitted_preprint': node.has_submitted_preprint,
             'attached_preprint_title': node_linked_preprint.title if node_linked_preprint else '',
             'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
+            'has_withdrawn_preprint': node_linked_preprint.date_withdrawn is not None if node_linked_preprint else '',
             'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
             'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
             'preprint_provider': {

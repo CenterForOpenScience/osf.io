@@ -333,7 +333,14 @@
        <div id="metadatapreprint" class="collection-details collapse">
            <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
                 <li>
-                    Status:&nbsp;&nbsp;<b>${node['preprint_state'].capitalize()}</b>
+                    Status:&nbsp;&nbsp;
+                        <b>
+                            % if node['has_withdrawn_preprint']:
+                                Withdrawn
+                            % else:
+                                ${node['preprint_state'].capitalize()}
+                            % endif
+                        </b>
                     % if node['has_moderated_preprint']:
                         <% icon_tooltip = ''%>
                         % if node['preprint_state'] == 'pending':
@@ -349,7 +356,7 @@
                         % else:
                             <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
                         % endif
-                        <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
+                        <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                     % endif
                 </li>
            </ul>

@@ -9,6 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
+from django.utils import timezone
 from osf.utils import permissions
 
 
@@ -132,6 +133,53 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
             auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+    def test_filter_withdrawn_preprint(self, app, url, user):
+        preprint_one = PreprintFactory(is_published=False, creator=user)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        preprint_two = PreprintFactory(creator=user)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        # Unauthenticated users cannot see users/me/preprints
+        url = '/{}users/me/preprints/?version=2.2&'.format(API_BASE)
+        expected = [preprint_two._id]
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontribs cannot see withdrawn preprints - need to be an admin contributor
+        user2 = AuthUserFactory()
+        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        expected = []
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs - contrib=False on UserPreprints filter so read contribs can only see
+        # withdrawn preprints that were once public
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read', save=True)
+        preprint_two.add_contributor(user2, 'read', save=True)
+        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        expected = [preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [preprint_one._id, preprint_two._id]
+        # Admin contribs can see all withdrawn preprints
+        res = app.get(url, auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
 
 
 class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):

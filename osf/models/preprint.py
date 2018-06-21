@@ -170,7 +170,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             self.is_public and \
             self.has_submitted_preprint and not \
             self.deleted and not \
-            self.is_preprint_orphan
+            self.is_preprint_orphan and \
+            (not self.is_retracted or self.ever_public is True)
 
     @property
     def preprint_doi(self):

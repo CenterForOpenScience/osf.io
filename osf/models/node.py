@@ -437,7 +437,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def has_submitted_preprint(self):
         # Attached to a submitted preprint
         return self.preprints.filter(
-            deleted__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).exists()
+            deleted__isnull=True).filter(Q(date_withdrawn__isnull=True) | Q(ever_public=True)).exclude(machine_state=DefaultStates.INITIAL.value).exists()
 
     @property
     def has_published_preprint(self):
@@ -451,7 +451,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             is_public=True,
             deleted__isnull=True,
             primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value)
+            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).filter(
+            Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     @property
     def preprint_url(self):

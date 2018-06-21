@@ -501,7 +501,8 @@ class PreprintQueryBaseMixin(object):
             is_published=True,
             is_public=True,
             primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
+            & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
         if auth_user:
             admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))

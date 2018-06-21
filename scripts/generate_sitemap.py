@@ -16,6 +16,7 @@ import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
+from django.db.models import Q
 from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
 from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
@@ -201,6 +202,7 @@ class Sitemap(object):
 
         objs = (Preprint.objects
                     .filter(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False, primary_file__deleted_on__isnull=True)
+                    .filter(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
                     .exclude(machine_state=DefaultStates.INITIAL.value)
                     .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
