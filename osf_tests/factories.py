@@ -644,6 +644,7 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
+        update_task_patcher.stop()
 
         if finish:
             auth = Auth(user)
