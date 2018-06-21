@@ -335,14 +335,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_get_preprint_identifiers_called(self, mock_get_identifiers):
-        self.preprint.is_published = True
-        update_or_create_preprint_identifiers(self.preprint)
-        assert mock_get_identifiers.called
-        assert mock_get_identifiers.call_count == 1
-
-
     @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
     def test_update_or_create_preprint_identifiers_called(self, mock_update_doi):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
@@ -694,7 +686,8 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
-        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args
+        call_args, call_kwargs = mock_on_preprint_updated.call_args
+        assert call_kwargs.get('old_subjects') == [self.subject.id]
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
@@ -710,7 +703,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('osf.models.preprint_service.update_or_enqueue_on_preprint_updated')
     def test_node_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
         # A user is added as a contributor
         self.preprint.is_published = True
@@ -814,7 +807,7 @@ class TestWithdrawnPreprint:
     def preprint(self):
         return PreprintFactory()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    @mock.patch('website.identifiers.utils.request_identifiers')
     def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
         # test_ever_public
 

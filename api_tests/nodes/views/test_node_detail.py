@@ -994,7 +994,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
-    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_set_node_with_preprint_private_updates_doi(
             self, mock_update_doi_metadata, app, user,
             project_public, url_public, make_node_payload):
@@ -1009,8 +1009,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(
-            target_object._id, status='unavailable')
+        mock_update_doi_metadata.assert_called_with(target_object._id)
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects

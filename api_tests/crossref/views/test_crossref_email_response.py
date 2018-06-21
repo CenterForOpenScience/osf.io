@@ -189,7 +189,7 @@ class TestCrossRefEmailResponse:
         assert not mock_send_mail.called
         assert preprint.get_identifier_value(category='doi') != initial_value
 
-    def test_update_success_does_not_set_prerprint_doi_created(self, app, preprint, url, update_success_xml):
+    def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url, update_success_xml):
         preprint.set_identifier_value(category='doi', value='test')
         preprint.preprint_doi_created = timezone.now()
         preprint.save()
