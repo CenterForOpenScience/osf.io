@@ -252,6 +252,7 @@ services:
       - web
     environment:
       - BACKEND=local
+      - ASSETS_PREFIX=/ember_osf_web/
     expose:
       - 4200
       - 41953
@@ -300,7 +301,6 @@ services:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
