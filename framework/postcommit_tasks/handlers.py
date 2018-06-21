@@ -58,8 +58,9 @@ def postcommit_after_request(response, base_status_error_code=500):
             logger.error('Post commit task queue not initialized: {}'.format(ex))
     return response
 
-def get_task_from_postcommit_queue(name, predicate):
-    matches = [task for key, task in postcommit_celery_queue().iteritems() if task.type.name == name and predicate(task)]
+def get_task_from_postcommit_queue(name, predicate, celery=True):
+    queue = postcommit_celery_queue() if celery else postcommit_queue()
+    matches = [task for key, task in queue.iteritems() if task.type.name == name and predicate(task)]
     if len(matches) == 1:
         return matches[0]
     elif len(matches) > 1:
