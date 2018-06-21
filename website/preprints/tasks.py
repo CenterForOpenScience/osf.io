@@ -26,21 +26,21 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     preprint = PreprintService.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
-    if should_send_preprint_metadata(preprint, old_subjects, saved_fields):
+    if should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
         update_or_create_preprint_identifiers(preprint)
     if update_share:
         update_preprint_share(preprint, old_subjects, share_type)
 
-def should_send_preprint_metadata(preprint, old_subjects, saved_fields):
-    # Only call for a metadata update if identifiers haven't been requested yet, or subjects aren't being set
-    send_preprint_metadata = True
-    if not preprint.node:
-        send_preprint_metadata = False
-    if saved_fields and 'preprint_doi_created' in saved_fields:
-        send_preprint_metadata = False
-    if old_subjects:
-        send_preprint_metadata = False
-    return send_preprint_metadata
+def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
+    # Only update identifier metadata iff...
+    return (
+        # the preprint is valid (has a node)
+        preprint.node and
+        # DOI didn't just get created
+        not (saved_fields and 'preprint_doi_created' in saved_fields) and
+        # subjects aren't being set
+        not old_subjects
+    )
 
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
@@ -54,17 +54,20 @@ def update_or_create_preprint_identifiers(preprint):
             sentry.log_message(err.args[0])
 
 def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
-    task = get_task_from_postcommit_queue('website.preprints.tasks.on_preprint_updated', predicate=lambda task: task.kwargs['preprint_id'] == preprint_id)
+    task = get_task_from_postcommit_queue(
+        'website.preprints.tasks.on_preprint_updated',
+        predicate=lambda task: task.kwargs['preprint_id'] == preprint_id
+    )
     if task:
         old_subjects = old_subjects or []
         task_subjects = task.kwargs['old_subjects'] or []
         saved_fields = saved_fields or {}
         task_saved_fields = task.kwargs['saved_fields'] or {}
-        saved_fields.update(task_saved_fields)
+        task_saved_fields.update(saved_fields)
         task.kwargs['update_share'] = update_share or task.kwargs['update_share']
         task.kwargs['share_type'] = share_type or task.kwargs['share_type']
         task.kwargs['old_subjects'] = old_subjects + task_subjects
-        task.kwargs['saved_fields'] = saved_fields or task.kwargs['saved_fields']
+        task.kwargs['saved_fields'] = task_saved_fields or task.kwargs['saved_fields']
     else:
         enqueue_postcommit_task(
             on_preprint_updated,
