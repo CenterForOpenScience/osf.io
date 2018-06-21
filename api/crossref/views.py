@@ -53,13 +53,11 @@ class ParseCrossRefConfirmation(APIView):
                         legacy_doi.remove()
 
         if dois_processed != record_count or status != 'completed':
-            first_guid = crossref_email_content.find('batch_id').text.split(',')[0]
-            preprint = PreprintService.load(first_guid)
+            batch_id = crossref_email_content.find('batch_id')
             mails.send_mail(
                 to_addr=settings.OSF_SUPPORT_EMAIL,
                 mail=mails.CROSSREF_ERROR,
-                preprint=preprint,
-                doi=settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id),
+                batch_id=batch_id,
                 email_content=request.POST['body-plain'],
             )
             logger.error('Error submitting metadata for preprint {} with CrossRef, email sent to help desk'.format(preprint._id))

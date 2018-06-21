@@ -5,6 +5,7 @@ import time
 import logging
 
 import requests
+from django.db.models import QuerySet
 
 from framework.auth.utils import impute_names
 from website.identifiers.metadata import remove_control_characters
@@ -43,7 +44,7 @@ class CrossRefClient(AbstractIdentifierClient):
         :param preprint: the preprint, or list of preprints to build metadata for
         """
         is_batch = False
-        if isinstance(preprint, list):
+        if isinstance(preprint, (list, QuerySet)):
             is_batch = True
             preprints = preprint
         else:
@@ -94,7 +95,7 @@ class CrossRefClient(AbstractIdentifierClient):
         if status == 'public':
             posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
 
-        title = element.title(preprint.node.title) if status == 'public' else element.title('')
+        title = element.title(remove_control_characters(preprint.node.title)) if status == 'public' else element.title('')
         posted_content.append(element.titles(title))
 
         posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))
@@ -104,7 +105,7 @@ class CrossRefClient(AbstractIdentifierClient):
 
             if preprint.node.description:
                 posted_content.append(
-                    element.abstract(element.p(preprint.node.description), xmlns=JATS_NAMESPACE))
+                    element.abstract(element.p(remove_control_characters(preprint.node.description)), xmlns=JATS_NAMESPACE))
 
             if preprint.license and preprint.license.node_license.url:
                 posted_content.append(
