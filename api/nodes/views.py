@@ -930,6 +930,7 @@ class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     view_category = 'nodes'
     view_name = 'node-linked-by-nodes'
+    ordering = ('-modified',)
 
     serializer_class = NodeSerializer
 
@@ -953,6 +954,7 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
 
     view_category = 'nodes'
     view_name = 'node-linked-by-registrations'
+    ordering = ('-modified',)
 
     serializer_class = RegistrationSerializer
 
