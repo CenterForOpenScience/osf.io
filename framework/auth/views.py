@@ -943,7 +943,7 @@ def external_login_email_post():
 
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
-    fullname = session.data.get('auth_user_fullname', form.name.data)
+    fullname = session.data.get('auth_user_fullname') or form.name.data
     service_url = session.data['service_url']
 
     # TODO: @cslzchen use user tags instead of destination
