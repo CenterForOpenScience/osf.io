@@ -35,6 +35,9 @@ keenAnalysis.ready(function() {
     $('#preprints-tab')[0].onclick = function() {
         Metrics.PreprintMetrics();
     };
+    $('#downloads-tab')[0].onclick = function() {
+        Metrics.DownloadMetrics();
+    };
     $('#preprints-range')[0].onclick = function() {
         var preprint_created = new keenAnalysis.Query('sum', {
             eventCollection: 'preprint_summary',
@@ -49,6 +52,20 @@ keenAnalysis.ready(function() {
         });
 
         Metrics.KeenRenderMetrics("#preprints-added", "line", preprint_created, 200);
+    };
+    $('#downloads-range')[0].onclick = function() {
+        var download_count = new keenAnalysis.Query('sum', {
+            eventCollection: 'download_count_summary',
+            targetProperty: 'files.total',
+            interval: 'daily',
+            timeframe: {
+                'start': $('#start-date-downloads')[0].value,
+                'end': $('#end-date-downloads')[0].value
+            },
+            timezone: "UTC"
+        });
+
+        Metrics.KeenRenderMetrics("#download-counts", "line", download_count, 200);
     };
 
 });

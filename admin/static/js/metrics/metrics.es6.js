@@ -898,31 +898,6 @@ var HealthyUserMetrics = function() {
 
 var RawNumberMetrics = function() {
 
-    var totalDownloadsQuery = new keenAnalysis.Query("count", {
-        eventCollection: "file_stats",
-        timeframe: 'previous_1_days',
-        filters: [{
-            property_name: 'action.type',
-            operator: 'eq',
-            property_value: 'download_file',
-            timezone: "UTC"
-        }]
-    });
-    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery, defaultHeight, defaultColor, publicClient);
-
-    var uniqueDownloadsQuery = new keenAnalysis.Query("count_unique", {
-        eventCollection: "file_stats",
-        timeframe: 'previous_1_days',
-        target_property: 'file.resource',
-        filters: [{
-            property_name: 'action.type',
-            operator: 'eq',
-            property_value: 'download_file',
-            timezone: "UTC"
-        }]
-    });
-    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, defaultColor, publicClient);
-
     renderKeenMetric("#total-projects", "metric", totalProjectsQuery, defaultHeight);
 
     var propertiesAndElements = {
@@ -1039,6 +1014,49 @@ var PreprintMetrics = function() {
 };
 
 
+//≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
+//   file download counts   |
+//≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
+
+var DownloadMetrics = function() {
+
+    var totalDownloadsQuery = new keenAnalysis.Query("count", {
+        eventCollection: "file_stats",
+        timeframe: 'previous_1_days',
+        filters: [{
+            property_name: 'action.type',
+            operator: 'eq',
+            property_value: 'download_file',
+            timezone: "UTC"
+        }]
+    });
+    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery, defaultHeight, defaultColor, publicClient);
+
+    var uniqueDownloadsQuery = new keenAnalysis.Query("count_unique", {
+        eventCollection: "file_stats",
+        timeframe: 'previous_1_days',
+        target_property: 'file.resource',
+        filters: [{
+            property_name: 'action.type',
+            operator: 'eq',
+            property_value: 'download_file',
+            timezone: "UTC"
+        }]
+    });
+    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, defaultColor, publicClient);
+
+    var download_count = new keenAnalysis.Query("sum", {
+        eventCollection: "download_count_summary",
+        interval: "daily",
+        targetProperty: "files.total",
+        timeframe: "previous_30_days",
+        timeframe: {"end":"2017-11-30", "start":"2017-11-20"},
+        timezone: "UTC"
+    });
+
+    renderKeenMetric("#download-counts", "line", download_count, defaultHeight);
+};
+
 
 module.exports = {
     UserGainMetrics: UserGainMetrics,
@@ -1049,6 +1067,7 @@ module.exports = {
     RawNumberMetrics: RawNumberMetrics,
     AddonMetrics: AddonMetrics,
     PreprintMetrics: PreprintMetrics,
+    DownloadMetrics: DownloadMetrics,
     KeenRenderMetrics: renderKeenMetric
 
 };

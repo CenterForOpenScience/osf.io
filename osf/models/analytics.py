@@ -2,6 +2,8 @@ import logging
 
 from dateutil import parser
 from django.db import models, transaction
+from django.db.models import Sum
+from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
@@ -62,6 +64,24 @@ class PageCounter(BaseModel):
 
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
+
+    @staticmethod
+    def get_all_downloads_on_date(date):
+        """
+        Queries the total number of downloads on a date
+        :param str date: must be formatted the same as a page counter key so 'yyyy/mm/dd'
+        :return: long sum:
+        """
+
+        # Get all PageCounters with data for the date made for all versions downloads,
+        # regex insures one colon so all versions are queried.
+        page_counters = PageCounter.objects.filter(date__has_key=date, _id__regex='^download:[^:]*:{1}[^:]*$')
+
+        # Get the total download numbers from the nested dict on the PageCounter by annotating it as daily_total then
+        # aggregating the sum.
+        sum = page_counters.annotate(daily_total=RawSQL("((date->%s->>'total')::int)", (date,))).aggregate(sum=Sum('daily_total'))['sum']
+
+        return sum
 
     @staticmethod
     def clean_page(page):

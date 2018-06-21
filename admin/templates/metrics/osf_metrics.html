@@ -33,6 +33,7 @@
             <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
             <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">Addons</a></li>
             <li role="presentation" id="preprints-tab"><a href="#preprints" role="tab" data-toggle="tab">Preprints</a></li>
+            <li role="presentation" id="downloads-tab"><a href="#downloads" role="tab" data-toggle="tab">Download</a></li>
         </ul>
 
         <!-- Tab panes -->
@@ -650,39 +651,6 @@
                         </div>
                     </div>
                     <hr class="hr-menu">
-                    <div class="row" id="downloads">
-                        <div class="col-sm-12">
-                            <h3>Downloads</h3>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Downloads
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="number-of-downloads"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The total number of files downloaded from the OSF
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Unique Downloads
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="number-of-unique-downloads"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The number of unique downloads of files on the OSF.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="row" id="projects">
                         <div class="col-sm-12">
                             <h3>Projects</h3>
@@ -999,6 +967,66 @@
                                 <span>
                                     <a class="btn btn-success" id="preprints-range">Enter new date range</a>
                                 </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="downloads">
+                <div><h2>Downloads</h2></div>
+                <hr class="hr-menu">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Previous 30 days download counts
+                            </div>
+                            <div class="chart-stage">
+                                <div id="download-counts"></div>
+                            </div>
+                            <div class="chart-notes">
+                                <div>
+                                    The total number of downloads by non-contribs
+                                </div>
+                                <span>
+                                    Start date range:
+                                    <input id="start-date-downloads" placeholder="yyyy-mm-dd" type="date">
+                                </span>
+                                <span>
+                                    End date range:
+                                    <input id="end-date-downloads" placeholder="yyyy-mm-dd" type="date">
+                                </span>
+                                <span>
+                                    <a class="btn btn-success" id="downloads-range">Enter new date range</a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Downloads
+                            </div>
+                            <div class="chart-stage">
+                                <div id="number-of-downloads"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The total number of files downloaded from the OSF
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Unique Downloads
+                            </div>
+                            <div class="chart-stage">
+                                <div id="number-of-unique-downloads"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The number of unique downloads of files on the OSF.
                             </div>
                         </div>
                     </div>
