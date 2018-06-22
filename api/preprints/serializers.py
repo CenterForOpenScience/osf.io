@@ -15,6 +15,7 @@ from api.nodes.serializers import (
     NodeTagField
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from api.providers import workflows
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
@@ -165,8 +166,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if doi_identifier:
             doi = doi_identifier.value
         else:
-            client = obj.get_doi_client()
-            doi = client.build_doi(preprint=obj) if client else None
+            # if proivider has pre-moderation, don't show the DOI prematurely
+            if obj.provider.reviews_workflow != workflows.Workflows.PRE_MODERATION:
+                client = obj.get_doi_client()
+                doi = client.build_doi(preprint=obj) if client else None
         return 'https://dx.doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
