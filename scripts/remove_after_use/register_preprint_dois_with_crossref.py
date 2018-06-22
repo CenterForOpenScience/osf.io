@@ -36,29 +36,32 @@ def register_existing_preprints_with_crossref(dry=True):
         PAGE_SIZE
     )
     client = CrossRefClient(base_url=settings.CROSSREF_URL)
+    count = qs.count()
+    if count:
+        progress_bar = progressbar.ProgressBar(maxval=count).start()
+        n_processed = 0
+        for page_num in [1]:
+            page = paginator.page(page_num)
+            # build batch metadata to send to CrossRef
+            bulk_preprint_metadata = client.build_metadata(page.object_list)
+            preprint_ids = [e._id for e in page.object_list]
+            if dry:
+                logger.info('[dry] Sent metadata for preprints: {}'.format(preprint_ids))
+            else:
+                client.bulk_create(metadata=bulk_preprint_metadata, filename='osf_dois_{}'.format(page_num))
+                logger.info('Sent metadata for preprints: {}'.format(preprint_ids))
 
-    progress_bar = progressbar.ProgressBar(maxval=qs.count()).start()
-    n_processed = 0
-    for page_num in paginator.page_range:
-        page = paginator.page(page_num)
-        # build batch metadata to send to CrossRef
-        bulk_preprint_metadata = client.build_metadata(page.object_list)
-        preprint_ids = [e._id for e in page.object_list]
-        if dry:
-            logger.info('[dry] Sent metadata for preprints: {}'.format(preprint_ids))
-        else:
-            client.bulk_create(metadata=bulk_preprint_metadata, filename='osf_dois_{}.xml'.format(page_num))
-            logger.info('Sent metadata for preprints: {}'.format(preprint_ids))
-
-        n_processed += len(preprint_ids)
-        progress_bar.update(n_processed)
-        if page.has_next():
-            # Throttle requeests
-            if not dry:
-                logger.info('Waiting 2 seconds...')
-                time.sleep(2)
-        else:
-            logger.info('All done!')
+            n_processed += len(preprint_ids)
+            progress_bar.update(n_processed)
+            if page.has_next():
+                # Throttle requeests
+                if not dry:
+                    logger.info('Waiting 2 seconds...')
+                    time.sleep(2)
+            else:
+                logger.info('All done!')
+    else:
+        logger.info('No preprints to update.')
 
 
 def main(dry):
