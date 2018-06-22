@@ -1045,7 +1045,7 @@ def external_login_email_post():
     return {
         'form': form,
         'external_id_provider': external_id_provider,
-        'auth_user_fullname': session.data.get('auth_user_fullname')
+        'auth_user_fullname': fullname
     }
 
 
