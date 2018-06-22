@@ -42,10 +42,10 @@ class ParseCrossRefConfirmation(APIView):
                 doi = getattr(record.find('doi'), 'text', None)
                 guid = doi.split('/')[-1] if doi else None
                 guids.append(guid)
+                preprint = PreprintService.load(guid) if guid else None
                 if record.get('status').lower() == 'success' and doi:
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')
-                    preprint = PreprintService.load(guid)
                     legacy_doi = preprint.get_identifier(category='legacy_doi')
                     if created or legacy_doi:
                         # Sets preprint_doi_created and saves the preprint
@@ -59,6 +59,12 @@ class ParseCrossRefConfirmation(APIView):
                     # Mark legacy DOIs overwritten by newly batch confirmed crossref DOIs
                     if legacy_doi:
                         legacy_doi.remove()
+
+                elif record.get('status').lower() == 'failure':
+                    if 'Relation target DOI does not exist' in record.find('msg').text:
+                        logger.warn('Related publication DOI does not exist, sending metadata again without it...')
+                        client = preprint.get_doi_client()
+                        client.create_identifier(preprint, category='doi', include_relation=False)
             logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))
 
         if dois_processed != record_count or status != 'completed':

@@ -244,3 +244,12 @@ class TestCrossRefClient:
 
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS) is None
         assert root.find('.//{%s}program' % crossref.CROSSREF_ACCESS_INDICATORS).getchildren() == []
+
+    def test_metadata_for_non_included_relation(self, crossref_client, preprint):
+        crossref_xml = crossref_client.build_metadata(preprint)
+        root = lxml.etree.fromstring(crossref_xml)
+        assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.node.preprint_article_doi
+
+        xml_without_relation = crossref_client.build_metadata(preprint, include_relation=False)
+        root_without_relation = lxml.etree.fromstring(xml_without_relation)
+        assert root_without_relation.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS) is None
