@@ -2,8 +2,8 @@
 <div style="margin: 40px;">
     <p>Hello ${recipient.fullname},</p>
     <p>
-        Your ${reviewable.provider.preprint_word} "${reviewable.node.title}" has an updated comment by the moderator.
-        To view the comment, go to your <a href="${reviewable.absolute_url}">${reviewable.provider.preprint_word}</a>.
+        Your ${reviewable.provider.preprint_word} "<a href="${reviewable.absolute_url}">${reviewable.node.title}</a>" has an updated comment by the moderator:<br/>
+        ${comment}
     </p>
     <p>
         You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future notification emails
