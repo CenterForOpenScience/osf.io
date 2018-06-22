@@ -37,9 +37,11 @@ class ParseCrossRefConfirmation(APIView):
         dois_processed = 0
 
         if status == 'completed':
+            guids = []
             for record in records:
                 doi = getattr(record.find('doi'), 'text', None)
                 guid = doi.split('/')[-1] if doi else None
+                guids.append(guid)
                 if record.get('status').lower() == 'success' and doi:
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')
@@ -52,19 +54,19 @@ class ParseCrossRefConfirmation(APIView):
                         # Directly updates the identifier
                         preprint.set_identifier_value(category='doi', value=doi)
 
-                    logger.info('Creation success email received from CrossRef for preprint {}'.format(preprint._id))
                     dois_processed += 1
 
                     # Mark legacy DOIs overwritten by newly batch confirmed crossref DOIs
                     if legacy_doi:
                         legacy_doi.remove()
+            logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))
 
         if dois_processed != record_count or status != 'completed':
-            batch_id = crossref_email_content.find('batch_id')
+            batch_id = crossref_email_content.find('batch_id').text
             mails.send_mail(
                 to_addr=settings.OSF_SUPPORT_EMAIL,
                 mail=mails.CROSSREF_ERROR,
-                batch_id=batch_id.text,
+                batch_id=batch_id,
                 email_content=request.POST['body-plain'],
             )
             logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
