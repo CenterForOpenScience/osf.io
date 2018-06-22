@@ -1327,7 +1327,7 @@ class JSONAPISerializer(BaseAPISerializer):
                 # fields do not have to explicitly deal with that case.
                 if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
                     # if this is a RelationshipField, serialize as a null relationship
-                    data['relationships'][field.field_name] = {"data": None}
+                    data['relationships'][field.field_name] = {'data': None}
                 else:
                     # otherwise, serialize as an null attribute
                     data['attributes'][field.field_name] = None
