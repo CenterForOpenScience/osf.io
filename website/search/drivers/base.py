@@ -77,10 +77,37 @@ class SearchMigrator(object):
     def __init__(self, driver):
         self._driver = driver
 
+    def migrate(self, institutions=False):
+        self.setup()
+
+        if institutions:
+            self.migrate_institutions()
+        # self.migrate_projects()
+        # self.migrate_components()
+        # self.migrate_nodes()
+        # self.migrate_files()
+        self.migrate_users()
+
     @abc.abstractmethod
     def setup(self):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def teardown(self):
-        pass
+        raise NotImplementedError()
+
+    # @abc.abstractmethod
+    # def migrate_nodes(self):
+    #     raise NotImplementedError()
+
+    @abc.abstractmethod
+    def migrate_files(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def migrate_users(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def migrate_institutions(self):
+        raise NotImplementedError()
