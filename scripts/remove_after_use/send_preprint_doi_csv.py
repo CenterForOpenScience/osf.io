@@ -78,15 +78,15 @@ def send_doi_csv(dry=True):
         with gzip.GzipFile(filename=conversion_filename, mode='wb', fileobj=conversion_gzip) as conversion_gzip_obj:
             conversion_gzip_obj.write(conversion_output.getvalue())
 
-            mails.send_mail(
-                mail=mails.CROSSREF_CSV,
-                to_addr=settings.OSF_SUPPORT_EMAIL,
-                message='This CSV contains the DOIs to be sent to CNI to update the pointers from the old EZID DOI to the fancy new CrossRef DOI.',
-                attachment_name=conversion_filename,
-                attachment_content=conversion_gzip.getvalue(),
-                csv_type='Converting Preprint DOIs from EZID to CrossRef',
-                celery=False  # for the non-JSON-serializable attachment
-            )
+        mails.send_mail(
+            mail=mails.CROSSREF_CSV,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
+            message='This CSV contains the DOIs to be sent to CNI to update the pointers from the old EZID DOI to the fancy new CrossRef DOI.',
+            attachment_name=conversion_filename,
+            attachment_content=conversion_gzip.getvalue(),
+            csv_type='Converting Preprint DOIs from EZID to CrossRef',
+            celery=False  # for the non-JSON-serializable attachment
+        )
 
     # Check to see if there were rows added to the error CSV, send seperate email if so
     if there_are_doi_errors:
