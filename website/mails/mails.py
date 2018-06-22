@@ -419,7 +419,7 @@ ACCESS_REQUEST_DENIED = Mail(
 
 CROSSREF_ERROR = Mail(
     'crossref_doi_error',
-    subject='There was an error creating a DOI for the preprint ${preprint._id}'
+    subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
 )
 
 CROSSREF_CSV = Mail(
