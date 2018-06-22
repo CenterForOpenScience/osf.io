@@ -38,7 +38,7 @@ class CrossRefClient(AbstractIdentifierClient):
         prefix = preprint.provider.doi_prefix or PreprintProvider.objects.get(_id='osf').doi_prefix
         return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)
 
-    def build_metadata(self, preprint, status='public', **kwargs):
+    def build_metadata(self, preprint, status='public', include_relation=True, **kwargs):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
         :param preprint: the preprint, or list of preprints to build metadata for
@@ -72,7 +72,7 @@ class CrossRefClient(AbstractIdentifierClient):
         status = status if not is_batch else None
         body = element.body()
         for preprint in preprints:
-            body.append(self.build_posted_content(preprint, element, status))
+            body.append(self.build_posted_content(preprint, element, status, include_relation))
 
         root = element.doi_batch(
             head,
@@ -82,7 +82,7 @@ class CrossRefClient(AbstractIdentifierClient):
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
 
-    def build_posted_content(self, preprint, element, status):
+    def build_posted_content(self, preprint, element, status, include_relation):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
@@ -120,7 +120,7 @@ class CrossRefClient(AbstractIdentifierClient):
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
 
-            if preprint.node.preprint_article_doi:
+            if preprint.node.preprint_article_doi and include_relation:
                 posted_content.append(
                     element.program(
                         element.related_item(
@@ -210,9 +210,9 @@ class CrossRefClient(AbstractIdentifierClient):
         url.args.update(query)
         return url.url
 
-    def create_identifier(self, preprint, category, status='public'):
+    def create_identifier(self, preprint, category, status='public', include_relation=True):
         if category == 'doi':
-            metadata = self.build_metadata(preprint, status)
+            metadata = self.build_metadata(preprint, status, include_relation)
             doi = self.build_doi(preprint)
             filename = doi.split('/')[-1]
             username, password = self.get_credentials()
