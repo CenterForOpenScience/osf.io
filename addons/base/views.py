@@ -159,7 +159,7 @@ def check_access(node, auth, action, cas_resp):
     if cas_resp:
         if isinstance(node, Preprint):
             if permission == 'read':
-                if node.verified_publishable:
+                if node.verified_publishable and not node.is_retracted:
                     return True
                 required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_READ
             else:
@@ -177,13 +177,16 @@ def check_access(node, auth, action, cas_resp):
             raise HTTPError(httplib.FORBIDDEN)
 
     if permission == 'read':
-        if node.can_view(auth):
-            return True
+        if isinstance(node, Preprint):
+            if node.can_view_preprint_files(auth):
+                return True
+        else:
+            if node.can_view(auth):
+                return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
-        if getattr(node, 'is_registration', False):
-            if node.registered_from.can_view(auth):
-                return True
+        if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
+            return True
     if permission == 'write' and node.can_edit(auth):
         return True
 

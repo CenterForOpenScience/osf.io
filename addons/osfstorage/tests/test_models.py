@@ -240,14 +240,14 @@ class TestOsfstorageFileNode(StorageTestCase):
                 assert_equal(getattr(trashed, f), value)
 
     def test_delete_preprint_primary_file(self):
-            user = UserFactory()
-            preprint = PreprintFactory(creator=user)
-            preprint.save()
-            file = preprint.files.all()[0]
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        file = preprint.files.all()[0]
 
-            with assert_raises(FileNodeIsPrimaryFile):
-                file.delete()
-                
+        with assert_raises(FileNodeIsPrimaryFile):
+            file.delete()
+
     def test_delete_file_no_guid(self):
         child = self.node_settings.get_root().append_file('Test')
 

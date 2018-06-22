@@ -14,7 +14,7 @@ class UploadMixin(models.Model):
 
 @receiver(post_save, sender='osf.Preprint')
 def create_file_node(sender, instance, **kwargs):
-    if instance.root_folder:
+    if instance.root_folder_id:
         return
 
     # Note: The "root" node will always be "named" empty string

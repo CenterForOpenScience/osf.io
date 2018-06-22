@@ -722,6 +722,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
             (self.is_contributor(auth.user) and self.has_submitted_preprint)
         )
 
+    def can_view_preprint_files(self, auth):
+        if not auth.user:
+            return self.verified_publishable and not self.is_retracted
+
+        return ((self.verified_publishable and not self.is_retracted) or
+            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
+            self.has_permission(auth.user, 'admin') or
+            (self.is_contributor(auth.user) and self.has_submitted_preprint)
+        )
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
         Must specify one of (`auth`, `user`).

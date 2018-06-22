@@ -2363,6 +2363,29 @@ class TestCheckPreprintAuth(OsfTestCase):
             views.check_access(self.preprint, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
+    def test_check_access_withdrawn_preprint_file(self):
+        self.preprint.date_withdrawn = timezone.now()
+        self.preprint.save()
+        # Unauthenticated
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.preprint, Auth(), 'download', None)
+        assert_equal(exc_info.exception.code, 401)
+
+        # Noncontributor
+        user2 = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.preprint, Auth(user2), 'download', None)
+        assert_equal(exc_info.exception.code, 403)
+
+        # Read contributor
+        self.preprint.add_contributor(user2, 'read', save=True)
+        res = views.check_access(self.preprint, Auth(user2), 'download', None)
+        assert_true(res)
+
+        # Admin contributor
+        res = views.check_access(self.preprint, Auth(self.user), 'download', None)
+        assert_true(res)
+
 
 class TestPreprintOsfStorageLogs(OsfTestCase):
 

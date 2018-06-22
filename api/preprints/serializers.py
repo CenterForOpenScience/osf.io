@@ -376,12 +376,12 @@ class PreprintProviderSerializer(NodeProviderSerializer):
     node = HideIfPreprint(ser.CharField(source='node_id', read_only=True))
     preprint = ser.CharField(source='node_id', read_only=True)
 
-    files = (NodeFileHyperLinkField(
+    files = NodeFileHyperLinkField(
         related_view='preprints:preprint-files',
         related_view_kwargs={'preprint_id': '<node._id>'},
         kind='folder',
         never_embed=True
-    ))
+    )
 
     links = LinksField({
         'upload': WaterbutlerLink(),

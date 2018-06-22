@@ -45,7 +45,7 @@ class FileMixin(object):
                 raise NotFound
 
         if getattr(obj.target, 'deleted', None):
-            raise NotFound
+            raise Gone(detail='The requested file is no longer available')
 
         if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
             if obj.target.creator.is_disabled:

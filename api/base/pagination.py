@@ -14,7 +14,7 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from osf.models import AbstractNode, Comment, Guid
+from osf.models import AbstractNode, Comment, Preprint, Guid
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 
@@ -205,12 +205,7 @@ class NodeContributorPagination(JSONAPIPagination):
 
     def get_resource(self, kwargs):
         resource_id = kwargs.get('node_id', None)
-        if not resource_id:
-            resource_id = kwargs.get('preprint_id', None)
-
-        guid = Guid.load(resource_id)
-        if guid:
-            return guid.referent
+        return AbstractNode.load(resource_id)
 
     def get_paginated_response(self, data):
         """ Add number of bibliographic contributors to links.meta"""
@@ -224,6 +219,13 @@ class NodeContributorPagination(JSONAPIPagination):
         else:
             response_dict['meta']['total_bibliographic'] = total_bibliographic
         return Response(response_dict)
+
+
+class PreprintContributorPagination(NodeContributorPagination):
+
+    def get_resource(self, kwargs):
+        resource_id = kwargs.get('preprint_id')
+        return Preprint.load(resource_id)
 
 
 class SearchPaginator(DjangoPaginator):

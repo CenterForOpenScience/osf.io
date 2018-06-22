@@ -2,7 +2,6 @@ import re
 
 from rest_framework import generics
 from django.db.models import Q
-from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
@@ -14,6 +13,7 @@ from osf.utils.permissions import PERMISSIONS
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
 from api.actions.views import get_review_actions_queryset
+from api.base.pagination import PreprintContributorPagination
 from api.base.exceptions import Conflict, InvalidFilterOperator, InvalidFilterValue
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -114,7 +114,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         return self.get_queryset_from_request()
 
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -138,14 +138,6 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
     def get_object(self):
         return self.get_preprint()
-
-    def perform_destroy(self, instance):
-        if instance.is_published:
-            raise Conflict('Published preprints cannot be deleted.')
-        # Marking preprints as deleted, will later become withdrawn?
-        instance.deleted = timezone.now()
-        instance.update_search()
-        instance.save()
 
     def get_parser_context(self, http_request):
         """
@@ -273,6 +265,8 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         base_permissions.TokenHasScope,
         PreprintPublishedOrAdmin,
     )
+
+    pagination_class = PreprintContributorPagination
 
     required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]

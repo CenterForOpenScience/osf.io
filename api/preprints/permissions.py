@@ -95,7 +95,7 @@ class AdminOrPublic(NodeAdminOrPublic):
 
 
 class PreprintFilesPermissions(PreprintPublishedOrAdmin):
-    """Permissions for preprint contributor detail page."""
+    """Permissions for preprint files and provider views."""
 
     acceptable_models = (Preprint,)
 
@@ -106,5 +106,8 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
         assert_resource_type(obj, self.acceptable_models)
         context = request.parser_context['kwargs']
         preprint = self.load_resource(context, view)
+
+        if preprint.is_retracted and request.method in permissions.SAFE_METHODS:
+            return preprint.can_view_preprint_files(get_user_auth(request))
 
         return super(PreprintFilesPermissions, self).has_object_permission(request, view, preprint)

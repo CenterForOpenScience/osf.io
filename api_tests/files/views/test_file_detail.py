@@ -857,20 +857,20 @@ class TestPreprintFileView:
 
         # Unauthenticated
         res = app.get(file_url, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Non contrib
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Write contrib
         preprint.add_contributor(other_user, 'write', save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Admin contrib
         res = app.get(file_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_abandoned_preprint_file(self, app, file_url, preprint, user, other_user):
         preprint.machine_state = DefaultStates.INITIAL.value
@@ -906,6 +906,27 @@ class TestPreprintFileView:
         assert res.status_code == 200
 
         # Write contrib
+        preprint.add_contributor(other_user, 'write', save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_withdrawn_preprint_files(self, app, file_url, preprint, user, other_user):
+        preprint.date_withdrawn = timezone.now()
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contributor
         preprint.add_contributor(other_user, 'write', save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 200

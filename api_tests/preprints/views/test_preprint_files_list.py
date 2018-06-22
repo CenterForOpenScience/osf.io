@@ -154,6 +154,27 @@ class TestPreprintProvidersList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_withdrawn_preprint_files(self):
+        self.preprint.date_withdrawn = timezone.now()
+        self.preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontrib
+        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contributor
+        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 200
+
     def test_return_published_files_logged_out(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
@@ -338,6 +359,27 @@ class TestPreprintFilesList(ApiTestCase):
         # Admin contrib
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404
+
+    def test_withdrawn_preprint_files(self):
+        self.preprint.date_withdrawn = timezone.now()
+        self.preprint.save()
+
+        # Unauthenticated
+        res = self.app.get(self.url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontrib
+        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contributor
+        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 200
 
     def test_only_primary_file_is_returned(self):
         filename = 'my second file'

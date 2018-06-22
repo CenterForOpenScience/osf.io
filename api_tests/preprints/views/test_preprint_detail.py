@@ -8,7 +8,7 @@ from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
-from osf.models import Preprint, NodeLicense, PreprintContributor
+from osf.models import NodeLicense, PreprintContributor
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     PreprintFactory,
@@ -217,77 +217,14 @@ class TestPreprintDelete:
     def url(self, user):
         return '/{}preprints/{{}}/'.format(API_BASE)
 
-    def test_can_delete_unpublished(
-            self, app, user, url, unpublished_preprint):
-        previous_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True))
-        app.delete(url.format(unpublished_preprint._id), auth=user.auth)
-        remaining_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True))
-        assert unpublished_preprint.pk in previous_ids
-        assert unpublished_preprint.pk in remaining_ids
-        # Preprints are no longer deleted, but marked as deleted.
-        unpublished_preprint.reload()
-        assert unpublished_preprint.deleted is not None
+    def test_cannot_delete_preprints(
+            self, app, user, url, unpublished_preprint, published_preprint):
+        res = app.delete(url.format(unpublished_preprint._id), auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert unpublished_preprint.deleted is None
 
-    def test_delete_permissions(
-            self, app, user, url, unpublished_preprint):
-        write_contrib = AuthUserFactory()
-        unpublished_preprint.add_contributor(write_contrib, 'write', save=True)
-
-        res = app.delete(url.format(unpublished_preprint._id), auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        res = app.delete(url.format(unpublished_preprint._id), expect_errors=True)
-        assert res.status_code == 401
-
-        read_contrib = AuthUserFactory()
-        unpublished_preprint.add_contributor(read_contrib, 'read', save=True)
-        res = app.delete(url.format(unpublished_preprint._id), auth=read_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    def test_cannot_delete_published(self, app, user, published_preprint, url):
-        previous_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True)
-        )
-        res = app.delete(
-            url.format(
-                published_preprint._id),
-            auth=user.auth,
-            expect_errors=True)
-        remaining_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True))
-        assert res.status_code == 409
-        assert previous_ids == remaining_ids
-        assert published_preprint.pk in remaining_ids
-        published_preprint.reload()
-        assert published_preprint.deleted is None
-
-    def test_deletes_only_requested_document(
-            self, app, user, published_preprint,
-            unpublished_preprint, url):
-        previous_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True))
-        app.delete(url.format(unpublished_preprint._id), auth=user.auth)
-        remaining_ids = list(
-            Preprint.objects.all().values_list(
-                'pk', flat=True))
-
-        assert unpublished_preprint.pk in previous_ids
-        assert published_preprint.pk in previous_ids
-
-        assert unpublished_preprint.pk in remaining_ids
-        assert published_preprint.pk in remaining_ids
-
-        unpublished_preprint.reload()
-        published_preprint.reload()
-
-        assert unpublished_preprint.deleted is not None
+        res = app.delete(url.format(published_preprint._id), auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
         assert published_preprint.deleted is None
 
 
