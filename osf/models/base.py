@@ -252,6 +252,8 @@ class GuidMixinQuerySet(IncludeQuerySet):
         return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
 
     def all(self):
+        if self._fields:
+            return super(GuidMixinQuerySet, self).all()
         return super(GuidMixinQuerySet, self).all().include('guids')
 
     def count(self):
