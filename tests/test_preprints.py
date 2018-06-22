@@ -10,6 +10,7 @@ from addons.osfstorage.models import OsfStorageFile
 from api_tests import utils as api_test_utils
 from framework.auth import Auth
 from framework.celery_tasks import handlers
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf_tests.factories import (
@@ -26,7 +27,7 @@ from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
 from website.util.share import format_user
 
@@ -335,14 +336,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_get_preprint_identifiers_called(self, mock_get_identifiers):
-        self.preprint.is_published = True
-        update_or_create_preprint_identifiers(self.preprint)
-        assert mock_get_identifiers.called
-        assert mock_get_identifiers.call_count == 1
-
-
     @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
     def test_update_or_create_preprint_identifiers_called(self, mock_update_doi):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
@@ -395,6 +388,27 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def tearDown(self):
         handlers.celery_before_request()
         super(TestOnPreprintUpdatedTask, self).tearDown()
+
+    def test_update_or_enqueue_on_preprint_updated(self):
+        first_subjects = [15]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=first_subjects,
+            saved_fields={'contributors': True}
+        )
+        second_subjects = [16, 17]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=second_subjects,
+            saved_fields={'title': 'Hello'}
+        )
+        updated_task = get_task_from_postcommit_queue(
+            'website.preprints.tasks.on_preprint_updated',
+            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
+        )
+        assert 'title' in updated_task.kwargs['saved_fields']
+        assert 'contributors' in  updated_task.kwargs['saved_fields']
+        assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
     def test_format_preprint(self):
         res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
@@ -694,7 +708,8 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
-        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args
+        call_args, call_kwargs = mock_on_preprint_updated.call_args
+        assert call_kwargs.get('old_subjects') == [self.subject.id]
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
@@ -710,7 +725,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('osf.models.preprint_service.update_or_enqueue_on_preprint_updated')
     def test_node_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
         # A user is added as a contributor
         self.preprint.is_published = True
@@ -814,7 +829,7 @@ class TestWithdrawnPreprint:
     def preprint(self):
         return PreprintFactory()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    @mock.patch('website.identifiers.utils.request_identifiers')
     def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
         # test_ever_public
 

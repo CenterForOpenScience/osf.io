@@ -163,7 +163,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_preprint_doi_url(self, obj):
         doi_identifier = obj.get_identifier('doi')
         if doi_identifier:
-            return 'https://dx.doi.org/{}'.format(doi_identifier.value)
+            doi = doi_identifier.value
+        else:
+            client = obj.get_doi_client()
+            doi = client.build_doi(preprint=obj) if client else None
+        return 'https://dx.doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

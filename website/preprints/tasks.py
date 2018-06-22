@@ -7,6 +7,7 @@ import requests
 
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework import sentry
 
 from website import settings, mails
@@ -18,28 +19,62 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=60)
-def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
+def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
-    if preprint.node:
+    if should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
         update_or_create_preprint_identifiers(preprint)
     if update_share:
         update_preprint_share(preprint, old_subjects, share_type)
 
+def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
+    # Only update identifier metadata iff...
+    return (
+        # the preprint is valid (has a node)
+        preprint.node and
+        # DOI didn't just get created
+        not (saved_fields and 'preprint_doi_created' in saved_fields) and
+        # subjects aren't being set
+        not old_subjects
+    )
+
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
     if preprint.is_published and not preprint.get_identifier('doi'):
-        get_and_set_preprint_identifiers(preprint)
+        request_identifiers(preprint)
     else:
         try:
             update_doi_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
+
+def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
+    task = get_task_from_postcommit_queue(
+        'website.preprints.tasks.on_preprint_updated',
+        predicate=lambda task: task.kwargs['preprint_id'] == preprint_id
+    )
+    if task:
+        old_subjects = old_subjects or []
+        task_subjects = task.kwargs['old_subjects'] or []
+        saved_fields = saved_fields or {}
+        task_saved_fields = task.kwargs['saved_fields'] or {}
+        task_saved_fields.update(saved_fields)
+        task.kwargs['update_share'] = update_share or task.kwargs['update_share']
+        task.kwargs['share_type'] = share_type or task.kwargs['share_type']
+        task.kwargs['old_subjects'] = old_subjects + task_subjects
+        task.kwargs['saved_fields'] = task_saved_fields or task.kwargs['saved_fields']
+    else:
+        enqueue_postcommit_task(
+            on_preprint_updated,
+            (),
+            {'preprint_id': preprint_id, 'old_subjects': old_subjects, 'update_share': update_share, 'share_type': share_type, 'saved_fields': saved_fields},
+            celery=True
+        )
 
 def update_preprint_share(preprint, old_subjects=None, share_type=None):
     if settings.SHARE_URL:
@@ -170,14 +205,6 @@ def format_preprint(preprint, share_type, old_subjects=None):
         to_visit.extend(list(n.get_related()))
 
     return [node.serialize() for node in visited]
-
-
-def get_and_set_preprint_identifiers(preprint):
-    identifiers = request_identifiers(preprint)
-    if identifiers is None:
-        return
-    preprint.set_identifier_values(doi=identifiers['doi'], save=True)
-
 
 def send_desk_share_preprint_error(preprint, resp, retries):
     mails.send_mail(
