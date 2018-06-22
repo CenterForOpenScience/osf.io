@@ -24,6 +24,7 @@ from api.base.exceptions import (
     EndpointNotImplementedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.exceptions import ServiceUnavailableError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -118,11 +119,10 @@ from website.project import signals as project_signals
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
-    400: ValidationError(detail='This provider has made a bad request.'),
-    401: NotAuthenticated,
-    403: PermissionDenied,
-    404: NotFound,
-
+    400: ValidationError(detail='This add-on has made a bad request.'),
+    401: NotAuthenticated('This add-on could not be authenticated.'),
+    403: PermissionDenied('This add-on\'s credentials could not be validated.'),
+    404: NotFound('This add-on\'s resources could not be found.'),
 }
 
 class NodeMixin(object):
@@ -1163,13 +1163,13 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         try:
             return node_addon.get_folders(path=path, folder_id=folder_id)
         except InvalidAuthError:
-            raise NotAuthenticated
+            raise NotAuthenticated('This add-on could not be authenticated.')
         except HTTPError as exc:
             v2_exception = HTTP_CODE_MAP.get(exc.code)
             if v2_exception:
                 raise v2_exception
             else:
-                raise exc
+                raise ServiceUnavailableError(detail='This add-on is unavailable.')
 
 
 class NodeProvider(object):
