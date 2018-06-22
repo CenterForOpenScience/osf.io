@@ -64,7 +64,7 @@ class ParseCrossRefConfirmation(APIView):
             mails.send_mail(
                 to_addr=settings.OSF_SUPPORT_EMAIL,
                 mail=mails.CROSSREF_ERROR,
-                batch_id=batch_id,
+                batch_id=batch_id.text,
                 email_content=request.POST['body-plain'],
             )
             logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
