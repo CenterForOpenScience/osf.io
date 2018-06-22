@@ -44,7 +44,8 @@ class ParseCrossRefConfirmation(APIView):
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')
                     preprint = PreprintService.load(guid)
-                    if created:
+                    legacy_doi = preprint.get_identifier(category='legacy_doi')
+                    if created or legacy_doi:
                         # Sets preprint_doi_created and saves the preprint
                         preprint.set_identifier_values(doi=doi, save=True)
                     else:
@@ -55,7 +56,6 @@ class ParseCrossRefConfirmation(APIView):
                     dois_processed += 1
 
                     # Mark legacy DOIs overwritten by newly batch confirmed crossref DOIs
-                    legacy_doi = preprint.get_identifier(category='legacy_doi')
                     if legacy_doi:
                         legacy_doi.remove()
 
@@ -67,6 +67,6 @@ class ParseCrossRefConfirmation(APIView):
                 batch_id=batch_id,
                 email_content=request.POST['body-plain'],
             )
-            logger.error('Error submitting metadata for preprint {} with CrossRef, email sent to help desk'.format(preprint._id))
+            logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
 
         return HttpResponse('Mail received', status=200)
