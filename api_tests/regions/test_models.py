@@ -53,4 +53,4 @@ class TestRegion:
 
         # All registrations should have the same region as the node they are registered from.
         assert all(reg.registered_from.get_addon('osfstorage').region ==
-                   reg.get_addon('osfstorage').region for reg in regs)
+            reg.get_addon('osfstorage').region for reg in regs)
