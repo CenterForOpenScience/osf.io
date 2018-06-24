@@ -141,6 +141,7 @@ class ReviewsMachine(BaseMachine):
                                            action=self.action)
     def notify_edit_comment(self, ev):
         context = self.get_context()
+        context['comment'] = self.action.comment
         if not self.machineable.provider.reviews_comments_private and self.action.comment:
             reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                                template='reviews_update_comment',
