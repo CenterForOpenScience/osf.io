@@ -1,6 +1,8 @@
 from guardian.models import GroupObjectPermission
 
 from django.utils import timezone
+from django.db.models import Q
+
 from rest_framework import serializers as ser
 
 from api.base.exceptions import InvalidModelValueError
@@ -10,11 +12,10 @@ from api.base.serializers import (
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser, DevOnly
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, default_node_list_queryset
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
-from osf.models import OSFUser, QuickFilesNode, Registration, PreprintService
-
+from osf.models import OSFUser, QuickFilesNode, Registration, PreprintService, Node
 
 class QuickFilesRelationshipField(RelationshipField):
 
@@ -123,16 +124,20 @@ class UserSerializer(JSONAPISerializer):
         })
 
     def get_node_count(self, obj):
-        return obj.nodes.count()
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
 
     def get_quickfiles_count(self, obj):
         return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
 
     def get_registration_count(self, obj):
-        return Registration.objects.filter(contributor__user__id=obj.id).count()
+        return default_node_list_queryset(model_cls=Registration).filter(contributor__user__id=obj.id).count()
 
     def get_preprint_count(self, obj):
-        return PreprintService.objects.filter(node___contributors__guids___id=obj._id).count()
+        return PreprintService.objects.filter(Q(node___contributors__guids___id=obj._id)
+                                              & Q(Q(node__is_public=True) |
+                                                  Q(is_published=True) |
+                                                  Q(node__contributor__admin=True))
+                                              ).count()
 
     def get_institutions_count(self, obj):
         return obj.affiliated_institutions.all().count()
