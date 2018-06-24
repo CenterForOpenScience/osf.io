@@ -460,7 +460,7 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
 
         nt.assert_true(self.registration, view.get_object())
 
-    def test_restart_stuck_registration(self):
+    def test_remove_stuck_registration(self):
         view = RemoveStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         from django.contrib.messages.storage.fallback import FallbackStorage
