@@ -442,14 +442,17 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
-class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
-    template_name = 'nodes/restart_registrations_modal.html'
+class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
     context_object_name = 'node'
 
     def get_object(self, queryset=None):
         return Registration.load(self.kwargs.get('guid'))
+
+
+class RestartStuckRegistrationsView(StuckRegistrationsView):
+    template_name = 'nodes/restart_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
         from osf.management.commands.force_archive import archive, verify
@@ -469,14 +472,8 @@ class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
-class RemoveStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
+class RemoveStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/remove_registrations_modal.html'
-    permission_required = ('osf.view_node', 'osf.change_node')
-    raise_exception = True
-    context_object_name = 'node'
-
-    def get_object(self, queryset=None):
-        return Registration.load(self.kwargs.get('guid'))
 
     def post(self, request, *args, **kwargs):
         from osf.management.commands.force_archive import verify
