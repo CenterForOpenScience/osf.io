@@ -288,7 +288,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     forks = RelationshipField(
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_fork_count'}
     )
 
     node_links = ShowIfVersion(RelationshipField(
@@ -398,9 +397,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_logs_count(self, obj):
         return obj.logs.count()
-
-    def get_fork_count(self, obj):
-        return obj.forks.count()
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
