@@ -56,17 +56,18 @@ def send_preprints(qs, client):
         n_processed = 0
         for page_num in paginator.page_range:
             page = paginator.page(page_num)
-            # build batch metadata to send to CrossRef
-            bulk_preprint_metadata = client.build_metadata(page.object_list)
-            preprint_ids = [e._id for e in page.object_list]
-            if dry:
-                logger.info('[dry] Sent metadata for preprints: {}'.format(preprint_ids))
-            else:
-                client.bulk_create(metadata=bulk_preprint_metadata, filename='osf_dois_{}'.format(page_num))
-                logger.info('Sent metadata for preprints: {}'.format(preprint_ids))
+            if len(page.object_list):
+                # build batch metadata to send to CrossRef
+                bulk_preprint_metadata = client.build_metadata(page.object_list)
+                preprint_ids = [e._id for e in page.object_list]
+                if dry:
+                    logger.info('[dry] Sent metadata for preprints: {}'.format(preprint_ids))
+                else:
+                    client.bulk_create(metadata=bulk_preprint_metadata, filename='osf_dois_{}'.format(page_num))
+                    logger.info('Sent metadata for preprints: {}'.format(preprint_ids))
 
-            n_processed += len(preprint_ids)
-            progress_bar.update(n_processed)
+                n_processed += len(preprint_ids)
+                progress_bar.update(n_processed)
             if page.has_next():
                 # Throttle requeests
                 if not dry:

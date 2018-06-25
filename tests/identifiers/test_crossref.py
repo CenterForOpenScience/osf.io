@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import os
 import mock
 import lxml
@@ -177,6 +179,36 @@ class TestCrossRefClient:
         contributor.save()
         meta = crossref_client._process_crossref_name(contributor)
         assert meta == {'given_name': 'ScottyHotty Ronald', 'surname': 'Garland', 'suffix': 'II'}
+
+        # Long suffix is truncated to 10 characters
+        long_suffix = 'PhD MD Esq MPH IV'
+        contributor.given_name = 'Mark'
+        contributor.family_name = 'Henry'
+        contributor.suffix = long_suffix
+        contributor.save()
+        meta = crossref_client._process_crossref_name(contributor)
+        assert meta['suffix'] == long_suffix[:crossref.CROSSREF_SUFFIX_LIMIT]
+
+        # Long given_names and surnames are truncated to limit
+        long_given = 'Maaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaark'
+        long_surname = 'Henryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
+        contributor.given_name = long_given
+        contributor.family_name = long_surname
+        contributor.save()
+
+        meta = crossref_client._process_crossref_name(contributor)
+        assert meta['given_name'] == long_given[:crossref.CROSSREF_GIVEN_NAME_LIMIT]
+        assert meta['surname'] == long_surname[:crossref.CROSSREF_SURNAME_LIMIT]
+
+        # Unparsable given or surname just returns fullname as surname
+        unparsable_fullname = 'Author (name withheld until double-blind peer review completes and this name is also really long)'
+        contributor.given_name = ''
+        contributor.family_name = ''
+        contributor.fullname = unparsable_fullname
+        contributor.save()
+
+        meta = crossref_client._process_crossref_name(contributor)
+        assert meta == {'surname': unparsable_fullname[:crossref.CROSSREF_SURNAME_LIMIT]}
 
     def test_metadata_for_single_name_contributor_only_has_surname(self, crossref_client, preprint):
         contributor = preprint.node.creator
