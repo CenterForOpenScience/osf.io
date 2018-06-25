@@ -167,11 +167,11 @@ class CrossRefClient(AbstractIdentifierClient):
         )
         surname_processed = remove_control_characters(family)
 
-        surname = surname_processed or given_processed
+        surname = surname_processed or given_processed or contributor.fullname
         processed_names = {'surname': surname[:CROSSREF_SURNAME_LIMIT].strip()}
         if given_processed and surname_processed:
             processed_names['given_name'] = given_processed[:CROSSREF_GIVEN_NAME_LIMIT].strip()
-        if suffix:
+        if suffix and (surname_processed or given_processed):
             processed_names['suffix'] = suffix[:CROSSREF_SUFFIX_LIMIT].strip()
 
         return processed_names
