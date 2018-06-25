@@ -906,6 +906,11 @@ class NodeRequestFactory(DjangoModelFactory):
 
     comment = factory.Faker('text')
 
+class PreprintRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PreprintRequest
+
+    comment = factory.Faker('text')
 
 class ProviderAssetFileFactory(DjangoModelFactory):
     class Meta:
