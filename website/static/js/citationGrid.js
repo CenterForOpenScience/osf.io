@@ -150,11 +150,11 @@ var buildExternalUrl = function(csl) {
 
 var makeClipboardConfig = function(getText) {
     return function(elm, isInit, ctx) {
-        var $elm = $(elm);
         if (!elm._client) {
             elm._client = clipboard(elm);
             // Attach `beforecopy` handler to ensure updated clipboard text
             if (getText) {
+                var $elm = $(elm);
                 elm._client.on('beforecopy', function() {
                     $elm.attr('data-clipboard-text', getText());
                 });
@@ -175,7 +175,6 @@ var renderActions = function(item, col) {
             icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
             tooltip: 'Copy citation',
-            clipboard: self.getCitation(item),
             config: makeClipboardConfig()
         });
         // Add link to external document
@@ -369,10 +368,12 @@ CitationGrid.prototype.makeBibliography = function(folder, format) {
 };
 
 CitationGrid.prototype.getBibliography = function(folder, format) {
-    if (format) {
-        return this.makeBibliography(folder, format);
+
+    if(this.bibliographies[folder.id]){
+        this.bibliographies[folder.id] = this.bibliographies[folder.id];
+    } else {
+        this.bibliographies[folder.id] =  this.makeBibliography(folder);
     }
-    this.bibliographies[folder.id] = this.bibliographies[folder.id] || this.makeBibliography(folder);
     return this.bibliographies[folder.id];
 };
 
