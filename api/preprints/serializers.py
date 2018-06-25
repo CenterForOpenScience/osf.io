@@ -162,14 +162,14 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def get_preprint_doi_url(self, obj):
+        doi = None
         doi_identifier = obj.get_identifier('doi')
         if doi_identifier:
             doi = doi_identifier.value
-        else:
-            # if proivider has pre-moderation, don't show the DOI prematurely
-            if obj.provider.reviews_workflow != workflows.Workflows.PRE_MODERATION:
-                client = obj.get_doi_client()
-                doi = client.build_doi(preprint=obj) if client else None
+        # if proivider has pre-moderation, don't show the DOI prematurely
+        elif obj.provider.reviews_workflow != workflows.Workflows.PRE_MODERATION.value:
+            client = obj.get_doi_client()
+            doi = client.build_doi(preprint=obj) if client else None
         return 'https://dx.doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
