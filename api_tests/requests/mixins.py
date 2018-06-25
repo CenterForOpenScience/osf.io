@@ -1,10 +1,14 @@
 import pytest
 
+from api.providers.permissions import GroupHelper
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import (
     AuthUserFactory,
+    NodeRequestFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    PreprintRequestFactory,
     ProjectFactory,
-    NodeRequestFactory
 )
 from osf.utils import permissions
 
@@ -59,3 +63,143 @@ class NodeRequestTestMixin(object):
             save=True
         )
         return second_admin
+
+@pytest.mark.django_db
+class PreprintRequestTestMixin(object):
+
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def noncontrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def moderator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def pre_mod_provider(self, moderator):
+        ppp = PreprintProviderFactory(reviews_workflow='pre-moderation')
+        GroupHelper(ppp).get_group('moderator').user_set.add(moderator)
+        return ppp
+
+    @pytest.fixture()
+    def post_mod_provider(self, moderator):
+        ppp = PreprintProviderFactory(reviews_workflow='post-moderation')
+        GroupHelper(ppp).get_group('moderator').user_set.add(moderator)
+        return ppp
+
+    @pytest.fixture()
+    def none_mod_provider(self):
+        return PreprintProviderFactory(reviews_workflow=None)
+
+    @pytest.fixture()
+    def pre_mod_preprint(self, admin, write_contrib, pre_mod_provider):
+        pre = PreprintFactory(
+            creator=admin,
+            provider=pre_mod_provider,
+            is_published=False,
+            machine_state='pending'
+        )
+        pre.ever_public = True
+        pre.save()
+        pre.node.add_contributor(
+            contributor=write_contrib,
+            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            save=True
+        )
+        return pre
+
+    @pytest.fixture()
+    def auto_withdrawable_pre_mod_preprint(self, admin, write_contrib, pre_mod_provider):
+        pre = PreprintFactory(
+            creator=admin,
+            provider=pre_mod_provider,
+            is_published=False,
+            machine_state='pending'
+        )
+        pre.save()
+        pre.node.add_contributor(
+            contributor=write_contrib,
+            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            save=True
+        )
+        return pre
+
+    @pytest.fixture()
+    def post_mod_preprint(self, admin, write_contrib, post_mod_provider):
+        post = PreprintFactory(
+            creator=admin,
+            provider=post_mod_provider,
+        )
+        post.save()
+        post.node.add_contributor(
+            contributor=write_contrib,
+            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            save=True
+        )
+        return post
+
+    @pytest.fixture()
+    def none_mod_preprint(self, admin, write_contrib, none_mod_provider):
+        preprint = PreprintFactory(
+            creator=admin,
+            provider=none_mod_provider,
+        )
+        preprint.save()
+        preprint.node.add_contributor(
+            contributor=write_contrib,
+            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            save=True
+        )
+        return preprint
+
+    @pytest.fixture()
+    def pre_request(self, pre_mod_preprint, admin):
+        request = PreprintRequestFactory(
+            creator=admin,
+            target=pre_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(admin)
+        return request
+
+    @pytest.fixture()
+    def post_request(self, post_mod_preprint, admin):
+        request = PreprintRequestFactory(
+            creator=admin,
+            target=post_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(admin)
+        return request
+
+    @pytest.fixture()
+    def none_request(self, none_mod_preprint, admin):
+        request = PreprintRequestFactory(
+            creator=admin,
+            target=none_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(admin)
+        return request
+
+    @pytest.fixture()
+    def auto_approved_pre_request(self, auto_withdrawable_pre_mod_preprint, admin):
+        request = PreprintRequestFactory(
+            creator=admin,
+            target=auto_withdrawable_pre_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(admin)
+        return request
