@@ -23,6 +23,9 @@ JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
 
+CROSSREF_SUFFIX_LIMIT = 10
+CROSSREF_SURNAME_LIMIT = 60
+CROSSREF_GIVEN_NAME_LIMIT = 60
 
 class CrossRefClient(AbstractIdentifierClient):
 
@@ -164,11 +167,12 @@ class CrossRefClient(AbstractIdentifierClient):
         )
         surname_processed = remove_control_characters(family)
 
-        processed_names = {'surname': surname_processed or given_processed}
+        surname = surname_processed or given_processed
+        processed_names = {'surname': surname[:CROSSREF_SURNAME_LIMIT].strip()}
         if given_processed and surname_processed:
-            processed_names['given_name'] = given_processed
+            processed_names['given_name'] = given_processed[:CROSSREF_GIVEN_NAME_LIMIT].strip()
         if suffix:
-            processed_names['suffix'] = suffix
+            processed_names['suffix'] = suffix[:CROSSREF_SUFFIX_LIMIT].strip()
 
         return processed_names
 
