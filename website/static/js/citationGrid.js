@@ -206,15 +206,6 @@ var renderActions = function(item, col) {
     } else if (item.kind === 'folder' && item.open && item.children.length) {
         buttons.push({
             name: '',
-            icon: 'fa fa-file-o',
-            css: 'btn btn-default btn-xs',
-            tooltip: 'Copy citations',
-            config: makeClipboardConfig(function() {
-                return self.getCitations(item).join('\n');
-            })
-        });
-        buttons.push({
-            name: '',
             icon: 'fa fa-arrow-circle-o-down',
             css: 'btn btn-default btn-xs',
             tooltip: 'Download citations',
