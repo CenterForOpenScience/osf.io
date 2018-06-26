@@ -1,7 +1,6 @@
 import pytz
 import json
 
-from osf.models import Node
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
@@ -22,6 +21,7 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
                                   ShowIfVersion, VersionedDateTimeField, ValuesListField)
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
+from osf.models import Node
 
 
 class BaseRegistrationSerializer(NodeSerializer):
