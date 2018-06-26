@@ -22,7 +22,7 @@ SELECT json_agg(
                                                         ELSE NULL
                                                         END
                                                  , 'fullname', U.fullname
-                                             ))
+                                             ) ORDER BY CONTRIB._order)
                              FROM osf_osfuser AS U
                                INNER JOIN osf_contributor AS CONTRIB
                                  ON (U.id = CONTRIB.user_id)
@@ -116,6 +116,7 @@ FROM osf_abstractnode AS N
             FROM osf_guid
             WHERE object_id = N.id
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'abstractnode')
+            ORDER BY osf_guid.created DESC
             LIMIT 1
             ) NODE_GUID ON TRUE
   LEFT JOIN LATERAL (
@@ -371,6 +372,7 @@ FROM osf_basefilenode AS F
             FROM osf_guid
             WHERE object_id = F.id
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'basefilenode')
+            ORDER BY osf_guid.created DESC
             LIMIT 1
             ) FILE_GUID ON TRUE
   LEFT JOIN LATERAL (
@@ -454,6 +456,7 @@ FROM osf_basefilenode AS F
             ) NODE ON TRUE
 WHERE name IS NOT NULL
       AND name != ''
+      AND type = 'osf.osfstoragefile'
       AND node_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
@@ -470,7 +473,7 @@ WHERE name IS NOT NULL
                                AND NOT (osf_abstractnode.id IN
                                         (SELECT AJ.dst_node_id
                                          FROM osf_archivejob AJ
-                                             WHERE (AJ.status != 'FAILURE' AND AJ.status != 'SUCCESS'
+                                             WHERE (AJ.status != 'SUCCESS'
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
       AND id > {page_start}
