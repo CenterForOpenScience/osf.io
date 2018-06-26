@@ -7,9 +7,10 @@ class Command(BaseCommand):
         super(Command, self).add_arguments(parser)
 
         parser.add_argument('index-name', type=str, help='Name of the new index to create')
+        parser.add_argument('--type', type=str, help='Types to migrate', nargs='*')
 
     def handle(self, *args, **options):
         from website.search.drivers.elasticsearch import ElasticsearchDriver
 
         ElasticsearchDriver(options['index-name']).migrator.teardown()
-        ElasticsearchDriver(options['index-name']).migrator.migrate()
+        ElasticsearchDriver(options['index-name']).migrator.migrate(types=options['type'])
