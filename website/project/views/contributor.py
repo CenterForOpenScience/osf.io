@@ -4,6 +4,7 @@ import httplib as http
 
 from flask import request
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from framework import forms, status
 from framework.auth import cas
@@ -17,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider
+from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
@@ -528,9 +529,13 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
+def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default', *args, **kwargs):
     if email_template == 'false':
         return
+
+    if hasattr(node, 'is_published') and not getattr(node, 'is_published'):
+        return
+
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
     if contributor.is_registered and (isinstance(node, Preprint) or
@@ -585,6 +590,33 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     elif not contributor.is_registered:
         unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
+
+@contributor_added.connect
+def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
+    # import pdb; pdb.set_trace()
+    if isinstance(node, Preprint):
+        return
+    MAX_RECENT_LENGTH = 15
+    # Add contributor to recently added list for user
+    if auth is not None:
+        user = auth.user
+        recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
+            user=user,
+            contributor=contributor
+        )
+        recently_added_contributor_obj.date_added = timezone.now()
+        recently_added_contributor_obj.save()
+        count = user.recently_added.count()
+        if count > MAX_RECENT_LENGTH:
+            difference = count - MAX_RECENT_LENGTH
+            for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
+                each.delete()
+
+    # If there are pending access requests for this user, mark them as accepted
+    pending_access_requests_for_user = node.requests.filter(creator=contributor, machine_state='pending')
+    if pending_access_requests_for_user.exists():
+        permissions = kwargs.get('permissions') or node.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        pending_access_requests_for_user.get().run_accept(contributor, comment='', permissions=permissions)
 
 
 def find_preprint_provider(node):

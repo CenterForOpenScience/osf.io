@@ -1,6 +1,4 @@
 {
-    "created": "${user} created ${node}",
-    "deleted":  "${user} deleted ${node}",
     "project_created":  "${user} created ${node}",
     "project_registered": "${user} registered ${node}",
     "project_registered_no_user": "${node} registered",

@@ -18,9 +18,6 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
-    CREATED = 'created'
-    DELETED = 'deleted'
-
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
@@ -46,7 +43,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     PUBLISHED = 'published'
 
-    actions = ([CREATED, DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
+    actions = ([CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
                 EDITED_DESCRIPTION, FILE_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
                 MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED] + list(sum([

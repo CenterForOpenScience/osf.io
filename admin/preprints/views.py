@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 
-from osf.models import SpamStatus
+from osf.models import SpamStatus, NodeLog
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
 from osf.models.admin_log_entry import update_admin_log, REINDEX_ELASTIC, REINDEX_SHARE, PREPRINT_REMOVED, PREPRINT_RESTORED
 
@@ -36,7 +36,7 @@ class PreprintFormView(PreprintMixin, GuidFormView):
     """
     template_name = 'preprints/search.html'
     object_type = 'preprint'
-    permission_required = 'osf.osf_admin_view_preprint'
+    permission_required = 'osf.view_preprint'
     raise_exception = True
 
     @property
@@ -51,7 +51,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
     """
     template_name = 'preprints/preprint.html'
     context_object_name = 'preprint'
-    permission_required = 'osf.osf_admin_view_preprint'
+    permission_required = 'osf.view_preprint'
     raise_exception = True
     form_class = ChangeProviderForm
 
@@ -77,7 +77,7 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
     template_name = 'nodes/reindex_node_share.html'
     context_object_name = 'preprint'
     object = None
-    permission_required = 'osf.osf_admin_view_preprint'
+    permission_required = 'osf.view_preprint'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
@@ -102,7 +102,7 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
 
 class PreprintReindexElastic(PreprintMixin, NodeDeleteBase):
     template_name = 'nodes/reindex_node_elastic.html'
-    permission_required = 'osf.osf_admin_view_preprint'
+    permission_required = 'osf.view_preprint'
     raise_exception = True
 
     def delete(self, request, *args, **kwargs):
@@ -130,7 +130,7 @@ class PreprintRemoveContributorView(NodeRemoveContributorView):
     Interface with OSF database. No admin models.
     """
     context_object_name = 'preprint'
-    permission_required = ('osf.osf_admin_view_preprint', 'osf.change_preprint')
+    permission_required = ('osf.view_preprint', 'osf.change_preprint')
 
     def add_contributor_removed_log(self, preprint, user):
         osf_log = PreprintLog(
@@ -169,7 +169,7 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
     """
     template_name = 'nodes/remove_node.html'
     object = None
-    permission_required = ('osf.osf_admin_view_preprint', 'osf.delete_preprint')
+    permission_required = ('osf.view_preprint', 'osf.delete_preprint')
     raise_exception = True
     context_object_name = 'preprint'
 
@@ -189,12 +189,12 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
                 preprint.deleted = None
                 flag = PREPRINT_RESTORED
                 message = 'Preprint {} restored.'.format(preprint.pk)
-                osf_flag = PreprintLog.CREATED
+                osf_flag = NodeLog.CREATED
             else:
                 preprint.deleted = timezone.now()
                 flag = PREPRINT_REMOVED
                 message = 'Preprint {} removed.'.format(preprint.pk)
-                osf_flag = PreprintLog.DELETED
+                osf_flag = NodeLog.DELETED
             preprint.save()
             if flag is not None:
                 update_admin_log(

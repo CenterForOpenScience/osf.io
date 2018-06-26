@@ -15,12 +15,12 @@ def unmigrate_preprint_service_permissions(state, schema):
     add_preprint = Permission.objects.get(codename='add_preprint')
     change_preprint = Permission.objects.get(codename='change_preprint')
     delete_preprint = Permission.objects.get(codename='delete_preprint')
-    osf_admin_view_preprint = Permission.objects.get(codename='osf_admin_view_preprint')
+    view_preprint = Permission.objects.get(codename='view_preprint')
 
     remove_users_from_permission(add_preprint)
     remove_users_from_permission(change_preprint)
     remove_users_from_permission(delete_preprint)
-    remove_users_from_permission(osf_admin_view_preprint)
+    remove_users_from_permission(view_preprint)
 
 def remove_users_from_permission(perm):
     for user in OSFUser.objects.filter(user_permissions=perm):
@@ -48,13 +48,13 @@ def migrate_preprint_service_permissions(state, schema):
     add_preprint = Permission.objects.get(codename='add_preprint')
     change_preprint = Permission.objects.get(codename='change_preprint')
     delete_preprint = Permission.objects.get(codename='delete_preprint')
-    osf_admin_view_preprint = Permission.objects.get(codename='osf_admin_view_preprint')
+    view_preprint = Permission.objects.get(codename='view_preprint')
 
 
     add_users_to_renamed_permission(add_preprintservice, add_preprint)
     add_users_to_renamed_permission(change_preprintservice, change_preprint)
     add_users_to_renamed_permission(delete_preprintservice, delete_preprint)
-    add_users_to_renamed_permission(view_preprintservice, osf_admin_view_preprint)
+    add_users_to_renamed_permission(view_preprintservice, view_preprint)
 
 class Migration(migrations.Migration):
 

@@ -625,7 +625,8 @@ class TestPreprintCreate(ApiTestCase):
             res.json['errors'][0]['detail'],
             'This file is not a valid primary file for this preprint.')
 
-    def test_preprint_contributor_signal_not_sent_on_creation(self):
+    def test_preprint_contributor_signal_sent_on_creation(self):
+        # Signal sent but bails out early without sending email
         with capture_signals() as mock_signals:
             payload = build_preprint_create_payload(
                 provider_id=self.provider._id)
@@ -633,8 +634,8 @@ class TestPreprintCreate(ApiTestCase):
                 self.url, payload, auth=self.user.auth)
 
             assert_equal(res.status_code, 201)
-            assert_true(len(mock_signals.signals_sent()) == 0)
-            assert_not_in(
+            assert_true(len(mock_signals.signals_sent()) == 1)
+            assert_in(
                 project_signals.contributor_added,
                 mock_signals.signals_sent())
 
@@ -680,7 +681,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(log.action, 'published')
         assert_equal(log.params.get('preprint'), preprint._id)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_create_preprint_from_project_published_hits_update(
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
@@ -697,7 +698,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_true(mock_on_preprint_updated.called)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
@@ -709,7 +710,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth)
         assert not mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_setting_is_published_with_moderated_provider_fails(
             self, mock_on_preprint_updated):
         self.provider.reviews_workflow = 'pre-moderation'

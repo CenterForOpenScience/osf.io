@@ -4,6 +4,7 @@ import logging
 import re
 import urlparse
 import warnings
+import httplib
 
 import bson
 from django.db.models import Q
@@ -27,7 +28,7 @@ from include import IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.models.contributor import (Contributor, get_contributor_permissions)
 from osf.models.collection import CollectedGuidMetadata
@@ -59,7 +60,7 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, reduce_permissions
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -881,40 +882,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
 
-    # Overrides ContributorMixin
-    def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email='default', auth=None, log=True, save=False):
-        MAX_RECENT_LENGTH = 15
-        RecentlyAddedContributor = apps.get_model('osf.RecentlyAddedContributor')
-
-        contrib_to_add = super(AbstractNode, self).add_contributor(contributor=contributor, permissions=permissions, visible=visible, send_email=send_email, auth=auth, log=log, save=save)
-        # Add contributor to recently added list for user
-        if auth is not None and contrib_to_add:
-            user = auth.user
-            recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
-                user=user,
-                contributor=contrib_to_add
-            )
-            recently_added_contributor_obj.date_added = timezone.now()
-            recently_added_contributor_obj.save()
-            count = user.recently_added.count()
-            if count > MAX_RECENT_LENGTH:
-                difference = count - MAX_RECENT_LENGTH
-                for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
-                    each.delete()
-
-        # If there are pending access requests for this user, mark them as accepted
-        if contrib_to_add:
-            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
-            if pending_access_requests_for_user.exists():
-                permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
-                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
-
-        if self._id and contrib_to_add:
-            project_signals.contributor_added.send(self,
-                                                   contributor=contributor,
-                                                   auth=auth, email_template=send_email)
-        return contrib_to_add
+    @property
+    def contributor_email_template(self):
+        return 'default'
 
     # Overrides ContributorMixin
     def remove_contributor(self, contributor, auth, log=True):
@@ -1078,6 +1048,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'project': self.parent_id,
             'node': self._primary_key,
         }
+
+    @property
+    def order_by_contributor_field(self):
+        return 'contributor___order'
+
+    def spam_fields(self, saved_fields):
+        return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
 
     DEFAULT_CONTRIBUTOR_PERMISSIONS = DEFAULT_CONTRIBUTOR_PERMISSIONS
 
@@ -2266,6 +2244,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
+
+    def serialize_waterbutler_credentials(self, provider_name):
+        return self.get_addon(provider_name).serialize_waterbutler_credentials()
+
+    def serialize_waterbutler_settings(self, provider_name):
+        return self.get_addon(provider_name).serialize_waterbutler_settings()
+
+    def create_waterbutler_log(self, auth, action, payload):
+        try:
+            metadata = payload['metadata']
+            node_addon = self.get_addon(payload['provider'])
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        if node_addon is None:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        metadata['path'] = metadata['path'].lstrip('/')
+
+        return node_addon.create_waterbutler_log(auth, action, metadata)
 
 
 class Node(AbstractNode):

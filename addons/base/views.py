@@ -277,28 +277,22 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node = AbstractNode.load(node_id)
+    node = AbstractNode.load(node_id) or Preprint.load(node_id)
     if not node:
-        preprint = Preprint.load(node_id)
-        if not preprint:
-            raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
-    if node:
-        check_access(node, auth, action, cas_resp)
+    check_access(node, auth, action, cas_resp)
+    if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
-    else:
-        check_access(preprint, auth, action, cas_resp)
-
     try:
-        credentials = provider_settings.serialize_waterbutler_credentials() if node else preprint.serialize_waterbutler_credentials()
-        waterbutler_settings = provider_settings.serialize_waterbutler_settings() if node else preprint.serialize_waterbutler_settings()
+        credentials = node.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node = node or preprint
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
@@ -399,6 +393,7 @@ def create_waterbutler_log(payload, **kwargs):
             if not source_node:
                 source_node = Preprint.load(payload['metadata'].get('nid'))
 
+            # We return provider fullname so we need to load node settings, if applicable
             if hasattr(source_node, 'get_addon'):
                 source = source_node.get_addon(payload['source']['provider'])
             else:
@@ -439,16 +434,6 @@ def create_waterbutler_log(payload, **kwargs):
                 }
             })
 
-            if isinstance(node, Preprint):
-                payload.update({
-                    'preprint': destination_node._id,
-                })
-            else:
-                payload.update({
-                    'node': destination_node._id,
-                    'project': destination_node.parent_id,
-                })
-
             if not payload.get('errors'):
                 destination_node.add_log(
                     action=action,
@@ -477,23 +462,10 @@ def create_waterbutler_log(payload, **kwargs):
                 return {'status': 'success'}
 
         else:
-            try:
-                metadata = payload['metadata']
-                node_addon = node if isinstance(node, Preprint) else node.get_addon(payload['provider'])
-            except KeyError:
-                raise HTTPError(httplib.BAD_REQUEST)
+            node.create_waterbutler_log(auth, action, payload)
 
-            if node_addon is None:
-                raise HTTPError(httplib.BAD_REQUEST)
-
-            metadata['path'] = metadata['path'].lstrip('/')
-
-            node_addon.create_waterbutler_log(auth, action, metadata)
-
-    if not isinstance(node, Preprint):
-        with transaction.atomic():
-            # Preprints not getting emails about file updates for now
-            file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+    with transaction.atomic():
+        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 

@@ -16,12 +16,14 @@ from website.notifications.events.base import (
     register, Event, event_registry, RegistryError
 )
 from website.notifications.events import utils as event_utils
-from osf.models import AbstractNode, NodeLog
+from osf.models import AbstractNode, NodeLog, Preprint
 from addons.base.signals import file_updated as signal
 
 
 @signal.connect
 def file_updated(self, target=None, user=None, event_type=None, payload=None):
+    if isinstance(target, Preprint):
+        return
     if event_type not in event_registry:
         raise RegistryError
     event = event_registry[event_type](user, target, event_type, payload=payload)

@@ -191,7 +191,6 @@ class TestPreprintSubjects:
 class TestLogging:
 
     def test_add_log(self, preprint, auth):
-        preprint.add_log(PreprintLog.CREATED, params={'preprint': preprint._id}, auth=auth)
         preprint.add_log(PreprintLog.FILE_UPDATED, params={'preprint': preprint._id}, auth=auth)
         preprint.save()
 
@@ -282,22 +281,6 @@ class TestPreprintCreation:
         assert preprint.has_permission(user, ADMIN) is True
         assert preprint.has_permission(user, WRITE) is True
         assert preprint.has_permission(user, READ) is True
-
-    def test_created_log_is_added(self, fake):
-        user = UserFactory()
-        preprint = Preprint(
-            title=fake.bs(),
-            creator=user,
-            provider=PreprintProviderFactory()
-        )
-        preprint.save()
-        # Preprint Log
-        assert preprint.logs.count() == 1
-        first_log = preprint.logs.first()
-        assert first_log.action == PreprintLog.CREATED
-        params = first_log.params
-        assert params['preprint'] == preprint._id
-        assert_datetime_equal(first_log.created, preprint.created)
 
     def test_default_region_set_to_user_settings_osfstorage_default(self, fake):
         user = UserFactory()
@@ -912,7 +895,7 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_check_spam_only_public_preprint_by_default(self, mock_preprint_updated, preprint, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -942,7 +925,7 @@ class TestPreprintSpam:
     @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
@@ -972,7 +955,7 @@ class TestPreprintSpam:
     @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
@@ -985,7 +968,7 @@ class TestPreprintSpam:
 
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_flag_spam_make_preprint_private(self, mock_preprint_updated, preprint):
         assert preprint.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
@@ -1004,7 +987,7 @@ class TestPreprintSpam:
         assert preprint.is_spammy
         assert preprint.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_confirm_spam_makes_preprint_private(self, mock_preprint_updated, preprint):
         assert preprint.is_public
         preprint.confirm_spam()
@@ -1379,7 +1362,6 @@ class TestSetPreprintFile(OsfTestCase):
         self.project.save()
 
     @assert_preprint_logs(PreprintLog.PUBLISHED, 'preprint')
-    @assert_preprint_logs(PreprintLog.CREATED, 'preprint', -4)
     def test_is_preprint_property_new_file_to_published(self):
         assert_false(self.preprint.is_published)
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
@@ -2151,38 +2133,38 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_unpublished_not_called(self, mock_on_preprint_updated):
         self.preprint.save()
         assert not mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_published_called(self, mock_on_preprint_updated):
         self.preprint.set_published(True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.called
 
     # This covers an edge case where a preprint is forced back to unpublished
     # that it sends the information back to share
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
         self.preprint.set_published(True, auth=self.auth, save=True)
-        self.preprint.published = False
+        self.preprint.is_published = False
         self.preprint.save(**{'force_update': True})
         assert_equal(mock_on_preprint_updated.call_count, 2)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_published_called(self, mock_on_preprint_updated):
         self.preprint.set_published(True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_published_subject_change_called(self, mock_on_preprint_updated):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
-        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args
+        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args[1].values()
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert not mock_on_preprint_updated.called
@@ -2196,7 +2178,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_preprint_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
         # A user is added as a contributor
         self.preprint.is_published = True
@@ -2207,7 +2189,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         user = AuthUserFactory()
         self.preprint.primary_file = self.file
 
-        self.preprint.add_contributor(contributor=user, auth=self.auth)
+        self.preprint.add_contributor(contributor=user, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 2
 
         self.preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
@@ -2299,7 +2281,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.preprint.create_waterbutler_log(
             auth=Auth(user=self.user),
             action=action,
-            metadata={'path': path, 'materialized': path, 'kind': 'file'},
+            payload={'metadata': {'path': path, 'materialized': path, 'kind': 'file'}},
         )
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlog + 1)

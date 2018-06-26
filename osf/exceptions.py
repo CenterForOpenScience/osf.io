@@ -124,6 +124,11 @@ class PreprintStateError(PreprintError):
     pass
 
 
+class PreprintProviderError(PreprintError):
+    """Raised when there is an error with the preprint provider"""
+    pass
+
+
 class BlacklistedEmailError(OSFError):
     """Raised if a user tries to register an email that is included
     in the blacklisted domains list

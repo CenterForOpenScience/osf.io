@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name='preprint',
-            options={'permissions': (('osf_admin_view_preprint', 'Can view preprint details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
+            options={'permissions': (('view_preprint', 'Can view preprint details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
         ),
         migrations.AddField(
             model_name='preprint',

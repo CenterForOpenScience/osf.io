@@ -1511,7 +1511,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         assert mock_mail.call_count == 0
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_publishing_preprint_sends_emails_to_contributors(
             self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
         url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)

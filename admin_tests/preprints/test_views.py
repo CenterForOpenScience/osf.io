@@ -46,7 +46,7 @@ class TestPreprintView(AdminTestCase):
     def test_correct_view_permissions(self):
         user = AuthUserFactory()
 
-        view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -68,7 +68,7 @@ class TestPreprintView(AdminTestCase):
         user = AuthUserFactory()
 
         change_permission = Permission.objects.get(codename='change_preprint')
-        view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
@@ -108,7 +108,7 @@ class TestPreprintFormView(AdminTestCase):
 
     def test_correct_view_permissions(self):
 
-        view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         self.user.user_permissions.add(view_permission)
         self.user.save()
 
@@ -204,7 +204,7 @@ class TestPreprintDeleteView(AdminTestCase):
         user = AuthUserFactory()
         guid = self.preprint._id
         change_permission = Permission.objects.get(codename='delete_preprint')
-        view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
@@ -286,7 +286,7 @@ class TestRemoveContributor(AdminTestCase):
 
     def test_correct_view_permissions(self):
         change_permission = Permission.objects.get(codename='change_preprint')
-        view_permission = Permission.objects.get(codename='osf_admin_view_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         self.user.user_permissions.add(change_permission)
         self.user.user_permissions.add(view_permission)
         self.user.save()

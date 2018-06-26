@@ -550,7 +550,7 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.title != new_title
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_description_and_title(
             self, mock_preprint_updated, app, user, preprint, url):
         new_title = 'Brother Nero'
@@ -576,7 +576,7 @@ class TestPreprintUpdate:
         assert preprint.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_tags(self, mock_on_preprint_updated, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
@@ -602,7 +602,7 @@ class TestPreprintUpdate:
         ) == new_tags
         assert mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_contributors(
             self, mock_update_preprint, app, user, preprint, url):
         new_user = AuthUserFactory()
@@ -785,7 +785,7 @@ class TestPreprintUpdate:
         assert unpublished.node.is_public is False
         assert unpublished.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_preprint_task_called_on_api_update(
             self, mock_on_preprint_updated, app, user, preprint, url):
         update_doi_payload = build_preprint_update_payload(

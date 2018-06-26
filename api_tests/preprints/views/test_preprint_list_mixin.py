@@ -366,7 +366,7 @@ class PreprintIsValidListMixin:
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_preprint_node_null_visible(
             self, mock_preprint_updated, app,
             user_admin_contrib, user_write_contrib,
