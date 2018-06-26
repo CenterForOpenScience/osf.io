@@ -17,7 +17,6 @@ from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
-from website.search.exceptions import SearchUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +56,7 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     def update_index(self):
         if self.collection.is_public:
             from website.search.search import update_collected_metadata
+            from website.search.exceptions import SearchUnavailableError
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
@@ -64,6 +64,7 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
 
     def remove_from_index(self):
         from website.search.search import update_collected_metadata
+        from website.search.exceptions import SearchUnavailableError
         try:
             update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:

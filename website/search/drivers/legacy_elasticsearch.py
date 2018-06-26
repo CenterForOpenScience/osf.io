@@ -79,6 +79,18 @@ class LegacyElasticsearchDriver(base.SearchDriver):
     def update_institution(self, institution, index=None):
         return elastic_search.update_institution(institution, index=index or self._default_index)
 
+    def update_collected_metadata(self, cgm_id, collection_id=None, index=None, op='update'):
+        index = index or self._default_index
+
+        if settings.USE_CELERY:
+            enqueue_task(elastic_search.update_cgm_async.s(cgm_id, collection_id=collection_id, op=op, index=index))
+        else:
+            elastic_search.update_cgm_async(cgm_id, collection_id=collection_id, op=op, index=index)
+
+    def bulk_update_collected_metadata(self, cgms, op='update', index=None):
+        index = index or self._default_index
+        elastic_search.bulk_update_cgm(cgms, op=op, index=index)
+
     def bulk_update_nodes(self, serialize, nodes, index=None):
         return elastic_search.bulk_update_nodes(serialize, nodes, index=index or self._default_index)
 

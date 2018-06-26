@@ -19,8 +19,8 @@ from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Collect
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
-from website.search.elastic_search import bulk_update_cgm
-from website.search.search import bulk_update_collected_metadata
+# from website.search.elastic_search import bulk_update_cgm
+# from website.search.search import bulk_update_collected_metadata
 from website.search import search
 
 logger = logging.getLogger(__name__)
@@ -138,22 +138,22 @@ def migrate_collected_metadata(index, delete):
         collection__deleted__isnull=True,
         collection__is_bookmark_collection=False)
 
-    docs = helpers.scan(es_client(), query={
-        'query': {'match': {'_type': 'collectionSubmission'}}
-    }, index=index)
+    # docs = helpers.scan(es_client(), query={
+    #     'query': {'match': {'_type': 'collectionSubmission'}}
+    # }, index=index)
 
-    actions = ({
-        '_op_type': 'delete',
-        '_index': index,
-        '_id': doc['_source']['id'],
-        '_type': 'collectionSubmission',
-        'doc': doc['_source'],
-        'doc_as_upsert': True,
-    } for doc in list(docs))
+    # actions = ({
+    #     '_op_type': 'delete',
+    #     '_index': index,
+    #     '_id': doc['_source']['id'],
+    #     '_type': 'collectionSubmission',
+    #     'doc': doc['_source'],
+    #     'doc_as_upsert': True,
+    # } for doc in list(docs))
 
-    bulk_update_cgm(None, actions=actions, op='delete', index=index)
+    # bulk_update_cgm(None, actions=actions, op='delete', index=index)
 
-    bulk_update_collected_metadata(cgms, index=index)
+    search.bulk_update_collected_metadata(cgms, index=index)
     logger.info('{} collection submissions migrated'.format(cgms.count()))
 
 def migrate_institutions(index):
