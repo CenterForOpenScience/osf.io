@@ -34,7 +34,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, ValidationError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -1507,6 +1507,56 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+
+    def gdpr_delete(self):
+        """
+        This function does not remove the user object reference from our database, but it does disable the account and
+        remove identifying in a manner compliant with GDPR guidelines.
+        :return:
+        """
+        from osf.models import PreprintService, AbstractNode
+
+        user_nodes = self.nodes.all()
+        #  Validates the user isn't trying to delete things they deliberately made public.
+        if user_nodes.filter(type='osf.registration').exists():
+            raise ValidationError('You cannot delete this user because they have one or more registrations.')
+
+        if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
+            raise ValidationError('You cannot delete this user because they have one or more preprints.')
+
+        # Validates that the user isn't trying to delete things nodes they are the only admin on.
+        personal_nodes = [node.id for node in user_nodes if node.contributor_set.count() == 1]
+        personal_nodes = AbstractNode.objects.filter(id__in=personal_nodes)
+        shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
+
+        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+            alternate_admins = Contributor.objects.select_related('user').filter(
+                node=node,
+                user__is_active=True,
+                admin=True,
+            ).exclude(user=self)
+            if not alternate_admins:
+                raise ValidationError(
+                    'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
+                        node._id))
+
+        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        personal_nodes.delete()
+
+        # This removes identifying info
+        self.fullname = 'Deleted User'
+        self.username = 'Deleted User'
+        self.given_name = 'Deleted User'
+        self.family_name = 'Deleted User'
+        self.middle_names = 'Deleted User'
+        self.jobs = []
+        self.schools = []
+        self.social = []
+        self.external_accounts.clear()
+        self.external_identity = {}
+
+        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
+        self.is_disabled = True
 
     class Meta:
         # custom permissions for use in the OSF Admin App

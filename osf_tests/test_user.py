@@ -48,6 +48,8 @@ from .factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
     UserFactory,
+    RegistrationFactory,
+    PreprintFactory
 )
 from tests.base import OsfTestCase
 
@@ -1968,3 +1970,79 @@ class TestUserValidation(OsfTestCase):
             }]
             with pytest.raises(ValidationError):
                 self.user.save()
+
+
+class TestUserGdprDelete(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserGdprDelete, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_can_gdpr_delete(self):
+        self.user.social = ['fake social']
+        self.user.schools = ['fake schools']
+        self.user.jobs = ['fake jobs']
+        self.user.external_identity = ['fake external identity']
+        self.user.external_accounts.add(ExternalAccountFactory())
+
+        self.user.gdpr_delete()
+
+        assert self.user.fullname == 'Deleted User'
+        assert self.user.social == []
+        assert self.user.schools == []
+        assert self.user.jobs == []
+        assert self.user.external_identity == {}
+        assert not self.user.external_accounts.exists()
+        assert self.user.is_disabled
+
+        assert self.user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_personal_nodes(self):
+        project = ProjectFactory(creator=self.user)
+        project.save()
+
+        self.user.gdpr_delete()
+
+        assert self.user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.save()
+
+        self.user.gdpr_delete()
+
+        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
+        assert self.user.nodes.all().count() == 1
+
+    def test_cant_gdpr_delete_registrations(self):
+        registration = RegistrationFactory(creator=self.user)
+        registration.save()
+
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+
+    def test_cant_gdpr_delete_preprints(self):
+        preprint = PreprintFactory(creator=self.user)
+        preprint.save()
+
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+
+    def test_cant_gdpr_delete_shared_node_if_only_admin(self):
+        non_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(non_admin_contrib)
+        project.save()
+
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
+                                         ' be a node with contributors, but with no admin.'.format(project._id)
