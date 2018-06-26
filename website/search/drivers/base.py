@@ -50,6 +50,14 @@ class SearchDriver(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def update_collected_metadata(self, file_, index=None, delete=False):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def bulk_update_collected_metadata(self, file_, index=None, delete=False):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def update_institution(self, institution, index=None):
         raise NotImplementedError()
 
@@ -77,16 +85,40 @@ class SearchMigrator(object):
     def __init__(self, driver):
         self._driver = driver
 
-    def migrate(self, institutions=False):
-        self.setup()
+    def _before_migrate(self):
+        pass
 
-        if institutions:
+    def _after_migrate(self):
+        pass
+
+    def migrate(self, types=None):
+        types = types or ('users', 'files', 'institutions', 'collections', 'projects', 'registrations', 'preprints', 'components')
+
+        self.setup()
+        self._before_migrate()
+
+        if 'institutions' in types:
             self.migrate_institutions()
-        # self.migrate_projects()
-        # self.migrate_components()
-        # self.migrate_nodes()
-        # self.migrate_files()
-        self.migrate_users()
+
+        if 'projects' in types:
+            self.migrate_projects()
+
+        if 'registrations' in types:
+            self.migrate_projects()
+
+        if 'components' in types:
+            self.migrate_components()
+
+        if 'preprints' in types:
+            self.migrate_preprints()
+
+        if 'files' in types:
+            self.migrate_files()
+
+        if 'users' in types:
+            self.migrate_users()
+
+        self._after_migrate()
 
     @abc.abstractmethod
     def setup(self):

@@ -55,3 +55,7 @@ class ElasticsearchDriver(base.SearchDriver):
         pass
     def update_user(self):
         pass
+    def bulk_update_collected_metadata(self):
+        pass
+    def update_collected_metadata(self):
+        pass
