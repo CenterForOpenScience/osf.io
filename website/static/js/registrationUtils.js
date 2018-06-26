@@ -772,6 +772,7 @@ Draft.prototype.register = function(url, data) {
                 }
             }
         });
+    }).always(function(){
         $osf.unblock();
     });
 
