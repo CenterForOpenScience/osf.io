@@ -90,8 +90,8 @@ class BaseModel(TimeStampedModel):
     def reload(self):
         return self.refresh_from_db()
 
-    def refresh_from_db(self):
-        super(BaseModel, self).refresh_from_db()
+    def refresh_from_db(self, **kwargs):
+        super(BaseModel, self).refresh_from_db(**kwargs)
         # Django's refresh_from_db does not uncache GFKs
         for field in self._meta.private_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
@@ -125,6 +125,30 @@ class BaseModel(TimeStampedModel):
         return super(BaseModel, self).save(*args, **kwargs)
 
 
+class DegenericQuerySet(models.QuerySet):
+    def degeneric(self, **kwargs):
+        class Meta:
+            proxy = True
+            app_label = self.model._meta.app_label
+
+        clone = self._clone()
+        query, attrs = {}, {'Meta': Meta, '__module__': self.model._meta.app_label}
+
+        for field_name, model in kwargs.items():
+            field = self.model._meta.get_field(field_name)
+            attrs[field_name] = ForeignKey(model, db_column=field.fk_field, null=True)
+            query[field.ct_field + '__model'] = model._meta.concrete_model._meta.model_name
+            query[field.ct_field + '__app_label'] = model._meta.concrete_model._meta.app_label
+
+        pfs, self.model._meta.private_fields = self.model._meta.private_fields, []
+
+        clone.model = clone.query.model = type('NonGeneric' + self.model.__name__, (self.model, ), attrs)
+
+        self.model._meta.private_fields = pfs
+
+        return clone.filter(**query)
+
+
 # TODO: Rename to Identifier?
 class Guid(BaseModel):
     """Stores either a short guid or long object_id for any model that inherits from BaseIDMixin.
@@ -132,6 +156,8 @@ class Guid(BaseModel):
     'initialize_<ID type>' (e.g. 'initialize_guid') that generates and sets the field.
     """
     primary_identifier_name = '_id'
+
+    objects = DegenericQuerySet.as_manager()
 
     id = models.AutoField(primary_key=True)
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
