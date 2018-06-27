@@ -167,6 +167,16 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
             raise ValidationError('This is not a registration.')
         return registration
 
+    def get_renderer_context(self):
+        context = super(RegistrationDetail, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('related_counts', False))
+        if show_counts:
+            registration = self.get_object()
+            context['meta'] = {
+                'templated_by_count': registration.templated_list.count(),
+            }
+        return context
+
 
 class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_list).
