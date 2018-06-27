@@ -449,22 +449,21 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         )
 
     The lookup field must be surrounded in angular brackets to find the attribute on the target. Otherwise, the lookup
-    field will be returned verbatim. ::
+    field is assumed to be a method on the serializer. ::
 
-        wiki_home = RelationshipField(
-            related_view='addon:addon-detail',
-            related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
-        )
-
-    '_id' is enclosed in angular brackets, but 'wiki' is not. 'id' will be looked up on the target, but 'wiki' will not.
-     The serialized result would be '/nodes/abc12/addons/wiki'.
-
-    Field can handle nested attributes: ::
-
-        node = RelationshipField(
+        root = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<wiki_page.node._id>'}
+            related_view_kwargs={'node_id': '<root._id>'}
         )
+
+        region = RegionRelationshipField(
+            related_view='regions:region-detail',
+            related_view_kwargs={'region_id': 'get_region_id'},
+            read_only=False
+        )
+
+    'root._id' is enclosed in angular brackets, but 'get_region_id' is not.
+    'root._id' will be looked up on the target, but 'get_region_id' will be executed on the serializer.
 
     Field can handle a filter_key, which operates as the source field (but
     is named differently to not interfere with HyperLinkedIdentifyField's source
@@ -642,11 +641,17 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             kwargs_dict = kwargs_dict(obj)
 
         kwargs_retrieval = {}
+
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
-            try:
-                lookup_value = self.lookup_attribute(obj, lookup_field)
-            except AttributeError as exc:
-                raise AssertionError(exc)
+
+            if _tpl(lookup_field):
+                try:
+                    lookup_value = self.lookup_attribute(obj, lookup_field)
+                except AttributeError as exc:
+                    raise AssertionError(exc)
+            else:
+                lookup_value = _url_val(lookup_field, obj, self.parent, self.context['request'])
+
             if lookup_value is None:
                 return None
             kwargs_retrieval[lookup_url_kwarg] = lookup_value

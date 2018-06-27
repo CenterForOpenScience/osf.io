@@ -505,6 +505,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             }
 
     @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        osfs_settings = self._settings_model('osfstorage')
+        default_region_subquery = osfs_settings.objects.filter(owner=self.id).values('default_region_id')
+        return Region.objects.get(id=default_region_subquery)
+
+    @property
     def contributor_to(self):
         return self.nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 

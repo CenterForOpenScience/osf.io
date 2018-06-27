@@ -1010,8 +1010,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
-        node_settings = self.get_addon('osfstorage')
-        return Region.objects.get(id=node_settings.region_id)
+        osfs_settings = self._settings_model('osfstorage')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        return Region.objects.get(id=region_subquery)
 
     @property
     def parent_id(self):
