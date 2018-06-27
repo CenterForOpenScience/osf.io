@@ -24,7 +24,7 @@
 
     % if notify_comment:
         The moderator has also provided a comment that is only visible to contributors
-        of the ${reviewable.provider.preprint_word}, and not to others:</br>
+        of the ${reviewable.provider.preprint_word}, and not to others:<br/>
         ${comment}
     % endif
     </p>
