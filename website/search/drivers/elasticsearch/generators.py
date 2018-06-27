@@ -265,24 +265,43 @@ class NodeCollectionSubmition(AbstractActionGenerator):
         return 'collectionSubmission'
 
     @property
+    def subjects_query(self):
+        return Coalesce(Subquery(
+            models.CollectedGuidMetadata.subjects.through.objects.filter(
+                collectedguidmetadata_id=OuterRef('pk'),
+            ).annotate(
+                doc=ArrayAgg('subject__text')
+            ).values('doc')
+        ), Value([]))
+
+    @property
+    def node_query(self):
+        return 
+
+
+    @property
     def contributors_query(self):
-        return Subquery(models.Contributor.objects.annotate(
-            doc=ArrayAgg(JSONBuildObject(
-                fullname=F('user__fullname'),
-                is_active=F('user__is_active'),
-                guid=self.guid_for(Contributor),
-            ), order_by=F('_order').asc())
-        ).filter(
-            visible=True,
-            node_id=OuterRef('pk'),
-        ).values('doc'))
+        return Subquery(
+            models.Contributor.objects.filter(
+                visible=True,
+                node_id=OuterRef('object_id'),
+            ).annotate(
+                doc=JSONAgg(JSONBuildObject(
+                    fullname=F('user__fullname'),
+                    is_active=F('user__is_active'),
+                    guid=self.guid_for(models.OSFUser, 'user__pk'),
+                ), order_by=F('_order').asc())
+            ).order_by().values('doc')
+        )
 
     def build_query(self):
-        qs = models.CollectedGuidMetadata.objects.filter(
+        return models.CollectedGuidMetadata.objects.filter(
             collection__deleted__isnull=True,
             collection__is_bookmark_collection=False,
             collection__is_public=True,
             collection__provider__isnull=False,
+            guid__content_type__model=models.AbstractNode._meta.model_name,
+            guid__content_type__app_label=models.AbstractNode._meta.app_label,
         ).annotate(
             doc=JSONBuildObject(
                 _id=Concat(
@@ -290,109 +309,38 @@ class NodeCollectionSubmition(AbstractActionGenerator):
                     Value('-'),
                     self.guid_for(models.Collection, 'collection__pk'),
                 ),
-                subjects=Subquery(models.CollectedGuidMetadata.subjects.through.objects.filter(
-                    collectedguidmetadata_id=OuterRef('pk'),
-                ).annotate(
-                    doc=ArrayAgg('subject__text')
-                ).values('doc')),
-                node=Subquery(Guid.objects.degeneric(
-                    referent=models.AbstractNode
-                ).filter(
-                    referent_id=OuterRef('guid__id')
-                ).annotate(
-                    doc=JSONBuildObject(
-                        title=F('referent__title'),
-                        description=F('referent__description'),
-                        contirbutors=self.contributors_query,
-                    )
-                ).values('doc'))
+                status=F('status'),
+                category=Value('collectionSubmission'),
+                collectedType=F('collected_type'),
+                subjects=self.subjects_query,
+                node=Subquery(
+                    Guid.objects.degeneric(referent=models.AbstractNode).filter(
+                        pk=OuterRef('guid__id')
+                    ).annotate(
+                        doc=JSONBuildObject(
+                            guid=F('_id'),
+                            title=F('referent__title'),
+                            description=F('referent__description'),
+                            contributors=self.contributors_query,
+                        )
+                    ).values('doc')
+                )
             )
         ).values('doc')
 
-        # qs = models.AbstractNode.objects.annotate(
-        #     node_guid=self.guid_for(models.AbstractNode),
-        #     node_guid_pk=Subquery(Guid.objects.filter(
-        #         object_id=OuterRef('pk'),
-        #         content_type__app_label=models.AbstractNode._meta.app_label,
-        #         content_type__model=models.AbstractNode._meta.concrete_model._meta.model_name,
-        #     ).order_by('created').values('pk')[:1])
-        # ).annotate(
-        #     doc=JSONBuildObject(
-        #         _id=Concat(F('node_guid'), Value('-'), F('collection_guid'))
-        #     ),
-        #     # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
-        #     #     doc=JSONBuildObject(),
-        #     #     #     status=F('status'),
-        #     #     #     collected_type=F('collected_type'),
-        #     #     #     collection_guid=self.guid_for(models.Collection, 'collection_id')
-        #     #     # )
-        #     # ).filter(
-        #     #     guid=OuterRef('node_guid_pk'),
-        #     #     collection__deleted__isnull=True,
-        #     #     collection__is_bookmark_collection=False,
-        #     #     collection__is_public=True,
-        #     #     collection__provider__isnull=False,
-        #     # ).values('doc'))
-        # ).values('doc')
+    def post_process(self, _id, doc):
+        node = doc.pop('node')
 
-        import ipdb; ipdb.set_trace()
+        doc['title'] = node['title']
+        doc['abstract'] = node['description']
+        doc['url'] = '/{}/'.format(node['guid'])
 
-        return qs
+        doc['contributors'] = [{
+            'fullname': contrib['fullname'],
+            'url': '/{}/'.format(contrib['guid']) if contrib['is_active'] else None
+        } for contrib in node['contributors']]
 
-
-            # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
-            #     collection_id=self.guid_for(models.Collection, 'collection__id'),
-            # ).filter(
-            #     guid_id=Subquery(models.Guid.objects.filter(
-            #         object_id=OuterRef('pk'),
-            #         content_type__app_label=models.AbstractNode._meta.app_label,
-            #         content_type__model=models.AbstractNode._meta.model_name,
-            #     ).values('id'))
-            # )),
-
-        # ).annotate(
-            # node_guid=self.guid_for(models.AbstractNode),
-            # collection_guid=self.guid_for(models.AbstractNode),
-        # ).annotate(
-            # doc=JSONBuildObject(
-            #     _id=F('guid'),
-            #     title=F('title'),
-            #     abstract=F('description'),
-            #     contributors=self.contributors_query,
-            # ),
-            # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
-            #     collection_id=self.guid_for(models.Collection, 'collection__id'),
-            # ).filter(
-            #     collection__deleted__isnull=True,
-            #     collection__is_bookmark_collection=False,
-            #     collection__is_public=True,
-            #     collection__provider__isnull=False,
-            #     guid_id=Subquery(models.Guid.objects.filter(
-            #         object_id=OuterRef('pk'),
-            #         content_type__app_label=models.AbstractNode._meta.app_label,
-            #         content_type__model=models.AbstractNode._meta.model_name,
-            #     ).values('id'))
-            # )),
-        # ).values('doc')
-
-# class CollectedGuidMetadataActionGenerator(AbstractActionGenerator):
-
-#     @property
-#     def type(self):
-#         return 'collectionSubmission'
-
-#     def build_query(self):
-#         return models.CollectedGuidMetadata.objects.filter(
-#             collection__provider__isnull=False,
-#             collection__is_public=True,
-#             collection__deleted__isnull=True,
-#             collection__is_bookmark_collection=False
-#         ).annotate(
-#             doc=JSONBuildObject(
-#                 _id=F('_id'),
-#                 
-#             )
-#         ).values('doc')
+        return doc
 
 
 class UserActionGenerator(AbstractActionGenerator):
