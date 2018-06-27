@@ -78,16 +78,12 @@ def update_institutions(node, new_institutions, user, post=False):
 
 class RegionRelationshipField(RelationshipField):
 
-    def get_object(self, region_id):
+    def to_internal_value(self, data):
         try:
-            region = Region.objects.get(_id=region_id)
+            region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
             raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
-        return region
-
-    def to_internal_value(self, data):
-        region = self.get_object(data)
-        return {'region_id': region.id}
+        return {'region_id': region_id}
 
 
 class NodeTagField(ser.Field):

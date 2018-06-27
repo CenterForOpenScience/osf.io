@@ -236,11 +236,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         region_id = self.request.query_params.get('region', None)
         if region_id:
             try:
-                region = Region.objects.get(_id=region_id)
+                region_id = Region.objects.filter(_id=region_id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
                 raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
             context.update({
-                'region_id': region.id
+                'region_id': region_id
             })
         return context
 
