@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.145.0 (2018-05-27)
+====================
+- Add more metadata and relationships to API requests in support of Analytics page updates
+- Allow PATCHing of View Only Links in API v2
+- Create a scopes endpoint for User PAT Settings updates
+- Improve /v2/ route to allow for fewer requests by spaces
+
 0.144.0 (2018-06-13)
 ====================
 - Allow deleting child components from component widget dropdown
