@@ -15,6 +15,22 @@ logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
 
 class ElasticsearchMigrator(base.SearchMigrator):
 
+    NODE_LIKE_MAPPINGS = {
+        'title': {'index': True, 'type': 'text', 'analyzer': 'english'},
+        'description': {'index': True, 'type': 'text', 'analyzer': 'english'},
+        'tags': {'index': True, 'type': 'keyword'},
+        'license': {
+            'properties': {
+                'id': {'index': True, 'type': 'keyword'},
+                'name': {'index': True, 'type': 'keyword'},
+                # Copied from elastic_search.py
+                # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                'year': {'index': True, 'type': 'text'},
+            }
+        }
+    }
+
     INDICES = {
         'user': {
             'index_tmpl': '{}-users',
@@ -46,42 +62,32 @@ class ElasticsearchMigrator(base.SearchMigrator):
         'project': {
             'index_tmpl': '{}-nodes-projects',
             'action_generator': generators.ProjectActionGenerator,
-            'mappings': {
-                'title': {'index': True, 'type': 'text', 'analyzer': 'english'},
-                'description': {'index': True, 'type': 'text', 'analyzer': 'english'},
-                'tags': {'index': True, 'type': 'keyword'},
-                'license': {
-                    'properties': {
-                        'id': {'index': True, 'type': 'keyword'},
-                        'name': {'index': True, 'type': 'keyword'},
-                        # Copied from elastic_search.py
-                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
-                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
-                        'year': {'index': True, 'type': 'text'},
-                    }
-                }
-            }
+            'mappings': NODE_LIKE_MAPPINGS,
         },
 
         'component': {
             'index_tmpl': '{}-nodes-components',
             'action_generator': generators.ComponentActionGenerator,
-            'mappings': {
-                'title': {'index': True, 'type': 'text', 'analyzer': 'english'},
-                'description': {'index': True, 'type': 'text', 'analyzer': 'english'},
-                'tags': {'index': True, 'type': 'keyword'},
-                'license': {
-                    'properties': {
-                        'id': {'index': True, 'type': 'keyword'},
-                        'name': {'index': True, 'type': 'keyword'},
-                        # Copied from elastic_search.py
-                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
-                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
-                        'year': {'index': True, 'type': 'text'},
-                    }
-                }
-            }
-        }
+            'mappings': NODE_LIKE_MAPPINGS,
+        },
+
+        'preprint': {
+            'index_tmpl': '{}-nodes-preprints',
+            'action_generator': generators.PreprintActionGenerator,
+            'mappings': NODE_LIKE_MAPPINGS,
+        },
+
+        'registration': {
+            'index_tmpl': '{}-nodes-registrations',
+            'action_generator': generators.RegistrationActionGenerator,
+            'mappings': NODE_LIKE_MAPPINGS,
+        },
+
+        'node_collection_submission': {
+            'index_tmpl': '{}-collection-submissions',
+            'action_generator': generators.NodeCollectionSubmition,
+            'mappings': {}
+        },
     }
 
     @property
@@ -134,22 +140,25 @@ class ElasticsearchMigrator(base.SearchMigrator):
         return self._do_migrate('project')
 
     def migrate_components(self):
-        return self._do_migrate('components')
+        return self._do_migrate('component')
 
     def migrate_registrations(self):
-        return self._do_migrate('components')
+        return self._do_migrate('registration')
 
     def migrate_preprints(self):
-        return self._do_migrate('preprints')
+        return self._do_migrate('preprint')
 
     def migrate_files(self):
-        return self._do_migrate('files')
+        return self._do_migrate('file')
 
     def migrate_institutions(self):
-        return self._do_migrate('institutions')
+        return self._do_migrate('institution')
 
     def migrate_users(self):
-        return self._do_migrate('users')
+        return self._do_migrate('user')
+
+    def migrate_collection_submissions(self):
+        return self._do_migrate('node_collection_submission')
 
     def _do_migrate(self, type_):
         x, action_generator = 0, self.INDICES[type_]['action_generator'](

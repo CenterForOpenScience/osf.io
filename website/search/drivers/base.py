@@ -92,7 +92,7 @@ class SearchMigrator(object):
         pass
 
     def migrate(self, types=None):
-        types = types or ('users', 'files', 'institutions', 'collections', 'projects', 'registrations', 'preprints', 'components')
+        types = types or ('users', 'files', 'institutions', 'collections', 'projects', 'registrations', 'preprints', 'components', 'collection-submissions')
 
         self.setup()
         self._before_migrate()
@@ -104,7 +104,7 @@ class SearchMigrator(object):
             self.migrate_projects()
 
         if 'registrations' in types:
-            self.migrate_projects()
+            self.migrate_registrations()
 
         if 'components' in types:
             self.migrate_components()
@@ -117,6 +117,9 @@ class SearchMigrator(object):
 
         if 'users' in types:
             self.migrate_users()
+
+        if 'collection-submissions' in types:
+            self.migrate_collection_submissions()
 
         self._after_migrate()
 

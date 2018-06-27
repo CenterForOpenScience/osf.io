@@ -11,6 +11,8 @@ from django.db.models import OuterRef, Subquery, Exists
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Concat
 
+from addons.wiki.models import WikiPage, WikiVersion
+
 from osf.expressions import JSONBuildObject, ArrayAgg, JSONAgg
 from osf import models
 from osf.utils.workflows import DefaultStates
@@ -144,7 +146,7 @@ class FileActionGenerator(AbstractActionGenerator):
                     child_id=OuterRef('node__pk')
                 ).annotate(
                     guid=self.guid_for(AbstractNode, 'parent_id')
-                ).values('guid')[:1]
+                ).order_by('created').values('guid')[:1]
             )
         )
 
@@ -256,6 +258,143 @@ class InstitutionActionGenerator(AbstractActionGenerator):
         return doc
 
 
+class NodeCollectionSubmition(AbstractActionGenerator):
+
+    @property
+    def type(self):
+        return 'collectionSubmission'
+
+    @property
+    def contributors_query(self):
+        return Subquery(models.Contributor.objects.annotate(
+            doc=ArrayAgg(JSONBuildObject(
+                fullname=F('user__fullname'),
+                is_active=F('user__is_active'),
+                guid=self.guid_for(Contributor),
+            ), order_by=F('_order').asc())
+        ).filter(
+            visible=True,
+            node_id=OuterRef('pk'),
+        ).values('doc'))
+
+    def build_query(self):
+        qs = models.CollectedGuidMetadata.objects.filter(
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False,
+            collection__is_public=True,
+            collection__provider__isnull=False,
+        ).annotate(
+            doc=JSONBuildObject(
+                _id=Concat(
+                    F('guid___id'),
+                    Value('-'),
+                    self.guid_for(models.Collection, 'collection__pk'),
+                ),
+                subjects=Subquery(models.CollectedGuidMetadata.subjects.through.objects.filter(
+                    collectedguidmetadata_id=OuterRef('pk'),
+                ).annotate(
+                    doc=ArrayAgg('subject__text')
+                ).values('doc')),
+                node=Subquery(Guid.objects.degeneric(
+                    referent=models.AbstractNode
+                ).filter(
+                    referent_id=OuterRef('guid__id')
+                ).annotate(
+                    doc=JSONBuildObject(
+                        title=F('referent__title'),
+                        description=F('referent__description'),
+                        contirbutors=self.contributors_query,
+                    )
+                ).values('doc'))
+            )
+        ).values('doc')
+
+        # qs = models.AbstractNode.objects.annotate(
+        #     node_guid=self.guid_for(models.AbstractNode),
+        #     node_guid_pk=Subquery(Guid.objects.filter(
+        #         object_id=OuterRef('pk'),
+        #         content_type__app_label=models.AbstractNode._meta.app_label,
+        #         content_type__model=models.AbstractNode._meta.concrete_model._meta.model_name,
+        #     ).order_by('created').values('pk')[:1])
+        # ).annotate(
+        #     doc=JSONBuildObject(
+        #         _id=Concat(F('node_guid'), Value('-'), F('collection_guid'))
+        #     ),
+        #     # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
+        #     #     doc=JSONBuildObject(),
+        #     #     #     status=F('status'),
+        #     #     #     collected_type=F('collected_type'),
+        #     #     #     collection_guid=self.guid_for(models.Collection, 'collection_id')
+        #     #     # )
+        #     # ).filter(
+        #     #     guid=OuterRef('node_guid_pk'),
+        #     #     collection__deleted__isnull=True,
+        #     #     collection__is_bookmark_collection=False,
+        #     #     collection__is_public=True,
+        #     #     collection__provider__isnull=False,
+        #     # ).values('doc'))
+        # ).values('doc')
+
+        import ipdb; ipdb.set_trace()
+
+        return qs
+
+
+            # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
+            #     collection_id=self.guid_for(models.Collection, 'collection__id'),
+            # ).filter(
+            #     guid_id=Subquery(models.Guid.objects.filter(
+            #         object_id=OuterRef('pk'),
+            #         content_type__app_label=models.AbstractNode._meta.app_label,
+            #         content_type__model=models.AbstractNode._meta.model_name,
+            #     ).values('id'))
+            # )),
+
+        # ).annotate(
+            # node_guid=self.guid_for(models.AbstractNode),
+            # collection_guid=self.guid_for(models.AbstractNode),
+        # ).annotate(
+            # doc=JSONBuildObject(
+            #     _id=F('guid'),
+            #     title=F('title'),
+            #     abstract=F('description'),
+            #     contributors=self.contributors_query,
+            # ),
+            # collection_submission=Subquery(models.CollectedGuidMetadata.objects.annotate(
+            #     collection_id=self.guid_for(models.Collection, 'collection__id'),
+            # ).filter(
+            #     collection__deleted__isnull=True,
+            #     collection__is_bookmark_collection=False,
+            #     collection__is_public=True,
+            #     collection__provider__isnull=False,
+            #     guid_id=Subquery(models.Guid.objects.filter(
+            #         object_id=OuterRef('pk'),
+            #         content_type__app_label=models.AbstractNode._meta.app_label,
+            #         content_type__model=models.AbstractNode._meta.model_name,
+            #     ).values('id'))
+            # )),
+        # ).values('doc')
+
+# class CollectedGuidMetadataActionGenerator(AbstractActionGenerator):
+
+#     @property
+#     def type(self):
+#         return 'collectionSubmission'
+
+#     def build_query(self):
+#         return models.CollectedGuidMetadata.objects.filter(
+#             collection__provider__isnull=False,
+#             collection__is_public=True,
+#             collection__deleted__isnull=True,
+#             collection__is_bookmark_collection=False
+#         ).annotate(
+#             doc=JSONBuildObject(
+#                 _id=F('_id'),
+#                 
+#             )
+#         ).values('doc')
+
+
 class UserActionGenerator(AbstractActionGenerator):
 
     @property
@@ -263,9 +402,9 @@ class UserActionGenerator(AbstractActionGenerator):
         return 'user'
 
     def build_query(self):
-        return OSFUser.objects.annotate(
+        return models.OSFUser.objects.annotate(
             doc=JSONBuildObject(
-                _id=self.guid_for(OSFUser),
+                _id=self.guid_for(models.OSFUser),
                 user=F('fullname'),
                 normalized_user=F('fullname'),  # TODO Legacy?
                 normalized_names=JSONBuildObject(  # TODO Legacy?
@@ -377,30 +516,6 @@ class NodeActionGenerator(AbstractActionGenerator):
         )
 
     @property
-    def preprint_query(self):
-        return Subquery(PreprintService.objects.annotate(
-            doc=JSONBuildObject(
-                guid=self.guid_for(PreprintService),
-                provider=JSONBuildObject(
-                    # TODO _id
-                    domain=F('provider__domain'),
-                    domain_redirect_enabled=F('provider__domain_redirect_enabled'),
-                )
-            )
-        ).filter(
-            node_id=OuterRef('pk'),
-            node__is_public=True,
-            node___is_preprint_orphan=True,
-        ).exclude(
-            machine_state='initial',
-        ).exclude(
-            node__preprint_file_id=None,
-        ).order_by(
-            F('is_published').desc(),
-            F('created').desc()
-        ).values('doc')[:1].include(None))
-
-    @property
     def license_query(self):
         return RawSQL(re.sub('\s+', ' ', '''(
             WITH RECURSIVE ascendants AS (
@@ -467,7 +582,11 @@ class NodeActionGenerator(AbstractActionGenerator):
 
         preprint = doc.pop('preprint', None)
         if preprint:
-            doc['preprint_url'] = None
+            provider = preprint['provider']
+            if (provider['domain_redirect_enabled'] and provider['domain']) or provider['_id'] == 'osf':
+                doc['preprint_url'] = '/{}/'.format(preprint['guid'])
+            else:
+                doc['preprint_url'] = '/preprints/{}/{}/'.format(provider['_id'], preprint['guid'])
         else:
             doc['preprint_url'] = None
 
@@ -480,12 +599,12 @@ class NodeActionGenerator(AbstractActionGenerator):
             # TODO Sanatize?
             x['name'].replace('.', ' '): x['content']
             for x in (doc['wikis'] or [])
+            if x['name'].replace('.', ' ').strip()
         }
 
         return doc
 
     def _build_attributes(self):
-        from addons.wiki.models import WikiPage, WikiVersion
         return {
             '_id': self.guid_for(AbstractNode),
             'type': F('type'),
@@ -496,7 +615,6 @@ class NodeActionGenerator(AbstractActionGenerator):
             'public': F('is_public'),
             'date_created': F('created'),
 
-            # 'boost': Value(2),  # Legacy?
             'category': Value(self.category),
 
             # Overriden in subclasses
@@ -524,10 +642,8 @@ class NodeActionGenerator(AbstractActionGenerator):
             'affiliated_institutions': self.affiliated_institutions_query,
             'contributors': self.contributors_query,
             'license': self.license_query,
-            # 'preprint': self.preprint_query,
             'tags': self.tags_query,
             'parent_id': self.parent_query,  # TODO ???
-            # 'extra_search_terms': clean_splitters(node.title), TODO
         }
 
 
@@ -599,11 +715,199 @@ class ComponentActionGenerator(NodeActionGenerator):
         return 'component'
 
     def _get_queryset(self):
-        return Node.objects.annotate(
-            has_parent=Exists(NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False))
+        qs = Node.objects.annotate(
+            has_parent=Exists(NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False)),
+            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+                abstractnode_id=OuterRef('pk'),
+                tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
+            )),
+            has_preprint=Exists(PreprintService.objects.filter(
+                node_id=OuterRef('pk')
+            ).exclude(
+                machine_state=DefaultStates.INITIAL.value,
+            )),
+            is_archiving_or_failed=Exists(models.ArchiveJob.objects.filter(
+                dst_node_id=OuterRef('pk'),
+            ).exclude(
+                status='SUCCESS'
+            )),
         ).filter(
-            has_parent=True,
+            is_public=True,
             is_deleted=False,
+            is_archiving_or_failed=False,
+            has_qa_tags=False,
+            has_parent=True,
+        ).exclude(
+            spam_status=2
+        ).exclude(
+            _is_preprint_orphan=False,
+            has_preprint=True,
+            preprint_file_id__isnull=False,
+        )
+
+        for title in settings.DO_NOT_INDEX_LIST['titles']:
+            qs = qs.exclude(title__icontains=title)
+
+        if settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH:
+            qs = qs.exclude(spam_status=1)
+
+        return qs
+
+
+class PreprintActionGenerator(NodeActionGenerator):
+
+    @property
+    def category(self):
+        return 'preprint'
+
+    @property
+    def type(self):
+        return 'preprint'
+
+    @property
+    def preprint_query(self):
+        return Subquery(PreprintService.objects.annotate(
+            doc=JSONBuildObject(
+                guid=self.guid_for(PreprintService),
+                provider=JSONBuildObject(
+                    _id=F('provider___id'),
+                    domain=F('provider__domain'),
+                    domain_redirect_enabled=F('provider__domain_redirect_enabled'),
+                )
+            )
+        ).filter(
+            node_id=OuterRef('pk'),
+        ).order_by(
+            F('is_published').desc(),
+            F('created').desc()
+        ).values('doc')[:1])
+
+    def _get_queryset(self):
+        qs = Node.objects.annotate(
+            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+                abstractnode_id=OuterRef('pk'),
+                tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
+            )),
+            has_preprint=Exists(PreprintService.objects.filter(
+                node_id=OuterRef('pk')
+            ).exclude(
+                machine_state=DefaultStates.INITIAL.value,
+            )),
+            is_archiving_or_failed=Exists(models.ArchiveJob.objects.filter(
+                dst_node_id=OuterRef('pk'),
+            ).exclude(
+                status='SUCCESS'
+            )),
+        ).filter(
+            is_public=True,
+            is_deleted=False,
+            is_archiving_or_failed=False,
+            has_qa_tags=False,
+            _is_preprint_orphan=False,
+            has_preprint=True,
+            preprint_file_id__isnull=False,
+        ).exclude(
+            spam_status=2
+        )
+
+        for title in settings.DO_NOT_INDEX_LIST['titles']:
+            qs = qs.exclude(title__icontains=title)
+
+        if settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH:
+            qs = qs.exclude(spam_status=1)
+
+        return qs
+
+    def _build_attributes(self):
+        return dict(
+            super(PreprintActionGenerator, self)._build_attributes(),
+            preprint=self.preprint_query,
         )
 
 
+class RegistrationActionGenerator(NodeActionGenerator):
+
+    @property
+    def category(self):
+        return 'registration'
+
+    @property
+    def type(self):
+        return 'registration'
+
+    @property
+    def retracted_query(self):
+        return RawSQL(re.sub('\s+', ' ', '''COALESCE((
+            WITH RECURSIVE ascendants AS (
+                SELECT
+                    N.id,
+                    N.retraction_id
+                FROM "{abstractnode}" AS N
+                WHERE N.id = "{abstractnode}".id
+            UNION ALL
+                SELECT
+                    N.id,
+                    N.retraction_id
+                FROM ascendants AS D
+                    JOIN "{noderelation}" AS R ON R.child_id = D.id
+                    JOIN "{abstractnode}" AS N ON N.id = R.parent_id
+                WHERE D.retraction_id IS NULL AND R.is_node_link = FALSE
+            ) SELECT
+                RETRACTION.state = '{approved}' AS is_retracted
+            FROM
+                osf_retraction AS RETRACTION
+            WHERE
+                RETRACTION.id = (SELECT retraction_id FROM ascendants WHERE retraction_id IS NOT NULL LIMIT 1)
+            LIMIT 1
+        ), FALSE)'''.format(
+            abstractnode=AbstractNode._meta.db_table,
+            approved=models.Retraction.APPROVED,
+            noderelation=NodeRelation._meta.db_table,
+            retraction=models.Retraction._meta.db_table,
+        )), [])
+
+    def _get_queryset(self):
+        qs = models.Registration.objects.annotate(
+            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+                abstractnode_id=OuterRef('pk'),
+                tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
+            )),
+            is_archiving_or_failed=Exists(models.ArchiveJob.objects.filter(
+                dst_node_id=OuterRef('pk'),
+            ).exclude(
+                status='SUCCESS'
+            )),
+        ).filter(
+            is_public=True,
+            is_deleted=False,
+            is_archiving_or_failed=False,
+            has_qa_tags=False,
+        ).exclude(
+            spam_status=2
+        )
+        for title in settings.DO_NOT_INDEX_LIST['titles']:
+            qs = qs.exclude(title__icontains=title)
+
+        if settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH:
+            qs = qs.exclude(spam_status=1)
+
+        return qs
+
+    def _build_attributes(self):
+        return dict(
+            super(RegistrationActionGenerator, self)._build_attributes(),
+            is_registration=Value(True),
+            registered_date=F('registered_date'),
+            is_retracted=self.retracted_query,
+            registration_status=F('registration_approval__state')
+        )
+
+    def post_process(self, _id, doc):
+        doc = super(RegistrationActionGenerator, self).post_process(_id, doc)
+
+        if doc['is_retracted']:
+            doc['wikis'] = {}
+
+        doc['is_pending_registration'] = doc.pop('registration_status') == 'unapproved'
+
+        return doc

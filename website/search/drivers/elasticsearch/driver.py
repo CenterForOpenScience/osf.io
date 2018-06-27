@@ -19,6 +19,7 @@ from website.search.drivers.elasticsearch.migrator import ElasticsearchMigrator
 from osf.expressions import JSONBuildObject, ArrayAgg, JSONAgg
 from osf.models import Node, Guid, NodeRelation, Contributor, OSFUser, AbstractNode, NodeLicenseRecord, NodeLicense, PreprintService
 
+
 class ElasticsearchDriver(base.SearchDriver):
 
     @property
