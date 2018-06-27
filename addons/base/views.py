@@ -333,13 +333,15 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
+            user = OSFUser.load(auth['id'])
             # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
                 url = furl.furl(payload['request_meta']['url'])
                 version = url.args.get('version') or url.args.get('revision')
                 path = payload['metadata']['path'].lstrip('/')
-                mark_file_version_as_seen(user, path, version)
+                if user:
+                    mark_file_version_as_seen(user, path, version)
                 if not node.is_contributor(user):
                     if payload['action_meta']['is_mfr_render']:
                         update_analytics(node, path, version, 'view')
@@ -348,7 +350,6 @@ def create_waterbutler_log(payload, **kwargs):
 
                 return {'status': 'success'}
 
-            user = OSFUser.load(auth['id'])
             if user is None:
                 raise HTTPError(httplib.BAD_REQUEST)
 
