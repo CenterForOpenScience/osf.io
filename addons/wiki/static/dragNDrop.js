@@ -3,6 +3,14 @@ var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 var Range = ace.require('ace/range').Range;
 
+// Disable local file render for drops outside of dropzone
+window.addEventListener("dragover",function(e){
+  e.preventDefault();
+},false);
+window.addEventListener("drop",function(e){
+  e.preventDefault();
+},false);
+
 var getExtension = function(filename) {
     return /(?:\.([^.]+))?$/.exec(filename)[1];
 };
