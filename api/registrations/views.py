@@ -43,7 +43,7 @@ from api.nodes.views import (
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
-    NodeLinkedRegistrationsList,
+    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -166,6 +166,16 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+    def get_renderer_context(self):
+        context = super(RegistrationDetail, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('related_counts', False))
+        if show_counts:
+            registration = self.get_object()
+            context['meta'] = {
+                'templated_by_count': registration.templated_list.count(),
+            }
+        return context
 
 
 class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserMixin):
@@ -454,6 +464,16 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+
+class RegistrationLinkedByNodesList(NodeLinkedByNodesList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-nodes'
+
+
+class RegistrationLinkedByRegistrationsList(NodeLinkedByRegistrationsList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-registrations'
 
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):

@@ -58,7 +58,6 @@ from website.identifiers import views as identifier_views
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
-
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -230,7 +229,8 @@ def ember_app(path=None):
         raise HTTPError(http.NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
-        url = urlparse.urljoin(ember_app['server'], request.path[len(ember_app['path']):])
+        path = request.path[len(ember_app['path']):]
+        url = urlparse.urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
@@ -352,6 +352,20 @@ def make_url_map(app):
                     notemplate
                 )
             ])
+            if 'routes' in EXTERNAL_EMBER_APPS['ember_osf_web']:
+                for route in EXTERNAL_EMBER_APPS['ember_osf_web']['routes']:
+                    process_rules(app, [
+                        Rule(
+                            [
+                                '/',
+                                '/<path:path>',
+                            ],
+                            'get',
+                            ember_osf_web_views.use_ember_app,
+                            notemplate,
+                            endpoint_suffix='__' + route
+                        )
+                    ], prefix='/' + route)
 
     ### Base ###
 
