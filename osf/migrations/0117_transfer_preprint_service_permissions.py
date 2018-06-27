@@ -5,56 +5,34 @@ from __future__ import unicode_literals
 from django.db import migrations
 from django.contrib.auth.models import Permission
 from django.core.management.sql import emit_post_migrate_signal
-from osf.models import OSFUser
 
 
 def unmigrate_preprint_service_permissions(state, schema):
     emit_post_migrate_signal(2, False, 'default')
 
     # New permission groups
-    add_preprint = Permission.objects.get(codename='add_preprint')
-    change_preprint = Permission.objects.get(codename='change_preprint')
-    delete_preprint = Permission.objects.get(codename='delete_preprint')
-    view_preprint = Permission.objects.get(codename='view_preprint')
-
-    remove_users_from_permission(add_preprint)
-    remove_users_from_permission(change_preprint)
-    remove_users_from_permission(delete_preprint)
-    remove_users_from_permission(view_preprint)
-
-def remove_users_from_permission(perm):
-    for user in OSFUser.objects.filter(user_permissions=perm):
-        user.user_permissions.remove(perm)
-
-def add_users_to_renamed_permission(old_perm, new_perm):
-    if old_perm:
-        for user in OSFUser.objects.filter(user_permissions=old_perm):
-            user.user_permissions.add(new_perm)
+    add_preprint = Permission.objects.filter(codename='add_preprint').update(codename='add_preprintservice')
+    change_preprint = Permission.objects.filter(codename='change_preprint').update(codename='change_preprintservice')
+    delete_preprint = Permission.objects.filter(codename='delete_preprint').update(codename='delete_preprintservice')
+    view_preprint = Permission.objects.filter(codename='view_preprint').update(codename='view_preprintservice')
 
 def migrate_preprint_service_permissions(state, schema):
     """
-    Django permissions on the preprint model have new names.  Need to create these new permission groups
-    and move everyone from the old groups to the new ones.
+    Django permissions on the preprint model have new names.
     """
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
+
+    add_preprint = Permission.objects.filter(codename='add_preprint').delete()
+    change_preprint = Permission.objects.filter(codename='change_preprint').delete()
+    delete_preprint = Permission.objects.filter(codename='delete_preprint').delete()
+    view_preprint = Permission.objects.filter(codename='view_preprint').delete()
+
     # Old permission groups
-    add_preprintservice = Permission.objects.filter(codename='add_preprintservice').first()
-    change_preprintservice = Permission.objects.filter(codename='change_preprintservice').first()
-    delete_preprintservice = Permission.objects.filter(codename='delete_preprintservice').first()
-    view_preprintservice = Permission.objects.filter(codename='view_preprintservice').first()
-
-    # New permission groups
-    add_preprint = Permission.objects.get(codename='add_preprint')
-    change_preprint = Permission.objects.get(codename='change_preprint')
-    delete_preprint = Permission.objects.get(codename='delete_preprint')
-    view_preprint = Permission.objects.get(codename='view_preprint')
-
-
-    add_users_to_renamed_permission(add_preprintservice, add_preprint)
-    add_users_to_renamed_permission(change_preprintservice, change_preprint)
-    add_users_to_renamed_permission(delete_preprintservice, delete_preprint)
-    add_users_to_renamed_permission(view_preprintservice, view_preprint)
+    add_preprintservice = Permission.objects.filter(codename='add_preprintservice').update(codename='add_preprint')
+    change_preprintservice = Permission.objects.filter(codename='change_preprintservice').update(codename='change_preprint')
+    delete_preprintservice = Permission.objects.filter(codename='delete_preprintservice').update(codename='delete_preprint')
+    view_preprintservice = Permission.objects.filter(codename='view_preprintservice').update(codename='view_preprint')
 
 class Migration(migrations.Migration):
 

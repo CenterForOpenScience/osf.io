@@ -200,10 +200,7 @@ class Sitemap(object):
 
         # Preprint urls
 
-        objs = (Preprint.objects
-                    .filter(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False, primary_file__deleted_on__isnull=True)
-                    .filter(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-                    .exclude(machine_state=DefaultStates.INITIAL.value)
+        objs = (Preprint.objects.can_view()
                     .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
         osf = PreprintProvider.objects.get(_id='osf')

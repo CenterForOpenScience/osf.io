@@ -60,11 +60,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='preprint',
-            name='root_folder',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint_object', to='osf.OsfStorageFolder'),
-        ),
-        migrations.AddField(
-            model_name='preprint',
             name='primary_file',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint', to='osf.OsfStorageFile'),
         ),

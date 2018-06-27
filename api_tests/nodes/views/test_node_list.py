@@ -1137,6 +1137,7 @@ class TestNodeFiltering:
         preprint_one.is_public = True
         preprint_one.is_published = True
         preprint_one.machine_state = 'accepted'
+        preprint_one.date_published = timezone.now()
         assert preprint_one.ever_public is False
         # Putting this preprint in a weird state, is verified_publishable, but has been
         # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
@@ -1186,6 +1187,7 @@ class TestNodeFiltering:
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
+        preprint_one.date_published = timezone.now()
         preprint_one.machine_state = 'accepted'
         assert preprint_one.ever_public is False
         # Putting this preprint in a weird state, is verified_publishable, but has been

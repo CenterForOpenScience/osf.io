@@ -161,9 +161,11 @@ class TestPreprintDetail:
         assert 'preprint_doi' not in res.json['data']['links'].keys()
         assert res.json['data']['attributes']['preprint_doi_created'] is None
 
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
     def test_published_preprint_doi_link_returned_before_datacite_request(
-            self, app, user, unpublished_preprint, unpublished_url):
+            self, mock_change_identifier, app, user, unpublished_preprint, unpublished_url):
         unpublished_preprint.is_published = True
+        unpublished_preprint.date_published = timezone.now()
         unpublished_preprint.save()
         res = app.get(unpublished_url, auth=user.auth)
         assert res.json['data']['id'] == unpublished_preprint._id

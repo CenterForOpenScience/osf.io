@@ -134,11 +134,13 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-    def test_filter_withdrawn_preprint(self, app, url, user):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    def test_filter_withdrawn_preprint(self, mock_change_identifier, app, url, user):
         preprint_one = PreprintFactory(is_published=False, creator=user)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
+        preprint_one.date_published = timezone.now()
         preprint_one.machine_state = 'accepted'
         assert preprint_one.ever_public is False
         # Putting this preprint in a weird state, is verified_publishable, but has been

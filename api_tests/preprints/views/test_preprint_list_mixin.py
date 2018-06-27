@@ -1,4 +1,3 @@
-import mock
 import pytest
 from django.utils import timezone
 
@@ -366,9 +365,8 @@ class PreprintIsValidListMixin:
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_preprint_node_null_visible(
-            self, mock_preprint_updated, app,
+            self, app,
             user_admin_contrib, user_write_contrib,
             user_non_contrib, preprint, url):
         # Removed node no longer affects whether you can see preprint
@@ -387,5 +385,3 @@ class PreprintIsValidListMixin:
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
-
-        assert mock_preprint_updated.called

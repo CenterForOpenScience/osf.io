@@ -3,20 +3,23 @@ from copy import deepcopy
 from django.db.models import Q, Exists, OuterRef
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
-from api.base.filters import ListFilterMixin, PreprintQueryBaseMixin
+from api.base.filters import ListFilterMixin
 from api.base import utils
 
 from osf.models import NodeRelation, AbstractNode, Preprint
 
 
-class NodesFilterMixin(ListFilterMixin, PreprintQueryBaseMixin):
+class NodesFilterMixin(ListFilterMixin):
 
     def param_queryset(self, query_params, default_queryset):
         filters = self.parse_query_params(query_params)
         auth_user = utils.get_user_auth(self.request)
-        query = self.build_preprint_permissions_query(auth_user.user)
-        subquery = Preprint.objects.filter(query & Q(deleted__isnull=True) & Q(node=OuterRef('pk')))
-        queryset = default_queryset.annotate(preprints_exist=Exists(subquery))
+        if 'filter[preprint]' in query_params:
+            query = Preprint.objects.preprint_permissions_query(user=auth_user.user)
+            subquery = Preprint.objects.filter(query & Q(deleted__isnull=True) & Q(node=OuterRef('pk')))
+            queryset = default_queryset.annotate(preprints_exist=Exists(subquery))
+        else:
+            queryset = default_queryset
 
         if filters:
             for key, field_names in filters.iteritems():

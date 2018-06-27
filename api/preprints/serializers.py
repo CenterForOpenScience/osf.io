@@ -347,17 +347,13 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
 class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
     """
     Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+
+    id and index redefined because of the two serializers we've inherited
     """
     id = IDField(source='_id', required=False, allow_null=True)
     index = ser.IntegerField(required=False, source='_order')
 
     email_preferences = ['preprint', 'false']
-
-    def get_default_send_email_type(self):
-        return self.context['request'].GET.get('send_email') or 'preprint'
-
-    def get_related_resource(self):
-        return self.context['view'].get_preprint()
 
     def get_proposed_permissions(self, validated_data):
         return validated_data.get('permission') or osf_permissions.WRITE
@@ -366,12 +362,11 @@ class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, Pre
 class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, PreprintContributorsSerializer):
     """
     Overrides NodeContributorDetailSerializer to set the preprint instead of the node
+
+    id and index redefined because of the two serializers we've inherited
     """
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
-
-    def get_related_resource(self):
-        return self.context['view'].get_preprint()
 
 
 class PreprintProviderSerializer(NodeProviderSerializer):

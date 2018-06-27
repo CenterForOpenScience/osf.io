@@ -373,23 +373,24 @@ class TestProject(OsfTestCase):
 class TestPreprint(OsfTestCase):
 
     def setUp(self):
-        super(TestPreprint, self).setUp()
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
-        self.user = factories.UserFactory(fullname='John Deacon')
-        self.preprint = Preprint(
-            title='Red Special',
-            creator=self.user,
-            provider=factories.PreprintProviderFactory()
-        )
-        self.preprint.save()
-        self.file = OsfStorageFile.create(
-            target=self.preprint,
-            path='/panda.txt',
-            name='panda.txt',
-            materialized_path='/panda.txt')
-        self.file.save()
-        self.published_preprint = factories.PreprintFactory(creator=self.user)
+        with run_celery_tasks():
+            super(TestPreprint, self).setUp()
+            search.delete_index(elastic_search.INDEX)
+            search.create_index(elastic_search.INDEX)
+            self.user = factories.UserFactory(fullname='John Deacon')
+            self.preprint = Preprint(
+                title='Red Special',
+                creator=self.user,
+                provider=factories.PreprintProviderFactory()
+            )
+            self.preprint.save()
+            self.file = OsfStorageFile.create(
+                target=self.preprint,
+                path='/panda.txt',
+                name='panda.txt',
+                materialized_path='/panda.txt')
+            self.file.save()
+            self.published_preprint = factories.PreprintFactory(creator=self.user)
 
     def test_new_preprint_unsubmitted(self):
         # Verify that an unsubmitted preprint is not present in Elastic Search.
@@ -418,8 +419,8 @@ class TestPreprint(OsfTestCase):
         assert_equal(len(docs), 2)
 
     def test_preprint_title_change(self):
+        new_title = 'My new preprint title'
         with run_celery_tasks():
-            new_title = 'My new preprint title'
             self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
         docs = query(new_title)['results']
         # Both preprint and primary_file showing up in Elastic

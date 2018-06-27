@@ -4,7 +4,6 @@ import operator
 import re
 
 import pytz
-from guardian.shortcuts import get_objects_for_user
 from api.base import utils
 from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
@@ -17,9 +16,8 @@ from django.db.models import QuerySet as DjangoQuerySet
 from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider, Preprint
+from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from osf.utils.workflows import DefaultStates
 
 
 def lowercase(lower):
@@ -494,31 +492,7 @@ class ListFilterMixin(FilterMixin):
         return getattr(serializer, serializer_method_name)
 
 
-class PreprintQueryBaseMixin(object):
-
-    def build_preprint_permissions_query(self, auth_user, allow_contribs=True):
-        no_user_query = Q(
-            is_published=True,
-            is_public=True,
-            primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
-            & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-
-        if auth_user:
-            admin_user_query = Q(id__in=get_objects_for_user(auth_user, 'admin_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
-            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(auth_user, 'read_preprint', Preprint.objects.filter(Q(preprintcontributor__user_id=auth_user.id))))
-                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (no_user_query | admin_user_query | reviews_user_query)
-        else:
-            query = no_user_query
-
-        return query
-
-
-class PreprintFilterMixin(ListFilterMixin, PreprintQueryBaseMixin):
+class PreprintFilterMixin(ListFilterMixin):
     """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
        Subclasses must define `get_default_queryset()`.
@@ -539,6 +513,4 @@ class PreprintFilterMixin(ListFilterMixin, PreprintQueryBaseMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        query = self.build_preprint_permissions_query(auth_user, allow_contribs)
-
-        return base_queryset.filter(query & Q(deleted__isnull=True)).distinct('id', 'created')
+        return Preprint.objects.can_view(base_queryset=base_queryset, user=auth_user, allow_contribs=allow_contribs)

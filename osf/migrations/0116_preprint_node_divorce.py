@@ -48,7 +48,6 @@ def reverse_func(apps, schema_editor):
         preprint.date_last_reported = None
         preprint.reports = {}
 
-        preprint.root_folder = None
         preprint_file = None
         if preprint.primary_file:
             preprint_file = BaseFileNode.objects.get(id=preprint.primary_file.id)
@@ -73,7 +72,7 @@ def reverse_func(apps, schema_editor):
 
     PreprintContributor.objects.all().delete()
     PreprintTags.objects.all().delete()
-    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports', 'root_folder'])
+    bulk_update(preprints, update_fields=['title', 'description', 'creator', 'article_doi', 'is_public', 'region_id', 'deleted', 'migrated', 'modified', 'primary_file', 'spam_status', 'spam_pro_tip', 'spam_data', 'date_last_reported', 'reports'])
     bulk_update(nodes, update_fields=['preprint_file'])
     bulk_update(files)
     # Order is important - remove the preprint root folders after the files have been saved back onto the nodes
@@ -266,26 +265,20 @@ def divorce_preprints_from_nodes_sql(state, schema):
         WHERE P.node_id IS NOT NULL
         AND CT.model = 'preprint' and CT.app_label = 'osf';
 
-        -- Set the preprint's root_folder to be the folder created in the step above
-        UPDATE osf_preprint P
-        SET root_folder_id = F.id
-        FROM osf_basefilenode F, django_content_type CT
-        WHERE P.node_id IS NOT NULL
-        AND F.target_object_id = P.id
-        AND CT.model = 'preprint' AND CT.app_label = 'osf'
-        AND F.target_content_type_id = CT.id;
-
         -- Move the node's preprint file target from the node -> preprint, and
         -- set the file's parent as the preprint's root_folder
-        UPDATE osf_basefilenode F
+        UPDATE osf_basefilenode Fi
         SET target_object_id = P.id,
           target_content_type_id = CT.id,
-          parent_id = P.root_folder_id
-        FROM osf_preprint P, osf_abstractnode N, django_content_type CT
-        WHERE p.node_id = N.id
+          parent_id = Fo.id
+        FROM osf_preprint P, osf_abstractnode N, django_content_type CT, osf_basefilenode Fo
+        WHERE P.node_id = N.id
         and P.node_id IS NOT NULL
-        and N.preprint_file_id = F.id
-        and CT.model = 'preprint' and CT.app_label = 'osf';
+        and N.preprint_file_id = Fi.id
+        and CT.model = 'preprint' and CT.app_label = 'osf'
+        and Fo.is_root = TRUE
+        and Fo.target_object_id = P.id
+        and Fo.target_content_type_id = CT.id;
 
         -- Set the preprint primary file as the node's preprint file
         UPDATE osf_preprint P

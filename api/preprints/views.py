@@ -2,7 +2,7 @@ import re
 
 from rest_framework import generics
 from django.db.models import Q
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError, NotAuthenticated
+from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -51,6 +51,7 @@ from api.preprints.permissions import (
 from api.nodes.permissions import (
     ContributorOrPublic
 )
+from addons.osfstorage.models import OsfStorageFile
 
 
 class PreprintMixin(NodeMixin):
@@ -279,7 +280,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         preprint = self.get_preprint()
         return preprint.preprintcontributor_set.all().include('user__guids')
 
-    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
+    # overrides NodeContributorsList
     def get_serializer_class(self):
         """
         Use NodeContributorDetailSerializer which requires 'id'
@@ -291,18 +292,10 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         else:
             return PreprintContributorsSerializer
 
-    # Overrides BulkDestroyJSONAPIView
-    def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        preprint = self.get_preprint()
-        if len(preprint.visible_contributors) == 1 and preprint.get_visible(instance):
-            raise ValidationError('Must have at least one visible contributor')
-        if not preprint.preprintcontributor_set.filter(user=instance).exists():
-            raise NotFound('User cannot be found in the list of contributors.')
-        removed = preprint.remove_contributor(instance, auth)
-        if not removed:
-            raise ValidationError('Must have at least one registered admin contributor')
+    def get_resource(self):
+        return self.get_preprint()
 
+    # Overrides NodeContributorsList
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permission':
             if operation['op'] != 'eq':
@@ -311,8 +304,15 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
             query_val = operation['value'].lower().strip()
             if query_val not in PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(user__in=self.get_preprint().get_group(query_val).user_set.all())
+            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
         return super(PreprintContributorsList, self).build_query_from_field(field_name, operation)
+
+    # Overrides NodeContributorsList
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'preprint'
+        return context
 
 
 class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
@@ -343,6 +343,12 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
             return preprint.preprintcontributor_set.get(user=user)
         except PreprintContributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_preprint()
+        context['default_email'] = 'preprint'
+        return context
 
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
@@ -440,8 +446,6 @@ class PreprintProvidersList(NodeProvidersList, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-providers'
 
-    ordering = ('-id',)
-
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_preprint())
 
@@ -463,12 +467,9 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-files'
 
-    @property
-    def serializer_class(self):
-        # Preprints will be stored in OSFStorage.
-        return OsfStorageFileSerializer
+    serializer_class = OsfStorageFileSerializer
 
     def get_queryset(self):
         # Restricting queryset so only primary file is returned.
         preprint = self.get_preprint()
-        return preprint.files.filter(id=getattr(preprint.primary_file, 'id', None))
+        return OsfStorageFile.objects.filter(id=getattr(preprint.primary_file, 'id', None))

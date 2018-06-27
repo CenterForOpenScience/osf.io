@@ -447,13 +447,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def published_preprints_queryset(self):
+        Preprint = apps.get_model('osf.Preprint')
         return self.preprints.filter(
-            is_published=True,
-            is_public=True,
-            deleted__isnull=True,
-            primary_file__isnull=False,
-            primary_file__deleted_on__isnull=True).exclude(machine_state=DefaultStates.INITIAL.value).filter(
-            Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+            Preprint.objects.no_user_query)
 
     @property
     def preprint_url(self):

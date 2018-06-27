@@ -24,7 +24,7 @@ from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
-from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
+from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError, PreprintProviderError
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf_tests.utils import MockShareResponse
 from .utils import assert_datetime_equal
@@ -1394,7 +1394,7 @@ class TestSetPreprintFile(OsfTestCase):
             self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
 
     def test_set_supplemental_node_already_has_a_preprint(self):
-        with assert_raises(ValueError):
+        with assert_raises(PreprintProviderError):
             project_two = ProjectFactory(creator=self.preprint.creator)
             preprint = PreprintFactory(project=project_two, provider=self.preprint.provider)
             self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)

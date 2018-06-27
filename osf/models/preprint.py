@@ -6,12 +6,16 @@ import re
 import pytz
 
 from dirtyfields import DirtyFieldsMixin
+from include import IncludeManager
 from django.apps import apps
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
+from guardian.shortcuts import get_objects_for_user
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
@@ -19,7 +23,7 @@ from framework.exceptions import PermissionsError
 from framework.analytics import increment_user_activity_counters
 from framework.celery_tasks.handlers import enqueue_task
 
-from osf.models import Subject, Tag, OSFUser
+from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
 from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
@@ -36,11 +40,10 @@ from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
 
-from osf.models.base import BaseModel, GuidMixin
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
-from addons.osfstorage.mixins import UploadMixin
-from addons.osfstorage.models import OsfStorageFolder, Region
+from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode
 
 from framework.sentry import log_exception
 from osf.exceptions import (
@@ -50,8 +53,41 @@ from osf.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, UploadMixin,
-        BaseModel, Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
+class PreprintManager(IncludeManager):
+    def get_queryset(self):
+        return GuidMixinQuerySet(self.model, using=self._db)
+
+    no_user_query = Q(
+        is_published=True,
+        is_public=True,
+        deleted__isnull=True,
+        primary_file__isnull=False,
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
+        & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+
+    def preprint_permissions_query(self, user=None, allow_contribs=True):
+        if user:
+            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id))))
+            reviews_user_query = Q(is_public=True, provider__in=get_objects_for_user(user, 'view_submissions', PreprintProvider))
+            if allow_contribs:
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id))))
+                query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = (self.no_user_query | admin_user_query | reviews_user_query)
+        else:
+            query = self.no_user_query
+        return query
+
+    def can_view(self, base_queryset=None, user=None, allow_contribs=True):
+        if base_queryset is None:
+            base_queryset = self
+        return base_queryset.filter(self.preprint_permissions_query(user=user, allow_contribs=allow_contribs) & Q(deleted__isnull=True)).distinct('id', 'created')
+
+
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,
+        Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
+
+    objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
@@ -134,6 +170,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
+
+    @property
+    def root_folder(self):
+        try:
+            return OsfStorageFolder.objects.get(name='', target_object_id=self.id, target_content_type_id=ContentType.objects.get_for_model(Preprint).id, is_root=True)
+        except BaseFileNode.DoesNotExist:
+            return None
 
     @property
     def visible_contributors(self):
@@ -916,12 +959,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Up
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):
-    if instance.root_folder_id:
+    if instance.root_folder:
         return
-
     # Note: The "root" node will always be "named" empty string
     root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
     root_folder.save()
-
-    instance.__class__.objects.filter(id=instance.id).update(root_folder=root_folder)
-    instance.refresh_from_db()

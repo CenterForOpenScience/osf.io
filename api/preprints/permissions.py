@@ -45,9 +45,7 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
         if request.method in permissions.SAFE_METHODS:
             return super(PreprintPublishedOrWrite, self).has_object_permission(request, view, obj)
         else:
-            if request.method == 'DELETE':
-                return obj.has_permission(auth.user, osf_permissions.ADMIN)
-            elif not obj.has_permission(auth.user, osf_permissions.WRITE):
+            if not obj.has_permission(auth.user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='User must have admin or write permissions to the preprint.')
             return True
 

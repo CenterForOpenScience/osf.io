@@ -7,10 +7,9 @@ from math import ceil
 import logging
 
 from django.db import connection
-from django.db.models import Q
+from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import helpers
-from framework.database import paginated
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -26,7 +25,6 @@ from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.search import update_institution, bulk_update_collected_metadata
-from osf.utils.workflows import DefaultStates
 
 
 logger = logging.getLogger(__name__)
@@ -97,17 +95,14 @@ def migrate_nodes(index, delete, increment=10000):
 
 def migrate_preprints(index, delete):
     logger.info('Migrating preprints to index: {}'.format(index))
-    preprint_query = Q(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-    total = Preprint.objects.filter(preprint_query).count()
+    preprints = Preprint.objects.can_view()
     increment = 100
-    total_pages = (total // increment) + 1
-    pages = paginated(Preprint, query=preprint_query, increment=increment, each=False, include=['preprintcontributor__user__guids'])
-    for page_number, page in enumerate(pages):
-        logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
-        Preprint.bulk_update_search(page, index=index)
+    paginator = Paginator(preprints, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        Preprint.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
-    logger.info('Preprints migrated: {}'.format(total))
+    logger.info('Preprints migrated: {}'.format(preprints.count()))
     if delete:
         logger.info('Preparing to delete old preprint documents')
         max_pid = Preprint.objects.last().id
@@ -122,20 +117,15 @@ def migrate_preprints(index, delete):
 
 def migrate_preprint_files(index, delete):
     logger.info('Migrating preprint files to index: {}'.format(index))
-    preprint_query = Q(is_published=True, is_public=True, deleted__isnull=True, primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-    valid_preprints = Preprint.objects.filter(preprint_query)
+    valid_preprints = Preprint.objects.can_view()
     valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
-    total = valid_preprint_files.count()
-    increment = 100
-    total_pages = (total // increment) + 1
-    pages = paginated(BaseFileNode, query=Q(preprint__in=valid_preprints), increment=increment, each=False)
-    for page_number, page in enumerate(pages):
-        logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
-        for file in page:
+    paginator = Paginator(valid_preprint_files, 500)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        for file in paginator.page(page_number).object_list:
             search.update_file(file, index=index)
 
-    logger.info('Preprint files migrated: {}'.format(total))
+    logger.info('Preprint files migrated: {}'.format(valid_preprint_files.count()))
     if delete:
         preprint_files = BaseFileNode.objects.filter(target_content_type=ContentType.objects.get_for_model(Preprint))
         invalid_preprint_files = preprint_files.exclude(preprint__in=valid_preprints)

@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 
-from osf.models import SpamStatus, NodeLog
+from osf.models import SpamStatus
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
 from osf.models.admin_log_entry import update_admin_log, REINDEX_ELASTIC, REINDEX_SHARE, PREPRINT_REMOVED, PREPRINT_RESTORED
 
@@ -189,12 +189,11 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
                 preprint.deleted = None
                 flag = PREPRINT_RESTORED
                 message = 'Preprint {} restored.'.format(preprint.pk)
-                osf_flag = NodeLog.CREATED
             else:
                 preprint.deleted = timezone.now()
                 flag = PREPRINT_REMOVED
                 message = 'Preprint {} removed.'.format(preprint.pk)
-                osf_flag = NodeLog.DELETED
+                osf_flag = PreprintLog.DELETED
             preprint.save()
             if flag is not None:
                 update_admin_log(
