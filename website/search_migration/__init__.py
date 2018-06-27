@@ -321,7 +321,7 @@ WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesn
   AND NOT (N.id IN  -- node.archiving
            (SELECT AJ.dst_node_id  -- May need to be made recursive as AJ table grows
             FROM osf_archivejob AJ
-            WHERE (AJ.status != 'FAILURE' AND AJ.status != 'SUCCESS'
+            WHERE (AJ.status != 'SUCCESS'
                    AND AJ.dst_node_id IS NOT NULL)))
   AND id > {page_start}
   AND id <= {page_end}
