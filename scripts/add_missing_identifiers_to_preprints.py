@@ -27,11 +27,6 @@ def add_identifiers_to_preprints(dry_run=True):
 
         if not dry_run:
             identifiers = request_identifiers(preprint)
-            preprint.set_identifier_values(doi=identifiers['doi'])
-            preprint.save()
-
-            doi = preprint.get_identifier('doi')
-            assert preprint._id.upper() in doi.value
             identifiers_added += 1
 
             logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
