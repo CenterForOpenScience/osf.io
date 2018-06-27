@@ -47,7 +47,7 @@ class TestNodeSerializer:
         assert attributes['registration'] == node.is_registration
         assert attributes['fork'] == node.is_fork
         assert attributes['collection'] == node.is_collection
-        assert 'analytics_key' not in attributes
+        assert attributes['analytics_key'] == node.keenio_read_key
 
         # Relationships
         relationships = data['relationships']

@@ -144,7 +144,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
                 assert_true(
                     isinstance(reg_field, base_serializers.HideIfWithdrawal) or
                     isinstance(reg_field, base_serializers.ShowIfVersion) or
-                    isinstance(reg_field, base_serializers.ShowIfAdminScope)
+                    isinstance(reg_field, base_serializers.ShowIfAdminScopeOrAnonymous)
                 )
 
     def test_hide_if_registration_fields(self):
