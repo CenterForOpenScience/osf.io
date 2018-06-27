@@ -136,7 +136,8 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'},
     ))
 
     node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
