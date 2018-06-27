@@ -56,9 +56,7 @@ def registration_with_children_approved_url(registration_with_children_approved)
 class TestRegistrationsChildrenList:
 
     def test_registrations_children_list(self, user, app, registration_with_children, registration_with_children_url):
-
-        component_one = registration_with_children.node_relations.all()[0].child
-        component_two = registration_with_children.node_relations.all()[1].child
+        component_one, component_two = registration_with_children.nodes
 
         res = app.get(registration_with_children_url, auth=user.auth)
         ids = [node['id'] for node in res.json['data']]
@@ -69,8 +67,7 @@ class TestRegistrationsChildrenList:
         assert component_two._id in ids
 
     def test_return_registrations_list_no_auth_approved(self, user, app, registration_with_children_approved, registration_with_children_approved_url):
-        component_one = registration_with_children_approved.node_relations.all()[0].child
-        component_two = registration_with_children_approved.node_relations.all()[1].child
+        component_one, component_two = registration_with_children_approved.nodes
 
         res = app.get(registration_with_children_approved_url)
         ids = [node['id'] for node in res.json['data']]
@@ -91,9 +88,7 @@ class TestRegistrationsChildrenList:
 class TestRegistrationChildrenListFiltering:
 
     def test_registration_child_filtering(self, app, user, registration_with_children):
-
-        component_one = registration_with_children.node_relations.all()[0].child
-        component_two = registration_with_children.node_relations.all()[1].child
+        component_one, component_two = registration_with_children.nodes
 
         url = '/{}registrations/{}/children/?filter[title]={}'.format(
             API_BASE,
