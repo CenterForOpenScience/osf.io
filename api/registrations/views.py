@@ -262,8 +262,9 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     def get_queryset(self):
         registration = self.get_node()
+        auth = get_user_auth(self.request)
         registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-modified')
+        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(auth.user).order_by('-modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
