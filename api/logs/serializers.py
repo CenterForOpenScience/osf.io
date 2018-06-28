@@ -37,7 +37,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
     def get_node_title(self, obj):
         user = self.context['request'].user
         node_title = obj['node']['title']
-        node = AbstractNode.load(obj['node']['_id'])
+        node = AbstractNode.load(obj['node']['_id']) or Preprint.load(obj['node']['_id'])
         if not user.is_authenticated:
             if node.is_public:
                 return node_title

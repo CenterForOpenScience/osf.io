@@ -27,6 +27,7 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework import status
+from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
@@ -2260,6 +2261,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         metadata['path'] = metadata['path'].lstrip('/')
 
         return node_addon.create_waterbutler_log(auth, action, metadata)
+
+    def can_view_files(self, auth=None):
+        return self.can_view(auth)
+
+    @property
+    def file_read_scope(self):
+        return oauth_scopes.CoreScopes.NODE_FILE_READ
+
+    @property
+    def file_write_scope(self):
+        return oauth_scopes.CoreScopes.NODE_FILE_WRITE
 
 
 class Node(AbstractNode):

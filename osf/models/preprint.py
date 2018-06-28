@@ -22,6 +22,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.analytics import increment_user_activity_counters
 from framework.celery_tasks.handlers import enqueue_task
+from framework.auth import oauth_scopes
 
 from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
@@ -177,6 +178,24 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return OsfStorageFolder.objects.get(name='', target_object_id=self.id, target_content_type_id=ContentType.objects.get_for_model(Preprint).id, is_root=True)
         except BaseFileNode.DoesNotExist:
             return None
+
+    def can_view_files(self, auth=None):
+        if auth and auth.user:
+            return ((self.verified_publishable and not self.is_retracted) or
+                (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
+                self.has_permission(auth.user, 'admin') or
+                (self.is_contributor(auth.user) and self.has_submitted_preprint)
+            )
+        else:
+            return self.verified_publishable and not self.is_retracted
+
+    @property
+    def file_read_scope(self):
+        return oauth_scopes.CoreScopes.PREPRINT_FILE_READ
+
+    @property
+    def file_write_scope(self):
+        return oauth_scopes.CoreScopes.PREPRINT_FILE_WRITE
 
     @property
     def visible_contributors(self):
@@ -763,16 +782,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return self.verified_publishable
 
         return (self.verified_publishable or
-            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, 'admin') or
-            (self.is_contributor(auth.user) and self.has_submitted_preprint)
-        )
-
-    def can_view_preprint_files(self, auth):
-        if not auth.user:
-            return self.verified_publishable and not self.is_retracted
-
-        return ((self.verified_publishable and not self.is_retracted) or
             (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
             self.has_permission(auth.user, 'admin') or
             (self.is_contributor(auth.user) and self.has_submitted_preprint)

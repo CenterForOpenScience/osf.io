@@ -157,32 +157,20 @@ def check_access(node, auth, action, cas_resp):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if cas_resp:
-        if isinstance(node, Preprint):
-            if permission == 'read':
-                if node.verified_publishable and not node.is_retracted:
-                    return True
-                required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_READ
-            else:
-                required_scope = oauth_scopes.CoreScopes.PREPRINT_FILE_WRITE
+        if permission == 'read':
+            if node.can_view_files(auth=None):
+                return True
+            required_scope = node.file_read_scope
         else:
-            if permission == 'read':
-                if node.is_public:
-                    return True
-                required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
-            else:
-                required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+            required_scope = node.file_write_scope
 
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
     if permission == 'read':
-        if isinstance(node, Preprint):
-            if node.can_view_preprint_files(auth):
-                return True
-        else:
-            if node.can_view(auth):
-                return True
+        if node.can_view_files(auth):
+            return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
         if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
@@ -389,20 +377,15 @@ def create_waterbutler_log(payload, **kwargs):
                     action = LOG_ACTION_MAP['rename']
 
             destination_node = node  # For clarity
-            source_node = AbstractNode.load(payload['source']['nid'])
-            if not source_node:
-                source_node = Preprint.load(payload['metadata'].get('nid'))
+            source_node = AbstractNode.load(src['nid']) or Preprint.load(src['nid'])
 
             # We return provider fullname so we need to load node settings, if applicable
+            source = None
             if hasattr(source_node, 'get_addon'):
                 source = source_node.get_addon(payload['source']['provider'])
-            else:
-                source = None
-
+            destination = None
             if hasattr(node, 'get_addon'):
                 destination = node.get_addon(payload['destination']['provider'])
-            else:
-                destination = None
 
             payload['source'].update({
                 'materialized': payload['source']['materialized'].lstrip('/'),
@@ -648,7 +631,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if isinstance(target, AbstractNode):
+    if hasattr(target, 'get_addon'):
+
         node_addon = target.get_addon(provider)
 
         if not isinstance(node_addon, BaseStorageAddon):

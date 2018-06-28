@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from django.utils import timezone
@@ -1128,8 +1129,9 @@ class TestNodeFiltering:
         assert 'One' in public_project_two.description
         assert public_project_three._id not in ids
 
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
     def test_withdrawn_preprint_in_preprint_true_filter_results(
-            self, app, user_one, user_two):
+            self, mock_change_identifier, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
         project_one.add_contributor(user_two, ['read', 'write'], save=True)
@@ -1179,8 +1181,9 @@ class TestNodeFiltering:
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
     def test_withdrawn_preprint_in_preprint_false_filter_results(
-            self, app, user_one, user_two):
+            self, mock_change_identifier, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
         project_one.add_contributor(user_two, ['read', 'write'], save=True)

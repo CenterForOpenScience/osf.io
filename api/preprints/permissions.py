@@ -106,6 +106,6 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
         preprint = self.load_resource(context, view)
 
         if preprint.is_retracted and request.method in permissions.SAFE_METHODS:
-            return preprint.can_view_preprint_files(get_user_auth(request))
+            return preprint.can_view_files(get_user_auth(request))
 
         return super(PreprintFilesPermissions, self).has_object_permission(request, view, preprint)
