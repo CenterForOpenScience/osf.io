@@ -8,7 +8,7 @@ Run nightly, this script will approve any embargo termination
 requests for which not all admins have responded within the 48 hour window.
 Makes the Embargoed Node and its components public.
 """
-
+import sys
 import logging
 
 import django
@@ -39,7 +39,13 @@ def main():
     pending_embargo_termination_requests = get_pending_embargo_termination_requests()
     count = 0
     for request in pending_embargo_termination_requests:
-        registration = models.Registration.objects.get(embargo_termination_approval=request)
+        try:
+            registration = models.Registration.objects.get(embargo_termination_approval=request)
+        except models.Registration.DoesNotExist:
+            logger.error(
+                'EmbargoTerminationApproval {} is not attached to a registration'.format(request._id)
+            )
+            continue
         if not registration.is_embargoed:
             logger.warning("Registration {0} associated with this embargo termination request ({0}) is not embargoed.".format(
                 registration._id,
@@ -71,3 +77,6 @@ def run_main(dry_run=True):
         main()
         if dry_run:
             raise RuntimeError("Dry run, rolling back transaction")
+
+if __name__ == '__main__':
+    run_main(dry_run='--dry' in sys.argv)
