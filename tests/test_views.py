@@ -56,6 +56,7 @@ from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
+from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,

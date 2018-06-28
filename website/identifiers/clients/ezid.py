@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+import logging
 import furl
 import requests
+import waffle
 
 from website import settings
 from website.identifiers import utils
 from website.util.client import BaseClient
 from website.identifiers.clients import DataCiteClient, exceptions
 
+logger = logging.getLogger(__name__)
+
+EZID_SWITCH = 'ezid'
 
 class EzidClient(BaseClient, DataCiteClient):
     """Inherits _make_request from BaseClient"""
@@ -33,6 +38,9 @@ class EzidClient(BaseClient, DataCiteClient):
         return utils.from_anvl(resp.content.strip('\n'))
 
     def create_identifier(self, object, category):
+        if not waffle.switch_is_active(EZID_SWITCH):
+            logger.info('ezid waffle switch is off. Doing nothing...')
+            return None
         if category in ['doi', 'ark']:
             metadata = self.build_metadata(object)
             doi = self.build_doi(object)
@@ -55,6 +63,9 @@ class EzidClient(BaseClient, DataCiteClient):
             raise NotImplementedError('Create identifier method is not supported for category {}'.format(category))
 
     def update_identifier(self, object, category):
+        if not waffle.switch_is_active(EZID_SWITCH):
+            logger.info('ezid waffle switch is off. Doing nothing...')
+            return None
         metadata = self.build_metadata(object)
         status = self.get_status(object)
         metadata['_status'] = status

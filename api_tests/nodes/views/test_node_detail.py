@@ -23,6 +23,8 @@ from osf_tests.factories import (
     IdentifierFactory,
     InstitutionFactory,
     SubjectFactory,
+    ForkFactory,
+    WithdrawnRegistrationFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -307,6 +309,95 @@ class TestNodeDetail:
         url = url_public + '?version=2.7'
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
+
+    def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
+        url = url_public
+        res = app.get(url)
+        assert res.json['meta'].get('templated_by_count', False) is False
+        url = url + '?related_counts=true'
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 0
+        ProjectFactory(title='template copy', template_node=project_public, creator=user)
+        project_public.reload()
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 1
+
+    def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
+        url = url_public + '?related_counts=true'
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        registration = RegistrationFactory(project=project_private, creator=user)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
+
+        project_private.is_deleted = True
+        project_private.save()
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
+
+        WithdrawnRegistrationFactory(registration=registration, user=user)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+    def test_node_shows_correct_forks_count_including_private_forks(self, app, user, project_private, url_private, user_two):
+        project_private.add_contributor(
+            user_two,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(user)
+        )
+        url = url_private + '?related_counts=true'
+        forks_url = url_private + 'forks/'
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 0
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+        ForkFactory(project=project_private, user=user_two)
+        project_private.reload()
+
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 1
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+        ForkFactory(project=project_private, user=user)
+        project_private.reload()
+
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 2
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 1
 
 
 @pytest.mark.django_db

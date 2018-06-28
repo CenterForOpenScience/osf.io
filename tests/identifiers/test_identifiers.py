@@ -2,6 +2,7 @@
 from nose.tools import *  # noqa
 
 from django.db import IntegrityError
+from waffle.testutils import override_switch
 
 from osf_tests.factories import (
     SubjectFactory,

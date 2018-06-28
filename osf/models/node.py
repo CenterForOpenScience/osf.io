@@ -10,6 +10,7 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
@@ -140,7 +141,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
-        if user is not None:
+        if user is not None and not isinstance(user, AnonymousUser):
             if isinstance(user, OSFUser):
                 user = user.pk
             if not isinstance(user, int):
@@ -1349,19 +1350,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
-
-            try:
+            contributor = get_user(email=email)
+            if contributor:
+                if self.contributor_set.filter(user=contributor).exists():
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                    send_email=send_email, permissions=permissions, save=True)
+            else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
                     send_email=send_email, permissions=permissions,
                     visible=bibliographic, save=True
                 )
-            except ValidationError:
-                contributor = get_user(email=email)
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     send_email=send_email, permissions=permissions, save=True)
 
         auth.user.email_last_sent = timezone.now()
         auth.user.save()
