@@ -35,7 +35,11 @@ LIVE_RELOAD_DOMAIN = 'http://{}:4200'.format(EMBER_DOMAIN)  # Change port for th
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
         'server': 'http://{}:4200/'.format(EMBER_DOMAIN),
-        'path': '/ember_osf_web/'
+        'path': '/ember_osf_web/',
+        'routes': [
+            'collections',
+            'handbook',
+        ],
     },
     'preprints': {
         'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
