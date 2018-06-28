@@ -2,7 +2,7 @@
 
 <%def name="content()">
 <tr>
-  <td style="border-collapse: collapse;">
+  <td style="border-collapse: collapse; line-height: 1.5;">
     Dear ${user.fullname},<br>
     <br>
     We're writing to let you know about an improvement to the OSF Preprints family of preprint services.
