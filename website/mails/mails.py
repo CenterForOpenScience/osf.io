@@ -426,3 +426,8 @@ CROSSREF_CSV = Mail(
     'crossref_csv',
     subject='[auto] Here is a CSV of DOIs related to crossref: ${csv_type}'
 )
+
+PREPRINT_DOI_CHANGE = Mail(
+    'preprint_doi_change',
+    subject='Improvements to OSF Preprints DOIs'
+)
