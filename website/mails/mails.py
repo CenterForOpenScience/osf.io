@@ -416,3 +416,8 @@ ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
     subject='Your access request to an OSF project has been declined'
 )
+
+PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
+    'preprint_withdrawal_request_granted',
+    subject='Your ${preprint.provider.preprint_word} has been withdrawn',
+)

@@ -246,7 +246,7 @@ class PreprintRequestMachine(BaseMachine):
         elif ev.event.name == DefaultTriggers.SUBMIT.value:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
-                self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+                self.action.target.run_accept(user=self.machineable.creator, comment=self.action.comment)
         elif ev.event.name == DefaultTriggers.ACCEPT.value:
             # If moderator accepts the withdrawal request
             self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
@@ -262,8 +262,20 @@ class PreprintRequestMachine(BaseMachine):
         pass
 
     def notify_accept_reject(self, ev):
-        # TODO: [IN-331]
-        pass
+        if ev.event.name == DefaultTriggers.ACCEPT.value:
+            context = self.get_context()
+            for contributor in self.machineable.target.node.contributors.all():
+                context['is_submitter'] = context['requester'].username == contributor.username
+                context['contributor'] = contributor
+                mails.send_mail(
+                    contributor.username,
+                    mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
+                    mimetype='html',
+                    **context
+                )
+        elif ev.event.name == DefaultTriggers.REJECT.value:
+            # Preprint withdrawal request rejection email is not currently needed
+            pass
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event
