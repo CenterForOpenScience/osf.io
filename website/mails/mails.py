@@ -416,3 +416,8 @@ ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
     subject='Your access request to an OSF project has been declined'
 )
+
+PREPRINT_DOI_CHANGE = Mail(
+    'preprint_doi_change',
+    subject='Improvements to OSF Preprints DOIs'
+)
