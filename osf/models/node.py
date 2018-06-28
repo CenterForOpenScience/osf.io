@@ -10,6 +10,7 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
@@ -139,7 +140,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
-        if user is not None:
+        if user is not None and not isinstance(user, AnonymousUser):
             if isinstance(user, OSFUser):
                 user = user.pk
             if not isinstance(user, int):
