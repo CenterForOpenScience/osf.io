@@ -149,6 +149,7 @@ def get_globals():
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
         'footer_links': settings.FOOTER_LINKS,
+        'waffle': waffle,
     }
 
 

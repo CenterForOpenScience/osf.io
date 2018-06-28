@@ -4,6 +4,7 @@ import responses
 from nose.tools import *  # noqa
 
 from django.db import IntegrityError
+from waffle.testutils import override_switch
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
@@ -208,6 +209,7 @@ class TestIdentifierViews(OsfTestCase):
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
     @responses.activate
+    @override_switch('ezid', active=True)
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_not_exists(self):
@@ -241,6 +243,7 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.status_code, 201)
 
     @responses.activate
+    @override_switch('ezid', active=True)
     @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
     @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):

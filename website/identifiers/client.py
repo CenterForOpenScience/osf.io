@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import furl
+import logging
 
+import furl
+import waffle
 from website.util.client import BaseClient
 
 from . import utils
+logger = logging.getLogger(__name__)
 
+EZID_SWITCH = 'ezid'
 
 class EzidClient(BaseClient):
 
@@ -38,6 +42,9 @@ class EzidClient(BaseClient):
         return utils.from_anvl(resp.content.strip('\n'))
 
     def create_identifier(self, identifier, metadata=None):
+        if not waffle.switch_is_active(EZID_SWITCH):
+            logger.info('ezid waffle switch is off. Doing nothing...')
+            return None
         resp = self._make_request(
             'PUT',
             self._build_url('id', identifier),
@@ -47,6 +54,9 @@ class EzidClient(BaseClient):
         return utils.from_anvl(resp.content)
 
     def mint_identifier(self, shoulder, metadata=None):
+        if not waffle.switch_is_active(EZID_SWITCH):
+            logger.info('ezid waffle switch is off. Doing nothing...')
+            return None
         resp = self._make_request(
             'POST',
             self._build_url('shoulder', shoulder),
@@ -56,6 +66,9 @@ class EzidClient(BaseClient):
         return utils.from_anvl(resp.content)
 
     def change_status_identifier(self, status, identifier, metadata=None):
+        if not waffle.switch_is_active(EZID_SWITCH):
+            logger.info('ezid waffle switch is off. Doing nothing...')
+            return None
         metadata['_status'] = status
         resp = self._make_request(
             'POST',
