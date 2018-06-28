@@ -187,7 +187,7 @@ def s3_modify_user_account(auth, **kwargs):
     port = port if port is not None else account.port
     access_key = access_key if access_key else account.oauth_key
     secret_key = secret_key if secret_key else account.oauth_secret
-    encrypted = encrypted if encrypted else account.encrypted
+    encrypted = encrypted if encrypted is not None else account.encrypted
 
     # Get fresh user info from the provider - Need to demonstrate that the new
     # credentials actually work.
