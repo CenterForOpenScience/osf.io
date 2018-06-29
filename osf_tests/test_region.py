@@ -2,7 +2,6 @@ import pytest
 
 from framework.auth import Auth
 
-from addons.osfstorage.models import Region
 from osf.models import MetaSchema, Registration
 from osf_tests.factories import (
     AuthUserFactory,
