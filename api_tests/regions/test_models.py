@@ -2,6 +2,7 @@ import pytest
 
 from framework.auth import Auth
 
+from addons.osfstorage.models import Region
 from osf.models import MetaSchema, Registration
 from osf_tests.factories import (
     AuthUserFactory,
@@ -27,15 +28,21 @@ class TestRegion:
 
         # components nested five deep
         for _ in range(0, 5):
-            region = RegionFactory()
             parent_node = ProjectFactory(creator=user, parent=parent_node)
-            parent_node.get_addon('osfstorage').region = region
+            addon = parent_node.get_addon('osfstorage')
+            addon.region = RegionFactory()
+            addon.save()
 
         # root project has three direct children
         for _ in range(0, 2):
-            region = RegionFactory()
             parent_node = ProjectFactory(creator=user, parent=root_node)
-            parent_node.get_addon('osfstorage').region = region
+            addon = parent_node.get_addon('osfstorage')
+            addon.region = RegionFactory()
+            addon.save()
+
+        addon = root_node.get_addon('osfstorage')
+        addon.region = RegionFactory()
+        addon.save()
 
         return root_node
 
@@ -50,6 +57,9 @@ class TestRegion:
         project_with_different_regions.register_node(schema, Auth(user=user), '41-33')
 
         regs = Registration.objects.all()
+
+        # Sanity check all regions are different from each other
+        assert regs.count() == len({reg.get_addon('osfstorage').region._id for reg in regs})
 
         # All registrations should have the same region as the node they are registered from.
         assert all(reg.registered_from.get_addon('osfstorage').region ==
