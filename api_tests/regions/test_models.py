@@ -3,10 +3,10 @@ import pytest
 from framework.auth import Auth
 
 from osf.models import MetaSchema, Registration
-from addons.osfstorage.tests.factories import RegionFactory
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
+    RegionFactory
 )
 
 @pytest.mark.django_db
