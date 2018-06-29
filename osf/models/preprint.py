@@ -106,7 +106,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'deleted',
         'subjects',
         '_contributors'
-
     }
 
     # Setting for ContributorMixin
@@ -179,15 +178,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         except BaseFileNode.DoesNotExist:
             return None
 
-    def can_view_files(self, auth=None):
-        if auth and auth.user:
-            return ((self.verified_publishable and not self.is_retracted) or
-                (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-                self.has_permission(auth.user, 'admin') or
-                (self.is_contributor(auth.user) and self.has_submitted_preprint)
-            )
-        else:
-            return self.verified_publishable and not self.is_retracted
+    @property
+    def contributor_email_template(self):
+        return 'preprint'
 
     @property
     def file_read_scope(self):
@@ -373,6 +366,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             increment_user_activity_counters(user._primary_key, action, log.created.isoformat())
 
         return log
+
+    def can_view_files(self, auth=None):
+        if auth and auth.user:
+            return ((self.verified_publishable and not self.is_retracted) or
+                (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
+                self.has_permission(auth.user, 'admin') or
+                (self.is_contributor(auth.user) and self.has_submitted_preprint)
+            )
+        else:
+            return self.verified_publishable and not self.is_retracted
 
     # Overrides ContributorMixin
     def has_permission(self, user, permission):
@@ -845,10 +848,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         for name in self.groups.keys():
             if user.groups.filter(name=self.get_group(name)).exists():
                 self.remove_permission(user, name)
-
-    @property
-    def contributor_email_template(self):
-        return 'preprint'
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin

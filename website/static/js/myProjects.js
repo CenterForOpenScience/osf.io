@@ -503,6 +503,7 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
+                // Hiding preprint logs for now
                 if (item.data.type === 'preprints') {
                     return [];
                 }

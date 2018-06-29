@@ -153,10 +153,6 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
     to_visit.extend(format_contributor(preprint_graph, user, preprint.get_visible(user), i) for i, user in enumerate(preprint.contributors))
 
-    if preprint.node:
-        to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))
-                    for institution in preprint.node.affiliated_institutions.values_list('name', flat=True))
-
     visited = set()
     to_visit.extend(preprint_graph.get_related())
 

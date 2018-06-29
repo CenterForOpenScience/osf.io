@@ -28,6 +28,7 @@ from osf.models import Institution
 from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import CollectedGuidMetadata
+from osf.models import SpamStatus
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -464,7 +465,7 @@ def update_node(node, index=None, bulk=False, async=False):
         update_file(file_, index=index)
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
+    if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -482,7 +483,7 @@ def update_preprint(preprint, index=None, bulk=False, async=False):
         update_file(file_, index=index)
 
     is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not preprint.verified_publishable or (preprint.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
+    if not preprint.verified_publishable or preprint.is_spam or (preprint.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
         delete_doc(preprint._id, preprint, category='preprint', index=index)
     else:
         category = 'preprint'
@@ -492,7 +493,7 @@ def update_preprint(preprint, index=None, bulk=False, async=False):
         else:
             client().index(index=index, doc_type=category, id=preprint._id, body=elastic_document, refresh=True)
 
-def bulk_update_nodes(serialize, nodes, index=None):
+def bulk_update_nodes(serialize, nodes, index=None, category=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
@@ -509,7 +510,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 '_op_type': 'update',
                 '_index': index,
                 '_id': node._id,
-                '_type': get_doctype_from_node(node),
+                '_type': category or get_doctype_from_node(node),
                 'doc': serialized,
                 'doc_as_upsert': True,
             })
@@ -650,7 +651,8 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
     ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False):
+    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
+            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         client().delete(
             index=index,
             doc_type='file',
@@ -661,7 +663,8 @@ def update_file(file_, index=None, delete=False):
         return
 
     if isinstance(target, Preprint):
-        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_:
+        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_ or target.is_spam or (
+                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
             client().delete(
                 index=index,
                 doc_type='file',

@@ -695,34 +695,3 @@ WHERE is_active != TRUE
   AND id <= {page_end}
 LIMIT 1;
 """
-
-JSON_DELETE_PREPRINTS_SQL = """
-SELECT json_agg(
-    json_build_object(
-        '_type', 'preprint'
-        , '_index', '{index}'
-        , '_id', PREPRINT_GUID._id
-        , '_op_type', 'delete'
-    )
-)
-FROM osf_preprint as P
-    LEFT JOIN LATERAL (
-        SELECT _id
-        FROM osf_guid
-        WHERE object_id = P.id
-        AND content_type_id = ANY (SELECT id
-                                   FROM django_content_type
-                                   WHERE model='preprint')
-       LIMIT 1
-       ) PREPRINT_GUID ON TRUE
-   LEFT OUTER JOIN osf_basefilenode F ON (P.primary_file_id = F.id)
-WHERE P.is_published = FALSE
-    OR P.is_public = FALSE
-    OR P.primary_file_id IS NULL
-    OR F.deleted_on IS NOT NULL
-    OR P.machine_state = 'initial'
-    OR P.deleted IS NOT NULL
-    AND P.id > {page_start}
-    AND P.id <= {page_end}
-LIMIT 1;
-"""

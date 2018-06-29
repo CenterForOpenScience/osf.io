@@ -3,12 +3,11 @@
 '''Migration script for Search-enabled Models.'''
 from __future__ import absolute_import
 from math import ceil
-
+import functools
 import logging
 
 from django.db import connection
 from django.core.paginator import Paginator
-from django.contrib.contenttypes.models import ContentType
 from elasticsearch import helpers
 
 import website.search.search as search
@@ -16,8 +15,7 @@ from website.search.elastic_search import client
 from website.search_migration import (
     JSON_UPDATE_NODES_SQL, JSON_DELETE_NODES_SQL,
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
-    JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL,
-    JSON_DELETE_PREPRINTS_SQL)
+    JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
 from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectedGuidMetadata
 from website import settings
@@ -95,43 +93,22 @@ def migrate_nodes(index, delete, increment=10000):
 
 def migrate_preprints(index, delete):
     logger.info('Migrating preprints to index: {}'.format(index))
-    preprints = Preprint.objects.can_view()
+    preprints = Preprint.objects.all()
     increment = 100
     paginator = Paginator(preprints, increment)
     for page_number in paginator.page_range:
         logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
         Preprint.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
-    logger.info('Preprints migrated: {}'.format(preprints.count()))
-    if delete:
-        logger.info('Preparing to delete old preprint documents')
-        max_pid = Preprint.objects.last().id
-        total_preprints = sql_migrate(
-            index,
-            JSON_DELETE_PREPRINTS_SQL,
-            max_pid,
-            increment,
-            es_args={'raise_on_error': False},  # ignore 404s
-            spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
-        logger.info('{} preprints marked deleted'.format(total_preprints))
-
 def migrate_preprint_files(index, delete):
     logger.info('Migrating preprint files to index: {}'.format(index))
-    valid_preprints = Preprint.objects.can_view()
+    valid_preprints = Preprint.objects.all()
     valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
     paginator = Paginator(valid_preprint_files, 500)
+    serialize = functools.partial(search.update_file, index=index)
     for page_number in paginator.page_range:
         logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
-        for file in paginator.page(page_number).object_list:
-            search.update_file(file, index=index)
-
-    logger.info('Preprint files migrated: {}'.format(valid_preprint_files.count()))
-    if delete:
-        preprint_files = BaseFileNode.objects.filter(target_content_type=ContentType.objects.get_for_model(Preprint))
-        invalid_preprint_files = preprint_files.exclude(preprint__in=valid_preprints)
-
-        for file in invalid_preprint_files:
-            search.update_file(file, index=index)
+        search.bulk_update_nodes(serialize, paginator.page(page_number).object_list, index=index, category='file')
 
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))

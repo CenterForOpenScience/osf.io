@@ -449,8 +449,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def published_preprints_queryset(self):
         Preprint = apps.get_model('osf.Preprint')
-        return self.preprints.filter(
-            Preprint.objects.no_user_query)
+        return self.preprints.filter(Preprint.objects.no_user_query)
 
     @property
     def preprint_url(self):
@@ -1050,7 +1049,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def order_by_contributor_field(self):
         return 'contributor___order'
 
-    def spam_fields(self, saved_fields):
+    def get_spam_fields(self, saved_fields):
         return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 

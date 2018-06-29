@@ -3,7 +3,7 @@
     <p>Hello ${recipient.fullname},</p>
         <p>
             The ${reviewable.provider.preprint_word}
-            <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
+            <a href="${reviewable.absolute_url}">${reviewable.title}</a>
             has been successfully re-submitted to ${reviewable.provider.name}.
         </p>
         <p>
@@ -23,8 +23,8 @@
             <a href="${domain + 'settings/notifications/'}">user settings</a>.
         </p>
         <p>
-            If you have been erroneously associated with "${reviewable.node.title}", then you
-            may visit the project's "Contributors" page and remove yourself as a contributor.
+            If you have been erroneously associated with "${reviewable.title}", then you
+            may visit the project's "Contributors" page and ≈.
         </p>
         <p>
             For more information about ${reviewable.provider.name}, visit
@@ -41,4 +41,3 @@
         </p>
         <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
 </div>
-

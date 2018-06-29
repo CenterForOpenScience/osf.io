@@ -1508,7 +1508,7 @@ class SpamOverrideMixin(SpamMixin):
             else:
                 content.append((getattr(self, field, None) or '').encode('utf-8'))
         if self.all_tags.exists():
-            content.extend(map(lambda name: name.encode('utf-8'), self.node.all_tags.values_list('name', flat=True)))
+            content.extend(map(lambda name: name.encode('utf-8'), self.all_tags.values_list('name', flat=True)))
         if not content:
             return None
         return ' '.join(content)

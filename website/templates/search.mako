@@ -278,7 +278,7 @@
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="preprint">
-        <h4><a data-bind="attr: {href: url}, text: title"></a></h4>
+        <h4><a data-bind="attr: {href: url}, text: title"></a> (Preprint)</h4>
         <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
         <!-- ko if: contributors.length > 0 -->
         <p>
@@ -289,6 +289,7 @@
                 <!-- ko ifnot: url -->
                     <span data-bind="text: fullname"></span>
                 <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </span>
         </p>
         <!-- /ko -->

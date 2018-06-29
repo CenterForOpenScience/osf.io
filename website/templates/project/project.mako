@@ -341,7 +341,7 @@
                                 ${node['preprint_state'].capitalize()}
                             % endif
                         </b>
-                    % if node['has_moderated_preprint']:
+                    % if node['has_moderated_preprint'] and not node['has_withdrawn_preprint']:
                         <% icon_tooltip = ''%>
                         % if node['preprint_state'] == 'pending':
                             % if node['preprint_provider']['workflow'] == 'post-moderation':
