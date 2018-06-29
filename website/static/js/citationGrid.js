@@ -367,7 +367,7 @@ CitationGrid.prototype.makeBibliography = function(folder, format) {
     return {};
 };
 
-CitationGrid.prototype.getBibliography = function(folder, format) {
+CitationGrid.prototype.getBibliography = function(folder) {
 
     if(!this.bibliographies[folder.id]){
         this.bibliographies[folder.id] =  this.makeBibliography(folder);
