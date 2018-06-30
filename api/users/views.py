@@ -1,3 +1,4 @@
+import newrelic.agent
 from django.apps import apps
 
 from api.addons.views import AddonSettingsMixin
@@ -259,6 +260,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
 
     ordering = ('-modified',)
 
+    @newrelic.agent.function_trace()
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
@@ -266,6 +268,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
             return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
         return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
 
+    @newrelic.agent.function_trace()
     # overrides ListAPIView
     def get_queryset(self):
         return (

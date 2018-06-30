@@ -100,3 +100,6 @@ ciso8601==1.0.5
 # Reviews requirements
 transitions==0.6.1
 enum34==1.1.6
+
+# newrelic APM agent
+newrelic==2.60.0.46
