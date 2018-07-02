@@ -124,7 +124,7 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
 
     @pytest.fixture()
     def expected_reviewables(self, provider, user):
-        with mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers'):
+        with mock.patch('website.identifiers.utils.request_identifiers'):
             preprints = [
                 PreprintFactory(
                     is_published=False,

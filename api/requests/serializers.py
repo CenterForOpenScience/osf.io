@@ -16,7 +16,7 @@ class NodeRequestSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'creator',
         'request_type',
-        'current_state',
+        'machine_state',
         'created',
         'id'
     ])
