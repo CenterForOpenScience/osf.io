@@ -5,7 +5,6 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.identifiers.clients import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +65,7 @@ def request_identifiers(target_object):
                  only_doi - boolean; only include the DOI (and not the ARK) identifier
                             when processing this response in get_or_create_identifiers
     """
+    from website.identifiers.clients import exceptions
     client = target_object.get_doi_client()
     if not client:
         return
