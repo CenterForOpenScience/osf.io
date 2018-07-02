@@ -279,7 +279,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except gitlab.exceptions.GitlabConnectionError as exc:
             # The old client allowed us to use 'gitlab.com' instead of 'http://gitlab.com' this allows us to maintain backwards compatibility
             if 'No schema supplied' in exc.error_message:
-                self.external_account.oauth_secret = 'http://{}'.format(self.external_account.oauth_secret)
+                self.external_account.oauth_secret = 'https://{}'.format(self.external_account.oauth_secret)
                 connect = GitLabClient(external_account=self.external_account)
                 repo = connect.repo(self.repo_id)
                 self.external_account.save()
