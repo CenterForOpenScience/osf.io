@@ -41,7 +41,8 @@ class DataCiteClient(AbstractIdentifierClient):
             'publisher': 'Open Science Framework',
             'publicationYear': str(datetime.datetime.now().year),
             'resourceType': {
-                'resourceTypeGeneral': 'Dataset'
+                'resourceType': 'Project',
+                'resourceTypeGeneral': 'Text'
             }
         }
 
