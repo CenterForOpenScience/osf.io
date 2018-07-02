@@ -1,0 +1,19 @@
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.dat/metadata.xsd">
+  <identifier identifierType="DOI">10.5072/FK2osf.io/yvzp4</identifier>
+  <creators>
+    <creator>
+      <creatorName>John Tordoff</creatorName>
+      <givenName>John</givenName>
+      <familyName>Tordoff</familyName>
+    </creator>
+  </creators>
+  <titles>
+    <title>test datacite response</title>
+  </titles>
+  <publisher>Open Science Framework</publisher>
+  <publicationYear>2018</publicationYear>
+  <resourceType resourceTypeGeneral="Dataset"/>
+  <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="ARK" relationType="Documents">ark:99999/fk4osf.io/yvzp4</relatedIdentifier>
+  </relatedIdentifiers>
+</resource>
