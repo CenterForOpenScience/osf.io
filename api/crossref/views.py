@@ -38,6 +38,8 @@ class ParseCrossRefConfirmation(APIView):
 
         if status == 'completed':
             guids = []
+            # Keep track of errors recieved, ignore those that are handled
+            unexpected_errors = False
             for record in records:
                 doi = getattr(record.find('doi'), 'text', None)
                 guid = doi.split('/')[-1] if doi else None
@@ -66,16 +68,19 @@ class ParseCrossRefConfirmation(APIView):
                         logger.warn('Related publication DOI does not exist, sending metadata again without it...')
                         client = preprint.get_doi_client()
                         client.create_identifier(preprint, category='doi', include_relation=False)
+                    else:
+                        unexpected_errors = True
             logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))
 
         if dois_processed != record_count or status != 'completed':
-            batch_id = crossref_email_content.find('batch_id').text
-            mails.send_mail(
-                to_addr=settings.OSF_SUPPORT_EMAIL,
-                mail=mails.CROSSREF_ERROR,
-                batch_id=batch_id,
-                email_content=request.POST['body-plain'],
-            )
-            logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
+            if unexpected_errors:
+                batch_id = crossref_email_content.find('batch_id').text
+                mails.send_mail(
+                    to_addr=settings.OSF_SUPPORT_EMAIL,
+                    mail=mails.CROSSREF_ERROR,
+                    batch_id=batch_id,
+                    email_content=request.POST['body-plain'],
+                )
+                logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
 
         return HttpResponse('Mail received', status=200)
