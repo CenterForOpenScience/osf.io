@@ -9,19 +9,24 @@
         Dear ${contributor.fullname},<br>
         <br>
     % if is_submitter:
-        Your request to withdraw your ${preprint.provider.preprint_word} ${preprint.node.title} from ${preprint.provider.name} has been approved by the service moderators.
+        Your request to withdraw your ${reviewable.provider.preprint_word} ${reviewable.node.title} from ${reviewable.provider.name} has been approved by the service moderators.
         <br>
-        The ${preprint.provider.preprint_word} has been removed from ${preprint.provider.name}, but its metadata is still available: title of the withdrawn ${preprint.provider.preprint_word}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+        The ${reviewable.provider.preprint_word} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${reviewable.provider.preprint_word}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+        <br>
+    % elif withdrawal_submitter_is_moderator_or_admin:
+        A moderator has withdrawn your ${reviewable.provider.preprint_word} ${reviewable.node.title} from ${reviewable.provider.name}.
+        <br>
+        The ${reviewable.provider.preprint_word} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${reviewable.provider.preprint_word}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
         <br>
     % else:
-        ${requester.fullname} has withdrawn your ${preprint.provider.preprint_word} ${preprint.node.title} from ${preprint.provider.name}.
+        ${requester.fullname} has withdrawn your ${reviewable.provider.preprint_word} ${reviewable.node.title} from ${reviewable.provider.name}.
         <br>
-        The ${preprint.provider.preprint_word} has been removed from ${preprint.provider.name}, but its metadata is still available: title of the withdrawn ${preprint.provider.preprint_word}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+        The ${reviewable.provider.preprint_word} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${reviewable.provider.preprint_word}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
         <br>
     % endif
         <br>
         Sincerely,<br>
-        The ${preprint.provider.name} and OSF Teams
+        The ${reviewable.provider.name} and OSF Teams
         <br>
 
 </tr>
