@@ -1545,10 +1545,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # This removes identifying info
         self.fullname = 'Deleted User'
-        self.username = 'Deleted User'
-        self.given_name = 'Deleted User'
-        self.family_name = 'Deleted User'
-        self.middle_names = 'Deleted User'
+        self.username = ''
+        self.given_name = ''
+        self.family_name = ''
+        self.middle_names = ''
+        self.mailchimp_mailing_lists = {}
+        self.osf_mailing_lists = {}
+        self.suffix = ''
         self.jobs = []
         self.schools = []
         self.social = []
