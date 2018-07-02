@@ -12,7 +12,7 @@
   </titles>
   <publisher>Open Science Framework</publisher>
   <publicationYear>2018</publicationYear>
-  <resourceType resourceTypeGeneral="Dataset"/>
+  <resourceType resourceTypeGeneral="Text">Project</resourceType>
   <relatedIdentifiers>
     <relatedIdentifier relatedIdentifierType="ARK" relationType="Documents">ark:99999/fk4osf.io/yvzp4</relatedIdentifier>
   </relatedIdentifiers>
