@@ -154,7 +154,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def is_private(self):
         connection = GitLabClient(external_account=self.external_account)
-        return not connection.repo(self.repo_id).visibility == 'private'
+        return connection.repo(self.repo_id).visibility == 'private'
 
     def to_json(self, user):
 
