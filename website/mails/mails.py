@@ -419,5 +419,5 @@ ACCESS_REQUEST_DENIED = Mail(
 
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
-    subject='Your ${preprint.provider.preprint_word} has been withdrawn',
+    subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
 )
