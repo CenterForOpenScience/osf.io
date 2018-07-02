@@ -2,7 +2,6 @@ import urllib
 import requests
 
 import gitlab
-from gitlab import Project
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
@@ -44,7 +43,7 @@ class GitLabClient(object):
         """
 
         try:
-            return Project(self.gitlab, repo_id)
+            return gitlab.Project(self.gitlab, repo_id)
         except gitlab.GitlabGetError as exc:
             if exc.code == 404:
                 raise NotFoundError
@@ -65,9 +64,9 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return Project(self.gitlab, repo_id).branches.get(branch)
+            return gitlab.Project(self.gitlab, repo_id).branches.get(branch)
 
-        return Project(self.gitlab, repo_id).branches.list()
+        return gitlab.Project(self.gitlab, repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
