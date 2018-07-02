@@ -62,6 +62,11 @@ def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
+    Preprint = apps.get_model('osf.Preprint')
+    # Preprints don't have subscriptions at this time
+    if isinstance(node, Preprint):
+            return
+
     if user._id not in node.admin_contributor_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:

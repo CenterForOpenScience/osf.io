@@ -187,6 +187,13 @@ class TestPreprintSubjects:
         preprint.reload()
         assert initial_subjects != list(preprint.subjects.all())
 
+    def test_write_can_set_subjects(self, preprint, subject, write_contrib):
+        initial_subjects = list(preprint.subjects.all())
+        preprint.set_subjects([[subject._id]], auth=Auth(write_contrib))
+
+        preprint.reload()
+        assert initial_subjects != list(preprint.subjects.all())
+
 
 class TestLogging:
 

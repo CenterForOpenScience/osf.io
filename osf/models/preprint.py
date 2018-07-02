@@ -162,7 +162,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     class Meta:
         permissions = (
-            ('view_preprint', 'Can view preprint details in the admin app.'),
+            ('view_preprint', 'Can view preprint details in the admin app'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
@@ -217,6 +217,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def order_by_contributor_field(self):
+        # Property needed for ContributorMixin
         return 'preprintcontributor___order'
 
     @property
@@ -230,6 +231,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def contributor_set(self):
         # Property needed for ContributorMixin
         return self.preprintcontributor_set
+
+    @property
+    def state_error(self):
+        # Property needed for ContributorMixin
+        return PreprintStateError
 
     @property
     def is_retracted(self):
@@ -377,7 +383,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         else:
             return self.verified_publishable and not self.is_retracted
 
-    # Overrides ContributorMixin
+    # Overrides ContributorMixin entirely
+    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def has_permission(self, user, permission):
         """Check whether user has permission.
         :param User user: User to test
@@ -388,7 +395,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return False
         return user.has_perm('{}_preprint'.format(permission), self)
 
-    # Overrides ContributorMixin
+    # Overrides ContributorMixin entirely
+    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
         if isinstance(user, PreprintContributor):
@@ -401,6 +409,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         self.add_permission(user, permissions)
         if save:
             self.save()
+
+    def get_addons(self):
+        # Override for ContributorMixin, Preprints don't have addons
+        return []
 
     def get_subjects(self):
         ret = []
@@ -808,7 +820,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             user and ((self.has_permission(user, 'write') and self.has_submitted_preprint) or self.has_permission(user, 'admin'))
         )
 
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions
+    def belongs_to_permission_group(self, user, permission):
+        # Override for contributormixin
+        return self.get_group(permission).user_set.filter(id=user.id).exists()
+
+    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
+    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
@@ -817,16 +834,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        permission_group = self.get_group(permission)
-
-        if not permission_group.user_set.filter(id=user.id).exists():
+        if not self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
             permission_group.user_set.add(user)
         else:
             raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
 
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions
+    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
+    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
@@ -835,19 +852,25 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        permission_group = self.get_group(permission)
-
-        if permission_group.user_set.filter(id=user.id).exists():
+        if self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
             permission_group.user_set.remove(user)
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
             self.save()
 
+    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def clear_permissions(self, user):
         for name in self.groups.keys():
             if user.groups.filter(name=self.get_group(name)).exists():
                 self.remove_permission(user, name)
+
+    def expand_permissions(self, permission=None):
+        # Property needed for ContributorMixin
+        # Preprint contributor methods don't require a list ['read', 'write'], they
+        # just use highest permission, 'write'
+        return permission
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin
@@ -862,7 +885,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         res = super(Preprint, self).replace_contributor(old, new)
 
         for group_name in self.groups.keys():
-            if self.get_group(group_name).user_set.filter(id=old.id).exists():
+            if self.belongs_to_permission_group(old, group_name):
                 self.get_group(group_name).user_set.remove(old)
                 self.get_group(group_name).user_set.add(new)
         return res

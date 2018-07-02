@@ -17,12 +17,11 @@ from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError, PreprintStateError
+from osf.exceptions import InvalidTriggerError, ValidationValueError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin
-from osf.models.contributor import get_contributor_permissions
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
@@ -796,6 +795,7 @@ class ContributorMixin(models.Model):
 
     @property
     def order_by_contributor_field(self):
+        # 'contributor___order', for example
         raise NotImplementedError()
 
     @property
@@ -808,9 +808,23 @@ class ContributorMixin(models.Model):
         # default contributor email template as a string
         raise NotImplementedError()
 
+    def expand_permissions(self):
+        # Transforms the permissions into the form the contributor methods expect
+        raise NotImplementedError()
+
     @property
     def admin_contributor_ids(self):
         return self._get_admin_contributor_ids(include_self=True)
+
+    def belongs_to_permission_group(self, user, permission):
+        # Boolean, whether the user belongs to this permission get_group
+        raise NotImplementedError()
+
+    def clear_permissions(self, user):
+        return
+
+    def get_addons(self):
+        raise NotImplementedError()
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on the object."""
@@ -1019,16 +1033,6 @@ class ContributorMixin(models.Model):
             self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
 
         contributor_obj = self.contributor_set.get(user=contributor)
-        contributor.bibliographic = contributor_obj.visible
-        contributor.node_id = self._id
-        contributor_order = list(self.get_contributor_order())
-        contributor.index = contributor_order.index(contributor_obj.pk)
-        if isinstance(permissions, list):
-            contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
-
-        if save:
-            contributor.save()
-
         return contributor_obj
 
     def replace_contributor(self, old, new):
@@ -1053,26 +1057,20 @@ class ContributorMixin(models.Model):
 
         Also checks to make sure unique admin is not removing own admin privilege.
         """
-        Preprint = apps.get_model('osf.Preprint')
+        OSFUser = apps.get_model('osf.OSFUser')
 
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
-            if isinstance(self, Preprint):
-                permissions = permission
-                admins = self.get_group('admin').user_set
-            else:
-                permissions = expand_permissions(permission)
-                admins = self.contributor_set.filter(admin=True)
+            permissions = self.expand_permissions(permission=permission)
+            admins = OSFUser.objects.filter(id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
             if not admins.count() > 1:
                 # has only one admin
                 admin = admins.first()
                 if (admin == user or getattr(admin, 'user', None) == user) and ADMIN not in permissions:
                     error_msg = '{} is the only admin.'.format(user.fullname)
-                    if isinstance(self, Preprint):
-                        raise PreprintStateError(error_msg)
-                    raise NodeStateError(error_msg)
+                    raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
                     'User {0} not in contributors'.format(user.fullname)
@@ -1091,10 +1089,9 @@ class ContributorMixin(models.Model):
                     auth=auth,
                     save=False
                 )
-                if not isinstance(self, Preprint):
-                    with transaction.atomic():
-                        if ['read'] in permissions_changed.values():
-                            project_signals.write_permissions_revoked.send(self)
+                with transaction.atomic():
+                    if ['read'] in permissions_changed.values():
+                        project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
 
@@ -1107,8 +1104,6 @@ class ContributorMixin(models.Model):
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
-        Preprint = apps.get_model('osf.Preprint')
-
         if isinstance(contributor, self.contributor_class):
             contributor = contributor.user
 
@@ -1122,32 +1117,26 @@ class ContributorMixin(models.Model):
             return False
 
         # Node must have at least one registered admin user
-        if isinstance(self, Preprint):
-            if not self.get_group('admin').user_set.exclude(id=contributor.id).exists():
-                return False
-        else:
-            admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-            if not admin_query.exists():
-                return False
+        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+        if not admin_query.exists():
+            return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
 
-        if isinstance(self, Preprint):
-            self.clear_permissions(contributor)
-        else:
-            # After remove callback
-            for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, contributor, auth)
-                if message:
-                    # Because addons can return HTML strings, addons are responsible
-                    # for markupsafe-escaping any messages returned
-                    status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                        'addon': markupsafe.escape(addon.config.full_name),
-                        'category': markupsafe.escape(self.category_display),
-                        'title': markupsafe.escape(self.title),
-                        'user': markupsafe.escape(contributor.fullname)
-                    })
+        self.clear_permissions(contributor)
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor, auth)
+            if message:
+                # Because addons can return HTML strings, addons are responsible
+                # for markupsafe-escaping any messages returned
+                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                    'addon': markupsafe.escape(addon.config.full_name),
+                    'category': markupsafe.escape(self.category_display),
+                    'title': markupsafe.escape(self.title),
+                    'user': markupsafe.escape(contributor.fullname)
+                })
 
         if log:
             params = self.log_params
@@ -1161,6 +1150,7 @@ class ContributorMixin(models.Model):
 
         self.save()
         self.update_search()
+        project_signals.contributor_removed.send(self, user=contributor)
 
         return True
 
@@ -1224,7 +1214,6 @@ class ContributorMixin(models.Model):
         :raises: ValueError if any users in `users` not in contributors or if
             no admin contributors remaining
         """
-        Preprint = apps.get_model('osf.Preprint')
         OSFUser = apps.get_model('osf.OSFUser')
 
         with transaction.atomic():
@@ -1243,18 +1232,10 @@ class ContributorMixin(models.Model):
                         'User {0} not in contributors'.format(user.fullname)
                     )
 
-                update_permissions = False
-                if isinstance(self, Preprint):
-                    permissions = user_dict['permissions']
-                    if not self.get_group(permissions).user_set.filter(id=user.id).exists():
-                        update_permissions = True
-                else:
-                    permissions = expand_permissions(user_dict['permission'])
-                    if set(permissions) != set(self.get_permissions(user)):
-                        update_permissions = True
-
-                if update_permissions:
+                permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
+                if not self.belongs_to_permission_group(user, permission):
                     # Validate later
+                    permissions = self.expand_permissions(permission)
                     self.set_permissions(user, permissions, validate=False, save=False)
                     permissions_changed[user._id] = permissions
 
@@ -1281,9 +1262,7 @@ class ContributorMixin(models.Model):
 
             if users is None or not self._get_admin_contributors_query(users).exists():
                 error_message = 'Must have at least one registered admin contributor'
-                if isinstance(self, Preprint):
-                    raise PreprintStateError(error_message)
-                raise NodeStateError(error_message)
+                raise self.state_error(error_message)
 
             if to_retain != users:
                 # Ordered Contributor PKs, sorted according to the passed list of user IDs
@@ -1318,7 +1297,6 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-        if not isinstance(self, Preprint):
             with transaction.atomic():
                 if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                     project_signals.write_permissions_revoked.send(self)

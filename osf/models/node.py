@@ -61,7 +61,7 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -882,13 +882,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def contributor_email_template(self):
         return 'default'
 
-    # Overrides ContributorMixin
-    def remove_contributor(self, contributor, auth, log=True):
-        removed = super(AbstractNode, self).remove_contributor(contributor=contributor, auth=auth, log=log)
-        # send signal to remove this user from project subscriptions
-        project_signals.contributor_removed.send(self, user=contributor)
-        return removed
-
     @property
     def registrations_all(self):
         """For v1 compat."""
@@ -1028,18 +1021,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def log_class(self):
+        # Override for ContributorMixin
         return NodeLog
 
     @property
     def contributor_class(self):
+        # Override for ContributorMixin
         return Contributor
 
     @property
     def contributor_kwargs(self):
+        # Override for ContributorMixin
         return {'node': self}
 
     @property
     def log_params(self):
+        # Override for ContributorMixin
         return {
             'project': self.parent_id,
             'node': self._primary_key,
@@ -1047,12 +1044,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def order_by_contributor_field(self):
+        # Needed for Contributor Mixin
         return 'contributor___order'
 
+    @property
+    def state_error(self):
+        # Override for ContributorMixin
+        return NodeStateError
+
+    def expand_permissions(self, permission=None):
+        # Override for ContributorMixin
+        # Preprint contributor methods don't require a list ['read', 'write'], they
+        # just use highest permission, 'write'
+        return expand_permissions(permission)
+
+    def belongs_to_permission_group(self, user, permission):
+        # Override for ContributorMixin
+        permissions = self.expand_permissions(permission)
+        return set(permissions) == set(self.get_permissions(user))
+
     def get_spam_fields(self, saved_fields):
+        # Override for SpamOverrideMixin
         return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 
+    # Needed for ContributorMixin
     DEFAULT_CONTRIBUTOR_PERMISSIONS = DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def callback(self, callback, recursive=False, *args, **kwargs):
