@@ -21,8 +21,9 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
-from django.db.models.signals import post_save
 from django.db import models
+from django.db.models import Count
+from django.db.models.signals import post_save
 from django.utils import timezone
 
 from framework.auth import Auth, signals, utils
@@ -34,7 +35,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, ValidationError
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -1519,14 +1520,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user_nodes = self.nodes.all()
         #  Validates the user isn't trying to delete things they deliberately made public.
         if user_nodes.filter(type='osf.registration').exists():
-            raise ValidationError('You cannot delete this user because they have one or more registrations.')
+            raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
         if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
-            raise ValidationError('You cannot delete this user because they have one or more preprints.')
+            raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.
-        personal_nodes = [node.id for node in user_nodes if node.contributor_set.count() == 1]
-        personal_nodes = AbstractNode.objects.filter(id__in=personal_nodes)
+        personal_nodes = AbstractNode.objects.annotate(contrib_count=Count('_contributors')).filter(contrib_count__lte=1).filter(contributor__user=self)
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
@@ -1536,7 +1536,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 admin=True,
             ).exclude(user=self)
             if not alternate_admins:
-                raise ValidationError(
+                raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
                         node._id))
 
