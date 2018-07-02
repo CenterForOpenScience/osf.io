@@ -79,9 +79,9 @@ class PageCounter(BaseModel):
 
         # Get the total download numbers from the nested dict on the PageCounter by annotating it as daily_total then
         # aggregating the sum.
-        sum = page_counters.annotate(daily_total=RawSQL("((date->%s->>'total')::int)", (date,))).aggregate(sum=Sum('daily_total'))['sum']
+        daily_total = page_counters.annotate(daily_total=RawSQL("((date->%s->>'total')::int)", (date,))).aggregate(sum=Sum('daily_total'))['sum']
 
-        return sum
+        return daily_total
 
     @staticmethod
     def clean_page(page):
@@ -122,7 +122,6 @@ class PageCounter(BaseModel):
                     # increment the number of unique visitors for today
                     model_instance.date[date_string]['unique'] += 1
                 else:
-                    # set the number of unique visitors to 1
                     model_instance.date[date_string] = dict(unique=0)
 
             # update their sessions

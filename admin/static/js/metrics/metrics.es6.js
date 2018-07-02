@@ -1050,7 +1050,6 @@ var DownloadMetrics = function() {
         interval: "daily",
         targetProperty: "files.total",
         timeframe: "previous_30_days",
-        timeframe: {"end":"2017-11-30", "start":"2017-11-20"},
         timezone: "UTC"
     });
 

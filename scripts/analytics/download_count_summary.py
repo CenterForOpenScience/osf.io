@@ -10,11 +10,6 @@ from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 from osf.models import PageCounter
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-LOG_THRESHOLD = 11
-
 
 class DownloadCountSummary(SummaryAnalytics):
 
