@@ -38,7 +38,7 @@ class TestConfigViews(NextcloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
     def setUp(self):
         super(TestConfigViews, self).setUp()
-        self.mock_ser_api = mock.patch('nextcloud.Client.login')
+        self.mock_ser_api = mock.patch('owncloud.Client.login')
         self.mock_ser_api.start()
         self.set_node_settings(self.node_settings)
 
