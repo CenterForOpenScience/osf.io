@@ -364,6 +364,9 @@ DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
 DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+# Minting DOIs only works on Datacite's production server, so 
+# disable minting on staging and development environments by default
+DATACITE_MINT_DOIS = not DEV_MODE
 
 # crossref
 CROSSREF_USERNAME = None

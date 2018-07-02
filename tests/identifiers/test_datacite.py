@@ -22,6 +22,9 @@ from osf_tests.factories import AuthUserFactory, RegistrationFactory, ProjectFac
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
 
+@pytest.fixture(autouse=True)
+def override_doi_settings():
+    settings.DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
 @pytest.fixture()
 def datacite_client(registration):
@@ -32,6 +35,7 @@ def datacite_client(registration):
         url = 'https://mds.fakedatacite.org'
         metadata_get = mock.Mock(return_value=datacite_metadata_response())
         metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/{})'.format(registration._id))
+        doi_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/{})'.format(registration._id))
         metadata_delete = mock.Mock(return_value='OK heeeeeeey')
 
     return DataCiteClient(
@@ -144,6 +148,14 @@ class TestDataCiteViews(OsfTestCase):
             responses.Response(
                 responses.POST,
                 self.client.base_url + '/metadata',
+                body='OK (10.5072/FK2osf.io/cq695)',
+                status=201,
+            )
+        )
+        responses.add(
+            responses.Response(
+                responses.POST,
+                self.client.base_url + '/doi',
                 body='OK (10.5072/FK2osf.io/cq695)',
                 status=201,
             )

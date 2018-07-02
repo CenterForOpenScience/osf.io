@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import logging
 
 import re
 import datetime
@@ -7,6 +8,8 @@ import datetime
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
+
+logger = logging.getLogger(__name__)
 
 
 class DataCiteClient(AbstractIdentifierClient):
@@ -74,9 +77,10 @@ class DataCiteClient(AbstractIdentifierClient):
         if category == 'doi':
             metadata = self.build_metadata(node)
             resp = self._client.metadata_post(metadata)
-
             # Typical response: 'OK (10.5072/FK2osf.io/cq695)' to doi 10.5072/FK2osf.io/cq695
             doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
+            if settings.DATACITE_MINT_DOIS:
+                self._client.doi_post(doi, node.absolute_url)
             return {'doi': doi}
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
