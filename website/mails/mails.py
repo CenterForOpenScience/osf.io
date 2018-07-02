@@ -315,7 +315,7 @@ FILE_OPERATION_FAILED = Mail(
     subject='Your ${action} has failed',
 )
 
-UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
+UNESCAPE = '<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(

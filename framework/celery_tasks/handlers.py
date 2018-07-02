@@ -39,7 +39,7 @@ def celery_teardown_request(error=None):
             group(queue()).apply_async()
         else:
             for task in queue():
-                task.apply()
+                task()
 
 
 def get_task_from_queue(name, predicate):
