@@ -40,7 +40,7 @@ class GitLabClient(object):
         https://docs.gitlab.com/ce/api/projects.html#get-single-project
 
         :param str repo_id: GitLab repository id
-        :return: Dict of repo information
+        :return: gitlab.Project a object representing the repo
         """
 
         try:
