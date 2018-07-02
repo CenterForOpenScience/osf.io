@@ -2,7 +2,7 @@ import furl
 import mock
 import pytest
 import responses
-
+from waffle.testutils import override_switch
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -24,6 +24,7 @@ class TestEZIDClient(OsfTestCase):
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.client = EzidClient(base_url='https://test.ezid.osf.io', prefix=settings.EZID_DOI_NAMESPACE.replace('doi:', ''))
 
+    @override_switch('ezid', active=True)
     @responses.activate
     def test_create_identifiers_not_exists_ezid(self):
         guid = self.registration._id
@@ -58,7 +59,7 @@ class TestEZIDClient(OsfTestCase):
 
         assert_equal(res.status_code, 201)
 
-
+    @override_switch('ezid', active=True)
     @responses.activate
     def test_create_identifiers_exists_ezid(self):
         guid = self.registration._id
