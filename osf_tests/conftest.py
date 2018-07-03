@@ -110,21 +110,60 @@ def enable_enqueue_task(settings):
     settings.TEST_OPTIONS.DISABLE_ENQUEUE_TASK = False
 
 
-@pytest.fixture(autouse=True)
-def _elasticsearch(request):
-    if request.node.get_marker('enable_search'):
-        # driver = LegacyElasticsearchDriver('osf-test-{}'.format(uuid.uuid4()))
-        driver = ElasticsearchDriver([
+class _SearchEnabler(object):
+
+    def __init__(self):
+        self._setup = False
+        self._disabled = SearchDisabledDriver(warnings=False)
+        self._elasticsearch = ElasticsearchDriver([
             'http://localhost:92001',
         ], 'osf-test-{}'.format(uuid.uuid4()))
-    else:
-        driver = SearchDisabledDriver(warnings=False)
 
-    search._driver = driver
+    def enable(self):
+        if not self._setup:
+            self._setup = True
+            self._elasticsearch.setup()
+        search._driver = self._elasticsearch
 
-    try:
-        driver.setup()
+    def disable(self):
+        search._driver = self._disabled
 
-        yield driver
-    finally:
-        driver.teardown()
+    def clear(self):
+        # Clear out the index and make sure it's flushed to disk for the next test
+        # Clearing the index is faster than dropping and recreating the entire index
+        # as we'll only ever have ~10 docs at most
+        self._elasticsearch._client.indices.flush()
+        self._elasticsearch._client.delete_by_query(
+            index=self._elasticsearch._index_prefix + '*',
+            body={
+                'query': {
+                    'match_all': {}
+                }
+            },
+            refresh=True,
+            conflicts='proceed'
+        )
+        self._elasticsearch._client.indices.flush()
+
+    def teardown(self):
+        if not self._setup:
+            return
+        self._elasticsearch.teardown()
+
+
+@pytest.fixture(scope='session')
+def _searchenabler():
+    enabler = _SearchEnabler()
+    enabler.disable()
+    yield enabler
+    enabler.teardown()
+
+
+@pytest.fixture(autouse=True)
+def _search(request, _searchenabler):
+    if not request.node.get_marker('enable_search'):
+        return
+    _searchenabler.enable()
+    yield
+    _searchenabler.clear()
+    _searchenabler.disable()

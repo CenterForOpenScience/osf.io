@@ -141,10 +141,14 @@ class ElasticsearchDriver(base.SearchDriver):
                 index=config['index_tmpl'].format(self._index_prefix),
                 body={
                     'settings': {
+                        # TODO
                         'index.number_of_shards': 1,
                         'index.number_of_replicas': 0,
-                        'index.refresh_interval': '10s',
-                        'index.translog.durability': 'async',
+                        # 'index.shard.check_on_startup': False,
+                        # 'index.refresh_interval': -1,
+                        # 'index.gc_deletes': 0,
+                        # 'index.translog.sync_interval': '1s',
+                        # 'index.translog.durability': 'async',
                         'analysis': {
                             'analyzer': {
                                 'default': {
