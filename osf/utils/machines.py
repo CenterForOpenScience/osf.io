@@ -103,6 +103,13 @@ class ReviewsMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
+    def withdrawal_submitter_is_moderator_or_admin(self, submitter):
+        # Returns True if the submitter of the request is a moderator or admin for the provider.
+        from api.providers.permissions import GroupHelper
+        provider = self.machineable.provider
+        return GroupHelper(provider).get_group('moderator').user_set.filter(id=submitter.id).exists() or \
+               GroupHelper(provider).get_group('admin').user_set.filter(id=submitter.id).exists()
+
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
@@ -148,8 +155,17 @@ class ReviewsMachine(BaseMachine):
                                                action=self.action)
 
     def notify_withdraw(self, ev):
-        # TODO [IN-284]: language
-        pass
+        context = self.get_context()
+        for contributor in self.machineable.node.contributors.all():
+            context['contributor'] = contributor
+            context['withdrawal_submitter_is_moderator_or_admin'] = self.withdrawal_submitter_is_moderator_or_admin(self.action.creator)
+            context['is_submitter'] = self.action.creator.username == contributor.username
+            mails.send_mail(
+                contributor.username,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
+                mimetype='html',
+                **context
+            )
 
     def get_context(self):
         return {
@@ -245,8 +261,8 @@ class PreprintRequestMachine(BaseMachine):
             self.machineable.comment = self.action.comment
         elif ev.event.name == DefaultTriggers.SUBMIT.value:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
-            if self.auto_approval_allowed():
-                self.action.target.run_accept(user=self.machineable.creator, comment=self.action.comment)
+            if self.auto_approval_allowed(self.machineable.creator):
+                self.machineable.run_accept(user=self.machineable.creator, comment=self.action.comment)
         elif ev.event.name == DefaultTriggers.ACCEPT.value:
             # If moderator accepts the withdrawal request
             self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
@@ -255,27 +271,13 @@ class PreprintRequestMachine(BaseMachine):
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
         return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value \
-            and not self.machineable.target.ever_public
+                and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
-        # TODO: [IN-284]
         pass
 
     def notify_accept_reject(self, ev):
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
-            context = self.get_context()
-            for contributor in self.machineable.target.node.contributors.all():
-                context['is_submitter'] = context['requester'].username == contributor.username
-                context['contributor'] = contributor
-                mails.send_mail(
-                    contributor.username,
-                    mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
-                    mimetype='html',
-                    **context
-                )
-        elif ev.event.name == DefaultTriggers.REJECT.value:
-            # Preprint withdrawal request rejection email is not currently needed
-            pass
+        pass
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event
@@ -292,5 +294,5 @@ class PreprintRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'preprint': self.machineable.target,
-            'requester': self.machineable.creator
+            'requester': self.machineable.creator,
         }
