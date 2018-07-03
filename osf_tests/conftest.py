@@ -13,6 +13,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.search.drivers.disabled import SearchDisabledDriver
 from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
+from website.search.drivers.elasticsearch import ElasticsearchDriver
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -112,15 +113,18 @@ def enable_enqueue_task(settings):
 @pytest.fixture(autouse=True)
 def _elasticsearch(request):
     if request.node.get_marker('enable_search'):
-        driver = LegacyElasticsearchDriver('osf-test-{}'.format(uuid.uuid4()))
+        # driver = LegacyElasticsearchDriver('osf-test-{}'.format(uuid.uuid4()))
+        driver = ElasticsearchDriver([
+            'http://localhost:92001',
+        ], 'osf-test-{}'.format(uuid.uuid4()))
     else:
         driver = SearchDisabledDriver(warnings=False)
 
     search._driver = driver
 
     try:
-        driver.migrator.setup()
+        driver.setup()
 
         yield driver
     finally:
-        driver.migrator.teardown()
+        driver.teardown()

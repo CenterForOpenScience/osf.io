@@ -14,9 +14,11 @@ from framework.auth.core import Auth
 
 from website import settings
 from website import search
+from website.search import driver
 from website.search.util import build_query
 from website.search_migration.migrate import migrate, migrate_collected_metadata
 from osf.models import (
+    ArchiveJob,
     Retraction,
     NodeLicense,
     Tag,
@@ -34,7 +36,7 @@ from tests.utils import mock_archive, run_celery_tasks
 
 
 def query(term, raw=False):
-    results = search.search.search(build_query(term), raw=raw)
+    results = driver.search(build_query(term), raw=raw, refresh=True)
     return results
 
 def query_collections(name):
@@ -70,11 +72,12 @@ def retry_assertion(interval=0.3, retries=3):
         return wrapped
     return test_wrapper
 
+
+@pytest.mark.enable_search
+@pytest.mark.usefixtures('enable_enqueue_task')
 class TestCollectionsSearch(OsfTestCase):
     def setUp(self):
         super(TestCollectionsSearch, self).setUp()
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
 
         self.user = factories.UserFactory(fullname='Salif Keita')
         self.node_private = factories.NodeFactory(creator=self.user, title='Salif Keita: Madan', is_public=False)
@@ -195,7 +198,9 @@ class TestCollectionsSearch(OsfTestCase):
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 3)
-        self.collection_public.delete()
+
+        with run_celery_tasks():
+            self.collection_public.delete()
 
         assert_true(self.collection_public.deleted)
 
@@ -428,9 +433,10 @@ class TestRegistrationRetractions(OsfTestCase):
             is_public=True,
         )
         self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
+        ArchiveJob.objects.filter(_id=self.registration.archive_job._id).update(status='SUCCESS')
+        self.registration.archive_job.refresh_from_db()
 
     @mock.patch('website.project.tasks.update_node_share')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_retraction_is_searchable(self, mock_registration_updated):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
@@ -440,7 +446,6 @@ class TestRegistrationRetractions(OsfTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -534,9 +539,10 @@ class TestPublicNodes(OsfTestCase):
                 creator=self.user,
                 is_public=True,
             )
-            self.registration.archive_job.target_addons = []
-            self.registration.archive_job.status = 'SUCCESS'
-            self.registration.archive_job.save()
+            archive_job = self.registration.archive_job
+            archive_job.target_addons = []
+            archive_job.status = 'SUCCESS'
+            archive_job.save()
 
     def test_make_private(self):
         # Make project public, then private, and verify that it is not present
@@ -746,7 +752,7 @@ class TestAddContributor(OsfTestCase):
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = factories.UnregUserFactory()
-        contribs = search.search.search_contributor(unreg.fullname)
+        contribs = search.search.search_contributor(unreg.fullname, refresh=True)
         assert_equal(len(contribs['users']), 0)
 
 
@@ -764,54 +770,57 @@ class TestAddContributor(OsfTestCase):
 
     def test_search_fullname(self):
         # Searching for full name yields exactly one result.
-        contribs = search.search.search_contributor(self.name1)
+        contribs = search.search.search_contributor(self.name1, refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name2)
+        contribs = search.search.search_contributor(self.name2, refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
         # Searching for first name yields exactly one result.
-        contribs = search.search.search_contributor(self.name1.split(' ')[0])
+        contribs = search.search.search_contributor(self.name1.split(' ')[0], refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name2.split(' ')[0])
+        contribs = search.search.search_contributor(self.name2.split(' ')[0], refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
         # Searching for part of first name yields exactly one
         # result.
-        contribs = search.search.search_contributor(self.name1.split(' ')[0][:-1])
+        contribs = search.search.search_contributor(self.name1.split(' ')[0][:-1], refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name2.split(' ')[0][:-1])
+        contribs = search.search.search_contributor(self.name2.split(' ')[0][:-1], refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_fullname_special_character(self):
         # Searching for a fullname with a special character yields
         # exactly one result.
-        contribs = search.search.search_contributor(self.name3)
+        contribs = search.search.search_contributor(self.name3, refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name4)
+        contribs = search.search.search_contributor(self.name4, refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname_special_charcter(self):
         # Searching for a first name with a special character yields
         # exactly one result.
-        contribs = search.search.search_contributor(self.name3.split(' ')[0])
+        contribs = search.search.search_contributor(self.name3.split(' ')[0], refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name4.split(' ')[0])
+        contribs = search.search.search_contributor(self.name4.split(' ')[0], refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial_special_character(self):
         # Searching for a partial name with a special character yields
         # exctly one result.
-        contribs = search.search.search_contributor(self.name3.split(' ')[0][:-1])
+        contribs = search.search.search_contributor(self.name3.split(' ')[0][:-1], refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = search.search.search_contributor(self.name4.split(' ')[0][:-1])
+        contribs = search.search.search_contributor(u'jA')
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search.search_contributor(self.name4.split(' ')[0][:-1], refresh=True)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_profile(self):
@@ -819,7 +828,7 @@ class TestAddContributor(OsfTestCase):
         user = factories.UserFactory()
         user.social['orcid'] = orcid
         user.save()
-        contribs = search.search.search_contributor(orcid)
+        contribs = search.search.search_contributor(orcid, refresh=True)
         assert_equal(len(contribs['users']), 1)
         assert_equal(len(contribs['users'][0]['social']), 1)
         assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
@@ -1060,7 +1069,6 @@ class TestSearchMigration(OsfTestCase):
 
         assert_equal(institution_bucket_found, True)
 
-<<<<<<< HEAD
     def test_migration_collections(self):
         provider = factories.CollectionProviderFactory()
         collection_one = factories.CollectionFactory(is_public=True, provider=provider)
@@ -1096,10 +1104,8 @@ class TestSearchMigration(OsfTestCase):
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type='collectionSubmission', search_type='count', body=count_query)
         assert res['hits']['total'] == 2
 
-=======
 @pytest.mark.enable_search
 @pytest.mark.usefixtures('enable_enqueue_task', 'enable_quickfiles_creation')
->>>>>>> Search fixes/clean up/test fixes
 class TestSearchFiles(OsfTestCase):
 
     def setUp(self):

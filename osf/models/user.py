@@ -132,6 +132,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'jobs',
         'schools',
         'social',
+        'is_active',
     }
     TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
     TRACK_FIELDS.update({'password', 'last_login'})

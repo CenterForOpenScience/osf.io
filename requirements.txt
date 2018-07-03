@@ -101,3 +101,5 @@ ciso8601==1.0.5
 # Reviews requirements
 transitions==0.6.1
 enum34==1.1.6
+
+deprecation==2.0.4

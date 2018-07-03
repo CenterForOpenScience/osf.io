@@ -12,5 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from website.search.drivers.elasticsearch import ElasticsearchDriver
 
-        ElasticsearchDriver(options['index-name']).migrator.teardown()
-        ElasticsearchDriver(options['index-name']).migrator.migrate(types=options['type'])
+        ElasticsearchDriver(
+            ['http://localhost:9201'],
+            options['index-name'],
+        ).migrate(types=options['type'])

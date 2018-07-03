@@ -54,21 +54,14 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
             return None
 
     def update_index(self):
-        if self.collection.is_public:
-            from website.search.search import update_collected_metadata
-            from website.search.exceptions import SearchUnavailableError
-            try:
-                update_collected_metadata(self.guid._id, collection_id=self.collection.id)
-            except SearchUnavailableError as e:
-                logger.exception(e)
+        if not self.collection.is_public:
+            return
+        from website.search import driver
+        driver.index_collection_submissions(pk=self.id)
 
     def remove_from_index(self):
-        from website.search.search import update_collected_metadata
-        from website.search.exceptions import SearchUnavailableError
-        try:
-            update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
-        except SearchUnavailableError as e:
-            logger.exception(e)
+        from website.search import driver
+        driver.remove(self)
 
     def save(self, *args, **kwargs):
         kwargs.pop('old_subjects', None)  # Not indexing this, trash it
@@ -140,14 +133,6 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def linked_registrations_related_url(self):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
-    @classmethod
-    def bulk_update_search(cls, cgms, op='update', index=None):
-        from website import search
-        try:
-            search.search.bulk_update_collected_metadata(cgms, op=op, index=index)
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-
     def save(self, *args, **kwargs):
         first_save = self.id is None
         if self.is_bookmark_collection:
@@ -166,7 +151,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)
 
-        elif 'is_public' in saved_fields:
+        elif 'is_public' in saved_fields or 'deleted' in saved_fields:
             from website.collections.tasks import on_collection_updated
             enqueue_task(on_collection_updated.s(self._id))
 
@@ -238,9 +223,6 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             raise NodeStateError('Bookmark collections may not be deleted.')
 
         self.deleted = timezone.now()
-
-        if self.is_public:
-            self.bulk_update_search(list(self.collectedguidmetadata_set.all()), op='delete')
 
         self.save()
 
