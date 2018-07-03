@@ -1,24 +1,29 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import abc
+import logging
 import re
 import uuid
 
+from django.contrib.postgres.fields import JSONField
 from django.db import connection
 from django.db import transaction
-from django.db.models import F, Value, When, Case
-from django.db.models import OuterRef, Subquery, Exists
+from django.db.models import Case, Exists, F, OuterRef, Subquery, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Concat
+from django.utils.functional import cached_property
 
 from addons.wiki.models import WikiPage, WikiVersion
 
-from osf.expressions import JSONBuildObject, ArrayAgg, JSONAgg
 from osf import models
+from osf.expressions import JSONBuildObject, ArrayAgg, JSONAgg
 from osf.utils.workflows import DefaultStates
-from osf.models import Node, Guid, NodeRelation, Contributor, OSFUser, AbstractNode, NodeLicenseRecord, NodeLicense, PreprintService, BaseFileNode, Institution
 
 from website import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractActionGenerator(object):
@@ -28,80 +33,145 @@ class AbstractActionGenerator(object):
     def type(self):
         raise NotImplementedError
 
-    def __init__(self, index, doc_type, chunk_size=1000):
+    @abc.abstractproperty
+    def model(self):
+        raise NotImplementedError
+
+    @property
+    def inital_queryset(self):
+        if self._initial_query:
+            return self.model.objects.filter(**self._initial_query)
+        return self.model.objects.all()
+
+    def __init__(self, index, doc_type, initial_query=None, chunk_size=1000):
         self._index = index
         self._doc_type = doc_type
         self._chunk_size = chunk_size
+        self._remove = bool(initial_query)
+        self._initial_query = initial_query or {}
 
     @abc.abstractmethod
     def build_query(self):
         raise NotImplementedError()
-
-    def should_index(self, doc):
-        return True
 
     def post_process(self, _id, doc):
         return doc
 
     def guid_for(self, model, ref='pk'):
         return Subquery(
-            Guid.objects.filter(
+            models.Guid.objects.filter(
                 object_id=OuterRef(ref),
                 content_type__app_label=model._meta.app_label,
                 content_type__model=model._meta.concrete_model._meta.model_name,
             ).values('_id')[:1]
         )
 
+    def _fetch_docs(self, query):
+        with connection.cursor() as cursor:
+            cursor_id = str(uuid.uuid4())
+            query, params = query.query.sql_with_params()
+
+            # Don't try this at home, kids
+            cursor.execute('DECLARE "{}" CURSOR FOR {}'.format(cursor_id, query), params)
+
+            # Should be able to use .iterator but it appears to be slower for whatever reason
+            # TODO Investigate the above
+            while True:
+                cursor.execute('FETCH {} FROM "{}"'.format(self._chunk_size, cursor_id))
+                rows = cursor.fetchall()
+
+                if not rows:
+                    return
+
+                for row in rows:
+                    if not row:
+                        return
+                    yield row[0]
+
     def __iter__(self):
         with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor_id = str(uuid.uuid4())
-                query, params = self.build_query().query.sql_with_params()
-                # Don't try this at home, kids
-                cursor.execute('DECLARE "{}" CURSOR FOR {}'.format(cursor_id, query), params)
+            to_remove = []
+            qs = self.build_query()
 
-                # Should be able to use .iterator but it appears to be slower for whatever reason
-                # TODO Investigate the above
-                while True:
-                    cursor.execute('FETCH {} FROM "{}"'.format(self._chunk_size, cursor_id))
-                    rows = cursor.fetchall()
+            for doc in self._fetch_docs(qs):
+                _id = doc.pop('_id')
+                doc['id'] = _id  # For backwards compat
+                doc['type'] = self.type  # doc_types no longer exist so we have to do it ourselves
+                _source = self.post_process(_id, doc)
 
-                    if not rows:
-                        return
+                # This is only here for collection submissions at the moment
+                # it should be removed whenever that issue is fixed/handled
+                if not _source:
+                    to_remove.append(_id)
+                    continue
 
-                    for row in rows:
-                        if not row:
-                            return
+                yield {
+                    '_id': _id,
+                    '_o[_type': 'index',
+                    '_index': self._index,
+                    '_type': self._doc_type,
+                    '_source': _source,
+                }
 
-                        doc = row[0]
-                        action = {'_id': doc.pop('_id'), '_index': self._index, '_type': self._doc_type}
+            if not self._remove:
+                return
 
-                        if not self.should_index(doc):
-                            action['_doc_type'] = 'delete'
-                        else:
-                            action['_source'] = self.post_process(action['_id'], doc)
-                            action['_doc_type'] = 'index'
+            for _id in to_remove:
+                yield {
+                    '_id': _id,
+                    '_op_type': 'delete',
+                    '_index': self._index,
+                    '_type': self._doc_type,
+                }
 
-                        yield action
+            # Probably a better way to do this
+            # but we want to steal the doc annotation (and any others it might use)
+            # The problem being that resolve_expression has already been called on the
+            # annotation, so our new queryset won't have any of the joins required.
+            # Clone it, knock off the filters, and combine with our query to get all the joins
+            remove_qs = qs._clone()
+            remove_qs.query.where.children = []
+
+            # remove_qs.filter(**self._initial_query)
+
+            # remove_qs = self.inital_queryset
+            # remove_qs.query.combine(clone.query, AND)
+
+            # This was an after thought, in case you couldn't tell
+            # It's a bit wasteful to generate the entire document here but
+            # _id needs to be formatted the same way everytime so there's not much of a choice
+            remove_qs = remove_qs.values('id').filter(
+                **self._initial_query
+            ).annotate(
+                **qs.query.annotation_select
+            ).exclude(
+                id__in=qs.values('id')
+            ).values('doc')
+
+            for doc in self._fetch_docs(remove_qs):
+                yield {
+                    '_id': doc['_id'],
+                    '_op_type': 'delete',
+                    '_index': self._index,
+                    '_type': self._doc_type,
+                }
 
 
 class FileActionGenerator(AbstractActionGenerator):
+    type = 'file'
+    model = models.BaseFileNode
 
-    @property
-    def type(self):
-        return 'file'
-
-    @property
+    @cached_property
     def tags_query(self):
         return Coalesce(Subquery(
-            BaseFileNode.tags.through.objects.filter(
+            models.BaseFileNode.tags.through.objects.filter(
                 basefilenode_id=OuterRef('pk')
             ).annotate(
                 tags=ArrayAgg(F('tag__name'))
             ).values('tags')
         ), [])
 
-    @property
+    @cached_property
     def retracted_query(self):
         return RawSQL(re.sub('\s+', ' ', '''(
             WITH RECURSIVE ascendants AS (
@@ -127,31 +197,31 @@ class FileActionGenerator(AbstractActionGenerator):
                 RETRACTION.id = (SELECT retraction_id FROM ascendants WHERE retraction_id IS NOT NULL LIMIT 1)
             LIMIT 1
         )'''.format(
-            abstractnode=AbstractNode._meta.db_table,
+            abstractnode=models.AbstractNode._meta.db_table,
             approved=models.Retraction.APPROVED,
-            noderelation=NodeRelation._meta.db_table,
+            noderelation=models.NodeRelation._meta.db_table,
             retraction=models.Retraction._meta.db_table,
         )), [])
 
-    @property
+    @cached_property
     def node_query(self):
         return JSONBuildObject(
             title=F('node__title'),
-            guid=self.guid_for(AbstractNode, 'node__pk'),
+            guid=self.guid_for(models.AbstractNode, 'node__pk'),
             type=F('node__type'),
             is_retracted=Coalesce(self.retracted_query, Value(False)),
             parent_guid=Subquery(
-                NodeRelation.objects.filter(
+                models.NodeRelation.objects.filter(
                     is_node_link=False,
                     child_id=OuterRef('node__pk')
                 ).annotate(
-                    guid=self.guid_for(AbstractNode, 'parent_id')
+                    guid=self.guid_for(models.AbstractNode, 'parent_id')
                 ).order_by('created').values('guid')[:1]
             )
         )
 
     def build_query(self):
-        qs = BaseFileNode.objects.all()
+        qs = self.inital_queryset
 
         # NOTE: A file will be exclude from search if any of the following apply
         # File Based Exclusions:
@@ -177,17 +247,17 @@ class FileActionGenerator(AbstractActionGenerator):
         return qs.annotate(
             doc=JSONBuildObject(
                 _id=F('_id'),
-                guid=self.guid_for(BaseFileNode),
+                guid=self.guid_for(models.BaseFileNode),
                 name=F('name'),
                 category=Value('file'),
                 tags=self.tags_query,
                 node=self.node_query,
             ),
-            file_qa_tags=Exists(BaseFileNode.tags.through.objects.filter(
+            file_qa_tags=Exists(models.BaseFileNode.tags.through.objects.filter(
                 basefilenode_id=OuterRef('pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),
-            node_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+            node_qa_tags=Exists(models.AbstractNode.tags.through.objects.filter(
                 abstractnode_id=OuterRef('node__pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),
@@ -208,6 +278,11 @@ class FileActionGenerator(AbstractActionGenerator):
             name=''
         ).exclude(
             node__spam_status=2
+        ).exclude(
+            # Exclude quickfiles that do not have an active user
+            # IE spam users
+            node__creator__is_active=False,
+            node__type=models.QuickFilesNode._meta.label_lower,
         ).values('doc')
 
     def post_process(self, _id, doc):
@@ -219,7 +294,7 @@ class FileActionGenerator(AbstractActionGenerator):
             extra = ''
 
         doc.update({
-            'deep_url': '/{}/files/osfstorage/{}'.format(node['guid'], _id),
+            'deep_url': '/{}/files/osfstorage/{}/'.format(node['guid'], _id),
             'guid_url': '/{}/'.format(guid) if guid else None,
             'is_registration': node['type'] == models.Registration._meta.label_lower,
             'is_retracted': node['is_retracted'],
@@ -233,13 +308,11 @@ class FileActionGenerator(AbstractActionGenerator):
 
 
 class InstitutionActionGenerator(AbstractActionGenerator):
-
-    @property
-    def type(self):
-        return 'institution'
+    type = 'institution'
+    model = models.Institution
 
     def build_query(self):
-        return Institution.objects.annotate(
+        return models.Institution.objects.annotate(
             doc=JSONBuildObject(
                 _id=F('_id'),
                 category=Value('institution'),
@@ -258,11 +331,9 @@ class InstitutionActionGenerator(AbstractActionGenerator):
         return doc
 
 
-class NodeCollectionSubmition(AbstractActionGenerator):
-
-    @property
-    def type(self):
-        return 'collectionSubmission'
+class CollectionSubmission(AbstractActionGenerator):
+    type = 'collectionSubmission'
+    model = models.CollectedGuidMetadata
 
     @property
     def subjects_query(self):
@@ -273,11 +344,6 @@ class NodeCollectionSubmition(AbstractActionGenerator):
                 doc=ArrayAgg('subject__text')
             ).values('doc')
         ), Value([]))
-
-    @property
-    def node_query(self):
-        return 
-
 
     @property
     def contributors_query(self):
@@ -295,13 +361,13 @@ class NodeCollectionSubmition(AbstractActionGenerator):
         )
 
     def build_query(self):
+        # TODO This might be better as a union all in the future
+        # Provided that nested GFKs can be joined on
         return models.CollectedGuidMetadata.objects.filter(
             collection__deleted__isnull=True,
             collection__is_bookmark_collection=False,
             collection__is_public=True,
             collection__provider__isnull=False,
-            guid__content_type__model=models.AbstractNode._meta.model_name,
-            guid__content_type__app_label=models.AbstractNode._meta.app_label,
         ).annotate(
             doc=JSONBuildObject(
                 _id=Concat(
@@ -313,41 +379,54 @@ class NodeCollectionSubmition(AbstractActionGenerator):
                 category=Value('collectionSubmission'),
                 collectedType=F('collected_type'),
                 subjects=self.subjects_query,
-                node=Subquery(
-                    Guid.objects.degeneric(referent=models.AbstractNode).filter(
-                        pk=OuterRef('guid__id')
-                    ).annotate(
-                        doc=JSONBuildObject(
-                            guid=F('_id'),
-                            title=F('referent__title'),
-                            description=F('referent__description'),
-                            contributors=self.contributors_query,
+                node=Case(
+                    When(
+                        guid__content_type__model=models.AbstractNode._meta.model_name,
+                        guid__content_type__app_label=models.AbstractNode._meta.app_label,
+                        then=Subquery(
+                            models.Guid.objects.degeneric(referent=models.AbstractNode).filter(
+                                pk=OuterRef('guid__id'),
+                                referent__is_public=True,
+                                referent__is_deleted=False,
+                            ).annotate(
+                                doc=JSONBuildObject(
+                                    guid=F('_id'),
+                                    title=F('referent__title'),
+                                    description=F('referent__description'),
+                                    contributors=self.contributors_query,
+                                )
+                            ).values('doc')
                         )
-                    ).values('doc')
-                )
+                    ),
+                    default=Value(None),
+                    output_field=JSONField(),
+                ),
             )
         ).values('doc')
 
     def post_process(self, _id, doc):
         node = doc.pop('node')
 
-        doc['title'] = node['title']
-        doc['abstract'] = node['description']
-        doc['url'] = '/{}/'.format(node['guid'])
+        if node:
+            doc['title'] = node['title']
+            doc['abstract'] = node['description']
+            doc['url'] = '/{}/'.format(node['guid'])
 
-        doc['contributors'] = [{
-            'fullname': contrib['fullname'],
-            'url': '/{}/'.format(contrib['guid']) if contrib['is_active'] else None
-        } for contrib in node['contributors']]
+            doc['contributors'] = [{
+                'fullname': contrib['fullname'],
+                'url': '/{}/'.format(contrib['guid']) if contrib['is_active'] else None
+            } for contrib in node['contributors']]
+        else:
+            # This could be avoided using the union all strategy
+            logger.warning('No Collected Object present on {}'.format(_id))
+            return None
 
         return doc
 
 
 class UserActionGenerator(AbstractActionGenerator):
-
-    @property
-    def type(self):
-        return 'user'
+    type = 'user'
+    model = models.OSFUser
 
     def build_query(self):
         return models.OSFUser.objects.annotate(
@@ -391,10 +470,10 @@ class UserActionGenerator(AbstractActionGenerator):
             'degree': schools[0]['degree'] if schools else '',
             'all_schools': [x['institution'] for x in schools] or None,
             'social': {
-                key: OSFUser.SOCIAL_FIELDS[key].format(val)
+                key: models.OSFUser.SOCIAL_FIELDS[key].format(val)
                 if isinstance(val, basestring) else val
                 for key, val in (doc.pop('social') or {}).items()
-                if val and key in OSFUser.SOCIAL_FIELDS
+                if val and key in models.OSFUser.SOCIAL_FIELDS
             } or None
         })
 
@@ -414,7 +493,7 @@ class NodeActionGenerator(AbstractActionGenerator):
     @property
     def tags_query(self):
         return Coalesce(Subquery(
-            AbstractNode.tags.through.objects.filter(
+            models.AbstractNode.tags.through.objects.filter(
                 tag__system=False,
                 abstractnode_id=OuterRef('pk')
             ).annotate(
@@ -425,7 +504,7 @@ class NodeActionGenerator(AbstractActionGenerator):
     @property
     def affiliated_institutions_query(self):
         return Coalesce(Subquery(
-            Node.affiliated_institutions.through.objects.filter(
+            models.Node.affiliated_institutions.through.objects.filter(
                 abstractnode_id=OuterRef('pk')
             ).annotate(
                 names=ArrayAgg(F('institution__name'))
@@ -444,7 +523,7 @@ class NodeActionGenerator(AbstractActionGenerator):
                     url=Case(
                         When(
                             user__is_active=True,
-                            then=Concat(Value('/'), self.guid_for(OSFUser, 'user__pk'), Value('/'))
+                            then=Concat(Value('/'), self.guid_for(models.OSFUser, 'user__pk'), Value('/'))
                         ),
                         default=Value(None)
                     )
@@ -455,11 +534,11 @@ class NodeActionGenerator(AbstractActionGenerator):
     @property
     def parent_query(self):
         return Subquery(
-            NodeRelation.objects.filter(
+            models.NodeRelation.objects.filter(
                 is_node_link=False,
                 child_id=OuterRef('pk')
             ).annotate(
-                guid=self.guid_for(AbstractNode, 'parent_id')
+                guid=self.guid_for(models.AbstractNode, 'parent_id')
             ).values('guid')[:1]
         )
 
@@ -497,14 +576,11 @@ class NodeActionGenerator(AbstractActionGenerator):
                 NODE_LICENSE.id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL LIMIT 1)
             LIMIT 1
         )'''.format(
-            nodelicense=NodeLicense._meta.db_table,
-            noderelation=NodeRelation._meta.db_table,
-            abstractnode=AbstractNode._meta.db_table,
-            nodelicenserecord=NodeLicenseRecord._meta.db_table
+            nodelicense=models.NodeLicense._meta.db_table,
+            noderelation=models.NodeRelation._meta.db_table,
+            abstractnode=models.AbstractNode._meta.db_table,
+            nodelicenserecord=models.NodeLicenseRecord._meta.db_table
         )), [])
-
-    def should_index(self, doc):
-        return True
 
     def build_query(self):
         return self._get_queryset().annotate(
@@ -554,7 +630,7 @@ class NodeActionGenerator(AbstractActionGenerator):
 
     def _build_attributes(self):
         return {
-            '_id': self.guid_for(AbstractNode),
+            '_id': self.guid_for(models.AbstractNode),
             'type': F('type'),
             # Node Attrs
             'title': F('title'),
@@ -596,23 +672,18 @@ class NodeActionGenerator(AbstractActionGenerator):
 
 
 class ProjectActionGenerator(NodeActionGenerator):
-
-    @property
-    def category(self):
-        return 'project'
-
-    @property
-    def type(self):
-        return 'project'
+    type = 'project'
+    category = 'project'
+    model = models.AbstractNode
 
     def _get_queryset(self):
-        qs = AbstractNode.objects.annotate(
-            has_parent=Exists(NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False)),
-            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+        qs = self.inital_queryset.annotate(
+            has_parent=Exists(models.NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False)),
+            has_qa_tags=Exists(models.AbstractNode.tags.through.objects.filter(
                 abstractnode_id=OuterRef('pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),
-            has_preprint=Exists(PreprintService.objects.filter(
+            has_preprint=Exists(models.PreprintService.objects.filter(
                 node_id=OuterRef('pk')
             ).exclude(
                 machine_state=DefaultStates.INITIAL.value,
@@ -653,23 +724,18 @@ class ProjectActionGenerator(NodeActionGenerator):
         )
 
 class ComponentActionGenerator(NodeActionGenerator):
-
-    @property
-    def category(self):
-        return 'component'
-
-    @property
-    def type(self):
-        return 'component'
+    type = 'component'
+    category = 'component'
+    model = models.Node
 
     def _get_queryset(self):
-        qs = Node.objects.annotate(
-            has_parent=Exists(NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False)),
-            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+        qs = self.inital_queryset.annotate(
+            has_parent=Exists(models.NodeRelation.objects.filter(child_id=OuterRef('pk'), is_node_link=False)),
+            has_qa_tags=Exists(models.AbstractNode.tags.through.objects.filter(
                 abstractnode_id=OuterRef('pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),
-            has_preprint=Exists(PreprintService.objects.filter(
+            has_preprint=Exists(models.PreprintService.objects.filter(
                 node_id=OuterRef('pk')
             ).exclude(
                 machine_state=DefaultStates.INITIAL.value,
@@ -703,20 +769,15 @@ class ComponentActionGenerator(NodeActionGenerator):
 
 
 class PreprintActionGenerator(NodeActionGenerator):
-
-    @property
-    def category(self):
-        return 'preprint'
-
-    @property
-    def type(self):
-        return 'preprint'
+    type = 'preprint'
+    category = 'preprint'
+    model = models.Node
 
     @property
     def preprint_query(self):
-        return Subquery(PreprintService.objects.annotate(
+        return Subquery(models.PreprintService.objects.annotate(
             doc=JSONBuildObject(
-                guid=self.guid_for(PreprintService),
+                guid=self.guid_for(models.PreprintService),
                 provider=JSONBuildObject(
                     _id=F('provider___id'),
                     domain=F('provider__domain'),
@@ -731,12 +792,12 @@ class PreprintActionGenerator(NodeActionGenerator):
         ).values('doc')[:1])
 
     def _get_queryset(self):
-        qs = Node.objects.annotate(
-            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+        qs = self.inital_queryset.annotate(
+            has_qa_tags=Exists(models.AbstractNode.tags.through.objects.filter(
                 abstractnode_id=OuterRef('pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),
-            has_preprint=Exists(PreprintService.objects.filter(
+            has_preprint=Exists(models.PreprintService.objects.filter(
                 node_id=OuterRef('pk')
             ).exclude(
                 machine_state=DefaultStates.INITIAL.value,
@@ -774,14 +835,9 @@ class PreprintActionGenerator(NodeActionGenerator):
 
 
 class RegistrationActionGenerator(NodeActionGenerator):
-
-    @property
-    def category(self):
-        return 'registration'
-
-    @property
-    def type(self):
-        return 'registration'
+    type = 'registration'
+    category = 'registration'
+    model = models.Registration
 
     @property
     def retracted_query(self):
@@ -808,15 +864,15 @@ class RegistrationActionGenerator(NodeActionGenerator):
                 RETRACTION.id = (SELECT retraction_id FROM ascendants WHERE retraction_id IS NOT NULL LIMIT 1)
             LIMIT 1
         ), FALSE)'''.format(
-            abstractnode=AbstractNode._meta.db_table,
+            abstractnode=models.AbstractNode._meta.db_table,
             approved=models.Retraction.APPROVED,
-            noderelation=NodeRelation._meta.db_table,
+            noderelation=models.NodeRelation._meta.db_table,
             retraction=models.Retraction._meta.db_table,
         )), [])
 
     def _get_queryset(self):
-        qs = models.Registration.objects.annotate(
-            has_qa_tags=Exists(AbstractNode.tags.through.objects.filter(
+        qs = self.inital_queryset.annotate(
+            has_qa_tags=Exists(models.AbstractNode.tags.through.objects.filter(
                 abstractnode_id=OuterRef('pk'),
                 tag__name__in=settings.DO_NOT_INDEX_LIST['tags'],
             )),

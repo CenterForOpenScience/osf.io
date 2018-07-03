@@ -26,22 +26,9 @@ def build_query(qs='*', start=0, size=10, sort=None):
 
 # Match queryObject in search.js
 def build_query_string(qs):
-    field_boosts = {
-        'title': TITLE_WEIGHT,
-        'description': DESCRIPTION_WEIGHT,
-        'job': JOB_SCHOOL_BOOST,
-        'school': JOB_SCHOOL_BOOST,
-        'all_jobs': ALL_JOB_SCHOOL_BOOST,
-        'all_schools': ALL_JOB_SCHOOL_BOOST,
-        '_all': 1,
-
-    }
-
-    fields = ['{}^{}'.format(k, v) for k, v in field_boosts.iteritems()]
     return {
         'query_string': {
-            'default_field': '_all',
-            'fields': fields,
+            'default_field': '*',
             'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this

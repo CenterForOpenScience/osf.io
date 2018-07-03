@@ -2,6 +2,8 @@ import logging
 
 from framework.celery_tasks.handlers import enqueue_task
 
+from osf import models
+
 from website import settings
 from website.search.drivers import base
 from website.search import elastic_search
@@ -11,14 +13,16 @@ logger = logging.getLogger(__name__)
 
 class LegacyElasticsearchDriver(base.SearchDriver):
 
-    @property
-    def migrator(self):
-        return LegacyElasticsearchMigrator(self)
-
     def __init__(self, default_index=None):
         self._default_index = default_index
 
-    def search(self, query, index=None, doc_type=None, raw=None):
+    def setup(self, types=None):
+        self.create_index(self._default_index)
+
+    def teardown(self, types=None):
+        self.delete_index(self._default_index)
+
+    def search(self, query, index=None, doc_type=None, raw=None, refresh=False):
         return elastic_search.search(
             query,
             index=index or self._default_index,
@@ -112,11 +116,39 @@ class LegacyElasticsearchDriver(base.SearchDriver):
     def create_index(self, index=None):
         elastic_search.create_index(index=index or self._default_index)
 
+    # Not implemented on purpose. No need to continue use of this driver
 
-class LegacyElasticsearchMigrator(base.SearchMigrator):
+    def index_files(self, **query):
+        raise NotImplementedError()
 
-    def setup(self):
-        self._driver.create_index()
+    def index_users(self, **query):
+        raise NotImplementedError()
 
-    def teardown(self):
-        self._driver.delete_index(self._driver._default_index)
+    def index_registrations(self, **query):
+        raise NotImplementedError()
+
+    def index_projects(self, **query):
+        raise NotImplementedError()
+
+    def index_components(self, **query):
+        raise NotImplementedError()
+
+    def index_preprints(self, **query):
+        raise NotImplementedError()
+
+    def index_collection_submissions(self, **query):
+        for cgm in models.CollectedGuidMetadata.objects.filter(**query).select_related('guid'):
+            elastic_search.update_cgm_async(
+                cgm.guid._id,
+                collection_id=cgm.collection_id,
+                index=self._default_index,
+            )
+
+    def remove(self, model):
+        elastic_search.client().delete(
+            doc_type='collectionSubmission',
+            id=model._id,
+            refresh=True,
+            ignore=[404],
+            index=self._default_index,
+        )
