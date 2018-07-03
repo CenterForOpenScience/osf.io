@@ -2,7 +2,7 @@
 """
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
-
+import re
 import unittest
 
 import mock
@@ -146,8 +146,23 @@ class TestPageCounter:
         assert total_downloads == 45
 
     def test_get_all_downloads_on_date_exclude_versions(self, page_counter, page_counter2, page_counter_for_individual_version):
-        # Indirectly checks regex to ensure we don't double count versions totals for that file node.
-
         total_downloads = PageCounter.get_all_downloads_on_date('2018/02/04')
 
         assert total_downloads == 45
+
+    def test_download_all_versions_regex(self):
+        # Checks regex to ensure we don't double count versions totals for that file node.
+
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'bad id')
+        assert not match
+
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'views:guid1:fileid')
+        assert not match
+
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'download:guid1:fileid:0')
+        assert not match
+
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'download:guid1:fileid')
+        assert match
+
+

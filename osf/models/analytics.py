@@ -65,6 +65,8 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
+    DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
+
     @staticmethod
     def get_all_downloads_on_date(date):
         """
@@ -75,7 +77,7 @@ class PageCounter(BaseModel):
 
         # Get all PageCounters with data for the date made for all versions downloads,
         # regex insures one colon so all versions are queried.
-        page_counters = PageCounter.objects.filter(date__has_key=date, _id__regex='^download:[^:]*:{1}[^:]*$')
+        page_counters = PageCounter.objects.filter(date__has_key=date, _id__regex=PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN)
 
         # Get the total download numbers from the nested dict on the PageCounter by annotating it as daily_total then
         # aggregating the sum.
