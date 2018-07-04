@@ -7,7 +7,6 @@ import pytz
 
 from dirtyfields import DirtyFieldsMixin
 from include import IncludeManager
-from django.apps import apps
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -21,7 +20,6 @@ from django.db.models.signals import post_save
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.analytics import increment_user_activity_counters
-from framework.celery_tasks.handlers import enqueue_task
 from framework.auth import oauth_scopes
 
 from osf.models import Subject, Tag, OSFUser, PreprintProvider
@@ -35,16 +33,18 @@ from osf.utils import sanitize
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
-from website.preprints.tasks import on_preprint_updated
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
+from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode
+
 
 from framework.sentry import log_exception
 from osf.exceptions import (
@@ -92,14 +92,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
-        'description'
+        'description',
     }
 
     # Node fields that trigger an update to elastic search on save
     SEARCH_UPDATE_FIELDS = {
         'title',
         'description',
-        'primary_file',
         'is_published',
         'license',
         'is_public',
@@ -455,8 +454,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
-        # TODO might have to rework. Do we need osfstorage checks?
-
         if not self.root_folder:
             raise PreprintStateError('Preprint needs a root folder.')
 
@@ -486,6 +483,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if save:
             self.save()
+        self.update_search()
+        update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'primary_file'})
 
     def set_published(self, published, auth, save=False):
         if not self.has_permission(auth.user, 'admin'):
@@ -542,6 +541,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 auth=auth,
                 save=False
             )
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'license'})
 
         if save:
             self.save()
@@ -553,20 +553,48 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
+    def get_doi_client(self):
+        if settings.CROSSREF_URL:
+            if self.provider._id == 'ecsarxiv':
+                return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
+            return CrossRefClient(base_url=settings.CROSSREF_URL)
+        else:
+            return None
+
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        ret = super(Preprint, self).save(*args, **kwargs)
-
         if saved_fields:
-            self.on_update(first_save, saved_fields, old_subjects={'old_subjects': old_subjects})
+            request, user_id = get_request_and_user_id()
+            request_headers = {}
+            if not isinstance(request, DummyRequest):
+                request_headers = {
+                    k: v
+                    for k, v in get_headers_from_request(request).items()
+                    if isinstance(v, basestring)
+                }
+            user = OSFUser.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers)
+
+        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
+            raise ValidationError('Cannot set "ever_public" to False')
+
+        ret = super(Preprint, self).save(*args, **kwargs)
 
         if first_save:
             self._set_default_region()
             self.update_group_permissions()
             self._add_creator_as_contributor()
+
+        if (not first_save and 'is_published' in saved_fields) or self.is_published:
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
         return ret
+
+    def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):
+        # Needed for ContributorMixin
+        return update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
 
     def _set_default_region(self):
         user_settings = self.creator.get_addon('osfstorage')
@@ -897,28 +925,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             user__in=users,
             user__is_active=True,
             user__groups=(self.get_group('admin').id))
-
-    def on_update(self, first_save, saved_fields, old_subjects=None):
-        User = apps.get_model('osf.OSFUser')
-        request, user_id = get_request_and_user_id()
-        request_headers = {}
-        if not isinstance(request, DummyRequest):
-            request_headers = {
-                k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
-            }
-
-        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
-            raise ValidationError('Cannot set "ever_public" to False')
-
-        if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id, saved_fields=saved_fields, old_subjects=old_subjects))
-
-        user = User.load(user_id)
-        if user and self.check_spam(user, saved_fields, request_headers):
-            # Specifically call the super class save method to avoid recursion into model save method.
-            super(Preprint, self).save()
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):

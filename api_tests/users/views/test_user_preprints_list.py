@@ -1,4 +1,3 @@
-import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -135,8 +134,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_filter_withdrawn_preprint(self, mock_change_identifier, app, url, user):
+    def test_filter_withdrawn_preprint(self, app, url, user):
         preprint_one = PreprintFactory(is_published=False, creator=user)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True

@@ -1,4 +1,3 @@
-import mock
 import pytest
 
 from django.utils import timezone
@@ -60,8 +59,7 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_filter_withdrawn_preprint(self, mock_change_identifier, app, url, user, project_one, provider_one, provider_two):
+    def test_filter_withdrawn_preprint(self, app, url, user, project_one, provider_one, provider_two):
         preprint_one = PreprintFactory(is_published=False, creator=user, project=project_one, provider=provider_one)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
@@ -265,7 +263,7 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
-    def test_preprint_node_null_visible(
+    def test_preprint_node_null_invisible(
             self, app,
             user_admin_contrib, user_write_contrib,
             user_non_contrib, preprint, url):

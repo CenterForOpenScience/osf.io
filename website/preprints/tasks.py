@@ -7,12 +7,13 @@ import requests
 
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_ezid_metadata_on_change
-from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
+from website.identifiers.tasks import update_doi_metadata_on_change
+from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -25,26 +26,53 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if old_subjects is None:
         old_subjects = []
 
-    update_or_create_preprint_identifiers(preprint)
-
     need_update = bool(preprint.SEARCH_UPDATE_FIELDS.intersection(saved_fields or {}))
-
     if need_update:
         preprint.update_search()
+
+    if should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
+        update_or_create_preprint_identifiers(preprint)
 
     if update_share:
         update_preprint_share(preprint, old_subjects, share_type)
 
+def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
+    # Only update identifier metadata iff...
+    return (
+        # DOI didn't just get created
+        not (saved_fields and 'preprint_doi_created' in saved_fields) and
+        # subjects aren't being set
+        not old_subjects
+    )
+
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
     if preprint.is_published and not preprint.get_identifier('doi'):
-        get_and_set_preprint_identifiers(preprint)
+        request_identifiers(preprint)
     else:
         try:
-            update_ezid_metadata_on_change(preprint._id, status=status)
+            update_doi_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
+
+def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
+    task = get_task_from_queue(
+        'website.preprints.tasks.on_preprint_updated',
+        predicate=lambda task: task.kwargs['preprint_id'] == preprint_id
+    )
+    if task:
+        old_subjects = old_subjects or []
+        task_subjects = task.kwargs['old_subjects'] or []
+        saved_fields = saved_fields or {}
+        task.kwargs['update_share'] = update_share or task.kwargs['update_share']
+        task.kwargs['share_type'] = share_type or task.kwargs['share_type']
+        task.kwargs['old_subjects'] = old_subjects + task_subjects
+        task.kwargs['saved_fields'] = list(set(task.kwargs['saved_fields']).union(saved_fields))
+    else:
+        enqueue_task(
+            on_preprint_updated.s(preprint_id=preprint_id, old_subjects=old_subjects, update_share=update_share, share_type=share_type, saved_fields=saved_fields)
+        )
 
 def update_preprint_share(preprint, old_subjects=None, share_type=None):
     if settings.SHARE_URL:
@@ -166,15 +194,6 @@ def format_preprint(preprint, share_type, old_subjects=None):
         to_visit.extend(list(n.get_related()))
 
     return [node.serialize() for node in visited]
-
-
-def get_and_set_preprint_identifiers(preprint):
-    ezid_response = request_identifiers_from_ezid(preprint)
-    if ezid_response is None:
-        return
-    id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], save=True)
-
 
 def send_desk_share_preprint_error(preprint, resp, retries):
     mails.send_mail(

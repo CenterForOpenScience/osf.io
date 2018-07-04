@@ -266,7 +266,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
     def url(self):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
 
-    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    @mock.patch('website.identifiers.clients.crossref.CrossRefClient.update_identifier')
     def test_provider_filter_equals_returns_one(
             self,
             mock_change_identifier,
@@ -284,8 +284,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_filter_withdrawn_preprint(self, mock_change_identifier, app, url, user):
+    def test_filter_withdrawn_preprint(self, app, url, user):
         preprint_one = PreprintFactory(is_published=False, creator=user)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
@@ -338,7 +337,7 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
 
     @pytest.fixture()
     def expected_reviewables(self, user):
-        with mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers'):
+        with mock.patch('website.identifiers.utils.request_identifiers'):
             preprints = [
                 PreprintFactory(
                     is_published=False, project=ProjectFactory(

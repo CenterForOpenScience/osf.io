@@ -1,3 +1,4 @@
+import mock
 import pytest
 from django.utils import timezone
 
@@ -365,11 +366,11 @@ class PreprintIsValidListMixin:
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
 
-    def test_preprint_node_null_visible(
-            self, app,
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
+    def test_preprint_node_null_invisible(
+            self, mock_preprint_updated, app,
             user_admin_contrib, user_write_contrib,
             user_non_contrib, preprint, url):
-        # Removed node no longer affects whether you can see preprint
         preprint.node = None
         preprint.save()
 

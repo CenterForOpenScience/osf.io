@@ -15,7 +15,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0113_merge_20180620_1013'),
+        ('osf', '0116_merge_20180702_1607'),
     ]
 
     operations = [

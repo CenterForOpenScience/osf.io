@@ -593,7 +593,6 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
-    # import pdb; pdb.set_trace()
     if isinstance(node, Preprint):
         return
     MAX_RECENT_LENGTH = 15

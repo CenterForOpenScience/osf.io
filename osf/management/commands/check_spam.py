@@ -20,12 +20,13 @@ def check_spam(guid, flag=False):
     """Check and optionally flag a node or preprint as spam. Unlike the spam-related node methods, this
     function will check the node regardless of whether the node/preprint is public or private.
     """
-    referent_type = 'preprint' if isinstance(guid.referent, Preprint) else 'node'
     node = guid.referent
+    referent_type = 'preprint' if isinstance(node, Preprint) else 'node'
     logger.info('Checking {} {}...'.format(referent_type, node._id))
 
     # Pass saved fields so that all relevant fields get sent to Akismet
-    content = node._get_spam_content(saved_fields={'is_public', } | node.SPAM_CHECK_FIELDS)
+    saved_fields = {'is_public', } if referent_type == 'node' else {'is_published', }
+    content = node._get_spam_content(saved_fields=saved_fields | node.SPAM_CHECK_FIELDS)
 
     author = node.creator.fullname
     author_email = node.creator.username

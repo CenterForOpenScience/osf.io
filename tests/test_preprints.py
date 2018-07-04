@@ -13,21 +13,23 @@ import itsdangerous
 
 from framework.exceptions import PermissionsError
 from website import settings, mails
-from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.util.share import format_user
 from framework.auth import Auth, cas, signing
 from framework.celery_tasks import handlers
+from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError, PreprintProviderError
+
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf_tests.utils import MockShareResponse
-from .utils import assert_datetime_equal
+from tests.base import assert_datetime_equal
 
 from osf_tests.factories import (
     ProjectFactory,
@@ -100,9 +102,6 @@ class TestPreprintProperties:
 
         preprint.deleted = None
         assert preprint.verified_publishable is True
-
-    def test_preprint_doi(self, preprint):
-        assert preprint.preprint_doi == '{}osf.io/{}'.format(settings.DOI_NAMESPACE.replace('doi:', ''), preprint._id)
 
     def test_is_preprint_orphan(self, preprint):
         assert preprint.is_preprint_orphan is False
@@ -887,7 +886,7 @@ class TestAddUnregisteredContributor:
 
 class TestPreprintSpam:
     @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
-    def test_preprint_on_spammy_preprint(self, preprint):
+    def test_set_privacy_on_spammy_preprint(self, preprint):
         preprint.is_public = False
         preprint.save()
         with mock.patch.object(Preprint, 'is_spammy', mock.PropertyMock(return_value=True)):
@@ -902,14 +901,12 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_check_spam_only_public_preprint_by_default(self, mock_preprint_updated, preprint, user):
+    def test_check_spam_only_public_preprint_by_default(self, preprint, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is False
-        assert mock_preprint_updated.called
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_skips_ham_user(self, preprint, user):
@@ -932,8 +929,7 @@ class TestPreprintSpam:
     @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -957,13 +953,11 @@ class TestPreprintSpam:
                 assert preprint2.is_public is False
                 preprint3.reload()
                 assert preprint3.is_public is True
-        assert mock_preprint_updated.called
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_preprint_updated, mock_send_mail, preprint, user):
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -973,18 +967,13 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is True
                 assert preprint.is_public is True
 
-        assert mock_preprint_updated.called
-
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_flag_spam_make_preprint_private(self, mock_preprint_updated, preprint):
+    def test_flag_spam_make_preprint_private(self, preprint):
         assert preprint.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             preprint.flag_spam()
             preprint.save()
         assert preprint.is_spammy
         assert preprint.is_public is False
-
-        assert mock_preprint_updated.called
 
     def test_flag_spam_do_not_make_preprint_private(self,  preprint):
         assert preprint.is_public
@@ -994,15 +983,12 @@ class TestPreprintSpam:
         assert preprint.is_spammy
         assert preprint.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_confirm_spam_makes_preprint_private(self, mock_preprint_updated, preprint):
+    def test_confirm_spam_makes_preprint_private(self, preprint):
         assert preprint.is_public
         preprint.confirm_spam()
         preprint.save()
         assert preprint.is_spammy
         assert preprint.is_public is False
-
-        assert mock_preprint_updated.called
 
 
 # copied from tests/test_models.py
@@ -1793,6 +1779,7 @@ class TestPreprintProvider(OsfTestCase):
         assert self.provider.has_highlighted_subjects is True
         assert set(self.provider.highlighted_subjects) == set([subj_aaa])
 
+
 class TestPreprintIdentifiers(OsfTestCase):
     def setUp(self):
         super(TestPreprintIdentifiers, self).setUp()
@@ -1800,29 +1787,19 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    def test_get_doi_for_preprint(self):
-        new_provider = PreprintProviderFactory()
-        preprint = PreprintFactory(provider=new_provider)
-        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
-
-        doi, metadata = get_doi_and_metadata_for_object(preprint)
-
-        assert doi == ideal_doi
-
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_update_or_create_preprint_identifiers(self, mock_get_identifiers):
-        self.preprint.is_published = True
-        update_or_create_preprint_identifiers(self.preprint)
-        assert mock_get_identifiers.called
-        assert mock_get_identifiers.call_count == 1
-
-
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_or_create_preprint_identifiers_ezid(self, mock_update_ezid):
+    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
+    def test_update_or_create_preprint_identifiers_called(self, mock_update_doi):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
         update_or_create_preprint_identifiers(published_preprint)
-        assert mock_update_ezid.called
-        assert mock_update_ezid.call_count == 1
+        assert mock_update_doi.called
+        assert mock_update_doi.call_count == 1
+
+    @mock.patch('website.settings.CROSSREF_URL', 'http://test.osf.crossref.test')
+    def test_correct_doi_client_called(self):
+        osf_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
+        assert isinstance(osf_preprint.get_doi_client(), CrossRefClient)
+        ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
+        assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
@@ -1859,10 +1836,30 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
             pp.set_subjects([[SubjectFactory()._id]], auth=Auth(pp.creator))
 
-
     def tearDown(self):
         handlers.celery_before_request()
         super(TestOnPreprintUpdatedTask, self).tearDown()
+
+    def test_update_or_enqueue_on_preprint_updated(self):
+        first_subjects = [15]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=first_subjects,
+            saved_fields={'contributors': True}
+        )
+        second_subjects = [16, 17]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=second_subjects,
+            saved_fields={'title': 'Hello'}
+        )
+        updated_task = get_task_from_queue(
+            'website.preprints.tasks.on_preprint_updated',
+            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
+        )
+        assert 'title' in updated_task.kwargs['saved_fields']
+        assert 'contributors' in  updated_task.kwargs['saved_fields']
+        assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
     def test_format_preprint(self):
         res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
@@ -2140,38 +2137,36 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_save_unpublished_not_called(self, mock_on_preprint_updated):
         self.preprint.save()
         assert not mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_save_published_called(self, mock_on_preprint_updated):
         self.preprint.set_published(True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.called
 
     # This covers an edge case where a preprint is forced back to unpublished
     # that it sends the information back to share
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.is_published = False
         self.preprint.save(**{'force_update': True})
         assert_equal(mock_on_preprint_updated.call_count, 2)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_save_published_called(self, mock_on_preprint_updated):
-        self.preprint.set_published(True, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.called
-
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_save_published_subject_change_called(self, mock_on_preprint_updated):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
-        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args[1].values()
+        call_args, call_kwargs = mock_on_preprint_updated.call_args
+        assert 'old_subjects' in mock_on_preprint_updated.call_args[1]
+        assert call_kwargs.get('old_subjects') == [self.subject.id]
+        assert [self.subject.id] in mock_on_preprint_updated.call_args[1].values()
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert not mock_on_preprint_updated.called
@@ -2185,34 +2180,31 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_preprint_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
-        # A user is added as a contributor
-        self.preprint.is_published = True
-        self.preprint.save()
-
-        assert mock_on_preprint_updated.call_count == 1
-
-        user = AuthUserFactory()
-        self.preprint.primary_file = self.file
-
-        self.preprint.add_contributor(contributor=user, auth=self.auth, save=True)
+        preprint = PreprintFactory(is_published=True, creator=self.admin)
         assert mock_on_preprint_updated.call_count == 2
 
-        self.preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 3
+        user = AuthUserFactory()
+        preprint.primary_file = self.file
+
+        preprint.add_contributor(contributor=user, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 5
+
+        preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 6
 
         data = [{'id': self.admin._id, 'permissions': 'admin', 'visible': True},
                 {'id': user._id, 'permissions': 'write', 'visible': False}]
 
-        self.preprint.manage_contributors(data, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 4
+        preprint.manage_contributors(data, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 7
 
-        self.preprint.update_contributor(user, 'read', True, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 5
+        preprint.update_contributor(user, 'read', True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 8
 
-        self.preprint.remove_contributor(contributor=user, auth=self.auth)
-        assert mock_on_preprint_updated.call_count == 6
+        preprint.remove_contributor(contributor=user, auth=self.auth)
+        assert mock_on_preprint_updated.call_count == 10
 
     @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
     @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
@@ -2570,7 +2562,7 @@ class TestWithdrawnPreprint:
     def preprint(self):
         return PreprintFactory()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+    @mock.patch('website.identifiers.utils.request_identifiers')
     def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
         # test_ever_public
 
