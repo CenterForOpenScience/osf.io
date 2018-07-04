@@ -570,15 +570,21 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value = {
-        'response': {
-            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            )
-        },
+    from website.identifiers.clients import EzidClient
+    client = preprint.get_doi_client()
+
+    if isinstance(client, EzidClient):
+        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
+        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
+        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
+    else:
+        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
+
+    doi_client_return_value = {
+        'response': return_value,
         'already_exists': False
     }
-    id_dict = parse_identifiers(ezid_return_value)
+    id_dict = parse_identifiers(doi_client_return_value)
     preprint.set_identifier_values(doi=id_dict['doi'])
 
 
@@ -604,6 +610,7 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
 
@@ -641,6 +648,7 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
+        update_task_patcher.stop()
 
         if finish:
             auth = Auth(user)
@@ -650,9 +658,9 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
-            if is_published:
+            if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
             instance.set_published(is_published, auth=auth)

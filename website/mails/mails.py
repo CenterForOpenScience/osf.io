@@ -315,7 +315,7 @@ FILE_OPERATION_FAILED = Mail(
     subject='Your ${action} has failed',
 )
 
-UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
+UNESCAPE = '<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
@@ -415,4 +415,19 @@ ACCESS_REQUEST_SUBMITTED = Mail(
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
     subject='Your access request to an OSF project has been declined'
+)
+
+CROSSREF_ERROR = Mail(
+    'crossref_doi_error',
+    subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
+)
+
+CROSSREF_CSV = Mail(
+    'crossref_csv',
+    subject='[auto] Here is a CSV of DOIs related to crossref: ${csv_type}'
+)
+
+PREPRINT_DOI_CHANGE = Mail(
+    'preprint_doi_change',
+    subject='Improvements to OSF Preprints DOIs'
 )
