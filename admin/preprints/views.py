@@ -101,7 +101,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
         ]
         for pid in preprint_ids:
             preprint = PreprintService.load(pid)
-            osf_admin_change_status_identifier(preprint, 'unavailable | spam')
+            osf_admin_change_status_identifier(preprint)
             preprint.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
@@ -142,7 +142,7 @@ class PreprintConfirmSpamView(PermissionRequiredMixin, PreprintDeleteBase):
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.confirm_spam(save=True)
-        osf_admin_change_status_identifier(preprint, 'unavailable | spam')
+        osf_admin_change_status_identifier(preprint)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,
@@ -160,7 +160,7 @@ class PreprintConfirmHamView(PermissionRequiredMixin, PreprintDeleteBase):
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.confirm_ham(save=True)
-        osf_admin_change_status_identifier(preprint, 'public')
+        osf_admin_change_status_identifier(preprint)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,
