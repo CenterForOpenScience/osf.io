@@ -301,7 +301,6 @@ class ElasticsearchDriver(base.SearchDriver):
 
         return ret
 
-
         # ret = {
         #     doc_type: {
         #         item['key']: item['doc_count']
@@ -501,10 +500,10 @@ class ElasticsearchDriver(base.SearchDriver):
                 'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
                 'profile_image_url': profile_image_url(
-                     settings.PROFILE_IMAGE_PROVIDER,
-                     user,
-                     use_ssl=True,
-                     size=settings.PROFILE_IMAGE_MEDIUM
+                    settings.PROFILE_IMAGE_PROVIDER,
+                    user,
+                    use_ssl=True,
+                    size=settings.PROFILE_IMAGE_MEDIUM
                 ),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,

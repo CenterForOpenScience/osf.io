@@ -12,7 +12,7 @@ from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.search.drivers.disabled import SearchDisabledDriver
-from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
+# from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
 from website.search.drivers.elasticsearch import ElasticsearchDriver
 
 # Silence some 3rd-party logging and some "loud" internal loggers

@@ -85,7 +85,7 @@ class SearchDriver(object):
 
     ### NEW API ###
 
-    # NOTE: index_type methods are 
+    # NOTE: index_type methods are
 
     @abc.abstractproperty
     def index_files(self, **query):
