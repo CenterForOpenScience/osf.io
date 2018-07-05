@@ -70,7 +70,6 @@ def add_poster_by_email(conference, message):
             logo=settings.OSF_MEETINGS_LOGO
         )
 
-    nodes_created = []
     users_created = []
 
     with transaction.atomic():
@@ -96,22 +95,16 @@ def add_poster_by_email(conference, message):
         else:
             set_password_url = None
 
-        node, node_created = Node.objects.get_or_create(
-            title__iexact=message.subject,
-            is_deleted=False,
-            _contributors__guids___id=user._id,
-            defaults={
-                'title': message.subject,
-                'creator': user
-            }
+        # Always create a new meeting node
+        node = Node.objects.create(
+            title=message.subject,
+            creator=user
         )
-        if node_created:
-            nodes_created.append(node)
-            node.add_system_tag('osf4m')
-            node.save()
+        node.add_system_tag('osf4m')
+        node.save()
 
         utils.provision_node(conference, message, node, user)
-        utils.record_message(message, nodes_created, users_created)
+        utils.record_message(message, [node], users_created)
     # Prevent circular import error
     from framework.auth import signals as auth_signals
     if user_created:
@@ -148,7 +141,7 @@ def add_poster_by_email(conference, message):
         can_change_preferences=False,
         logo=settings.OSF_MEETINGS_LOGO
     )
-    if node_created and user_created:
+    if user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 def conference_data(meeting):
