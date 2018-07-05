@@ -56,6 +56,7 @@ from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
+from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -1421,6 +1422,8 @@ class TestUserProfile(OsfTestCase):
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put_json(url, payload, auth=self.user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
 
         assert mock_client.lists.unsubscribe.called
         mock_client.lists.unsubscribe.assert_called_with(
@@ -4075,6 +4078,8 @@ class TestConfigureMailingListViews(OsfTestCase):
         payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
         user.reload()
 
         # check user.mailing_lists is updated
