@@ -77,10 +77,10 @@ before_install:
       fi
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE.sha1.txt" ]; then
-        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE.sha1.txt
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE.sha512.txt
       fi
 
-      sha1sum --check $ELASTICSEARCH_ARCHIVE.sha1.txt
+      shasum -a 512 --check $ELASTICSEARCH_ARCHIVE.sha512.txt
 
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
