@@ -192,6 +192,7 @@
             ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
             ga('set', 'dimension2', '${self.resource()}');
             ga('set', 'dimension3', '${self.public()}');
+            ga('set', 'anonymizeIp', true);
             ga('send', 'pageview');
             </script>
 
