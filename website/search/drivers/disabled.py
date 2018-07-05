@@ -11,7 +11,7 @@ class SearchDisabledDriver(base.SearchDriver):
     def __init__(self, warnings=True):
         self._warnings = warnings
 
-    def search(query, index=None, doc_type=None, raw=None, refresh=False):
+    def search(self, query, index=None, doc_type=None, raw=None, refresh=False):
         raise exceptions.SearchDisabledException()
 
     def search_contributor(self, query, page=0, size=10, exclude=None, current_user=None):

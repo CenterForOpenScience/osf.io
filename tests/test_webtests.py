@@ -456,58 +456,6 @@ class TestMergingAccounts(OsfTestCase):
         assert_in('This account has been merged', res)
 
 
-# FIXME: These affect search in development environment. So need to migrate solr after running.
-# # Remove this side effect.
-@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
-class TestSearching(OsfTestCase):
-    '''Test searching using the search bar. NOTE: These may affect the
-    Solr database. May need to migrate after running these.
-    '''
-
-    def setUp(self):
-        super(TestSearching, self).setUp()
-        from website.search import search
-        search.delete_all()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_user_from_home_page(self):
-        user = UserFactory()
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Fills search form
-        form = res.forms['searchBar']
-        form['q'] = user.fullname
-        res = form.submit().maybe_follow()
-        # The username shows as a search result
-        assert_in(user.fullname, res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_project_from_home_page(self):
-        project = ProjectFactory(title='Foobar Project', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        project.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the project is shown as a result
-        assert_in('Foobar Project', res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_component_from_home_page(self):
-        component = NodeFactory(title='Foobar Component', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        component.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the component is shown as a result
-        assert_in('Foobar Component', res)
-
-
 @pytest.mark.usefixtures('enable_bookmark_creation')
 class TestShortUrls(OsfTestCase):
 
