@@ -11,6 +11,7 @@ import os
 from celery.canvas import Signature
 from celery.local import PromiseProxy
 from gevent.pool import Pool
+from flask import _app_ctx_stack as context_stack
 
 from website import settings
 
@@ -71,20 +72,24 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
     '''
     Any task queued with this function where celery=True will be run asynchronously.
     '''
-    # make a hash of the pertinent data
-    raw = [fn.__name__, fn.__module__, args, kwargs]
-    m = hashlib.md5()
-    m.update('-'.join([x.__repr__() for x in raw]))
-    key = m.hexdigest()
-
-    if not once_per_request:
-        # we want to run it once for every occurrence, add a random string
-        key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
-
-    if celery and isinstance(fn, PromiseProxy):
-        postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})
+    if context_stack.top and context_stack.top.app.testing:
+        # For testing purposes only: run fn directly
+        fn(*args, **kwargs)
     else:
-        postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
+        # make a hash of the pertinent data
+        raw = [fn.__name__, fn.__module__, args, kwargs]
+        m = hashlib.md5()
+        m.update('-'.join([x.__repr__() for x in raw]))
+        key = m.hexdigest()
+
+        if not once_per_request:
+            # we want to run it once for every occurrence, add a random string
+            key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
+
+        if celery and isinstance(fn, PromiseProxy):
+            postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})
+        else:
+            postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
 
 handlers = {
     'before_request': postcommit_before_request,

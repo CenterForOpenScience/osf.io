@@ -682,7 +682,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(log.action, 'published')
         assert_equal(log.params.get('preprint'), preprint._id)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_published_hits_update(
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
@@ -699,7 +699,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_true(mock_on_preprint_updated.called)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
@@ -711,7 +711,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth)
         assert not mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_setting_is_published_with_moderated_provider_fails(
             self, mock_on_preprint_updated):
         self.provider.reviews_workflow = 'pre-moderation'

@@ -104,7 +104,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'is_public',
         'deleted',
         'subjects',
-        '_contributors'
+        'primary_file',
+        'contributors',
+        'tags',
     }
 
     # Setting for ContributorMixin
@@ -483,7 +485,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if save:
             self.save()
-        self.update_search()
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'primary_file'})
 
     def set_published(self, published, auth, save=False):
@@ -541,10 +542,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 auth=auth,
                 save=False
             )
-            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'license'})
-
         if save:
             self.save()
+        update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'license'})
 
     def set_identifier_values(self, doi, save=False):
         self.set_identifier_value('doi', doi)
@@ -667,7 +667,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     # Override Taggable
     def on_tag_added(self, tag):
-        self.update_search()
+        update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'tags'})
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -688,7 +688,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             )
             if save:
                 self.save()
-            self.update_search()
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields={'tags'})
             return True
 
     def set_supplemental_node(self, node, auth, save=False):

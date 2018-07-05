@@ -10,6 +10,7 @@ from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
+from framework.postcommit_tasks.handlers import postcommit_after_request
 from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS

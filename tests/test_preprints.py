@@ -19,7 +19,7 @@ from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.util.share import format_user
 from framework.auth import Auth, cas, signing
 from framework.celery_tasks import handlers
-from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue, postcommit_celery_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
@@ -1790,7 +1790,6 @@ class TestPreprintIdentifiers(OsfTestCase):
     @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
     def test_update_or_create_preprint_identifiers_called(self, mock_update_doi):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
-        update_or_create_preprint_identifiers(published_preprint)
         assert mock_update_doi.called
         assert mock_update_doi.call_count == 1
 
@@ -1841,19 +1840,22 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         super(TestOnPreprintUpdatedTask, self).tearDown()
 
     def test_update_or_enqueue_on_preprint_updated(self):
+        # enqueue_postcommit_task automatically calls task in testing now.
+        # This test modified to stick something in the postcommit_queue manually so
+        # we can test that the queue is modified properly.
         first_subjects = [15]
-        update_or_enqueue_on_preprint_updated(
-            self.preprint._id,
-            old_subjects=first_subjects,
-            saved_fields={'contributors': True}
-        )
+        args = ()
+        kwargs = {'preprint_id': self.preprint._id, 'old_subjects': first_subjects, 'update_share': False, 'share_type': None, 'saved_fields': ['contributors']}
+        postcommit_celery_queue().update({'asdfasd': on_preprint_updated.si(*args, **kwargs)})
+
         second_subjects = [16, 17]
         update_or_enqueue_on_preprint_updated(
             self.preprint._id,
             old_subjects=second_subjects,
             saved_fields={'title': 'Hello'}
         )
-        updated_task = get_task_from_queue(
+
+        updated_task = get_task_from_postcommit_queue(
             'website.preprints.tasks.on_preprint_updated',
             predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
         )
@@ -2137,7 +2139,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_save_unpublished_not_called(self, mock_on_preprint_updated):
         self.preprint.save()
         assert not mock_on_preprint_updated.called
@@ -2192,19 +2194,19 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert mock_on_preprint_updated.call_count == 5
 
         preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 6
+        assert mock_on_preprint_updated.call_count == 7
 
         data = [{'id': self.admin._id, 'permissions': 'admin', 'visible': True},
                 {'id': user._id, 'permissions': 'write', 'visible': False}]
 
         preprint.manage_contributors(data, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 7
+        assert mock_on_preprint_updated.call_count == 9
 
         preprint.update_contributor(user, 'read', True, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 8
+        assert mock_on_preprint_updated.call_count == 11
 
         preprint.remove_contributor(contributor=user, auth=self.auth)
-        assert mock_on_preprint_updated.call_count == 10
+        assert mock_on_preprint_updated.call_count == 13
 
     @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
     @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')

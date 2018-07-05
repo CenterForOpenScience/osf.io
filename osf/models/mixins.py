@@ -915,13 +915,12 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-            self.update_search()
             if self._id and contrib_to_add:
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email, permissions=permissions)
 
-            # enqueue on_node_updated to update DOI metadata when a contributor is added
+            # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
@@ -1157,11 +1156,10 @@ class ContributorMixin(models.Model):
             )
 
         self.save()
-        self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
-        # enqueue on_node_updated to update DOI metadata when a contributor is removed
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is removed
         if self.get_identifier_value('doi'):
             request, user_id = get_request_and_user_id()
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
@@ -1213,7 +1211,10 @@ class ContributorMixin(models.Model):
         )
         if save:
             self.save()
-        self.update_search()
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is moved
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
 
     # TODO: Optimize me
     def manage_contributors(self, user_dicts, auth, save=False):
@@ -1368,7 +1369,10 @@ class ContributorMixin(models.Model):
             )
         if save:
             self.save()
-        self.update_search()
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is hidden/made visible
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.

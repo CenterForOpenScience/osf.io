@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import mock
 import time
 import unittest
 import logging
@@ -25,12 +26,15 @@ from osf.models import (
     CollectedGuidMetadata,
 )
 from addons.osfstorage.models import OsfStorageFile
+from framework.postcommit_tasks.handlers import postcommit_queue
 
 from scripts.populate_institutions import main as populate_institutions
 
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
+from framework.postcommit_tasks.handlers import postcommit_after_request
+
 from tests.utils import mock_archive, run_celery_tasks
 
 
@@ -394,53 +398,62 @@ class TestPreprint(OsfTestCase):
 
     def test_new_preprint_unsubmitted(self):
         # Verify that an unsubmitted preprint is not present in Elastic Search.
-        docs = query(self.preprint.title)['results']
+        title = 'Apple'
+        self.preprint.title = title
+        self.preprint.save()
+        docs = query(title)['results']
         assert_equal(len(docs), 0)
 
     def test_new_preprint_unpublished(self):
         # Verify that an unpublished preprint is not present in Elastic Search.
-        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False)
-        docs = query(self.preprint.title)['results']
+        title = 'Banana'
+        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
+        assert self.preprint.title == title
+        docs = query(title)['results']
         assert_equal(len(docs), 0)
 
     def test_unsubmitted_preprint_primary_file(self):
         # Unpublished preprint's primary_file not showing up in Elastic Search
-        with run_celery_tasks():
-            self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
-        docs = query(self.preprint.title)['results']
+        title = 'Cantaloupe'
+        self.preprint.title = title
+        self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
+        assert self.preprint.title == title
+        docs = query(title)['results']
         assert_equal(len(docs), 0)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     def test_publish_preprint(self):
-        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False)
-        with run_celery_tasks():
-            self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
-        docs = query(self.preprint.title)['results']
+        title = 'Date'
+        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
+        self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
+        assert self.preprint.title == title
+        docs = query(title)['results']
         # Both preprint and primary_file showing up in Elastic
         assert_equal(len(docs), 2)
 
     def test_preprint_title_change(self):
+        title_original = self.published_preprint.title
         new_title = 'My new preprint title'
-        with run_celery_tasks():
-            self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
-        docs = query(new_title)['results']
-        # Both preprint and primary_file showing up in Elastic
-        assert_equal(len(docs), 2)
+        self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
+        docs = query('category:preprint AND ' + title_original)['results']
+        assert_equal(len(docs), 0)
+
+        docs = query('category:preprint AND ' + new_title)['results']
+        assert_equal(len(docs), 1)
 
     def test_preprint_description_change(self):
-        with run_celery_tasks():
-            new_abstract = 'My preprint abstract'
-            self.published_preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
+        description_original = self.published_preprint.description
+        new_abstract = 'My preprint abstract'
+        self.published_preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
         docs = query(self.published_preprint.title)['results']
-        # Both preprint and primary_file showing up in Elastic
-        assert_equal(len(docs), 2)
-        assert_equal(docs[0]['description'], new_abstract)
+        docs = query('category:preprint AND ' + description_original)['results']
+        assert_equal(len(docs), 0)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+        docs = query('category:preprint AND ' + new_abstract)['results']
+        assert_equal(len(docs), 1)
+
     def test_set_preprint_private(self):
         # Not currently an option for users, but can be used for spam
-        with run_celery_tasks():
-            self.published_preprint.set_privacy('private', auth=Auth(self.user), save=True)
+        self.published_preprint.set_privacy('private', auth=Auth(self.user), save=True)
         docs = query(self.published_preprint.title)['results']
         # Both preprint and primary_file showing up in Elastic
         assert_equal(len(docs), 0)
@@ -453,9 +466,7 @@ class TestPreprint(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
-
-        with run_celery_tasks():
-            self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
+        self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
         docs = query(self.published_preprint.title)['results']
         assert_equal(len(docs), 2)
         assert_equal(docs[1]['name'], self.file.name)
@@ -466,9 +477,11 @@ class TestPreprint(OsfTestCase):
             'year': '2015',
             'copyrightHolders': ['Iron Man']
         }
-        with run_celery_tasks():
-            self.published_preprint.set_preprint_license(license_details, Auth(self.user), save=True)
-        docs = query(self.published_preprint.title)['results']
+        title = 'Elderberry'
+        self.published_preprint.title = title
+        self.published_preprint.set_preprint_license(license_details, Auth(self.user), save=True)
+        assert self.published_preprint.title == title
+        docs = query(title)['results']
         assert_equal(len(docs), 2)
         assert_equal(docs[0]['license']['copyright_holders'][0], 'Iron Man')
         assert_equal(docs[0]['license']['name'], 'No license')
@@ -477,11 +490,10 @@ class TestPreprint(OsfTestCase):
 
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        with run_celery_tasks():
-            for tag in tags:
-                docs = query('tags:"{}"'.format(tag))['results']
-                assert_equal(len(docs), 0)
-                self.published_preprint.add_tag(tag, Auth(self.user), save=True)
+        for tag in tags:
+            docs = query('tags:"{}"'.format(tag))['results']
+            assert_equal(len(docs), 0)
+            self.published_preprint.add_tag(tag, Auth(self.user), save=True)
 
         for tag in tags:
             docs = query('tags:"{}"'.format(tag))['results']
@@ -504,8 +516,8 @@ class TestPreprint(OsfTestCase):
 
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)
-        with run_celery_tasks():
-            self.published_preprint.add_contributor(user2, save=True)
+        # with run_celery_tasks():
+        self.published_preprint.add_contributor(user2, save=True)
 
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 1)
@@ -524,21 +536,31 @@ class TestPreprint(OsfTestCase):
     def test_hide_contributor(self):
         user2 = factories.UserFactory(fullname='Brian May')
         self.published_preprint.add_contributor(user2)
-        with run_celery_tasks():
-            self.published_preprint.set_visible(user2, False, save=True)
+        self.published_preprint.set_visible(user2, False, save=True)
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)
-        with run_celery_tasks():
-            self.published_preprint.set_visible(user2, True, save=True)
+        self.published_preprint.set_visible(user2, True, save=True)
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 1)
+
+    def test_move_contributor(self):
+        user2 = factories.UserFactory(fullname='Brian May')
+        self.published_preprint.add_contributor(user2, save=True)
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 1)
+        docs[0]['contributors'][0]['fullname'] == self.user.fullname
+        docs[0]['contributors'][1]['fullname'] == user2.fullname
+        self.published_preprint.move_contributor(user2, Auth(self.user), 0)
+        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        assert_equal(len(docs), 1)
+        docs[0]['contributors'][0]['fullname'] == user2.fullname
+        docs[0]['contributors'][1]['fullname'] == self.user.fullname
 
     def test_tag_aggregation(self):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        with run_celery_tasks():
-            for tag in tags:
-                self.published_preprint.add_tag(tag, Auth(self.user), save=True)
+        for tag in tags:
+            self.published_preprint.add_tag(tag, Auth(self.user), save=True)
 
         docs = query(self.published_preprint.title)['tags']
         assert len(docs) == 3
