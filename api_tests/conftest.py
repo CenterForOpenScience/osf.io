@@ -3,7 +3,6 @@ import pytest
 from faker import Factory
 
 from osf_tests.conftest import *  # noqa
-from osf_tests.conftest import _search  # noqa
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
 

@@ -1,19 +1,14 @@
 import logging
-import uuid
 
 import pytest
 from faker import Factory
 
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from website import search
 from website import settings as osf_settings
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
-from website.search.drivers.disabled import SearchDisabledDriver
-# from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
-from website.search.drivers.elasticsearch import ElasticsearchDriver
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -108,63 +103,3 @@ def enable_implicit_clean(settings):
 @pytest.fixture
 def enable_enqueue_task(settings):
     settings.TEST_OPTIONS.DISABLE_ENQUEUE_TASK = False
-
-
-class _SearchEnabler(object):
-
-    def __init__(self):
-        self._setup = False
-        self._disabled = SearchDisabledDriver(warnings=False)
-        self._elasticsearch = ElasticsearchDriver([
-            'http://localhost:92001',
-        ], 'osf-test-{}'.format(uuid.uuid4()))
-
-    def enable(self):
-        if not self._setup:
-            self._setup = True
-            self._elasticsearch.setup()
-        search._driver = self._elasticsearch
-
-    def disable(self):
-        search._driver = self._disabled
-
-    def clear(self):
-        # Clear out the index and make sure it's flushed to disk for the next test
-        # Clearing the index is faster than dropping and recreating the entire index
-        # as we'll only ever have ~10 docs at most
-        self._elasticsearch._client.indices.flush()
-        self._elasticsearch._client.delete_by_query(
-            index=self._elasticsearch._index_prefix + '*',
-            body={
-                'query': {
-                    'match_all': {}
-                }
-            },
-            refresh=True,
-            conflicts='proceed'
-        )
-        self._elasticsearch._client.indices.flush()
-
-    def teardown(self):
-        if not self._setup:
-            return
-        self._elasticsearch.teardown()
-
-
-@pytest.fixture(scope='session')
-def _searchenabler():
-    enabler = _SearchEnabler()
-    enabler.disable()
-    yield enabler
-    enabler.teardown()
-
-
-@pytest.fixture(autouse=True)
-def _search(request, _searchenabler):
-    if not request.node.get_marker('enable_search'):
-        yield
-    else:
-        _searchenabler.enable()
-        yield
-        _searchenabler.clear()
-        _searchenabler.disable()
