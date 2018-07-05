@@ -264,6 +264,6 @@ class SearchDriver(object):
         details='Use .remove(node)',
     )
     def delete_node(self, node, index=None):
-        return self.index_node(pk=node.id)
+        return self.index_nodes(pk=node.id)
 
     # / Deprecated API
