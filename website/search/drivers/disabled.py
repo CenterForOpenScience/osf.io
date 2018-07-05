@@ -29,24 +29,35 @@ class SearchDisabledDriver(base.SearchDriver):
 
     def index_files(self, **query):
         self._warn_disabled('index_files', query=query)
+        return 0
 
     def index_users(self, **query):
         self._warn_disabled('index_users', query=query)
+        return 0
 
     def index_registrations(self, **query):
         self._warn_disabled('index_registrations', query=query)
+        return 0
 
     def index_projects(self, **query):
         self._warn_disabled('index_projects', query=query)
+        return 0
 
     def index_components(self, **query):
         self._warn_disabled('index_components', query=query)
+        return 0
 
     def index_preprints(self, **query):
         self._warn_disabled('index_preprints', query=query)
+        return 0
 
     def index_collection_submissions(self, **query):
         self._warn_disabled('index_collection_submissions', query=query)
+        return 0
+
+    def index_institutions(self, **query):
+        self._warn_disabled('index_institutions', query=query)
+        return 0
 
     def remove(self, instance):
         self._warn_disabled('remove', instance=instance)

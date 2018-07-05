@@ -162,8 +162,9 @@ def _searchenabler():
 @pytest.fixture(autouse=True)
 def _search(request, _searchenabler):
     if not request.node.get_marker('enable_search'):
-        return
-    _searchenabler.enable()
-    yield
-    _searchenabler.clear()
-    _searchenabler.disable()
+        yield
+    else:
+        _searchenabler.enable()
+        yield
+        _searchenabler.clear()
+        _searchenabler.disable()

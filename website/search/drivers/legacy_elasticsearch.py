@@ -124,6 +124,9 @@ class LegacyElasticsearchDriver(base.SearchDriver):
     def index_users(self, **query):
         raise NotImplementedError()
 
+    def index_institutions(self, **query):
+        raise NotImplementedError()
+
     def index_registrations(self, **query):
         raise NotImplementedError()
 

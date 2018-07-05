@@ -96,6 +96,10 @@ class SearchDriver(object):
         raise NotImplementedError()
 
     @abc.abstractproperty
+    def index_institutions(self, **query):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
     def index_registrations(self, **query):
         raise NotImplementedError()
 
@@ -248,10 +252,10 @@ class SearchDriver(object):
         removed_in='0.155.0',
         deprecated_in='0.145.0',
         current_version=settings.VERSION,
-        details='Use .index_institution or .remove(institution) instead',
+        details='Use .index_institutions or .remove(institution) instead',
     )
     def update_institution(self, institution):
-        return self.index_institution(pk=institution.id)
+        return self.index_institutions(pk=institution.id)
 
     @deprecation.deprecated(
         removed_in='0.155.0',
