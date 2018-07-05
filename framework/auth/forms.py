@@ -64,6 +64,15 @@ name_field = TextField(
     widget=BootstrapTextInput(),
 )
 
+name_field_not_required = TextField(
+    'Full Name',
+    [
+        NoHtmlCharacters(),
+    ],
+    filters=[stripped],
+    widget=BootstrapTextInput(),
+)
+
 email_field = TextField('Email Address',
     [
         validators.Required(message=u'Email address is required'),
@@ -159,6 +168,7 @@ class SignInForm(Form):
 
 
 class ResendConfirmationForm(Form):
+    name = name_field_not_required  # If the user's auth already has a fullname this won't appear.
     email = email_field
     accepted_terms_of_service = BooleanField(
         [
