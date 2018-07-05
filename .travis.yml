@@ -73,7 +73,7 @@ before_install:
       cd $HOME/.cache/downloads
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE" ]; then
-        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/$ELASTICSEARCH_ARCHIVE
       fi
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE.sha512" ]; then
