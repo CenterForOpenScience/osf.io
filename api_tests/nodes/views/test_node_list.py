@@ -140,6 +140,11 @@ class TestNodeList:
         res = app.get('{}?sort=title'.format(url))
         assert res.status_code == 200
 
+    def test_node_list_embed_region(self, app, url, public_project):
+        res = app.get('{}?embed=region'.format(url))
+        assert res.status_code == 200
+        assert res.json['data'][0]['embeds']['region']['data']['id'] == 'us-east-1'
+
 
 @pytest.mark.django_db
 class TestNodeFiltering:
@@ -191,7 +196,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_three(self):
-        return ProjectFactory(title='Unique Test Title', is_public=True)
+        return ProjectFactory(title='Unique Test Title', description='three', is_public=True)
 
     @pytest.fixture()
     def user_one_private_project(self, user_one):
@@ -1219,6 +1224,23 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
+
+    def test_create_project_with_region_relationship(
+            self, app, user_one, region, private_project, url):
+        private_project['data']['relationships'] = {
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
 
     def test_create_project_with_region_query_param(
             self, app, user_one, region, private_project, url_with_region_query_param):
@@ -3021,6 +3043,25 @@ class TestNodeBulkDelete:
             {'id': public_project_parent._id, 'type': 'nodes'},
             {'id': public_component._id, 'type': 'nodes'}
         ]}
+        res = app.delete_json_api(
+            url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
+    # Regression test for PLAT-859
+    def test_bulk_delete_project_with_already_deleted_component(
+            self, app, user_one,
+            public_project_parent,
+            public_project_one,
+            public_component, url):
+
+        public_component.is_deleted = True
+        public_component.save()
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_project_one._id, 'type': 'nodes'}
+        ]}
+
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204

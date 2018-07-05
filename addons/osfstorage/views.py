@@ -168,7 +168,7 @@ def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
     user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
-    user_pk = OSFUser.objects.filter(guids___id=user_id).values_list('pk', flat=True).get()
+    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''
@@ -381,7 +381,9 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-
+    # TODO: Update analytics in MFR callback when it is implemented
+    if request.args.get('mode') not in ('render', ):
+        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
     return {
         'data': {
             'name': file_node.name,

@@ -44,6 +44,23 @@ class TestPreregReminder:
 
         assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 1
 
+    def test_dont_trigger_if_node_deleted(self, draft):
+        draft.branched_from.is_deleted = True
+        draft.branched_from.save()
+        main(dry_run=False)
+
+        assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0
+
+    def test_dequeue_if_node_deleted(self, draft):
+        main(dry_run=False)
+        assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 1
+
+        draft.branched_from.is_deleted = True
+        draft.branched_from.save()
+
+        main(dry_run=False)
+        assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0
+
     def test_dont_trigger_prereg_reminder_too_new(self, schema):
         DraftRegistrationFactory(registration_schema=schema)
         main(dry_run=False)

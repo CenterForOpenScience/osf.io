@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.db.models import F
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -64,7 +65,11 @@ class UserMixin(object):
             if user._id == key:
                 if check_permissions:
                     self.check_object_permissions(self.request, user)
-                return user
+                return get_object_or_error(
+                    OSFUser.objects.filter(id=user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                    request=self.request,
+                    display_name='user'
+                )
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[OSFUser]:
@@ -72,13 +77,19 @@ class UserMixin(object):
 
         current_user = self.request.user
 
-        if key == 'me':
-            if isinstance(current_user, AnonymousUser):
+        if isinstance(current_user, AnonymousUser):
+            if key == 'me':
                 raise NotAuthenticated
-            else:
-                return self.request.user
+
+        elif key == 'me' or key == current_user._id:
+            return get_object_or_error(
+                OSFUser.objects.filter(id=current_user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                request=self.request,
+                display_name='user'
+            )
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
