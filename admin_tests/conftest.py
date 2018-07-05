@@ -1,7 +1,7 @@
 import pytest
 
 from website.app import init_app
-from osf_tests.conftest import _elasticsearch  # noqa
+from osf_tests.conftest import _search  # noqa
 
 
 @pytest.fixture(autouse=True, scope='session')
