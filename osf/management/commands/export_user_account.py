@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-
+import datetime as dt
+import time
 import io
 import os
 import json
@@ -169,7 +170,7 @@ def get_usage(user):
     versions = FileVersion.objects.filter(basefilenode__in=files)
     return sum([v.size or 0 for v in versions]) / GBs
 
-def export_account(user_id, only_private=False, only_admin=False, export_files=True, export_wikis=True):
+def export_account(user_id, path, only_private=False, only_admin=False, export_files=True, export_wikis=True):
     """
     Exports (as a zip file) all of the projects, registrations, and preprints for which the given user is a contributor.
 
@@ -245,8 +246,10 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     export_nodes(preprints_to_export, user, preprints_dir, 'preprints')
     export_nodes(registrations_to_export, user, registrations_dir, 'registrations')
 
-    print('Creating {} ({}).zip ...'.format(user.fullname, user_id))
-    shutil.make_archive('{} ({})'.format(user.fullname, user_id), 'zip', base_dir)
+    timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))
+    print('Creating {output}.zip ...').format(**locals())
+    shutil.make_archive(output, 'zip', base_dir)
     shutil.rmtree(base_dir)
 
     finished_msg = 'Finished without errors.' if not ERRORS else 'Finished with errors logged below.'
@@ -266,13 +269,19 @@ class Command(BaseCommand):
         #   export only projects on which user is an admin
         super(Command, self).add_arguments(parser)
         parser.add_argument(
-            '--user',
+            'user',
+            type=str,
+            help='GUID of the user account to export.'
+        )
+        parser.add_argument(
+            '--path',
             type=str,
             required=True,
-            help='GUID of the user account to export.'
+            help='Path where to save the output file.'
         )
 
     def handle(self, *args, **options):
         export_account(
             user_id=options['user'],
+            path=options['path'],
         )
