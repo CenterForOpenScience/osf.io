@@ -1,20 +1,26 @@
+import os
 from werkzeug.local import LocalProxy
+from django.utils.module_loading import import_string
 
 from website import settings
 
+__all__ = ('search', 'driver', 'build_driver', '_set_driver')
 
-__all__ = ('search', 'driver', '_driver')
+def build_driver(name):
+    if name not in settings.SEARCH_ENGINES:
+        raise Exception('Search Engine "{}" is not configured'.format(name))
+    return import_string(settings.SEARCH_ENGINES[name]['DRIVER'])(
+        *settings.SEARCH_ENGINES[name]['ARGS'],
+        **settings.SEARCH_ENGINES[name]['KWARGS']
+    )
 
-if settings.SEARCH_ENGINE is None:
-    from website.search.drivers.disabled import SearchDisabledDriver
-    _driver = SearchDisabledDriver()
-elif settings.SEARCH_ENGINE in ('elastic', 'legacy_elasticsearch'):
-    from website.search.drivers.legacy_elasticsearch import LegacyElasticsearchDriver
-    _driver = LegacyElasticsearchDriver(settings.ELASTIC_INDEX)
-else:
-    raise RuntimeError('Unknown Search Engine "{}"'.format(settings.SEARCH_ENGINE))
+_driver = build_driver(os.environ.get('SEARCH_ENGINE', 'default'))
 
 def _get_driver():
     return _driver
+
+def _set_driver(driver):
+    global _driver
+    _driver = driver
 
 search = driver = LocalProxy(_get_driver)

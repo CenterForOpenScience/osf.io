@@ -38,7 +38,38 @@ EXTERNAL_EMBER_APPS = {
     }
 }
 
-SEARCH_ENGINE = 'elastic'
+SEARCH_ENGINES = {
+    'default': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'osf-',
+        ],
+        'KWARGS': {},
+    },
+    'disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': True
+        },
+    },
+    'test': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'test-osf-',
+        ],
+        'KWARGS': {},
+    },
+    'test-disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': False
+        },
+    }
+}
 
 USE_EMAIL = False
 USE_CELERY = False

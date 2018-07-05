@@ -105,7 +105,42 @@ CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
-SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
+SEARCH_ENGINES = {
+    'default': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'osf-',
+        ],
+        'KWARGS': {},
+    },
+    'disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': True
+        },
+    },
+    'test': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'test-osf-',
+        ],
+        'KWARGS': {},
+    },
+    'test-disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': False
+        },
+    }
+}
+
+# LEGACY SETTINGS
+# These may be removed once the LegacyElasticsearchDriver
+# is removed from the codebase
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
@@ -116,6 +151,7 @@ ELASTIC_KWARGS = {
     # 'client_cert': None,
     # 'client_key': None
 }
+# /LEGACY SETTINGS
 
 # Sessions
 COOKIE_NAME = 'osf'

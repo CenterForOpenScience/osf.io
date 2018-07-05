@@ -31,7 +31,6 @@ from scripts.populate_institutions import main as populate_institutions
 
 from osf_tests import factories
 from tests.base import OsfTestCase
-from tests.test_features import requires_search
 from tests.utils import mock_archive, run_celery_tasks
 
 
@@ -989,7 +988,6 @@ class TestSearchExceptions(OsfTestCase):
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.CLIENT = cls._client
 
-    @requires_search
     def test_connection_error(self):
         # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = factories.UserFactory(fullname='Doug Bogie')

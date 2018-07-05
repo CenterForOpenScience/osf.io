@@ -51,8 +51,38 @@ EXTERNAL_EMBER_APPS = {
     },
 }
 
-SEARCH_ENGINE = 'elastic'
-ELASTIC_TIMEOUT = 10
+SEARCH_ENGINES = {
+    'default': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'osf-',
+        ],
+        'KWARGS': {},
+    },
+    'disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': True
+        },
+    },
+    'test': {
+        'DRIVER': 'website.search.drivers.elasticsearch.ElasticsearchDriver',
+        'ARGS': [
+            ['http://localhost:9200'],
+            'test-osf-',
+        ],
+        'KWARGS': {},
+    },
+    'test-disabled': {
+        'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',
+        'ARGS': [],
+        'KWARGS': {
+            'warnings': False
+        },
+    }
+}
 
 # Email
 USE_EMAIL = False

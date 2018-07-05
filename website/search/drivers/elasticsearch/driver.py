@@ -126,12 +126,9 @@ class ElasticsearchDriver(base.SearchDriver):
         },
     }
 
-    def __init__(self, urls, index_prefix, refresh=None, **kwargs):
-        self._refresh = refresh
+    def __init__(self, urls, index_prefix, **kwargs):
         self._index_prefix = index_prefix
-        self._client = elasticsearch.Elasticsearch([
-            'http://localhost:9201'
-        ], **kwargs)
+        self._client = elasticsearch.Elasticsearch(urls, **kwargs)
 
     def setup(self, types=None):
         for type_, config in self.INDICES.items():
