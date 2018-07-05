@@ -70,8 +70,6 @@ def add_poster_by_email(conference, message):
             logo=settings.OSF_MEETINGS_LOGO
         )
 
-    users_created = []
-
     with transaction.atomic():
         user, user_created = get_or_create_user(
             message.sender_display,
@@ -80,7 +78,6 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             user.save()  # need to save in order to access m2m fields (e.g. tags)
-            users_created.append(user)
             user.add_system_tag('osf4m')
             user.update_date_last_login()
             user.save()
@@ -104,7 +101,8 @@ def add_poster_by_email(conference, message):
         node.save()
 
         utils.provision_node(conference, message, node, user)
-        utils.record_message(message, [node], users_created)
+        created_user = user if user_created else None
+        utils.record_message(message, node, created_user)
     # Prevent circular import error
     from framework.auth import signals as auth_signals
     if user_created:
