@@ -96,12 +96,14 @@ def ensure_licenses(*args, **kwargs):
             name = info['name']
             text = info['text']
             properties = info.get('properties', [])
+            url = info.get('url', '')
 
             node_license, created = NodeLicense.objects.get_or_create(license_id=id)
 
             node_license.name = name
             node_license.text = text
             node_license.properties = properties
+            node_license.url = url
             node_license.save()
 
             if created:
