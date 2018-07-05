@@ -1,14 +1,12 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from framework.auth.core import Auth
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
+    RegistrationFactory,
     AuthUserFactory,
 )
-
-from osf.models import MetaSchema
 
 
 @pytest.fixture()
@@ -20,13 +18,9 @@ def registration_with_children(user):
     project = ProjectFactory(creator=user)
     NodeFactory(parent=project, creator=user)
     NodeFactory(parent=project, creator=user)
-
-    reg = project.register_node(
-        schema=MetaSchema.objects.first(),
-        auth=Auth(user=user),
-        data='B-Dawk',
+    return RegistrationFactory(
+        project=project
     )
-    return reg
 
 @pytest.fixture()
 def registration_with_children_url(registration_with_children):

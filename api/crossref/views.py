@@ -68,6 +68,9 @@ class ParseCrossRefConfirmation(APIView):
                         logger.warn('Related publication DOI does not exist, sending metadata again without it...')
                         client = preprint.get_doi_client()
                         client.create_identifier(preprint, category='doi', include_relation=False)
+                    # This error occurs when a single preprint is being updated several times in a row with the same metadata [#PLAT-944]
+                    elif 'less or equal to previously submitted version' in record.find('msg').text and record_count == 2:
+                        break
                     else:
                         unexpected_errors = True
             logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))

@@ -50,7 +50,6 @@ from api.base.views import (
     LinkedRegistrationsRelationship,
     WaterButlerMixin
 )
-from api.caching.tasks import ban_url
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
 from api.comments.serializers import (CommentCreateSerializer,
@@ -102,7 +101,6 @@ from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
@@ -1823,8 +1821,8 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
         link.save()
-        enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
-
+        # FIXME: Doesn't work because instance isn't JSON-serializable
+        # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
 
 class NodeIdentifierList(NodeMixin, IdentifierList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_identifiers_list).
