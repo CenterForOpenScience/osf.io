@@ -8,9 +8,6 @@ logger = logging.getLogger(__name__)
 
 class SearchDisabledDriver(base.SearchDriver):
 
-    def __init__(self, warnings=True):
-        self._warnings = warnings
-
     def search(self, query, index=None, doc_type=None, raw=None, refresh=False):
         raise exceptions.SearchDisabledException()
 

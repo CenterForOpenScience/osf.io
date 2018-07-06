@@ -8,6 +8,7 @@ import logging
 
 import elasticsearch
 from elasticsearch import helpers
+from elasticsearch import TransportError
 
 from osf import models
 from osf.utils.sanitize import unescape_entities
@@ -33,9 +34,27 @@ class ElasticsearchDriver(base.SearchDriver):
     NODE_LIKE_MAPPINGS = {
         'type': {'index': True, 'type': 'keyword'},
         'category': {'index': True, 'type': 'keyword'},
-        'title': {'index': True, 'type': 'text', 'analyzer': 'english'},
-        'description': {'index': True, 'type': 'text', 'analyzer': 'english'},
-        'tags': {'index': True, 'type': 'keyword'},
+        'title': {
+            'index': True,
+            'type': 'text',
+            'fields': {
+                'en': {
+                    'type': 'text',
+                    'analyzer': 'english',
+                }
+            }
+        },
+        'description': {
+            'index': True,
+            'type': 'text',
+            'fields': {
+                'en': {
+                    'type': 'text',
+                    'analyzer': 'english',
+                }
+            }
+        },
+        'tags': {'index': True, 'type': 'keyword', 'normalizer': 'tags'},
         'license': {
             'properties': {
                 'id': {'index': True, 'type': 'keyword'},
@@ -50,6 +69,7 @@ class ElasticsearchDriver(base.SearchDriver):
 
     INDICES = {
         'users': {
+            'doc_type': 'user',
             'model': models.OSFUser,
             'index_tmpl': '{}-users',
             'action_generator': generators.UserActionGenerator,
@@ -65,6 +85,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'files': {
+            'doc_type': 'file',
             'model': models.BaseFileNode,
             'index_tmpl': '{}-files',
             'action_generator': generators.FileActionGenerator,
@@ -78,6 +99,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'institutions': {
+            'doc_type': 'institution',
             'model': models.Institution,
             'index_tmpl': '{}-institutions',
             'action_generator': generators.InstitutionActionGenerator,
@@ -88,6 +110,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'projects': {
+            'doc_type': 'project',
             'model': models.Node,
             'index_tmpl': '{}-nodes-projects',
             'action_generator': generators.ProjectActionGenerator,
@@ -95,6 +118,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'components': {
+            'doc_type': 'component',
             'model': models.Node,
             'index_tmpl': '{}-nodes-components',
             'action_generator': generators.ComponentActionGenerator,
@@ -102,6 +126,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'preprints': {
+            'doc_type': 'preprint',
             'model': models.PreprintService,
             'index_tmpl': '{}-nodes-preprints',
             'action_generator': generators.PreprintActionGenerator,
@@ -109,6 +134,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'registrations': {
+            'doc_type': 'registration',
             'model': models.Registration,
             'index_tmpl': '{}-nodes-registrations',
             'action_generator': generators.RegistrationActionGenerator,
@@ -116,6 +142,7 @@ class ElasticsearchDriver(base.SearchDriver):
         },
 
         'collection_submissions': {
+            'doc_type': 'collectionSubmission',
             'model': models.CollectedGuidMetadata,
             'index_tmpl': '{}-collection-submissions',
             'action_generator': generators.CollectionSubmission,
@@ -126,7 +153,9 @@ class ElasticsearchDriver(base.SearchDriver):
         },
     }
 
-    def __init__(self, urls, index_prefix, **kwargs):
+    def __init__(self, urls, index_prefix, warnings=True, refresh=False, **kwargs):
+        super(ElasticsearchDriver, self).__init__(warnings=warnings)
+        self._refresh = refresh
         self._index_prefix = index_prefix
         self._client = elasticsearch.Elasticsearch(urls, **kwargs)
 
@@ -147,9 +176,17 @@ class ElasticsearchDriver(base.SearchDriver):
                         # 'index.translog.sync_interval': '1s',
                         # 'index.translog.durability': 'async',
                         'analysis': {
+                            'normalizer': {
+                                'tags': {
+                                    'type': 'custom',
+                                    'char_filter': [],
+                                    'filter': ['lowercase', 'preserve_asciifolding']
+                                }
+                            },
                             'analyzer': {
                                 'default': {
-                                    'tokenizer': 'standard',
+                                    'type': 'standard',
+                                    # 'tokenizer': 'standard',
                                     'filter': ['standard', 'preserve_asciifolding', 'lowercase'],
                                 }
                             },
@@ -285,7 +322,7 @@ class ElasticsearchDriver(base.SearchDriver):
             item['key']: item['doc_count']
             for item in res['aggregations']['licenses']['buckets']
         }
-        ret['licenses']['total'] = res['hits']['total']
+        ret['total'] = res['hits']['total']
 
         ret['counts'] = {
             x['key']: x['doc_count']
@@ -405,42 +442,43 @@ class ElasticsearchDriver(base.SearchDriver):
     def _doc_type_to_indices(self, doc_type):
         if not doc_type:
             return self._index_prefix + '*'
-        if doc_type == 'user':
-            return self.INDICES['users']['index_tmpl'].format(self._index_prefix)
+        for value in self.INDICES.values():
+            if value['doc_type'] == doc_type:
+                return value['index_tmpl'].format(self._index_prefix)
         raise NotImplementedError(doc_type)
 
     def search(self, query, doc_type=None, raw=False, refresh=False):
-        if refresh:
+        if refresh or self._refresh:
             self._client.indices.refresh(self._doc_type_to_indices(doc_type))
 
-        tag_query = copy.deepcopy(query)
         aggs_query = copy.deepcopy(query)
-        count_query = copy.deepcopy(query)
 
         indices = self._doc_type_to_indices(doc_type)
 
         for key in ['from', 'size', 'sort']:
-            tag_query.pop(key, None)
             aggs_query.pop(key, None)
-            count_query.pop(key, None)
 
         try:
             del aggs_query['query']['filtered']['filter']
-            del count_query['query']['filtered']['filter']
         except KeyError:
             pass
 
-        # tags = self._get_tags(tag_query, indices)
-        # counts = self._get_counts(count_query)
-        aggregations = self._get_aggregations(aggs_query, indices)
+        try:
+            aggregations = self._get_aggregations(aggs_query, indices)
 
-        # Run the real query and get the results
-        raw_results = self._client.search(index=indices, doc_type=self.DOC_TYPE, body=query)
+            # Run the real query and get the results
+            raw_results = self._client.search(index=indices, doc_type=self.DOC_TYPE, body=query)
+        except TransportError as e:
+            if e.info['error']['failed_shards'][0]['reason']['reason'].startswith('Failed to parse'):
+                raise exceptions.MalformedQueryError(e.info['error']['failed_shards'][0]['reason']['reason'])
+            raise exceptions.SearchException(e.info)
+
         results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
         return {
             'aggs': {
-                'licenses': aggregations['licenses']
+                'total': aggregations['total'],
+                'licenses': aggregations['licenses'],
             },
             'typeAliases': self.ALIASES,
             'tags': aggregations['tags'],

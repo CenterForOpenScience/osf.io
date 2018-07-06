@@ -124,12 +124,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
         saved_fields = self.get_dirty_fields()
         if saved_fields and bool(self.pk):
-            for node in self.nodes.filter(is_deleted=False):
-                try:
-                    search.update_node(node, async=False)
-                except SearchUnavailableError as e:
-                    logger.exception(e)
+            try:
+                search.index_nodes(pk__in=self.nodes.values_list('id'))
+            except SearchUnavailableError as e:
+                logger.exception(e)
 
     def save(self, *args, **kwargs):
+        ret = super(Institution, self).save(*args, **kwargs)
         self.update_search()
-        return super(Institution, self).save(*args, **kwargs)
+        return ret

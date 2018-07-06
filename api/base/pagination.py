@@ -236,7 +236,10 @@ class SearchPaginator(DjangoPaginator):
         number = self.validate_number(number)
         results = self.object_list['results']
         items = [
-            self.search_type_to_model(result.get('_id'), result.get('_type'))
+            self.search_type_to_model(
+                result['_id'],
+                result['_source']['type']
+            )
             for result in results
         ]
         return self._get_page(items, number, self)

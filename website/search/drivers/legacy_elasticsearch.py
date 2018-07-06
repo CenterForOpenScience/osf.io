@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 class LegacyElasticsearchDriver(base.SearchDriver):
 
-    def __init__(self, default_index=None):
+    def __init__(self, default_index=None, **kwargs):
+        super(LegacyElasticsearchDriver, self).__init__(**kwargs)
         self._default_index = default_index
 
     def setup(self, types=None):

@@ -48,6 +48,9 @@ class SearchDriver(object):
         'users',
     )
 
+    def __init__(self, warnings=True):
+        self._warnings = warnings
+
     ### Migration API ###
 
     @abc.abstractmethod
@@ -152,7 +155,8 @@ class SearchDriver(object):
         details='Use .index_nodes(pk=node_id) or .index_<node_type>(pk=node_id), followed by .index_files(node_id=node.id) on CelerySearchDelegator instead',
     )
     def update_node_async(self, node_id, index=None, bulk=False):
-        logger.warning('update_node_async is no longer async by default. Use CelerySearchDelegator for async search operations')
+        if self._warnings:
+            logger.warning('update_node_async is no longer async by default. Use CelerySearchDelegator for async search operations')
         # TODO can this be trusted to be a pk??
         return self.update_node(models.AbstractNode.load(node_id).id)
 
@@ -216,7 +220,8 @@ class SearchDriver(object):
         details='Use .index_users(pk=user.id) or .remove(user) on CelerySearchDelegator instead',
     )
     def update_user_async(self, user_id, index=None):
-        logger.warning('update_user_async is no longer async by default. Use CelerySearchDelegator for async search operations')
+        if self._warnings:
+            logger.warning('update_user_async is no longer async by default. Use CelerySearchDelegator for async search operations')
         return self.index_users(pk=user_id)
 
     @deprecation.deprecated(
@@ -235,7 +240,8 @@ class SearchDriver(object):
         details='Use .index_nodes(contributor__user_id=user_id) on CelerySearchDelegator instead',
     )
     def update_contributors_async(self, user_id):
-        logger.warning('update_contributors_async is no longer async by default. Use CelerySearchDelegator for async search operations')
+        if self._warnings:
+            logger.warning('update_contributors_async is no longer async by default. Use CelerySearchDelegator for async search operations')
         return self.index_files(node__contributor__user_id=user_id)
         return self.index_nodes(contributor__user_id=user_id)
 

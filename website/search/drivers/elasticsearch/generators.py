@@ -95,8 +95,6 @@ class AbstractActionGenerator(object):
 
             for doc in self._fetch_docs(qs):
                 _id = doc.pop('_id')
-                doc['id'] = _id  # For backwards compat
-                doc['type'] = self.type  # doc_types no longer exist so we have to do it ourselves
                 _source = self.post_process(_id, doc)
 
                 # This is only here for collection submissions at the moment
@@ -104,6 +102,9 @@ class AbstractActionGenerator(object):
                 if not _source:
                     to_remove.append(_id)
                     continue
+
+                _source['id'] = _id  # For backwards compat
+                _source['type'] = self.type  # doc_types no longer exist so we have to do it ourselves
 
                 yield {
                     '_id': _id,
@@ -695,7 +696,8 @@ class ProjectActionGenerator(NodeActionGenerator):
             )),
         ).filter(
             # TODO Remove quickfiles
-            type__in=['osf.node', 'osf.quickfilesnode'],
+            # type__in=['osf.node', 'osf.quickfilesnode'],
+            type__in=['osf.node'],
             is_public=True,
             is_deleted=False,
             is_archiving_or_failed=False,

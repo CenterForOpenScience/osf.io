@@ -18,8 +18,8 @@ def _celery_search_task(method, *args, **kwargs):
 
 class CelerySearchDelegator(base.SearchDriver):
 
-    def __init__(self):
-        pass
+    def __init__(self, warnings=False):
+        super(CelerySearchDelegator, self).__init__(self, warnings=warnings)
 
     def setup(self, *args, **kwargs):
         return self._inner.setup(*args, **kwargs)

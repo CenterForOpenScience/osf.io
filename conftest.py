@@ -12,6 +12,10 @@ class _SearchEnabler(object):
 
     def enable(self):
         if not self._setup:
+            try:
+                self.teardown()
+            except Exception:
+                pass
             self._setup = True
             self._test_driver.setup()
         search._set_driver(self._test_driver)
