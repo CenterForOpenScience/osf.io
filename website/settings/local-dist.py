@@ -73,7 +73,10 @@ SEARCH_ENGINES = {
             ['http://localhost:9200'],
             'test-osf-',
         ],
-        'KWARGS': {},
+        'KWARGS': {
+            'refresh': True,
+            'warnings': False,
+        },
     },
     'test-disabled': {
         'DRIVER': 'website.search.drivers.disabled.SearchDisabledDriver',

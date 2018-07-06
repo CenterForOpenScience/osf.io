@@ -185,9 +185,8 @@ class ElasticsearchDriver(base.SearchDriver):
                             },
                             'analyzer': {
                                 'default': {
-                                    'type': 'standard',
-                                    # 'tokenizer': 'standard',
-                                    'filter': ['standard', 'preserve_asciifolding', 'lowercase'],
+                                    'tokenizer': 'standard',
+                                    'filter': ['lowercase', 'preserve_asciifolding', 'standard'],
                                 }
                             },
                             'filter': {
