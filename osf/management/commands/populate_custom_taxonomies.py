@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from osf.models import PreprintProvider, PreprintService, Subject
+from osf.models import AbstractProvider, PreprintProvider, PreprintService, Subject
 from osf.models.provider import rules_to_subjects
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
@@ -19,13 +19,14 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
     # This function may be run outside of this command (e.g. in the admin app) so we
     # need to make sure that BEPRESS_PROVIDER is set
     global BEPRESS_PROVIDER
-    BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+    BEPRESS_PROVIDER = AbstractProvider.objects.filter(_id='osf').first()
 
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
     customs = data.get('custom', {})
     merges = data.get('merge', {})
+
     if copy:
         included_subjects = rules_to_subjects(custom_provider.subjects_acceptable)
     else:
@@ -42,22 +43,28 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
             assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
         included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
+
     for cust_name, map_dict in customs.iteritems():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=map_dict.get('bepress')).exists(), 'Unable to find specified BePress subject with text {}'.format(map_dict.get('bepress'))
         if map_dict.get('parent'):  # Null parent possible
             assert map_dict['parent'] in set(customs.keys()) | set(included_subjects.values_list('text', flat=True)), 'Unable to find specified parent with text {} in mapped set'.format(map_dict['parent'])
             # TODO: hierarchy length validation? Probably more trouble than worth here, done on .save
+
     logger.info('Successfully validated `custom`')
     included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in customs.values()])
+
     for merged_from, merged_into in merges.iteritems():
         assert not included_subjects.filter(text=merged_from).exists(), 'Cannot merge subject "{}" that will be included'.format(merged_from)
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
+
     if not add_missing:
         assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
-    assert custom_provider.share_title not in [None, '', 'bepress'], 'share title not set; please set the share title on this provider before creating a custom taxonomy.'
+
+    if isinstance(custom_provider, PreprintProvider):
+        assert custom_provider.share_title not in [None, '', 'bepress'], 'share title not set; please set the share title on this provider before creating a custom taxonomy.'
 
     logger.info('Successfully validated mapping completeness')
     return list(missing_subjects) if add_missing else None
@@ -76,8 +83,10 @@ def create_subjects_recursive(custom_provider, root_text, exclude_texts, parent=
 def create_from_subjects_acceptable(custom_provider, add_missing=False, missing=None):
     tries = 0
     subjects_to_copy = list(rules_to_subjects(custom_provider.subjects_acceptable))
+
     if missing and add_missing:
         subjects_to_copy = subjects_to_copy + missing
+
     while len(subjects_to_copy):
         previous_len = len(subjects_to_copy)
         tries += 1
@@ -162,17 +171,21 @@ def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=Fals
     # This function may be run outside of this command (e.g. in the admin app) so we
     # need to make sure that BEPRESS_PROVIDER is set
     global BEPRESS_PROVIDER
+
     if not BEPRESS_PROVIDER:
-        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
-    custom_provider = PreprintProvider.objects.filter(_id=provider).first()
+        BEPRESS_PROVIDER = AbstractProvider.objects.filter(_id='osf').first()
+
+    custom_provider = AbstractProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
     assert not custom_provider.subjects.exists(), 'Provider aldready has a custom taxonomy'
-    if custom_provider.share_title in [None, '', 'bepress']:
+
+    if custom_provider.share_title in [None, '', 'bepress'] and isinstance(custom_provider, PreprintProvider):
         if not share_title:
             raise RuntimeError('`--share-title` is required if not already set on the provider')
         custom_provider.share_title = share_title
         custom_provider.save()
+
     missing = validate_input(custom_provider, data, copy=copy, add_missing=add_missing)
     do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy, add_missing=add_missing, missing=missing)
     do_custom_mapping(custom_provider, data.get('custom', {}))
@@ -201,7 +214,7 @@ class Command(BaseCommand):
             action='store',
             dest='provider',
             required=True,
-            help='_id of the PreprintProvider object, e.g. "osf". Provider is expected to not already have a custom taxonomy.'
+            help='_id of the AbstractProvider object, e.g. "osf". Provider is expected to not already have a custom taxonomy.'
         )
         parser.add_argument(
             '--from-subjects-acceptable',
@@ -225,7 +238,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         global BEPRESS_PROVIDER
-        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+        BEPRESS_PROVIDER = AbstractProvider.objects.filter(_id='osf').first()
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')
