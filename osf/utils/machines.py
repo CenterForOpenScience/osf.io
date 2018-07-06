@@ -259,7 +259,8 @@ class PreprintRequestMachine(BaseMachine):
 
     def notify_submit(self, ev):
         context = self.get_context()
-        reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
+        if not self.auto_approval_allowed():
+            reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
         # TODO: [IN-331]
