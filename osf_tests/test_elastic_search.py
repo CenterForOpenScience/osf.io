@@ -816,7 +816,6 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search.search_contributor(self.name3.split(' ')[0][:-1], refresh=True)
         assert_equal(len(contribs['users']), 1)
 
-        import ipdb; ipdb.set_trace()
         contribs = search.search.search_contributor(u'ja')
         assert_equal(len(contribs['users']), 1)
 
