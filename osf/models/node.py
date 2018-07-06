@@ -1351,7 +1351,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                  permissions=permissions, send_email=send_email, save=True)
         else:
             contributor = get_user(email=email)
-            if contributor:
+            if contributor and contributor.is_registered:
                 if self.contributor_set.filter(user=contributor).exists():
                     raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,

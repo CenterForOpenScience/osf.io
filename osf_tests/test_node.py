@@ -1168,6 +1168,16 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
+    def test_add_contributor_unregistered(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor = contributor_obj.user
+        assert contributor == unregistered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
+
 class TestContributorProperties:
 
     def test_admin_contributors(self, user):
