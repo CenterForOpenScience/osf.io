@@ -258,8 +258,8 @@ class PreprintRequestMachine(BaseMachine):
             and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
-        # TODO: [IN-284]
-        pass
+        context = self.get_context()
+        reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
         # TODO: [IN-331]
@@ -279,6 +279,6 @@ class PreprintRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'preprint': self.machineable.target,
+            'reviewable': self.machineable.target,
             'requester': self.machineable.creator
         }
