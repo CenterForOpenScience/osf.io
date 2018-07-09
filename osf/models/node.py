@@ -1190,7 +1190,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
         if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
-            raise ValidationValueError('Unregistered users cannot be added as contributors without unclaimed records')
+            raise ValidationValueError('Unregistered users cannot be added as contributors without unclaimed records.')
 
         if not self.is_contributor(contrib_to_add):
 
