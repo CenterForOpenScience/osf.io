@@ -59,6 +59,35 @@ a {
     list-style-type: none;
 }
 
+/* Cookie Banner */
+#cookieBanner {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    margin-bottom: 0px;
+    left:0;
+    background-color:#204762;
+    color:white;
+    text-align: left;
+    border: 0px;
+    display: none;
+    align-items: center;
+}
+
+#cookieText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+#cookieAccept {
+   margin-right: 10%
+}
+
+#cookieBanner a {
+    color:#5BC0DE;
+}
+
 /* Footer slide-in */
 #footerSlideIn {
     position:fixed;
