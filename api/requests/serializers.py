@@ -19,7 +19,8 @@ class RequestSerializer(JSONAPISerializer):
         'request_type',
         'machine_state',
         'created',
-        'id'
+        'id',
+        'target'
     ])
     id = ser.CharField(source='_id', read_only=True)
     request_type = ser.ChoiceField(read_only=True, required=False, choices=RequestTypes.choices())
@@ -62,7 +63,7 @@ class NodeRequestSerializer(RequestSerializer):
         read_only=True,
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<target._id>'},
-        filter_key='target___id',
+        filter_key='target__guids___id',
     )
 
     def get_target_url(self, obj):
@@ -112,7 +113,7 @@ class PreprintRequestSerializer(RequestSerializer):
         read_only=True,
         related_view='preprints:preprint-detail',
         related_view_kwargs={'preprint_id': '<target._id>'},
-        filter_key='target___id',
+        filter_key='target__guids___id',
     )
 
     def get_target_url(self, obj):

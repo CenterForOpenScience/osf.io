@@ -114,6 +114,8 @@ class PreprintRequestTestMixin(object):
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             save=True
         )
+        pre.node.is_public = True
+        pre.node.save()
         return pre
 
     @pytest.fixture()
