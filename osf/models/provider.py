@@ -70,6 +70,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
+        return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
 
     @property
     def readable_type(self):
