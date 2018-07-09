@@ -23,7 +23,7 @@ def add_missing_unclaimed_record(user, node, dry_run):
 
 def main(dry_run=True):
     users = OSFUser.objects.filter(date_disabled=None,
-                                   is_registered=False).filter(nodes__type='osf.node').include(None).distinct()
+                                   is_registered=False).exclude(nodes__type='osf.quickfiles').include(None).distinct()
     logger.info('{} users without unclaimed records'.format(users.count()))
     for user in users:
         for node in user.nodes.filter(type='osf.node'):
