@@ -860,6 +860,17 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+
+        assert unregistered_user.is_registered is False
+        assert unregistered_user.unclaimed_records == {}
+
+        with pytest.raises(ValidationValueError) as excinfo:
+            node.add_contributor(unregistered_user, auth=Auth(user))
+        assert excinfo.value.message == 'Unregistered users cannot be added as contributors without unclaimed records.'
+
+
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
@@ -1128,6 +1139,16 @@ class TestNodeAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+
+        contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records != {}
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
