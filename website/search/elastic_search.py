@@ -441,6 +441,7 @@ def serialize_cgm(cgm):
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
+        'provider': getattr(cgm.collection.provider, '_id', None),
         'status': cgm.status,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
