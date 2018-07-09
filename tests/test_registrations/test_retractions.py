@@ -798,8 +798,9 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
         unreg = UnregUserFactory()
-        self.registration.add_contributor(
-            unreg,
+        self.registration.add_unregistered_contributor(
+            unreg.fullname,
+            unreg.email,
             auth=Auth(self.user),
             permissions=['read', 'write', 'admin']
         )

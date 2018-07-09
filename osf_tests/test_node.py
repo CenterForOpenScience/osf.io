@@ -2314,8 +2314,10 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, node, auth):
         unregistered = UnregUserFactory()
-        node.add_contributor(
-            unregistered,
+        node.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
             save=True
         )

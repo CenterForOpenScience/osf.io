@@ -388,10 +388,10 @@ class TestNotificationsModels(OsfTestCase):
         assert_equal(comments_subscription.email_transactional.count(), 1)
 
     def test_unregistered_contributor_not_subscribed_when_added_to_project(self):
-        user = factories.UserFactory()
+        user = factories.AuthUserFactory()
         unregistered_contributor = factories.UnregUserFactory()
         project = factories.ProjectFactory(creator=user)
-        project.add_contributor(contributor=unregistered_contributor)
+        project.add_unregistered_contributor(unregistered_contributor.fullname, unregistered_contributor.email, Auth(user))
         contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
         assert_equal(len(contributor_subscriptions), 0)
 
