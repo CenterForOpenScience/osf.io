@@ -62,4 +62,10 @@ urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
 
+# Add django-silk URLs if it's in INSTALLED_APPS
+if 'silk' in settings.INSTALLED_APPS:
+    urlpatterns += [
+        url(r'^silk/', include('silk.urls', namespace='silk'))
+    ]
+
 handler404 = views.error_404
