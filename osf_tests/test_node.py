@@ -870,7 +870,6 @@ class TestContributorMethods:
             node.add_contributor(unregistered_user, auth=Auth(user))
         assert excinfo.value.message == 'Unregistered users cannot be added as contributors without unclaimed records.'
 
-
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
