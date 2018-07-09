@@ -1036,7 +1036,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             auth=user.auth, expect_errors=True)
         project_public.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Osf user with this Username already exists.'
+        assert res.json['errors'][0]['detail'] == '{} is already a contributor.'.format(
+            name)
 
     def test_add_contributor_user_is_deactivated_registered_payload(
             self, app, user, url_public):
