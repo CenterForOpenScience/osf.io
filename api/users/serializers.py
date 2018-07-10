@@ -133,11 +133,14 @@ class UserSerializer(JSONAPISerializer):
         return default_node_list_queryset(model_cls=Registration).filter(contributor__user__id=obj.id).count()
 
     def get_preprint_count(self, obj):
-        return PreprintService.objects.filter(Q(node___contributors__guids___id=obj._id)
-                                              & Q(Q(node__is_public=True) |
-                                                  Q(is_published=True) |
-                                                  Q(node__contributor__admin=True))
-                                              ).count()
+        auth_user = get_user_auth(self.context['request']).user
+        query = Q(is_published=True, node__is_public=True)
+        if auth_user:
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            query = query | admin_user_query | reviews_user_query
+
+        return PreprintService.objects.filter(node___contributors__guids___id=obj._id, node__is_deleted=False).filter(query).count()
 
     def get_institutions_count(self, obj):
         return obj.affiliated_institutions.all().count()
