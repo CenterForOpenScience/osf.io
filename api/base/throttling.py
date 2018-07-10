@@ -95,3 +95,8 @@ class TestUserRateThrottle(BaseThrottle, UserRateThrottle):
 class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
 
     scope = 'test-anon'
+
+
+class SendEmailThrottle(BaseThrottle, UserRateThrottle):
+
+    scope = 'send-email'
