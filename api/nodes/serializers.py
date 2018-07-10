@@ -1315,85 +1315,6 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
         link.save()
         return link
 
-class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
-    anyone_can_comment = ser.BooleanField(write_only=True, required=False)
-    anyone_can_edit_wiki = ser.BooleanField(write_only=True, required=False)
-    wiki_enabled = ser.BooleanField(write_only=True, required=False)
-    redirect_link_enabled = ser.BooleanField(write_only=True, required=False)
-    redirect_link_url = ser.URLField(read_only=True)
-    # TODO - add a length restriction
-    redirect_link_label = ser.CharField()
-
-    def update(self, obj, validated_data):
-        user = self.context['request'].user
-        auth = get_user_auth(self.context['request'])
-        is_admin = obj.has_permission(user, 'admin')
-        is_read_write = obj.has_permission(user, 'write')
-
-        access_requests_enabled = validated_data.get('access_requests_enabled')
-        anyone_can_comment = validated_data.get('anyone_can_comment')
-        anyone_can_edit_wiki = validated_data.get('anyone_can_edit_wiki')
-        wiki_enabled = validated_data.get('wiki_enabled')
-        redirect_link_enabled = validated_data.get('redirect_link_enabled')
-        redirect_link_url = validated_data.get('redirect_link_url')
-        redirect_link_label = validated_data.get('redirect_link_label')
-
-        admin_only_field_names = [
-            'access_requests_enabled',
-            'anyone_can_comment',
-            'anyone_can_edit_wiki',
-            'wiki_enabled',
-        ]
-        save_node = False
-        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not is_admin:
-            raise exceptions.PermissionDenied
-        if access_requests_enabled is not None:
-            obj.access_requests_enabled = access_requests_enabled
-            save_node = True
-        if anyone_can_comment is not None:
-            if anyone_can_comment is True:
-                obj.comment_level = 'public'
-            else:
-                obj.comment_level = 'private'
-            save_node = True
-        if save_node:
-            obj.save()
-
-        if anyone_can_edit_wiki is not None:
-            wiki_addon = obj.get_addon('wiki')
-            if wiki_addon
-                if anyone_can_edit_wiki is True:
-                    wiki_addon.is_publicly_editable = True
-                else:
-                    wiki_addon.is_publicly_editable = False
-                wiki_addon.save()
-        # TODO: test me well!
-        if redirect_link_enabled is not None:
-            if not redirect_link_url and redirect_link_enabled:
-                raise ValidationError('You must include a redirect URL to enable a redirect.')
-            if redirect_link_enabled:
-                forward_addon = obj.get_or_add_addon('forward')
-                forward_addon.url = redirect_link_url
-                if redirect_link_label:
-                    forward_addon.label = redirect_link_label
-                forward_addon.save()
-        if redirect_link_url is not None:
-            forward_addon = obj.get_addon('forward')
-            if not forward_addon:
-                raise ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
-            elif not redirect_link_enabled:
-                forward_addon.url = redirect_link_url
-                forward_addon.save()
-        if redirect_link_label is not None:
-            forward_addon = obj.get_addon('forward')
-            if not forward_addon:
-                raise ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
-            elif not redirect_link_enabled:
-                forward_addon.label = redirect_link_label
-                forward_addon.save()
-
-        return obj
-
 
 class NodeSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
@@ -1450,3 +1371,83 @@ class NodeSettingsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'node-settings'
+
+
+class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
+    anyone_can_comment = ser.BooleanField(write_only=True, required=False)
+    anyone_can_edit_wiki = ser.BooleanField(write_only=True, required=False)
+    wiki_enabled = ser.BooleanField(write_only=True, required=False)
+    redirect_link_enabled = ser.BooleanField(write_only=True, required=False)
+    redirect_link_url = ser.URLField(read_only=True)
+    # TODO - add a length restriction
+    redirect_link_label = ser.CharField()
+
+    def update(self, obj, validated_data):
+        user = self.context['request'].user
+        auth = get_user_auth(self.context['request'])
+        is_admin = obj.has_permission(user, 'admin')
+        is_read_write = obj.has_permission(user, 'write')
+
+        access_requests_enabled = validated_data.get('access_requests_enabled')
+        anyone_can_comment = validated_data.get('anyone_can_comment')
+        anyone_can_edit_wiki = validated_data.get('anyone_can_edit_wiki')
+        wiki_enabled = validated_data.get('wiki_enabled')
+        redirect_link_enabled = validated_data.get('redirect_link_enabled')
+        redirect_link_url = validated_data.get('redirect_link_url')
+        redirect_link_label = validated_data.get('redirect_link_label')
+
+        admin_only_field_names = [
+            'access_requests_enabled',
+            'anyone_can_comment',
+            'anyone_can_edit_wiki',
+            'wiki_enabled',
+        ]
+        save_node = False
+        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not is_admin:
+            raise exceptions.PermissionDenied
+        if access_requests_enabled is not None:
+            obj.access_requests_enabled = access_requests_enabled
+            save_node = True
+        if anyone_can_comment is not None:
+            if anyone_can_comment is True:
+                obj.comment_level = 'public'
+            else:
+                obj.comment_level = 'private'
+            save_node = True
+        if save_node:
+            obj.save()
+
+        if anyone_can_edit_wiki is not None:
+            wiki_addon = obj.get_addon('wiki')
+            if wiki_addon:
+                if anyone_can_edit_wiki is True:
+                    wiki_addon.is_publicly_editable = True
+                else:
+                    wiki_addon.is_publicly_editable = False
+                wiki_addon.save()
+        # TODO: test me well!
+        if redirect_link_enabled is not None:
+            if not redirect_link_url and redirect_link_enabled:
+                raise ValidationError('You must include a redirect URL to enable a redirect.')
+            if redirect_link_enabled:
+                forward_addon = obj.get_or_add_addon('forward')
+                forward_addon.url = redirect_link_url
+                if redirect_link_label:
+                    forward_addon.label = redirect_link_label
+                forward_addon.save()
+        if redirect_link_url is not None:
+            forward_addon = obj.get_addon('forward')
+            if not forward_addon:
+                raise ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
+            elif not redirect_link_enabled:
+                forward_addon.url = redirect_link_url
+                forward_addon.save()
+        if redirect_link_label is not None:
+            forward_addon = obj.get_addon('forward')
+            if not forward_addon:
+                raise ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
+            elif not redirect_link_enabled:
+                forward_addon.label = redirect_link_label
+                forward_addon.save()
+
+        return obj

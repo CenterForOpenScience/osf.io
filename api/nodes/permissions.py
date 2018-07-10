@@ -58,7 +58,7 @@ class IsContributor(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor(auth.user)
         else:
-            return obj.has_permission(user, 'write')
+            return obj.has_permission(auth.user, 'write')
 
 
 class IsAdminOrReviewer(permissions.BasePermission):
