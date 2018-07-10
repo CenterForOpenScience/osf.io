@@ -4,32 +4,21 @@ import mock
 from api.users.serializers import UserSerializer
 from osf_tests.factories import (
     UserFactory,
+    PreprintFactory
 )
 from tests.utils import make_drf_request_with_version
 
 
 @pytest.fixture()
-@mock.patch('website.search.elastic_search.update_user')
-def user(mock_update_user):
-    user = UserFactory()
-    user.jobs = [{
-        'title': 'Veterinarian/Owner',
-        'ongoing': True,
-        'startYear': '2009',
-        'startMonth': 4,
-        'institution': 'Happy Paws Vet'
-    }]
-    user.schools = [{
-        'endYear': '1994',
-        'ongoing': False,
-        'endMonth': 6,
-        'startYear': '1990',
-        'department': 'Veterinary Medicine',
-        'startMonth': 8,
-        'institution': 'UC Davis'
-    }]
-    user.save()
-    return user
+def user():
+    return UserFactory()
+
+@pytest.fixture()
+def user_with_preprint():
+    preprint = PreprintFactory(is_published=True)
+    preprint.save()
+    preprint.node.creator.save()
+    return preprint.node.creator
 
 
 @pytest.mark.django_db
@@ -57,3 +46,26 @@ class TestUserSerializer:
         assert 'institutions' in relationships
         assert 'preprints' in relationships
         assert 'registrations' in relationships
+
+    def test_user_serializer_with_related_counts(self, user):
+        req = make_drf_request_with_version(version='2.0')
+        req.query_params['related_counts'] = True
+        result = UserSerializer(user, context={'request': req}).data
+        data = result['data']
+
+        # Relationships
+        relationships = data['relationships']
+        assert relationships['quickfiles']['links']['related']['meta']['count'] == 0
+        assert relationships['nodes']['links']['related']['meta']['count'] == 0
+        assert relationships['institutions']['links']['related']['meta']['count'] == 0
+        assert relationships['preprints']['links']['related']['meta']['count'] == 0
+        assert relationships['registrations']['links']['related']['meta']['count'] == 0
+
+    def test_user_serializer_get_preprint_count(self, user_with_preprint):
+
+        req = make_drf_request_with_version(version='2.0')
+        req.query_params['related_counts'] = True
+        result = UserSerializer(user_with_preprint, context={'request': req}).data
+        data = result['data']
+
+        assert data['relationships']['preprints']['links']['related']['meta']['count'] == 1
