@@ -90,6 +90,7 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
+    NodeSettingsUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
@@ -1931,3 +1932,8 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     # overrides RetrieveUpdateAPIView
     def get_object(self):
         return self.get_node()
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            return NodeSettingsUpdateSerializer
+        return NodeSettingsSerializer
