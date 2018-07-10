@@ -2020,12 +2020,13 @@ class TestUserGdprDelete:
 
         user.gdpr_delete()
 
-        assert user.fullname == 'Deleted User'
+        assert user.fullname == 'Deleted user'
         assert user.suffix == ''
         assert user.social == []
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
+        assert not user.emails.exists()
         assert not user.external_accounts.exists()
         assert user.is_disabled
         assert user.deleted is not None
