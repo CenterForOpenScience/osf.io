@@ -1314,3 +1314,58 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
 
         link.save()
         return link
+
+
+class NodeSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    # Do we need to wrap these fields in HideIfWithdrawal so this serializer
+    # can be used for registrations?
+
+    # TODO deprecate field from NodeSerializer
+    allow_access_requests = ser.BooleanField(read_only=True, source='access_requests_enabled')
+    anyone_can_comment = ser.SerializerMethodField()
+    anyone_can_edit_wiki = ser.SerializerMethodField()
+    wiki_enabled = ser.SerializerMethodField()
+    redirect_link_enabled = ser.SerializerMethodField()
+    redirect_link_url = ser.SerializerMethodField()
+    redirect_link_label = ser.SerializerMethodField()
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    # TODO add view_only_links RelationshipField
+
+    def get_anyone_can_comment(self, obj):
+        return obj.comment_level == 'public'
+
+    def get_anyone_can_edit_wiki(self, obj):
+        wiki_addon = obj.get_addon('wiki')
+        return wiki_addon.is_publicly_editable if wiki_addon else None
+
+    def get_wiki_enabled(self, obj):
+        return 'wiki' in obj.get_addon_names()
+
+    def get_redirect_link_enabled(self, obj):
+        return 'forward' in obj.get_addon_names()
+
+    def get_redirect_link_url(self, obj):
+        forward_addon = obj.get_addon('forward')
+        return forward_addon.url if forward_addon else None
+
+    def get_redirect_link_label(self, obj):
+        forward_addon = obj.get_addon('forward')
+        return forward_addon.label if forward_addon else None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-settings',
+            kwargs={
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    class Meta:
+        type_ = 'node-settings'

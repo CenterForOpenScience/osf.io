@@ -68,6 +68,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
+    IsContributor,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -88,6 +89,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
+    NodeSettingsSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
@@ -1909,3 +1911,23 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsContributor,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.NODE_SETTINGS_WRITE]
+
+    serializer_class = NodeSettingsSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-settings'
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_node()
