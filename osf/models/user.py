@@ -1555,7 +1555,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.jobs = []
         self.schools = []
         self.social = []
-        self.external_accounts.clear()
+        self.external_accounts.delete()
         self.external_identity = {}
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
