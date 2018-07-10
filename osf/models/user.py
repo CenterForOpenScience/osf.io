@@ -337,6 +337,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # When the user was disabled.
     date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
+    # When the user was soft-deleted (GDPR)
+    deleted = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
+
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
@@ -1513,7 +1516,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         This function does not remove the user object reference from our database, but it does disable the account and
         remove identifying in a manner compliant with GDPR guidelines.
-        :return:
+
+        Follows the protocol described in
+        https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
+
         """
         from osf.models import PreprintService, AbstractNode
 
@@ -1540,26 +1546,60 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
                         node._id))
 
-        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
-        personal_nodes.delete()
+            for addon in node.get_addons():
+                if addon.user_settings and addon.user_settings.owner.id == self.id:
+                    raise UserStateError('You cannot delete this user because they '
+                                         'have an external account for {} attached to Node {}, '
+                                         'which has other contributors.'.format(addon.short_name, node.pk))
 
+        for node in shared_nodes.all():
+            logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
+            node.remove_contributor(self, auth=Auth(self), log=False)
+
+        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
+        self.disable_account()
+
+        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        for node in personal_nodes.all():
+            logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
+            node.remove_node(auth=Auth(self))
+
+        logger.info('Clearing identifying information...')
         # This removes identifying info
-        self.fullname = 'Deleted User'
-        self.username = ''
+        # hard-delete all emails associated with the user
+        self.emails.all().delete()
+        # Change name to "Deleted user" so that logs render properly
+        self.fullname = 'Deleted user'
+        self.set_unusable_username()
+        self.set_unusable_password()
         self.given_name = ''
         self.family_name = ''
         self.middle_names = ''
         self.mailchimp_mailing_lists = {}
         self.osf_mailing_lists = {}
+        self.verification_key = None
         self.suffix = ''
         self.jobs = []
         self.schools = []
         self.social = []
-        self.external_accounts.delete()
+        self.unclaimed_records = {}
+        self.notifications_configured = {}
+        # Scrub all external accounts
+        if self.external_accounts.exists():
+            logger.info('Clearing identifying information from external accounts...')
+            for account in self.external_accounts.all():
+                account.oauth_key = None
+                account.oauth_secret = None
+                account.refresh_token = None
+                account.provider = 'gdpr-deleted'
+                account.provider_name = 'gdpr-deleted'
+                account.provider_id = 'gdpr-deleted'
+                account.display_name = None
+                account.profile_url = None
+                account.save()
+            self.external_accounts.clear()
         self.external_identity = {}
-
-        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.is_disabled = True
+        self.deleted = timezone.now()
 
     class Meta:
         # custom permissions for use in the OSF Admin App

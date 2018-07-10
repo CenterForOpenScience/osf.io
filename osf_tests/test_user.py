@@ -2028,14 +2028,16 @@ class TestUserGdprDelete:
         assert user.external_identity == {}
         assert not user.external_accounts.exists()
         assert user.is_disabled
-
-        assert user.nodes.all().count() == 0
+        assert user.deleted is not None
 
     def test_can_gdpr_delete_personal_nodes(self, user):
 
         user.gdpr_delete()
 
-        assert user.nodes.all().count() == 0
+        # user still has nodes because we did a soft delete
+        assert user.nodes.all().count()
+        # but they're all deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
 
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
