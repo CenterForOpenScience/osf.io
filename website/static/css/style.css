@@ -838,3 +838,18 @@ table.add-links {
     padding: 10px 40px 10px 40px;
     margin-bottom: 0;
 }
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
+}

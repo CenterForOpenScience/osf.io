@@ -10,6 +10,8 @@ class BannerSerializer(JSONAPISerializer):
     end_date = VersionedDateTimeField(read_only=True)
     color = ser.CharField(read_only=True)
     license = ser.CharField(read_only=True)
+    link = ser.URLField(read_only=True)
+    name = ser.CharField(read_only=True)
     default_alt_text = ser.SerializerMethodField()
     mobile_alt_text = ser.SerializerMethodField()
 

@@ -25,6 +25,7 @@ from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAUL
 
 from osf.models import (
     AbstractNode,
+    Email,
     Node,
     Tag,
     NodeLog,
@@ -1154,6 +1155,16 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_fullname_email_exists_as_secondary(self, user, node):
+        registered_user = UserFactory()
+        secondary_email = 'secondary@test.test'
+        Email.objects.create(address=secondary_email, user=registered_user)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor = contributor_obj.user
+        assert contributor == registered_user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
@@ -3383,18 +3394,48 @@ class TestOnNodeUpdate:
     def teardown_method(self, method):
         handlers.celery_before_request()
 
-    @mock.patch('osf.models.node.enqueue_task')
-    def test_enqueue_called(self, enqueue_task, node, user, request_context):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
         node.save()
 
-        (task, ) = enqueue_task.call_args[0]
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
-        assert task.args[0] == node._id
-        assert task.args[1] == user._id
-        assert task.args[2] is False
-        assert 'title' in task.args[3]
+        assert task.kwargs['node_id'] == node._id
+        assert task.kwargs['user_id'] == user._id
+        assert task.kwargs['first_save'] is False
+        assert 'title' in task.kwargs['saved_fields']
+
+    @mock.patch('osf.models.identifiers.IdentifierMixin.request_identifier_update')
+    def test_queueing_on_node_updated(self, mock_request_update, node, user):
+        node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
+        node.title = 'Something New'
+        node.save()
+
+        # make sure on_node_updated is in the queue
+        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+
+        # adding a contributor to the node will also trigger on_node_updated
+        new_person = UserFactory()
+        node.add_contributor(new_person)
+
+        # so will updating a license
+        new_license = NodeLicenseRecordFactory()
+        node.set_node_license(
+            {
+                'id': new_license.license_id,
+                'year': '2018',
+                'copyrightHolders': ['LeBron', 'Ladron']
+            },
+            Auth(node.creator),
+        )
+        node.save()
+
+        # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        assert 'contributors' in task.kwargs['saved_fields']
+        assert 'node_license' in task.kwargs['saved_fields']
+        mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')

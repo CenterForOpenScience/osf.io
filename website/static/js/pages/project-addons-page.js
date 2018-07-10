@@ -2,7 +2,6 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
-var Cookie = require('js-cookie');
 var ctx = window.contextVars;
 
 var changeAddonSettingsSuccess = function () {
@@ -14,19 +13,6 @@ var changeAddonSettingsFailure = function () {
     var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
     $osf.growl('Failure', msg, 'danger');
 };
-
-$(function(){
-    // Make zotero group library message permanently dismissible
-    var zoteroPersistKey = 'zoteroGroupDismiss';
-    var $zoteroPersist = $('#zoteroWarningCancel').click(function() {
-        Cookie.set(zoteroPersistKey, '1', {path: '/'});
-    });
-    var dismissed = Cookie.get(zoteroPersistKey) === '1';
-    if (!dismissed) {
-        $('#zotero-group-library-alert').show();
-    }
-});
-
 
 $('.addon-container').each(function(ind, elm) {
     elm = $(elm);

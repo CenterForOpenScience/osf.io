@@ -44,9 +44,12 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
+
+    def __unicode__(self):
+        return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
 
     @property
     def all_subjects(self):
@@ -68,9 +71,17 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
 
+    @property
+    def readable_type(self):
+        raise NotImplementedError
+
 class CollectionProvider(AbstractProvider):
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
+
+    @property
+    def readable_type(self):
+        return 'collection'
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -97,6 +108,7 @@ class PreprintProvider(AbstractProvider):
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
     access_token = EncryptedTextField(null=True, blank=True)
+    doi_prefix = models.CharField(blank=True, max_length=32)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -113,6 +125,10 @@ class PreprintProvider(AbstractProvider):
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
+
+    @property
+    def readable_type(self):
+        return 'preprint'
 
     @property
     def all_subjects(self):
