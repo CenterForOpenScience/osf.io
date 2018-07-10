@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import mock
 import pytest
@@ -8,33 +7,102 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 
+from framework.auth import Auth
+
+
+@pytest.fixture()
+def admin_contrib():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def write_contrib():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def read_contrib():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def project(admin_contrib, write_contrib, read_contrib):
+    project = ProjectFactory(creator=admin_contrib)
+    project.add_contributor(write_contrib, 'write')
+    project.add_contributor(read_contrib, 'write')
+    project.save()
+    return project
+
+@pytest.fixture()
+def url(project):
+    return '/{}nodes/{}/settings/'.format(API_BASE, project._id)
+
+
+@pytest.mark.django_db
+class TestGetNodeSettingsGet:
+
+    @pytest.fixture()
+    def non_contrib(self):
+        return AuthUserFactory()
+
+    def test_node_settings_detail(self, app, admin_contrib, non_contrib, write_contrib, url, project):
+
+        # non logged in uers can't access node settings
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # non_contrib can't access node settings
+        res = app.get(url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # read contrib can access node settings
+        res = app.get(url, auth=write_contrib.auth)
+        assert res.status_code == 200
+
+        # admin can access node settings
+        res = app.get(url, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        # allow_access_requests
+        project.allow_access_requests = True
+        project.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['access_requests_enabled'] == True
+
+        # anyone can comment
+        project.comment_level = 'public'
+        project.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['anyone_can_comment'] == True
+
+        project.comment_level = 'private'
+        project.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['anyone_can_comment'] == False
+
+        # wiki enabled
+        project.delete_addon('wiki', auth=Auth(admin_contrib))
+        project.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['wiki_enabled'] == False
+
+        # redirect link enabled
+        new_url = 'http://cool.com'
+        new_label = 'Test Label Woo'
+        forward = project.add_addon('forward', auth=Auth(admin_contrib))
+        forward.url = new_url
+        forward.label = new_label
+        forward.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['redirect_link_enabled'] == True
+        assert attributes['redirect_link_url'] == new_url
+        assert attributes['redirect_link_label'] == new_label
+
 
 @pytest.mark.django_db
 class TestNodeSettingsUpdate:
-
-    @pytest.fixture()
-    def admin_contrib(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def write_contrib(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def read_contrib(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def project(self, admin_contrib, write_contrib, read_contrib):
-        project = ProjectFactory(creator=admin_contrib)
-        project.add_contributor(write_contrib, 'write')
-        project.add_contributor(read_contrib, 'write')
-        project.save()
-        return project
-
-    @pytest.fixture()
-    def url(self, project):
-        return '/{}nodes/{}/settings/'.format(API_BASE, project._id)
 
     @pytest.fixture()
     def payload(self, project):
