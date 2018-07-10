@@ -1547,10 +1547,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         node._id))
 
             for addon in node.get_addons():
-                if addon.user_settings and addon.user_settings.owner.id == self.id:
+                if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:
                     raise UserStateError('You cannot delete this user because they '
                                          'have an external account for {} attached to Node {}, '
-                                         'which has other contributors.'.format(addon.short_name, node.pk))
+                                         'which has other contributors.'.format(addon.short_name, node._id))
 
         for node in shared_nodes.all():
             logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
