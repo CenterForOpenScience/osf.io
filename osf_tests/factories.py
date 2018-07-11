@@ -26,6 +26,7 @@ from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
+from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
@@ -34,6 +35,9 @@ fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
 fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
+
+# Do this out of a cls context to avoid setting "t" as a local
+PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -909,3 +913,19 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+
+class ProviderAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProviderAssetFile
+
+    name = FuzzyChoice(choices=PROVIDER_ASSET_NAME_CHOICES)
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        providers = kwargs.pop('providers', [])
+        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.providers = providers
+        instance.save()
+        return instance
