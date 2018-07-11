@@ -686,3 +686,44 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['profile_url'])
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
+
+    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_create_conference_node_with_same_name_as_existing_node(self, mock_upload, mock_send_mail):
+        conference = ConferenceFactory()
+        user = UserFactory()
+        title = 'Long Live Greg'
+        ProjectFactory(creator=user, title=title)
+
+        body = 'Greg is a good plant'
+        content = 'Long may they reign.'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': '{0} <{1}>'.format(user.fullname, user.username),
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            upload_files=[
+                ('attachment-1', 'attachment-1', content),
+            ],
+        )
+
+        assert AbstractNode.objects.filter(title=title, creator=user).count() == 2
+        assert mock_upload.called
+        assert mock_send_mail.called
