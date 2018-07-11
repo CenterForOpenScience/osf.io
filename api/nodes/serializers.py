@@ -270,6 +270,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'}
     )
 
+    settings = RelationshipField(
+        related_view='nodes:node-settings',
+        related_view_kwargs={'node_id': '<_id>'}
+    )
+
     wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'}
