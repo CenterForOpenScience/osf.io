@@ -5,6 +5,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
+    PrivateLinkFactory,
 )
 
 from framework.auth import Auth
@@ -100,6 +101,12 @@ class TestGetNodeSettingsGet:
         assert attributes['redirect_link_url'] == new_url
         assert attributes['redirect_link_label'] == new_label
 
+        # view only links
+        view_only_link = PrivateLinkFactory(name='testlink')
+        view_only_link.nodes.add(project)
+        view_only_link.save()
+        res = app.get(url, auth=admin_contrib.auth)
+        assert 'view_only_links' in res.json['data']['relationships'].keys()
 
 @pytest.mark.django_db
 class TestNodeSettingsUpdate:
