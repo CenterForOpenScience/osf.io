@@ -7,6 +7,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
+from osf.models import Node, QuickFilesNode
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -27,12 +28,12 @@ class FileSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
-        query_datetime = timestamp_datetime + timedelta(days=1)
 
         file_qs = OsfStorageFile.objects
 
-        public_query = Q(node__is_public=True)
-        private_query = Q(node__is_public=False)
+        quickfiles_query = Q(target_object_id__in=QuickFilesNode.objects.values('id'))
+        public_query = (Q(target_object_id__in=Node.objects.filter(is_public=True).values('id')) | quickfiles_query)
+        private_query = Q(target_object_id__in=Node.objects.filter(is_public=False).values('id'))
 
         daily_query = Q(created__gte=timestamp_datetime)
 
