@@ -297,6 +297,10 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         super(PreprintService, self).confirm_spam(save=save)
         self.node.confirm_spam(save=save)
 
+    def confirm_ham(self, save=False):
+        super(PreprintService, self).confirm_ham(save=save)
+        self.node.confirm_ham(save=save)
+
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.node.creator
