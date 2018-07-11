@@ -148,7 +148,7 @@ script:
     - invoke test_travis_$TEST_BUILD -n 4
 
 after_success:
-    - coveralls
+    - coveralls || true
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
