@@ -1,6 +1,7 @@
 import django
 django.setup()
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 import logging
 from dateutil.parser import parse
@@ -30,10 +31,22 @@ class FileSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
 
         file_qs = OsfStorageFile.objects
+        node_content_type = ContentType.objects.get_for_model(Node)
 
-        quickfiles_query = Q(target_object_id__in=QuickFilesNode.objects.values('id'))
-        public_query = (Q(target_object_id__in=Node.objects.filter(is_public=True).values('id')) | quickfiles_query)
-        private_query = Q(target_object_id__in=Node.objects.filter(is_public=False).values('id'))
+        quickfiles_query = Q(
+            target_object_id__in=QuickFilesNode.objects.values('id'),
+            target_content_type=ContentType.objects.get_for_model(QuickFilesNode)
+        )
+
+        public_query = (quickfiles_query | Q(
+            target_object_id__in=Node.objects.filter(is_public=True).values('id'),
+            target_content_type=node_content_type
+        ))
+
+        private_query = Q(
+            target_object_id__in=Node.objects.filter(is_public=False).values('id'),
+            target_content_type=node_content_type
+        )
 
         daily_query = Q(created__gte=timestamp_datetime)
 
