@@ -1937,3 +1937,14 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         if self.request.method == 'PUT' or self.request.method == 'PATCH':
             return NodeSettingsUpdateSerializer
         return NodeSettingsSerializer
+
+    def get_serializer_context(self):
+        """
+        Extra context for NodeSettingsSerializer - this will prevent loading
+        addons multiple times in SerializerMethodFields
+        """
+        context = super(NodeSettings, self).get_serializer_context()
+        node = self.get_node(check_object_permissions=False)
+        context['wiki_addon'] = node.get_addon('wiki')
+        context['forward_addon'] = node.get_addon('forward')
+        return context

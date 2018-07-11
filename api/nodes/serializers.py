@@ -209,7 +209,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
+    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
@@ -1319,7 +1319,6 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
 class NodeSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    # TODO deprecate field from NodeSerializer
     access_requests_enabled = ser.BooleanField()
     anyone_can_comment = ser.SerializerMethodField()
     anyone_can_edit_wiki = ser.SerializerMethodField()
@@ -1327,6 +1326,7 @@ class NodeSettingsSerializer(JSONAPISerializer):
     redirect_link_enabled = ser.SerializerMethodField()
     redirect_link_url = ser.SerializerMethodField()
     redirect_link_label = ser.SerializerMethodField()
+
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<_id>'},
@@ -1339,22 +1339,22 @@ class NodeSettingsSerializer(JSONAPISerializer):
     def get_anyone_can_comment(self, obj):
         return obj.comment_level == 'public'
 
+    def get_wiki_enabled(self, obj):
+        return self.context['wiki_addon'] is not None
+
     def get_anyone_can_edit_wiki(self, obj):
-        wiki_addon = obj.get_addon('wiki')
+        wiki_addon = self.context['wiki_addon']
         return wiki_addon.is_publicly_editable if wiki_addon else None
 
-    def get_wiki_enabled(self, obj):
-        return 'wiki' in obj.get_addon_names()
-
     def get_redirect_link_enabled(self, obj):
-        return 'forward' in obj.get_addon_names()
+        return self.context['forward_addon'] is not None
 
     def get_redirect_link_url(self, obj):
-        forward_addon = obj.get_addon('forward')
+        forward_addon = self.context['forward_addon']
         return forward_addon.url if forward_addon else None
 
     def get_redirect_link_label(self, obj):
-        forward_addon = obj.get_addon('forward')
+        forward_addon = self.context['forward_addon']
         return forward_addon.label if forward_addon else None
 
     def get_absolute_url(self, obj):
@@ -1413,7 +1413,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
     def update_wiki_fields(self, obj, validated_data, auth):
         wiki_enabled = validated_data.get('wiki_enabled')
         anyone_can_edit_wiki = validated_data.get('anyone_can_edit_wiki')
-        wiki_addon = obj.get_addon('wiki')
+        wiki_addon = self.context['wiki_addon']
 
         if wiki_enabled is not None:
             wiki_addon = self.enable_or_disable_addon(obj, wiki_enabled, 'wiki', auth)
@@ -1433,7 +1433,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         redirect_link_label = validated_data.get('redirect_link_label')
 
         save_forward = False
-        forward_addon = obj.get_addon('forward')
+        forward_addon = self.context['forward_addon']
 
         if redirect_link_enabled is not None:
             if not redirect_link_url and redirect_link_enabled:
@@ -1456,6 +1456,9 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             forward_addon.save()
 
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
+        """
+        Returns addon, if exists, otherwise returns None
+        """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
         if type(addon) == bool:
             addon = None

@@ -8,9 +8,6 @@ from osf_tests.factories import (
     PrivateLinkFactory,
 )
 
-from framework.auth import Auth
-
-
 @pytest.fixture()
 def admin_contrib():
     return AuthUserFactory()
@@ -37,7 +34,7 @@ def url(project):
 
 
 @pytest.mark.django_db
-class TestGetNodeSettingsGet:
+class TestNodeSettingsGet:
 
     @pytest.fixture()
     def non_contrib(self):
@@ -66,29 +63,39 @@ class TestGetNodeSettingsGet:
         project.save()
         res = app.get(url, auth=admin_contrib.auth)
         attributes = res.json['data']['attributes']
-        assert attributes['access_requests_enabled'] == True
+        assert attributes['access_requests_enabled'] is True
 
         # anyone can comment
         project.comment_level = 'public'
         project.save()
         res = app.get(url, auth=admin_contrib.auth)
         attributes = res.json['data']['attributes']
-        assert attributes['anyone_can_comment'] == True
+        assert attributes['anyone_can_comment'] is True
 
         project.comment_level = 'private'
         project.save()
         res = app.get(url, auth=admin_contrib.auth)
         attributes = res.json['data']['attributes']
-        assert attributes['anyone_can_comment'] == False
+        assert attributes['anyone_can_comment'] is False
 
         # wiki enabled
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['wiki_enabled'] is True
+
         project.delete_addon('wiki', auth=Auth(admin_contrib))
         project.save()
         res = app.get(url, auth=admin_contrib.auth)
         attributes = res.json['data']['attributes']
-        assert attributes['wiki_enabled'] == False
+        assert attributes['wiki_enabled'] is False
 
         # redirect link enabled
+        res = app.get(url, auth=admin_contrib.auth)
+        attributes = res.json['data']['attributes']
+        assert attributes['redirect_link_enabled'] is False
+        assert attributes['redirect_link_url'] is None
+        assert attributes['redirect_link_label'] is None
+
         new_url = 'http://cool.com'
         new_label = 'Test Label Woo'
         forward = project.add_addon('forward', auth=Auth(admin_contrib))
@@ -97,7 +104,7 @@ class TestGetNodeSettingsGet:
         forward.save()
         res = app.get(url, auth=admin_contrib.auth)
         attributes = res.json['data']['attributes']
-        assert attributes['redirect_link_enabled'] == True
+        assert attributes['redirect_link_enabled'] is True
         assert attributes['redirect_link_url'] == new_url
         assert attributes['redirect_link_label'] == new_label
 
