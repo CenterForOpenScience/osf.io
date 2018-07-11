@@ -85,7 +85,8 @@ a {
 }
 
 #cookieBanner a {
-    color:#5BC0DE;
+    color: white;
+    text-decoration: underline;
 }
 
 /* Footer slide-in */
