@@ -375,17 +375,17 @@ CitationGrid.prototype.getBibliography = function(folder) {
     return this.bibliographies[folder.id];
 };
 
-CitationGrid.prototype.getCitation = function(item, format) {
-    var bibliography = this.getBibliography(item.parent(), format);
+CitationGrid.prototype.getCitation = function(item) {
+    var bibliography = this.getBibliography(item.parent());
     return bibliography[item.data.csl.id];
 };
 
-CitationGrid.prototype.getCitations = function(folder, format) {
+CitationGrid.prototype.getCitations = function(folder) {
     var self = this;
     return folder.children.filter(function(child) {
         return child.kind === 'file';
     }).map(function(child) {
-        return self.getCitation(child, format);
+        return self.getCitation(child);
     });
 };
 
