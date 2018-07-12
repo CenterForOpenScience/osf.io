@@ -38,3 +38,6 @@ pydevd==0.0.6
 
 # n+1 query detection
 nplusone==0.8.2
+
+# Profiling
+django-silk==2.0.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE
