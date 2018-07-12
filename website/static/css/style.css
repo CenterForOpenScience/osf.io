@@ -89,6 +89,14 @@ a {
     text-decoration: underline;
 }
 
+#cookieBanner a:hover {
+    color: #ADCCE6;
+}
+
+#cookieBanner a:visited {
+    color: #ADCCE6;
+}
+
 /* Footer slide-in */
 #footerSlideIn {
     position:fixed;
