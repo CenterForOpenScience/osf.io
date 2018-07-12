@@ -74,8 +74,6 @@ def s3_add_user_account(auth, **kwargs):
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
 
-    nickname = request.json.get('nickname', None)
-
     user_info = utils.get_user_info(
         host,
         port,
@@ -113,8 +111,7 @@ def s3_add_user_account(auth, **kwargs):
             oauth_key=access_key,
             oauth_secret=secret_key,
             provider_id=user_info.id,
-            display_name=user_info.display_name,
-            nickname=nickname
+            display_name=user_info.display_name
         )
         account.save()
     except ValidationError:
@@ -132,14 +129,12 @@ def s3_add_user_account(auth, **kwargs):
             account.host != host or
             account.port != port or
             account.encrypted != encrypted or
-            account.nickname != nickname
         ):
             account.oauth_key = access_key
             account.oauth_secret = secret_key
             account.host = host
             account.port = port
             account.encrypted = encrypted
-            account.nickname = nickname
             account.save()
 
     assert account is not None
@@ -174,7 +169,6 @@ def s3_modify_user_account(auth, **kwargs):
 
     # Load the new values for the account, but let them be none if they weren't
     # supplied in the request.
-    nickname = request.json.get('nickname', None)
     host = request.json.get('host', None)
     port = int(request.json.get('port', None))
     access_key = request.json.get('access_key', None)
@@ -229,14 +223,12 @@ def s3_modify_user_account(auth, **kwargs):
         account.host != host or
         account.port != port or
         account.encrypted != encrypted or
-        account.nickname != nickname
     ):
         account.oauth_key = access_key
         account.oauth_secret = secret_key
         account.host = host
         account.port = port
         account.encrypted = encrypted
-        account.nickname = nickname
         account.save()
 
     return {}

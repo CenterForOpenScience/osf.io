@@ -23,7 +23,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.secretKey = ko.observable('');
         self.host = ko.observable('');
         self.port = ko.observable('');
-        self.nickname = ko.observable('');
         self.toggleAdvanced = function() {
             console.log('HELLO');
         };

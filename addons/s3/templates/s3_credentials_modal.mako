@@ -13,11 +13,6 @@
                         <div class="col-sm-3"></div>
 
                         <div class="col-sm-6">
-                            <h4>OSF Addon Settings</h4>
-                            <div class="form-group">
-                                <label for="s3Addon">Nickname</label>
-                                <input class="form-control" data-bind="value: nickname" id="_nickname" name="_nickname" ${'disabled' if disabled else ''} />
-                            </div>
                             <h4>Account Credentials</h4>
                             <div class="form-group">
                                 <label for="s3Addon">Access Key</label>

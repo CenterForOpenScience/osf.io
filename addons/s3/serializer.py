@@ -41,8 +41,7 @@ class S3Serializer(StorageAddonSerializer):
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-            'host': node_settings.external_account.host,
-            'nickname': node_settings.external_account.nickname
+            'host': node_settings.external_account.host
         }
 
         if node_settings.has_auth:
