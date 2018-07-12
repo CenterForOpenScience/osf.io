@@ -7,6 +7,7 @@ import logging
 import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import pytest
 import mock
 
 from framework.auth.core import Auth
@@ -72,6 +73,8 @@ def retry_assertion(interval=0.3, retries=3):
         return wrapped
     return test_wrapper
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestCollectionsSearch(OsfTestCase):
     def setUp(self):
         super(TestCollectionsSearch, self).setUp()
@@ -254,6 +257,9 @@ class TestCollectionsSearch(OsfTestCase):
             self.node_one.collecting_metadata_list[0].collection._id))
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestUserUpdate(OsfTestCase):
 
     def setUp(self):
@@ -307,6 +313,7 @@ class TestUserUpdate(OsfTestCase):
         # Ensure user is not in search index
         assert_equal(len(query_user(user.fullname)['results']), 0)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merged_user(self):
         user = factories.UserFactory(fullname='Annie Lennox')
         merged_user = factories.UserFactory(fullname='Lisa Stansfield')
@@ -366,6 +373,8 @@ class TestUserUpdate(OsfTestCase):
         assert_true(all([user._id == doc[0]['id'] for doc in docs]))
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestProject(OsfTestCase):
 
     def setUp(self):
@@ -389,6 +398,8 @@ class TestProject(OsfTestCase):
         assert_equal(len(docs), 1)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestNodeSearch(OsfTestCase):
 
     def setUp(self):
@@ -433,6 +444,8 @@ class TestNodeSearch(OsfTestCase):
             assert_equal(doc['license'].get('id'), new_license.license_id)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestRegistrationRetractions(OsfTestCase):
 
     def setUp(self):
@@ -523,6 +536,8 @@ class TestRegistrationRetractions(OsfTestCase):
         assert_equal(len(docs), 1)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestPublicNodes(OsfTestCase):
 
     def setUp(self):
@@ -744,6 +759,8 @@ class TestPublicNodes(OsfTestCase):
             assert doc['key'] in tags
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestAddContributor(OsfTestCase):
     # Tests of the search.search_contributor method
 
@@ -839,6 +856,8 @@ class TestAddContributor(OsfTestCase):
         assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
         self.singular = 'Spanish Inquisition'
@@ -917,6 +936,8 @@ def job(**kwargs):
     return job
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestUserSearchResults(OsfTestCase):
     def setUp(self):
         with run_celery_tasks():
@@ -973,6 +994,8 @@ class TestUserSearchResults(OsfTestCase):
             assert_in(name, were_starfleet_names)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestSearchExceptions(OsfTestCase):
     # Verify that the correct exception is thrown when the connection is lost
 
@@ -1003,6 +1026,8 @@ class TestSearchExceptions(OsfTestCase):
         self.project.save()
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestSearchMigration(OsfTestCase):
     # Verify that the correct indices are created/deleted during migration
 
@@ -1104,6 +1129,8 @@ class TestSearchMigration(OsfTestCase):
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type='collectionSubmission', search_type='count', body=count_query)
         assert res['hits']['total'] == 2
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestSearchFiles(OsfTestCase):
 
     def setUp(self):
@@ -1205,6 +1232,7 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_quickfiles_files_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
@@ -1215,6 +1243,7 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(len(find), 1)
         assert find[0]['node_url'] == '/{}/quickfiles/'.format(quickfiles.creator._id)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_qatest_quickfiles_files_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
@@ -1229,6 +1258,7 @@ class TestSearchFiles(OsfTestCase):
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 0)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')

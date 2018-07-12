@@ -1,3 +1,4 @@
+import pytest
 import mock
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
@@ -254,6 +255,9 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_equal(response.status_code, 200)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super(TestNodeReindex, self).setUp()
@@ -296,27 +300,23 @@ class TestNodeReindex(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_node_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_node_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_registration_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_registration_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 class TestNodeConfirmHamView(AdminTestCase):
