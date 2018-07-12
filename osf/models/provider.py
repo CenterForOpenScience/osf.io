@@ -24,7 +24,8 @@ from website.util import api_v2_url
 
 
 class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
-
+    primary_collection = models.ForeignKey('Collection', related_name='+',
+                                           null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     advisory_board = models.TextField(default='', blank=True)
     description = models.TextField(default='', blank=True)
@@ -90,9 +91,6 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
 
 class CollectionProvider(AbstractProvider):
-    primary_collection = models.ForeignKey('Collection', related_name='+',
-                                           null=True, blank=True, on_delete=models.SET_NULL)
-
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
@@ -111,6 +109,25 @@ class CollectionProvider(AbstractProvider):
         path = '/providers/collections/{}/'.format(self._id)
         return api_v2_url(path)
 
+
+class RegistrationProvider(AbstractProvider):
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_registrationprovider', 'Can view registration provider details'),
+        )
+
+    @property
+    def readable_type(self):
+        return 'registration'
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/providers/registrations/{}/'.format(self._id)
+        return api_v2_url(path)
 
 class PreprintProvider(AbstractProvider):
 
@@ -237,6 +254,7 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
         )
 
 @receiver(post_save, sender=CollectionProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_primary_collection_for_provider(sender, instance, created, **kwargs):
     if created:
         Collection = apps.get_model('osf.Collection')
@@ -254,8 +272,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
             instance.save()
         else:
             # A user is required for Collections / Groups
-            sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))
-
+            sentry.log_message('Unable to create primary_collection for {}Provider {}'.format(instance.readable_type.capitalize(), instance.name))
 
 class WhitelistedSHAREPreprintProvider(BaseModel):
     id = models.AutoField(primary_key=True)
