@@ -252,3 +252,17 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserIdentitiesSerializer(BaseAPISerializer):
+    data = ser.DictField()
+    links = LinksField({'self': 'get_self_url'})
+
+    def get_self_url(self, obj):
+        return absolute_reverse('users:user-identities-list', kwargs={
+            'version': self.context['request'].parser_context['kwargs']['version'],
+            'user_id': obj['self']._id
+        })
+
+    class Meta:
+        type_ = 'external_identities'
