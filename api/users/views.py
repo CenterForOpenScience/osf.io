@@ -445,11 +445,15 @@ class UserIdentitiesList(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
     The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/...).
     """
     permission_classes = (
+        base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         CurrentUser,
     )
 
     serializer_class = UserIdentitiesSerializer
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'users'
     view_name = 'user-identities-list'
@@ -466,9 +470,13 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
     The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/...).
     """
     permission_classes = (
+        base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         CurrentUser,
     )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     serializer_class = UserIdentitiesSerializer
 
