@@ -8,12 +8,12 @@ Erroring deletions will be logged and skipped.
 import logging
 import sys
 
-logger = logging.getLogger(__name__)
-
 from django.db import transaction
 from django.core.management.base import BaseCommand
-from osf.management.utils import boolean_input
+from osf.management.utils import ask_for_confirmation
 from osf.models import OSFUser
+
+logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -30,20 +30,17 @@ class Command(BaseCommand):
         guids = options.get('guids', None)
         dry_run = options.get('dry_run', False)
 
-        if not boolean_input('About to delete users: {}. yes or no?'.format(' '.join(guids))):
+        if not ask_for_confirmation(
+            'About to delete user(s): {}. yes or no?'.format(' '.join(guids))
+        ):
             print('Exiting...')
             sys.exit(1)
 
         with transaction.atomic():
             for guid in guids:
-                try:
-                    user = OSFUser.load(guid)
-                    user.gdpr_delete()
-                    user.save()
-                except Exception:
-                    logger.exception('Error occurred while deleting user {}'.format(guid))
-                    logger.error('Skipping...')
-                logger.info('Deleted user: {}'.format(guid))
-
+                user = OSFUser.load(guid)
+                user.gdpr_delete()
+                user.save()
+                logger.info('Deleted user {}'.format(user._id))
             if dry_run:
                 raise RuntimeError('Dry run -- transaction rolled back.')

@@ -1591,9 +1591,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 account.oauth_key = None
                 account.oauth_secret = None
                 account.refresh_token = None
-                account.provider = 'gdpr-deleted'
                 account.provider_name = 'gdpr-deleted'
-                account.provider_id = 'gdpr-deleted'
                 account.display_name = None
                 account.profile_url = None
                 account.save()

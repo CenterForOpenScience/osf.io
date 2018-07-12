@@ -11,7 +11,7 @@ def print_sql(sql):
 
 
 # From https://stackoverflow.com/a/39257511/1157536
-def boolean_input(question, default=None):
+def ask_for_confirmation(question, default=None):
     """Ask for confirmation before proceeding.
     """
     result = input('{} '.format(question))
