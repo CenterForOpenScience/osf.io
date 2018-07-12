@@ -832,6 +832,36 @@ table.add-links {
     color: #000000;
 }
 
+.subject-preview {
+    display: inline-block;
+    background-color: #F8F8F8;
+    border-radius: 3px;
+    border: 1px solid #EEE;
+    padding: 1px 7px;
+    margin-bottom: 4px;
+    margin-right: 5px;
+}
+
+.dl-subjects dt {
+    width: 10px;
+    overflow: visible;
+    font-weight: normal;
+}
+
+.dl-subjects dd {
+    margin-left: 65px;
+}
+
+@media (max-width: 767px) {
+    .dl-subjects dd {
+        margin-left: 0px;
+    }
+
+    .dl-subjects dt {
+        padding-bottom: 5px;
+    }
+}
+
 /* Override jumbotron to be a bit smaller.
    Used for the updated terms of service banner on all pages. */
 .jumbotron {
