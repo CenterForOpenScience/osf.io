@@ -62,7 +62,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
     # Set message
-    context['message'] = u'submitted {}.'.format(context['reviewable'].node.title)
+    context['message'] = u'submitted "{}".'.format(context['reviewable'].node.title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
@@ -104,7 +104,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     preprint_word = preprint.provider.preprint_word
 
     # Set message
-    context['message'] = u'has requested withdrawal of {} {}.'.format(preprint_word, preprint.node.title)
+    context['message'] = u'has requested withdrawal of {} "{}".'.format(preprint_word, preprint.node.title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['requester'])
     # Set submission url
