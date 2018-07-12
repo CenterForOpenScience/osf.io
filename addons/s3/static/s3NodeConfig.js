@@ -23,10 +23,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.secretKey = ko.observable('');
         self.host = ko.observable('');
         self.port = ko.observable('');
-        self.toggleAdvanced = function() {
-            console.log('HELLO');
-        };
-
 
         // Treebeard config
         self.treebeardOptions = $.extend(
@@ -310,8 +306,6 @@ function s3NodeConfig(addonName, selector, url, folderPicker, opts, tbOpts) {
     tbOpts = tbOpts || {};
     self.viewModel = new s3FolderPickerViewModel(addonName, url, selector, folderPicker, opts, tbOpts);
     self.viewModel.updateFromData();
-    console.log('VIEW MODEL\n==========');
-    console.log(self.viewModel);
     $osf.applyBindings(self.viewModel, selector);
 }
 

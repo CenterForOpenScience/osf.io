@@ -50,7 +50,6 @@ function ViewModel(url) {
     self.advancedOpen = false
     self.toggleAdvanced = function(context, event) {
         var advSettings = document.querySelectorAll('.advanced_settings')[0];
-        console.log(advSettings)
         if (self.advancedOpen) {
             event.currentTarget.firstElementChild.className = 'fa fa-caret-right';
             advSettings.style.display = 'none';
@@ -60,7 +59,7 @@ function ViewModel(url) {
             advSettings.style.display = 'block';
             self.advancedOpen = true;
         }
-        
+
     };
 
     /** Send POST request to authorize S3 */
