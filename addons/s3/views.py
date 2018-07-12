@@ -128,7 +128,7 @@ def s3_add_user_account(auth, **kwargs):
             account.oauth_secret != secret_key or
             account.host != host or
             account.port != port or
-            account.encrypted != encrypted or
+            account.encrypted != encrypted
         ):
             account.oauth_key = access_key
             account.oauth_secret = secret_key
@@ -222,7 +222,7 @@ def s3_modify_user_account(auth, **kwargs):
         account.oauth_secret != secret_key or
         account.host != host or
         account.port != port or
-        account.encrypted != encrypted or
+        account.encrypted != encrypted
     ):
         account.oauth_key = access_key
         account.oauth_secret = secret_key
