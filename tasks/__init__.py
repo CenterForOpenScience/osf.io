@@ -289,12 +289,20 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
+    numprocesses = int(numprocesses)
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    if nocapture:
-        args = []
-    else:
-        args = ['-s']
+    args = [
+        '--cov-report', 'term-missing',
+        '--cov', 'admin',
+        '--cov', 'addons',
+        '--cov', 'api',
+        '--cov', 'framework',
+        '--cov', 'osf',
+        '--cov', 'website',
+    ]
+    if not nocapture:
+        args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
