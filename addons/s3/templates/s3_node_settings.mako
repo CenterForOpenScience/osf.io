@@ -42,9 +42,9 @@
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">
-                    <strong>Current Host:</strong>
                     <span data-bind="if: host">
-                        <a data-bind="attr: {href: host}, text: host">s3.amazonaws.com</a>
+                        <strong>Current Host:</strong>
+                        <a data-bind="attr: {href: host}, text: host"></a>
                     </span>
                     <br>
                     <strong>Current Bucket:</strong>
