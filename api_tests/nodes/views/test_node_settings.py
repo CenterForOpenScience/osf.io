@@ -117,6 +117,46 @@ class TestNodeSettingsGet:
 
 
 @pytest.mark.django_db
+class TestNodeSettingsPUT:
+    @pytest.fixture()
+    def payload(self, project):
+        return {
+            'data': {
+                'id': project._id,
+                'type': 'node-settings',
+                'attributes': {
+                    'redirect_link_enabled': True,
+                    'redirect_link_url': 'https://cos.io'
+                }
+            }
+        }
+
+    def test_put_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, url):
+        assert project.access_requests_enabled is True
+        payload['data']['attributes']['access_requests_enabled'] = False
+        # Logged out
+        res = app.put_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # Logged in, noncontrib
+        noncontrib = AuthUserFactory()
+        res = app.put_json_api(url, payload, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in read
+        res = app.put_json_api(url, payload, auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in write (Write contribs can only change some node settings)
+        res = app.put_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in admin
+        res = app.put_json_api(url, payload, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+
+@pytest.mark.django_db
 class TestNodeSettingsUpdate:
 
     @pytest.fixture()
