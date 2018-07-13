@@ -47,10 +47,10 @@ var CookieBannerViewModel = function(){
     var cookieConsentKey = 'osf_cookieconsent';
 
     self.accept = function() {
-        Cookie.set(cookieConsentKey, '0', { expires: 30, path: '/'});
+        Cookie.set(cookieConsentKey, '1', { expires: 30, path: '/'});
     };
 
-    var accepted = Cookie.get(cookieConsentKey) === '0';
+    var accepted = Cookie.get(cookieConsentKey) === '1';
     if (!accepted) {
         self.elem.css({'display': 'flex'});
         self.elem.show();
