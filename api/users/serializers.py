@@ -1,3 +1,5 @@
+import datetime
+
 from guardian.models import GroupObjectPermission
 
 from django.utils import timezone
@@ -7,8 +9,8 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink, ShowIfCurrentUser, DevOnly
+    Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
@@ -57,8 +59,10 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    employment = DevOnly(ser.ListField(child=ser.DictField(), source='jobs', read_only=True))
-    education = DevOnly(ser.ListField(child=ser.DictField(), source='schools', read_only=True))
+    employment = JSONAPIListField(required=False, source='jobs')
+    employment_required_keys = {'department', 'institution', 'ongoing', 'startMonth', 'startYear', 'title'}
+    education = JSONAPIListField(required=False, source='schools')
+    education_required_keys = {'department', 'institution', 'ongoing', 'startMonth', 'startYear', 'degree'}
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
@@ -128,6 +132,67 @@ class UserSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
+    def _update_social(self, social_dict, user):
+        for key, val in social_dict.items():
+            # currently only profileWebsites are a list, the rest of the social key only has one value
+            if key == 'profileWebsites':
+                user.social[key] = val
+            else:
+                if len(val) > 1:
+                    raise InvalidModelValueError(
+                        detail='{} only accept a list of one single value'.format(key)
+                    )
+                    user.social[key] = val[0]
+
+    def _validate_user_json(self, info_list, required_fields):
+        if type(info_list) != list or not info_list:
+            raise InvalidModelValueError(detail='The updated information must be in a list of dictionaries.')
+
+        for info in info_list:
+
+            if type(info) != dict:
+                raise InvalidModelValueError(detail='The updated information must be in a list of dictionaries.')
+
+            fields = set(info.keys())
+
+            absent_fields = required_fields.difference(fields)
+            if absent_fields:
+                raise InvalidModelValueError(
+                    detail='The updated employment fields must contain keys {}.'.format(', '.join(absent_fields))
+                )
+
+            if type(info['ongoing']) != bool:
+                raise InvalidModelValueError(detail='The field "ongoing" must be boolean.')
+
+            if not info['ongoing']:
+                required_fields = required_fields.union({'endYear', 'endMonth'})
+
+            extra_fields = required_fields.symmetric_difference(fields)
+            if extra_fields:
+                raise InvalidModelValueError(
+                    detail='The updated employment fields can only contain keys {}.'.format(', '.join(required_fields))
+                )
+
+            if not info.get('institution'):
+                raise InvalidModelValueError(detail='The institution field cannot be empty.')
+
+            self._validate_dates(info)
+
+    def _validate_dates(self, info):
+        try:
+            startDate = datetime.date(info['startYear'], info['startMonth'], 1)
+        except (ValueError, TypeError):
+            raise InvalidModelValueError(detail='Date values must be valid integers.')
+
+        if not info['ongoing']:
+            try:
+                endDate = datetime.date(info['endYear'], info['endMonth'], 1)
+            except (ValueError, TypeError):
+                raise InvalidModelValueError(detail='Date values must be valid integers.')
+
+            if (endDate - startDate).days <= 0:
+                raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
@@ -142,6 +207,13 @@ class UserSerializer(JSONAPISerializer):
                                 detail='{} only accept a list of one single value'. format(key)
                             )
                         instance.social[key] = val[0]
+            elif 'schools' == attr:
+                self._validate_user_json(value, self.education_required_keys)
+                instance.schools = value
+            elif 'jobs' == attr:
+                self._validate_user_json(value, self.employment_required_keys)
+                instance.jobs = value
+
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
