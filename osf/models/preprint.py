@@ -328,11 +328,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         elif preprint_doi and self.is_published and self.preprint_doi_created:
             csl['DOI'] = preprint_doi
 
-        if self.logs.exists():
-            csl['issued'] = datetime_to_csl(self.logs.latest().created)
-
-        if self.original_publication_date:
-            csl['issued'] = datetime_to_csl(self.original_publication_date)
+        if self.date_published:
+            csl['issued'] = datetime_to_csl(self.date_published)
 
         return csl
 

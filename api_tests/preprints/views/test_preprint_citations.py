@@ -201,20 +201,20 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
     def test_citation_contains_correct_date(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
-        expected_date = self.published_preprint.logs.latest().created.strftime('%Y, %B %-d')
+        expected_date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_true(
             expected_date in res.json['data']['attributes']['citation'])
 
-        self.published_preprint.original_publication_date = datetime(
-            2017, 12, 24)
+    def test_citation_no_date(self):
+        self.published_preprint.date_published = None
         self.published_preprint.save()
 
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
-        expected_date = self.published_preprint.original_publication_date.strftime(
-            '%Y, %B %-d')
+        expected_date = 'n.d.'
         assert_true(
             expected_date in res.json['data']['attributes']['citation'])
+
 
 
 class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCase):
@@ -365,11 +365,23 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.third_contrib.family_name = 'Schematics'
         self.third_contrib.save()
 
+    def test_not_published(self):
+        self.published_preprint.date_published = None
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {} Web.'.format(
+            self.published_preprint.title,
+            self.published_preprint.provider.name,
+            'n.d.')
+        )
+
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {}. Web.'.format(
             self.published_preprint.title,
             self.published_preprint.provider.name,
@@ -382,7 +394,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B., Junior. “{}.” {}, {}. Web.'.format(
             self.published_preprint.title,
             self.published_preprint.provider.name,
@@ -396,7 +408,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes. “{}.” {}, {}. Web.'.format(
             self.published_preprint.title,
             self.published_preprint.provider.name,
@@ -409,7 +421,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -424,7 +436,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -437,7 +449,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. “{}.” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -451,7 +463,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B., et al. “{}.” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -464,7 +476,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = self.published_preprint.date_published.strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B., Jr., et al. “{}.” {}, {}. Web.'.format(
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -504,11 +516,26 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
                      API_BASE, self.published_preprint._id)
 
+        def test_not_published(self):
+            self.published_preprint.date_published = None
+            self.published_preprint.save()
+            self.published_preprint.add_contributor(self.second_contrib)
+            self.published_preprint.save()
+            res = self.app.get(self.published_preprint_url)
+            assert_equal(res.status_code, 200)
+            citation = res.json['data']['attributes']['citation']
+            assert_equal(citation, u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
+                'n.d.',
+                self.published_preprint.title,
+                'https://doi.org/' + self.published_preprint.article_doi
+                )
+            )
+
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
@@ -522,7 +549,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B., Junior. ({}). {}. {}'.format(
             date,
             self.published_preprint.title,
@@ -537,7 +564,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. ({}). {}. {}'.format(
             date,
             self.published_preprint.title,
@@ -551,7 +578,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
             date,
             self.published_preprint.title,
@@ -567,7 +594,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
             date,
             'This Title Ends in a Period',
@@ -589,7 +616,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
             date,
             self.published_preprint.title,
@@ -611,7 +638,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%Y, %B %-d')
+        date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
             date,
             self.published_preprint.title,
@@ -651,11 +678,25 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         self.third_contrib.family_name = 'Schematics'
         self.third_contrib.save()
 
+    def test_not_published(self):
+        self.published_preprint.date_published = None
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        assert_equal(citation, u'McGee, Grapes C. B. {} “{}.” {}. {}.'.format(
+                'n.d.',
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                'doi:' + self.published_preprint.article_doi
+                )
+        )
+
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes C. B. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
@@ -671,7 +712,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes C. B., Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
@@ -688,7 +729,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
@@ -704,7 +745,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
@@ -722,7 +763,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 'This Preprint Ends in a Period',
@@ -745,7 +786,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date()
+        date = self.published_preprint.date_published
         assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, Lilith R. Schematics, James Taylor1, James Taylor2, James Taylor3, James Taylor4, et al. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,

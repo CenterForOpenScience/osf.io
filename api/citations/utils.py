@@ -181,7 +181,8 @@ def remove_extra_period_after_right_quotation(cit):
 
 def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
-    new_csl = cit.split(str(node.csl['issued']['date-parts'][0][0]), 1)
+    issued = node.csl.get('issued')
+    new_csl = cit.split(str(issued['date-parts'][0][0]) if issued else 'n.d.', 1)
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     # throw error if there is no visible contributor
@@ -213,7 +214,8 @@ def chicago_reformat(node, cit):
         new_chi += '.'
     cit = new_chi
     for x in new_csl[1:]:
-        cit += ' ' + str(node.csl['issued']['date-parts'][0][0]) + x
+        year = str(issued['date-parts'][0][0]) if issued else 'n.d.'
+        cit += ' ' + year + x
     return cit
 
 def mla_name(name, initial=False):
