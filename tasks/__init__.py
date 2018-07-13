@@ -294,15 +294,15 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = []
     if coverage:
-      args.extend([
-          '--cov-report', 'term-missing',
-          '--cov', 'admin',
-          '--cov', 'addons',
-          '--cov', 'api',
-          '--cov', 'framework',
-          '--cov', 'osf',
-          '--cov', 'website',
-      ])
+        args.extend([
+            '--cov-report', 'term-missing',
+            '--cov', 'admin',
+            '--cov', 'addons',
+            '--cov', 'api',
+            '--cov', 'framework',
+            '--cov', 'osf',
+            '--cov', 'website',
+        ])
     if not nocapture:
         args += ['-s']
     if numprocesses > 1:
