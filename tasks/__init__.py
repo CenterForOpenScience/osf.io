@@ -365,51 +365,51 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None):
+def test_osf(ctx, numprocesses=None, coverage=False):
     """Run the OSF test suite."""
     print('Testing modules "{}"'.format(OSF_TESTS))
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_else(ctx, numprocesses=None):
+def test_else(ctx, numprocesses=None, coverage=False):
     """Run the old test suite."""
     print('Testing modules "{}"'.format(ELSE_TESTS))
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_api1(ctx, numprocesses=None):
+def test_api1(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api2(ctx, numprocesses=None):
+def test_api2(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api3(ctx, numprocesses=None):
+def test_api3(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_admin(ctx, numprocesses=None):
+def test_admin(ctx, numprocesses=None, coverage=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_addons(ctx, numprocesses=None):
+def test_addons(ctx, numprocesses=None, coverage=False):
     """Run all the tests in the addons directory.
     """
     print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
@@ -450,47 +450,47 @@ def test_js(ctx):
     karma(ctx)
 
 @task
-def test_travis_addons(ctx, numprocesses=None):
+def test_travis_addons(ctx, numprocesses=None, coverage=False):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_addons(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_else(ctx, numprocesses=None):
+def test_travis_else(ctx, numprocesses=None, coverage=False):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_else(ctx, numprocesses=numprocesses)
+    test_else(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
-    test_api1(ctx, numprocesses=numprocesses)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None):
+def test_travis_api2(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
-    test_api2(ctx, numprocesses=numprocesses)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
-    test_api3(ctx, numprocesses=numprocesses)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
