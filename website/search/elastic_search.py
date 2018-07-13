@@ -681,7 +681,10 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{target_id}/'.format(target_id=target._id)
+    if target.is_quickfiles:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
+    else:
+        node_url = '/{target_id}/'.format(target_id=target._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)

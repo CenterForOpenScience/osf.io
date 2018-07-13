@@ -1395,6 +1395,7 @@ class TestSearchFiles(OsfTestCase):
         quickfiles_root.append_file('GreenLight.mp3')
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 1)
+        assert find[0]['node_url'] == '/{}/quickfiles/'.format(quickfiles.creator._id)
 
     def test_qatest_quickfiles_files_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
