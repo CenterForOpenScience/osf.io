@@ -281,7 +281,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -292,15 +292,17 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     numprocesses = int(numprocesses)
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    args = [
-        '--cov-report', 'term-missing',
-        '--cov', 'admin',
-        '--cov', 'addons',
-        '--cov', 'api',
-        '--cov', 'framework',
-        '--cov', 'osf',
-        '--cov', 'website',
-    ]
+    args = []
+    if coverage:
+      args.extend([
+          '--cov-report', 'term-missing',
+          '--cov', 'admin',
+          '--cov', 'addons',
+          '--cov', 'api',
+          '--cov', 'framework',
+          '--cov', 'osf',
+          '--cov', 'website',
+      ])
     if not nocapture:
         args += ['-s']
     if numprocesses > 1:
