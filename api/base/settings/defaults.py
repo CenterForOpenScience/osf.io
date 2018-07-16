@@ -28,6 +28,9 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
+        'TEST': {
+            'SERIALIZE': False,
+        },
     }
 }
 
@@ -84,6 +87,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
     'waffle',
 
     # OSF
@@ -234,6 +238,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+    DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 

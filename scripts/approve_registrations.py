@@ -1,7 +1,7 @@
 """Run nightly, this script will approve any pending registrations that have
 elapsed the pending approval time..
 """
-
+import sys
 import logging
 
 import django
@@ -31,7 +31,13 @@ def main(dry_run=True):
     for registration_approval in approvals_past_pending:
         if dry_run:
             logger.warn('Dry run mode')
-        pending_registration = models.Registration.objects.get(registration_approval=registration_approval)
+        try:
+            pending_registration = models.Registration.objects.get(registration_approval=registration_approval)
+        except models.Registration.DoesNotExist:
+            logger.error(
+                'RegistrationApproval {} is not attached to a registration'.format(registration_approval._id)
+            )
+            continue
         logger.warn(
             'RegistrationApproval {0} automatically approved by system. Making registration {1} public.'
             .format(registration_approval._id, pending_registration._id)
@@ -62,3 +68,6 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
+
+if __name__ == '__main__':
+    run_main(dry_run='--dry' in sys.argv)

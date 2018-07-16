@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>Known Spam Preprints</title>
+{% endblock title %}
+{% block content %}
+    {% include 'preprints/preprint_list.html' %}
+{% endblock content %}

@@ -24,6 +24,7 @@ class CitationStyle(BaseModel):
     short_title = models.CharField(max_length=2048, null=True, blank=True)
     summary = models.CharField(max_length=4200, null=True, blank=True)  # longest value was 3,812 8/23/2016
     has_bibliography = models.BooleanField(default=False)
+    parent_style = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ['_id']
@@ -34,5 +35,10 @@ class CitationStyle(BaseModel):
             'title': self.title,
             'short_title': self.short_title,
             'summary': self.summary,
-            'has_bibliography': self.has_bibliography
+            'has_bibliography': self.has_bibliography,
+            'parent_style': self.parent_style
         }
+
+    @property
+    def has_parent_style(self):
+        return self.parent_style is not None

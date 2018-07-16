@@ -18,6 +18,7 @@ from django.test import override_settings
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import handlers as celery_handlers
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from osf.models import MetaSchema
@@ -47,6 +48,7 @@ except AssertionError:  # Routes have already been set up
     test_app = init_app(routes=False, set_backends=False)
 
 rm_handlers(test_app, django_handlers)
+rm_handlers(test_app, celery_handlers)
 
 test_app.testing = True
 

@@ -33,6 +33,19 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     if need_update:
         node.update_search()
         update_node_share(node)
+        update_collecting_metadata(node, saved_fields)
+
+    if node.get_identifier_value('doi') and bool(node.IDENTIFIER_UPDATE_FIELDS.intersection(saved_fields)):
+        node.request_identifier_update(category='doi')
+
+def update_collecting_metadata(node, saved_fields):
+    from website.search.search import update_collected_metadata
+    if node.is_collected:
+        if node.is_public:
+            update_collected_metadata(node._id)
+        else:
+            if 'is_public' in saved_fields:
+                update_collected_metadata(node._id, op='delete')
 
 def update_node_share(node):
     # Wrapper that ensures share_url and token exist

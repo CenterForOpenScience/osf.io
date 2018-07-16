@@ -56,7 +56,6 @@
                     <a href="${footer_links['facebook']}" aria-label="Facebook"><i class="fa fa-facebook fa-2x"></i></a>
                     <a href="${footer_links['googleGroup']}" aria-label="Google Group"><i class="fa fa-group fa-2x"></i></a>
                     <a href="${footer_links['github']}" aria-label="GitHub"><i class="fa fa-github fa-2x"></i></a>
-                    <a href="${footer_links['googlePlus']}" aria-label="Google Plus" rel="publisher"><i class="fa fa-google-plus fa-2x"></i></a>
                 </p>
             </div>
         </div>

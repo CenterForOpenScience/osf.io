@@ -25,6 +25,7 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models import CollectedGuidMetadata
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -56,6 +57,7 @@ DOC_TYPE_TO_MODEL = {
     'file': BaseFileNode,
     'institution': Institution,
     'preprint': AbstractNode,
+    'collectionSubmission': CollectedGuidMetadata,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -246,8 +248,11 @@ def format_results(results):
             result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
+        elif result.get('category') == 'collectionSubmission':
+            continue
         elif not result.get('category'):
             continue
+
         ret.append(result)
     return ret
 
@@ -419,6 +424,49 @@ def bulk_update_nodes(serialize, nodes, index=None):
     if actions:
         return helpers.bulk(client(), actions)
 
+def serialize_cgm_contributor(contrib):
+    return {
+        'fullname': contrib['fullname'],
+        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+    }
+
+def serialize_cgm(cgm):
+    obj = cgm.guid.referent
+    contributors = []
+    if hasattr(obj, '_contributors'):
+        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
+
+    return {
+        'id': cgm._id,
+        'abstract': getattr(obj, 'description', ''),
+        'collectedType': getattr(cgm, 'collected_type'),
+        'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
+        'provider': getattr(cgm.collection.provider, '_id', None),
+        'status': cgm.status,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
+        'title': getattr(obj, 'title', ''),
+        'url': getattr(obj, 'url', ''),
+        'category': 'collectionSubmission',
+    }
+
+@requires_search
+def bulk_update_cgm(cgms, actions=None, op='update', index=None):
+    index = index or INDEX
+    if not actions and cgms:
+        actions = ({
+            '_op_type': op,
+            '_index': index,
+            '_id': cgm._id,
+            '_type': 'collectionSubmission',
+            'doc': serialize_cgm(cgm),
+            'doc_as_upsert': True,
+        } for cgm in cgms)
+
+    try:
+        helpers.bulk(client(), actions or [], refresh=True, raise_on_error=False)
+    except helpers.BulkIndexError as e:
+        raise exceptions.BulkUpdateError(e.errors)
+
 def serialize_contributors(node):
     return {
         'contributors': [
@@ -527,7 +575,10 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+    if file_.node.is_quickfiles:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=file_.node.creator._id)
+    else:
+        node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
@@ -573,6 +624,49 @@ def update_institution(institution, index=None):
 
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
+    CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+    if collection_id:
+        try:
+            cgm = CollectedGuidMetadata.objects.get(
+                guid___id=cgm_id,
+                collection_id=collection_id,
+                collection__provider__isnull=False,
+                collection__deleted__isnull=True,
+                collection__is_bookmark_collection=False)
+
+        except CollectedGuidMetadata.DoesNotExist:
+            logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
+        else:
+            if cgm and hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+                try:
+                    update_cgm(cgm, op=op, index=index)
+                except Exception as exc:
+                    self.retry(exc=exc)
+    else:
+        cgms = CollectedGuidMetadata.objects.filter(
+            guid___id=cgm_id,
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+        for cgm in cgms:
+            try:
+                update_cgm(cgm, op=op, index=index)
+            except Exception as exc:
+                self.retry(exc=exc)
+
+@requires_search
+def update_cgm(cgm, op='update', index=None):
+    index = index or INDEX
+    if op == 'delete':
+        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        return
+    collection_submission_doc = serialize_cgm(cgm)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
+
 @requires_search
 def delete_all():
     delete_index(INDEX)
@@ -589,7 +683,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
     project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
