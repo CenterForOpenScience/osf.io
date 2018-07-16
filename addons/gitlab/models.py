@@ -9,7 +9,6 @@ from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 
-import gitlab
 from addons.gitlab import utils
 from addons.gitlab.api import GitLabClient
 from addons.gitlab.serializer import GitLabSerializer
@@ -276,15 +275,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             repo = connect.repo(self.repo_id)
         except (ApiError, GitLabError):
             return
-        except gitlab.exceptions.GitlabConnectionError as exc:
-            # The old client allowed us to use 'gitlab.com' instead of 'http://gitlab.com' this allows us to maintain backwards compatibility
-            if 'No schema supplied' in exc.error_message:
-                self.external_account.oauth_secret = 'https://{}'.format(self.external_account.oauth_secret)
-                connect = GitLabClient(external_account=self.external_account)
-                repo = connect.repo(self.repo_id)
-                self.external_account.save()
-            else:
-                raise exc
 
         # GitLab has visibility types: public, private, internal.
         node_permissions = 'public' if node.is_public else 'private'

@@ -1,5 +1,3 @@
-import requests
-
 from addons.base.serializer import StorageAddonSerializer
 from addons.gitlab.api import GitLabClient
 from addons.gitlab.exceptions import GitLabError
@@ -28,14 +26,6 @@ class GitLabSerializer(StorageAddonSerializer):
                 client.user()
             except (GitLabError, IndexError):
                 return False
-            except requests.exceptions.MissingSchema as exc:
-                # The old client allowed us to use 'gitlab.com' instead of 'http://gitlab.com' this allows us to maintain backwards compatibility
-                if 'No schema supplied' in exc.message:
-                    external_account.oauth_secret = 'http://{}'.format(external_account.oauth_secret)
-                    GitLabClient(external_account=external_account).user()
-                    external_account.save()
-                else:
-                    raise exc
         return True
 
     def serialized_folder(self, node_settings):
