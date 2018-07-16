@@ -7,7 +7,7 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-        {% if perms.osf.delete_asset_file %}
+        {% if perms.osf.delete_providerassetfile %}
             <a class="btn btn-danger" href={% url 'asset_files:delete' object.id %}>Delete asset</a>
         {% endif %}
     </div>
