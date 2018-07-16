@@ -254,15 +254,25 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         type_ = 'institutions'
 
 
-class UserIdentitiesSerializer(BaseAPISerializer):
-    data = ser.DictField()
-    links = LinksField({'self': 'get_self_url'})
+class UserIdentitiesSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    external_id = ser.CharField(read_only=True)
+    status = ser.CharField(read_only=True)
 
-    def get_self_url(self, obj):
-        return absolute_reverse('users:user-identities-list', kwargs={
-            'version': self.context['request'].parser_context['kwargs']['version'],
-            'user_id': obj['self']._id
-        })
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-identities-detail',
+            kwargs={
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+                'identity_id': obj['_id']
+            }
+        )
 
     class Meta:
-        type_ = 'external_identities'
+        type_ = 'external-identities'

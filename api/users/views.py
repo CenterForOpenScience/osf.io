@@ -439,7 +439,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user.save()
 
 
-class UserIdentitiesList(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
+class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """
     REMEMBER TO WRITE DEV DOCS!!!
     The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/...).
@@ -458,10 +458,14 @@ class UserIdentitiesList(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-identities-list'
 
-    def get_object(self):
+    # overrides ListAPIView
+    def get_queryset(self):
         user = self.get_user()
+        identities = []
+        for key, value in user.external_identity.iteritems():
+            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
 
-        return {'data': user.external_identity, 'self': user, 'type': 'external-identities'}
+        return identities
 
 
 class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
@@ -487,9 +491,12 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         user = self.get_user()
         identity_id = self.kwargs['identity_id']
         try:
-            return {'data': {identity_id: user.external_identity[identity_id]}, 'self': user}
+            identity = user.external_identity[identity_id]
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
+
+        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+
 
     def perform_destroy(self, instance):
         user = self.get_user()
