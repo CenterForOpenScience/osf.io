@@ -16,6 +16,11 @@ PROVIDER_ASSET_NAME_CHOICES = [
 ]
 
 class ProviderAssetFile(BaseModel):
+    class Meta:
+        permissions = (
+            ('view_providerassetfile', 'Can view provider asset files'),
+        )
+
     name = models.CharField(choices=PROVIDER_ASSET_NAME_CHOICES, max_length=63)
     file = models.FileField(upload_to='assets')
     providers = models.ManyToManyField('AbstractProvider', blank=True, related_name='asset_files')
