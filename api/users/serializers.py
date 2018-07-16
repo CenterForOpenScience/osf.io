@@ -1,5 +1,6 @@
 from guardian.models import GroupObjectPermission
 
+import jsonschema
 from django.utils import timezone
 from rest_framework import serializers as ser
 
@@ -14,6 +15,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from api.users.schemas import get_user_social_jsonschema
 from api.users.schemas.utils import validate_user_json
 
 
@@ -137,20 +139,31 @@ class UserSerializer(JSONAPISerializer):
         validate_user_json(value, 'education-schema.json')
         return value
 
+    def validate_social(self, value):
+        schema = get_user_social_jsonschema()
+        try:
+            jsonschema.validate(value, schema)
+        except jsonschema.ValidationError as e:
+            raise InvalidModelValueError(e)
+
+        social_dict = {}
+        for key, val in value.iteritems():
+            # Ignore fields that are not specified in the current social fields list
+            if key not in schema['properties'].keys():
+                continue
+            if key == 'profileWebsites':
+                social_dict[key] = val
+            else:
+                social_dict[key] = val[0]
+
+        return social_dict
+
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
-                    # currently only profileWebsites are a list, the rest of the social key only has one value
-                    if key == 'profileWebsites':
-                        instance.social[key] = val
-                    else:
-                        if len(val) > 1:
-                            raise InvalidModelValueError(
-                                detail='{} only accept a list of one single value'. format(key)
-                            )
-                        instance.social[key] = val[0]
+                    instance.social[key] = val
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
