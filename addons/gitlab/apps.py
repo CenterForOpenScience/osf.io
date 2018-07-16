@@ -84,7 +84,6 @@ class GitLabAddonConfig(BaseAddonAppConfig):
     categories = ['storage']
     owners = ['user', 'node']
     has_hgrid_files = True
-    max_file_size = 100  # MB
     node_settings_template = NODE_SETTINGS_TEMPLATE
     user_settings_template = USER_SETTINGS_TEMPLATE
 
