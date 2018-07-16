@@ -12,7 +12,7 @@ from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
+from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
@@ -105,7 +105,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     )
 
     files = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-providers',
+        related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'}
     ))
 
@@ -386,9 +386,9 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
                                      help_text='The registration that this file belongs to'
                              )
 
-class RegistrationProviderSerializer(NodeProviderSerializer):
+class RegistrationStorageProviderSerializer(NodeStorageProviderSerializer):
     """
-    Overrides NodeProviderSerializer to lead to correct registration file links
+    Overrides NodeStorageProviderSerializer to lead to correct registration file links
     """
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
