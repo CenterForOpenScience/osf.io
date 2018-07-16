@@ -14,9 +14,9 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
     PreprintFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    RegionFactory
 )
-from addons.osfstorage.tests.factories import RegionFactory
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection

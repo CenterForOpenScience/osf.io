@@ -10,13 +10,13 @@ from mock import patch, Mock
 import factory
 import pytz
 from factory.django import DjangoModelFactory
+from django.apps import apps
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory
 from waffle.models import Flag, Sample, Switch
 
-from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
@@ -29,7 +29,7 @@ from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
-from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile, Region
 
 fake = Factory.create()
 
@@ -913,6 +913,43 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+
+settings = apps.get_app_config('addons_osfstorage')
+
+
+generic_location = {
+    'service': 'cloud',
+    settings.WATERBUTLER_RESOURCE: 'resource',
+    'object': '1615307',
+}
+
+generic_waterbutler_settings = {
+    'storage': {
+        'provider': 'glowcloud',
+        'container': 'osf_storage',
+        'use_public': True,
+    }
+}
+
+generic_waterbutler_credentials = {
+    'storage': {
+        'region': 'PartsUnknown',
+        'username': 'mankind',
+        'token': 'heresmrsocko'
+    }
+}
+
+
+class RegionFactory(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
 
 
 class ProviderAssetFileFactory(DjangoModelFactory):
