@@ -717,6 +717,7 @@ class TestUserUpdate:
 
     #   test_update_user_social_with_invalid_value
         """update the social key which is not profileWebsites with more than one value should throw an error"""
+        original_github = user_one.social['github']
         res = app.patch_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -730,8 +731,25 @@ class TestUserUpdate:
                 },
             }
         }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
         assert res.status_code == 400
-        assert 'github only accept a list of one single value' == res.json['errors'][0]['detail']
+        assert user_one.social['github'] == original_github
+
+        # Test list with non-string value
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': {
+                        'github': [{'should': 'not_work'}]
+                    }
+                }
+            }
+        }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert user_one.social['github'] == original_github
 
     def test_patch_user_without_required_field(
             self, app, user_one, data_new_user_one, url_user_one):
@@ -783,6 +801,50 @@ class TestUserUpdate:
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == 'even_newer_github'
+
+    def test_patch_all_social_fields(self, app, user_one, url_user_one):
+        social_payload = {
+            'github': ['the_coolest_coder'],
+            'scholar': ['neat'],
+            'profileWebsites': ['http://yeah.com', 'http://cool.com'],
+            'baiduScholar': ['ok'],
+            'twitter': ['tweetmaster'],
+            'linkedIn': ['networkingmaster'],
+            'academiaProfileID': ['okokokok'],
+            'ssrn': ['aaaa'],
+            'impactStory': ['why not'],
+            'orcid': ['ork-id'],
+            'researchGate': ['Why are there so many of these'],
+            'researcherId': ['okalstone']
+        }
+
+        fake_fields = {
+            'nope': ['notreal'],
+            'totallyNot': {
+                'a': ['thing']
+            }
+        }
+
+        new_fields = social_payload.copy()
+        new_fields.update(fake_fields)
+
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': new_fields
+                }
+            }
+        }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        user_one.reload()
+        for key, value in res.json['data']['attributes']['social'].iteritems():
+            if key == 'profileWebsites':
+                assert user_one.social[key] == value == social_payload[key]
+            else:
+                assert user_one.social[key] == value[0] == social_payload[key][0]
 
     def test_partial_patch_user_logged_in_no_social_fields(
             self, app, user_one, url_user_one):
