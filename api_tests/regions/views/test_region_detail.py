@@ -1,9 +1,9 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from addons.osfstorage.tests.factories import RegionFactory
 from osf_tests.factories import (
     AuthUserFactory,
+    RegionFactory
 )
 
 @pytest.mark.django_db
