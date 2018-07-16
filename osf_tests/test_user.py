@@ -26,11 +26,12 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
-from osf.exceptions import ValidationError, BlacklistedEmailError
+from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -48,6 +49,8 @@ from .factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
     UserFactory,
+    RegistrationFactory,
+    PreprintFactory
 )
 from tests.base import OsfTestCase
 
@@ -1966,3 +1969,129 @@ class TestUserValidation(OsfTestCase):
             }]
             with pytest.raises(ValidationError):
                 self.user.save()
+
+
+class TestUserGdprDelete:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_with_two_admins(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def project_with_two_admins_and_addon_credentials(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        user = project.creator
+
+        node_settings = project.add_addon('github', auth=None)
+        user_settings = user.add_addon('github')
+        node_settings.user_settings = user_settings
+        github_account = GitHubAccountFactory()
+        github_account.save()
+        node_settings.external_account = github_account
+        node_settings.save()
+        user.save()
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def registration(self, user):
+        registration = RegistrationFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
+    def project(self, user):
+        project = ProjectFactory(creator=user)
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def project_user_is_only_admin(self, user):
+        non_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(non_admin_contrib)
+        project.save()
+        return project
+
+    def test_can_gdpr_delete(self, user):
+        user.social = ['fake social']
+        user.schools = ['fake schools']
+        user.jobs = ['fake jobs']
+        user.external_identity = ['fake external identity']
+        user.external_accounts.add(ExternalAccountFactory())
+
+        user.gdpr_delete()
+
+        assert user.fullname == 'Deleted user'
+        assert user.suffix == ''
+        assert user.social == []
+        assert user.schools == []
+        assert user.jobs == []
+        assert user.external_identity == {}
+        assert not user.emails.exists()
+        assert not user.external_accounts.exists()
+        assert user.is_disabled
+        assert user.deleted is not None
+
+    def test_can_gdpr_delete_personal_nodes(self, user):
+
+        user.gdpr_delete()
+
+        # user still has nodes because we did a soft delete
+        assert user.nodes.all().count()
+        # but they're all deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+
+    def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
+
+        user.gdpr_delete()
+
+        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
+        assert user.nodes.all().count() == 1
+
+    def test_cant_gdpr_delete_registrations(self, user, registration):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+
+    def test_cant_gdpr_delete_preprints(self, user, preprint):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+
+    def test_cant_gdpr_delete_shared_node_if_only_admin(self, user, project_user_is_only_admin):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
+                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+
+    def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
+                                         ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)

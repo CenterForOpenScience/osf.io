@@ -2720,7 +2720,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :type date: `datetime.datetime` or `None`
+        :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
         if not self.can_edit(auth):
