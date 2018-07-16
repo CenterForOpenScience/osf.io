@@ -571,6 +571,7 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 def sync_set_identifiers(preprint):
     from website.identifiers.clients import EzidClient
+    from website import settings
     client = preprint.get_doi_client()
 
     if isinstance(client, EzidClient):
@@ -915,12 +916,12 @@ class NodeRequestFactory(DjangoModelFactory):
     comment = factory.Faker('text')
 
 
-settings = apps.get_app_config('addons_osfstorage')
+osfstorage_settings = apps.get_app_config('addons_osfstorage')
 
 
 generic_location = {
     'service': 'cloud',
-    settings.WATERBUTLER_RESOURCE: 'resource',
+    osfstorage_settings.WATERBUTLER_RESOURCE: 'resource',
     'object': '1615307',
 }
 
