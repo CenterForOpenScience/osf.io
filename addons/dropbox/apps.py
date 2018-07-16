@@ -1,4 +1,5 @@
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.dropbox.settings import MAX_UPLOAD_SIZE
 
 
 dropbox_root_folder = generic_root_folder('dropbox')
@@ -11,7 +12,7 @@ class DropboxAddonAppConfig(BaseAddonAppConfig):
     short_name = 'dropbox'
     configs = ['accounts', 'node']
     has_hgrid_files = True
-    max_file_size = 150  # MB
+    max_file_size = MAX_UPLOAD_SIZE
     owners = ['user', 'node']
     categories = ['storage']
 
