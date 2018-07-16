@@ -147,6 +147,9 @@ install:
 script:
     - invoke test_travis_$TEST_BUILD -n 4
 
+after_success:
+    - coveralls || true
+
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
   - rm -f $HOME/.cache/pip/log/debug.log

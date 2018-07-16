@@ -58,6 +58,15 @@ def postcommit_after_request(response, base_status_error_code=500):
             logger.error('Post commit task queue not initialized: {}'.format(ex))
     return response
 
+def get_task_from_postcommit_queue(name, predicate, celery=True):
+    queue = postcommit_celery_queue() if celery else postcommit_queue()
+    matches = [task for key, task in queue.iteritems() if task.type.name == name and predicate(task)]
+    if len(matches) == 1:
+        return matches[0]
+    elif len(matches) > 1:
+        raise ValueError()
+    return False
+
 def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=True):
     '''
     Any task queued with this function where celery=True will be run asynchronously.

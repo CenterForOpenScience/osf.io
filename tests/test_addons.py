@@ -101,6 +101,28 @@ class TestAddonAuth(OsfTestCase):
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
 
+    def test_auth_render_action_returns_200(self):
+        url = self.build_url(action='render')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_render_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='render', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_auth_export_action_returns_200(self):
+        url = self.build_url(action='export')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_export_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='export', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.app.get(url, expect_errors=True)
@@ -393,7 +415,7 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
-    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+    def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
         ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
@@ -401,7 +423,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = registration._nodes.first()
 
         assert_false(component_registration.has_permission(self.user, 'write'))
-        res = views.check_access(component_registration, Auth(user=self.user), 'copyto', None)
+        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -414,13 +436,13 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
-    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+    def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto', None)
+            views.check_access(component, Auth(user=self.user), 'upload', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()

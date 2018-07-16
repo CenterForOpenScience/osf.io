@@ -6,7 +6,7 @@ var Submissions = require('../submissions.js');
 new Meetings(window.contextVars.meetings);
 
 var request = $.getJSON('/api/v1/meetings/submissions/');
-var DonateBanner = require('js/home-page/donateBannerPlugin');
+var ScheduledBanner = require('js/home-page/scheduledBannerPlugin');
 var columnSizeClass = '.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2';
 
 request.always(function() {
@@ -17,16 +17,16 @@ request.done(function(data) {
 });
 
 $(document).ready(function(){
-    var osfDonateBanner = {
+    var osfScheduledBanner = {
         view : function(ctrl, args) {
             return [
-                m('.donate-banner-background', m('.container',
+                m('.scheduled-banner-background', m('.container',
                     [
-                        m(columnSizeClass, m.component(DonateBanner, {}))
+                        m(columnSizeClass, m.component(ScheduledBanner, {}))
                     ]
                 )),
             ];
         }
     };
-    m.mount(document.getElementById('osfDonateBanner'), m.component(osfDonateBanner, {}));
+    m.mount(document.getElementById('osfScheduledBanner'), m.component(osfScheduledBanner, {}));
 });

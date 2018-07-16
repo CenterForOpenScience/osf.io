@@ -26,11 +26,12 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
-from osf.exceptions import ValidationError, BlacklistedEmailError
+from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -48,6 +49,8 @@ from .factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
     UserFactory,
+    RegistrationFactory,
+    PreprintFactory
 )
 from tests.base import OsfTestCase
 
@@ -697,7 +700,13 @@ class TestChangePassword:
         assert mock_send_mail.called is False
 
     @mock.patch('website.mails.send_mail')
-    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user):
+    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user, settings):
+        # NOTE: settings fixture comes from pytest-django.
+        # changes get reverted after tests run
+        settings.PASSWORD_HASHERS = (
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+        )
         raw_password = 'password'
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
         user.check_password(raw_password)
@@ -1147,6 +1156,12 @@ class TestCitationProperties:
 # copied from tests/test_models.py
 class TestMergingUsers:
 
+    @pytest.yield_fixture()
+    def email_subscriptions_enabled(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        yield
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+
     @pytest.fixture()
     def master(self):
         return UserFactory(
@@ -1205,21 +1220,13 @@ class TestMergingUsers:
             merge_dupe()
             assert mock_signals.signals_sent() == set([user_merged])
 
-    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api, dupe, merge_dupe, request_context):
+    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
-        username = dupe.username
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
-        mock_client = mock.MagicMock()
-        mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
-        list_id = mailchimp_utils.get_list_id_from_name(list_name)
         merge_dupe()
-        handlers.celery_teardown_request()
-        dupe.reload()
-        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
-        assert dupe.mailchimp_mailing_lists[list_name] is False
+        assert mock_unsubscribe.called
 
     def test_inherits_projects_contributed_by_dupe(self, dupe, master, merge_dupe):
         project = ProjectFactory()
@@ -1962,3 +1969,129 @@ class TestUserValidation(OsfTestCase):
             }]
             with pytest.raises(ValidationError):
                 self.user.save()
+
+
+class TestUserGdprDelete:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_with_two_admins(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def project_with_two_admins_and_addon_credentials(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        user = project.creator
+
+        node_settings = project.add_addon('github', auth=None)
+        user_settings = user.add_addon('github')
+        node_settings.user_settings = user_settings
+        github_account = GitHubAccountFactory()
+        github_account.save()
+        node_settings.external_account = github_account
+        node_settings.save()
+        user.save()
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def registration(self, user):
+        registration = RegistrationFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
+    def project(self, user):
+        project = ProjectFactory(creator=user)
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def project_user_is_only_admin(self, user):
+        non_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(non_admin_contrib)
+        project.save()
+        return project
+
+    def test_can_gdpr_delete(self, user):
+        user.social = ['fake social']
+        user.schools = ['fake schools']
+        user.jobs = ['fake jobs']
+        user.external_identity = ['fake external identity']
+        user.external_accounts.add(ExternalAccountFactory())
+
+        user.gdpr_delete()
+
+        assert user.fullname == 'Deleted user'
+        assert user.suffix == ''
+        assert user.social == []
+        assert user.schools == []
+        assert user.jobs == []
+        assert user.external_identity == {}
+        assert not user.emails.exists()
+        assert not user.external_accounts.exists()
+        assert user.is_disabled
+        assert user.deleted is not None
+
+    def test_can_gdpr_delete_personal_nodes(self, user):
+
+        user.gdpr_delete()
+
+        # user still has nodes because we did a soft delete
+        assert user.nodes.all().count()
+        # but they're all deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+
+    def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
+
+        user.gdpr_delete()
+
+        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
+        assert user.nodes.all().count() == 1
+
+    def test_cant_gdpr_delete_registrations(self, user, registration):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+
+    def test_cant_gdpr_delete_preprints(self, user, preprint):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+
+    def test_cant_gdpr_delete_shared_node_if_only_admin(self, user, project_user_is_only_admin):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
+                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+
+    def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
+                                         ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)

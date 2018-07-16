@@ -19,6 +19,7 @@ def serialize_node(node):
         'parent': node.parent_id,
         'root': node.root._id,
         'is_registration': node.is_registration,
+        'is_stuck_registration': getattr(node, 'is_stuck_registration', False),
         'date_created': node.created,
         'withdrawn': node.is_retracted,
         'embargo': embargo,

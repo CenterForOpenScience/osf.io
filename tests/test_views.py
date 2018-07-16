@@ -57,6 +57,7 @@ from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
+from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -1422,6 +1423,8 @@ class TestUserProfile(OsfTestCase):
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put_json(url, payload, auth=self.user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
 
         assert mock_client.lists.unsubscribe.called
         mock_client.lists.unsubscribe.assert_called_with(
@@ -2233,13 +2236,17 @@ class TestUserInviteViews(OsfTestCase):
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
 
-    def test_invite_contributor_post_if_emaiL_already_registered(self):
+    def test_invite_contributor_post_if_email_already_registered(self):
         reg_user = UserFactory()
-        # Tries to invite user that is already regiestered
+        name, email = fake.name(), reg_user.username
+        # Tries to invite user that is already registered - this is now permitted.
         res = self.app.post_json(self.invite_url,
-                                 {'fullname': fake.name(), 'email': reg_user.username},
-                                 auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+                                 {'fullname': name, 'email': email},
+                                 auth=self.user.auth)
+        contrib = res.json['contributor']
+        assert_equal(contrib['id'], reg_user._id)
+        assert_equal(contrib['fullname'], name)
+        assert_equal(contrib['email'], email)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
         unreg_user = self.project.add_unregistered_contributor(
@@ -3016,7 +3023,7 @@ class TestPointerViews(OsfTestCase):
         prompts = [
             prompt
             for prompt in res.json['prompts']
-            if 'Links will be copied into your registration' in prompt
+            if 'These links will be copied into your registration,' in prompt
         ]
         assert_equal(len(prompts), 1)
 
@@ -4101,6 +4108,8 @@ class TestConfigureMailingListViews(OsfTestCase):
         payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
         user.reload()
 
         # check user.mailing_lists is updated

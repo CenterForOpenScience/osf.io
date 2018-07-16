@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 
 from api.base.utils import get_user_auth
 from osf.models import AbstractNode, Collection, CollectedGuidMetadata, CollectionProvider
-from osf.utils.permissions import WRITE
+from osf.utils.permissions import WRITE, ADMIN
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
@@ -54,8 +54,8 @@ class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
         elif request.method in ['PUT', 'PATCH']:
             return obj.guid.referent.has_permission(auth.user, WRITE) or auth.user.has_perm('write_collection', collection)
         elif request.method == 'DELETE':
-            # Restricted to collection admins
-            return auth.user.has_perm('admin_collection', collection)
+            # Restricted to collection and project admins.
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user.has_perm('admin_collection', collection)
         return False
 
 class CollectionWriteOrPublicForPointers(permissions.BasePermission):

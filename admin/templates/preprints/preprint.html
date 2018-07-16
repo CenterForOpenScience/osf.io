@@ -38,6 +38,34 @@
                     </span>
                 {% endif %}
                 {% endif %}
+            {% if perms.osf.mark_spam %}
+            <span class="col-md-2">
+                <a href="{% url 'preprints:confirm-spam' guid=serialized_preprint.id %}"
+                   data-toggle="modal" data-target="#confirmSpamModal"
+                   class="btn btn-warning">
+                    Confirm Spam
+                </a>
+            </span>
+            <div class="modal" id="confirmSpamModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
+            <span class="col-md-2">
+                <a href="{% url 'preprints:confirm-ham' guid=serialized_preprint.id %}"
+                   data-toggle="modal" data-target="#confirmHamModal"
+                   class="btn btn-default">
+                    Confirm <strong>Not</strong> Spam
+                </a>
+            </span>
+            <div class="modal" id="confirmHamModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
+            {% endif %}
             <span class="col-md-2">
                 <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
                    data-toggle="modal" data-target="#confirmReindexSharePreprint"
@@ -94,7 +122,7 @@
                             {% if perms.osf.change_preprintservice %}
                             <span class="provider_form_link" style="margin-left: 100px;">
                                 <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
-                                    Change prepint provider
+                                    Change preprint provider
                                 </a>
                                 <div class="collapse" id="collapseChangeProvider">
                                     <div class="well">
@@ -125,7 +153,7 @@
                     </tr>
                     <tr>
                         <td>Date Modified</td>
-                        <td>{{ serialized_preprint.date_created }} UTC</td>
+                        <td>{{ serialized_preprint.modified }} UTC</td>
                     </tr>
                     <tr>
                         <td>Published</td>
@@ -171,6 +199,30 @@
                             {% endfor %}
                             </tbody>
                             </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SPAM Pro Tip</td>
+                        <td>{{ serialized_preprint.spam_pro_tip }}</td>
+                    </tr>
+                    <tr>
+                    <td>SPAM Status</td>
+                    <td>
+                        {% if serialized_preprint.spam_status == SPAM_STATUS.UNKNOWN %}
+                            <span class="label label-default">Unknown</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.FLAGGED %}
+                            <span class="label label-warning">Flagged</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.SPAM %}
+                            <span class="label label-danger">Spam</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.HAM %}
+                            <span class="label label-success">Ham</span>
+                        {% endif %}
+                    </td>
+                    </tr>
+                    <tr>
+                        <td>SPAM Data</td>
+                        <td>
+                            <pre>{{ serialized_preprint.spam_data }}</pre>
                         </td>
                     </tr>
                 </tbody>
