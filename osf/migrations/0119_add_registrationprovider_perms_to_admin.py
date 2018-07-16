@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
+from django.core.management.sql import emit_post_migrate_signal
 
 
 def get_new_permissions(read_only=False):
@@ -13,6 +14,8 @@ def get_new_permissions(read_only=False):
     return Permission.objects.filter(codename='view_registrationprovider')
 
 def add_registrationprovider_perms(*args):
+    # this is to make sure that the permissions created in an earlier migration exist!
+    emit_post_migrate_signal(2, False, 'default')
 
     # Add permissions for the read only group
     read_only_group = Group.objects.get(name='read_only')
