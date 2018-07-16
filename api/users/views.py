@@ -497,7 +497,6 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
 
         return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
 
-
     def perform_destroy(self, instance):
         user = self.get_user()
         identity_id = self.kwargs['identity_id']
