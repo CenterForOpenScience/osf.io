@@ -1,9 +1,10 @@
 import mock
 import pytest
 
+from osf.utils import workflows
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
-from osf_tests.factories import NodeFactory
+from osf_tests.factories import NodeFactory, NodeRequestFactory
 
 @pytest.mark.django_db
 class TestNodeRequestListCreate(NodeRequestTestMixin):
@@ -106,3 +107,17 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         assert project.is_contributor(noncontrib)
         assert not project.requests.filter(creator=noncontrib, machine_state='pending').exists()
         assert project.requests.filter(creator=noncontrib, machine_state='accepted').exists()
+
+    def test_filter_by_machine_state(self, app, project, noncontrib, url, admin, node_request):
+        initial_node_request = NodeRequestFactory(
+            creator=noncontrib,
+            target=project,
+            request_type=workflows.RequestTypes.ACCESS.value,
+            machine_state=workflows.DefaultStates.INITIAL.value
+        )
+        filtered_url = '{}?filter[machine_state]=pending'.format(url)
+        res = app.get(filtered_url, auth=admin.auth)
+        assert res.status_code == 200
+        ids = [result['id'] for result in res.json['data']]
+        assert initial_node_request._id not in ids
+        assert node_request.machine_state == 'pending' and node_request._id in ids

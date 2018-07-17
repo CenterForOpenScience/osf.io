@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -211,8 +212,9 @@ class TestReviewActionCreateRelated(object):
             expect_errors=True)
         assert res.status_code == 400
 
+    @mock.patch('website.preprints.tasks.update_or_create_preprint_identifiers')
     def test_valid_transitions(
-            self, app, url, preprint, provider, moderator):
+            self, mock_update_or_create_preprint_identifiers, app, url, preprint, provider, moderator):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),

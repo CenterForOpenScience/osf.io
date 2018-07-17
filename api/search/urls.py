@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^registrations/$', views.SearchRegistrations.as_view(), name=views.SearchRegistrations.view_name),
     url(r'^users/$', views.SearchUsers.as_view(), name=views.SearchUsers.view_name),
     url(r'^institutions/$', views.SearchInstitutions.as_view(), name=views.SearchInstitutions.view_name),
+    url(r'^collections/$', views.SearchCollections.as_view(), name=views.SearchCollections.view_name),
 
     # not currently supported by v1, but should be supported by v2
     # url(r'^nodes/$', views.SearchProjects.as_view(), name=views.SearchProjects.view_name),

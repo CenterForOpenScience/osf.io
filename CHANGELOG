@@ -2,6 +2,58 @@
 Changelog
 *********
 
+0.147.0 (2018-07-11)
+====================
+- Add choices for ProviderAssetFileNames
+- Add Comments to Reviews email
+- Add ProviderAssetFile API endpoints, AbstractProvider relationship
+- Admin View for creating/managing CollectionProviders
+- Admin view for preprint spam removal
+- Make v2/search accept POST for getting raw data
+- Fix: Add provider to ES collectionSubmission documents
+- Fix: CSS for banners created in OSF Admin
+- Fix: Update preprint citation to use OSF Preprints
+- Fix: Prevent ConcurrentObjectUseError with ProviderAssetFiles
+
+0.146.0 (2018-07-02)
+====================
+
+- Migrate from EZID to Datacite (for nodes) and Crossref (for preprints) for creating DOIs.
+
+0.145.0 (2018-06-27)
+====================
+
+- Add more metadata and relationships to API requests in support of Analytics page updates
+- Allow PATCHing of View Only Links in API v2
+- Create a scopes endpoint for User PAT Settings updates
+- Improve /v2/ route to allow for fewer requests by spaces
+
+0.144.0 (2018-06-13)
+====================
+
+- Allow deleting child components from component widget dropdown
+- Make preprints checkable for spam
+- Add fields required for preprint withdrawal
+- Add support for GC asset file storage
+- Index collection submissions with ES
+- Add new citation styles
+- Improve banners with dynamic links
+- Add workflow states/transitions for preprint withdrawal
+- Improve support for GitHub Organization repos
+- Fix required perms for removing a collected object
+
+0.143.0 (2018-06-11)
+====================
+
+- Fix MLA citations for preprints
+- Copy changes for Prereg Challenge wind-down.
+- Copy changes to clarify immutability of registrations.
+- Disallow accessing inactive users' quick files.
+- Fixes to wiki drag-and-drop behavior.
+- Fix rendering wide tables in the wiki.
+- Admin: Force-archive stuck registrations
+- API: Return more profile information (employment and education) for users.
+
 0.142.0 (2018-05-29)
 ====================
 - Add UI with metadata when a project is in a public collection

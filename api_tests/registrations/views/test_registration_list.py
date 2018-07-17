@@ -305,7 +305,7 @@ class TestRegistrationFiltering(ApiTestCase):
         self.project_one.add_tag('caT', Auth(self.user_one))
         self.project_one.add_tag('CAT', Auth(self.user_one))
         self.project_one_reg = RegistrationFactory(
-            creator=self.user_one, project=self.project_one, is_public=True)
+            creator=self.user_one, project=self.project_one, is_public=True, title='No search terms!')
         res = self.app.get(
             '/{}registrations/?filter[tags]=cat'.format(
                 API_BASE

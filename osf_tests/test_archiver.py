@@ -17,8 +17,6 @@ from mock import call
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from scripts.stuck_registration_audit import find_failed_registrations
-
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
@@ -40,7 +38,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
-from osf.models import MetaSchema
+from osf.models import MetaSchema, Registration
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -506,12 +504,8 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_node_fail(self):
         settings.MAX_ARCHIVE_SIZE = 100
         results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
-        with mock.patch('website.archiver.tasks.ArchiverTask.on_failure') as mock_fail:
-            try:
-                archive_node.apply(args=(results, self.archive_job._id))
-            except:
-                pass
-        assert_true(isinstance(mock_fail.call_args[0][0], ArchiverSizeExceeded))
+        with pytest.raises(ArchiverSizeExceeded):  # Note: Requires task_eager_propagates = True in celery
+            archive_node.apply(args=(results, self.archive_job._id))
 
     @mock.patch('website.project.signals.archive_callback.send')
     @mock.patch('website.archiver.tasks.archive_addon.delay')
@@ -1201,7 +1195,7 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
             archive_job.save()
             pending.append(reg)
-        failed = find_failed_registrations()
+        failed = Registration.find_failed_registrations()
         assert_equal(len(failed), 5)
         assert_items_equal([f._id for f in failed], failures)
         for pk in legacy:

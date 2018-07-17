@@ -70,9 +70,6 @@ def add_poster_by_email(conference, message):
             logo=settings.OSF_MEETINGS_LOGO
         )
 
-    nodes_created = []
-    users_created = []
-
     with transaction.atomic():
         user, user_created = get_or_create_user(
             message.sender_display,
@@ -81,7 +78,6 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             user.save()  # need to save in order to access m2m fields (e.g. tags)
-            users_created.append(user)
             user.add_system_tag('osf4m')
             user.update_date_last_login()
             user.save()
@@ -96,22 +92,17 @@ def add_poster_by_email(conference, message):
         else:
             set_password_url = None
 
-        node, node_created = Node.objects.get_or_create(
-            title__iexact=message.subject,
-            is_deleted=False,
-            _contributors__guids___id=user._id,
-            defaults={
-                'title': message.subject,
-                'creator': user
-            }
+        # Always create a new meeting node
+        node = Node.objects.create(
+            title=message.subject,
+            creator=user
         )
-        if node_created:
-            nodes_created.append(node)
-            node.add_system_tag('osf4m')
-            node.save()
+        node.add_system_tag('osf4m')
+        node.save()
 
         utils.provision_node(conference, message, node, user)
-        utils.record_message(message, nodes_created, users_created)
+        created_user = user if user_created else None
+        utils.record_message(message, node, created_user)
     # Prevent circular import error
     from framework.auth import signals as auth_signals
     if user_created:
@@ -148,7 +139,7 @@ def add_poster_by_email(conference, message):
         can_change_preferences=False,
         logo=settings.OSF_MEETINGS_LOGO
     )
-    if node_created and user_created:
+    if user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 def conference_data(meeting):

@@ -1,0 +1,52 @@
+import logging
+
+import pytest
+from faker import Factory
+from website import settings as website_settings
+
+from framework.celery_tasks import app as celery_app
+
+logger = logging.getLogger(__name__)
+
+# Silence some 3rd-party logging and some "loud" internal loggers
+SILENT_LOGGERS = [
+    'api.caching.tasks',
+    'factory.generate',
+    'factory.containers',
+    'framework.analytics',
+    'framework.auth.core',
+    'website.app',
+    'website.archiver.tasks',
+    'website.mails',
+    'website.notifications.listeners',
+    'website.search.elastic_search',
+    'website.search_migration.migrate',
+    'website.util.paths',
+    'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
+    'raven.contrib.django.client.DjangoClient',
+    'transitions.core',
+    'MARKDOWN',
+]
+for logger_name in SILENT_LOGGERS:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+
+@pytest.fixture(autouse=True)
+def override_settings():
+    """Override settings for the test environment.
+    """
+    # Make tasks run synchronously, and make sure exceptions get propagated
+    celery_app.conf.update({
+        'task_always_eager': True,
+        'task_eager_propagates': True,
+    })
+    website_settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+    # TODO: Remove if this is unused?
+    website_settings.BCRYPT_LOG_ROUNDS = 1
+    # Make sure we don't accidentally send any emails
+    website_settings.SENDGRID_API_KEY = None
+
+
+@pytest.fixture()
+def fake():
+    return Factory.create()

@@ -13,7 +13,9 @@ from osf_tests import factories
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
+from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
+from api.crossref.views import ParseCrossRefConfirmation
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
@@ -46,7 +48,7 @@ for mod in URLS_MODULES:
 class TestApiBaseViews(ApiTestCase):
     def setUp(self):
         super(TestApiBaseViews, self).setUp()
-        self.EXCLUDED_VIEWS = [MoveFileMetadataView, CopyFileMetadataView]
+        self.EXCLUDED_VIEWS = [MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
@@ -72,7 +74,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
             TokenHasScope,
-            (IsAuthenticated, IsAuthenticatedOrReadOnly)
+            (IsAuthenticated, IsAuthenticatedOrReadOnly, IsAuthenticatedOrReadOnlyForSearch)
         ]
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:
