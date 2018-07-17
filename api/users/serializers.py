@@ -132,18 +132,6 @@ class UserSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
-    def _update_social(self, social_dict, user):
-        for key, val in social_dict.items():
-            # currently only profileWebsites are a list, the rest of the social key only has one value
-            if key == 'profileWebsites':
-                user.social[key] = val
-            else:
-                if len(val) > 1:
-                    raise InvalidModelValueError(
-                        detail='{} only accept a list of one single value'.format(key)
-                    )
-                    user.social[key] = val[0]
-
     def _validate_user_json(self, value, json_schema):
         try:
             jsonschema.validate(value, from_json(json_schema))
