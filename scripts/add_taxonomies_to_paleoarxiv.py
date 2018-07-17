@@ -17,14 +17,14 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def add_subjects_to_paleorxiv():
-    paleoarix = PreprintProvider.objects.get(name='PaleorXiv')
+    paleoarix = PreprintProvider.objects.get(_id='paleorxiv')
 
-    bepress_subject = Subject.objects.filter(name='Paleontology')
-    life_sciences = Subject.objects.filter(name='Earth and Life Sciences', provider=paleoarix)
-    ichnology = Subject(name='Ichnology', provider=paleoarix, parent=life_sciences, bepress_subject=bepress_subject)
+    bepress_subject = Subject.objects.get(text='Paleontology', provider___id='osf')
+    life_sciences = Subject.objects.get(text='Earth and Life Sciences', provider=paleoarix)
+    ichnology = Subject(text='Ichnology', provider=paleoarix, parent=life_sciences, bepress_subject=bepress_subject)
     ichnology.save()
 
-    taphonomy = Subject(name='Taphonomy', provider=paleoarix, parent=life_sciences, bepress_subject=bepress_subject)
+    taphonomy = Subject(text='Taphonomy', provider=paleoarix, parent=life_sciences, bepress_subject=bepress_subject)
     taphonomy.save()
 
     paleoarix.save()
