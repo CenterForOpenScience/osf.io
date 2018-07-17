@@ -34,14 +34,15 @@ class TestUserIdentitiesList:
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
-        print res.json['data']
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data'][0]['attributes'] == {u'status': u'LINK', u'external_id': u'0000-0001-9143-4652'}
+        assert res.json['data'][0]['attributes']['status'] == 'LINK'
+        assert res.json['data'][0]['attributes']['external_id'] == '0000-0001-9143-4652'
         assert res.json['data'][0]['type'] == 'external-identities'
         assert res.json['data'][0]['id'] == 'LOTUS'
 
-        assert res.json['data'][1]['attributes'] == {u'status': u'VERIFIED', u'external_id': u'0000-0001-9143-4653'}
+        assert res.json['data'][1]['attributes']['status'] == 'VERIFIED'
+        assert res.json['data'][1]['attributes']['external_id'] == '0000-0001-9143-4653'
         assert res.json['data'][1]['type'] == 'external-identities'
         assert res.json['data'][1]['id'] == 'ORCID'
 
@@ -63,28 +64,20 @@ class TestUserIdentitiesDetail:
     def url(self, user):
         return '/{}users/{}/settings/identities/ORCID/'.format(API_BASE, user._id)
 
+    @pytest.fixture()
+    def bad_url(self, user):
+        return '/{}users/{}/settings/identities/404-CID/'.format(API_BASE, user._id)
+
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data'] == {
-            u'attributes': {
-                u'external_id': u'0000-0001-9143-4653',
-                u'status': u'VERIFIED'
-            },
-            u'id': u'ORCID',
-            u'links': {
-                u'self': u'http://localhost:8000/v2/users/{}/settings/identities/ORCID/'.format(user._id)
-            },
-            u'type': u'external-identities'
-        }
+        assert res.json['data']['attributes']['status'] == 'VERIFIED'
+        assert res.json['data']['attributes']['external_id'] == '0000-0001-9143-4653'
+        assert res.json['data']['type'] == 'external-identities'
+        assert res.json['data']['links']['self'] == 'http://localhost:8000/v2/users/{}/settings/identities/ORCID/'.format(user._id)
 
-    def test_anonymous_gets_401(self, app, url):
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
-        assert res.content_type == 'application/vnd.api+json'
-
-    def test_no_creds_delete_204(self, app, user, url):
+    def test_delete_204(self, app, user, url):
         res = app.delete(url, auth=user.auth)
         assert res.status_code == 204
 
@@ -95,7 +88,22 @@ class TestUserIdentitiesDetail:
             }
         }
 
+    def test_anonymous_gets_401(self, app, url):
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+        assert res.content_type == 'application/vnd.api+json'
+
     def test_unauthorized_delete_403(self, app, url, unauthorized_user):
         res = app.get(url, auth=unauthorized_user.auth, expect_errors=True)
         assert res.status_code == 403
+        assert res.content_type == 'application/vnd.api+json'
+
+    def test_bad_request_gets_404(self, app, bad_url):
+        res = app.get(bad_url, expect_errors=True)
+        assert res.status_code == 404
+        assert res.content_type == 'application/vnd.api+json'
+
+    def test_patch_405(self, app, user, url):
+        res = app.patch(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
         assert res.content_type == 'application/vnd.api+json'
