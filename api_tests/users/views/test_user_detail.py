@@ -895,6 +895,28 @@ class TestUserUpdate:
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
+    def test_user_put_schools_403(self, app, user_two, url_user_one):
+        res = app.put_json_api(url_user_one, {
+            'data': {
+                'id': user_two._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_two.fullname,
+                    'education': [{'degree': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                   }]
+                },
+            }
+        }, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
     def test_user_put_schools_validation(self, app, user_one, url_user_one):
         # Tests to make sure schools fields correct structure
         res = app.put_json_api(url_user_one, {
@@ -1106,6 +1128,28 @@ class TestUserUpdate:
         }, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+    def test_user_put_jobs_403(self, app, user_two, url_user_one):
+        res = app.put_json_api(url_user_one, {
+            'data': {
+                'id': user_two._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_two.fullname,
+                    'education': [{'title': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                   }]
+                },
+            }
+        }, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_user_put_jobs_validation(self, app, user_one, url_user_one):
         # Tests to make sure jobs fields correct structure
