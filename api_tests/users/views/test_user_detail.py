@@ -913,20 +913,6 @@ class TestUserUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-        # Tests to make sure structure is lists of dicts
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': []
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated information must be in a list of dictionaries.'
-
         # Tests to make sure structure is lists of dicts consisting of proper fields
         res = app.put_json_api(url_user_one, {
             'data': {
@@ -938,9 +924,9 @@ class TestUserUpdate:
                 },
             }
         }, auth=user_one.auth, expect_errors=True)
+        print res.json
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated employment fields must contain keys degree, startYear,' \
-                                                  ' startMonth, ongoing, department, institution.'
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
 
         # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
@@ -962,7 +948,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The institution field cannot be empty.'
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
 
         # Tests to make sure ongoing is bool
         res = app.put_json_api(url_user_one, {
@@ -982,7 +968,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The field "ongoing" must be boolean.'
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
 
     def test_user_put_schools_date_validation(self, app, user_one, url_user_one):
 
@@ -1004,7 +990,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Date values must be valid integers.'
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
 
         # Not valid values for dates
         res = app.put_json_api(url_user_one, {
@@ -1024,7 +1010,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Date values must be valid integers.'
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
 
         # endDates for ongoing position
         res = app.put_json_api(url_user_one, {
@@ -1046,8 +1032,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated employment fields can only contain keys degree, ' \
-                                                  'startYear, startMonth, ongoing, department, institution.'
+        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
 
         # End date is greater then start date
         res = app.put_json_api(url_user_one, {
@@ -1142,20 +1127,6 @@ class TestUserUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-        # Tests to make sure structure is lists of dicts
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': []
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated information must be in a list of dictionaries.'
-
         # Tests to make sure structure is lists of dicts consisting of proper fields
         res = app.put_json_api(url_user_one, {
             'data': {
@@ -1168,8 +1139,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated employment fields must contain keys startYear, title,' \
-                                                  ' startMonth, ongoing, department, institution.'
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
 
         # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
@@ -1191,7 +1161,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The institution field cannot be empty.'
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
 
         # Tests to make sure ongoing is bool
         res = app.put_json_api(url_user_one, {
@@ -1211,7 +1181,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The field "ongoing" must be boolean.'
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
 
     def test_user_put_jobs_date_validation(self, app, user_one, url_user_one):
 
@@ -1233,7 +1203,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Date values must be valid integers.'
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
 
         # Not valid values for dates
         res = app.put_json_api(url_user_one, {
@@ -1253,7 +1223,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Date values must be valid integers.'
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
 
         # endDates for ongoing position
         res = app.put_json_api(url_user_one, {
@@ -1275,8 +1245,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The updated employment fields can only contain keys startYear,' \
-                                                  ' title, startMonth, ongoing, department, institution.'
+        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
 
         # End date is greater then start date
         res = app.put_json_api(url_user_one, {

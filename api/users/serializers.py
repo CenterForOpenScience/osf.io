@@ -1,5 +1,6 @@
 import datetime
 
+import jsonschema
 from guardian.models import GroupObjectPermission
 
 from django.utils import timezone
@@ -16,6 +17,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from api.users.schemas import from_json
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -144,54 +146,31 @@ class UserSerializer(JSONAPISerializer):
                     )
                     user.social[key] = val[0]
 
-    def _validate_user_json(self, info_list, required_fields):
-        if type(info_list) != list or not info_list:
-            raise InvalidModelValueError(detail='The updated information must be in a list of dictionaries.')
+    def _validate_user_json(self, value, json_schema):
+        try:
+            jsonschema.validate(value, from_json(json_schema))
+        except jsonschema.ValidationError as e:
+            if len(e.path) > 1:
+                raise InvalidModelValueError("For '{}' the field value {}".format(e.path[-1], e.message))
 
-        for info in info_list:
+            raise InvalidModelValueError(e.message)
+        except jsonschema.SchemaError as e:
+            raise InvalidModelValueError(e.message)
 
-            if type(info) != dict:
-                raise InvalidModelValueError(detail='The updated information must be in a list of dictionaries.')
-
-            fields = set(info.keys())
-
-            absent_fields = required_fields.difference(fields)
-            if absent_fields:
-                raise InvalidModelValueError(
-                    detail='The updated employment fields must contain keys {}.'.format(', '.join(absent_fields))
-                )
-
-            if type(info['ongoing']) != bool:
-                raise InvalidModelValueError(detail='The field "ongoing" must be boolean.')
-
-            if not info['ongoing']:
-                required_fields = required_fields.union({'endYear', 'endMonth'})
-
-            extra_fields = required_fields.symmetric_difference(fields)
-            if extra_fields:
-                raise InvalidModelValueError(
-                    detail='The updated employment fields can only contain keys {}.'.format(', '.join(required_fields))
-                )
-
-            if not info.get('institution'):
-                raise InvalidModelValueError(detail='The institution field cannot be empty.')
-
-            self._validate_dates(info)
+        self._validate_dates(value)
 
     def _validate_dates(self, info):
-        try:
-            startDate = datetime.date(info['startYear'], info['startMonth'], 1)
-        except (ValueError, TypeError):
-            raise InvalidModelValueError(detail='Date values must be valid integers.')
+        for history in info:
 
-        if not info['ongoing']:
-            try:
-                endDate = datetime.date(info['endYear'], info['endMonth'], 1)
-            except (ValueError, TypeError):
-                raise InvalidModelValueError(detail='Date values must be valid integers.')
+            startDate = datetime.date(history['startYear'], history['startMonth'], 1)
 
-            if (endDate - startDate).days <= 0:
-                raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+            if not history['ongoing']:
+                endDate = datetime.date(history['endYear'], history['endMonth'], 1)
+
+                if (endDate - startDate).days <= 0:
+                    raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+            elif history.get('endYear') or history.get('endMonth'):
+                raise InvalidModelValueError(detail='Ongoing positions cannot have end dates.')
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
@@ -208,10 +187,10 @@ class UserSerializer(JSONAPISerializer):
                             )
                         instance.social[key] = val[0]
             elif 'schools' == attr:
-                self._validate_user_json(value, self.education_required_keys)
+                self._validate_user_json(value, 'education-schema.json')
                 instance.schools = value
             elif 'jobs' == attr:
-                self._validate_user_json(value, self.employment_required_keys)
+                self._validate_user_json(value, 'employment-schema.json')
                 instance.jobs = value
 
             elif 'accepted_terms_of_service' == attr:
