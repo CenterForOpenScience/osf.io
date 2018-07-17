@@ -843,7 +843,6 @@ class TestUserUpdate:
         assert user_one.social['github'] == 'even_newer_github'
 
     def test_user_put_schools_200(self, app, user_one, url_user_one):
-        # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -875,7 +874,6 @@ class TestUserUpdate:
                                      }]
 
     def test_user_put_schools_401(self, app, user_one, url_user_one):
-        # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -1057,7 +1055,6 @@ class TestUserUpdate:
         assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
 
     def test_user_put_jobs_200(self, app, user_one, url_user_one):
-        # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -1089,7 +1086,6 @@ class TestUserUpdate:
                                   }]
 
     def test_user_put_jobs_401(self, app, user_one, url_user_one):
-        # Tests to make sure institution is not empty string
         res = app.put_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -1112,7 +1108,7 @@ class TestUserUpdate:
         assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_user_put_jobs_validation(self, app, user_one, url_user_one):
-        # Tests to make sure schools fields correct structure
+        # Tests to make sure jobs fields correct structure
         res = app.put_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
