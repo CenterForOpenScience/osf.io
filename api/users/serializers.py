@@ -62,9 +62,7 @@ class UserSerializer(JSONAPISerializer):
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
     employment = JSONAPIListField(required=False, source='jobs')
-    employment_required_keys = {'department', 'institution', 'ongoing', 'startMonth', 'startYear', 'title'}
     education = JSONAPIListField(required=False, source='schools')
-    education_required_keys = {'department', 'institution', 'ongoing', 'startMonth', 'startYear', 'degree'}
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
