@@ -14,6 +14,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -252,3 +253,53 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserMailingListReadSerializer(JSONAPISerializer):
+    id = ser.CharField(required=True, source='_id')
+    subscribe_osf_general_email = ser.SerializerMethodField()
+    subscribe_osf_help_email = ser.SerializerMethodField()
+    links = LinksField({'self': 'get_self_url'})
+
+    def get_subscribe_osf_general_email(self, obj):
+        return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
+
+    def get_subscribe_osf_help_email(self, obj):
+        return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
+
+    def get_self_url(self, obj):
+        return absolute_reverse('users:user-mailing-list', kwargs={
+            'user_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
+
+    class Meta:
+        type_ = 'user-settings'
+
+
+class UserMailingListWriteSerializer(JSONAPISerializer):
+    id = ser.CharField(required=True, source='_id')
+
+    subscribe_osf_general_email = ser.BooleanField(read_only=False, required=False)
+    subscribe_osf_help_email = ser.BooleanField(read_only=False, required=False)
+
+    MAP_MAIL = {
+        'subscribe_osf_help_email': OSF_HELP_LIST,
+        'subscribe_osf_general_email': MAILCHIMP_GENERAL_LIST,
+    }
+
+    def get_subscribe_osf_general_email(self, obj):
+        return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
+
+    def get_subscribe_osf_help_email(self, obj):
+        return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
+
+    class Meta:
+        type_ = 'user-settings'
+
+    def update(self, instance, validated_data):
+        # switch field names back to human readable names stored in DB
+        user_mailing_lists = dict((self.MAP_MAIL[key], value) for (key, value) in validated_data.items())
+        instance.osf_mailing_lists.update(user_mailing_lists)
+        instance.save()
+        return instance

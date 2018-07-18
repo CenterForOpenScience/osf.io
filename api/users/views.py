@@ -24,7 +24,9 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
                                    UserQuickFilesSerializer,
-                                   ReadEmailUserDetailSerializer,)
+                                   ReadEmailUserDetailSerializer,
+                                   UserMailingListWriteSerializer,
+                                   UserMailingListReadSerializer)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from rest_framework import permissions as drf_permissions
@@ -38,7 +40,6 @@ from osf.models import (Contributor,
                         Node,
                         Registration,
                         OSFUser)
-
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -436,3 +437,35 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
+
+
+class UserMailingListView(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser
+    )
+
+    view_category = 'users'
+    view_name = 'user-mailing-list'
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserMailingListReadSerializer
+
+    def get_serializer_class(self):
+        if self.request.method in ('PATCH', 'PUT'):
+            return UserMailingListWriteSerializer
+        if self.request.method == 'GET':
+            return UserMailingListReadSerializer
+
+    def get_object(self):
+        return self.get_user()
+
+    def get_serializer_context(self):
+        # Serializer needs the request in order to make an update to privacy
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['request'] = self.request
+        return context

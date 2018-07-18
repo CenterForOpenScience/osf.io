@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/registrations/$', views.UserRegistrations.as_view(), name=views.UserRegistrations.view_name),
     url(r'^(?P<user_id>\w+)/quickfiles/$', views.UserQuickFiles.as_view(), name=views.UserQuickFiles.view_name),
     url(r'^(?P<user_id>\w+)/relationships/institutions/$', views.UserInstitutionsRelationship.as_view(), name=views.UserInstitutionsRelationship.view_name),
+    url(r'^(?P<user_id>\w+)/settings/$', views.UserMailingListView.as_view(), name=views.UserMailingListView.view_name),
 ]
