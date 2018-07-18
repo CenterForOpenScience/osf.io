@@ -187,9 +187,6 @@ def dashboard(auth):
     return redirect('/')
 
 
-def support():
-    return use_ember_app()
-
 @must_be_logged_in
 @ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
