@@ -6,17 +6,17 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
+@pytest.fixture()
+def user_one():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def user_two():
+    return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestUserRequestExport:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def user_two(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def url(self, user_one):
@@ -63,7 +63,8 @@ class TestUserRequestExport:
         assert user_one.email_last_sent is None
         assert mock_mail.call_count == 0
 
-    def test_exceed_throttle(self, app, user_one, url, payload):
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
@@ -77,14 +78,6 @@ class TestUserRequestExport:
 
 @pytest.mark.django_db
 class TestUserRequestDeactivate:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def user_two(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def url(self, user_one):
@@ -133,7 +126,8 @@ class TestUserRequestDeactivate:
         assert user_one.email_last_sent is None
         assert mock_mail.call_count == 0
 
-    def test_exceed_throttle(self, app, user_one, url, payload):
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
