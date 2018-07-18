@@ -5,6 +5,7 @@ import httplib as http
 import requests
 import urlparse
 import waffle
+import ipaddress
 
 from flask import request
 from flask import send_from_directory
@@ -70,6 +71,19 @@ def set_status_message(user):
             extra={}
         )
 
+def anonymize_ip(request):
+    remote_addr = request.remote_addr
+    if remote_addr:
+        try:
+            ip = ipaddress.ip_address(unicode(remote_addr))
+        except ipaddress.AddressValueError:
+            return None
+        if ip.version == 4:
+            return '.'.join(ip.exploded.split('.')[:-1]) + '.0'
+        elif ip.version == 6:
+            return ':'.join(ip.exploded.split(':')[:-1])[:-1] + '0:0000'
+    return remote_addr
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -104,6 +118,7 @@ def get_globals():
             'continent': (location or {}).get('continent', {}).get('code', None),
             'country': (location or {}).get('country', {}).get('iso_code', None),
         },
+        'anonymized_ip': anonymize_ip(request),
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
