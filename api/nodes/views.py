@@ -1,7 +1,7 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists, Subquery
+from django.db.models import Q, OuterRef, Exists, Subquery, F
 from django.utils import timezone
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
@@ -638,23 +638,25 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
                 .values_list('child__pk', flat=True)
         return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
 
+    def get_serializer_context(self):
+        context = super(NodeChildrenList, self).get_serializer_context()
+        region__id = self.request.query_params.get('region', None)
+        id = None
+        if region__id:
+            try:
+                id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
+            except Region.DoesNotExist:
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
+
+        context.update({
+            'region_id': id
+        })
+        return context
+
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
-
-    def get_serializer_context(self):
-        context = super(NodeChildrenList, self).get_serializer_context()
-        region_id = self.request.query_params.get('region', None)
-        if region_id:
-            try:
-                region = Region.objects.get(_id=region_id)
-            except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
-            context.update({
-                'region_id': region.id
-            })
-        return context
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):

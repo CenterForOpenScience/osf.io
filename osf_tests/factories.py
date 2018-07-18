@@ -29,7 +29,7 @@ from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
-from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile, Region
 
 fake = Factory.create()
 
@@ -913,6 +913,16 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+
+class RegionFactory(DjangoModelFactory):
+
+    class Meta:
+        model = Region
+
+    name = factory.Faker('country')
+    waterbutler_settings = {u'storage': {u'folder': u'/code/website/osfstoragecache', u'provider': u'filesystem'}}
+    waterbutler_credentials = {u'storage': {}}
 
 
 class ProviderAssetFileFactory(DjangoModelFactory):

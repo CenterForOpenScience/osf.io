@@ -38,6 +38,8 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
+        self.newProjectStorageLocation = m.prop(window.contextVars.storageRegions[0]); // first storage region is default
+        self.storageRegions = m.prop(window.contextVars.storageRegions);
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
@@ -91,9 +93,9 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2'}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             } else {
-                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2'}});
+                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             }
             data = {
                     'data' : {
@@ -228,6 +230,16 @@ var AddProject = {
                                 }
                             ))),
                         ]): '',
+                        m('.form-group.m-v-sm', [
+                            m('row',
+                                m('f-w-lg.text-bigger', 'Storage location'),
+                                m.component(SelectStorageLocation, {
+                                    value: ctrl.newProjectStorageLocation,
+                                    locations: ctrl.storageRegions
+                                })
+                            )
+                            ]
+                        ),
                         ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
                             m('label.f-w-md',
 
@@ -465,6 +477,36 @@ var Select2Template = {
                     ctrl.userProjects().map(function(node){
                         if(node.id === id) {
                             ctrl.value(node.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+            }
+        };
+    }
+};
+
+var SelectStorageLocation = {
+    view: function(ctrl, options) {
+        return m('select.p-t-sm', {config: SelectStorageLocation.config(options)},
+            [
+            options.locations().map(function(region) {
+                var args = {value: region._id};
+                return m('option', args, region.name);
+            })
+        ]);
+    },
+    config: function(ctrl) {
+        return function (element, isInitialized) {
+            var $el = $(element);
+            if (!isInitialized) {
+                $el.select2({allowClear: true, width: '100%'}).on('change', function () {
+                    var id = $el.select2('val');
+                    m.startComputation();
+                    //Set the value to the selected option
+                    ctrl.locations().map(function (location) {
+                        if (location._id === id) {
+                            ctrl.value(location);
                         }
                     });
                     m.endComputation();

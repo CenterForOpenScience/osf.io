@@ -16,7 +16,11 @@
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
+                    % endif
 
+                    <li><a href="#nodeStorageLocation">Storage Location</a></li>
+
+                    % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
                             <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
@@ -121,6 +125,22 @@
                 </div>
 
             % endif
+
+        <div class="panel panel-default">
+            <span id="nodeStorageLocation" class="anchor"></span>
+            <div class="panel-heading clearfix">
+                <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
+            </div>
+            <div class="panel-body">
+                <p>
+                    <b>Storage location:</b> ${node['storage_location']}
+                </p>
+                <div class="help-block">
+                    <p class="text-muted">This is set on project creation and cannot be changed once set.</p>
+                </div>
+
+            </div>
+        </div>
 
         % endif  ## End Configure Project
 
