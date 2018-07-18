@@ -1402,12 +1402,13 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         return obj
 
     def update_node_fields(self, obj, validated_data):
+        auth = get_user_auth(self.context['request'])
         access_requests_enabled = validated_data.get('access_requests_enabled')
         anyone_can_comment = validated_data.get('anyone_can_comment')
         save_node = False
 
         if access_requests_enabled is not None:
-            obj.access_requests_enabled = access_requests_enabled
+            obj.set_access_requests_enabled(access_requests_enabled, auth=auth)
             save_node = True
         if anyone_can_comment is not None:
             obj.comment_level = 'public' if anyone_can_comment else 'private'

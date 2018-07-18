@@ -7,6 +7,7 @@ from osf_tests.factories import (
     ProjectFactory,
     PrivateLinkFactory,
 )
+from osf.models import NodeLog
 
 @pytest.fixture()
 def admin_contrib():
@@ -214,6 +215,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.access_requests_enabled is False
+        assert project.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
 
         payload['data']['attributes']['access_requests_enabled'] = True
         # Logged in admin
@@ -221,6 +223,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.access_requests_enabled is True
+        assert project.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
 
     def test_patch_anyone_can_comment(self, app, project, payload, admin_contrib, write_contrib, url):
         assert project.comment_level == 'public'
