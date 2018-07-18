@@ -2,6 +2,17 @@
 Changelog
 *********
 
+0.148.0 (2018-07-18)
+====================
+- Create RegistrationProvider model
+- Create PreprintWithdrawalRequest model
+- Add collections logos to project overview
+- Return None relationships for withdrawn preprints
+- Fix "Other" Subject ordering
+- Replace OSF-internal usage of preprint assets with ProviderAssetFiles
+- Fix preprint download permissions checking
+- Fix collectionSubmission ES mapping
+
 0.147.0 (2018-07-11)
 ====================
 - Add choices for ProviderAssetFileNames

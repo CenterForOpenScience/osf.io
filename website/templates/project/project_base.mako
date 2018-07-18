@@ -116,7 +116,7 @@
 <%def name="image_meta()">
     <%
         from website import settings
-        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/sharing.png'
+        return '{}{}/img/osf-sharing.png'.format(settings.DOMAIN.rstrip('/'), settings.STATIC_URL_PATH)
     %>
 </%def>
 
