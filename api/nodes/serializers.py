@@ -1428,7 +1428,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             if not obj.is_public and anyone_can_edit_wiki:
                 raise exceptions.ValidationError('To allow all OSF users to edit the wiki, the project must be public.')
             if wiki_addon:
-                wiki_addon.is_publicly_editable = True if anyone_can_edit_wiki else False
+                wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
                 wiki_addon.save()
             else:
                 raise exceptions.ValidationError('You must have the wiki enabled before changing wiki settings.')
@@ -1450,6 +1450,15 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             if not forward_addon:
                 raise exceptions.ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
             forward_addon.url = redirect_link_url
+            obj.add_log(
+                action='forward_url_changed',
+                params=dict(
+                    node=obj._id,
+                    project=obj.parent_id,
+                    forward_url=redirect_link_url,
+                ),
+                auth=auth
+            )
             save_forward = True
 
         if redirect_link_label is not None:

@@ -262,6 +262,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         wiki_addon.reload()
         assert wiki_addon.is_publicly_editable is True
+        assert project.logs.latest().action == NodeLog.MADE_WIKI_PUBLIC
 
         payload['data']['attributes']['anyone_can_edit_wiki'] = False
         # Logged in admin
@@ -269,6 +270,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         wiki_addon.reload()
         assert wiki_addon.is_publicly_editable is False
+        assert project.logs.latest().action == NodeLog.MADE_WIKI_PRIVATE
 
         # Test wiki disabled in same request so cannot change wiki_settings
         payload['data']['attributes']['wiki_enabled'] = False
@@ -286,6 +288,7 @@ class TestNodeSettingsUpdate:
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
         assert project.get_addon('wiki').is_publicly_editable is True
+        assert project.logs.latest().action == NodeLog.MADE_WIKI_PUBLIC
 
         # If project is private, cannot change settings to allow anyone to edit wiki
         project.is_public = False
@@ -341,6 +344,7 @@ class TestNodeSettingsUpdate:
         assert forward_addon is not None
         assert forward_addon.url == 'https://cos.io'
         assert forward_addon.label == 'My Link'
+        assert project.logs.latest().action == 'forward_url_changed'
 
         # Attempting to set redirect_link_url when redirect_link not enabled
         payload['data']['attributes']['redirect_link_enabled'] = False
