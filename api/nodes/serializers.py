@@ -1396,13 +1396,12 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, 'admin'):
             raise exceptions.PermissionDenied
 
-        self.update_node_fields(obj, validated_data)
+        self.update_node_fields(obj, validated_data, auth)
         self.update_wiki_fields(obj, validated_data, auth)
         self.update_forward_fields(obj, validated_data, auth)
         return obj
 
-    def update_node_fields(self, obj, validated_data):
-        auth = get_user_auth(self.context['request'])
+    def update_node_fields(self, obj, validated_data, auth):
         access_requests_enabled = validated_data.get('access_requests_enabled')
         anyone_can_comment = validated_data.get('anyone_can_comment')
         save_node = False
