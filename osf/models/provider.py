@@ -70,6 +70,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
+        return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
 
     @property
     def readable_type(self):
@@ -78,6 +79,12 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 class CollectionProvider(AbstractProvider):
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_collectionprovider', 'Can view collection provider details'),
+        )
 
     @property
     def readable_type(self):
@@ -108,6 +115,7 @@ class PreprintProvider(AbstractProvider):
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
     access_token = EncryptedTextField(null=True, blank=True)
+    doi_prefix = models.CharField(blank=True, max_length=32)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

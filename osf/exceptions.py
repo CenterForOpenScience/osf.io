@@ -40,6 +40,13 @@ class NodeStateError(NodeError):
     """
     pass
 
+class UserStateError(OSFError):
+    """Raised when the user's state is not suitable for the requested action
+
+    Example: user.gdpr_delete() is called, but the user has resources that cannot be deleted.
+    """
+    pass
+
 
 class SanctionTokenError(TokenError):
     """Base class for errors arising from the user of a sanction token."""

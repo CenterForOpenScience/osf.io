@@ -441,6 +441,7 @@ def serialize_cgm(cgm):
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
+        'provider': getattr(cgm.collection.provider, '_id', None),
         'status': cgm.status,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
@@ -574,7 +575,10 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+    if file_.node.is_quickfiles:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=file_.node.creator._id)
+    else:
+        node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
