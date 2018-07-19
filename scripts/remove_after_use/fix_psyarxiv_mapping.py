@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+from website.app import setup_django
+setup_django()
+
 import sys
 import logging
 from dateutil.parser import parse
 from scripts import utils as script_utils
 
-import django
 from django.db import transaction
-django.setup()
 
 from osf.models import Subject, PreprintProvider
 
@@ -88,16 +89,12 @@ def main(dry_run=True):
             correct_subjects.values_list('text', flat=True),
             pp._id
         ))
-        pp.subjects = correct_subjects
+        if not dry_run:
+            pp.subjects = correct_subjects
     logger.info('Successfully migrated {} preprints'.format(i))
-
-    if dry_run:
-        # When running in dry_run mode force the transaction to rollback
-        raise Exception('Dry Run complete -- not committed')
 
 if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    with transaction.atomic():
-        main(dry_run=dry_run)
+    main(dry_run=dry_run)
