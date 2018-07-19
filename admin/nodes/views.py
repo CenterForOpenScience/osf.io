@@ -345,7 +345,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         ]
         for nid in node_ids:
             node = Node.load(nid)
-            osf_admin_change_status_identifier(node, 'unavailable | spam')
+            osf_admin_change_status_identifier(node)
             node.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
@@ -372,7 +372,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        osf_admin_change_status_identifier(node, 'unavailable | spam')
+        osf_admin_change_status_identifier(node)
         node.confirm_spam(save=True)
         update_admin_log(
             user_id=self.request.user.id,

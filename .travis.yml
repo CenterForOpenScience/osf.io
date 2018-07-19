@@ -145,7 +145,11 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD -n 4
+    - export COVERAGE=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "--coverage"; else echo ""; fi`
+    - invoke test_travis_$TEST_BUILD -n 4 $COVERAGE
+
+after_success:
+    - if [[ "$TRAVIS_BRANCH" == "master" ]]; then coveralls; fi
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http

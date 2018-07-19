@@ -1383,15 +1383,13 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
     redirect_link_url = ser.URLField(write_only=True, required=False)
     redirect_link_label = ser.CharField(max_length=50, write_only=True, required=False)
 
-
     def to_representation(self, instance):
         """
         Overriding to_representation allows using different serializers for the request and response.
         """
         context = self.context
-        node = self.context['node']
-        context['wiki_addon'] = node.get_addon('wiki')
-        context['forward_addon'] = node.get_addon('forward')
+        context['wiki_addon'] = instance.get_addon('wiki')
+        context['forward_addon'] = instance.get_addon('forward')
         return NodeSettingsSerializer(instance=instance, context=context).data
 
     def update(self, obj, validated_data):
@@ -1438,7 +1436,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             if not obj.is_public and anyone_can_edit_wiki:
                 raise exceptions.ValidationError('To allow all OSF users to edit the wiki, the project must be public.')
             if wiki_addon:
-                wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
+                try:
+                    wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
+                except NodeStateError:
+                    return
                 wiki_addon.save()
             else:
                 raise exceptions.ValidationError('You must have the wiki enabled before changing wiki settings.')
