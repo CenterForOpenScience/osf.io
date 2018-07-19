@@ -255,17 +255,9 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         type_ = 'institutions'
 
 
-class UserMailingListReadSerializer(JSONAPISerializer):
+class UserMailingListBaseSerializer(JSONAPISerializer):
     id = ser.CharField(required=True, source='_id')
-    subscribe_osf_general_email = ser.SerializerMethodField()
-    subscribe_osf_help_email = ser.SerializerMethodField()
-    links = LinksField({'self': 'get_self_url'})
-
-    def get_subscribe_osf_general_email(self, obj):
-        return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
-
-    def get_subscribe_osf_help_email(self, obj):
-        return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
+    links = LinksField({'self': 'get_self_url', 'html': 'get_absolute_url'})
 
     def get_self_url(self, obj):
         return absolute_reverse('users:user-mailing-list', kwargs={
@@ -273,20 +265,16 @@ class UserMailingListReadSerializer(JSONAPISerializer):
             'version': self.context['request'].parser_context['kwargs']['version']
         })
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
     class Meta:
         type_ = 'user-settings'
 
 
-class UserMailingListWriteSerializer(JSONAPISerializer):
-    id = ser.CharField(required=True, source='_id')
-
-    subscribe_osf_general_email = ser.BooleanField(read_only=False, required=False)
-    subscribe_osf_help_email = ser.BooleanField(read_only=False, required=False)
-
-    MAP_MAIL = {
-        'subscribe_osf_help_email': OSF_HELP_LIST,
-        'subscribe_osf_general_email': MAILCHIMP_GENERAL_LIST,
-    }
+class UserMailingListReadSerializer(UserMailingListBaseSerializer):
+    subscribe_osf_general_email = ser.SerializerMethodField()
+    subscribe_osf_help_email = ser.SerializerMethodField()
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
@@ -294,8 +282,15 @@ class UserMailingListWriteSerializer(JSONAPISerializer):
     def get_subscribe_osf_help_email(self, obj):
         return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
 
-    class Meta:
-        type_ = 'user-settings'
+
+class UserMailingListWriteSerializer(UserMailingListBaseSerializer):
+    subscribe_osf_general_email = ser.BooleanField(read_only=False, required=False)
+    subscribe_osf_help_email = ser.BooleanField(read_only=False, required=False)
+
+    MAP_MAIL = {
+        'subscribe_osf_help_email': OSF_HELP_LIST,
+        'subscribe_osf_general_email': MAILCHIMP_GENERAL_LIST,
+    }
 
     def update(self, instance, validated_data):
         # switch field names back to human readable names stored in DB
