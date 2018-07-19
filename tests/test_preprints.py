@@ -350,6 +350,12 @@ class TestPreprintIdentifiers(OsfTestCase):
         ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
         assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
+    @mock.patch('website.settings.CROSSREF_URL', 'http://test.osf.crossref.test')
+    def test_qatest_doesnt_make_dois(self):
+        preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
+        preprint.node.add_tag('qatest', self.auth)
+        assert preprint.get_doi_client() is None
+
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

@@ -216,7 +216,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
             self.save()
 
     def get_doi_client(self):
-        if settings.CROSSREF_URL:
+        if settings.CROSSREF_URL and 'qatest' not in self.node.all_tags.values_list('name', flat=True):
             if self.provider._id == 'ecsarxiv':
                 return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
             return CrossRefClient(base_url=settings.CROSSREF_URL)
