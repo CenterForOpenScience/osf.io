@@ -248,14 +248,14 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.comment_level == 'public'
-        assert res.json['data']['attributes']['anyone_can_comment'] is False
+        assert res.json['data']['attributes']['anyone_can_comment'] is True
 
     def test_patch_anyone_can_edit_wiki(self, app, project, payload, admin_contrib, write_contrib, url):
         project.is_public = True
         project.save()
         wiki_addon = project.get_addon('wiki')
         assert wiki_addon.is_publicly_editable is False
-        payload['data']['attributes']['anyone_can_edit_wiki'] = False
+        payload['data']['attributes']['anyone_can_edit_wiki'] = True
 
         # Write cannot modify this field
         res = app.patch_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
@@ -340,25 +340,25 @@ class TestNodeSettingsUpdate:
         payload['data']['attributes']['redirect_link_enabled'] = True
 
         label = 'My Link'
-        url = 'https://cos.io'
+        link = 'https://cos.io'
 
         # Redirect link not included
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You must include a redirect URL to enable a redirect.'
 
-        payload['data']['attributes']['redirect_link_url'] = url
+        payload['data']['attributes']['redirect_link_url'] = link
         payload['data']['attributes']['redirect_link_label'] = label
         # Write contrib can modify forward related fields
         res = app.patch_json_api(url, payload, auth=write_contrib.auth)
         assert res.status_code == 200
         forward_addon = project.get_addon('forward')
         assert forward_addon is not None
-        assert forward_addon.url == url
-        assert forward_addon.label == 'My Link'
+        assert forward_addon.url == link
+        assert forward_addon.label == label
         assert project.logs.latest().action == 'forward_url_changed'
         assert res.json['data']['attributes']['redirect_link_enabled'] is True
-        assert res.json['data']['attributes']['redirect_link_url'] == url
+        assert res.json['data']['attributes']['redirect_link_url'] == link
         assert res.json['data']['attributes']['redirect_link_label'] == label
 
         # Attempting to set redirect_link_url when redirect_link not enabled
@@ -371,7 +371,7 @@ class TestNodeSettingsUpdate:
         # Attempting to set redirect_link_label when redirect_link not enabled
         payload['data']['attributes']['redirect_link_enabled'] = False
         del payload['data']['attributes']['redirect_link_url']
-        payload['data']['attributes']['redirect_link_label'] = 'My Link'
+        payload['data']['attributes']['redirect_link_label'] = label
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You must first set redirect_link_enabled to True before specifying a redirect link label.'

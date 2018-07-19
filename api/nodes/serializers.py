@@ -1434,7 +1434,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
         if anyone_can_edit_wiki is not None:
             if not obj.is_public and anyone_can_edit_wiki:
-                raise exceptions.ValidationError('To allow all OSF users to edit the wiki, the project must be public.')
+                raise exceptions.ValidationError(detail='To allow all OSF users to edit the wiki, the project must be public.')
             if wiki_addon:
                 try:
                     wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
@@ -1442,7 +1442,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
                     return
                 wiki_addon.save()
             else:
-                raise exceptions.ValidationError('You must have the wiki enabled before changing wiki settings.')
+                raise exceptions.ValidationError(detail='You must have the wiki enabled before changing wiki settings.')
 
     def update_forward_fields(self, obj, validated_data, auth):
         redirect_link_enabled = validated_data.get('redirect_link_enabled')
@@ -1454,12 +1454,12 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
         if redirect_link_enabled is not None:
             if not redirect_link_url and redirect_link_enabled:
-                raise exceptions.ValidationError('You must include a redirect URL to enable a redirect.')
+                raise exceptions.ValidationError(detail='You must include a redirect URL to enable a redirect.')
             forward_addon = self.enable_or_disable_addon(obj, redirect_link_enabled, 'forward', auth)
 
         if redirect_link_url is not None:
             if not forward_addon:
-                raise exceptions.ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link URL.')
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link URL.')
             forward_addon.url = redirect_link_url
             obj.add_log(
                 action='forward_url_changed',
@@ -1474,7 +1474,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
         if redirect_link_label is not None:
             if not forward_addon:
-                raise exceptions.ValidationError('You must first set redirect_link_enabled to True before specifying a redirect link label.')
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link label.')
             forward_addon.label = redirect_link_label
             save_forward = True
 
