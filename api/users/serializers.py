@@ -2,7 +2,9 @@ from guardian.models import GroupObjectPermission
 
 from django.utils import timezone
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
+from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
@@ -252,3 +254,72 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    two_factor_enabled = ser.SerializerMethodField()
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-settings',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    def get_two_factor_enabled(self, obj):
+        try:
+            two_factor = TwoFactorUserSettings.objects.get(owner_id=obj.id)
+            return not two_factor.deleted
+        except TwoFactorUserSettings.DoesNotExist:
+            return False
+
+    class Meta:
+        type_ = 'user-settings'
+
+
+class UserSettingsUpdateSerializer(UserSettingsSerializer):
+    id = IDField(source='_id', required=True)
+    two_factor_enabled = ser.BooleanField(write_only=True, required=False)
+    two_factor_verification = ser.IntegerField(write_only=True, required=False)
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        return UserSettingsSerializer(instance=instance, context=context).data
+
+    def update(self, instance, validated_data):
+        save_user_addon = False
+        auth = get_user_auth(self.context['request'])
+        for attr, value in validated_data.items():
+            user_addon = None
+            if 'two_factor_enabled' == attr:
+                if value:
+                    if not instance.has_addon('twofactor'):
+                        user_addon = instance.get_or_add_addon('twofactor')
+                        save_user_addon = True
+                else:
+                    instance.delete_addon('twofactor', auth=auth)
+            elif 'two_factor_verification' == attr:
+                user_addon = user_addon or instance.get_addon('twofactor')
+                if not user_addon:
+                    raise exceptions.ValidationError(detail='Two-factor authentication is not enabled.')
+                if user_addon.verify_code(value):
+                    user_addon.is_confirmed = True
+                    save_user_addon = True
+                else:
+                    raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
+
+        if save_user_addon:
+            user_addon.save()
+
+        return instance

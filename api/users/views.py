@@ -23,6 +23,8 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserSettingsSerializer,
+                                   UserSettingsUpdateSerializer,
                                    UserQuickFilesSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
@@ -436,3 +438,31 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
+
+
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-settings'
+
+    serializer_class = UserSettingsSerializer
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_user()
