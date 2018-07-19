@@ -1383,6 +1383,17 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
     redirect_link_url = ser.URLField(write_only=True, required=False)
     redirect_link_label = ser.CharField(max_length=50, write_only=True, required=False)
 
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        node = self.context['node']
+        context['wiki_addon'] = node.get_addon('wiki')
+        context['forward_addon'] = node.get_addon('forward')
+        return NodeSettingsSerializer(instance=instance, context=context).data
+
     def update(self, obj, validated_data):
         user = self.context['request'].user
         auth = get_user_auth(self.context['request'])

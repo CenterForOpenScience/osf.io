@@ -216,6 +216,7 @@ class TestNodeSettingsUpdate:
         project.reload()
         assert project.access_requests_enabled is False
         assert project.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
+        assert res.json['data']['attributes']['access_requests_enabled'] is False
 
         payload['data']['attributes']['access_requests_enabled'] = True
         # Logged in admin
@@ -224,6 +225,7 @@ class TestNodeSettingsUpdate:
         project.reload()
         assert project.access_requests_enabled is True
         assert project.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
+        assert res.json['data']['attributes']['access_requests_enabled'] is True
 
     def test_patch_anyone_can_comment(self, app, project, payload, admin_contrib, write_contrib, url):
         assert project.comment_level == 'public'
@@ -238,6 +240,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.comment_level == 'private'
+        assert res.json['data']['attributes']['anyone_can_comment'] is False
 
         payload['data']['attributes']['anyone_can_comment'] = True
         # Logged in admin
@@ -245,13 +248,14 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.comment_level == 'public'
+        assert res.json['data']['attributes']['anyone_can_comment'] is False
 
     def test_patch_anyone_can_edit_wiki(self, app, project, payload, admin_contrib, write_contrib, url):
         project.is_public = True
         project.save()
         wiki_addon = project.get_addon('wiki')
         assert wiki_addon.is_publicly_editable is False
-        payload['data']['attributes']['anyone_can_edit_wiki'] = True
+        payload['data']['attributes']['anyone_can_edit_wiki'] = False
 
         # Write cannot modify this field
         res = app.patch_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
@@ -263,6 +267,7 @@ class TestNodeSettingsUpdate:
         wiki_addon.reload()
         assert wiki_addon.is_publicly_editable is True
         assert project.logs.latest().action == NodeLog.MADE_WIKI_PUBLIC
+        assert res.json['data']['attributes']['anyone_can_edit_wiki'] is True
 
         payload['data']['attributes']['anyone_can_edit_wiki'] = False
         # Logged in admin
@@ -271,6 +276,7 @@ class TestNodeSettingsUpdate:
         wiki_addon.reload()
         assert wiki_addon.is_publicly_editable is False
         assert project.logs.latest().action == NodeLog.MADE_WIKI_PRIVATE
+        assert res.json['data']['attributes']['anyone_can_edit_wiki'] is False
 
         # Test wiki disabled in same request so cannot change wiki_settings
         payload['data']['attributes']['wiki_enabled'] = False
@@ -289,6 +295,7 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         assert project.get_addon('wiki').is_publicly_editable is True
         assert project.logs.latest().action == NodeLog.MADE_WIKI_PUBLIC
+        assert res.json['data']['attributes']['anyone_can_edit_wiki'] is True
 
         # If project is private, cannot change settings to allow anyone to edit wiki
         project.is_public = False
@@ -309,6 +316,7 @@ class TestNodeSettingsUpdate:
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         assert project.get_addon('wiki') is None
+        assert res.json['data']['attributes']['wiki_enabled'] is False
 
         # Nothing happens if attempting to disable an already-disabled wiki
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
@@ -320,6 +328,7 @@ class TestNodeSettingsUpdate:
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         assert project.get_addon('wiki') is not None
+        assert res.json['data']['attributes']['wiki_enabled'] is True
 
         # Nothing happens if attempting to enable an already-enabled-wiki
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
@@ -330,21 +339,27 @@ class TestNodeSettingsUpdate:
         assert project.get_addon('forward') is None
         payload['data']['attributes']['redirect_link_enabled'] = True
 
+        label = 'My Link'
+        url = 'https://cos.io'
+
         # Redirect link not included
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You must include a redirect URL to enable a redirect.'
 
-        payload['data']['attributes']['redirect_link_url'] = 'https://cos.io'
-        payload['data']['attributes']['redirect_link_label'] = 'My Link'
+        payload['data']['attributes']['redirect_link_url'] = url
+        payload['data']['attributes']['redirect_link_label'] = label
         # Write contrib can modify forward related fields
         res = app.patch_json_api(url, payload, auth=write_contrib.auth)
         assert res.status_code == 200
         forward_addon = project.get_addon('forward')
         assert forward_addon is not None
-        assert forward_addon.url == 'https://cos.io'
+        assert forward_addon.url == url
         assert forward_addon.label == 'My Link'
         assert project.logs.latest().action == 'forward_url_changed'
+        assert res.json['data']['attributes']['redirect_link_enabled'] is True
+        assert res.json['data']['attributes']['redirect_link_url'] == url
+        assert res.json['data']['attributes']['redirect_link_label'] == label
 
         # Attempting to set redirect_link_url when redirect_link not enabled
         payload['data']['attributes']['redirect_link_enabled'] = False
@@ -367,6 +382,9 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
         forward_addon = project.get_addon('forward')
         assert forward_addon is None
+        assert res.json['data']['attributes']['redirect_link_enabled'] is False
+        assert res.json['data']['attributes']['redirect_link_url'] is None
+        assert res.json['data']['attributes']['redirect_link_label'] is None
 
     def test_redirect_link_label_char_limit(self, app, project, payload, admin_contrib, url):
         project.add_addon('forward', ())
