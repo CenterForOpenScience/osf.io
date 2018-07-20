@@ -25,20 +25,27 @@ class S3Folder(S3FileNode, Folder):
 class S3File(S3FileNode, File):
     version_identifier = 'version'
 
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']
+        except (IndexError, KeyError):
+            return None
+
 
 class UserSettings(BaseOAuthUserSettings):
     oauth_provider = S3Provider
     serializer = S3Serializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = S3Provider
     serializer = S3Serializer
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_path(self):
@@ -153,5 +160,5 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)

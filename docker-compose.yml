@@ -11,6 +11,8 @@ volumes:
     external: false
   rabbitmq_vol:
     external: false
+  ember_osf_web_dist_vol:
+    external: false
   preprints_dist_vol:
     external: false
   registries_dist_vol:
@@ -76,10 +78,10 @@ services:
 
   mongo:
     image: mongo:3.4
-    command: 
+    command:
       - /bin/bash
-      - -c 
-      - openssl req -newkey rsa:2048 -new -x509 -days 9999 -nodes 
+      - -c
+      - openssl req -newkey rsa:2048 -new -x509 -days 9999 -nodes
           -subj "/C=US/ST=Virginia/L=Charlottesville/O=COS/OU=Test/CN=192.168.168.167"
           -out /etc/ssl/mongodb.crt -keyout /etc/ssl/mongodb.key &&
         cat /etc/ssl/mongodb.key /etc/ssl/mongodb.crt > /etc/ssl/mongodb.pem &&
@@ -141,6 +143,21 @@ services:
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
       - mfr_requirements_local_bin_vol:/usr/local/bin
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  unoconv:
+    image: centerforopenscience/unoconv
+    command:
+      - /bin/bash
+      - -c
+      - /opt/libreoffice6.0/program/python -u /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
+        chmod -R 777 /tmp/mfrlocalcache
+    restart: unless-stopped
+    ports:
+      - 2002:2002
+    volumes:
+      - wb_tmp_vol:/tmp
     stdin_open: true
 
   ###############
@@ -148,7 +165,7 @@ services:
   ###############
 
   wb_requirements:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command:
       - /bin/bash
       - -c
@@ -162,7 +179,7 @@ services:
       - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command: invoke server
     restart: unless-stopped
     ports:
@@ -177,7 +194,7 @@ services:
     stdin_open: true
 
   wb_worker:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command: invoke celery
     restart: unless-stopped
     depends_on:
@@ -193,6 +210,16 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
+  # wb_flower:
+  #   image: quay.io/centerforopenscience/wb:develop
+  #   # Install flower here, instead of in WB repo, due to tornado version conflict
+  #   command: [/bin/bash, -c, "pip install flower && celery flower -A waterbutler.tasks.app.app --port=5556 --broker=amqp://guest:guest@192.168.168.167:5672//"]
+  #   depends_on:
+  #     - rabbitmq
+  #   # Use non-default port to avoid conflict with OSF flower
+  #   ports:
+  #     - 5556:5556
+
   ##################################
   # Central Authentication Service #
   ##################################
@@ -207,6 +234,34 @@ services:
       - postgres
     stdin_open: true
 
+
+  #################
+  # Ember OSF Web #
+  #################
+
+  ember_osf_web:
+    image: quay.io/centerforopenscience/osf-web:develop-local
+    command:
+      - /bin/bash
+      - -c
+      - yarn --frozen-lockfile &&
+        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4200
+      - 41953
+    ports:
+      - 4200:4200
+      - 41953:41953
+    volumes:
+      - ember_osf_web_dist_vol:/code/dist
+    stdin_open: true
+
   #############
   # Preprints #
   #############
@@ -215,7 +270,7 @@ services:
     image: quay.io/centerforopenscience/osf-preprints:develop-local
     command:
       - /bin/bash
-      - -c 
+      - -c
       - yarn --frozen-lockfile &&
        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
@@ -241,11 +296,10 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/osf-registries:develop-local
-    command: 
+    command:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
@@ -271,7 +325,7 @@ services:
     image: quay.io/centerforopenscience/osf-reviews:develop-local
     command:
       - /bin/bash
-      - -c 
+      - -c
       - yarn --frozen-lockfile &&
         yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
     restart: unless-stopped
@@ -345,9 +399,6 @@ services:
       - web
     env_file:
       - .docker-compose.sharejs.env
-    volumes:
-      - ./addons/wiki/package.json:/code/package.json
-      - ./addons/wiki/shareServer.js:/code/shareServer.js
     stdin_open: true
 
 #  beat:
@@ -450,6 +501,7 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews

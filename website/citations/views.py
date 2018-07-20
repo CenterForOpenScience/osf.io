@@ -21,7 +21,7 @@ def list_citation_styles():
             Q(short_title__icontains=query)
         )
     return {
-        'styles': [style.to_json() for style in citation_styles]
+        'styles': [style.to_json() for style in citation_styles if style.has_bibliography]
     }
 
 
@@ -80,7 +80,7 @@ class GenericCitationViews(object):
         @must_be_valid_project
         @must_have_permission('write')
         def _get_config(auth, node_addon, **kwargs):
-            """ Returns the serialized node settigs,
+            """ Returns the serialized node settings,
             with a boolean indicator for credential validity.
             """
             provider = Provider()

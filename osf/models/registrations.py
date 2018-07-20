@@ -12,6 +12,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
+from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
     OSFUser, MetaSchema, RegistrationApproval,
@@ -19,6 +20,7 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
+from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
@@ -39,9 +41,9 @@ class Registration(AbstractNode):
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True)
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
+    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
+    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
 
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
@@ -65,9 +67,17 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
 
+    @staticmethod
+    def find_failed_registrations():
+        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+        node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
+        root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
+        stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+        return stuck_regs
+
     @property
     def registered_schema_id(self):
-        if self.registered_schema:
+        if self.registered_schema.exists():
             return self.registered_schema.first()._id
         return None
 
@@ -75,6 +85,10 @@ class Registration(AbstractNode):
     def is_registration(self):
         """For v1 compat."""
         return True
+
+    @property
+    def is_stuck_registration(self):
+        return self in self.find_failed_registrations()
 
     @property
     def is_collection(self):
@@ -351,6 +365,39 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    def add_tag(self, tag, auth=None, save=True, log=True, system=False):
+        if self.retraction is None:
+            super(Registration, self).add_tag(tag, auth, save, log, system)
+        else:
+            raise NodeStateError('Cannot add tags to withdrawn registrations.')
+
+    def add_tags(self, tags, auth=None, save=True, log=True, system=False):
+        if self.retraction is None:
+            super(Registration, self).add_tags(tags, auth, save, log, system)
+        else:
+            raise NodeStateError('Cannot add tags to withdrawn registrations.')
+
+    def remove_tag(self, tag, auth, save=True):
+        if self.retraction is None:
+            super(Registration, self).remove_tag(tag, auth, save)
+        else:
+            raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def remove_tags(self, tags, auth, save=True):
+        if self.retraction is None:
+            super(Registration, self).remove_tags(tags, auth, save)
+        else:
+            raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def delete_node_wiki(self, name_or_page, auth):
+        raise NodeStateError('Registered wiki pages cannot be deleted.')
+
+    def rename_node_wiki(self, name, new_name, auth):
+        raise NodeStateError('Registered wiki pages cannot be renamed.')
+
+    def update_node_wiki(self, name, content, auth):
+        raise NodeStateError('Registered wiki pages cannot be edited.')
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -367,8 +414,9 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """
     date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
-    user = models.ForeignKey('OSFUser', null=True)
+    draft = models.ForeignKey('DraftRegistration', related_name='logs',
+                              null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
@@ -386,10 +434,13 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
     datetime_updated = NonNaiveDateTimeField(auto_now=True)
-    # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
-    initiator = models.ForeignKey('OSFUser', null=True)
+    # Original Node a draft registration is associated with
+    branched_from = models.ForeignKey('Node', related_name='registered_draft',
+                                      null=True, on_delete=models.CASCADE)
+
+    initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -406,11 +457,11 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True)
+    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
-                                        related_name='draft_registration')
+                                        related_name='draft_registration', on_delete=models.CASCADE)
 
-    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True)
+    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
@@ -478,7 +529,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     def is_approved(self):
         if self.requires_approval:
             if not self.approval:
-                return False
+                return bool(self.registered_node)
             else:
                 return self.approval.is_approved
         else:

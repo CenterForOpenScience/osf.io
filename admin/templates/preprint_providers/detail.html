@@ -16,13 +16,18 @@
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'preprint_providers:export' preprint_provider.id %}>Export preprint provider metadata</a>
                 {%  if perms.osf.delete_preprintprovider %}
+                    {%  if preprint_provider.share_source or preprint_provider.access_token %}
+                    <a class="btn btn-primary disabled">Share source or token already exist</a>
+                    {% else %}
+                    <a class="btn btn-primary" href={% url 'preprint_providers:share_source' preprint_provider.id %}>Setup Share Source</a>
+                    {% endif %}
                 <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
                 {% endif %}
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 text-center">
-                <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{ preprint_provider.logo_name }}">
+                <img class="institution-logo" src="{{logo}}">
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
         </div>
@@ -47,10 +52,12 @@
                 </table>
             </div>
         </div>
-        <div class="row" id="form-view" style="display:none;">
+        <div id="form-view" style="display:none;">
             {% include 'preprint_providers/update_preprint_provider_form.html' %}
+            {% if show_taxonomies %}
+            {% include 'preprint_providers/enter_custom_taxonomy.html' %}
+            {% endif %}
         </div>
-    </div>
 
 {% endblock content %}
 {% block bottom_js %}
@@ -60,6 +67,7 @@
             'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
             'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
             'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' %}",
             'originalSubjects': {{ subject_ids | escapejs }}
         };
     </script>

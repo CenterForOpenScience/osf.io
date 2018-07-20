@@ -3,6 +3,7 @@ from django.conf.urls import url
 from api.registrations import views
 from website import settings
 
+app_name = 'osf'
 
 urlpatterns = [
     # Examples:
@@ -14,6 +15,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/$', views.RegistrationContributorsList.as_view(), name=views.RegistrationContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.RegistrationContributorDetail.as_view(), name=views.RegistrationContributorDetail.view_name),
+    url(r'^(?P<node_id>\w+)/implicit_contributors/$', views.RegistrationImplicitContributorsList.as_view(), name=views.RegistrationImplicitContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.RegistrationProvidersList.as_view(), name=views.RegistrationProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.RegistrationFilesList.as_view(), name=views.RegistrationFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.RegistrationFileDetail.as_view(), name=views.RegistrationFileDetail.view_name),
@@ -24,6 +26,8 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/institutions/$', views.RegistrationInstitutionsList.as_view(), name=views.RegistrationInstitutionsList.view_name),
     url(r'^(?P<node_id>\w+)/linked_nodes/$', views.RegistrationLinkedNodesList.as_view(), name=views.RegistrationLinkedNodesList.view_name),
     url(r'^(?P<node_id>\w+)/linked_registrations/$', views.RegistrationLinkedRegistrationsList.as_view(), name=views.RegistrationLinkedRegistrationsList.view_name),
+    url(r'^(?P<node_id>\w+)/linked_by_nodes/$', views.RegistrationLinkedByNodesList.as_view(), name=views.RegistrationLinkedByNodesList.view_name),
+    url(r'^(?P<node_id>\w+)/linked_by_registrations/$', views.RegistrationLinkedByRegistrationsList.as_view(), name=views.RegistrationLinkedByRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/logs/$', views.RegistrationLogList.as_view(), name=views.RegistrationLogList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/$', views.RegistrationNodeLinksList.as_view(), name=views.RegistrationNodeLinksList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.RegistrationNodeLinksDetail.as_view(), name=views.RegistrationNodeLinksDetail.view_name),

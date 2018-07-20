@@ -12,7 +12,8 @@ from osf.models import NodeLicense
 
 
 class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/licenses_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -39,33 +40,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of licenses available to Nodes. *Read-only*.
-
-
-   ##License Attributes
-
-    OSF License entities have the "licenses" `type`.
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        name           string                 Name of the license
-        text           string                 Full text of the license
-
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-    Licenses may be filtered by their name and id.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/license_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -83,7 +58,8 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ('name', )  # default ordering
 
     def get_default_queryset(self):
-        return NodeLicense.objects.all()
+        # excludes CCBYNCND and CCBYSA40
+        return NodeLicense.objects.project_licenses()
 
     def get_queryset(self):
         return self.get_queryset_from_request()

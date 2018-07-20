@@ -1,4 +1,4 @@
-FROM python:2.7-slim
+FROM python:2.7-slim-jessie
 
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \
@@ -9,9 +9,11 @@ ENV GOSU_VERSION=1.10 \
 RUN set -ex \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www \
-    # GOSU
-    && gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && apt-get update \
+    && apt-get install -y gnupg2 \
     && for key in \
+      # GOSU
+      B42F6819007F00F88E364FD4036A9C25BF357DD4 \
       # https://github.com/nodejs/docker-node/blob/9c25cbe93f9108fd1e506d14228afe4a3d04108f/8.2/Dockerfile
       # gpg keys listed at https://github.com/nodejs/node#release-team
       # Node
@@ -26,12 +28,12 @@ RUN set -ex \
       # Yarn
       6A010C5166006599AA17F08146C2130DFD2497F5 \
     ; do \
-      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
-    done \
+      gpg --keyserver hkp://ipv4.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://keyserver.pgp.com:80 --recv-keys "$key" \
+    ; done \
     # Install dependancies
-    && apt-get update \
     && apt-get install -y \
         git \
         libev4 \
@@ -48,6 +50,8 @@ RUN set -ex \
         python-dev \
         # postgresql
         libpq-dev \
+        # file audits
+        par2 \
     && ARCH= \
     && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch##*-}" in \
@@ -103,8 +107,10 @@ COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
 #COPY ./addons/figshare/requirements.txt ./addons/figshare/
 #COPY ./addons/forward/requirements.txt ./addons/forward/
 COPY ./addons/github/requirements.txt ./addons/github/
+COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
 #COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
 COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
+COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
 #COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
 COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
 COPY ./addons/s3/requirements.txt ./addons/s3/
@@ -152,8 +158,10 @@ COPY ./addons/dropbox/static/ ./addons/dropbox/static/
 COPY ./addons/figshare/static/ ./addons/figshare/static/
 COPY ./addons/forward/static/ ./addons/forward/static/
 COPY ./addons/github/static/ ./addons/github/static/
+COPY ./addons/gitlab/static/ ./addons/gitlab/static/
 COPY ./addons/googledrive/static/ ./addons/googledrive/static/
 COPY ./addons/mendeley/static/ ./addons/mendeley/static/
+COPY ./addons/onedrive/static/ /code/addons/onedrive/static/
 COPY ./addons/osfstorage/static/ ./addons/osfstorage/static/
 COPY ./addons/owncloud/static/ ./addons/owncloud/static/
 COPY ./addons/s3/static/ ./addons/s3/static/

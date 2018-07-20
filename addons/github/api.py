@@ -1,5 +1,4 @@
 import urllib
-import itertools
 
 import github3
 import cachecontrol
@@ -40,6 +39,8 @@ class GitHubClient(object):
             user if omitted
         :return dict: GitHub API response
         """
+        if user is None:
+            return self.gh3.me()
         return self.gh3.user(user)
 
     def repo(self, user, repo):
@@ -60,21 +61,11 @@ class GitHubClient(object):
         raise NotFoundError
 
     def repos(self):
-        return self.gh3.iter_repos(type='all', sort='full_name')
-
-    def user_repos(self, user):
-        return self.gh3.iter_user_repos(user, type='all', sort='full_name')
-
-    def my_org_repos(self, permissions=None):
-        permissions = permissions or ['push']
-        return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.iter_user_teams()
-            if team.permission in permissions
-        )
+        repos = self.gh3.repositories(type='all', sort='pushed')
+        return [repo for repo in repos if repo.permissions['push']]
 
     def create_repo(self, repo, **kwargs):
-        return self.gh3.create_repo(repo, **kwargs)
+        return self.gh3.create_repository(repo, **kwargs)
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -87,7 +78,7 @@ class GitHubClient(object):
         """
         if branch:
             return [self.repo(user, repo).branch(branch)]
-        return self.repo(user, repo).iter_branches() or []
+        return self.repo(user, repo).branches() or []
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):
@@ -119,7 +110,7 @@ class GitHubClient(object):
         :return list: List of commit dicts from GitHub; see
             http://developer.github.com/v3/repos/hooks/#json-http
         """
-        return self.repo(user, repo).iter_hooks()
+        return self.repo(user, repo).hooks()
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
@@ -158,6 +149,9 @@ class GitHubClient(object):
     def revoke_token(self):
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
+
+    def check_authorization(self):
+        return self.gh3.check_authorization(self.access_token)
 
 
 def ref_to_params(branch=None, sha=None):

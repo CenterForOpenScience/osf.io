@@ -4,22 +4,22 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField,
-    LinksField, RelationshipField, DateByVersion, JSONAPIListField
+    JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
+    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
-from api.taxonomies.serializers import TaxonomyField
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
     get_license_details,
     NodeTagField
 )
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.utils import permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -55,7 +55,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class PreprintSerializer(JSONAPISerializer):
+class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'date_created',
@@ -70,43 +70,46 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = ser.SerializerMethodField()
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
-    date_published = DateByVersion(read_only=True)
-    original_publication_date = DateByVersion(required=False)
+    type = TypeField()
+
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+    date_published = VersionedDateTimeField(read_only=True)
+    original_publication_date = VersionedDateTimeField(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
-    is_published = ser.BooleanField(required=False)
-    is_preprint_orphan = ser.BooleanField(read_only=True)
-    license_record = NodeLicenseSerializer(required=False, source='license')
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
+    date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
+    withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
+    is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
+    license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
+    node_is_public = NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public'))
+    preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
+    reviews_state = NoneIfWithdrawal(ser.CharField(source='machine_state', read_only=True, max_length=15))
+    date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
-    reviews_state = ser.CharField(read_only=True, max_length=15)
-    date_last_transitioned = DateByVersion(read_only=True)
-
-    citation = RelationshipField(
+    citation = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-citation',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    identifiers = RelationshipField(
+    identifiers = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:identifier-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    node = NodeRelationshipField(
+    node = NoneIfWithdrawal(NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False
-    )
+    ))
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
@@ -114,28 +117,27 @@ class PreprintSerializer(JSONAPISerializer):
         read_only=False
     )
 
-    provider = PreprintProviderRelationshipField(
-        related_view='preprint_providers:preprint_provider-detail',
+    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
+        related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    )
+    ))
 
-    files = RelationshipField(
+    files = NoneIfWithdrawal(RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
-    primary_file = PrimaryFileRelationshipField(
+    primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        lookup_url_kwarg='file_id',
         read_only=False
-    )
+    ))
 
-    actions = RelationshipField(
-        related_view='preprints:preprint-action-list',
+    review_actions = NoneIfWithdrawal(RelationshipField(
+        related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
     links = LinksField(
         {
@@ -149,13 +151,6 @@ class PreprintSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'preprints'
 
-    def get_subjects(self, obj):
-        return [
-            [
-                TaxonomyField().to_representation(subj) for subj in hier
-            ] for hier in obj.subject_hierarchy
-        ]
-
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
@@ -166,16 +161,15 @@ class PreprintSerializer(JSONAPISerializer):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def get_preprint_doi_url(self, obj):
+        doi = None
         doi_identifier = obj.get_identifier('doi')
-        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
-
-    def run_validation(self, *args, **kwargs):
-        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
-        # Validation for `subjects` happens in the model
-        _validated_data = super(PreprintSerializer, self).run_validation(*args, **kwargs)
-        if 'subjects' in self.initial_data:
-            _validated_data['subjects'] = self.initial_data['subjects']
-        return _validated_data
+        if doi_identifier:
+            doi = doi_identifier.value
+        # if a preprint hasn't been published yet, don't show the DOI prematurely
+        elif obj.is_published:
+            client = obj.get_doi_client()
+            doi = client.build_doi(preprint=obj) if client else None
+        return 'https://dx.doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -189,8 +183,9 @@ class PreprintSerializer(JSONAPISerializer):
         if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
-                absolute_reverse('actions:create-action', kwargs={
-                    'version': self.context['request'].parser_context['kwargs']['version']
+                absolute_reverse('preprints:preprint-review-action-list', kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                    'preprint_id': preprint._id
                 })
             ))
 

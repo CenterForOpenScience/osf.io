@@ -51,3 +51,12 @@ form p label {
 .firstlevel_subjects {
     width: 120%;
 }
+
+
+.select2-container.select2-container--default {
+    width: 75% !important;
+}
+
+#id_custom_taxonomy_json {
+    width: 100%;
+}

@@ -24,9 +24,9 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from osf.models import OSFUser, Session
+from osf.utils import permissions
 from website import mails
 from website import settings
-from website.util import permissions
 from website.project.decorators import (
     must_have_permission,
     must_be_contributor,
@@ -75,7 +75,7 @@ class TestAuthUtils(OsfTestCase):
         auth.register_unconfirmed(
             username=user.username,
             password='gattaca',
-            fullname='Rosie',
+            fullname='Rosie'
         )
 
         user.reload()
@@ -99,6 +99,7 @@ class TestAuthUtils(OsfTestCase):
             'mimetype': 'html',
             'mail': mails.WELCOME,
             'to_addr': user.username,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL
         })
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
@@ -109,7 +110,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
-        session = Session.objects.filter(data__auth_user_id=user._id).order_by('-date_modified').first()
+        session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
@@ -186,9 +187,11 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(empty, ())
         assert_equal(kwargs, {
             'user': user,
-            'mimetype': 'plain',
+            'mimetype': 'html',
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
+            'can_change_preferences': False,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         })
 
     @mock.patch('framework.auth.utils.requests.post')
@@ -238,7 +241,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'plain'
+            'html'
         ))
 
         self.app.post_json(url, sign_up_data)
@@ -247,7 +250,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'plain'
+            'html'
         ))
 
 

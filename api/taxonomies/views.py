@@ -1,42 +1,21 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
+from django.core.exceptions import ObjectDoesNotExist
 
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.base.versioning import DeprecatedEndpointMixin
 from api.taxonomies.serializers import TaxonomySerializer
+from api.taxonomies.utils import optimize_subject_query
 from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
 class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Taxonomy Attributes
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        text           array of strings       Actual text of the subject
-        parents        array of subjects      Parent subjects, [] indicates a top level subject.
-
-    ##Query Params
-
-    + `field['id']=<subject_id>` -- Finds one subject with the given id
-    + `field['text']=<Str>` -- Find subjects with texts that match the passed string
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-    + `filter['parents']=<subject_id>` -- Find subjects that have a parent with the id passed
-    + `filter['parents']=null` -- Find top level subjects
-
-    Subjects may be filtered by their 'text', 'parents', and 'id' fields.
-
-    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
@@ -53,7 +32,7 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        return Subject.objects.all()
+        return optimize_subject_query(Subject.objects.all())
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -76,17 +55,8 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Taxonomy Attributes
-
-    See TaxonomyList
-
-    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
@@ -99,4 +69,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'taxonomy-detail'
 
     def get_object(self):
-        return get_object_or_error(Subject, self.kwargs['taxonomy_id'], self.request)
+        try:
+            return optimize_subject_query(Subject.objects).get(_id=self.kwargs['taxonomy_id'])
+        except ObjectDoesNotExist:
+            raise NotFound

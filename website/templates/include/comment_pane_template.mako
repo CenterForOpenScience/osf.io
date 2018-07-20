@@ -1,6 +1,6 @@
 <div class="scripted comment-pane">
 
-    <div class="cp-handle-div cp-handle pull-right pointer hidden-xs" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Comments">
+    <div class="cp-handle-div cp-handle pull-right pointer visible-lg visible-md" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Comments">
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
@@ -23,20 +23,20 @@
             <div data-bind="if: canComment" style="margin-top: 20px">
                 <form class="form">
                     <div class="form-group">
-                        <span>
-                            <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
-                        </span>
+                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></div>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
+                                <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
+                                </span>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
-                    <div class="text-danger" data-bind="text: errorMessage"></div>
                 </form>
             </div>
             <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>

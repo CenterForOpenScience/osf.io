@@ -46,8 +46,17 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Minimum seconds between attempts to change password
+CHANGE_PASSWORD_THROTTLE = 30
+
+# Number of incorrect password attempts allowed before throttling.
+INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
+
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+
+# Seconds that must elapse before change password attempts are reset(currently 1 hour)
+TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -83,6 +92,8 @@ PREPRINT_PROVIDER_DOMAINS = {
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 PROXY_EMBER_APPS = False
+# http://docs.python-requests.org/en/master/user/advanced/#timeouts
+EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
@@ -98,6 +109,13 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
+ELASTIC_KWARGS = {
+    # 'use_ssl': False,
+    # 'verify_certs': True,
+    # 'ca_certs': None,
+    # 'client_cert': None,
+    # 'client_key': None
+}
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -122,7 +140,14 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+
+# support email
+OSF_SUPPORT_EMAIL = 'support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'contact@osf.io'
+
+# prereg email
+PREREG_EMAIL = 'prereg@cos.io'
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -134,7 +159,11 @@ MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
 # OR, if using Sendgrid's API
+# WARNING: If `SENDGRID_WHITELIST_MODE` is True,
+# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
 SENDGRID_API_KEY = None
+SENDGRID_WHITELIST_MODE = False
+SENDGRID_EMAIL_WHITELIST = []
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -144,6 +173,8 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
+PREREG_AGE_LIMIT = timedelta(weeks=12)
+PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
@@ -182,12 +213,15 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
-COMMENT_MAXLENGTH = 500
+# If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
+COMMENT_MAXLENGTH = 1000
 
 # Profile image options
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
+# Currently (8/21/2017) only gravatar supported.
+PROFILE_IMAGE_PROVIDER = 'gravatar'
 
 # Conference options
 CONFERENCE_MIN_COUNT = 5
@@ -244,6 +278,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DESCRIPTION = addon_settings['addons_description']
     ADDONS_URL = addon_settings['addons_url']
+    ADDONS_DEFAULT = addon_settings['addons_default']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -310,15 +345,40 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
-# Test identifier namespaces
-DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:99999/fk4'
+####################
+#   Identifiers   #
+###################
+DOI_URL_PREFIX = 'https://dx.doi.org/'
 
-# For creating DOIs and ARKs through the EZID service
+# General Format for DOIs
+DOI_FORMAT = '{prefix}/osf.io/{guid}'
+
+# ezid
+EZID_DOI_NAMESPACE = 'doi:10.5072'
+EZID_ARK_NAMESPACE = 'ark:99999'
 EZID_USERNAME = None
 EZID_PASSWORD = None
-# Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+# datacite
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_URL = None
+DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+# Minting DOIs only works on Datacite's production server, so 
+# disable minting on staging and development environments by default
+DATACITE_MINT_DOIS = not DEV_MODE
+
+# crossref
+CROSSREF_USERNAME = None
+CROSSREF_PASSWORD = None
+CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
+
+ECSARXIV_CROSSREF_USERNAME = None
+ECSARXIV_CROSSREF_PASSWORD = None
+
+# Leave as `None` for production, test/staging/local envs must set
+SHARE_PREPRINT_PROVIDER_PREPEND = None
 
 SHARE_REGISTRATION_URL = ''
 SHARE_URL = None
@@ -342,70 +402,6 @@ JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
 
-DEFAULT_QUEUE = 'celery'
-LOW_QUEUE = 'low'
-MED_QUEUE = 'med'
-HIGH_QUEUE = 'high'
-
-# Seconds, not an actual celery setting
-CELERY_RETRY_BACKOFF_BASE = 5
-
-LOW_PRI_MODULES = {
-    'framework.analytics.tasks',
-    'framework.celery_tasks',
-    'scripts.osfstorage.usage_audit',
-    'scripts.stuck_registration_audit',
-    'scripts.osfstorage.glacier_inventory',
-    'scripts.analytics.tasks',
-    'scripts.osfstorage.files_audit',
-    'scripts.osfstorage.glacier_audit',
-    'scripts.populate_new_and_noteworthy_projects',
-    'scripts.populate_popular_projects_and_registrations',
-    'website.search.elastic_search',
-    'scripts.generate_sitemap',
-}
-
-MED_PRI_MODULES = {
-    'framework.email.tasks',
-    'scripts.send_queued_mails',
-    'scripts.triggered_mails',
-    'website.mailchimp_utils',
-    'website.notifications.tasks',
-    'scripts.analytics.run_keen_summaries',
-    'scripts.analytics.run_keen_snapshots',
-    'scripts.analytics.run_keen_events',
-}
-
-HIGH_PRI_MODULES = {
-    'scripts.approve_embargo_terminations',
-    'scripts.approve_registrations',
-    'scripts.embargo_registrations',
-    'scripts.refresh_addon_tokens',
-    'scripts.retract_registrations',
-    'website.archiver.tasks',
-}
-
-try:
-    from kombu import Queue, Exchange
-except ImportError:
-    pass
-else:
-    CELERY_QUEUES = (
-        Queue(LOW_QUEUE, Exchange(LOW_QUEUE), routing_key=LOW_QUEUE,
-              consumer_arguments={'x-priority': -1}),
-        Queue(DEFAULT_QUEUE, Exchange(DEFAULT_QUEUE), routing_key=DEFAULT_QUEUE,
-              consumer_arguments={'x-priority': 0}),
-        Queue(MED_QUEUE, Exchange(MED_QUEUE), routing_key=MED_QUEUE,
-              consumer_arguments={'x-priority': 1}),
-        Queue(HIGH_QUEUE, Exchange(HIGH_QUEUE), routing_key=HIGH_QUEUE,
-              consumer_arguments={'x-priority': 10}),
-    )
-
-    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
-    CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
-    CELERY_IGNORE_RESULT = True
-    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
-
 # Default RabbitMQ broker
 RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME', 'guest')
 RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD', 'guest')
@@ -413,177 +409,237 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
 
-BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
-BROKER_USE_SSL = False
+# Seconds, not an actual celery setting
+CELERY_RETRY_BACKOFF_BASE = 5
 
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)
+class CeleryConfig:
+    """
+    Celery Configuration
+    http://docs.celeryproject.org/en/latest/userguide/configuration.html
+    """
+    timezone = 'UTC'
 
-# Modules to import when celery launches
-CELERY_IMPORTS = (
-    'framework.celery_tasks',
-    'framework.email.tasks',
-    'website.mailchimp_utils',
-    'website.notifications.tasks',
-    'website.archiver.tasks',
-    'website.search.search',
-    'website.project.tasks',
-    'scripts.populate_new_and_noteworthy_projects',
-    'scripts.populate_popular_projects_and_registrations',
-    'scripts.refresh_addon_tokens',
-    'scripts.retract_registrations',
-    'scripts.embargo_registrations',
-    'scripts.approve_registrations',
-    'scripts.approve_embargo_terminations',
-    'scripts.triggered_mails',
-    'scripts.send_queued_mails',
-    'scripts.analytics.run_keen_summaries',
-    'scripts.analytics.run_keen_snapshots',
-    'scripts.analytics.run_keen_events',
-    'scripts.generate_sitemap',
-)
+    task_default_queue = 'celery'
+    task_low_queue = 'low'
+    task_med_queue = 'med'
+    task_high_queue = 'high'
 
-# Modules that need metrics and release requirements
-# CELERY_IMPORTS += (
-#     'scripts.osfstorage.glacier_inventory',
-#     'scripts.osfstorage.glacier_audit',
-#     'scripts.osfstorage.usage_audit',
-#     'scripts.stuck_registration_audit',
-#     'scripts.osfstorage.files_audit',
-#     'scripts.analytics.tasks',
-#     'scripts.analytics.upload',
-# )
-
-# celery.schedule will not be installed when running invoke requirements the first time.
-try:
-    from celery.schedules import crontab
-except ImportError:
-    pass
-else:
-    #  Setting up a scheduler, essentially replaces an independent cron job
-    CELERYBEAT_SCHEDULE = {
-        '5-minute-emails': {
-            'task': 'website.notifications.tasks.send_users_email',
-            'schedule': crontab(minute='*/5'),
-            'args': ('email_transactional',),
-        },
-        'daily-emails': {
-            'task': 'website.notifications.tasks.send_users_email',
-            'schedule': crontab(minute=0, hour=0),
-            'args': ('email_digest',),
-        },
-        'refresh_addons': {
-            'task': 'scripts.refresh_addon_tokens',
-            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False, 'addons': {
-                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
-                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
-            }},
-        },
-        'retract_registrations': {
-            'task': 'scripts.retract_registrations',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'embargo_registrations': {
-            'task': 'scripts.embargo_registrations',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'approve_registrations': {
-            'task': 'scripts.approve_registrations',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'approve_embargo_terminations': {
-            'task': 'scripts.approve_embargo_terminations',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'triggered_mails': {
-            'task': 'scripts.triggered_mails',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'send_queued_mails': {
-            'task': 'scripts.send_queued_mails',
-            'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
-            'kwargs': {'dry_run': False},
-        },
-        'new-and-noteworthy': {
-            'task': 'scripts.populate_new_and_noteworthy_projects',
-            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': False}
-        },
-        'update_popular_nodes': {
-            'task': 'scripts.populate_popular_projects_and_registrations',
-            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-            'kwargs': {'dry_run': False}
-        },
-        'run_keen_summaries': {
-            'task': 'scripts.analytics.run_keen_summaries',
-            'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
-            'kwargs': {'yesterday': True}
-        },
-        'run_keen_snapshots': {
-            'task': 'scripts.analytics.run_keen_snapshots',
-            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
-        },
-        'run_keen_events': {
-            'task': 'scripts.analytics.run_keen_events',
-            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
-            'kwargs': {'yesterday': True}
-        },
-        'generate_sitemap': {
-            'task': 'scripts.generate_sitemap',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
-        }
+    low_pri_modules = {
+        'framework.analytics.tasks',
+        'framework.celery_tasks',
+        'scripts.osfstorage.usage_audit',
+        'scripts.stuck_registration_audit',
+        'scripts.analytics.tasks',
+        'scripts.populate_new_and_noteworthy_projects',
+        'scripts.populate_popular_projects_and_registrations',
+        'scripts.remind_draft_preregistrations',
+        'website.search.elastic_search',
+        'scripts.generate_sitemap',
+        'scripts.generate_prereg_csv',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
     }
 
-    # Tasks that need metrics and release requirements
-    # CELERYBEAT_SCHEDULE.update({
-    #     'usage_audit': {
-    #         'task': 'scripts.osfstorage.usage_audit',
-    #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-    #         'kwargs': {'send_mail': True},
-    #     },
-    #     'stuck_registration_audit': {
-    #         'task': 'scripts.stuck_registration_audit',
-    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
-    #         'kwargs': {},
-    #     },
-    #     'glacier_inventory': {
-    #         'task': 'scripts.osfstorage.glacier_inventory',
-    #         'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
-    #         'args': (),
-    #     },
-    #     'glacier_audit': {
-    #         'task': 'scripts.osfstorage.glacier_audit',
-    #         'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
-    #         'kwargs': {'dry_run': False},
-    #     },
-    #     'files_audit_0': {
-    #         'task': 'scripts.osfstorage.files_audit.0',
-    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-    #     },
-    #     'files_audit_1': {
-    #         'task': 'scripts.osfstorage.files_audit.1',
-    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-    #     },
-    #     'files_audit_2': {
-    #         'task': 'scripts.osfstorage.files_audit.2',
-    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-    #     },
-    #     'files_audit_3': {
-    #         'task': 'scripts.osfstorage.files_audit.3',
-    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-    #     },
-    # })
+    med_pri_modules = {
+        'framework.email.tasks',
+        'scripts.send_queued_mails',
+        'scripts.triggered_mails',
+        'website.mailchimp_utils',
+        'website.notifications.tasks',
+    }
+
+    high_pri_modules = {
+        'scripts.approve_embargo_terminations',
+        'scripts.approve_registrations',
+        'scripts.embargo_registrations',
+        'scripts.premigrate_created_modified',
+        'scripts.refresh_addon_tokens',
+        'scripts.retract_registrations',
+        'website.archiver.tasks',
+        'scripts.add_missing_identifiers_to_preprints'
+    }
+
+    try:
+        from kombu import Queue, Exchange
+    except ImportError:
+        pass
+    else:
+        task_queues = (
+            Queue(task_low_queue, Exchange(task_low_queue), routing_key=task_low_queue,
+                consumer_arguments={'x-priority': -1}),
+            Queue(task_default_queue, Exchange(task_default_queue), routing_key=task_default_queue,
+                consumer_arguments={'x-priority': 0}),
+            Queue(task_med_queue, Exchange(task_med_queue), routing_key=task_med_queue,
+                consumer_arguments={'x-priority': 1}),
+            Queue(task_high_queue, Exchange(task_high_queue), routing_key=task_high_queue,
+                consumer_arguments={'x-priority': 10}),
+        )
+
+        task_default_exchange_type = 'direct'
+        task_routes = ('framework.celery_tasks.routers.CeleryRouter', )
+        task_ignore_result = True
+        task_store_errors_even_if_ignored = True
+
+    broker_url = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+    broker_use_ssl = False
+
+    # Default RabbitMQ backend
+    result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+
+    beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+    # Modules to import when celery launches
+    imports = (
+        'framework.celery_tasks',
+        'framework.email.tasks',
+        'website.mailchimp_utils',
+        'website.notifications.tasks',
+        'website.archiver.tasks',
+        'website.search.search',
+        'website.project.tasks',
+        'scripts.populate_new_and_noteworthy_projects',
+        'scripts.populate_popular_projects_and_registrations',
+        'scripts.refresh_addon_tokens',
+        'scripts.remind_draft_preregistrations',
+        'scripts.retract_registrations',
+        'scripts.embargo_registrations',
+        'scripts.approve_registrations',
+        'scripts.approve_embargo_terminations',
+        'scripts.triggered_mails',
+        'scripts.send_queued_mails',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
+        'scripts.generate_sitemap',
+        'scripts.premigrate_created_modified',
+        'scripts.generate_prereg_csv',
+        'scripts.add_missing_identifiers_to_preprints',
+    )
+
+    # Modules that need metrics and release requirements
+    # imports += (
+    #     'scripts.osfstorage.usage_audit',
+    #     'scripts.stuck_registration_audit',
+    #     'scripts.analytics.tasks',
+    #     'scripts.analytics.upload',
+    # )
+
+    # celery.schedule will not be installed when running invoke requirements the first time.
+    try:
+        from celery.schedules import crontab
+    except ImportError:
+        pass
+    else:
+        #  Setting up a scheduler, essentially replaces an independent cron job
+        # Note: these times must be in UTC
+        beat_schedule = {
+            '5-minute-emails': {
+                'task': 'website.notifications.tasks.send_users_email',
+                'schedule': crontab(minute='*/5'),
+                'args': ('email_transactional',),
+            },
+            'daily-emails': {
+                'task': 'website.notifications.tasks.send_users_email',
+                'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
+                'args': ('email_digest',),
+            },
+            'refresh_addons': {
+                'task': 'scripts.refresh_addon_tokens',
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
+                'kwargs': {'dry_run': False, 'addons': {
+                    'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                    'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                }},
+            },
+            'retract_registrations': {
+                'task': 'scripts.retract_registrations',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'embargo_registrations': {
+                'task': 'scripts.embargo_registrations',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'add_missing_identifiers_to_preprints': {
+                'task': 'scripts.add_missing_identifiers_to_preprints',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'approve_registrations': {
+                'task': 'scripts.approve_registrations',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'approve_embargo_terminations': {
+                'task': 'scripts.approve_embargo_terminations',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'triggered_mails': {
+                'task': 'scripts.triggered_mails',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'send_queued_mails': {
+                'task': 'scripts.send_queued_mails',
+                'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
+                'kwargs': {'dry_run': False},
+            },
+            'prereg_reminder': {
+                'task': 'scripts.remind_draft_preregistrations',
+                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+                'kwargs': {'dry_run': False},
+            },
+            'new-and-noteworthy': {
+                'task': 'scripts.populate_new_and_noteworthy_projects',
+                'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
+                'kwargs': {'dry_run': False}
+            },
+            'update_popular_nodes': {
+                'task': 'scripts.populate_popular_projects_and_registrations',
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
+                'kwargs': {'dry_run': False}
+            },
+            'run_keen_summaries': {
+                'task': 'scripts.analytics.run_keen_summaries',
+                'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
+                'kwargs': {'yesterday': True}
+            },
+            'run_keen_snapshots': {
+                'task': 'scripts.analytics.run_keen_snapshots',
+                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            },
+            'run_keen_events': {
+                'task': 'scripts.analytics.run_keen_events',
+                'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
+                'kwargs': {'yesterday': True}
+            },
+            'generate_sitemap': {
+                'task': 'scripts.generate_sitemap',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'generate_prereg_csv': {
+                'task': 'scripts.generate_prereg_csv',
+                'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
+            },
+        }
+
+        # Tasks that need metrics and release requirements
+        # beat_schedule.update({
+        #     'usage_audit': {
+        #         'task': 'scripts.osfstorage.usage_audit',
+        #         'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+        #         'kwargs': {'send_mail': True},
+        #     },
+        #     'stuck_registration_audit': {
+        #         'task': 'scripts.stuck_registration_audit',
+        #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
+        #         'kwargs': {},
+        #     },
+        # })
 
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
@@ -598,8 +654,6 @@ SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
-
-PREREG_ADMIN_TAG = "prereg_admin"
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
@@ -1416,7 +1470,6 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
-    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',
@@ -1793,9 +1846,10 @@ BLACKLISTED_DOMAINS = [
 ]
 
 # reCAPTCHA API
+# NOTE: Using the recaptcha.net domain h/t https://github.com/google/recaptcha/issues/87#issuecomment-368252094
 RECAPTCHA_SITE_KEY = None
 RECAPTCHA_SECRET_KEY = None
-RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
@@ -1843,10 +1897,40 @@ SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 
+# For preventing indexing of QA nodes by Elastic and SHARE
+DO_NOT_INDEX_LIST = {
+    'tags': ['qatest', 'qa test'],
+    'titles': ['Bulk stress 201', 'Bulk stress 202', 'OSF API Registration test'],
+}
+
 CUSTOM_CITATIONS = {
     'bluebook-law-review': 'bluebook',
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
 
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
+OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
+
+INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
+
+FOOTER_LINKS = {
+    'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
+    'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
+    'cookies': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies',
+    'cos': 'https://cos.io',
+    'statusPage': 'https://status.cos.io/',
+    'apiDocs': 'https://developer.osf.io/',
+    'topGuidelines': 'http://cos.io/top/',
+    'rpp': 'https://osf.io/ezcuj/wiki/home/',
+    'rpcb': 'https://osf.io/e81xl/wiki/home/',
+    'twitter': 'http://twitter.com/OSFramework',
+    'facebook': 'https://www.facebook.com/CenterForOpenScience/',
+    'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
+    'github': 'https://www.github.com/centerforopenscience',
+}

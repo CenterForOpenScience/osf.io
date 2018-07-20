@@ -1,5 +1,6 @@
+from guardian.core import ObjectPermissionChecker
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -12,23 +13,27 @@ from api.base.views import LinkedNodesRelationship
 from api.base.views import LinkedRegistrationsRelationship
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.collections.permissions import (
+    CollectionWriteOrPublic,
+    CollectionWriteOrPublicForPointers,
+    CollectionWriteOrPublicForRelationshipPointers,
+    CanSubmitToCollectionOrPublic,
+    CanUpdateDeleteCGMOrPublic,
+    ReadOnlyIfCollectedRegistration,
+)
 from api.collections.serializers import (
+    CollectedMetaSerializer,
+    CollectedMetaCreateSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
+    CollectedNodeRelationshipSerializer,
+    CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 
-from api.nodes.permissions import (
-    ContributorOrPublic,
-    ReadOnlyIfRegistration,
-    ContributorOrPublicForPointers,
-)
-
-from website.exceptions import NodeStateError
-from osf.models import Collection, NodeRelation
-from website.util.permissions import ADMIN
+from osf.models import AbstractNode, CollectedGuidMetadata, Collection, Node, Registration
 
 
 class CollectionMixin(object):
@@ -37,29 +42,25 @@ class CollectionMixin(object):
     """
 
     serializer_class = CollectionSerializer
-    node_lookup_url_kwarg = 'collection_id'
+    obj_lookup_url_kwarg = 'collection_id'
 
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
+    def get_collection(self, check_object_permissions=True):
+        collection = get_object_or_error(
             Collection,
-            self.kwargs[self.node_lookup_url_kwarg],
+            self.kwargs[self.obj_lookup_url_kwarg],
             self.request,
             display_name='collection'
         )
-        # Nodes that are folders/collections are treated as a separate resource, so if the client
-        # requests a non-collection through a collection endpoint, we return a 404
-        if not node.is_collection:
-            raise NotFound
         # May raise a permission denied
         if check_object_permissions:
-            self.check_object_permissions(self.request, node)
-        return node
+            self.check_object_permissions(self.request, collection)
+        return collection
 
 
 class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
-    Paginated list of Project Organizer Collections ordered by their `date_modified`.
+    Paginated list of Project Organizer Collections ordered by their `modified`.
     Each resource contains the full representation of the project organizer collection, meaning additional
     requests to an individual Organizer Collection's detail view are not necessary.
 
@@ -120,6 +121,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CollectionWriteOrPublic,
     )
 
     required_read_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ]
@@ -130,13 +132,13 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
         if not user.is_anonymous:
-            return Collection.objects.filter(creator=user, is_deleted=False)
-        return Collection.objects.filter(is_public=True, is_deleted=False)
+            return Collection.objects.filter(creator=user, deleted__isnull=True)
+        return Collection.objects.filter(is_public=True, deleted__isnull=True)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -145,8 +147,9 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             auth = get_user_auth(self.request)
             collection_ids = [coll['id'] for coll in self.request.data]
             collections = Collection.objects.filter(guids___id__in=collection_ids)
+            checker = ObjectPermissionChecker(auth.user)
             for collection in collections:
-                if not collection.can_edit(auth):
+                if not checker.has_perm('write_collection', collection):
                     raise PermissionDenied
             return collections
         else:
@@ -174,20 +177,16 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
 
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
-        """User must have admin permissions to delete nodes."""
-        for node in resource_list:
-            if not node.has_permission(user, ADMIN):
+        """User must have admin permissions to delete collections."""
+        checker = ObjectPermissionChecker(user)
+        for collection in resource_list:
+            if not checker.has_perm('admin_collection', collection):
                 return False
         return True
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        try:
-            instance.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        instance.save()
+        instance.delete()
 
 
 class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
@@ -262,7 +261,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        CollectionWriteOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -275,17 +274,77 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        return self.get_node()
+        return self.get_collection()
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        node = self.get_object()
-        try:
-            node.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        node.save()
+        collection = self.get_object()
+        collection.delete()
+
+class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectedGuidMetadata
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectedMetaCreateSerializer
+        else:
+            return CollectedMetaSerializer
+
+    def get_default_queryset(self):
+        return self.get_collection().collectedguidmetadata_set.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        collection = self.get_collection()
+        serializer.save(creator=user, collection=collection)
+
+
+class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCGMOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        cgm = get_object_or_error(
+            CollectedGuidMetadata,
+            self.kwargs['cgm_id'],
+            self.request,
+            'submission'
+        )
+        # May raise a permission denied
+        self.check_object_permissions(self.request, cgm)
+        return cgm
+
+    def perform_destroy(self, instance):
+        # Skip collection permission check -- perms class checks when getting CGM
+        collection = self.get_collection(check_object_permissions=False)
+        collection.remove_object(instance)
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin):
@@ -336,14 +395,20 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
 
     #This Request/Response
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionWriteOrPublic,
+        base_permissions.TokenHasScope,
+    )
     serializer_class = NodeSerializer
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
-        return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
+        auth = get_user_auth(self.request)
+        return Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -365,7 +430,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
@@ -419,14 +484,21 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     #This Request/Response
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionWriteOrPublic,
+        ReadOnlyIfCollectedRegistration,
+        base_permissions.TokenHasScope,
+    )
     serializer_class = RegistrationSerializer
     view_category = 'collections'
     view_name = 'linked-registrations'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
-        return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
+        auth = get_user_auth(self.request)
+        return Registration.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -491,8 +563,8 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
+        CollectionWriteOrPublic,
+        ReadOnlyIfCollectedRegistration,
         base_permissions.TokenHasScope,
     )
 
@@ -502,22 +574,20 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = NodeRelation
+    model_class = CollectedGuidMetadata
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')
+        return self.get_collection().collectedguidmetadata_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        node = self.get_node()
+        collection = self.get_collection()
         try:
-            node.rm_pointer(instance, auth=auth)
+            collection.remove_object(instance)
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(err.message)
-        node.save()
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -564,10 +634,10 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     #This Request/Response
     """
     permission_classes = (
-        ContributorOrPublicForPointers,
+        CollectionWriteOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyIfRegistration,
+        ReadOnlyIfCollectedRegistration,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -581,7 +651,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            NodeRelation,
+            CollectedGuidMetadata,
             self.kwargs[node_link_lookup_url_kwarg],
             self.request,
             'node link'
@@ -593,14 +663,13 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        node = self.get_node()
+        collection = self.get_collection()
         pointer = self.get_object()
         try:
-            node.rm_pointer(pointer, auth=auth)
+            collection.remove_object(pointer.guid.referent)
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(err.message)
-        node.save()
+        collection.save()
 
 
 class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin):
@@ -666,9 +735,39 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
+    permission_classes = (
+        CollectionWriteOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfCollectedRegistration,
+    )
+    serializer_class = CollectedNodeRelationshipSerializer
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_collection(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            Node.objects.filter(
+                guids__in=collection.guid_links.all(), is_deleted=False
+            ).can_view(
+                user=auth.user, private_link=auth.private_link
+            ).order_by('-modified')
+        ], 'self': collection}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.remove_object(current_pointers[val['id']])
+
 
 class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):
     """ Relationship Endpoint for Collection -> Linked Registration relationships
@@ -733,6 +832,27 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
+    permission_classes = (
+        CollectionWriteOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfCollectedRegistration,
+    )
 
+    serializer_class = CollectedRegistrationsRelationshipSerializer
     view_category = 'collections'
     view_name = 'collection-registration-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_collection(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            Registration.objects.filter(
+                guids__in=collection.guid_links.all(), is_deleted=False
+            ).can_view(
+                user=auth.user, private_link=auth.private_link
+            ).order_by('-modified')
+        ], 'self': collection}
+        self.check_object_permissions(self.request, obj)
+        return obj

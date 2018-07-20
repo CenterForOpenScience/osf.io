@@ -8,13 +8,14 @@ from osf.models import (
     Contributor,
     DraftRegistration,
     Institution,
+    Node,
     NodeRelation,
     OSFUser,
     PreprintService,
     PrivateLink,
 )
+from osf.utils import permissions as osf_permissions
 from website.project.metadata.utils import is_prereg_admin
-from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth, is_deprecated
 
@@ -76,8 +77,11 @@ class AdminOrPublic(permissions.BasePermission):
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        context = request.parser_context['kwargs']
-        node = AbstractNode.load(context[view.node_lookup_url_kwarg])
+        if isinstance(obj, Node):
+            node = obj
+        else:
+            context = request.parser_context['kwargs']
+            node = AbstractNode.load(context[view.node_lookup_url_kwarg])
         if node.is_retracted:
             return False
         return True
@@ -157,9 +161,6 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
             raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
-        if node_link.node.is_registration:
-            if request.method not in permissions.SAFE_METHODS:
-                raise exceptions.MethodNotAllowed
         if node != node_link.parent:
             raise exceptions.NotFound
         if request.method == 'DELETE' and not node.can_edit(auth):

@@ -34,18 +34,66 @@
     </script>
     % endif
 
+    <!-- Metadata tags-->
+    <meta name="dc.title" content="${self.title_meta()}" />
+    <meta name="dc.type" content="collection" />
+    <meta name="citation_title" content="${self.title_meta()}" />
+    %if self.identifier_meta():
+        <meta name="citation_doi" content="${self.identifier_meta()['doi']}" />
+        <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
+        <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
+    %endif
+    <meta name="citation_publisher" content="Open Science Framework" />
+    %for institution in self.institutions_meta()[:10]:
+        <meta name="citation_author_institution" content="${institution}" />
+    %endfor
+    %for rel in self.relations_meta():
+        %if rel:
+            <meta name="dc.relation" scheme="DCTERMS.URI" content="${rel}" />
+        %endif
+    %endfor
+    <meta name="dc.abstract" content="${self.description_meta()}" />
+    <meta name="dc.license" content="${self.license_meta()}" />
+    <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
+    <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
+    <meta name="dc.publisher" content="Open Science Framework" />
+    <meta name="dc.language" content="en" />
+    <meta name="dc.identifier" content="${self.url_meta()}" />
+    <meta name="citation_description" content="${self.description_meta()}" />
+    <meta name="citation_public_url" content="${self.url_meta()}" />
+    <meta name="citation_publication_date" content="${self.datecreated_meta()}" />
+
     <!-- Facebook display -->
-    <meta name="og:image" content="https://osf.io/static/img/circle_logo.png"/>
-    <meta name="og:title" content="${self.title()}"/>
-    <meta name="og:ttl" content="3"/>
-    <meta name="og:description" content="${self.og_description()}"/>
+    <meta property="og:ttl" content="3" />
+    <meta property="og:site_name" content="Open Science Framework" />
+    <meta property="og:url" content="${self.url_meta()}" />
+    <meta property="og:title" content="${self.title_meta()}" />
+    <meta property="og:description" content="${self.description_meta()}" />
+    <meta property="og:image" content="${self.image_meta()}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Open Science Framework" />
+
+    %for author in self.authors_meta()[:10]:
+        <meta name="dc.creator" content="${author}" />
+        <meta name="citation_author" content="${author}" />
+    %endfor
+    %for tag in self.keywords_meta()[:10]:
+        <meta name="citation_keywords" content="${tag}" />
+        <meta name="dc.subject" content="${tag}" />
+    %endfor
+
+    <!-- Twitter display -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@OSFramework">
+    <meta name="twitter:creator" content="@OSFramework">
 
     ${includes_top()}
     ${self.stylesheets()}
     <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
-    <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
 
 </head>
@@ -92,6 +140,16 @@
     ${self.content_wrap()}
 
 % if not user_id:
+<div id="cookieBanner" class="alert">
+    <div id="cookieText">
+        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+        see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
+        and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
+    </div>
+    <div id="cookieAccept">
+        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    </div>
+</div>
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
@@ -116,7 +174,6 @@
 
 
     ${self.footer()}
-    <%include file="copyright.mako"/>
         <%!
             import hashlib
 
@@ -142,8 +199,10 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
-            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension2', '${self.resource()}');
+            ga('set', 'dimension3', '${self.public()}');
+            ga('set', 'anonymizeIp', true);
             ga('send', 'pageview');
             </script>
 
@@ -160,6 +219,7 @@
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
+                apiV2Domain: ${ api_v2_domain | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
@@ -175,6 +235,7 @@
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
+                osfSupportEmail: ${osf_support_email | sjson, n },
             });
         </script>
 
@@ -212,6 +273,16 @@
     ### The page title ###
 </%def>
 
+<%def name="resource()"><%
+    return None
+%> ### What resource is displayed on page ###
+</%def>
+
+<%def name="public()"><%
+    return None
+%> ### What the public/private status of the resource displayed on page ###
+</%def>
+
 <%def name="container_class()">
     ### CSS classes to apply to the "content" div ###
 </%def>
@@ -220,9 +291,59 @@
     ### The page description ###
 </%def>
 
-<%def name="og_description()">
+<!-- Metadata tags-->
+<%def name="description_meta()">
     Hosted on the Open Science Framework
 </%def>
+
+<%def name="title_meta()">
+    ### The project title ###
+</%def>
+
+<%def name="institutions_meta()">
+  ### The list of affiliated institutions ###
+</%def>
+
+<%def name="authors_meta()">
+    ### The list of project contributors ###
+</%def>
+
+<%def name="datemodified_meta()">
+    ### The project last modified date.
+</%def>
+
+<%def name="datecreated_meta()">
+    ### The project creation date.
+</%def>
+
+<%def name="identifier_meta()">
+    ### The project doi ###
+</%def>
+
+<%def name="license_meta()">
+    ### The project license ###
+</%def>
+
+<%def name="keywords_meta()">
+    ### The project tags ###
+</%def>
+
+<%def name="relations_meta()">
+    ### The list of url for related nodes ###
+</%def>
+
+<%def name="category_meta()">
+    ### The project category ###
+</%def>
+
+<%def name="url_meta()">
+    ### The project canonical url ###
+</%def>
+
+<%def name="image_meta()">
+    ### The project image url ###
+</%def>
+<!--Metadata tags-->
 
 <%def name="stylesheets()">
     ### Extra css for this page. ###
@@ -238,6 +359,8 @@
 
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
+    <!-- Uncomment to include a waffle object to access flags, samples, and switches. -->
+    <!-- <script src="${wafflejs_url}"></script> -->
 </%def>
 
 <%def name="footer()">
@@ -251,21 +374,6 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            ## Maintenance alert
-            % if maintenance:
-                <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong>
-                % if maintenance['message']:
-                    ${maintenance['message']}
-                % else:
-                    The site will undergo maintenance between <span id="maintenanceTime"></span>.
-                    Thank you for your patience.
-                % endif
-            </div>
-            % endif
-            ## End Maintenance alert
 
             % if status:
                 ${self.alert()}
@@ -292,12 +400,11 @@
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
     % else:
-        <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     % endif

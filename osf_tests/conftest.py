@@ -1,35 +1,11 @@
-import logging
-
 import pytest
-from faker import Factory
 
+from framework.celery_tasks.handlers import handlers as celery_handlers
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from website import settings
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
-
-# Silence some 3rd-party logging and some "loud" internal loggers
-SILENT_LOGGERS = [
-    'api.caching.tasks',
-    'factory.generate',
-    'factory.containers',
-    'framework.analytics',
-    'framework.auth.core',
-    'website.app',
-    'website.archiver.tasks',
-    'website.mails',
-    'website.notifications.listeners',
-    'website.search.elastic_search',
-    'website.search_migration.migrate',
-    'website.util.paths',
-    'requests_oauthlib.oauth2_session',
-    'raven.base.Client',
-    'raven.contrib.django.client.DjangoClient',
-]
-for logger_name in SILENT_LOGGERS:
-    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
@@ -41,6 +17,7 @@ def app():
         test_app = init_app(routes=False, set_backends=False)
 
     rm_handlers(test_app, django_handlers)
+    rm_handlers(test_app, celery_handlers)
 
     test_app.testing = True
     return test_app
@@ -65,13 +42,3 @@ def disconnected_signals():
     for signal in DISCONNECTED_SIGNALS:
         for receiver in DISCONNECTED_SIGNALS[signal]:
             signal.disconnect(receiver)
-
-@pytest.fixture(autouse=True)
-def patched_settings():
-    """Patch settings for tests"""
-    settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-    settings.BCRYPT_LOG_ROUNDS = 1
-
-@pytest.fixture()
-def fake():
-    return Factory.create()

@@ -4,6 +4,7 @@ import json
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -13,10 +14,10 @@ from website.project.model import NodeUpdateError
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
+from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
-                                  JSONAPIListField, ShowIfVersion, DateByVersion,)
+                                  ShowIfVersion, VersionedDateTimeField, ValuesListField)
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
 
@@ -28,11 +29,12 @@ class BaseRegistrationSerializer(NodeSerializer):
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
-    date_modified = DateByVersion(read_only=True)
+    date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
+    access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
+    tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -51,8 +53,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
                                  help_text='The registration has been withdrawn.')
 
-    date_registered = DateByVersion(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = DateByVersion(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
+    date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+    date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
@@ -96,6 +98,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_contrib_count'}
     )
 
+    implicit_contributors = RelationshipField(
+        related_view='registrations:registration-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+        help_text='This feature is experimental and being tested. It may be deprecated.'
+    )
+
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-providers',
         related_view_kwargs={'node_id': '<_id>'}
@@ -128,7 +136,8 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'},
     ))
 
     node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
@@ -137,6 +146,18 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     )), min_version='2.0', max_version='2.0')
+
+    linked_by_nodes = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    ))
+
+    linked_by_registrations = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    ))
 
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
@@ -155,7 +176,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     ))
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
+        related_view='metaschemas:registration-metaschema-detail',
         related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
     )
 
@@ -275,18 +296,30 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_current_user_permissions(self, obj):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
+    def get_view_only_links_count(self, obj):
+        return obj.private_links.filter(is_deleted=False).count()
+
     def update(self, registration, validated_data):
-        is_public = validated_data.get('is_public', False)
-        if is_public:
-            auth = Auth(self.context['request'].user)
+        auth = Auth(self.context['request'].user)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = validated_data.pop('tags', [])
             try:
-                registration.update(validated_data, auth=auth)
-            except NodeUpdateError as err:
-                raise exceptions.ValidationError(err.reason)
+                registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise exceptions.ValidationError(err.message)
-        else:
-            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+                raise Conflict(err.message)
+
+        is_public = validated_data.get('is_public', None)
+        if is_public is not None:
+            if is_public:
+                try:
+                    registration.update(validated_data, auth=auth)
+                except NodeUpdateError as err:
+                    raise exceptions.ValidationError(err.reason)
+                except NodeStateError as err:
+                    raise exceptions.ValidationError(err.message)
+            else:
+                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
 
     class Meta:
@@ -299,7 +332,7 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     """
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
-    lift_embargo = DateByVersion(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):

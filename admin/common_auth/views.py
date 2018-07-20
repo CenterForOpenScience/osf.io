@@ -8,14 +8,12 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
-from website.settings import PREREG_ADMIN_TAG
-
 from osf.models.user import OSFUser
-from osf.models import AdminProfile
+from osf.models import AdminProfile, PreprintProvider
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -79,8 +77,15 @@ class RegisterUser(PermissionRequiredMixin, FormView):
         prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
+            split = group.name.split('_')
+            group_type = split[0]
+            if group_type == 'reviews':
+                provider_id = split[1]
+                provider = PreprintProvider.load(provider_id)
+                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
             if group == prereg_admin_group:
-                osf_user.add_system_tag(PREREG_ADMIN_TAG)
+                administer_permission = Permission.objects.get(codename='administer_prereg')
+                osf_user.user_permissions.add(administer_permission)
 
         osf_user.save()
 
@@ -93,6 +98,10 @@ class RegisterUser(PermissionRequiredMixin, FormView):
     def get_success_url(self):
         return reverse('auth:register')
 
+    def get_initial(self):
+        initial = super(RegisterUser, self).get_initial()
+        initial['osf_id'] = self.request.GET.get('id')
+        return initial
 
 class DeskUserCreateFormView(PermissionRequiredMixin, CreateView):
     form_class = DeskUserForm

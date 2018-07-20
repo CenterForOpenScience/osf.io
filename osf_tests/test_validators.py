@@ -1,5 +1,5 @@
 import pytest
-from modularodm.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError
 
 from osf.models import validators
 

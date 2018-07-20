@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import itertools
 import httplib as http
 import logging
@@ -6,6 +7,7 @@ import math
 import os
 import requests
 import urllib
+import waffle
 
 from django.apps import apps
 from django.db.models import Count
@@ -19,16 +21,21 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import get_current_user_id
+from framework.auth.core import get_current_user_id, _get_current_user
+from website import settings
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
+from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
-from website.util import permissions
+from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -92,7 +99,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'title': node.title,
             'category': node.category,
             'isPreprint': bool(node.preprint_file_id),
-            'childExists': node.nodes_active.exists(),
+            'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
             'logged_in': auth.logged_in,
@@ -113,16 +120,14 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'parent_title': parent_node.title if parent_node else None,
             'parent_is_public': parent_node.is_public if parent_node else False,
             'show_path': show_path,
-            # Read nlogs annotation if possible
-            'nlogs': node.nlogs if hasattr(node, 'nlogs') else node.logs.count(),
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
+            'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
         summary['can_view'] = False
 
     return summary
-
 
 def index():
     try:  # Check if we're on an institution landing page
@@ -132,13 +137,17 @@ def index():
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(institution._id),
+            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
         })
 
         return inst_dict
     except Institution.DoesNotExist:
         pass
 
+    return home()
+
+@ember_flag_is_active('ember_home_page')
+def home():
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
         all_institutions = (
@@ -169,14 +178,19 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
+    return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_dashboard_page')
 def dashboard(auth):
     return redirect('/')
 
+@ember_flag_is_active('ember_support_page')
+def support():
+    return {}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
     bookmark_collection = find_bookmark_collection(user)
@@ -274,10 +288,13 @@ def resolve_guid(guid, suffix=None):
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
-                    # admins should be able to know it exists.
+                    # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                    # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
+                    if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider) or
+                            referent.node.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
+
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
                 file_referent = referent
@@ -298,10 +315,27 @@ def resolve_guid(guid, suffix=None):
                 return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
             if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
+
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+            if referent.is_deleted:
+                raise HTTPError(http.GONE)
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+            return send_from_directory(ember_osf_web_dir, 'index.html')
+
+        if isinstance(referent, Node) and not referent.is_registration and suffix:
+            page = suffix.strip('/').split('/')[0]
+            flag_name = 'ember_project_{}_page'.format(page)
+            request.user = _get_current_user() or MockUser()
+
+            if waffle.flag_is_active(request, flag_name):
+                use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
@@ -347,3 +381,13 @@ def redirect_to_home():
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
     return redirect('https://cos.io/news/')
+
+
+# Return error for legacy SHARE v1 search route
+def legacy_share_v1_search(**kwargs):
+    return HTTPError(
+        http.BAD_REQUEST,
+        data=dict(
+            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+        )
+    )

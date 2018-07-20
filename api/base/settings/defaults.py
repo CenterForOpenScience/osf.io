@@ -28,16 +28,13 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
+        'TEST': {
+            'SERIALIZE': False,
+        },
     }
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
-CELERY_IMPORTS = [
-    'osf.management.commands.migratedata',
-    'osf.management.commands.migraterelations',
-    'osf.management.commands.verify',
-]
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -84,15 +81,17 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
+    'waffle',
 
     # OSF
     'osf',
-    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -103,8 +102,10 @@ INSTALLED_APPS = (
     'addons.figshare',
     'addons.forward',
     'addons.github',
+    'addons.gitlab',
     'addons.googledrive',
     'addons.mendeley',
+    'addons.onedrive',
     'addons.owncloud',
     'addons.s3',
     'addons.twofactor',
@@ -154,8 +155,10 @@ REST_FRAMEWORK = {
         '2.4',
         '2.5',
         '2.6',
+        '2.7',
+        '2.8',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -195,7 +198,6 @@ MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
@@ -209,7 +211,7 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [
@@ -236,6 +238,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+    DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
@@ -256,8 +266,8 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'mendeley', 'zotero', 'forward']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
@@ -270,3 +280,6 @@ SELECT_FOR_UPDATE_ENABLED = True
 
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

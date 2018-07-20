@@ -12,18 +12,20 @@ from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
+from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
 from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
     must_not_be_registration, must_be_registration,
+    must_not_be_retracted_registration
 )
-from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
-from osf.models import Identifier, MetaSchema, NodeLog
+from osf.models import Identifier, MetaSchema
 from website.project.utils import serialize_node
-from website.util.permissions import ADMIN
+from osf.utils.permissions import ADMIN
 from website import language
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util
@@ -31,11 +33,10 @@ from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
-from website.identifiers.client import EzidClient
-
 from .node import _view_project
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_contributor_or_public
 def node_register_page(auth, node, **kwargs):
     """Display the registration metadata for a registration.
@@ -57,6 +58,7 @@ def node_registration_retraction_redirect(auth, node, **kwargs):
     return redirect(node.web_url_for('node_registration_retraction_get', _guid=True))
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_have_permission(ADMIN)
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
@@ -114,16 +116,17 @@ def node_registration_retraction_post(auth, node, **kwargs):
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_registration_form_detail_page')
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
             meta_schema = MetaSchema.objects.get(_id=metaschema_id)
         except MetaSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
-            try:
-                meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
-            except IndexError:
+            meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
+            if not meta_schema:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'
@@ -208,38 +211,9 @@ def project_before_register(auth, node, **kwargs):
     }
 
 
-def osf_admin_change_status_identifier(node, status):
-    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = build_ezid_metadata(node)
-        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-        client.change_status_identifier(status, doi, metadata)
-
-
-@must_be_valid_project
-@must_have_permission(ADMIN)
-def node_identifiers_post(auth, node, **kwargs):
-    """Create identifier pair for a node. Node must be a public registration.
-    """
-    if not node.is_public or node.is_retracted:
-        raise HTTPError(http.BAD_REQUEST)
-    if node.get_identifier('doi') or node.get_identifier('ark'):
-        raise HTTPError(http.BAD_REQUEST)
-    try:
-        identifiers = get_or_create_identifiers(node)
-    except HTTPError:
-        raise HTTPError(http.BAD_REQUEST)
-    for category, value in identifiers.iteritems():
-        node.set_identifier_value(category, value)
-    node.add_log(
-        NodeLog.EXTERNAL_IDS_ADDED,
-        params={
-            'parent_node': node.parent_id,
-            'node': node._id,
-            'identifiers': identifiers,
-        },
-        auth=auth,
-    )
-    return identifiers, http.CREATED
+def osf_admin_change_status_identifier(node):
+    if node.get_identifier_value('doi'):
+        node.request_identifier_update(category='doi')
 
 
 def get_referent_by_identifier(category, value):
@@ -258,6 +232,8 @@ def get_referent_by_identifier(category, value):
 @must_be_signed
 @must_be_registration
 def registration_callbacks(node, payload, *args, **kwargs):
+    if payload.get('action', None) in DOWNLOAD_ACTIONS:
+        return {'status': 'success'}
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:

@@ -3,6 +3,7 @@ import json
 import jwe
 import jwt
 
+from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -13,6 +14,7 @@ from framework.auth import get_or_create_user
 
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
+from website.settings import OSF_CONTACT_EMAIL
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -93,6 +95,9 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.suffix = suffix
             user.update_date_last_login()
 
+            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
+            user.accepted_terms_of_service = timezone.now()
+
             # save and register user
             user.save()
             user.register(username)
@@ -102,7 +107,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
                 mimetype='html',
-                user=user
+                user=user,
+                osf_contact_email=OSF_CONTACT_EMAIL
             )
 
         if not user.is_affiliated_with_institution(institution):

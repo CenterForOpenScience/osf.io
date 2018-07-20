@@ -15,8 +15,14 @@ from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
-from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
+from website.search_migration.migrate import migrate, migrate_collected_metadata
+from osf.models import (
+    Retraction,
+    NodeLicense,
+    Tag,
+    QuickFilesNode,
+    CollectedGuidMetadata,
+)
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -29,9 +35,13 @@ from tests.utils import mock_archive, run_celery_tasks
 
 TEST_INDEX = 'test'
 
-def query(term):
-    results = search.search(build_query(term), index=elastic_search.INDEX)
+def query(term, raw=False):
+    results = search.search(build_query(term), index=elastic_search.INDEX, raw=raw)
     return results
+
+def query_collections(name):
+    term = 'category:collectionSubmission AND "{}"'.format(name)
+    return query(term, raw=True)
 
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
@@ -62,6 +72,187 @@ def retry_assertion(interval=0.3, retries=3):
         return wrapped
     return test_wrapper
 
+class TestCollectionsSearch(OsfTestCase):
+    def setUp(self):
+        super(TestCollectionsSearch, self).setUp()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
+
+        self.user = factories.UserFactory(fullname='Salif Keita')
+        self.node_private = factories.NodeFactory(creator=self.user, title='Salif Keita: Madan', is_public=False)
+        self.node_public = factories.NodeFactory(creator=self.user, title='Salif Keita: Yamore', is_public=True)
+        self.node_one = factories.NodeFactory(creator=self.user, title='Salif Keita: Mandjou', is_public=True)
+        self.node_two = factories.NodeFactory(creator=self.user, title='Salif Keita: Tekere', is_public=True)
+        self.reg_private = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=False)
+        self.reg_public = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True)
+        self.reg_one = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True)
+        self.provider = factories.CollectionProviderFactory()
+        self.reg_provider = factories.RegistrationProviderFactory()
+        self.collection_one = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
+        self.collection_public = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
+        self.collection_private = factories.CollectionFactory(creator=self.user, is_public = False, provider=self.provider)
+        self.reg_collection = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=True)
+        self.reg_collection_private = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=False)
+
+    def test_only_public_collections_submissions_are_searchable(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_private, self.user)
+        self.reg_collection.collect_object(self.reg_private, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        assert_false(self.node_one.is_collected)
+        assert_false(self.node_public.is_collected)
+
+        self.collection_one.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
+
+        assert_true(self.node_one.is_collected)
+        assert_true(self.node_public.is_collected)
+        assert_true(self.reg_public.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 3)
+
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.reg_collection_private.collect_object(self.reg_one, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 3)
+
+    def test_index_on_submission_privacy_changes(self):
+        # test_submissions_turned_private_are_deleted_from_index
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_one.collect_object(self.node_one, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 2)
+
+        with run_celery_tasks():
+            self.node_one.is_public = False
+            self.node_one.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        # test_submissions_turned_public_are_added_to_index
+        self.collection_public.collect_object(self.node_private, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        with run_celery_tasks():
+            self.node_private.is_public = True
+            self.node_private.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 1)
+
+    def test_index_on_collection_privacy_changes(self):
+        # test_submissions_of_collection_turned_private_are_removed_from_index
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 4)
+
+        with run_celery_tasks():
+            self.collection_public.is_public = False
+            self.collection_public.save()
+            self.reg_collection.is_public = False
+            self.reg_collection.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        # test_submissions_of_collection_turned_public_are_added_to_index
+        self.collection_private.collect_object(self.node_one, self.user)
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.collection_private.collect_object(self.node_public, self.user)
+        self.reg_collection_private.collect_object(self.reg_public, self.user)
+
+        assert_true(self.node_one.is_collected)
+        assert_true(self.node_two.is_collected)
+        assert_true(self.node_public.is_collected)
+        assert_true(self.reg_public.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        with run_celery_tasks():
+            self.collection_private.is_public = True
+            self.collection_private.save()
+            self.reg_collection.is_public = True
+            self.reg_collection.save()
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 4)
+
+    def test_collection_submissions_are_removed_from_index_on_delete(self):
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 4)
+        self.collection_public.delete()
+        self.reg_collection.delete()
+
+        assert_true(self.collection_public.deleted)
+        assert_true(self.reg_collection.deleted)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+    def test_removed_submission_are_removed_from_index(self):
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
+        assert_true(self.node_one.is_collected)
+        assert_true(self.reg_public.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 2)
+
+        self.collection_public.remove_object(self.node_one)
+        self.reg_collection.remove_object(self.reg_public)
+        assert_false(self.node_one.is_collected)
+        assert_false(self.reg_public.is_collected)
+
+        docs = query_collections('Salif Keita')['results']
+        assert_equal(len(docs), 0)
+
+    def test_collection_submission_doc_structure(self):
+        self.collection_public.collect_object(self.node_one, self.user)
+        docs = query_collections('Keita')['results']
+        assert_equal(docs[0]['_source']['title'], self.node_one.title)
+        with run_celery_tasks():
+            self.node_one.title = 'Keita Royal Family of Mali'
+            self.node_one.save()
+        docs = query_collections('Keita')['results']
+        assert_equal(docs[0]['_source']['title'], self.node_one.title)
+        assert_equal(docs[0]['_source']['abstract'], self.node_one.description)
+        assert_equal(docs[0]['_source']['contributors'][0]['url'], self.user.url)
+        assert_equal(docs[0]['_source']['contributors'][0]['fullname'], self.user.fullname)
+        assert_equal(docs[0]['_source']['url'], self.node_one.url)
+        assert_equal(docs[0]['_source']['id'], '{}-{}'.format(self.node_one._id,
+            self.node_one.collecting_metadata_list[0].collection._id))
+        assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
 class TestUserUpdate(OsfTestCase):
 
@@ -275,9 +466,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -308,9 +497,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -346,17 +533,20 @@ class TestPublicNodes(OsfTestCase):
             self.consolidate_auth = Auth(user=self.user)
             self.project = factories.ProjectFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )
             self.component = factories.NodeFactory(
                 parent=self.project,
+                description='',
                 title=self.title,
                 creator=self.user,
                 is_public=True
             )
             self.registration = factories.RegistrationFactory(
                 title=self.title,
+                description='',
                 creator=self.user,
                 is_public=True,
             )
@@ -414,7 +604,7 @@ class TestPublicNodes(OsfTestCase):
             self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
-        assert_equal(docs[0]['parent_title'], '-- private project --')
+        assert_false(docs[0]['parent_title'])
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):
@@ -638,6 +828,16 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
+    def test_search_profile(self):
+        orcid = '123456'
+        user = factories.UserFactory()
+        user.social['orcid'] = orcid
+        user.save()
+        contribs = search.search_contributor(orcid)
+        assert_equal(len(contribs['users']), 1)
+        assert_equal(len(contribs['users'][0]['social']), 1)
+        assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
+
 
 class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
@@ -824,29 +1024,29 @@ class TestSearchMigration(OsfTestCase):
             is_public=True
         )
 
-    def test_first_migration_no_delete(self):
-        migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_no_remove(self):
+        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_no_delete(self):
+    def test_multiple_migrations_no_remove(self):
         for n in xrange(1, 21):
-            migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_first_migration_with_delete(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+    def test_first_migration_with_remove(self):
+        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-    def test_multiple_migrations_with_delete(self):
+    def test_multiple_migrations_with_remove(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
@@ -868,6 +1068,41 @@ class TestSearchMigration(OsfTestCase):
                 institution_bucket_found = True
 
         assert_equal(institution_bucket_found, True)
+
+    def test_migration_collections(self):
+        provider = factories.CollectionProviderFactory()
+        collection_one = factories.CollectionFactory(is_public=True, provider=provider)
+        collection_two = factories.CollectionFactory(is_public=True, provider=provider)
+        node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
+        collection_one.collect_object(node, self.user)
+        collection_two.collect_object(node, self.user)
+        assert node.is_collected
+
+        docs = query_collections('*')['results']
+        assert len(docs) == 2
+
+        docs = query_collections('Bomaye')['results']
+        assert len(docs) == 2
+
+        count_query = {}
+        count_query['aggregations'] = {
+            'counts': {
+                'terms': {
+                    'field': '_type',
+                }
+            }
+        }
+
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+
+        docs = query_collections('*')['results']
+        assert len(docs) == 2
+
+        docs = query_collections('Bomaye')['results']
+        assert len(docs) == 2
+
+        res = self.es.search(index=settings.ELASTIC_INDEX, doc_type='collectionSubmission', search_type='count', body=count_query)
+        assert res['hits']['total'] == 2
 
 class TestSearchFiles(OsfTestCase):
 
@@ -978,6 +1213,21 @@ class TestSearchFiles(OsfTestCase):
         quickfiles_root.append_file('GreenLight.mp3')
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 1)
+        assert find[0]['node_url'] == '/{}/quickfiles/'.format(quickfiles.creator._id)
+
+    def test_qatest_quickfiles_files_not_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+
+        file = quickfiles_root.append_file('GreenLight.mp3')
+        tag = Tag(name='qatest')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 0)
 
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)

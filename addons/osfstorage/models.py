@@ -6,13 +6,17 @@ from django.apps import apps
 from django.db import models, connection
 from psycopg2._psycopg import AsIs
 
-from addons.base.models import BaseNodeSettings, BaseStorageAddon
+from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from osf.utils.fields import EncryptedJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
-from osf.utils.auth import Auth
+from osf.utils import permissions
+from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
-from website.util import permissions
+from website import settings as website_settings
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -165,10 +169,17 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if (
-                self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.get_permissions(
-                user)) \
-                or permissions.WRITE not in self.node.get_permissions(user):
+        if self.is_checked_out and self.checkout != user:
+            # Allow project admins to force check in
+            if self.node.has_permission(user, permissions.ADMIN):
+                # But don't allow force check in for prereg admin checked out files
+                if self.checkout.has_perm('osf.view_prereg') and self.node.draft_registrations_active.filter(
+                        registration_schema__name='Prereg Challenge').exists():
+                    raise exceptions.FileNodeCheckedOutError()
+            else:
+                raise exceptions.FileNodeCheckedOutError()
+
+        if not self.node.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
@@ -204,6 +215,31 @@ class OsfStorageFileNode(BaseFileNode):
 
 class OsfStorageFile(OsfStorageFileNode, File):
 
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
+
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
             return self.get_version(revision or version)
@@ -224,13 +260,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        earliest_version = self.versions.order_by('date_created').first()
+        earliest_version = self.versions.order_by('created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
-            'modified': version.date_created.isoformat() if version else None,
-            'created': earliest_version.date_created.isoformat() if version else None,
+            'modified': version.created.isoformat() if version else None,
+            'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
 
@@ -381,12 +417,38 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class Region(models.Model):
+    _id = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=200)
+    waterbutler_credentials = EncryptedJSONField(default=dict)
+    waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    class Meta:
+        unique_together = ('_id', 'name')
+
+class UserSettings(BaseUserSettings):
+    default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+
+    def on_add(self):
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        self.default_region = default_region
+        self.save()
+
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
+
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
+
+    region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
@@ -399,6 +461,10 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         if self.root_node:
             return
 
+        creator_user_settings = UserSettings.objects.get(owner=self.owner.creator)
+        self.user_settings = creator_user_settings
+        self.region_id = creator_user_settings.default_region_id
+
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
@@ -409,9 +475,15 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         self.root_node = root
         self.save()
 
+    def before_fork(self, node, user):
+        pass
+
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
+        clone.user_settings = self.user_settings
+        clone.region_id = self.region_id
+
         clone.save()
         if not self.root_node:
             self.on_add()
@@ -430,38 +502,37 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        return dict(settings.WATERBUTLER_SETTINGS, **{
+        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': self.owner.api_url_for(
                 'osfstorage_get_metadata',
                 _absolute=True,
                 _internal=True
-            )
+            ),
         })
 
     def serialize_waterbutler_credentials(self):
-        return settings.WATERBUTLER_CREDENTIALS
+        return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for(
-            'addon_view_or_download_file',
-            path=metadata['path'],
-            provider='osfstorage'
-        )
+        params = {
+            'node': self.owner._id,
+            'project': self.owner.parent_id,
+
+            'path': metadata['materialized'],
+        }
+
+        if (metadata['kind'] != 'folder'):
+            url = self.owner.web_url_for(
+                'addon_view_or_download_file',
+                path=metadata['path'],
+                provider='osfstorage'
+            )
+            params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
             'osf_storage_{0}'.format(action),
             auth=auth,
-            params={
-                'node': self.owner._id,
-                'project': self.owner.parent_id,
-
-                'path': metadata['materialized'],
-
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
-            },
+            params=params
         )

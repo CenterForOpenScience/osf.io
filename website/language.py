@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
-
+from website import settings
 
 # Status Messages
 #################
@@ -16,6 +16,43 @@ WELCOME_MESSAGE = '''
 <p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 '''
 
+TERMS_OF_SERVICE = """
+<div style="text-align: center">
+    <div>
+        <h4>We've updated our <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>. Please read them carefully.</h4>
+        <h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
+    </div>
+    <button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
+</div>
+<script>
+    $('#accept').on('change', function() {{
+        $('#continue').prop('disabled', !$('#accept').prop('checked'));
+    }});
+
+    $('#continue').on('click', function() {{
+        var accepted = $('#accept').prop('checked');
+        $.ajax({{
+            url: '{}v2/users/me/',
+            type: 'PATCH',
+            contentType: 'application/json',
+            xhrFields: {{
+                withCredentials: true
+            }},
+            data: JSON.stringify({{
+                'data': {{
+                    'id': '{}',
+                    'type': 'users',
+                    'attributes': {{
+                        'accepted_terms_of_service': accepted
+                    }}
+                }}
+            }})
+        }});
+    }});
+
+</script>
+"""
+
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address.'''
@@ -26,6 +63,8 @@ EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with you
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
+
+BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, please report this to {}.'.format(settings.OSF_SUPPORT_EMAIL)
 
 AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
@@ -102,10 +141,11 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your registration, but the projects that they link to will not be '
-    u'registered. If you wish to register the linked projects, you must fork '
-    u'them from the original project before registering.'
+    u'This {category} contains links to other projects. These links will be '
+    u'copied into your registration, but the projects that they link to will '
+    u'not be registered. If you wish to register the linked projects, they '
+    u'must be registered separately. Learn more about <a href="http://help.osf.io'
+    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
@@ -190,7 +230,9 @@ TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = u"Contact support@osf.io for further assistance."
+SUPPORT = u"Contact " + settings.OSF_SUPPORT_EMAIL + u"for further assistance."
+
+SUPPORT_LINK = 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'
 
 # Custom Error Messages w/ support  # TODO: Where are these used? See [#OSF-6101]
 STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)

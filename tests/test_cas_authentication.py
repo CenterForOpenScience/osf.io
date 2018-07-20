@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import furl
-import httpretty
+import responses
 import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import unittest
@@ -68,7 +68,7 @@ def generate_external_user_with_resp(service_url, user=True, release=True):
         user = {
             'external_id_provider': validated_credentials['provider'],
             'external_id': validated_credentials['id'],
-            'fullname': validated_credentials['id'],
+            'fullname': '',
             'access_token': cas_resp.attributes['accessToken'],
             'service_url': service_url,
         }
@@ -120,7 +120,7 @@ class TestCASClient(OsfTestCase):
         self.base_url = 'http://accounts.test.test'
         self.client = cas.CasClient(self.base_url)
 
-    @httpretty.activate
+    @responses.activate
     def test_service_validate(self):
         user = UserFactory()
         url = furl.furl(self.base_url)
@@ -128,66 +128,80 @@ class TestCASClient(OsfTestCase):
         service_url = 'http://test.osf.io'
         ticket = fake.md5()
         body = make_service_validation_response_body(user, ticket)
-        httpretty.register_uri(
-            httpretty.GET,
-            url.url,
-            body=body,
-            status=200,
+        responses.add(
+            responses.Response(
+                responses.GET,
+                url.url,
+                body=body,
+                status=200,
+            )
         )
         resp = self.client.service_validate(ticket, service_url)
         assert_true(resp.authenticated)
 
-    @httpretty.activate
+    @responses.activate
     def test_service_validate_invalid_ticket_raises_error(self):
         url = furl.furl(self.base_url)
         url.path.segments.extend(('p3', 'serviceValidate',))
         service_url = 'http://test.osf.io'
         # Return error response
-        httpretty.register_uri(
-            httpretty.GET,
-            url.url,
-            body='invalid ticket...',
-            status=500,
+        responses.add(
+            responses.Response(
+                responses.GET,
+                url.url,
+                body='invalid ticket...',
+                status=500,
+            )
         )
         with assert_raises(cas.CasHTTPError):
             self.client.service_validate('invalid', service_url)
 
-    @httpretty.activate
+    @responses.activate
     def test_profile_invalid_access_token_raises_error(self):
         url = furl.furl(self.base_url)
         url.path.segments.extend(('oauth2', 'profile',))
-        httpretty.register_uri(
-            httpretty.GET,
-            url.url,
-            status=500,
+        responses.add(
+            responses.Response(
+                responses.GET,
+                url.url,
+                status=500,
+            )
         )
         with assert_raises(cas.CasHTTPError):
             self.client.profile('invalid-access-token')
 
-    @httpretty.activate
+    @responses.activate
     def test_application_token_revocation_succeeds(self):
         url = self.client.get_auth_token_revocation_url()
         client_id= 'fake_id'
         client_secret = 'fake_secret'
-        httpretty.register_uri(httpretty.POST,
-                               url,
-                               body={'client_id': client_id,
-                                     'client_secret': client_secret},
-                               status=204)
+        responses.add(
+            responses.Response(
+                responses.POST,
+                url,
+                body={'client_id': client_id,
+                      'client_secret': client_secret},
+                status=204
+            )
+        )
 
         res = self.client.revoke_application_tokens(client_id, client_secret)
         assert_equal(res, True)
 
-    @httpretty.activate
+    @responses.activate
     def test_application_token_revocation_fails(self):
         url = self.client.get_auth_token_revocation_url()
         client_id= 'fake_id'
         client_secret = 'fake_secret'
-        httpretty.register_uri(httpretty.POST,
-                               url,
-                               body={'client_id': client_id,
-                                     'client_secret': client_secret},
-                               status=400)
+        responses.add(
+            responses.Response(
+                responses.POST,
+                url,
+                body={'client_id': client_id,
+                      'client_secret': client_secret},
+                status=400
+            )
+        )
 
         with assert_raises(cas.CasHTTPError):
             res = self.client.revoke_application_tokens(client_id, client_secret)

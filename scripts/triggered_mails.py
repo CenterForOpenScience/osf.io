@@ -29,6 +29,7 @@ def main(dry_run=True):
                     send_at=timezone.now(),
                     user=user,
                     fullname=user.fullname,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
                 )
 
 

@@ -83,12 +83,9 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    if(ctx.node.childExists){
-        new NodesDelete.NodesDelete('#nodesDelete', ctx.node);
-    }else{
-        $('#deleteNode').on('click', function() {
-            ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
-        });
+    var selector = '#deleteNode';
+    if ($(selector).length){
+        new NodesDelete.DeleteManager(selector);
     }
 
     // TODO: Knockout-ify me
@@ -126,186 +123,70 @@ $(document).ready(function() {
         return false;
 
     });
-
-    var checkedOnLoad = $('#selectAddonsForm input:checked');
-    var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-
-    // Set up submission for addon selection form
-    $('#selectAddonsForm').on('submit', function() {
-
-        var formData = {};
-        $('#selectAddonsForm').find('input').each(function(idx, elm) {
-            var $elm = $(elm);
-            formData[$elm.attr('name')] = $elm.is(':checked');
-        });
-
-        var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
-        var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
-        var msgElm = $(this).find('.addon-settings-message');
-
-        var submit = function() {
-            var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
-            return request;
-        };
-
-        function successMessage() {
-            msgElm.text('Settings updated');
-            setTimeout(
-                function() {
-                    msgElm.text('');
-                },
-                5000
-            );
-        }
-        function successfulAddonUpdate() {
-            successMessage();
-            checkedOnLoad = $('#selectAddonsForm input:checked');
-            uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-            if($osf.isSafari()) {
-                        //Safari can't update jquery style change before reloading. So delay is applied here
-                        setTimeout(function(){window.location.reload();}, 100);
-            } else {
-                        window.location.reload();
-            }
-        }
-        function failedAddonUpdate() {
-            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-            bootbox.alert({
-                title: 'Request failed',
-                message: msg,
-                buttons: {
-                    ok: {
-                        label: 'Close',
-                        className: 'btn-default'
-                    }
-                }
-            });
-        }
-        // some addons disabled (unchecked warning adopted from profile-settings-addons-page.js)
-        if(unchecked.length > 0) {
-            var uncheckedText = $.map(unchecked, function(el){
-                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
-            }).join('');
-            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
-            bootbox.confirm({
-                title: 'Are you sure you want to remove the add-ons you have deselected? ',
-                message: uncheckedText,
-                callback: function(result) {
-                    if (result) {
-                        var request = submit();
-                        request.done(successfulAddonUpdate);
-                        request.fail(failedAddonUpdate);
-                    } else{
-                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
-                    }
-                },
-                buttons: {
-                    confirm: {
-                        label: 'Remove',
-                        className: 'btn-danger'
-                    }
-                }
-            });
-        }
-        //no addons disabled but some addons enabled
-        else if(checked.length>0) {
-            var request = submit();
-            request.done(successfulAddonUpdate);
-            request.fail(failedAddonUpdate);
-        }
-        // no changes to the state of the addons
-        else {
-            successMessage();
-        }
-
-        return false;
-
-    });
-
-    /* Before closing the page, Check whether the newly checked addon are updated or not */
-    $(window).on('beforeunload',function() {
-      //new checked items but not updated
-      var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
-      //new unchecked items but not updated
-      var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
-
-      if(unchecked.length > 0 || checked.length > 0) {
-          return 'The changes on addon setting are not submitted!';
-      }
-
-        if (projectSettingsVM) {
-            /* Before closing the page, check whether changes made to category, title or
-               description are updated or not */
-            if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
-                projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
-                projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
-                return 'There are unsaved changes in your project settings.';
-            }
-        }
-    });
-
-    // Show capabilities modal on selecting an addon; unselect if user
-    // rejects terms
-    $('.addon-select').on('change', function() {
-        var that = this,
-            $that = $(that);
-        if ($that.is(':checked')) {
-            var name = $that.attr('name');
-            var capabilities = $('#capabilities-' + name).html();
-            if (capabilities) {
-                bootbox.confirm({
-                    message: capabilities,
-                    callback: function(result) {
-                        if (!result) {
-                            $(that).attr('checked', false);
-                        } else {
-                            $('#selectAddonsForm').submit();
-                        }
-                    },
-                    buttons:{
-                        confirm:{
-                            label:'Confirm'
-                        }
-                    }
-               });
-            } else {
-                $('#selectAddonsForm').submit();
-            }
-        } else {
-            $('#selectAddonsForm').submit();
-        }
-    });
 });
+
+
+var subscribeViewModel = function(viewModel, options) {
+    /**
+     * @param {Object} options: Options including `messageObservable`, `name` (the name of the setting),
+     *                          `updateUrl` (endpoint used to make the update request), and `objectToUpdate`
+     **/
+    viewModel.enabled.subscribe(function(newValue) {
+        var self = this;
+        var payload = {};
+        payload[options.objectToUpdate] = newValue;
+        $osf.postJSON(ctx.node.urls.api + options.updateUrl, payload
+        ).done(function(response) {
+            if (newValue) {
+                viewModel[options.messageObservable](options.name + ' enabled');
+            }
+            else {
+                viewModel[options.messageObservable](options.name + ' disabled');
+            }
+            //Give user time to see message before reload.
+            setTimeout(function(){window.location.reload();}, 1500);
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to update settings');
+            Raven.captureMessage('Could not update settings.', {
+                extra: {
+                    url: ctx.node.urls.api + options.updateUrl, status: status, error: error
+                }
+            });
+            setTimeout(function(){window.location.reload();}, 1500);
+        });
+        return true;
+    }, viewModel);
+};
+
 
 var WikiSettingsViewModel = {
     enabled: ko.observable(ctx.wiki.isEnabled), // <- this would get set in the mako template, as usual
     wikiMessage: ko.observable('')
 };
 
-WikiSettingsViewModel.enabled.subscribe(function(newValue) {
-    var self = this;
-    $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
-    ).done(function(response) {
-        if (newValue) {
-            self.wikiMessage('Wiki Enabled');
-        }
-        else {
-            self.wikiMessage('Wiki Disabled');
-        }
-        //Give user time to see message before reload.
-        setTimeout(function(){window.location.reload();}, 1500);
-    }).fail(function(xhr, status, error) {
-        $osf.growl('Error', 'Unable to update wiki');
-        Raven.captureMessage('Could not update wiki.', {
-            extra: {
-                url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
-            }
-        });
-        setTimeout(function(){window.location.reload();}, 1500);
-    });
-    return true;
-}, WikiSettingsViewModel);
+subscribeViewModel(WikiSettingsViewModel, {
+    messageObservable: 'wikiMessage',
+    name: 'Wiki',
+    updateUrl: 'settings/addons/',
+    objectToUpdate:'wiki'
+});
 
 if ($('#selectWikiForm').length) {
     $osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
+}
+
+var RequestAccessSettingsViewModel = {
+    enabled: ko.observable(ctx.node.requestProjectAccessEnabled), // <- this would get set in the mako template, as usual
+    requestAccessMessage: ko.observable('')
+};
+
+subscribeViewModel(RequestAccessSettingsViewModel, {
+    messageObservable: 'requestAccessMessage',
+    name: 'Request access',
+    updateUrl: 'settings/requests/',
+    objectToUpdate: 'accessRequestsEnabled'
+});
+
+if ($('#enableRequestAccessForm').length) {
+    $osf.applyBindings(RequestAccessSettingsViewModel, '#enableRequestAccessForm');
 }

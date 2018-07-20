@@ -21,3 +21,9 @@ class MetaSchemaSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'metaschemas'
+
+
+class RegistrationMetaSchemaSerializer(MetaSchemaSerializer):
+
+    class Meta:
+        type_ = 'registration_metaschemas'

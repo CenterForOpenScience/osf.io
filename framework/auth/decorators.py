@@ -11,6 +11,7 @@ from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from .core import Auth
+from website import settings
 
 
 # TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch
@@ -23,7 +24,10 @@ def block_bing_preview(func):
     def wrapped(*args, **kwargs):
         user_agent = request.headers.get('User-Agent')
         if user_agent and ('BingPreview' in user_agent or 'MSIE 9.0' in user_agent):
-            return HTTPError(httplib.FORBIDDEN, data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: support@osf.io">support@osf.io</a>.'})
+            return HTTPError(
+                httplib.FORBIDDEN,
+                data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: ' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'}
+            )
         return func(*args, **kwargs)
 
     return wrapped
@@ -76,7 +80,8 @@ def must_be_logged_in(func):
 
     return wrapped
 
-
+# TODO Can remove after Waterbutler is sending requests to V2 endpoints.
+# This decorator has been adapted for use in an APIv2 parser - HMACSignedParser
 def must_be_signed(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

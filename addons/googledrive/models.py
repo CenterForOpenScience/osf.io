@@ -35,7 +35,12 @@ class GoogleDriveFolder(GoogleDriveFileNode, Folder):
 
 
 class GoogleDriveFile(GoogleDriveFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'md5': self._history[-1]['extra']['hashes']['md5']}
+        except (IndexError, KeyError):
+            return None
 
 
 class GoogleDriveProvider(ExternalProvider):
@@ -74,14 +79,14 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = GoogleDriveSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     serializer = GoogleDriveSerializer
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -231,7 +236,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     def fetch_access_token(self):
         return self.api.fetch_access_token()
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True, save=True)
 
     def on_delete(self):

@@ -1,0 +1,288 @@
+{
+  "name": "RIDIE Registration - Study Complete",
+  "active": false,
+  "config": {
+    "hasFiles": true,
+    "requiresApproval": false,
+    "requiresConsent": false
+  },
+  "version": 2,
+  "description": "",
+  "pages": [
+    {
+      "id": "page1",
+      "title": "Completion",
+      "questions": [
+        {
+          "qid": "q1",
+          "nav": "StudyID",
+          "type": "string",
+          "format": "text",
+          "title": "StudyID",
+          "description": "ID assigned to original registration on RIDIE site",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q2",
+          "nav": "Intervention Completion Date",
+          "type": "string",
+          "format": "text",
+          "title": "Intervention Completion Date",
+          "description": "When was the intervention or program completed? If this is an ongoing program, leave the date blank.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q3",
+          "nav": "Data Collection Completion Date",
+          "type": "string",
+          "format": "text",
+          "title": "Data Collection Completion Date",
+          "description": "When was data collection on outcomes completed?",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q4",
+          "nav": "Unit of Analysis ",
+          "type": "string",
+          "format": "text",
+          "title": "Unit of Analysis ",
+          "description": "What was the main unit of analysis for the evaluation?",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q5",
+          "nav": "Clusters in Final Sample",
+          "type": "string",
+          "format": "text",
+          "title": "Clusters in Final Sample",
+          "description": "If the intervention involved clusters or groups as the unit of randomization or program assignment, please indicate the final number of clusters or groups in the sample used in the analysis. Be sure to indicate the units, e.g. 200 Schools",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q6",
+          "nav": "Total Observations in Final Sample",
+          "type": "string",
+          "format": "text",
+          "title": "Total Observations in Final Sample",
+          "description": "For estimating primary program impacts, what was the total number of individual observations used in the analysis (including program recipients and controls or comparisons)? Be sure to indicate the units, e.g. 10,000 pupils.",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q7",
+          "nav": "Size of Treatment, Control, or Comparison Subsamples",
+          "type": "string",
+          "format": "text",
+          "title": "Size of Treatment, Control, or Comparison Subsamples",
+          "description": "What is the size of each treatment and control or comparison subsample in the main analysis? (If the analysis is at the cluster or group level, please give the number of groups, not individuals, in each subsample.) e.g. 50 schools control, 50 schools teacher training, 50 schools scholarship 50 schools both treatment",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q8",
+          "nav": "Preliminary Report",
+          "type": "choose",
+          "format": "singleselect",
+          "title": "Preliminary Report",
+          "description": "Is there a report on the results?",
+          "options": ["Yes", "No"],
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q9",
+          "nav": "Preliminary Report URL",
+          "type": "string",
+          "format": "text",
+          "title": "Preliminary Report URL",
+          "description": "Provide a link to the report if available.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q10",
+          "nav": "Summary of Findings",
+          "type": "string",
+          "format": "textarea",
+          "title": "Summary of Findings",
+          "description": "Summarize your results. (Copy and paste a report abstract or executive summary as appropriate. Highlight the results for the key outcomes and hypotheses you outlined when registering.)",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q11",
+          "nav": "Paper",
+          "type": "choose",
+          "format": "singleselect",
+          "title": "Paper",
+          "description": "Are there any published studies based on this evaluation?",
+          "options": ["Yes", "No"],
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q12",
+          "nav": "Paper Summary",
+          "type": "string",
+          "format": "textarea",
+          "title": "Paper Summary",
+          "description": "Provide titles and brief summaries of the studies.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q13",
+          "nav": "Paper Citation",
+          "type": "string",
+          "format": "textarea",
+          "title": "Paper Citation",
+          "description": "Enter the citations.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q14",
+          "nav": "Data Availability (Primary Data)",
+          "type": "choose",
+          "format": "singleselect",
+          "title": "Data Availability (Primary Data)",
+          "description": "Is the data set you used available for other researchers (whether access is free or restricted), or will it be in the future?",
+          "options":[
+            "Yes--Available now",
+            "Yes--Available in the future",
+            "No--Data not expected to be available"
+          ],
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q15",
+          "nav": "Date of Data Availability",
+          "type": "string",
+          "format": "text",
+          "title": "Date of Data Availability",
+          "description": "When will the data be available?",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q16",
+          "nav": "Data URL or Contact",
+          "type": "string",
+          "format": "text",
+          "title": "Data URL or Contact",
+          "description": "Enter a link to the data set, if available, or the name and email of a contact person for access.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q17",
+          "nav": "Access procedure",
+          "type": "string",
+          "format": "text",
+          "title": "Access procedure",
+          "description": "If the data are or will be available only on a restricted basis, please describe the procedure to apply for the data.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q18",
+          "nav": "Survey ",
+          "type": "choose",
+          "format": "singleselect",
+          "title": "Survey ",
+          "description": "Can you share the survey questionnaire(s) you used (if not previously made publicly available)?",
+          "options": [
+            "Yes", "No"
+          ],
+          "help": "",
+          "required": false
+        },{
+          "qid": "q19",
+          "nav": "Survey Instrument Links or Contact",
+          "type": "string",
+          "format": "text",
+          "title": "Survey Instrument Links or Contact",
+          "description": "Provide the link to the survey instrument(s) or describe how to obtain them.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q20",
+          "nav": "Program Files",
+          "type": "choose",
+          "format": "singleselect",
+          "title": "Program Files",
+          "description": "Are program files (e.g., Stata .do files) available for public distribution? ",
+          "options": ["Yes", "No"],
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q21",
+          "nav": "Program Files Links or Contact",
+          "type": "string",
+          "format": "text",
+          "title": "Program Files Links or Contact",
+          "description": "If yes, please provide a link to the files or the name and email of a contact person for access.",
+          "help": "",
+          "required": false
+        },{
+          "qid": "q22",
+          "nav": "External Link",
+          "type": "string",
+          "format": "text",
+          "title": "External Link",
+          "description": "Please provide links to any other related websites, documents, etc.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q23",
+          "nav": "External Link Description",
+          "type": "string",
+          "format": "textarea",
+          "title": "External Link Description",
+          "description": "Describe the above links.",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q24",
+          "nav": "Description of Changes",
+          "type": "string",
+          "format": "textarea",
+          "title": "Description of Changes",
+          "description": "Please add any comments you would like to make on changes in this project between the initial registration and the reporting of the results (e.g., changes in evaluation method, sample size, hypotheses, etc.).",
+          "help": "",
+          "required": false
+        },
+        {
+          "qid": "q25",
+          "nav": "Date",
+          "type": "string",
+          "format": "text",
+          "title": "Date",
+          "description": "When was the study stopped?",
+          "help": "",
+          "required": true
+        },
+        {
+          "qid": "q26",
+          "nav": "Reason",
+          "type": "string",
+          "format": "textarea",
+          "title": "Reason",
+          "description": "Why was the study stopped?",
+          "help": "",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

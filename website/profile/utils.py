@@ -2,20 +2,19 @@
 from framework import auth
 
 from website import settings
-from website.filters import gravatar
 from osf.models import Contributor
+from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
-from website.util.permissions import reduce_permissions
+from osf.utils.permissions import reduce_permissions
+
+from osf.utils import workflows
 
 
-def get_gravatar(user, size=None):
-    if size is None:
-        size = settings.PROFILE_IMAGE_LARGE
-    return gravatar(
-        user, use_ssl=True,
-        size=size
-    )
-
+def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
+    return profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                             user,
+                             use_ssl=True,
+                             size=size)
 
 def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
@@ -24,7 +23,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
     :param User user: A User object
     :param bool full: Include complete user properties
     """
-    from website.project.utils import PROJECT_QUERY
     contrib = None
     if isinstance(user, Contributor):
         contrib = user
@@ -36,10 +34,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'surname': user.family_name,
         'fullname': fullname,
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
-        'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.PROFILE_IMAGE_MEDIUM
-        ),
+        'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'active': user.is_active,
     }
     if node is not None:
@@ -93,15 +88,12 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
         ret.update({
             'activity_points': user.get_activity_points(),
-            'gravatar_url': gravatar(
-                user, use_ssl=True,
-                size=settings.PROFILE_IMAGE_LARGE
-            ),
+            'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })
         if include_node_counts:
-            projects = user.nodes.filter(PROJECT_QUERY).get_roots()
+            projects = user.nodes.exclude(is_deleted=True).filter(type='osf.node').get_roots()
             ret.update({
                 'number_projects': projects.count(),
                 'number_public_projects': projects.filter(is_public=True).count(),
@@ -156,10 +148,7 @@ def add_contributor_json(user, current_user=None, node=None):
         'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
         'active': user.is_active,
-        'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.PROFILE_IMAGE_MEDIUM
-        ),
+        'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'profile_url': user.profile_url
     }
 
@@ -180,8 +169,10 @@ def serialize_unregistered(fullname, email):
             'id': None,
             'registered': False,
             'active': False,
-            'gravatar': gravatar(email, use_ssl=True,
-                                 size=settings.PROFILE_IMAGE_MEDIUM),
+            'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                   email,
+                                                   use_ssl=True,
+                                                   size=settings.PROFILE_IMAGE_MEDIUM),
             'email': email,
         }
     else:
@@ -189,3 +180,17 @@ def serialize_unregistered(fullname, email):
         serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
+
+
+def serialize_access_requests(node):
+    """Serialize access requests for a node"""
+    return [
+        {
+            'user': serialize_user(access_request.creator),
+            'comment': access_request.comment,
+            'id': access_request._id
+        } for access_request in node.requests.filter(
+            request_type=workflows.RequestTypes.ACCESS.value,
+            machine_state=workflows.DefaultStates.PENDING.value
+        ).select_related('creator')
+    ]

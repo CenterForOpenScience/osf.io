@@ -9,7 +9,7 @@ import unittest
 import uuid
 
 import blinker
-import httpretty
+import responses
 import mock
 import pytest
 
@@ -18,6 +18,7 @@ from django.test import override_settings
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import handlers as celery_handlers
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from osf.models import MetaSchema
@@ -39,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return MetaSchema.find()[0]
+    return MetaSchema.objects.first()
 
 try:
     test_app = init_app(routes=True, set_backends=False)
@@ -47,6 +48,7 @@ except AssertionError:  # Routes have already been set up
     test_app = init_app(routes=False, set_backends=False)
 
 rm_handlers(test_app, django_handlers)
+rm_handlers(test_app, celery_handlers)
 
 test_app.testing = True
 
@@ -68,6 +70,8 @@ SILENT_LOGGERS = [
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -147,7 +151,7 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
         from website.search import elastic_search
@@ -155,7 +159,7 @@ class SearchTestCase(unittest.TestCase):
         elastic_search.create_index(settings.ELASTIC_INDEX)
 
         # NOTE: Super is called last to ensure the ES connection can be established before
-        #       the httpretty module patches the socket.
+        #       the responses module patches the socket.
         super(SearchTestCase, self).setUp()
 
     def tearDown(self):
@@ -165,42 +169,8 @@ class SearchTestCase(unittest.TestCase):
         elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
-methods = [
-    httpretty.GET,
-    httpretty.PUT,
-    httpretty.HEAD,
-    httpretty.POST,
-    httpretty.PATCH,
-    httpretty.DELETE,
-]
-def kill(*args, **kwargs):
-    logger.error('httppretty.kill: %s - %s', args, kwargs)
-    raise httpretty.errors.UnmockedError()
 
-
-class MockRequestTestCase(unittest.TestCase):
-
-    DISABLE_OUTGOING_CONNECTIONS = False
-
-    def setUp(self):
-        super(MockRequestTestCase, self).setUp()
-        if self.DISABLE_OUTGOING_CONNECTIONS:
-            httpretty.enable()
-            for method in methods:
-                httpretty.register_uri(
-                    method,
-                    re.compile(r'.*'),
-                    body=kill,
-                    priority=-1,
-                )
-
-    def tearDown(self):
-        super(MockRequestTestCase, self).tearDown()
-        httpretty.reset()
-        httpretty.disable()
-
-
-class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -208,7 +178,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -288,18 +258,14 @@ class ApiAddonTestCase(ApiTestCase):
 
     def tearDown(self):
         super(ApiAddonTestCase, self).tearDown()
-        self.user.remove()
-        self.node.remove()
-        if self.node_settings:
-            self.node_settings.remove()
-        if self.user_settings:
-            self.user_settings.remove()
+        self.user.delete()
+        self.node.delete()
         if self.account:
-            self.account.remove()
+            self.account.delete()
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')
-class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
 class NotificationTestCase(OsfTestCase):
@@ -329,11 +295,20 @@ class ApiWikiTestCase(ApiTestCase):
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        from addons.wiki.tests.factories import NodeWikiFactory
-        # API will only return current wiki pages
+        from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=node, user=user)
+            wiki_page = WikiFactory(node=node, user=user)
+            wiki_version = WikiVersionFactory(wiki_page=wiki_page)
+            return wiki_page
+
+    def _add_project_wiki_version(self, node, user):
+        from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+        # Mock out update_search. TODO: Remove when StoredFileNode is implemented
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=node, user=user)
+            wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user)
+            return wiki_version
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

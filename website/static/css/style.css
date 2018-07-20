@@ -39,11 +39,17 @@ a {
 /* Footer
 -------------------------------------------------- */
 .footer {
-    text-shadow: 0 1px 0 #fff;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    padding-top: 10px;
+    margin-top: 20px;
+    text-shadow: 0 1px 0 #FFF;
     width: 100%;
-    color: #555;
+    color: #515151;
+    text-align: center;
+    background-color: #efefef;
+}
+
+.footer a {
+    color: #2d6a9f;
 }
 
 
@@ -51,6 +57,44 @@ a {
     padding: 0;
     margin: 0;
     list-style-type: none;
+}
+
+/* Cookie Banner */
+#cookieBanner {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    margin-bottom: 0px;
+    left:0;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border: 0px;
+    display: none;
+    align-items: center;
+}
+
+#cookieText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+#cookieAccept {
+   margin-right: 10%
+}
+
+#cookieBanner a {
+    color: white;
+    text-decoration: underline;
+}
+
+#cookieBanner a:hover {
+    color: #ADCCE6;
+}
+
+#cookieBanner a:visited {
+    color: #ADCCE6;
 }
 
 /* Footer slide-in */
@@ -191,21 +235,9 @@ a {
 
 /* Allow search-bar and nav-bar to support mutiple size of screen */
 @media (max-width: 767px) {
-    .navbar .search-query {
-        width: 100%;
-    }
-    .navbar-nav .open .dropdown-menu>li>a {
-        color: #FFF;
-    }
-
     #searchControls > .osf-search {
         z-index: 99;
     }
-    .osf-xs-search {
-        text-decoration: none !important;
-        padding: 14px;
-    }
-
     .navbar-brand {
         margin-left: 0 !important;
         height: 48px !important;
@@ -215,11 +247,6 @@ a {
     .osf-navbar-logo {
         margin-top: 0px !important;
     }
-
-    .name-div {
-        font-size: 20px;
-    }
-
     .sign-in .btn-group {
         width: 90%;
         padding-left: 5%;
@@ -231,13 +258,6 @@ a {
 }
 
 @media (min-width: 768px) {
-    .osf-navbar .navbar-nav>li>a {
-        padding-left: 7px;
-        padding-right: 7px;
-    }
-    .navbar .search-query {
-        width: 190px;
-    }
     .navbar-brand {
         margin-left: 0 !important;
         padding-left: 0;
@@ -245,24 +265,9 @@ a {
 }
 
 @media (min-width: 992px) {
-    .osf-navbar .navbar-nav>li>a {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-    .navbar .search-query {
-        width: 360px;
-    }
-
 }
-@media (min-width: 1200px) {
-    .osf-navbar .navbar-nav>li>a {
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-    .navbar .search-query {
-        width: 270px;
-    }
 
+@media (min-width: 1200px) {
 }
 
 @media (max-width: 991px) {
@@ -293,7 +298,7 @@ a {
     text-align: center;
 }
 
-.osf-gravatar>img {
+.osf-profile-image>img {
     border: 1px solid #CDCDCD;
     border-radius: 13px;
     margin-right: 5px;
@@ -409,18 +414,14 @@ a {
     padding: 5px;
     color: #3C763D;
 }
+
 .alert-notify-danger {
     padding: 5px;
     color: #A94442;
 }
 
-.table-less {
-    max-height: 140px;
-    overflow-y: hidden;
-}
 .table-hover {
     word-break: break-all;
-
 }
 
 .keep-all {
@@ -633,13 +634,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 12px;
-    padding-bottom: 11px;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
@@ -650,16 +644,6 @@ button.close {
 .btn-success-high-contrast {
     background-color: #52A452;
     border-color: #54AC54;
-}
-
-
-/* Trying out to move to osf-style */
-.comma-separated:after {
-    content: ", ";
-}
-
-.comma-separated:last-of-type:after {
-    content: "";
 }
 
 .action-buttons {
@@ -688,8 +672,13 @@ button.close {
     margin-right: 15px;
 }
 
-div.ball-scale-blue>div {
+div.ball-scale-blue>div, span.ball-scale-blue>div {
     background-color: #BED1E2;
+}
+
+span.ball-pulse-small>div {
+    height: 8px;
+    width: 8px;
 }
 
 /* Make registrations modal scrollable and background hidden
@@ -701,6 +690,12 @@ div.ball-scale-blue>div {
 
 .modal-scrollable {
     overflow: scroll;
+}
+
+/* Add Links Modal
+----------------------- */
+.node-dates {
+    white-space: pre;
 }
 
 /* Password strength check component colors for darker backgrounds  */
@@ -723,23 +718,176 @@ div.ball-scale-blue>div {
     margin-bottom: 0;
 }
 
-/* To be added to osf-style: project overview -> componentQuickActions menu */
-#componentQuickActions ul.dropdown-menu > li > a:hover,
-#componentQuickActions ul.dropdown-menu > li > a:focus {
+/* To be added to osf-style: generic dropdown-menu */
+
+.generic-dropdown .dropdown-menu {
+    /* Prevents dropdowns from obscuring navs and subnavs */
+    z-index: 98;
+}
+.generic-dropdown ul.dropdown-menu > li > a {
+    color: #000;
+}
+
+.generic-dropdown ul.dropdown-menu > li > a:hover,
+.generic-dropdown ul.dropdown-menu > li > a:focus {
     background-image: none;
     background-color: #D9D9D9;
 }
 
-#componentQuickActions button {
-  padding: 4px 12px;
-  line-height: 0;
+.generic-dropdown button.dropdown-toggle-sm {
+    padding: 4px 12px;
+    line-height: 0;
 }
 
-#componentQuickActions ul {
+.generic-dropdown ul {
     background-color: #EFEFEF;
     min-width: 180px;
 }
 
-#componentQuickActions a {
+.generic-dropdown a {
     color: #333;
+}
+
+.generic-dropdown li .disabled {
+    opacity: 0.65;
+}
+
+/* Table
+-----------------------*/
+table.add-links tr {
+    padding: 5px;
+  }
+
+table.add-links td {
+    padding: 10px;
+}
+
+table.add-links {
+    width: 100%;
+    margin:0;
+    padding:0;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.fa-fix-width {
+    width: 20px;
+}
+
+.fa-button {
+    padding: 5px;
+    margin-right: 5px;
+}
+
+@media screen and (max-width: 600px) {
+    table.add-links  {
+        border: 0;
+    }
+
+    table.add-links  tr {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 2px solid #ddd;
+    }
+
+    table.add-links  td {
+        display: block;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px dotted #ccc;
+    }
+
+    table.add-links  td:first-child {
+        border-top: 0;
+        text-align: left;
+    }
+
+    table.add-links  td:last-child {
+        border-bottom: 0;
+    }
+
+    table.add-links  td:before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+    }
+}
+
+.generic-dropdown.dropdown.pull-right .fa {
+    padding-right: 0px;
+}
+
+.generic-dropdown .fa {
+    padding-right: 7px;
+    width: 20px;
+}
+
+.generic-dropdown i.fa.fa-sort {
+    padding-left: 20px;
+}
+
+.category-list button {
+    padding: 5px 6px;
+}
+
+.category-list ul.dropdown-menu > li > a {
+    line-height: 1.65;
+    padding-left: 8px;
+}
+
+/* Remove gutters between bootstrap cols */
+.row.no-gutters {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.row.no-gutters > [class^="col-"],
+.row.no-gutters > [class*=" col-"] {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+/* counter */
+.counter-comment {
+    margin-top: -20px;
+    margin-right: 5px;
+}
+
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
+}
+
+/* Collection list */
+
+.collections-container {
+    margin-bottom: 20px;
+}
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
+
+/* Override jumbotron to be a bit smaller.
+   Used for the updated terms of service banner on all pages. */
+.jumbotron {
+    padding: 10px 40px 10px 40px;
+    margin-bottom: 0;
+}
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
 }

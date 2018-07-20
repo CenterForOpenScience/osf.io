@@ -8,7 +8,6 @@ require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
@@ -17,6 +16,7 @@ var Cookie = require('js-cookie');
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
+var AlertManager = require('js/alertsManager');
 var Raven = require('raven-js');
 var moment = require('moment');
 var KeenTracker = require('js/keen');
@@ -38,6 +38,24 @@ if (String.prototype.endsWith === undefined) {
 // $osf.applyBindings({}, '#navbarScope');
 
 $('[rel="tooltip"]').tooltip();
+
+// Cookie banner notice for logged out users
+var cookieBannerSelector = '#cookieBanner';
+var CookieBannerViewModel = function(){
+    var self = this;
+    self.elem = $(cookieBannerSelector);
+    var cookieConsentKey = 'osf_cookieconsent';
+
+    self.accept = function() {
+        Cookie.set(cookieConsentKey, '1', { expires: 30, path: '/'});
+    };
+
+    var accepted = Cookie.get(cookieConsentKey) === '1';
+    if (!accepted) {
+        self.elem.css({'display': 'flex'});
+        self.elem.show();
+    }
+};
 
 // If there isn't a user logged in, show the footer slide-in
 var sliderSelector = '#footerSlideIn';
@@ -119,10 +137,10 @@ function confirmEmails(emailsToAdd) {
         }
 
         var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         bootbox.dialog({
             title: title,
@@ -206,6 +224,10 @@ $(function() {
         $osf.applyBindings(new SlideInViewModel(), sliderSelector);
     }
 
+    if ($(cookieBannerSelector).length) {
+        $osf.applyBindings(new CookieBannerViewModel(), cookieBannerSelector);
+    }
+
     var affix = $('.osf-affix');
     if(affix.length){
         $osf.initializeResponsiveAffix();
@@ -214,6 +236,15 @@ $(function() {
     if (__ENABLE_DEV_MODE_CONTROLS) {
         new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
     }
+
+    var alertsSelector = '.dismissible-alerts';
+    if ($(alertsSelector).length > 0 && window.contextVars.currentUser) {
+        for (var i = 0; i < $(alertsSelector).length; i++) {
+            var selectorId = '#' + $(alertsSelector)[i].id;
+            new AlertManager(selectorId);
+        }
+    }
+
     if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
         if (!(/PhantomJS/.test(navigator.userAgent))){

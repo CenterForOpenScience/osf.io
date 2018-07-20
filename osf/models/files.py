@@ -5,6 +5,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
+from django.apps import apps
 from django.db import models
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
@@ -20,9 +21,10 @@ from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url, waterbutler_api_url_for
+from website.util import api_v2_url
 
 __all__ = (
     'File',
@@ -81,7 +83,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
-    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True, on_delete=models.CASCADE)
     # The last time the touch method was called on this FileNode
     last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
@@ -91,9 +93,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
-    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
-    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
+    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
@@ -103,7 +105,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
@@ -146,6 +148,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         Implemented here so that subclasses may override it or path.
         See OsfStorage or PathFollowingNode.
         """
+        # Files are inaccessible if a node is retracted, so just show
+        # the retraction detail page for files on retractions
+        if self.node.is_registration and self.node.is_retracted:
+            return self.node.web_url_for('view_project')
         return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     @property
@@ -209,8 +215,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return guids
 
-    def to_storage(self):
-        storage = super(BaseFileNode, self).to_storage()
+    def has_permission(self, user, perm):
+        return self.node and self.node.has_permission(user, perm)
+
+    def to_storage(self, **kwargs):
+        storage = super(BaseFileNode, self).to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
             for key in tuple(storage.keys()):
                 if 'deleted' in key:
@@ -314,18 +323,25 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
-        Currently only useful for OsfStorage
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
         _, count = get_basic_counters(page)
 
         return count or 0
+
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
@@ -346,6 +362,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     # used by django and DRF
     def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    def get_absolute_info_url(self):
         return self.absolute_api_v2_url
 
     def _repoint_guids(self, updated):
@@ -381,6 +400,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 child.delete(user=user, save=save, deleted_on=deleted_on)
         else:
             self.recast(TrashedFile._typedmodels_type)
+
+            guid = self.guids.first()
+            if guid:
+                Comment = apps.get_model('osf.Comment')
+                Comment.objects.filter(root_target=guid).update(root_target=None)
 
         if save:
             self.save()
@@ -480,13 +504,34 @@ class File(models.Model):
             'checkout': self.checkout._id if self.checkout else None,
             'version': newest_version.identifier if newest_version else None,
             'contentType': newest_version.content_type if newest_version else None,
-            'modified': newest_version.date_modified.isoformat() if newest_version.date_modified else None,
-            'created': self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
+            'modified': newest_version.external_modified.isoformat() if newest_version.external_modified else None,
+            'created': self.versions.all().first().external_modified.isoformat() if self.versions.all().first().external_modified else None,
         })
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
 
+    @property
+    def last_known_metadata(self):
+        try:
+            last_history = self._history[-1]
+        except IndexError:
+            size = None
+        else:
+            size = last_history.get('size', None)
+        return {
+            'path': self._materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.last_touched
+        }
+
+    @property
+    def _hashes(self):
+        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        Returns dict or None
+        """
+        return None
 
 class Folder(models.Model):
 
@@ -570,7 +615,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save()
+            self.save(update_modified=False)
 
         return self
 
@@ -580,6 +625,30 @@ class TrashedFile(TrashedFileNode):
     def kind(self):
         return 'file'
 
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
 
 class TrashedFolder(TrashedFileNode):
     @property
@@ -612,28 +681,38 @@ class TrashedFolder(TrashedFileNode):
         return tf
 
 
+class FileVersionUserMetadata(BaseModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    file_version = models.ForeignKey('FileVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'file_version')
+
+
 class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
     """
+    # Note on fields:
+    # `created`: Date version record was created. This is the date displayed to the user.
+    # `modified`: Date this object was last modified. Distinct from the date the file associated
+    #       with this object was last modified
+    # `external_modified`: Date file modified on third-party backend. Not displayed to user, since
+    #       this date may be earlier than the date of upload if the file already
+    #       exists on the backend
 
-    creator = models.ForeignKey('OSFUser', null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
-
-    # Date version record was created. This is the date displayed to the user.
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
-    # Date file modified on third-party backend. Not displayed to user, since
-    # this date may be earlier than the date of upload if the file already
-    # exists on the backend
-    date_modified = NonNaiveDateTimeField(null=True, blank=True)
+    external_modified = NonNaiveDateTimeField(null=True, blank=True)
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
 
     includable_objects = IncludeManager()
 
@@ -655,7 +734,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
+            self.external_modified = parse_date(self.metadata['modified'], ignoretz=False)
 
         if save:
             self.save()
@@ -691,4 +770,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        ordering = ('-date_created',)
+        ordering = ('-created',)

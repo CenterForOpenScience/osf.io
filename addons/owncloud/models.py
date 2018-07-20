@@ -25,7 +25,10 @@ class OwncloudFolder(OwncloudFileNode, Folder):
 
 
 class OwncloudFile(OwncloudFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        # ownCloud API doesn't provide this metadata
+        return None
 
 
 class OwnCloudProvider(BasicAuthProviderMixin):
@@ -56,12 +59,12 @@ class UserSettings(BaseOAuthUserSettings):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = OwnCloudProvider
     serializer = OwnCloudSerializer
 
     folder_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -129,7 +132,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'folder': self.folder_id,
-                'path': metadata['materialized'].strip('/'),
+                'path': metadata['materialized'].lstrip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'
@@ -137,7 +140,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

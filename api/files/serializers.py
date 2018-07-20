@@ -23,7 +23,7 @@ from api.base.serializers import (
     RelationshipField,
     TypeField,
     WaterbutlerLink,
-    DateByVersion,
+    VersionedDateTimeField,
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
@@ -85,7 +85,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         ])
 
     def get_queryset(self):
-        return OSFUser.objects.filter(guids___id=self.context['request'].user._id)
+        return OSFUser.objects.filter(guids___id=self.context['request'].user._id, guids___id__isnull=False)
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
@@ -156,7 +156,7 @@ class BaseFileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
         read_only=True, help_text='The Unix-style path of this object relative to the provider root')
-    last_touched = DateByVersion(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
@@ -186,9 +186,13 @@ class BaseFileSerializer(JSONAPISerializer):
         'move': WaterbutlerLink(),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
-        'download': WaterbutlerLink(must_be_file=True),
+        'download': 'get_download_link',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def get_download_link(self, obj):
+        if obj.is_file:
+            return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
 
     class Meta:
         type_ = 'files'
@@ -203,10 +207,10 @@ class BaseFileSerializer(JSONAPISerializer):
         mod_dt = None
         if obj.provider == 'osfstorage' and obj.versions.exists():
             # Each time an osfstorage file is added or uploaded, a new version object is created with its
-            # date_created equal to the time of the update.  The date_modified is the modified date
+            # date_created equal to the time of the update.  The external_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
-            # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions.first().date_created
+            # so prefer to use the created of the latest version.
+            mod_dt = obj.versions.first().created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
@@ -218,7 +222,7 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_date_created(self, obj):
         creat_dt = None
         if obj.provider == 'osfstorage' and obj.versions.exists():
-            creat_dt = obj.versions.last().date_created
+            creat_dt = obj.versions.last().created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
@@ -355,10 +359,11 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
-    date_created = DateByVersion(read_only=True, help_text='The date that this version was created')
+    date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
-        'html': 'absolute_url'
+        'html': 'absolute_url',
+        'download': 'get_download_link',
     })
 
     class Meta:
@@ -372,7 +377,7 @@ class FileVersionSerializer(JSONAPISerializer):
         })
 
     def absolute_url(self, obj):
-        fobj = self.context['view'].get_file()
+        fobj = self.context['file']
         return furl.furl(settings.DOMAIN).set(
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
@@ -380,3 +385,25 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.self_url(obj)
+
+    def get_download_link(self, obj):
+        return get_file_download_link(
+            self.context['file'], version=obj.identifier,
+            view_only=self.context['request'].query_params.get('view_only')
+        )
+
+
+def get_file_download_link(obj, version=None, view_only=None):
+    guid = obj.get_guid()
+    # Add '' to the path to ensure thare's a trailing slash
+    # The trailing slash avoids a 301
+    url = furl.furl(settings.DOMAIN).set(
+        path=('download', guid._id if guid else obj._id, ''),
+    )
+
+    if version:
+        url.args[obj.version_identifier] = version
+
+    if view_only:
+        url.args['view_only'] = view_only
+    return url.url

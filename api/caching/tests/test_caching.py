@@ -11,7 +11,7 @@ from django.conf import settings as django_settings
 from requests.auth import HTTPBasicAuth
 
 from osf.models import OSFUser
-from tests.factories import create_fake_project
+from scripts.create_fakes import create_fake_project
 from tests.base import DbTestCase
 
 

@@ -19,16 +19,16 @@ class TestMetaData(OsfTestCase):
     def test_ensure_schemas(self):
 
         # Should be zero MetaSchema records to begin with
-        MetaSchema.remove()
+        MetaSchema.objects.all().delete()
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             0
         )
 
         ensure_schemas()
 
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             len(OSF_META_SCHEMAS)
         )
 

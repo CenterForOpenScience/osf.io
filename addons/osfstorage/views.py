@@ -17,6 +17,7 @@ from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
+from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
@@ -43,13 +44,49 @@ def make_error(code, message_short=None, message_long=None):
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
 def osfstorage_update_metadata(node_addon, payload, **kwargs):
+    """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
+
+    The basic metadata response looks like::
+
+        {
+            "metadata": {
+                # file upload
+                "name": "file.name",
+                "md5": "d41d8cd98f00b204e9800998ecf8427e",
+                "path": "...",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "version": "2",
+                "downloads": "1",
+                "checkout": "...",
+                "latestVersionSeen": {"userId": "abc12", "seen": true},
+                "modified": "a date",
+                "modified_utc": "a date in utc",
+
+                # glacier vault (optional)
+                "archive": "glacier_key",
+                "vault": "glacier_vault_name",
+
+                # parity files
+                "parity": {
+                    "redundancy": "5",
+                    "files": [
+                        {"name": "foo.txt.par2","sha256": "abc123"},
+                        {"name": "foo.txt.vol00+01.par2","sha256": "xyz321"},
+                    ]
+                }
+            },
+        }
+    """
     try:
         version_id = payload['version']
         metadata = payload['metadata']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version = FileVersion.load(version_id)
+    if check_select_for_update():
+        version = FileVersion.objects.filter(_id=version_id).select_for_update().first()
+    else:
+        version = FileVersion.objects.filter(_id=version_id).first()
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND)
@@ -69,7 +106,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
     counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-date_created')
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
@@ -129,6 +166,9 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
+    user_id = request.args.get('user_id')
+    user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
+    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''
@@ -143,11 +183,12 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
                         , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
-                        , 'modified', LATEST_VERSION.date_created
-                        , 'created', EARLIEST_VERSION.date_created
+                        , 'modified', LATEST_VERSION.created
+                        , 'created', EARLIEST_VERSION.created
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
+                        , 'latestVersionSeen', SEEN_LATEST_VERSION.case
                     )
                 ELSE
                     json_build_object(
@@ -163,14 +204,14 @@ def osfstorage_get_children(file_node, **kwargs):
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created DESC
+                ORDER BY created DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created ASC
+                ORDER BY created ASC
                 LIMIT 1
             ) EARLIEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
@@ -184,10 +225,45 @@ def osfstorage_get_children(file_node, **kwargs):
                 WHERE P._id = 'download:' || %s || ':' || F._id
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
+            LEFT JOIN LATERAL (
+              SELECT EXISTS(
+                SELECT (1) FROM osf_fileversionusermetadata
+                  INNER JOIN osf_fileversion ON osf_fileversionusermetadata.file_version_id = osf_fileversion.id
+                  INNER JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                  WHERE osf_fileversionusermetadata.user_id = %s
+                  AND osf_basefilenode_versions.basefilenode_id = F.id
+                LIMIT 1
+              )
+            ) SEEN_FILE ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT CASE WHEN SEEN_FILE.exists
+                THEN
+                    CASE WHEN EXISTS(
+                      SELECT (1) FROM osf_fileversionusermetadata
+                      WHERE osf_fileversionusermetadata.file_version_id = LATEST_VERSION.fileversion_id
+                      AND osf_fileversionusermetadata.user_id = %s
+                      LIMIT 1
+                    )
+                    THEN
+                      json_build_object('user', %s, 'seen', TRUE)
+                    ELSE
+                      json_build_object('user', %s, 'seen', FALSE)
+                    END
+                ELSE
+                  NULL
+                END
+            ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
-
+        ''', [
+            user_content_type_id,
+            file_node.node._id,
+            user_pk,
+            user_pk,
+            user_id,
+            user_id,
+            file_node.id
+        ])
         return cursor.fetchone()[0] or []
 
 
@@ -305,10 +381,9 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-
+    # TODO: Update analytics in MFR callback when it is implemented
     if request.args.get('mode') not in ('render', ):
         utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
-
     return {
         'data': {
             'name': file_node.name,

@@ -39,7 +39,16 @@ def celery_teardown_request(error=None):
             group(queue()).apply_async()
         else:
             for task in queue():
-                task.apply()
+                task()
+
+
+def get_task_from_queue(name, predicate):
+    matches = [task for task in queue() if task.type.name == name and predicate(task)]
+    if len(matches) == 1:
+        return matches[0]
+    elif len(matches) > 1:
+        raise ValueError()
+    return False
 
 
 def enqueue_task(signature):

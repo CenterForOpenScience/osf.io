@@ -1,17 +1,14 @@
-from django.utils import timezone
 from django.db import models
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 
 from framework.utils import iso8601format
-from osf.utils.fields import NonNaiveDateTimeField
-from website.util import sanitize
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.utils.sanitize import unescape_entities
 
 
 class PrivateLink(ObjectIDMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(default=timezone.now)
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
@@ -35,9 +32,9 @@ class PrivateLink(ObjectIDMixin, BaseModel):
     def to_json(self):
         return {
             'id': self._id,
-            'date_created': iso8601format(self.date_created),
+            'date_created': iso8601format(self.created),
             'key': self.key,
-            'name': sanitize.unescape_entities(self.name),
+            'name': unescape_entities(self.name),
             'creator': {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             'nodes': [{'title': x.title, 'url': x.url,
                        'scale': str(self.node_scale(x)) + 'px', 'category': x.category}

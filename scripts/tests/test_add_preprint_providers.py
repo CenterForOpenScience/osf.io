@@ -15,11 +15,11 @@ class TestAddPreprintProviders(OsfTestCase):
         taxonomy_main()
 
     def tearDown(self):
-        PreprintProvider.remove()
+        PreprintProvider.objects.all().delete()
 
     def test_add_prod_providers(self):
         populate_main('prod')
-        providers = PreprintProvider.find()
+        providers = PreprintProvider.objects.all()
         assert_equal(providers.count(), len(PROD_PREPRINT_PROVIDERS))
         ids = [provider._id for provider in providers]
         for id in PROD_PREPRINT_PROVIDERS:
@@ -29,7 +29,7 @@ class TestAddPreprintProviders(OsfTestCase):
 
     def test_add_default_providers(self):
         populate_main(None)
-        providers = PreprintProvider.find()
+        providers = PreprintProvider.objects.all()
         assert_equal(providers.count(), len(PROD_PREPRINT_PROVIDERS))
         ids = [provider._id for provider in providers]
         for id in PROD_PREPRINT_PROVIDERS:
@@ -39,8 +39,8 @@ class TestAddPreprintProviders(OsfTestCase):
 
     def test_add_staging_providers(self):
         populate_main('stage')
-        providers = PreprintProvider.find()
-        assert_equal(PreprintProvider.find().count(), len(STAGING_PREPRINT_PROVIDERS))
+        providers = PreprintProvider.objects.all()
+        assert_equal(PreprintProvider.objects.all().count(), len(STAGING_PREPRINT_PROVIDERS))
         ids = [provider._id for provider in providers]
         for id in STAGING_PREPRINT_PROVIDERS:
             assert_in(id, ids)

@@ -39,8 +39,7 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        OSFUser.remove()
-        OSFUser.remove()
+        OSFUser.objects.all().delete()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
@@ -123,7 +122,7 @@ class CitationsUserTestCase(OsfTestCase):
         referrer = UserFactory()
         project = NodeFactory(creator=referrer)
         user = UnregUserFactory()
-        user.add_unclaimed_record(node=project,
+        user.add_unclaimed_record(project,
             given_name=user.fullname, referrer=referrer,
             email=fake_email())
         user.save()
@@ -135,6 +134,21 @@ class CitationsUserTestCase(OsfTestCase):
             {
                 'given': given_name,
                 'family': family_name,
+            }
+        )
+
+    def test_disabled_user_csl(self):
+        # Tests the csl name for a disabled user
+        user = UserFactory()
+        project = NodeFactory(creator=user)
+        user.disable_account()
+        user.is_registered = False
+        user.save()
+        assert bool(
+            user.csl_name() ==
+            {
+                'given': user.csl_given_name,
+                'family': user.family_name,
             }
         )
 

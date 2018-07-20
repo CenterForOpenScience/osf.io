@@ -14,15 +14,18 @@ from website import (
     mails,
     settings
 )
-from website.util import sanitize
+from osf.utils.sanitize import unescape_entities
 
-def send_archiver_size_exceeded_mails(src, user, stat_result):
+
+def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
         user=user,
         src=src,
-        stat_result=stat_result
+        stat_result=stat_result,
+        can_change_preferences=False,
+        url=url,
     )
     mails.send_mail(
         to_addr=user.username,
@@ -34,13 +37,15 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
     )
 
 
-def send_archiver_copy_error_mails(src, user, results):
+def send_archiver_copy_error_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_COPY_ERROR_DESK,
         user=user,
         src=src,
         results=results,
+        url=url,
+        can_change_preferences=False,
     )
     mails.send_mail(
         to_addr=user.username,
@@ -52,13 +57,15 @@ def send_archiver_copy_error_mails(src, user, results):
         mimetype='html',
     )
 
-def send_archiver_file_not_found_mails(src, user, results):
+def send_archiver_file_not_found_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
+        can_change_preferences=False,
         user=user,
         src=src,
         results=results,
+        url=url,
     )
     mails.send_mail(
         to_addr=user.username,
@@ -70,13 +77,15 @@ def send_archiver_file_not_found_mails(src, user, results):
         mimetype='html',
     )
 
-def send_archiver_uncaught_error_mails(src, user, results):
+def send_archiver_uncaught_error_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
+        url=url,
     )
     mails.send_mail(
         to_addr=user.username,
@@ -90,16 +99,17 @@ def send_archiver_uncaught_error_mails(src, user, results):
 
 
 def handle_archive_fail(reason, src, dst, user, result):
+    url = settings.INTERNAL_DOMAIN + src._id
     if reason == ARCHIVER_NETWORK_ERROR:
-        send_archiver_copy_error_mails(src, user, result)
+        send_archiver_copy_error_mails(src, user, result, url)
     elif reason == ARCHIVER_SIZE_EXCEEDED:
-        send_archiver_size_exceeded_mails(src, user, result)
+        send_archiver_size_exceeded_mails(src, user, result, url)
     elif reason == ARCHIVER_FILE_NOT_FOUND:
-        send_archiver_file_not_found_mails(src, user, result)
+        send_archiver_file_not_found_mails(src, user, result, url)
     elif reason == ARCHIVER_FORCED_FAILURE:  # Forced failure using scripts.force_fail_registration
         pass
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
-        send_archiver_uncaught_error_mails(src, user, result)
+        send_archiver_uncaught_error_mails(src, user, result, url)
     dst.root.sanction.forcibly_reject()
     dst.root.sanction.save()
     dst.root.delete_registration_tree(save=True)
@@ -210,7 +220,7 @@ def get_file_map(node, file_map):
 def find_registration_file(value, node):
     from osf.models import AbstractNode
     orig_sha256 = value['sha256']
-    orig_name = sanitize.unescape_entities(
+    orig_name = unescape_entities(
         value['selectedFileName'],
         safe={
             '&lt;': '<',

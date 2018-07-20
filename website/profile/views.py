@@ -20,14 +20,17 @@ from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
+from framework.utils import throttle_period_expired
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website import language
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
-from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
@@ -142,6 +145,10 @@ def update_user(auth):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
+            except BlacklistedEmailError:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long=language.BLACKLISTED_EMAIL)
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -170,10 +177,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -211,6 +223,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
         raise HTTPError(http.GONE)
 
     if profile:
+        profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
@@ -219,6 +232,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
+                'has_quickfiles': profile_quickfilesnode.files.filter(type='osf.osfstoragefile').exists()
             },
         }
         return ret
@@ -238,6 +252,7 @@ def profile_view_id_json(uid, auth):
     return _profile_view(user, is_profile)
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_profile_page')
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -252,6 +267,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_page')
 def user_profile(auth, **kwargs):
     user = auth.user
     return {
@@ -282,14 +298,31 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
+    # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+    if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+        user.reset_old_password_invalid_attempts()
+
+    # There have been more than 3 failed attempts and throttle hasn't expired.
+    if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+        push_status_message(
+            message='Too many failed attempts. Please wait a while before attempting to change your password.',
+            kind='warning',
+            trust=False
+        )
+        return redirect(web_url_for('user_account'))
+
     try:
         user.change_password(old_password, new_password, confirm_password)
+        if user.verification_key_v2:
+            user.verification_key_v2['expires'] = timezone.now()
         user.save()
     except ChangePasswordError as error:
         for m in error.messages:
             push_status_message(m, kind='warning', trust=False)
     else:
         push_status_message('Password updated successfully.', kind='success', trust=False)
+
+    user.save()
 
     return redirect(web_url_for('user_account'))
 
@@ -736,9 +769,10 @@ def request_export(auth):
                               'error_type': 'throttle_error'})
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
@@ -756,11 +790,19 @@ def request_deactivation(auth):
                         })
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
+@must_be_logged_in
+def cancel_request_deactivation(auth):
+    user = auth.user
+    user.requested_deactivation = False
+    user.save()
+    return {'message': 'You have canceled your deactivation request'}

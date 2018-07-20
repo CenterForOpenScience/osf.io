@@ -1,7 +1,10 @@
+import time
 import collections
+from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, NotAuthenticated
 
+from framework.auth import signing
 from api.base.utils import is_bulk_request
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
@@ -12,12 +15,23 @@ NO_DATA_ERROR = 'Request must include /data.'
 NO_TYPE_ERROR = 'Request must include /type.'
 NO_ID_ERROR = 'Request must include /data/id.'
 
+
 class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.
     """
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
+
+    @staticmethod
+    def get_relationship(data, related_resource):
+        target_type = data.get('type')
+        if not target_type:
+            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
+                                   detail=NO_TYPE_ERROR)
+
+        id = data.get('id')
+        return {'id': id, 'target_type': target_type}
 
     # Overrides JSONParser
     def flatten_relationships(self, relationships):
@@ -38,12 +52,10 @@ class JSONAPIParser(JSONParser):
         if not data:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
 
-        target_type = data.get('type')
-        if not target_type:
-            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)}, detail=NO_TYPE_ERROR)
-
-        id = data.get('id')
-        return {'id': id, 'target_type': target_type}
+        if isinstance(data, list):
+            return [self.get_relationship(item, related_resource) for item in data]
+        else:
+            return self.get_relationship(data, related_resource)
 
     def flatten_data(self, resource_object, parser_context, is_list):
         """
@@ -53,6 +65,8 @@ class JSONAPIParser(JSONParser):
         relationships = resource_object.get('relationships')
         is_relationship = parser_context.get('is_relationship')
         attributes_required = parser_context.get('attributes_required', True)
+        # allow skip type check for legacy api version
+        legacy_type_allowed = parser_context.get('legacy_type_allowed', False)
         request_method = parser_context['request'].method
 
         # Request must include "relationships" or "attributes"
@@ -66,12 +80,16 @@ class JSONAPIParser(JSONParser):
         object_id = resource_object.get('id')
         object_type = resource_object.get('type')
 
+        type_required = not (
+            legacy_type_allowed and parser_context['request'].version < 2.7 and request_method == 'PATCH'
+        )
+
         # For validating type and id for bulk delete:
         if is_list and request_method == 'DELETE':
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if object_type is None:
+            if type_required and object_type is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
@@ -82,7 +100,17 @@ class JSONAPIParser(JSONParser):
 
         if relationships:
             relationships = self.flatten_relationships(relationships)
-            parsed.update(relationships)
+            if isinstance(relationships, list):
+                relationship_values = []
+                relationship_key = None
+                for relationship in relationships:
+                    for key, value in relationship.iteritems():
+                        relationship_values.append(value)
+                        relationship_key = key
+                relationship = {relationship_key: relationship_values}
+                parsed.update(relationship)
+            else:
+                parsed.update(relationships)
 
         return parsed
 
@@ -149,6 +177,7 @@ class JSONAPIRelationshipParser(JSONParser):
 
         return {'data': []}
 
+
 class JSONAPIRelationshipParserForRegularJSON(JSONAPIRelationshipParser):
     """
     Allows same processing as JSONAPIRelationshipParser to occur for requests with application/json media type.
@@ -168,7 +197,13 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
         data = res.get('data')
-
+        # allow skip type check for legacy api version
+        legacy_type_allowed = parser_context.get('legacy_type_allowed', True)
+        type_required = not (
+            legacy_type_allowed and
+            parser_context['request'].version < 2.7 and
+            parser_context['request'].method == 'PATCH'
+        )
         if data:
             id_ = data.get('id')
             type_ = data.get('type')
@@ -176,7 +211,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
             if id_ is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if type_ is None:
+            if type_required and type_ is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
             return data
@@ -196,8 +231,14 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
         rel = {}
         for resource in relationships:
             ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
-            if ret.get('target_type') and ret.get('id'):
-                rel[resource] = ret['id']
+            if isinstance(ret, list):
+                rel = []
+                for item in ret:
+                    if item.get('target_type') and item.get('id'):
+                        rel.append({resource: item['id']})
+            else:
+                if ret.get('target_type') and ret.get('id'):
+                    rel[resource] = ret['id']
         return rel
 
 
@@ -208,3 +249,68 @@ class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJS
         if ret.get('target_type') and ret.get('id'):
             return {related_resource: ret['id']}
         return ret
+
+
+class HMACSignedParser(JSONParser):
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        """
+        Parses the incoming bytestream as JSON. Validates the 'signature' in the payload then returns the resulting data.
+        """
+        data = super(HMACSignedParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+
+        try:
+            sig = data['signature']
+            payload = signing.unserialize_payload(data['payload'])
+            exp_time = payload['time']
+        except (KeyError, ValueError):
+            raise JSONAPIException(detail='Invalid Payload')
+
+        if not signing.default_signer.verify_payload(sig, payload):
+            raise NotAuthenticated
+
+        if time.time() > exp_time:
+            raise JSONAPIException(detail='Signature has expired')
+
+        return payload
+
+class SearchParser(JSONAPIParser):
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        try:
+            view = parser_context['view']
+        except KeyError:
+            raise ImproperlyConfigured('SearchParser requires "view" context.')
+        data = super(SearchParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+        if not data:
+            raise JSONAPIException(detail='Invalid Payload')
+
+        res = {
+            'query': {
+                'bool': {}
+            }
+        }
+
+        try:
+            q = data.pop('q')
+        except KeyError:
+            pass
+        else:
+            res['query']['bool'].update({
+                'must': {
+                    'multi_match': {
+                        'query': q,
+                        'fields': view.search_fields
+                    }
+                }
+            })
+
+        if any(data.values()):
+            res['query']['bool'].update({'filter': []})
+            for key, val in data.iteritems():
+                if val is not None:
+                    if isinstance(val, list):
+                        res['query']['bool']['filter'].append({'terms': {key: val}})
+                    else:
+                        res['query']['bool']['filter'].append({'term': {key: val}})
+        return res

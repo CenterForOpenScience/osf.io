@@ -89,10 +89,10 @@ INSTALLED_APPS = (
     'django_nose',
     'password_reset',
     'guardian',
+    'waffle',
 
     # OSF
     'osf',
-    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -163,6 +163,7 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'waffle.middleware.WaffleMiddleware',
 )
 
 MESSAGE_TAGS = {
@@ -238,9 +239,19 @@ DESK_KEY_SECRET = ''
 
 TINYMCE_APIKEY = ''
 
+SHARE_URL = osf_settings.SHARE_URL
+API_DOMAIN = osf_settings.API_DOMAIN
+
 if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
+    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'DISABLE_PANELS': {
+            'debug_toolbar.panels.templates.TemplatesPanel',
+            'debug_toolbar.panels.redirects.RedirectsPanel'
+        }
     }
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

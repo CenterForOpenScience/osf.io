@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 
 from osf.models import ApiOAuth2Application
 
-from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, DateByVersion
+from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, VersionedDateTimeField
 from api.base.utils import absolute_reverse
 
 
@@ -67,7 +67,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
-    date_created = DateByVersion(help_text='The date this application was generated (automatically filled in)',
+    date_created = VersionedDateTimeField(source='created', help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
     def create(self, validated_data):

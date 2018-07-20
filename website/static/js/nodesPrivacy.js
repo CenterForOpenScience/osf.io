@@ -109,6 +109,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
     self.isPreprint = node.is_preprint;
+    self.dataType = node.is_registration ? 'registrations' : 'nodes';
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
@@ -238,7 +239,7 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
     //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
     if (nodesChanged.length <= 100) {
         $osf.block('Updating Privacy');
-        patchNodesPrivacy(nodesChanged, 'nodes').then(function () {
+        patchNodesPrivacy(nodesChanged, self.dataType).then(function () {
             self.onSetPrivacy(nodesChanged);
 
             self.nodesChangedPublic([]);
@@ -309,7 +310,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
 	return null;
     }).filter(Boolean);
     $osf.block('Submitting request to end embargo early ...');
-    patchNodesPrivacy(nodesChanged, 'registrations').then(function (res) {
+    patchNodesPrivacy(nodesChanged, self.dataType).then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);

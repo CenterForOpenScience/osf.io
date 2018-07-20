@@ -86,6 +86,14 @@
                     <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                 </div>
             </div>
+
+            <!-- Terms of Service and Privacy Policy agreement -->
+            <div class="form-group">
+                    <input type="checkbox" data-bind="checked: acceptedTermsOfService" name="accepted_terms_of_service">
+                    <label style="margin-right: 15px">I have read and agree to the <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>.</label>
+                    <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
+            </div>
+
             %if recaptcha_site_key:
                 <div class="row">
                     <div class="col-sm-12">
@@ -94,15 +102,14 @@
                 </div>
             %endif
             <div class='help-block'>
-                <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
+                <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
                 </p>
-                <p>By clicking "Save" and creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
             </div>
             ${form.token | unicode, n }
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
-            <button type='submit' class="btn btn-success pull-right">Save</button>
+            <button type='submit' class="btn btn-success pull-right" data-bind="disable: !acceptedTermsOfService()">Save</button>
         </form>
     </div>
 </div>
@@ -118,6 +125,6 @@
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
     %if recaptcha_site_key:
-        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        <script src="https://recaptcha.net/recaptcha/api.js" async defer></script>
     %endif
 </%def>

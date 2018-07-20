@@ -3,8 +3,8 @@
 import httplib as http
 import logging
 
-from bs4 import BeautifulSoup
 from flask import request
+from django.db.models.expressions import F
 
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
@@ -14,15 +14,17 @@ from framework.flask import redirect
 from addons.wiki.utils import to_mongo_key
 from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission,
     must_have_write_permission_or_public_wiki,
+    must_not_be_retracted_registration,
 )
 
 from website.exceptions import NodeStateError
@@ -37,7 +39,6 @@ from .exceptions import (
     PageNotFoundError,
     InvalidVersionError,
 )
-from .models import NodeWikiPage
 
 logger = logging.getLogger(__name__)
 
@@ -69,44 +70,33 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
 
 
 def _get_wiki_versions(node, name, anonymous=False):
-    key = to_mongo_key(name)
-
     # Skip if wiki_page doesn't exist; happens on new projects before
     # default "home" page is created
-    if key not in node.wiki_pages_versions:
+    wiki_page = node.get_wiki_page(name)
+    if wiki_page:
+        versions = wiki_page.get_versions()
+    else:
         return []
 
-    versions = [
-        NodeWikiPage.load(version_wiki_id)
-        for version_wiki_id in node.wiki_pages_versions[key]
-    ]
-
     return [
         {
-            'version': version.version,
+            'version': version.identifier,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': '{} UTC'.format(version.date.replace(microsecond=0).isoformat().replace('T', ' ')),
+            'date': '{} UTC'.format(version.created.replace(microsecond=0).isoformat().replace('T', ' ')),
         }
-        for version in reversed(versions)
+        for version in versions
     ]
 
-
-def _get_wiki_pages_current(node):
+def _get_wiki_pages_latest(node):
     return [
         {
-            'name': sorted_page.page_name,
-            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
-            'wiki_id': sorted_page._primary_key,
-            'wiki_content': _wiki_page_content(sorted_page.page_name, node=node)
+            'name': page.wiki_page.page_name,
+            'url': node.web_url_for('project_wiki_view', wname=page.wiki_page.page_name, _guid=True),
+            'wiki_id': page.wiki_page._primary_key,
+            'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node)
         }
-        for sorted_page in [
-            node.get_wiki_page(sorted_key)
-            for sorted_key in sorted(node.wiki_pages_current)
-        ]
-        # TODO: remove after forward slash migration
-        if sorted_page is not None
+        for page in node.get_wiki_pages_latest().order_by(F('name'))
     ]
-
 
 def _get_wiki_api_urls(node, name, additional_urls=None):
     urls = {
@@ -134,60 +124,25 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     return urls
 
 
-@must_be_contributor_or_public
-@must_have_addon('wiki', 'node')
-def wiki_widget(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    wiki = node.get_addon('wiki')
-    wiki_page = node.get_wiki_page('home')
-
-    # Show "Read more" link if there are multiple pages or has > 400 characters
-    more = len(node.wiki_pages_current.keys()) >= 2
-    MAX_DISPLAY_LENGTH = 400
-    rendered_before_update = False
-    if wiki_page and wiki_page.html(node):
-        wiki_html = wiki_page.html(node)
-        if len(wiki_html) > MAX_DISPLAY_LENGTH:
-            wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
-            more = True
-        else:
-            wiki_html = BeautifulSoup(wiki_html)
-        rendered_before_update = wiki_page.rendered_before_update
-    else:
-        wiki_html = None
-
-    ret = {
-        'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
-        'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
-        'rendered_before_update': rendered_before_update,
-        'more': more,
-        'include': False,
-    }
-    ret.update(wiki.config.to_json())
-    return ret
-
-
 @must_be_valid_project
 @must_have_write_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
 def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_page = node.get_wiki_page(wname)
+    wiki_version = node.get_wiki_version(wname)
 
     return {
-        'wiki_content': wiki_page.content if wiki_page else None,
-        'wiki_draft': (wiki_page.get_draft(node) if wiki_page
+        'wiki_content': wiki_version.content if wiki_version else None,
+        'wiki_draft': (wiki_version.get_draft(node) if wiki_version
                        else wiki_utils.get_sharejs_content(node, wname)),
     }
 
 def _wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_page = node.get_wiki_page(wname, version=wver)
-    rendered_before_update = wiki_page.rendered_before_update if wiki_page else False
+    wiki_version = node.get_wiki_version(wname, version=wver)
     return {
-        'wiki_content': wiki_page.content if wiki_page else '',
-        'rendered_before_update': rendered_before_update
+        'wiki_content': wiki_version.content if wiki_version else '',
+        'rendered_before_update': wiki_version.rendered_before_update if wiki_version else False
     }
 
 @must_be_valid_project
@@ -216,19 +171,20 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
+@must_not_be_retracted_registration
 def project_wiki_view(auth, wname, path=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
+    wiki_version = node.get_wiki_version(wiki_name)
     wiki_settings = node.get_addon('wiki')
     can_edit = (
-        auth.logged_in
-        and not node.is_registration
-        and (
-            node.has_permission(auth.user, 'write')
-            or wiki_settings.is_publicly_editable
+        auth.logged_in and not
+        node.is_registration and (
+            node.has_permission(auth.user, 'write') or
+            wiki_settings.is_publicly_editable
         )
     )
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
@@ -263,11 +219,11 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     if wiki_name.lower() == 'home':
         wiki_name = 'home'
 
-    if wiki_page:
-        version = wiki_page.version
-        is_current = wiki_page.is_current
-        content = wiki_page.html(node)
-        rendered_before_update = wiki_page.rendered_before_update
+    if wiki_version:
+        version = wiki_version.identifier
+        is_current = wiki_version.is_current
+        content = wiki_version.html(node)
+        rendered_before_update = wiki_version.rendered_before_update
     else:
         version = 'NA'
         is_current = False
@@ -279,11 +235,13 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             wiki_utils.generate_private_uuid(node, wiki_name)
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
     else:
-        if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
+        if not wiki_page and wiki_key != 'home':
             raise WIKI_PAGE_NOT_FOUND_ERROR
         if 'edit' in request.args:
             if wiki_settings.is_publicly_editable:
                 raise HTTPError(http.UNAUTHORIZED)
+            if node.can_view(auth):
+                return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True))
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
@@ -309,7 +267,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'version_settings': version_settings,
-        'pages_current': _get_wiki_pages_current(node),
+        'pages_current': _get_wiki_pages_latest(node),
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
@@ -319,7 +277,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
                 'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
         },
     }
     ret.update(_view_project(node, auth, primary=True))
@@ -334,7 +292,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
 def project_wiki_edit_post(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_version = node.get_wiki_version(wiki_name)
     redirect_url = node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True)
     form_wiki_content = request.form['content']
 
@@ -342,10 +300,10 @@ def project_wiki_edit_post(auth, wname, **kwargs):
     if wiki_name.lower() == 'home':
         wiki_name = 'home'
 
-    if wiki_page:
+    if wiki_version:
         # Only update node wiki if content has changed
-        if form_wiki_content != wiki_page.content:
-            node.update_node_wiki(wiki_page.page_name, form_wiki_content, auth)
+        if form_wiki_content != wiki_version.content:
+            node.update_node_wiki(wiki_version.wiki_page.page_name, form_wiki_content, auth)
             ret = {'status': 'success'}
         else:
             ret = {'status': 'unmodified'}
@@ -399,6 +357,7 @@ def get_node_wiki_permissions(node, auth, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
+@ember_flag_is_active('ember_project_wiki_page')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))
@@ -409,9 +368,9 @@ def project_wiki_home(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_id_page(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_page = node.get_wiki_page(id=wid)
-    if wiki_page:
-        return redirect(node.web_url_for('project_wiki_view', wname=wiki_page.page_name, _guid=True))
+    wiki = node.get_wiki_page(id=wid)
+    if wiki:
+        return redirect(node.web_url_for('project_wiki_view', wname=wiki.page_name, _guid=True))
     else:
         raise WIKI_PAGE_NOT_FOUND_ERROR
 
@@ -479,9 +438,9 @@ def project_wiki_rename(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, auth, node, **kwargs):
     wiki_name = wname.strip()
-    wiki_key = to_mongo_key(wiki_name)
+    wiki = node.get_wiki_page(wiki_name)
 
-    if wiki_key in node.wiki_pages_current or wiki_key == 'home':
+    if wiki or wiki_name.lower() == 'home':
         raise HTTPError(http.CONFLICT, data=dict(
             message_short='Wiki page name conflict.',
             message_long='A wiki page with that name already exists.'
@@ -537,7 +496,7 @@ def format_home_wiki_page(node):
 def format_project_wiki_pages(node, auth):
     pages = []
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
-    project_wiki_pages = _get_wiki_pages_current(node)
+    project_wiki_pages = _get_wiki_pages_latest(node)
     home_wiki_page = format_home_wiki_page(node)
     pages.append(home_wiki_page)
     for wiki_page in project_wiki_pages:
@@ -585,7 +544,7 @@ def serialize_component_wiki(node, auth):
     if can_edit or home_has_content:
         children.append(component_home_wiki)
 
-    for page in _get_wiki_pages_current(node):
+    for page in _get_wiki_pages_latest(node):
         if page['name'] != 'home':
             has_content = bool(page['wiki_content'].get('wiki_content'))
             component_page = {

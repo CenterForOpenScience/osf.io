@@ -12,7 +12,7 @@ from osf.utils.requests import check_select_for_update
 
 
 def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
-    """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
+    """Load an instance of Model by primary key or query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
     :param type Model: StoredObject subclass to query
     :param pk_or_query:

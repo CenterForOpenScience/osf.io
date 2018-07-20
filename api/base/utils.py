@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import urllib
+import furl
 import urlparse
 
-import furl
+from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import OuterRef, Exists, Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -13,9 +14,8 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, Contributor, Node, Registration
 from osf.models.base import GuidMixin
-from osf.modm_compat import to_django_query
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
@@ -31,9 +31,9 @@ UPDATE_METHODS = ['PUT', 'PATCH']
 def decompose_field(field):
     from api.base.serializers import (
         HideIfWithdrawal, HideIfRegistration,
-        HideIfDisabled, AllowMissing
+        HideIfDisabled, AllowMissing, NoneIfWithdrawal
     )
-    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing)
+    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing, NoneIfWithdrawal)
 
     while isinstance(field, WRAPPER_FIELDS):
         try:
@@ -93,11 +93,10 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
                 obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
     else:
         # they passed a query
-        if hasattr(model_cls, 'primary_identifier_name'):
-            query = to_django_query(query_or_pk, model_cls=model_cls)
-        else:
-            # fall back to modmcompatibility's find_one
-            obj = model_cls.find_one(query_or_pk, select_for_update=select_for_update)
+        try:
+            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
+        except model_cls.DoesNotExist:
+            raise NotFound
 
     if not obj:
         if not query:
@@ -118,56 +117,29 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False):
         if display_name is None:
             raise Gone
         else:
             raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
     return obj
 
+def default_node_list_queryset(model_cls):
+    assert model_cls in {Node, Registration}
+    return model_cls.objects.filter(is_deleted=False)
 
-def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
-    """Reverse URL lookup for WaterButler routes
-    :param str request_type: data or metadata
-    :param str provider: The name of the requested provider
-    :param str path: The path of the requested file or folder
-    :param str node_id: The id of the node being accessed
-    :param str token: The cookie to be used or None
-    :param dict **query: Addition query parameters to be appended
-    """
-    url = furl.furl(website_settings.WATERBUTLER_URL)
-    url.path.segments.append(request_type)
-
-    url.args.update({
-        'path': path,
-        'nid': node_id,
-        'provider': provider,
-    })
-
-    if token is not None:
-        url.args['cookie'] = token
-
-    if 'view_only' in obj_args:
-        url.args['view_only'] = obj_args['view_only']
-
-    url.args.update(query)
-    return url.url
-
-def default_node_list_queryset():
-    return Node.objects.filter(is_deleted=False)
-
-def default_node_permission_queryset(user):
+def default_node_permission_queryset(user, model_cls):
+    assert model_cls in {Node, Registration}
     if user.is_anonymous:
-        return Node.objects.filter(is_public=True)
-    return Node.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
+        return model_cls.objects.filter(is_public=True)
+    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
+    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
 
-def default_registration_list_queryset():
-    return Registration.objects.filter(is_deleted=False)
-
-def default_registration_permission_queryset(user):
-    if user.is_anonymous:
-        return Registration.objects.filter(is_public=True)
-    return Registration.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
+def default_node_list_permission_queryset(user, model_cls):
+    # **DO NOT** change the order of the querysets below.
+    # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
+    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)
@@ -203,3 +175,12 @@ def is_deprecated(request_version, min_version, max_version):
     if request_version < min_version or request_version > max_version:
         return True
     return False
+
+
+def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urlquote(x) for x in segments])
+    url.args.update(kwargs)
+    return url.url

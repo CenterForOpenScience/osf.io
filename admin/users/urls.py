@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from . import views
 
+app_name = 'admin'
+
 urlpatterns = [
     url(r'^$', views.UserFormView.as_view(), name='search'),
     url(r'^flagged_spam$', views.UserFlaggedSpamList.as_view(), name='flagged-spam'),
@@ -9,7 +11,7 @@ urlpatterns = [
     url(r'^known_ham$', views.UserKnownHamList.as_view(), name='known-ham'),
     url(r'^workshop$', views.UserWorkshopFormView.as_view(), name='workshop'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(), name='user'),
-    url(r'^search/(?P<name>[\w ]+)/$', views.UserSearchList.as_view(), name='search_list'),
+    url(r'^search/(?P<name>.*)/$', views.UserSearchList.as_view(), name='search_list'),
     url(r'^(?P<guid>[a-z0-9]+)/reset-password/$', views.ResetPasswordView.as_view(), name='reset_password'),
     url(r'^(?P<guid>[a-z0-9]+)/disable/$', views.UserDeleteView.as_view(), name='disable'),
     url(r'^(?P<guid>[a-z0-9]+)/disable_spam/$', views.SpamUserDeleteView.as_view(), name='spam_disable'),
@@ -20,4 +22,5 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/get_confirmation/$', views.GetUserConfirmationLink.as_view(), name='get_confirmation'),
     url(r'^(?P<guid>[a-z0-9]+)/get_reset_password/$', views.GetPasswordResetLink.as_view(), name='get_reset_password'),
     url(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_user/$', views.UserReindexElastic.as_view(), name='reindex-elastic-user'),
+    url(r'^(?P<guid>[a-z0-9]+)/merge_accounts/$', views.UserMergeAccounts.as_view(), name='merge-accounts'),
 ]

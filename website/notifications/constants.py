@@ -14,6 +14,10 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
     'global_reviews': 'Preprint submissions updated'
 }
 
+PROVIDER_SUBSCRIPTIONS_AVAILABLE = {
+    'new_pending_submissions': 'New preprint submissions for moderators to review.'
+}
+
 # Note: the python value None mean inherit from parent
 NOTIFICATION_TYPES = {
     'email_transactional': 'Email when a change occurs',
@@ -29,8 +33,10 @@ PROVIDERS = {
     'dropbox': 'Dropbox',
     'figshare': 'figshare',
     'github': 'GitHub',
+    'gitlab': 'GitLab',
     'bitbucket': 'Bitbucket',
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',
+    'onedrive': 'Microsoft OneDrive',
     's3': 'Amazon S3'
 }

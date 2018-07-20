@@ -25,12 +25,13 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models import CollectedGuidMetadata
+from osf.utils.sanitize import unescape_entities
 from website import settings
-from website.filters import gravatar
+from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
-from website.util import sanitize
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ DOC_TYPE_TO_MODEL = {
     'file': BaseFileNode,
     'institution': Institution,
     'preprint': AbstractNode,
+    'collectionSubmission': CollectedGuidMetadata,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -76,7 +78,8 @@ def client():
             CLIENT = Elasticsearch(
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,
-                retry_on_timeout=True
+                retry_on_timeout=True,
+                **settings.ELASTIC_KWARGS
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
@@ -106,11 +109,13 @@ def requires_search(func):
         if client() is not None:
             try:
                 return func(*args, **kwargs)
-            except ConnectionError:
-                raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
+            except ConnectionError as e:
+                raise exceptions.SearchUnavailableError(str(e))
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
+                if e.error == 'search_phase_execution_exception':
+                    raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
                 if type(e.error) == dict:  # ES 2.0
@@ -243,8 +248,11 @@ def format_results(results):
             result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
+        elif result.get('category') == 'collectionSubmission':
+            continue
         elif not result.get('category'):
             continue
+
         ret.append(result)
     return ret
 
@@ -254,10 +262,10 @@ def format_result(result, parent_id=None):
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
         # TODO: Remove unescape_entities when mako html safe comes in
-        'title': sanitize.unescape_entities(result['title']),
+        'title': unescape_entities(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': sanitize.unescape_entities(parent_info.get('title')) if parent_info else None,
+        'parent_title': unescape_entities(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
@@ -266,11 +274,11 @@ def format_result(result, parent_id=None):
         'is_pending_retraction': result['is_pending_retraction'],
         'embargo_end_date': result['embargo_end_date'],
         'is_pending_embargo': result['is_pending_embargo'],
-        'description': result['description'],
+        'description': unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis']),
+        'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
         'preprint_url': result.get('preprint_url'),
@@ -281,23 +289,18 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = AbstractNode.load(parent_id)
-    if parent is None:
-        return None
-    parent_info = {}
-    if parent is not None and parent.is_public:
-        parent_info['title'] = parent.title
-        parent_info['url'] = parent.url
-        parent_info['is_registration'] = parent.is_registration
-        parent_info['id'] = parent._id
-    else:
-        parent_info['title'] = '-- private project --'
-        parent_info['url'] = ''
-        parent_info['is_registration'] = None
-        parent_info['id'] = None
-    return parent_info
+    if parent and parent.is_public:
+        return {
+            'title': parent.title,
+            'url': parent.url,
+            'id': parent._id,
+            'is_registation': parent.is_registration,
+        }
+    return None
 
 
 COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
+
 
 def get_doctype_from_node(node):
     if node.is_registration:
@@ -331,8 +334,6 @@ def update_user_async(self, user_id, index=None):
         self.retry(exc)
 
 def serialize_node(node, category):
-    NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
-
     elastic_document = {}
     parent_id = node.parent_id
 
@@ -367,7 +368,7 @@ def serialize_node(node, category):
         'registered_date': node.registered_date,
         'wikis': {},
         'parent_id': parent_id,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -375,9 +376,9 @@ def serialize_node(node, category):
         'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
-        for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
+        for wiki in node.get_wiki_pages_latest():
             # '.' is not allowed in field names in ES2
-            elastic_document['wikis'][wiki.page_name.replace('.', ' ')] = wiki.raw_text(node)
+            elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
 
     return elastic_document
 
@@ -388,7 +389,8 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -422,6 +424,49 @@ def bulk_update_nodes(serialize, nodes, index=None):
     if actions:
         return helpers.bulk(client(), actions)
 
+def serialize_cgm_contributor(contrib):
+    return {
+        'fullname': contrib['fullname'],
+        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+    }
+
+def serialize_cgm(cgm):
+    obj = cgm.guid.referent
+    contributors = []
+    if hasattr(obj, '_contributors'):
+        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
+
+    return {
+        'id': cgm._id,
+        'abstract': getattr(obj, 'description', ''),
+        'collectedType': getattr(cgm, 'collected_type'),
+        'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
+        'provider': getattr(cgm.collection.provider, '_id', None),
+        'status': cgm.status,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
+        'title': getattr(obj, 'title', ''),
+        'url': getattr(obj, 'url', ''),
+        'category': 'collectionSubmission',
+    }
+
+@requires_search
+def bulk_update_cgm(cgms, actions=None, op='update', index=None):
+    index = index or INDEX
+    if not actions and cgms:
+        actions = ({
+            '_op_type': op,
+            '_index': index,
+            '_id': cgm._id,
+            '_type': 'collectionSubmission',
+            'doc': serialize_cgm(cgm),
+            'doc_as_upsert': True,
+        } for cgm in cgms)
+
+    try:
+        helpers.bulk(client(), actions or [], refresh=True, raise_on_error=False)
+    except helpers.BulkIndexError as e:
+        raise exceptions.BulkUpdateError(e.errors)
+
 def serialize_contributors(node):
     return {
         'contributors': [
@@ -432,6 +477,7 @@ def serialize_contributors(node):
             node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
+
 
 bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
@@ -507,7 +553,12 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    file_node_is_qa = bool(
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
+    ) or bool(
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))
+    ) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -524,7 +575,10 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+    if file_.node.is_quickfiles:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=file_.node.creator._id)
+    else:
+        node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
@@ -570,6 +624,49 @@ def update_institution(institution, index=None):
 
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
+    CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+    if collection_id:
+        try:
+            cgm = CollectedGuidMetadata.objects.get(
+                guid___id=cgm_id,
+                collection_id=collection_id,
+                collection__provider__isnull=False,
+                collection__deleted__isnull=True,
+                collection__is_bookmark_collection=False)
+
+        except CollectedGuidMetadata.DoesNotExist:
+            logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
+        else:
+            if cgm and hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
+                try:
+                    update_cgm(cgm, op=op, index=index)
+                except Exception as exc:
+                    self.retry(exc=exc)
+    else:
+        cgms = CollectedGuidMetadata.objects.filter(
+            guid___id=cgm_id,
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+        for cgm in cgms:
+            try:
+                update_cgm(cgm, op=op, index=index)
+            except Exception as exc:
+                self.retry(exc=exc)
+
+@requires_search
+def update_cgm(cgm, op='update', index=None):
+    index = index or INDEX
+    if op == 'delete':
+        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        return
+    collection_submission_doc = serialize_cgm(cgm)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
+
 @requires_search
 def delete_all():
     delete_index(INDEX)
@@ -586,51 +683,63 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
     project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
-        mapping = {
-            'properties': {
-                'tags': NOT_ANALYZED_PROPERTY,
-                'license': {
-                    'properties': {
-                        'id': NOT_ANALYZED_PROPERTY,
-                        'name': NOT_ANALYZED_PROPERTY,
-                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
-                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
-                        'year': {'type': 'string'},
+        if type_ == 'collectionSubmission':
+            mapping = {
+                'properties': {
+                    'collectedType': NOT_ANALYZED_PROPERTY,
+                    'subjects': NOT_ANALYZED_PROPERTY,
+                    'status': NOT_ANALYZED_PROPERTY,
+                    'provider': NOT_ANALYZED_PROPERTY,
+                    'title': ENGLISH_ANALYZER_PROPERTY,
+                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                }
+            }
+        else:
+            mapping = {
+                'properties': {
+                    'tags': NOT_ANALYZED_PROPERTY,
+                    'license': {
+                        'properties': {
+                            'id': NOT_ANALYZED_PROPERTY,
+                            'name': NOT_ANALYZED_PROPERTY,
+                            # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                            # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                            'year': {'type': 'string'},
+                        }
                     }
                 }
             }
-        }
-        if type_ in project_like_types:
-            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
-                         for field in analyzed_fields}
-            mapping['properties'].update(analyzers)
+            if type_ in project_like_types:
+                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                             for field in analyzed_fields}
+                mapping['properties'].update(analyzers)
 
-        if type_ == 'user':
-            fields = {
-                'job': {
-                    'type': 'string',
-                    'boost': '1',
-                },
-                'all_jobs': {
-                    'type': 'string',
-                    'boost': '0.01',
-                },
-                'school': {
-                    'type': 'string',
-                    'boost': '1',
-                },
-                'all_schools': {
-                    'type': 'string',
-                    'boost': '0.01'
-                },
-            }
-            mapping['properties'].update(fields)
+            if type_ == 'user':
+                fields = {
+                    'job': {
+                        'type': 'string',
+                        'boost': '1',
+                    },
+                    'all_jobs': {
+                        'type': 'string',
+                        'boost': '0.01',
+                    },
+                    'school': {
+                        'type': 'string',
+                        'boost': '1',
+                    },
+                    'all_schools': {
+                        'type': 'string',
+                        'boost': '0.01'
+                    },
+                }
+                mapping['properties'].update(fields)
         client().indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search
@@ -658,7 +767,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     :param current_user: A User object of the current user
 
     :return: List of dictionaries, each containing the ID, full name,
-        most recent employment and education, gravatar URL of an OSF user
+        most recent employment and education, profile_image URL of an OSF user
 
     """
     start = (page * size)
@@ -712,16 +821,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
+                'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
-                'gravatar_url': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.PROFILE_IMAGE_MEDIUM
-                ),
+                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                       user,
+                                                       use_ssl=True,
+                                                       size=settings.PROFILE_IMAGE_MEDIUM),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active
-
             })
 
     return {

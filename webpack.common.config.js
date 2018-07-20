@@ -5,16 +5,16 @@ var fs = require('fs');
 var SaveAssetsJson = require('assets-webpack-plugin');
 
 var addons = require('./addons.json');
-var root = path.join(__dirname, 'website', 'static');
+var root = path.resolve(__dirname, 'website', 'static');
 /** Return the absolute path given a path relative to ./website/static */
 var staticPath = function(dir) {
-    return path.join(root, dir);
+    return path.resolve(root, dir);
 };
 var nodePath = function(dir) {
-    return path.join(__dirname, 'node_modules', dir);
+    return path.resolve(__dirname, 'node_modules', dir);
 };
 var addonsPath = function(dir) {
-    return path.join(__dirname, 'addons', dir);
+    return path.resolve(__dirname, 'addons', dir);
 };
 
 /**
@@ -31,15 +31,17 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
+    'project-addons-page': staticPath('js/pages/project-addons-page.js'),
     'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register-page': staticPath('js/pages/register-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'statistics-page': staticPath('js/pages/statistics-page.js'),
+    'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
+    'reg-landing-page': staticPath('js/pages/reg-landing-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
@@ -84,6 +86,7 @@ var entry = {
         'mithril',
         // Main CSS files that get loaded above the fold
         nodePath('select2/select2.css'),
+        nodePath('bootstrap/dist/css/bootstrap.css'),
         '@centerforopenscience/osf-style',
         staticPath('css/style.css'),
     ],
@@ -102,20 +105,20 @@ var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
-        var modulePath = path.join(__dirname, 'addons',
+        var modulePath = path.resolve(__dirname, 'addons',
                                   addonName, 'static', module);
         if (fs.existsSync(modulePath)) {
             var entryPoint = baseDir + module.split('.')[0];
             entry[entryPoint] =  modulePath;
         }
     });
-    var logTextPath = path.join(__dirname, 'addons',
+    var logTextPath = path.resolve(__dirname, 'addons',
         addonName, 'static', addonName + 'LogActionList.json');
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
-    var anonymousLogTextPath = path.join(__dirname, 'addons',
+    var anonymousLogTextPath = path.resolve(__dirname, 'addons',
         addonName, 'static', addonName + 'AnonymousLogActionList.json');
     if(fs.existsSync(anonymousLogTextPath)) {
         anonymousAddonLog = require(anonymousLogTextPath);
@@ -127,16 +130,21 @@ fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js', '.min.js'],
-    root: root,
-    // Look for required files in bower and npm directories
-    modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
+    modules: [
+        root,
+        './website/static/vendor/bower_components',
+        'node_modules',
+    ],
+    extensions: ['*', '.es6.js', '.js', '.min.js'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
-        'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
+        'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
+        'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
+        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
+        'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
@@ -155,7 +163,7 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
-        'addons': path.join(__dirname, 'addons'),
+        'addons': path.resolve(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
@@ -175,11 +183,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
-    // Bower support
-    new webpack.ResolverPlugin(
-        new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-    ),
+    new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
     // Make jQuery available in all modules without having to do require('jquery')
     new webpack.ProvidePlugin({
         $: 'jquery',
@@ -192,9 +196,8 @@ var plugins = [
     }),
 ];
 
-
 var output = {
-    path: './website/static/public/js/',
+    path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
@@ -208,9 +211,9 @@ module.exports = {
     plugins: plugins,
     output: output,
     module: {
-        loaders: [
+        rules: [
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
-            {test: /\.css$/, loaders: ['style', 'css']},
+            {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
@@ -219,8 +222,7 @@ module.exports = {
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-            //Dirty hack because mime-type's json file is "special"
-            {test: /db.json/, loader: 'json-loader'}
+            { parser: { amd: false }}
         ]
     },
     node: {

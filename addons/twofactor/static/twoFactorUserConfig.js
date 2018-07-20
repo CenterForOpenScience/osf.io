@@ -66,8 +66,8 @@ ViewModel.prototype.fetchFromServer = function() {
             });
             self.changeMessage('Could not retrieve two-factor settings at ' +
                 'this time. Please refresh the page. ' +
-                'If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-danger', 5000);
+                'If the problem persists, email ' + $osf.osfSupportLink(),
+                'text-danger', 5000);
         });
 };
 
@@ -123,8 +123,7 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not disable two-factor authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'the page. If the problem persists, email ' + $osf.osfSupportLink(),
                 5000);
         });
 };
@@ -164,8 +163,7 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not enable two-factor authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'the page. If the problem persists, email ' + $osf.osfSupportLink(),
                 5000);
         });
 };

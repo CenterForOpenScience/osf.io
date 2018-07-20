@@ -43,6 +43,10 @@
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
 
+    - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
+      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
+      `sudo sysctl -p`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
       https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
@@ -74,6 +78,8 @@
     `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
 
     `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
+
+    `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -120,7 +126,7 @@ Ubuntu: Skip install of docker-sync. instead...
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
+  - `$ docker-compose up -d elasticsearch postgres mongo rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
@@ -146,7 +152,7 @@ Ubuntu: Skip install of docker-sync. instead...
   ```bash
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries ember_osf_web
   ```
 
 - To view the logs for a given container: 
@@ -172,6 +178,9 @@ Ubuntu: Skip install of docker-sync. instead...
 - Populate citation styles
   - Needed for api v2 citation style rendering.
     - `docker-compose run --rm web python -m scripts.parse_citation_styles`
+- Start ember_osf_web
+  - Needed for quickfiles feature:
+    - `docker-compose up -d ember_osf_web`
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app
     - `docker-compose run --rm web python -m scripts.register_oauth_scopes`
@@ -259,7 +268,7 @@ You should run the `web` and/or `api` container (depending on which codebase the
 $ docker-compose kill web
 
 # Run a web container. App logs and breakpoints will show up here.
-$ docker-compose run --service-ports web
+$ docker-compose run --rm --service-ports web
 ```
 
 **IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
@@ -291,6 +300,9 @@ $ docker-compose run --service-ports web
 
 - Test a Specific Method
   - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
+
+- Test with Specific Parameters (1 cpu, capture stdout)
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'`
 
 ## Managing Container State
 

@@ -11,7 +11,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 class QueuedMail(ObjectIDMixin, BaseModel):
-    user = models.ForeignKey('OSFUser', db_index=True, null=True)
+    user = models.ForeignKey('OSFUser', db_index=True, null=True, on_delete=models.CASCADE)
     to_addr = models.CharField(max_length=255)
     send_at = NonNaiveDateTimeField(db_index=True, null=False)
 
@@ -58,7 +58,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
             self.save()
             return True
         else:
-            self.__class__.remove_one(self)
+            self.__class__.delete(self)
             return False
 
     def find_sent_of_same_type_and_user(self):
@@ -129,6 +129,13 @@ NEW_PUBLIC_PROJECT = {
     'categories': ['engagement', 'engagement-new-public-project']
 }
 
+PREREG_REMINDER = {
+    'template': 'prereg_reminder',
+    'subject': 'Reminder: Your draft preregistration on the OSF is not yet finished',
+    'presend': presends.prereg_reminder,
+    'categories': ['engagement', 'engagement-prereg-challenge']
+}
+
 WELCOME_OSF4M = {
     'template': 'welcome_osf4m',
     'subject': 'The benefits of sharing your presentation',
@@ -139,12 +146,15 @@ WELCOME_OSF4M = {
 NO_ADDON_TYPE = 'no_addon'
 NO_LOGIN_TYPE = 'no_login'
 NEW_PUBLIC_PROJECT_TYPE = 'new_public_project'
+PREREG_REMINDER_TYPE = 'prereg_reminder'
 WELCOME_OSF4M_TYPE = 'welcome_osf4m'
+
 
 # Used to keep relationship from stored string 'email_type' to the predefined queued_email objects.
 queue_mail_types = {
     NO_ADDON_TYPE: NO_ADDON,
     NO_LOGIN_TYPE: NO_LOGIN,
     NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,
+    PREREG_REMINDER_TYPE: PREREG_REMINDER,
     WELCOME_OSF4M_TYPE: WELCOME_OSF4M
 }

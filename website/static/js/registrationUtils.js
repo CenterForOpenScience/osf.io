@@ -12,7 +12,7 @@ var moment = require('moment');
 var lodashHas = require('lodash.has');
 var lodashSet = require('lodash.set');
 var lodashIncludes = require('lodash.includes');
-var History = require('exports?History!history');
+var History = require('exports-loader?History!history');
 
 require('js/koHelpers');
 
@@ -182,6 +182,8 @@ var Question = function(questionSchema, data) {
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
     self.options = questionSchema.options || [];
+    self.fileLimit = questionSchema.fileLimit;
+    self.fileDescription = questionSchema.fileDescription;
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
@@ -210,6 +212,9 @@ var Question = function(questionSchema, data) {
         value = self.data.value();
     } else {
         value = self.data.value || null;
+        if(value) {
+            value = $osf.decodeText(value);
+        }
     }
 
     if (self.type === 'choose' && self.format === 'multiselect') {
@@ -645,6 +650,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         };
     }
     var preRegisterPrompts = response.prompts || [];
+    preRegisterPrompts.unshift('Registrations cannot be modified or deleted once completed.');
 
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
@@ -1378,6 +1384,8 @@ RegistrationManager.prototype.init = function() {
                 schemaName = 'Prereg Challenge';
             } else if (urlParams.campaign === 'erpc') {
                 schemaName = 'Election Research Preacceptance Competition';
+            } else if (urlParams.campaign === 'registered_report') {
+                schemaName = 'Registered Report Protocol Preregistration';
             }
             if (schemaName) {
                 $osf.block();
@@ -1385,10 +1393,15 @@ RegistrationManager.prototype.init = function() {
                     var preregSchema = self.schemas().filter(function(schema) {
                         return schema.name === schemaName;
                     })[0];
-                    preregSchema.askConsent(true).then(function() {
+                    if(urlParams.campaign === 'prereg') {
+                        preregSchema.askConsent(true).then(function () {
+                            self.selectedSchema(preregSchema);
+                            $('#newDraftRegistrationForm').submit();
+                        });
+                    } else {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
-                    });
+                    }
                 }).always($osf.unblock);
             }
         }

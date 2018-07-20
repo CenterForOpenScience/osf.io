@@ -34,16 +34,17 @@ from django.utils import timezone
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
+from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
-from website.util import waterbutler_api_url_for
 
 logger = logging.getLogger(__name__)
 
 # Control globals
 DELETE_COLLISIONS = False
 SKIP_COLLISIONS = False
+ALLOW_UNCONFIGURED = False
 
 # Logging globals
 CHECKED_OKAY = []
@@ -93,7 +94,10 @@ LOG_WHITELIST = {
     'tag_added',
     'tag_removed',
     'wiki_deleted',
-    'wiki_updated'
+    'wiki_updated',
+    'node_access_requests_disabled',
+    'view_only_link_added',
+    'view_only_link_removed',
 }
 
 # Require action, but recoverable from
@@ -212,7 +216,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                 'deleted': None,
                 'object': file_obj,
                 'name': file_obj.name,
-                'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+                'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
             })
             cached = True
             if move_under:
@@ -244,7 +248,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                     'object': file_obj,
                     'name': file_obj.name,
                     'deleted': file_obj.is_deleted,
-                    'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+                    'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
                 })
             noop = False
         if filenode.get('children'):
@@ -315,7 +319,7 @@ def build_file_tree(reg, node_settings):
             'object': file_obj,
             'name': file_obj.name,
             'deleted': file_obj.is_deleted,
-            'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+            'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
             serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]
@@ -339,6 +343,10 @@ def archive(registration):
             node_settings = reg.registered_from.get_addon(short_name)
             if not hasattr(node_settings, '_get_file_tree'):
                 # Excludes invalid or None-type
+                continue
+            if not node_settings.configured:
+                if not ALLOW_UNCONFIGURED:
+                    raise Exception('{}: {} on {} is not configured. If this is permissible, re-run with `--allow-unconfigured`.'.format(reg._id, short_name, reg.registered_from._id))
                 continue
             if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
                 continue
@@ -491,14 +499,22 @@ class Command(BaseCommand):
             dest='skip_collisions',
             help='Specifies that colliding archive filenodes should be skipped and the archive job target marked as successful in the event of a collision',
         )
+        parser.add_argument(
+            '--allow-unconfigured',
+            action='store_true',
+            dest='allow_unconfigured',
+            help='Specifies that addons with a False `configured` property are to be skipped, rather than raising an error',
+        )
         parser.add_argument('--addons', type=str, nargs='*', help='Addons other than OSFStorage to archive. Use caution')
         parser.add_argument('--guids', type=str, nargs='+', help='GUIDs of registrations to archive')
 
     def handle(self, *args, **options):
         global DELETE_COLLISIONS
         global SKIP_COLLISIONS
+        global ALLOW_UNCONFIGURED
         DELETE_COLLISIONS = options.get('delete_collisions')
         SKIP_COLLISIONS = options.get('skip_collisions')
+        ALLOW_UNCONFIGURED = options.get('allow_unconfigured')
         if DELETE_COLLISIONS and SKIP_COLLISIONS:
             raise Exception('Cannot specify both delete_collisions and skip_collisions')
 

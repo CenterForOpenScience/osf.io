@@ -14,7 +14,9 @@ from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
 from osf.models import OSFUser, AbstractNode
+from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query
@@ -38,7 +40,7 @@ def handle_search_errors(func):
             raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
-                                 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+                                 + language.SUPPORT_LINK),
             })
         except exceptions.SearchException:
             # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
@@ -71,6 +73,9 @@ def search_search(**kwargs):
     results['time'] = round(time.time() - tick, 2)
     return results
 
+@ember_flag_is_active('ember_search_page')
+def search_view():
+    return {'shareUrl': settings.SHARE_URL},
 
 def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query

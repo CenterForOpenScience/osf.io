@@ -7,9 +7,9 @@ var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
 
-var apaStyle = require('raw!styles/apa.csl');
+var apaStyle = require('raw-loader!styles/apa.csl');
 
-var errorPage = require('raw!citations_load_error.html');
+var errorPage = require('raw-loader!citations_load_error.html');
 
 require('css/fangorn.css');
 
@@ -117,7 +117,7 @@ var makeButtons = function(item, col, buttons) {
                         class: button.css,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'data-clipboard-target': item.data.csl ? item.data.csl.id : button.clipboard,
+                        'data-clipboard-target': item.data.csl ? '[id*="' + item.data.csl.id + '"]' : button.clipboard,
                         config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {

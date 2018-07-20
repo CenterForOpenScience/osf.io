@@ -15,23 +15,24 @@ from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
+from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN
+from osf.utils.functional import rapply
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     http_error_if_disk_saving_mode
 )
 from website import language, settings
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
-from website.util import rapply
-from website.util.sanitize import strip_html
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
@@ -43,6 +44,8 @@ def must_be_branched_from_node(func):
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
+        if draft.deleted:
+            raise HTTPError(http.GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -127,6 +130,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
+
+    if draft.registered_node and not draft.registered_node.is_deleted:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='This draft has already been registered, if you wish to '
+                                                              'register it again or submit it for review please create '
+                                                              'a new draft.'))
 
     # Don't allow resubmission unless submission was rejected
     if draft.approval and draft.approval.state != Sanction.REJECTED:
@@ -245,6 +253,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@ember_flag_is_active('ember_create_draft_registration_page')
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -282,6 +291,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@ember_flag_is_active('ember_edit_draft_registration_page')
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor
@@ -337,7 +347,8 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
                 'message_long': 'This draft has already been registered and cannot be deleted.'
             }
         )
-    DraftRegistration.remove_one(draft)
+    draft.deleted = timezone.now()
+    draft.save(update_fields=['deleted'])
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
@@ -350,9 +361,9 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True).distinct()
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION).distinct()
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
 
     meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 

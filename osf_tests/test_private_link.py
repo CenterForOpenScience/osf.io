@@ -50,7 +50,7 @@ class TestPrivateLink:
     def test_create_from_node(self):
         proj = NodeFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,

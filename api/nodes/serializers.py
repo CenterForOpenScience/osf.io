@@ -3,16 +3,17 @@ from django.db import connection
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
                                  RelationshipPostMakesNoChanges)
-from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
-                                  JSONAPIListField,
+from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField,
+                                  JSONAPISerializer, LinksField, ValuesListField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff, BaseAPISerializer)
+                                  WaterbutlerLink, relationship_diff, BaseAPISerializer,
+                                  HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -32,7 +33,46 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
+
+
+def get_institutions_to_add_remove(institutions, new_institutions):
+    diff = relationship_diff(
+        current_items={inst._id: inst for inst in institutions.all()},
+        new_items={inst['_id']: inst for inst in new_institutions}
+    )
+
+    insts_to_add = []
+    for inst_id in diff['add']:
+        inst = Institution.load(inst_id)
+        if not inst:
+            raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+        insts_to_add.append(inst)
+
+    return insts_to_add, diff['remove'].values()
+
+
+def update_institutions(node, new_institutions, user, post=False):
+    add, remove = get_institutions_to_add_remove(
+        institutions=node.affiliated_institutions,
+        new_institutions=new_institutions
+    )
+
+    if post and not len(add):
+        raise RelationshipPostMakesNoChanges
+
+    if not post:
+        for inst in remove:
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
+                raise exceptions.PermissionDenied(
+                    detail='User needs to be affiliated with {}'.format(inst.name))
+            node.remove_affiliated_institution(inst, user)
+
+    for inst in add:
+        if not user.is_affiliated_with_institution(inst):
+            raise exceptions.PermissionDenied(
+                detail='User needs to be affiliated with {}'.format(inst.name))
+        node.add_affiliated_institution(inst, user)
 
 
 class NodeTagField(ser.Field):
@@ -109,7 +149,7 @@ def get_license_details(node, validated_data):
         'copyrightHolders': license_holders
     }
 
-class NodeSerializer(JSONAPISerializer):
+class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
@@ -125,7 +165,8 @@ class NodeSerializer(JSONAPISerializer):
         'root',
         'parent',
         'contributors',
-        'preprint'
+        'preprint',
+        'subjects'
     ])
 
     non_anonymized_fields = [
@@ -148,7 +189,8 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
-        'wikis'
+        'wikis',
+        'subjects'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -160,14 +202,16 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = JSONAPIListField(child=NodeTagField(), required=False)
+    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
+    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
+    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -175,7 +219,6 @@ class NodeSerializer(JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
-
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
@@ -216,15 +259,21 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    implicit_contributors = RelationshipField(
+        related_view='nodes:node-implicit-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+        help_text='This feature is experimental and being tested. It may be deprecated.'
+    )
+
     files = RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<_id>'}
     )
 
-    wikis = RelationshipField(
+    wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
@@ -238,7 +287,8 @@ class NodeSerializer(JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'}
     )
 
     node_links = ShowIfVersion(RelationshipField(
@@ -247,6 +297,18 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     ), min_version='2.0', max_version='2.0')
+
+    linked_by_nodes = RelationshipField(
+        related_view='nodes:node-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    )
+
+    linked_by_registrations = RelationshipField(
+        related_view='nodes:node-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
@@ -274,7 +336,10 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<_id>'},
         self_view='nodes:node-relationships-institutions',
-        self_view_kwargs={'node_id': '<_id>'}
+        self_view_kwargs={'node_id': '<_id>'},
+        read_only=False,
+        many=True,
+        required=False,
     )
 
     root = RelationshipField(
@@ -407,6 +472,15 @@ class NodeSerializer(JSONAPISerializer):
                 count += 1
         return count
 
+    def get_linked_by_nodes_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
+
+    def get_linked_by_registrations_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__type='osf.registration', parent__retraction__isnull=True).count()
+
+    def get_forks_count(self, obj):
+        return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
+
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
@@ -420,6 +494,9 @@ class NodeSerializer(JSONAPISerializer):
         user = request.user
         Node = apps.get_model('osf.Node')
         tag_instances = []
+        affiliated_institutions = None
+        if 'affiliated_institutions' in validated_data:
+            affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -432,7 +509,6 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.NotFound
             if not template_node.has_permission(user, 'read', check_parent=False):
                 raise exceptions.PermissionDenied
-
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
@@ -442,6 +518,10 @@ class NodeSerializer(JSONAPISerializer):
             node.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
+        if affiliated_institutions:
+            new_institutions = [{'_id': institution} for institution in affiliated_institutions]
+            update_institutions(node, new_institutions, user, post=True)
+            node.save()
         if len(tag_instances):
             for tag in tag_instances:
                 node.tags.add(tag)
@@ -461,6 +541,10 @@ class NodeSerializer(JSONAPISerializer):
                         permissions=parent.get_permissions(contributor.user), existing_user=contributor.user
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
+        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
+            parent = validated_data['parent']
+            node.subjects.add(parent.subjects.all())
+            node.save()
         return node
 
     def update(self, node, validated_data):
@@ -468,25 +552,32 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(node, AbstractNode), 'node must be a Node'
+        user = self.context['request'].user
         auth = get_user_auth(self.context['request'])
-        old_tags = set(node.tags.values_list('name', flat=True))
-        if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        elif self.partial:
-            current_tags = set(old_tags)
-        else:
-            current_tags = set()
-
-        for new_tag in (current_tags - old_tags):
-            node.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            node.remove_tag(deleted_tag, auth=auth)
 
         if validated_data:
-
+            if 'tags' in validated_data:
+                new_tags = set(validated_data.pop('tags', []))
+                node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
                 validated_data['node_license'] = license_details
+            if 'affiliated_institutions' in validated_data:
+                institutions_list = validated_data.pop('affiliated_institutions')
+                new_institutions = [{'_id': institution} for institution in institutions_list]
+
+                update_institutions(node, new_institutions, user)
+                node.save()
+            if 'subjects' in validated_data:
+                subjects = validated_data.pop('subjects', None)
+                try:
+                    node.set_subjects(subjects, auth)
+                except PermissionsError as e:
+                    raise exceptions.PermissionDenied(detail=e.message)
+                except ValueError as e:
+                    raise exceptions.ValidationError(detail=e.message)
+                except NodeStateError as e:
+                    raise exceptions.ValidationError(detail=e.message)
 
             try:
                 node.update(validated_data, auth=auth)
@@ -697,6 +788,12 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
+
+    def get_current_user_is_contributor(self, obj):
+        user = self.context['request'].user
+        user = None if user.is_anonymous else user
+        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -706,7 +803,7 @@ class NodeForksSerializer(NodeSerializer):
 
     title = ser.CharField(required=False)
     category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
-    forked_date = DateByVersion(read_only=True)
+    forked_date = VersionedDateTimeField(read_only=True)
 
     def create(self, validated_data):
         node = validated_data.pop('node')
@@ -1016,21 +1113,6 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'institutions'
 
-    def get_institutions_to_add_remove(self, institutions, new_institutions):
-        diff = relationship_diff(
-            current_items={inst._id: inst for inst in institutions.all()},
-            new_items={inst['_id']: inst for inst in new_institutions}
-        )
-
-        insts_to_add = []
-        for inst_id in diff['add']:
-            inst = Institution.load(inst_id)
-            if not inst:
-                raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
-            insts_to_add.append(inst)
-
-        return insts_to_add, diff['remove'].values()
-
     def make_instance_obj(self, obj):
         return {
             'data': obj.affiliated_institutions.all(),
@@ -1040,22 +1122,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     def update(self, instance, validated_data):
         node = instance['self']
         user = self.context['request'].user
-
-        add, remove = self.get_institutions_to_add_remove(
-            institutions=instance['data'],
-            new_institutions=validated_data['data']
-        )
-
-        for inst in remove:
-            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-            node.remove_affiliated_institution(inst, user)
-
-        for inst in add:
-            if not user.is_affiliated_with_institution(inst):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-            node.add_affiliated_institution(inst, user)
-
+        update_institutions(node, validated_data['data'], user)
         node.save()
 
         return self.make_instance_obj(node)
@@ -1064,20 +1131,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
         instance = self.context['view'].get_object()
         user = self.context['request'].user
         node = instance['self']
-
-        add, remove = self.get_institutions_to_add_remove(
-            institutions=instance['data'],
-            new_institutions=validated_data['data']
-        )
-        if not len(add):
-            raise RelationshipPostMakesNoChanges
-
-        for inst in add:
-            if not user.is_affiliated_with_institution(inst):
-                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-
-        for inst in add:
-            node.add_affiliated_institution(inst, user)
+        update_institutions(node, validated_data['data'], user, post=True)
         node.save()
 
         return self.make_instance_obj(node)
@@ -1089,8 +1143,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     type = TypeField()
     registration_supplement = ser.CharField(source='registration_schema._id', required=True)
     registration_metadata = ser.DictField(required=False)
-    datetime_initiated = DateByVersion(read_only=True)
-    datetime_updated = DateByVersion(read_only=True)
+    datetime_initiated = VersionedDateTimeField(read_only=True)
+    datetime_updated = VersionedDateTimeField(read_only=True)
 
     branched_from = RelationshipField(
         related_view='nodes:node-detail',
@@ -1103,7 +1157,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
+        related_view='metaschemas:registration-metaschema-detail',
         related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
     )
 
@@ -1188,7 +1242,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
 
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = DateByVersion(read_only=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
     anonymous = ser.BooleanField(required=False, default=False)
     name = ser.CharField(required=False, default='Shared project link')
 

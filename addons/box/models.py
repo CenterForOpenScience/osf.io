@@ -5,8 +5,8 @@ import os
 import requests
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
-from box import BoxClient, CredentialsV2
-from box.client import BoxClientException
+from boxsdk import Client, OAuth2
+from boxsdk.exception import BoxAPIException
 from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -31,7 +31,12 @@ class BoxFolder(BoxFileNode, Folder):
 
 
 class BoxFile(BoxFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'sha1': self._history[-1]['extra']['hashes']['sha1']}
+        except (IndexError, KeyError):
+            return None
 
 
 class Provider(ExternalProvider):
@@ -53,14 +58,14 @@ class Provider(ExternalProvider):
         record to the user and saves the user's access token and account info.
         """
 
-        client = BoxClient(CredentialsV2(
-            response['access_token'],
-            response['refresh_token'],
-            settings.BOX_KEY,
-            settings.BOX_SECRET,
+        client = Client(OAuth2(
+            access_token=response['access_token'],
+            refresh_token=response['refresh_token'],
+            client_id=settings.BOX_KEY,
+            client_secret=settings.BOX_SECRET,
         ))
 
-        about = client.get_user_info()
+        about = client.user().get()
 
         return {
             'provider_id': about['id'],
@@ -99,7 +104,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_id = models.TextField(null=True, blank=True)
     folder_name = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -136,20 +141,17 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         try:
             Provider(self.external_account).refresh_oauth_key()
-            client = BoxClient(self.external_account.oauth_key)
-        except BoxClientException:
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            client = Client(oauth)
+        except BoxAPIException:
             raise HTTPError(http.FORBIDDEN)
 
         try:
-            metadata = client.get_folder(folder_id)
-        except BoxClientException:
+            metadata = client.folder(folder_id).get()
+        except BoxAPIException:
             raise HTTPError(http.NOT_FOUND)
         except MaxRetryError:
             raise HTTPError(http.BAD_REQUEST)
-
-        # Raise error if folder was deleted
-        if metadata.get('is_deleted'):
-            raise HTTPError(http.NOT_FOUND)
 
         folder_path = '/'.join(
             [
@@ -188,9 +190,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except InvalidGrantError:
             raise exceptions.InvalidAuthError()
         try:
-            client = BoxClient(self.external_account.oauth_key)
-            folder_data = client.get_folder(self.folder_id)
-        except BoxClientException:
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            client = Client(oauth)
+            folder_data = client.folder(self.folder_id).get()
+        except BoxAPIException:
             raise exceptions.InvalidFolderError()
 
         folder_name = folder_data['name'].replace('All Files', '') or '/ (Full Box)'
@@ -223,7 +226,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         try:
             Provider(self.external_account).refresh_oauth_key()
             return {'token': self.external_account.oauth_key}
-        except BoxClientException as error:
+        except BoxAPIException as error:
             raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
@@ -256,7 +259,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         )
 
     ##### Callback overrides #####
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

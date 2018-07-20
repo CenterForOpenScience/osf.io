@@ -16,7 +16,6 @@
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
-            <th>Logo</th>
             <th>Name</th>
             <th>Description</th>
         </tr>
@@ -24,11 +23,6 @@
     <tbody>
     {% for preprint_provider in preprint_providers %}
     <tr>
-        <td>
-            <a href="{% url 'preprint_providers:detail' preprint_provider_id=preprint_provider.id %}">
-                <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{preprint_provider.logo_name }}">
-            </a>
-        </td>
         <td><a href="{% url 'preprint_providers:detail' preprint_provider_id=preprint_provider.id %}">{{ preprint_provider.name }}</a></td>
         <td>{{ preprint_provider.description | safe}}</td>
     </tr>

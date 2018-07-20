@@ -54,51 +54,54 @@ var markers_present = [];
 // Spell check the Ace editor contents.
 function spell_check(check_right_click) {
     // Wait for the dictionary to be loaded.
-    if (dictionary == null) {
-        return;
-    }
-    if (currently_spellchecking) {
-    	return;
-    }
-
-    if (!contents_modified) {
-    	return;
-    }
-    currently_spellchecking = true;
-    var session = ace.edit(editor).getSession();
-
-    // Clear the markers.
-    for (var i in markers_present) {
-        session.removeMarker(markers_present[i]);
-    }
-    markers_present = [];
-    try {
-	    var Range = ace.require('ace/range').Range;
-	    var lines = session.getDocument().getAllLines();
-	    for (var i in lines) {
-	    	// Clear the gutter.
-	        session.removeGutterDecoration(i, 'misspelled');
-	        // Check spelling of this line.
-	        var misspellings = misspelled(lines[i]);
-	        // Add markers and gutter markings.
-	        if (misspellings.length > 0) {
-	            session.addGutterDecoration(i, 'misspelled');
-	        }
-	        for (var j in misspellings) {
-	            var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
-	            markers_present[markers_present.length] = session.addMarker(range, 'misspelled', 'typo', true);
-	        }
+	if ($('#' + editor).length) {
+		if (dictionary == null) {
+	        return;
 	    }
-	} finally {
-		currently_spellchecking = false;
-		contents_modified = false;
+	    if (currently_spellchecking) {
+	    	return;
+	    }
+
+	    if (!contents_modified) {
+	    	return;
+	    }
+	    currently_spellchecking = true;
+	    var session = ace.edit(editor).getSession();
+
+	    // Clear the markers.
+	    for (var i in markers_present) {
+	        session.removeMarker(markers_present[i]);
+	    }
+	    markers_present = [];
+	    try {
+		    var Range = ace.require('ace/range').Range;
+		    var lines = session.getDocument().getAllLines();
+		    for (var i in lines) {
+		    	// Clear the gutter.
+		        session.removeGutterDecoration(i, 'misspelled');
+		        // Check spelling of this line.
+		        var misspellings = misspelled(lines[i]);
+		        // Add markers and gutter markings.
+		        if (misspellings.length > 0) {
+		            session.addGutterDecoration(i, 'misspelled');
+		        }
+		        for (var j in misspellings) {
+		            var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
+		            markers_present[markers_present.length] = session.addMarker(range, 'misspelled', 'typo', true);
+		        }
+		    }
+		} finally {
+			currently_spellchecking = false;
+			contents_modified = false;
+		}
 	}
 }
 
 function enable_spellcheck() {
-    ace.edit(editor).getSession().on('change', function(e) {
-    	contents_modified = true;
-	});
-
-	setInterval(spell_check, 500);
+	if ($('#' + editor).length) {
+		ace.edit(editor).getSession().on('change', function(e) {
+	    	contents_modified = true;
+		});
+		setInterval(spell_check, 500);
+	}
 }

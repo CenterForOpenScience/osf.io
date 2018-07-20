@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-
+import datetime as dt
+import time
 import io
 import os
 import json
@@ -12,7 +13,6 @@ import tempfile
 from django.core import serializers
 from django.core.management.base import BaseCommand
 
-from addons.wiki.models import NodeWikiPage
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from framework.auth.core import Auth
 from osf.models import (
@@ -22,7 +22,7 @@ from osf.models import (
     Registration,
 )
 from scripts.utils import Progress
-from website.util import waterbutler_api_url_for
+from api.base.utils import waterbutler_api_url_for
 
 ERRORS = []
 GBs = 1024 ** 3.0
@@ -30,8 +30,8 @@ TMP_PATH = tempfile.mkdtemp()
 
 PREPRINT_EXPORT_FIELDS = [
     'is_published',
-    'date_created',
-    'date_modified',
+    'created',
+    'modified',
     'date_published'
 ]
 
@@ -42,8 +42,8 @@ NODE_EXPORT_FIELDS = [
     'is_public',
     'description',
     'forked_date',
-    'date_created',
-    'date_modified'
+    'created',
+    'modified'
 ]
 
 REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [
@@ -105,10 +105,9 @@ def export_wikis(node, current_dir):
     """
     wikis_dir = os.path.join(current_dir, 'wikis')
     os.mkdir(wikis_dir)
-    for wiki_name, wiki_id in node.wiki_pages_current.iteritems():
-        wiki = NodeWikiPage.objects.get(guids___id=wiki_id)
+    for wiki in node.get_wiki_pages_latest():
         if wiki.content:
-            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki_name)), 'w', encoding='utf-8') as f:
+            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki.wiki_page.page_name)), 'w', encoding='utf-8') as f:
                 f.write(wiki.content)
 
 def export_node(node, user, current_dir):
@@ -122,7 +121,7 @@ def export_node(node, user, current_dir):
 
     """
     export_metadata(node, current_dir)
-    if node.wiki_pages_current:
+    if node.get_wiki_pages_latest():
         export_wikis(node, current_dir)
     if OsfStorageFileNode.objects.filter(node=node):
         export_files(node, user, current_dir)
@@ -171,7 +170,7 @@ def get_usage(user):
     versions = FileVersion.objects.filter(basefilenode__in=files)
     return sum([v.size or 0 for v in versions]) / GBs
 
-def export_account(user_id, only_private=False, only_admin=False, export_files=True, export_wikis=True):
+def export_account(user_id, path, only_private=False, only_admin=False, export_files=True, export_wikis=True):
     """
     Exports (as a zip file) all of the projects, registrations, and preprints for which the given user is a contributor.
 
@@ -210,7 +209,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
             *same as projects*
 
     """
-    user = OSFUser.objects.get(guids___id=user_id)
+    user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
     proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
@@ -227,7 +226,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     os.mkdir(registrations_dir)
 
     preprints_to_export = (PreprintService.objects
-        .filter(node___contributors__guids___id=user_id)
+        .filter(node___contributors__guids___id=user_id, guids___id__isnull=False)
         .select_related('node')
     )
 
@@ -247,8 +246,10 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     export_nodes(preprints_to_export, user, preprints_dir, 'preprints')
     export_nodes(registrations_to_export, user, registrations_dir, 'registrations')
 
-    print('Creating {} ({}).zip ...'.format(user.fullname, user_id))
-    shutil.make_archive('{} ({})'.format(user.fullname, user_id), 'zip', base_dir)
+    timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))
+    print('Creating {output}.zip ...').format(**locals())
+    shutil.make_archive(output, 'zip', base_dir)
     shutil.rmtree(base_dir)
 
     finished_msg = 'Finished without errors.' if not ERRORS else 'Finished with errors logged below.'
@@ -268,13 +269,19 @@ class Command(BaseCommand):
         #   export only projects on which user is an admin
         super(Command, self).add_arguments(parser)
         parser.add_argument(
-            '--user',
+            'user',
+            type=str,
+            help='GUID of the user account to export.'
+        )
+        parser.add_argument(
+            '--path',
             type=str,
             required=True,
-            help='GUID of the user account to export.'
+            help='Path where to save the output file.'
         )
 
     def handle(self, *args, **options):
         export_account(
             user_id=options['user'],
+            path=options['path'],
         )

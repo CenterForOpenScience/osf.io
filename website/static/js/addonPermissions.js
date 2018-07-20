@@ -10,6 +10,7 @@ var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 
+
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
         $('.' + addonShortName + '-remove-token').on('click', function (event) {
@@ -39,7 +40,7 @@ var AddonPermissionsTable = {
 
                             error: function () {
                                 $osf.growl('An error occurred, the account is still connected to the project. ',
-                                    'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
+                                    'If the issue persists, please report it to ' + $osf.osfSupportLink() + '.');
                             }
                         });
                     }

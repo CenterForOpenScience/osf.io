@@ -15,6 +15,7 @@ from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
+from osf.exceptions import BlacklistedEmailError
 from website import settings
 from website.conferences import views
 from website.conferences import utils, message
@@ -92,7 +93,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_with_blacklisted_domain(self):
         fullname = 'Kanye West'
         username = 'kanye@mailinator.com'
-        with assert_raises(ValidationError) as e:
+        with assert_raises(BlacklistedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
         assert_equal(e.exception.message, 'Invalid Email')
 
@@ -188,27 +189,27 @@ class TestProvisionNode(ContextTestCase):
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
 
-    @mock.patch('website.util.waterbutler_url_for')
+    @mock.patch('website.conferences.utils.waterbutler_api_url_for')
     @mock.patch('website.conferences.utils.requests.put')
     def test_upload(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
-        self.attachment.filename = 'hammer-to-fall'
+        file_name = 'hammer-to-fall'
+        self.attachment.filename = file_name
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + self.attachment.filename,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name=file_name
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
         )
 
-    @mock.patch('website.util.waterbutler_url_for')
+    @mock.patch('website.conferences.utils.waterbutler_api_url_for')
     @mock.patch('website.conferences.utils.requests.put')
     def test_upload_no_file_name(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
@@ -216,12 +217,11 @@ class TestProvisionNode(ContextTestCase):
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + settings.MISSING_FILE_NAME,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -372,7 +372,7 @@ class TestMessage(ContextTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
-        conf.__class__.remove_one(conf)
+        conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
         recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
@@ -421,7 +421,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        AbstractNode.remove()
+        AbstractNode.objects.all().delete()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
@@ -522,6 +522,12 @@ class TestConferenceEmailViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+    def test_confererence_results_endpoint_is_case_insensitive(self):
+        ConferenceFactory(endpoint='StudySwap')
+        url = web_url_for('conference_results', meeting='studyswap')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
 
 class TestConferenceModel(OsfTestCase):
 
@@ -583,7 +589,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_page('home').content, body)
+        assert_equal(node.get_wiki_version('home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
@@ -672,7 +678,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_page('home').content, body)
+        assert_equal(node.get_wiki_version('home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
@@ -680,3 +686,44 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['profile_url'])
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
+
+    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_create_conference_node_with_same_name_as_existing_node(self, mock_upload, mock_send_mail):
+        conference = ConferenceFactory()
+        user = UserFactory()
+        title = 'Long Live Greg'
+        ProjectFactory(creator=user, title=title)
+
+        body = 'Greg is a good plant'
+        content = 'Long may they reign.'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': '{0} <{1}>'.format(user.fullname, user.username),
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            upload_files=[
+                ('attachment-1', 'attachment-1', content),
+            ],
+        )
+
+        assert AbstractNode.objects.filter(title=title, creator=user).count() == 2
+        assert mock_upload.called
+        assert mock_send_mail.called

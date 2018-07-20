@@ -18,7 +18,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
-var storageAddons = require('json!storageAddons.json');
+var storageAddons = require('json-loader!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -48,7 +48,19 @@ var STATE_MAP = {
 };
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
 
+var CONFLICT_INFO = {
+    skip: {
+        passed: 'Skipped'
+    },
+    replace: {
+        passed: 'Moved or replaced old version'
+    },
+    keep: {
+        passed: 'Kept both versions'
+    }
+};
 
 var OPERATIONS = {
     RENAME: {
@@ -91,6 +103,7 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+var WIKI_IMAGES_FOLDER_PATH = '/Wiki images/';
 
 /**
  * Cancel a pending upload
@@ -375,7 +388,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github' || item.data.provider === 'bitbucket'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -430,39 +443,80 @@ function _fangornToggleCheck(item) {
     return false;
 }
 
-function checkConflicts(tb, item, folder, cb) {
-    var messageArray = [];
-    for(var i = 0; i < folder.children.length; i++) {
-        var child = folder.children[i];
-        if (child.data.name === item.data.name && child.id !== item.id) {
-           messageArray.push([
-                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
-                m('h5.replace-file',
-                    '"Keep Both" will retain both files (and their version histories) in this location.'),
-                m('h5.replace-file',
-                    '"Replace" will overwrite the existing file in this location. ' +
-                    'You will lose previous versions of the overwritten file. ' +
-                    'You will keep previous versions of the moved file.'),
-                m('h5.replace-file', '"Cancel" will cancel the move.')
-            ]);
+function checkConflicts(items, folder){
 
-            tb.modal.update(
-                m('', messageArray), [
-                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
-                ],
-                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
-            );
-            return;
+    var children = {
+      'names': [],
+      'ids': []
+    };
+    var ret = {
+        'conflicts' : [],
+        'ready': []
+    };
+
+    folder.children.forEach(function(child){
+        children.names.push(child.data.name);
+        children.ids.push(child.id);
+    });
+
+    items.forEach(function(item) {
+        if (children.names.includes(item.data.name) && !children.ids.includes(item.id)){
+            ret.conflicts.push(item);
+        } else {
+            ret.ready.push(item);
         }
+    });
+
+    return ret;
+}
+
+function handleCancel(tb, provider, mode, item){
+    if (mode === 'stop') {
+        tb.syncFileMoveCache[provider].conflicts.length = 0;
+        tb.modal.dismiss();
+    } else {
+        addFileStatus(tb, item, false, '', '', 'skip');
+        doSyncMove(tb, provider);
     }
-    cb('replace');
+}
+
+function displayConflict(tb, item, folder, cb) {
+
+    if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        return;
+    }
+
+    var mithrilContent = m('', [
+        m('p', 'An item named "' + item.data.name + '" already exists in this location.'),
+        m('h5.replace-file',
+            '"Keep Both" will retain both files (and their version histories) in this location.'),
+        m('h5.replace-file',
+            '"Replace" will overwrite the existing file in this location. ' +
+            'You will lose previous versions of the overwritten file. ' +
+            'You will keep previous versions of the moved file.'),
+        m('h5.replace-file', '"Skip" will skip the current file.'),
+        m('h5.replace-file', '"Stop" will only move files with no conflicts.')
+    ]);
+    var mithrilButtons = [
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
+        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
+        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
+    ];
+    var header = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
+    tb.modal.update(mithrilContent, mithrilButtons, header);
 }
 
 function checkConflictsRename(tb, item, name, cb) {
     var messageArray = [];
     var parent = item.parent();
+
+    if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        return;
+    }
+
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
@@ -500,10 +554,45 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
+    // dismiss old modal immediately to prevent button mashing
     tb.modal.dismiss();
+    var inReadyQueue;
+    var filesRemaining;
+    var inConflictsQueue = false;
+    var syncMoves;
+
+    var notRenameOp = typeof rename === 'undefined';
+    if (notRenameOp) {
+        filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
+        syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
+        if (syncMoves) {
+            inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
+        }
+
+        if (filesRemaining.conflicts) {
+            inConflictsQueue = true;
+            if (filesRemaining.conflicts.length > 0) {
+                var s = filesRemaining.conflicts.length > 1 ? 's' : '';
+                var mithrilContent = m('div', { className: 'text-center' }, [
+                    m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                    m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                        m('div',''),
+                        m('div',''),
+                        m('div',''),
+                    ])
+                ]);
+                var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+                tb.modal.update(mithrilContent, m('', []), header);
+            } else {
+                // remove the empty queue to know there are no remaining conflicts next time
+                filesRemaining.conflicts = undefined;
+            }
+        }
+    }
+
     var ogParent = from.parentID;
     if (to.id === ogParent && (!rename || rename === from.data.name)){
-      return;
+        return;
     }
 
     if (operation === OPERATIONS.COPY) {
@@ -544,7 +633,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github' || from.data.provider === 'bitbucket'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket' || from.data.provider === 'gitlab'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -600,6 +689,10 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
+        var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
+        if (notRenameOp) {
+            addFileStatus(tb, from, true, '', url, conflict);
+        }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -620,9 +713,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+            message = 'Please refresh the page or contact ' + $osf.osfSupportLink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -633,11 +724,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-
+        if (notRenameOp) {
+            addFileStatus(tb, from, false, '', '', conflict);
+        }
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+        if (notRenameOp && (inConflictsQueue || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -929,7 +1022,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += '1. Cannot upload folders. <br>2. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact support@osf.io.';
+         msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -1029,7 +1122,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
 
-    if (parent.data.provider === 'github') {
+    if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
     }
@@ -1038,7 +1131,7 @@ function _createFolder(event, dismissCallback, helpText) {
         method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
     }).then(function(item) {
         item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
@@ -1107,16 +1200,24 @@ function _removeEvent (event, items, col) {
 
     function doDelete() {
         var folder = items[0];
+        var deleteMessage;
         if (folder.data.permissions.edit) {
-                var mithrilContent = m('div', [
+            if(folder.data.materialized === WIKI_IMAGES_FOLDER_PATH){
+                deleteMessage = m('p.text-danger',
+                    'This folder and all of its contents will be deleted. This folder is linked to ' +
+                    'your wiki(s). Deleting it will remove images embedded in your wiki(s). ' +
+                    'This action is irreversible.');
+            } else {
+                deleteMessage = m('p.text-danger',
+                    'This folder and ALL its contents will be deleted. This action is irreversible.');
+            }
 
-                        m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
-                    ]);
-                var mithrilButtons = m('div', [
-                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
-                    ]);
-                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
+            var mithrilContent = m('div', [deleteMessage]);
+            var mithrilButtons = m('div', [
+                m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
@@ -1124,10 +1225,16 @@ function _removeEvent (event, items, col) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
-        var detail = 'This action is irreversible.';
+        var detail;
+        if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
+            detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
+                ' image embedded in your wiki(s). ');
+        } else {
+            detail = '';
+        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p', detail)
+                m('p.text-danger', detail, 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -1174,7 +1281,12 @@ function _removeEvent (event, items, col) {
                                 m('i.fa.fa-folder'), m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        if(n.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
+                            return m('p.text-danger', m('b', n.data.name), ' may be linked to' +
+                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s). ');
+                        } else {
+                            return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        }
                     })
                 ]);
             mithrilButtonsMultiple = m('div', [
@@ -1376,18 +1488,19 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
-                    // Prevent gotoFileEvent from getting
-                    // called more than once after user has clicked once
-                    if (item.loading) {
-                        return false;
-                    }
-                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
             };
         }
-        return m('span', attrs, nameTitle);
+
+        var titleRow = m('span', attrs, nameTitle);
+
+        if  (item.data.extra.latestVersionSeen && item.data.extra.latestVersionSeen.seen === false && col.data === 'name') {
+            titleRow = m('strong', [titleRow]);
+        }
+
+        return titleRow;
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.' + classNameOption, {href: '/' + item.data.nodeID.toString() + toUrl}, nameTitle);
@@ -1591,14 +1704,18 @@ function _loadTopLevelChildren() {
 var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
         // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            var osfsItems = item.children.filter(function(child) { return child.isAddonRoot && child.provider === 'osfstorage'; });
+            var osfsItems = item.children.filter(function(child) { return child.data.isAddonRoot && child.data.provider === 'osfstorage'; });
             if (osfsItems.length) {
                 var osfsItem = osfsItems[0];
                 tb.updateFolder(null, osfsItem);
@@ -1609,6 +1726,7 @@ function expandStateLoad(item) {
             }
         }
     }
+
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -1616,7 +1734,33 @@ function expandStateLoad(item) {
             }
         }
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
+        if (icon.get(0)) {
+            m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        }
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(response) {
+            var data = response.data[0].children;
+            tb.updateFolder(data, item);
+            tb.redraw();
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
+        });
+    }
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
@@ -1688,6 +1832,11 @@ function _renameEvent () {
     if  (val === item.name) {
         return;
     }
+    if(item.data.materialized === WIKI_IMAGES_FOLDER_PATH){
+        $osf.growl('Error', 'You cannot rename your Wiki images folder.');
+        return;
+    }
+
     checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
@@ -2075,7 +2224,16 @@ var FGToolbar = {
         }
         // multiple selection icons
         // Special cased to not show 'delete multiple' for github or published dataverses
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+        if(
+            (items.length > 1) &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
+            (ctrl.tb.options.placement !== 'fileview') &&
+            !(
+                (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
+                (ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')
+            )
+        ) {
             if (showDeleteMultiple(items)) {
                 var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
@@ -2321,12 +2479,20 @@ function _fangornOver(event, ui) {
  * @param success Boolean on whether upload actually happened
  * @param message String failure reason message, '' if success === true
  * @param link String with url to file, '' if success === false
+ * @param op String specifying type of move conflict resolution; ['keep', 'skip', 'replace']
  * @private
  */
-function addFileStatus(treebeard, file, success, message, link){
-    treebeard.uploadStates.push(
-        {'name': file.name, 'success': success, 'link': link, 'message': message}
-    );
+function addFileStatus(treebeard, file, success, message, link, op){
+    if (typeof op !== 'undefined'){
+        treebeard.moveStates.push(
+            {'name': file.data.name, 'success': success, 'link': link, 'op': op}
+        );
+    } else {
+        treebeard.uploadStates.push(
+            {'name': file.name, 'success': success, 'link': link, 'message': message}
+        );
+    }
+
 }
 
 /**
@@ -2399,25 +2565,92 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
-        tb.syncFileMoveCache = tb.syncFileMoveCache || {};
-        tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
-        $.each(items, function(index, item) {
-            tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
+    var toMove = checkConflicts(items, folder);
+
+    tb.syncFileMoveCache = tb.syncFileMoveCache || {};
+    tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
+    tb.moveStates = [];
+
+    if (toMove.ready.length > 0) {
+        tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
+        if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+            toMove.ready.forEach(function(item) {
+                tb.syncFileMoveCache[folder.data.provider].ready.push({'item' : item, 'folder' : folder});
+            });
+        } else {
+            toMove.ready.forEach(function(item) {
+                doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined, 'replace');
+            });
+        }
+    }
+
+    if (toMove.conflicts.length > 0) {
+        tb.syncFileMoveCache[folder.data.provider].conflicts = tb.syncFileMoveCache[folder.data.provider].conflicts || [];
+        toMove.conflicts.forEach(function(item) {
+            tb.syncFileMoveCache[folder.data.provider].conflicts.push({'item' : item, 'folder' : folder});
         });
+    }
+
+    if (tb.syncFileMoveCache[folder.data.provider].conflicts ||
+        tb.syncFileMoveCache[folder.data.provider].ready) {
         doSyncMove(tb, folder.data.provider);
-    }else{
-        $.each(items, function(index, item) {
-            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-        });
     }
 }
 
+function displayMoveStats(tb) {
+   var moveStatuses = tb.moveStates;
+   var total = moveStatuses && moveStatuses.length;
+   if (moveStatuses.length) {
+       tb.moveStates = [];
+       var failed = 0;
+       var skipped = 0;
+       tb.modal.update(m('', [
+           m('', [
+               moveStatuses.map(function(status){
+                  if (!status.success){
+                      failed++;
+                  }
+                  if (status.op === 'skip'){
+                      skipped++;
+                  }
+                  return m('',
+                       [
+                           m('.row', [
+                               m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-7', status.name),
+                               m('.col-sm-1', m(status.success ? '.fa.fa-check.text-success' : '.fa.fa-times.text-danger')),
+                               m('.col-sm-4' + (status.success ? '.text-info' : '.text-danger'), CONFLICT_INFO[status.op].passed)
+                           ]),
+                           m('hr')
+                       ]
+                   );
+               })
+           ])
+       ]), m('', [
+           m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
+       ]), m('', [
+              m('h3.break-word.modal-title', 'Move Status'),
+              m('p', [
+                  m('span', failed !== total ? total - failed + '/' + total + ' files successfully moved.': ''),
+                  m('span', skipped ? ' Skipped ' + skipped + '/' + total + ' files.': '')
+                ])
+      ]));
+    } else {
+        tb.modal.dismiss();
+    }
+
+}
+
 function doSyncMove(tb, provider){
-    var cache = tb.syncFileMoveCache[provider];
-    if (cache.length > 0){
-        var itemData = cache.pop();
-        checkConflicts(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider];
+    var itemData;
+    if (cache.conflicts && cache.conflicts.length > 0) {
+        itemData = cache.conflicts.pop();
+        displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    } else if (cache.ready && cache.ready.length > 0) {
+        itemData = cache.ready.pop();
+        doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined, 'replace');
+    } else {
+        displayMoveStats(tb);
     }
 }
 
@@ -2486,7 +2719,9 @@ function isInvalidDropFolder(folder) {
         !folder.data.provider ||
         folder.data.status ||
         // cannot add to published dataverse
-        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished) ||
+        // no dropping into read-only providers
+        (READ_ONLY_ADDONS.indexOf(folder.data.provider) !== -1)
     ) {
         return true;
     }
@@ -2522,7 +2757,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
-        (item.data.provider !== 'bitbucket')
+        (READ_ONLY_ADDONS.indexOf(item.data.provider) === -1) && (READ_ONLY_ADDONS.indexOf(folder.data.provider) === -1)
     );
 }
 
@@ -2888,5 +3123,6 @@ module.exports = {
     isInvalidDropItem : isInvalidDropItem,
     getCopyMode : getCopyMode,
     multiselectContainsPreprint : multiselectContainsPreprint,
-    showDeleteMultiple : showDeleteMultiple
+    showDeleteMultiple : showDeleteMultiple,
+    checkConflicts : checkConflicts
 };

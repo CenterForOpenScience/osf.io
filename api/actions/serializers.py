@@ -12,12 +12,10 @@ from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
-
-from osf.models import PreprintService
-
-from reviews.exceptions import InvalidTriggerError
-from reviews.workflow import Triggers
-from reviews.workflow import States
+from osf.exceptions import InvalidTriggerError
+from osf.models import PreprintService, NodeRequest, PreprintRequest
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.utils import permissions
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -51,15 +49,27 @@ class ReviewableCountsRelationshipField(RelationshipField):
 
 
 class TargetRelationshipField(RelationshipField):
-    def get_object(self, preprint_id):
-        return PreprintService.objects.get(guids___id=preprint_id)
+    _target_class = None
+
+    def __init__(self, *args, **kwargs):
+        self._target_class = kwargs.pop('target_class', None)
+        super(TargetRelationshipField, self).__init__(*args, **kwargs)
+
+    @property
+    def TargetClass(self):
+        if self._target_class:
+            return self._target_class
+        raise NotImplementedError()
+
+    def get_object(self, object_id):
+        return self.TargetClass.load(object_id)
 
     def to_internal_value(self, data):
-        preprint = self.get_object(data)
-        return {'target': preprint}
+        target = self.get_object(data)
+        return {'target': target}
 
 
-class ActionSerializer(JSONAPISerializer):
+class BaseActionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'trigger',
@@ -67,44 +77,28 @@ class ActionSerializer(JSONAPISerializer):
         'to_state',
         'date_created',
         'date_modified',
-        'provider',
         'target',
     ])
 
     id = ser.CharField(source='_id', read_only=True)
 
-    trigger = ser.ChoiceField(choices=Triggers.choices())
+    trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+    comment = ser.CharField(max_length=65535, required=False)
 
-    from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
+    from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
 
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = ser.DateTimeField(source='created', read_only=True)
+    date_modified = ser.DateTimeField(source='modified', read_only=True)
 
-    provider = RelationshipField(
-        read_only=True,
-        related_view='preprint_providers:preprint_provider-detail',
-        related_view_kwargs={'provider_id': '<target.provider._id>'},
-        filter_key='target__provider___id',
-    )
-
-    target = TargetRelationshipField(
-        read_only=False,
-        required=True,
-        related_view='preprints:preprint-detail',
-        related_view_kwargs={'preprint_id': '<target._id>'},
-        filter_key='target__guids___id',
-    )
-
-    creator = HideIfProviderCommentsAnonymous(RelationshipField(
+    creator = RelationshipField(
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
         filter_key='creator__guids___id',
         always_embed=True,
-    ))
+    )
 
     links = LinksField(
         {
@@ -123,15 +117,17 @@ class ActionSerializer(JSONAPISerializer):
         user = validated_data.pop('user')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+        permissions = validated_data.pop('permissions', '')
+        visible = validated_data.pop('visible', '')
         try:
-            if trigger == Triggers.ACCEPT.value:
-                return target.reviews_accept(user, comment)
-            if trigger == Triggers.REJECT.value:
-                return target.reviews_reject(user, comment)
-            if trigger == Triggers.EDIT_COMMENT.value:
-                return target.reviews_edit_comment(user, comment)
-            if trigger == Triggers.SUBMIT.value:
-                return target.reviews_submit(user)
+            if trigger == DefaultTriggers.ACCEPT.value:
+                return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
+            if trigger == DefaultTriggers.REJECT.value:
+                return target.run_reject(user, comment)
+            if trigger == DefaultTriggers.EDIT_COMMENT.value:
+                return target.run_edit_comment(user, comment)
+            if trigger == DefaultTriggers.SUBMIT.value:
+                return target.run_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(e.message)
@@ -140,3 +136,92 @@ class ActionSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'actions'
+        abstract = True
+
+class ReviewActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'review-actions'
+
+    filterable_fields = frozenset([
+        'id',
+        'trigger',
+        'from_state',
+        'to_state',
+        'date_created',
+        'date_modified',
+        'provider',
+        'target',
+    ])
+
+    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
+    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+
+    provider = RelationshipField(
+        read_only=True,
+        related_view='providers:preprint-providers:preprint-provider-detail',
+        related_view_kwargs={'provider_id': '<target.provider._id>'},
+        filter_key='target__provider___id',
+    )
+
+    creator = HideIfProviderCommentsAnonymous(RelationshipField(
+        read_only=True,
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+        filter_key='creator__guids___id',
+        always_embed=True,
+    ))
+
+    target = TargetRelationshipField(
+        target_class=PreprintService,
+        read_only=False,
+        required=True,
+        related_view='preprints:preprint-detail',
+        related_view_kwargs={'preprint_id': '<target._id>'},
+        filter_key='target__guids___id',
+    )
+
+    def create(self, validated_data):
+        trigger = validated_data.get('trigger')
+        if trigger != ReviewTriggers.WITHDRAW.value:
+            return super(ReviewActionSerializer, self).create(validated_data)
+        user = validated_data.pop('user')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        try:
+            return target.run_withdraw(user=user, comment=comment)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(e.message)
+        else:
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+
+
+class NodeRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'node-request-actions'
+
+    target = TargetRelationshipField(
+        target_class=NodeRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )
+
+    permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)
+
+
+class PreprintRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'preprint-request-actions'
+
+    target = TargetRelationshipField(
+        target_class=PreprintRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )

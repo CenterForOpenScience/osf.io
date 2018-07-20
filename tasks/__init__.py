@@ -41,6 +41,7 @@ def task(*args, **kwargs):
         new_task = invoke.task(args[0])
         ns.add_task(new_task)
         return new_task
+
     def decorator(f):
         new_task = invoke.task(f, *args, **kwargs)
         ns.add_task(new_task)
@@ -119,90 +120,6 @@ def shell(ctx, transaction=True, print_sql=False, notebook=False):
         cmd += ' --no-transaction'
     return ctx.run(cmd, pty=True, echo=True)
 
-@task(aliases=['mongo'])
-def mongoserver(ctx, daemon=False, config=None):
-    """Run the mongod process.
-    """
-    if not config:
-        platform_configs = {
-            'darwin': '/usr/local/etc/tokumx.conf',  # default for homebrew install
-            'linux': '/etc/tokumx.conf',
-        }
-        platform = str(sys.platform).lower()
-        config = platform_configs.get(platform)
-    port = settings.DB_PORT
-    cmd = 'mongod --port {0}'.format(port)
-    if config:
-        cmd += ' --config {0}'.format(config)
-    if daemon:
-        cmd += ' --fork'
-    ctx.run(cmd, echo=True)
-
-
-@task(aliases=['mongoshell'])
-def mongoclient(ctx):
-    """Run the mongo shell for the OSF database."""
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-    ctx.run('mongo {db} --port {port}'.format(db=db, port=port), pty=True)
-
-
-@task
-def mongodump(ctx, path):
-    """Back up the contents of the running OSF database"""
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-
-    cmd = 'mongodump --db {db} --port {port} --out {path}'.format(
-        db=db,
-        port=port,
-        path=path,
-        pty=True)
-
-    if settings.DB_USER:
-        cmd += ' --username {0}'.format(settings.DB_USER)
-    if settings.DB_PASS:
-        cmd += ' --password {0}'.format(settings.DB_PASS)
-
-    ctx.run(cmd, echo=True)
-
-    print()
-    print('To restore from the dumped database, run `invoke mongorestore {0}`'.format(
-        os.path.join(path, settings.DB_NAME)))
-
-
-@task
-def mongorestore(ctx, path, drop=False):
-    """Restores the running OSF database with the contents of the database at
-    the location given its argument.
-
-    By default, the contents of the specified database are added to
-    the existing database. The `--drop` option will cause the existing database
-    to be dropped.
-
-    A caveat: if you `invoke mongodump {path}`, you must restore with
-    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
-    database dump will be stored.
-    """
-    db = settings.DB_NAME
-    port = settings.DB_PORT
-
-    cmd = 'mongorestore --db {db} --port {port}'.format(
-        db=db,
-        port=port,
-        pty=True)
-
-    if settings.DB_USER:
-        cmd += ' --username {0}'.format(settings.DB_USER)
-    if settings.DB_PASS:
-        cmd += ' --password {0}'.format(settings.DB_PASS)
-
-    if drop:
-        cmd += ' --drop'
-
-    cmd += ' ' + path
-    ctx.run(cmd, echo=True)
-
 
 @task
 def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
@@ -252,33 +169,8 @@ def celery_beat(ctx, level='debug', schedule=None):
         cmd = cmd + ' --schedule={}'.format(schedule)
     ctx.run(bin_prefix(cmd), pty=True)
 
-
 @task
-def rabbitmq(ctx):
-    """Start a local rabbitmq server.
-
-    NOTE: this is for development only. The production environment should start
-    the server as a daemon.
-    """
-    ctx.run('rabbitmq-server', pty=True)
-
-
-@task(aliases=['elastic'])
-def elasticsearch(ctx):
-    """Start a local elasticsearch server
-
-    NOTE: Requires that elasticsearch is installed. See README for instructions
-    """
-    import platform
-    if platform.linux_distribution()[0] == 'Ubuntu':
-        ctx.run('sudo service elasticsearch start')
-    elif platform.system() == 'Darwin':  # Mac OSX
-        ctx.run('elasticsearch')
-    else:
-        print('Your system is not recognized, you will have to start elasticsearch manually')
-
-@task
-def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
+def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -290,8 +182,7 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     for logger in SILENT_LOGGERS:
         logging.getLogger(logger).setLevel(logging.ERROR)
 
-    migrate(delete, index=index)
-
+    migrate(delete, remove=remove, index=index)
 
 @task
 def rebuild_search(ctx):
@@ -316,7 +207,7 @@ def rebuild_search(ctx):
     print('Creating index {}'.format(settings.ELASTIC_INDEX))
     print('----- PUT {}'.format(url))
     requests.put(url)
-    migrate_search(ctx)
+    migrate_search(ctx, delete=False)
 
 
 @task
@@ -390,7 +281,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, params=None):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -398,9 +289,22 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
+    numprocesses = int(numprocesses)
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    args = ['-s']
+    args = []
+    if coverage:
+        args.extend([
+            '--cov-report', 'term-missing',
+            '--cov', 'admin',
+            '--cov', 'addons',
+            '--cov', 'api',
+            '--cov', 'framework',
+            '--cov', 'osf',
+            '--cov', 'website',
+        ])
+    if not nocapture:
+        args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
@@ -410,6 +314,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
+
 
 OSF_TESTS = [
     'osf_tests',
@@ -425,13 +330,15 @@ API_TESTS1 = [
     'api_tests/licenses',
     'api_tests/logs',
     'api_tests/metaschemas',
-    'api_tests/preprint_providers',
+    'api_tests/providers',
     'api_tests/preprints',
     'api_tests/registrations',
     'api_tests/users',
 ]
 API_TESTS2 = [
+    'api_tests/actions',
     'api_tests/nodes',
+    'api_tests/requests'
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
@@ -458,51 +365,51 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None):
+def test_osf(ctx, numprocesses=None, coverage=False):
     """Run the OSF test suite."""
-    print('Testing modules "{}"'.format(OSF_TESTS + ADDON_TESTS))
-    test_module(ctx, module=OSF_TESTS + ADDON_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(OSF_TESTS))
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_else(ctx, numprocesses=None):
+def test_else(ctx, numprocesses=None, coverage=False):
     """Run the old test suite."""
     print('Testing modules "{}"'.format(ELSE_TESTS))
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_api1(ctx, numprocesses=None):
+def test_api1(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api2(ctx, numprocesses=None):
+def test_api2(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api3(ctx, numprocesses=None):
+def test_api3(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3))
-    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_admin(ctx, numprocesses=None):
+def test_admin(ctx, numprocesses=None, coverage=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_addons(ctx, numprocesses=None):
+def test_addons(ctx, numprocesses=None, coverage=False):
     """Run all the tests in the addons directory.
     """
     print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
@@ -525,10 +432,10 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_osf(ctx)
+    test_else(ctx)  # /tests
     test_api1(ctx)
     test_api2(ctx)
-    test_api3(ctx)
+    test_api3(ctx)  # also /osf_tests
 
     if all:
         test_addons(ctx)
@@ -543,46 +450,47 @@ def test_js(ctx):
     karma(ctx)
 
 @task
-def test_travis_osf(ctx, numprocesses=None):
+def test_travis_addons(ctx, numprocesses=None, coverage=False):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_else(ctx, numprocesses=None):
+def test_travis_else(ctx, numprocesses=None, coverage=False):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_else(ctx, numprocesses=numprocesses)
+    test_else(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
-    karma(ctx)
-    test_api1(ctx, numprocesses=numprocesses)
+    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+    # karma(ctx)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None):
+def test_travis_api2(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
-    test_api2(ctx, numprocesses=numprocesses)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api3(ctx, numprocesses=None):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
     flake(ctx)
     jshint(ctx)
-    test_api3(ctx, numprocesses=numprocesses)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
@@ -759,8 +667,7 @@ def hotfix(ctx, name, finish=False, push=False):
     if finish:
         ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
-        ctx.run('git push origin master', echo=True)
-        ctx.run('git push --tags', echo=True)
+        ctx.run('git push --follow-tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
 
 
@@ -953,22 +860,20 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     from website.app import setup_django
     setup_django()
     from website.maintenance import set_maintenance
-    """Creates a maintenance notice.
+    """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
-    Message is required.
-    Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
-
-    Set the time period for the maintenance notice to be displayed.
-    If no start or end values are displayed, default to starting now
-    and ending 24 hours from now. If no timezone info is passed along,
-    everything will be converted to UTC.
-
-    If a given end time results in a start that is after the end, start
-    will be changed to be 24 hours before the end time.
+    start - Start time for the maintenance period
+    end - End time for the mainteance period
+        NOTE: If no start or end values are provided, default to starting now
+        and ending 24 hours from now.
+    message - Message to display. If omitted, will be:
+        "The site will undergo maintenance between <localized start time> and <localized end time>. Thank you
+        for your patience."
+    level - Severity level. Modifies the color of the displayed notice. Must be one of 1 (info), 2 (warning), 3 (danger).
 
     Examples:
-        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
+        invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
     """
     state = set_maintenance(message, level, start, end)
     print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))

@@ -15,6 +15,8 @@ var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
+var RequestAccess = require('js/requestAccess.js');
+
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -47,7 +49,9 @@ var ProjectViewModel = function(data, options) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
+    self.currentUserRequestState = options.currentUserRequestState;
 
+    self.requestAccess = new RequestAccess(options.currentUserRequestState, self._id, self.user);
     self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
     self.makePublicTooltip = ko.computed(function() {
         if(self.nodeIsPendingEmbargoTermination()) {
@@ -110,9 +114,9 @@ var ProjectViewModel = function(data, options) {
             title: 'Edit Description',
             emptytext: 'Add a brief description to your ' + project_or_component_label,
             emptyclass: 'text-muted',
-            value: self.description(),
+            value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
-                newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
+                newValue = $osf.decodeText(response.newValue); // Update display to reflect changes, eg by sanitizer
                 self.description(newValue);
                 return {newValue: newValue};
             }
@@ -173,12 +177,20 @@ var ProjectViewModel = function(data, options) {
         NodeActions.forkNode();
     };
 
-    self.hasIdentifiers = ko.pureComputed(function() {
-        return !!(self.doi() && self.ark());
+    self.hasDoi = ko.pureComputed(function() {
+        return !!(self.doi());
+    });
+
+    self.hasArk = ko.pureComputed(function() {
+        return !!(self.ark());
+    });
+
+    self.identifier = ko.pureComputed(function(){
+        return self.hasArk() && self.hasDoi()? 'Identifiers' : 'Identifier';
     });
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
-        return !self.hasIdentifiers() &&
+        return !self.hasDoi() &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
@@ -194,11 +206,11 @@ var ProjectViewModel = function(data, options) {
     self.askCreateIdentifiers = function() {
         var self = this;
         bootbox.confirm({
-            title: 'Create identifiers',
+            title: 'Create DOI',
             message: '<p class="overflow">' +
-                'Are you sure you want to create a DOI and ARK for this ' +
-                $osf.htmlEscape(self.nodeType) + '? DOI and ARK identifiers' +
-                ' are persistent and will always resolve to this page.',
+                'Are you sure you want to create a DOI for this ' +
+                $osf.htmlEscape(self.nodeType) + '? A DOI' +
+                ' is persistent and will always resolve to this page.',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
@@ -225,11 +237,10 @@ var ProjectViewModel = function(data, options) {
             self.ark(resp.ark);
         }).fail(function(xhr) {
             var message = 'We could not create the identifier at this time. ' +
-                'The DOI/ARK acquisition service may be down right now. ' +
-                'Please try again soon and/or contact ' +
-                '<a href="mailto: support@osf.io">support@osf.io</a>';
+                'The DOI acquisition service may be down right now. ' +
+                'Please try again soon and/or contact ' + $osf.osfSupportLink();
             $osf.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
+            Raven.captureMessage('Could not create doi', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator

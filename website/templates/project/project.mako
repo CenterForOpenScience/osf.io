@@ -10,8 +10,8 @@
 
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
-            <div class="col-sm-5 col-md-7 cite-container">
+        <div class="row no-gutters">
+            <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -32,7 +32,8 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-7 col-md-5">
+            <div class="clearfix visible-md-block"></div>
+            <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -89,36 +90,56 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            View Forks(${ node['fork_count']})
+                                            View Forks (${ node['fork_count']})
                                         </span>
                                     </li>
                                     %endif
                                 </ul>
-                            </div>
-                    </div>
-                    <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none;" data-bind="visible: true">
-
-                        <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
-                        <!-- /ko -->
-                        <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-minus"></i>
-                           </a>
-                        <!-- /ko -->
-
-                    </div>
-                    <!-- /ko -->
-                    % if node["is_public"]:
-                        <div class="btn-group" id="shareButtonsPopover"></div>
-                    % endif
+                            </div> <!-- end .dropdown -->
+                        </div><!-- end .btn-group -->
+                    <div class="btn-group">
+                        <div class="generic-dropdown dropdown pull-right">
+                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" data-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li data-bind="visible: canBeOrganized()" class="keep-open">
+                                    <a role="button" href="#" id="addDashboardFolder" data-bind="visible: !inDashboard(), click: addToDashboard">
+                                        Bookmark
+                                    </a>
+                                    <a role="button" href="#" id="removeDashboardFolder" data-bind="visible: inDashboard(), click: removeFromDashboard">
+                                        Remove from bookmarks
+                                    </a>
+                                </li>
+                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                    <li>
+                                        <a href="${node['url']}settings/#createVolsAnchor">
+                                            Create view-only link
+                                        </a>
+                                    </li>
+                                % endif ## End create view-only link
+                                % if node['is_public']:
+                                    <li class="keep-open" id="shareButtonsPopover">
+                                        <a href="#" role="button">
+                                            Share
+                                        </a>
+                                    </li>
+                                %endif
+                                % if node['access_requests_enabled'] and not user['is_contributor'] and not node['is_registration']:
+                                    <li data-bind="css: {'keep-open': user.username}">
+                                        <a role="button" href="#" data-bind="
+                                                        visible: user.username,
+                                                        click: requestAccess.requestProjectAccess,
+                                                        text: requestAccess.requestAccessButton,
+                                                        css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
+                                                        tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
+                                        </a>
+                                        <a data-bind="visible: !user.username" role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
+                                    </li>
+                                % endif
+                            </ul>
+                        </div><!-- end .dropdown -->
+                    </div><!-- end .btn-group -->
                 </div>
             </div>
         </div>
@@ -185,30 +206,32 @@
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
-                <span data-bind="if: hasIdentifiers()" class="scripted">
+                <span data-bind="if: hasDoi()" class="scripted">
                   <p>
-                    Identifiers:
-                  DOI <span data-bind="text: doi"></span> |
-                  ARK <span data-bind="text: ark"></span>
+                    <span data-bind="text:identifier"></span>:
+                  DOI <span data-bind="text: doi"></span>
+                      <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
+                % if waffle.switch_is_active('ezid'):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
-                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                        <span class="text-info">Creating DOI. Please wait...</span>
                     </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
                   <p>
-                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI</a>
                   </p>
                   <!-- /ko -->
                 </span>
+                % endif
                 <p>
-                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
-                    <span data-bind="css: icon"></span>
+                    Category: <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
@@ -272,14 +295,66 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint']:
+% if node['is_collected']:
+    <div class="collections-container">
+    % for i, collection in enumerate(node['collections'][:5]):
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <div style="margin-top: 5px;">
+                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
+            % if any([collection['type'], collection['status']]):
+              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            % endif
+            </div>
+            <div id="metadata${i}" class="collection-details collapse">
+                <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
+
+                    % if collection['type']:
+                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
+                    % endif
+
+                    % if collection['status']:
+                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                    % endif
+
+                </ul>
+            </div>
+        </div>
+    </div>
+    % endfor
+    </div>
+% endif
+
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+            % if node['has_moderated_preprint']:
+                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
+                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
+                <% icon_tooltip = ''%>
+                % if node['preprint_state'] == 'pending':
+                    % if node['preprint_provider']['workflow'] == 'post-moderation':
+                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % else:
+                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % endif
+                % elif node['preprint_state'] == 'accepted':
+                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
+                % else:
+                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+                % endif
+                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
+            % else:
+                This project represents a ${node['preprint_word']}.
+            % endif
+            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
+            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
             % endif
         </div>
     </div>
@@ -299,7 +374,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
@@ -325,7 +400,9 @@
             %endif
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
                              <p class="m-t-sm fg-load-message"> Loading files...  </p>
                         </div>
                     </div>
@@ -350,7 +427,7 @@
 
     </div>
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -410,7 +487,9 @@
             <div class="panel-body">
                 <div id="logFeed">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>
@@ -431,7 +510,7 @@
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Link Projects</a>
+                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">Link Projects</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
@@ -475,6 +554,7 @@ ${parent.javascript_bottom()}
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
+            canEditTags: ${ user['can_edit_tags'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},
@@ -489,7 +569,8 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
-        customCitations: ${ custom_citations | sjson, n }
+        customCitations: ${ custom_citations | sjson, n },
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
     });
 </script>
 

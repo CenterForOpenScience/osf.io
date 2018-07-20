@@ -33,14 +33,12 @@ describe.skip('nodeControl', () => {
             it('has no identifiers when identifiers are null', () => {
                 var vm = new nodeControl._ProjectViewModel(nodeData);
                 assert.equal(vm.doi(), null);
-                assert.equal(vm.ark(), null);
-                assert.isFalse(vm.hasIdentifiers());
+                assert.isFalse(vm.hasDoi());
             });
             it('has identifiers when identifiers are not null', () => {
                 var vm = new nodeControl._ProjectViewModel(nodeData);
                 vm.doi('24601');
-                vm.ark('24601');
-                assert.isTrue(vm.hasIdentifiers());
+                assert.isTrue(vm.hasDoi());
             });
             it('can have identifiers when admin and public', () => {
                 var data = $.extend({}, nodeData);

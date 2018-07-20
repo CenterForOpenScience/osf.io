@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from api.nodes import views
 
+app_name = 'osf'
+
 urlpatterns = [
     # Examples:
     # url(r'^$', 'api.views.home', name='home'),
@@ -15,6 +17,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/citation/$', views.NodeCitationDetail.as_view(), name=views.NodeCitationDetail.view_name),
     url(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.NodeCitationStyleDetail.as_view(), name=views.NodeCitationStyleDetail.view_name),
     url(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),
+    url(r'^(?P<node_id>\w+)/implicit_contributors/$', views.NodeImplicitContributorsList.as_view(), name=views.NodeImplicitContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name=views.NodeContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.NodeContributorDetail.as_view(), name=views.NodeContributorDetail.view_name),
     url(r'^(?P<node_id>\w+)/draft_registrations/$', views.NodeDraftRegistrationsList.as_view(), name=views.NodeDraftRegistrationsList.view_name),
@@ -31,11 +34,14 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/logs/$', views.NodeLogList.as_view(), name=views.NodeLogList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
+    url(r'^(?P<node_id>\w+)/linked_by_nodes/$', views.NodeLinkedByNodesList.as_view(), name=views.NodeLinkedByNodesList.view_name),
+    url(r'^(?P<node_id>\w+)/linked_by_registrations/$', views.NodeLinkedByRegistrationsList.as_view(), name=views.NodeLinkedByRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/preprints/$', views.NodePreprintsList.as_view(), name=views.NodePreprintsList.view_name),
     url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name=views.NodeRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/relationships/institutions/$', views.NodeInstitutionsRelationship.as_view(), name=views.NodeInstitutionsRelationship.view_name),
     url(r'^(?P<node_id>\w+)/relationships/linked_nodes/$', views.NodeLinkedNodesRelationship.as_view(), name=views.NodeLinkedNodesRelationship.view_name),
     url(r'^(?P<node_id>\w+)/relationships/linked_registrations/$', views.NodeLinkedRegistrationsRelationship.as_view(), name=views.NodeLinkedRegistrationsRelationship.view_name),
+    url(r'^(?P<node_id>\w+)/requests/$', views.NodeRequestListCreate.as_view(), name=views.NodeRequestListCreate.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/$', views.NodeViewOnlyLinksList.as_view(), name=views.NodeViewOnlyLinksList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.NodeViewOnlyLinkDetail.as_view(), name=views.NodeViewOnlyLinkDetail.view_name),
     url(r'^(?P<node_id>\w+)/wikis/$', views.NodeWikiList.as_view(), name=views.NodeWikiList.view_name),

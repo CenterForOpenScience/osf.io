@@ -4,15 +4,21 @@ import logging
 import re
 import urlparse
 import warnings
+import markupsafe
 
+import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
 from django.db.models.signals import post_save
+from django.db.models.expressions import F
+from django.db.models.aggregates import Max
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -22,17 +28,17 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework import status
-from framework.celery_tasks.handlers import enqueue_task
+from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
+from osf.models.collection import CollectedGuidMetadata
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
-                               NodeLinkMixin, Taggable)
+                               NodeLinkMixin, Taggable, TaxonomizableMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
@@ -41,10 +47,13 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.utils.auth import Auth, get_user
+from framework.auth.core import Auth, get_user
+from addons.wiki import utils as wiki_utils
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils import sanitize
+from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -54,14 +63,15 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
-
-from website.util import (api_url_for, api_v2_url, get_headers_from_request,
-                          sanitize, web_url_for)
-from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+from website.identifiers.tasks import update_doi_metadata_on_change
+from website.identifiers.clients import DataCiteClient
+from osf.utils.requests import get_headers_from_request
+from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
+from website.util import api_url_for, api_v2_url, web_url_for
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
 
 logger = logging.getLogger(__name__)
@@ -131,7 +141,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
-        if user is not None:
+        if user is not None and not isinstance(user, AnonymousUser):
             if isinstance(user, OSFUser):
                 user = user.pk
             if not isinstance(user, int):
@@ -157,6 +167,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
         return qs
 
+
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
     def get_queryset(self):
@@ -177,7 +188,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin, CommentableMixin, SpamMixin,
+                   NodeLinkMixin, CommentableMixin, SpamMixin, TaxonomizableMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -219,16 +230,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'embargo',
         'is_public',
         'is_deleted',
-        'wiki_pages_current',
         'node_license',
         'preprint_file',
+    }
+
+    # Node fields that trigger an identifier update on save
+    IDENTIFIER_UPDATE_FIELDS = {
+        'title',
+        'description',
+        'is_public',
+        'contributors',
+        'is_deleted',
+        'node_license'
     }
 
     # Node fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
-        'wiki_pages_current',
     }
 
     # Fields that are writable by Node.update
@@ -284,11 +303,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
-                                related_name='created',
+                                related_name='nodes_created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(db_index=True, auto_now=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
@@ -300,6 +317,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
+    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -325,10 +343,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def parent_node(self):
-        # TODO: Use .filter when chaining is fixed in django-include
         try:
-            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
-        except StopIteration:
+            node_rel = self._parents.filter(is_node_link=False)[0]
+        except IndexError:
             node_rel = None
         if node_rel:
             parent = node_rel.parent
@@ -434,15 +451,36 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return not self.is_registration and not self.is_fork
 
     @property
+    def is_collected(self):
+        """is included in a collection"""
+        return self.collecting_metadata_qs.exists()
+
+    @property
+    def collecting_metadata_qs(self):
+        return CollectedGuidMetadata.objects.filter(
+            guid=self.guids.first(),
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False)
+
+    @property
+    def collecting_metadata_list(self):
+        return list(self.collecting_metadata_qs)
+
+    @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return self.has_published_preprint
+            return self.has_submitted_preprint
         else:
             self._is_preprint_orphan = True
             return False
+
+    @property
+    def has_submitted_preprint(self):
+        return self.preprints.exclude(machine_state=DefaultStates.INITIAL.value).exists()
 
     @property
     def is_preprint_orphan(self):
@@ -455,14 +493,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_published_preprint(self):
-        return self.preprints.filter(is_published=True).exists()
+        return self.published_preprints_queryset.exists()
+
+    @property
+    def published_preprints_queryset(self):
+        return self.preprints.filter(is_published=True)
 
     @property
     def preprint_url(self):
+        node_linked_preprint = self.linked_preprint
+        if node_linked_preprint:
+            return node_linked_preprint.url
+
+    @property
+    def linked_preprint(self):
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                return self.preprints.get_queryset()[0].url
+                published_preprint = self.published_preprints_queryset.first()
+                if published_preprint:
+                    return published_preprint
+                else:
+                    return self.preprints.get_queryset()[0]
             except IndexError:
                 pass
 
@@ -625,6 +677,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         DraftRegistration = apps.get_model('osf.DraftRegistration')
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
+            models.Q(deleted__isnull=True) &
             (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
         )
 
@@ -793,7 +846,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if hasattr(self.contributor_set.all(), '_result_cache'):
+        if getattr(self.contributor_set.all(), '_result_cache', None):
             for contrib in self.contributor_set.all():
                 if contrib.user_id == user.id:
                     return get_contributor_permissions(contrib)
@@ -867,6 +920,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def admin_contributor_ids(self):
+        return self._get_admin_contributor_ids(include_self=True)
+
+    @property
+    def parent_admin_contributor_ids(self):
+        return self._get_admin_contributor_ids()
+
+    def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
             return Contributor.objects.select_related('user').filter(
                 node=node,
@@ -875,7 +935,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set()
+        admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
@@ -885,6 +945,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def admin_contributors(self):
         return OSFUser.objects.filter(
             guids___id__in=self.admin_contributor_ids
+        ).order_by('family_name')
+
+    @property
+    def parent_admin_contributors(self):
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
 
     def set_permissions(self, user, permissions, validate=True, save=False):
@@ -1043,6 +1109,32 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.update_search()
             return True
 
+    def remove_tags(self, tags, auth, save=True):
+        """
+        Unlike remove_tag, this optimization method assumes that the provided
+        tags are already present on the node.
+        """
+        if not tags:
+            raise InvalidTagError
+
+        for tag in tags:
+            tag_obj = Tag.objects.get(name=tag)
+            self.tags.remove(tag_obj)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        self.update_search()
+        return True
+
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
         return user is not None and Contributor.objects.filter(user=user, node=self).exists()
@@ -1122,6 +1214,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
+
+            # If there are pending access requests for this user, mark them as accepted
+            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
+            if pending_access_requests_for_user.exists():
+                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -1142,6 +1240,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        auth=auth, email_template=send_email)
             self.update_search()
             self.save_node_preprints()
+
+            # enqueue on_node_updated to update DOI metadata when a contributor is added
+            if self.get_identifier_value('doi'):
+                request, user_id = get_request_and_user_id()
+                self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
+
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1204,7 +1308,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+        contributor.add_unclaimed_record(self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
@@ -1216,7 +1320,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise
 
             contributor.add_unclaimed_record(
-                node=self, referrer=auth.user, given_name=fullname, email=email
+                self, referrer=auth.user, given_name=fullname, email=email
             )
 
             contributor.save()
@@ -1246,19 +1350,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
-
-            try:
+            contributor = get_user(email=email)
+            if contributor:
+                if self.contributor_set.filter(user=contributor).exists():
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                    send_email=send_email, permissions=permissions, save=True)
+            else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
                     send_email=send_email, permissions=permissions,
                     visible=bibliographic, save=True
                 )
-            except ValidationError:
-                contributor = get_user(email=email)
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     send_email=send_email, permissions=permissions, save=True)
 
         auth.user.email_last_sent = timezone.now()
         auth.user.save()
@@ -1351,7 +1454,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if message:
                 # Because addons can return HTML strings, addons are responsible
                 # for markupsafe-escaping any messages returned
-                status.push_status_message(message, kind='info', trust=True)
+                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                    'addon': markupsafe.escape(addon.config.full_name),
+                    'category': markupsafe.escape(self.category_display),
+                    'title': markupsafe.escape(self.title),
+                    'user': markupsafe.escape(contributor.fullname)
+                })
 
         if log:
             self.add_log(
@@ -1371,6 +1479,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         project_signals.contributor_removed.send(self, user=contributor)
 
         self.save_node_preprints()
+
+        # enqueue on_node_updated to update DOI metadata when a contributor is removed
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1449,6 +1562,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
+            self.update_or_enqueue_on_node_updated(auth.user._id, first_save=False, saved_fields={'node_license'})
 
         if save:
             self.save()
@@ -1492,17 +1606,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
-
-        # After set permissions callback
         if check_addons:
             for addon in self.get_addons():
                 message = addon.after_set_privacy(self, permissions)
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
+
+        # Update existing identifiers
+        if self.get_identifier('doi'):
+            doi_status = 'unavailable' if permissions == 'private' else 'public'
+            enqueue_task(update_doi_metadata_on_change.s(self._id, status=doi_status))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -1607,11 +1720,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param template: Template name
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
-        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1622,8 +1733,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise NodeStateError('Folders may not be registered')
         original = self
 
-        # Note: Cloning a node will clone each node wiki page version and add it to
-        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        # Note: Cloning a node will clone each WikiPage on the node and all the related WikiVersions
+        # and point them towards the registration
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
@@ -1648,21 +1759,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_schema.add(schema)
         registered.copy_contributors_from(self)
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
+        registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
-        logs = original.logs.all()
-        for log in logs:
-            log.clone_node_log(registered._id)
+        self.clone_logs(registered)
 
         registered.is_public = False
+        registered.access_requests_enabled = False
         # Copy unclaimed records to unregistered users for parent
         registered.copy_unclaimed_records()
-        for node in registered.get_descendants_recursive():
-            node.is_public = False
-            node.save()
-            # Copy unclaimed records to unregistered users for children
-            node.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
@@ -1678,7 +1784,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
-                registered_child = node_contained.register_node(  # noqa
+                node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
@@ -1801,11 +1907,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None):
+    def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
+        :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
         Registration = apps.get_model('osf.Registration')
@@ -1823,8 +1930,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
 
-        # Note: Cloning a node will clone each node wiki page version and add it to
-        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        # Note: Cloning a node will clone each WikiPage on the node and all the related WikiVersions
+        # and point them towards the fork
         forked = original.clone()
         if isinstance(forked, Registration):
             forked.recast('osf.node')
@@ -1843,23 +1950,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+        forked.subjects.add(*self.subjects.values_list('pk', flat=True))
+
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
+
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='')
+                    node_contained.fork_node(
+                        auth=auth,
+                        title='',
+                        parent=forked,
+                    )
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
-                    forked_node = None
-                if forked_node is not None:
-                    NodeRelation.objects.get_or_create(
-                        is_node_link=False,
-                        parent=forked,
-                        child=forked_node
-                    )
-                    forked_node.root = None
-                    forked_node.save()  # Recompute root on save()
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
@@ -1906,9 +2014,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
         # Clone each log from the original node for this fork.
-        for log in original.logs.all():
-            log.clone_node_log(forked._id)
-
+        self.clone_logs(forked)
         forked.refresh_from_db()
 
         # After fork callback
@@ -1917,15 +2023,42 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return forked
 
-    def use_as_template(self, auth, changes=None, top_level=True):
+    def clone_logs(self, node, page_size=100):
+        paginator = Paginator(self.logs.order_by('pk').all(), page_size)
+        for page_num in paginator.page_range:
+            page = paginator.page(page_num)
+            # Instantiate NodeLogs "manually"
+            # because BaseModel#clone() is too slow for large projects
+            logs_to_create = [
+                NodeLog(
+                    _id=bson.ObjectId(),
+                    action=log.action,
+                    date=log.date,
+                    params=log.params,
+                    should_hide=log.should_hide,
+                    foreign_user=log.foreign_user,
+                    # Set foreign keys, not their objects
+                    # to speed things up
+                    node_id=node.pk,
+                    user_id=log.user_id,
+                    original_node_id=log.original_node_id
+                )
+                for log in page
+            ]
+            NodeLog.objects.bulk_create(logs_to_create)
+
+    def use_as_template(self, auth, changes=None, top_level=True, parent=None):
         """Create a new project, using an existing project as a template.
 
         :param auth: The user to be assigned as creator
         :param changes: A dictionary of changes, keyed by node id, which
                         override the attributes of the template project or its
                         children.
+        :param Bool top_level: indicates existence of parent TODO: deprecate
+        :param Node parent: parent template. Should only be passed in during recursion
         :return: The `Node` instance created.
         """
+        Registration = apps.get_model('osf.Registration')
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1935,16 +2068,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Non-contributors can't fork private nodes
+        if self.is_deleted:
+            raise NodeStateError('Cannot use deleted node as template.')
+
+        # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, 'read')):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
+        if isinstance(new, Registration):
+            new.recast('osf.node')
+
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
-        new.wiki_pages_current.clear()
-        new.wiki_pages_versions.clear()
         new.wiki_private_uuids.clear()
         new.file_guid_to_share_uuids.clear()
 
@@ -1975,8 +2112,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if len(new.title) > 200:
             new.title = new.title[:200]
 
-        # Slight hack - date_created is a read-only field.
-        new.date_created = timezone.now()
+        # Slight hack - created is a read-only field.
+        new.created = timezone.now()
 
         new.save(suppress_log=True)
 
@@ -1995,26 +2132,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
             },
             auth=auth,
-            log_date=new.date_created,
+            log_date=new.created,
             save=False,
         )
         new.save()
+
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.template_node, child=self)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=new)
+
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
             node_contained = node_relation.child
             # template child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                    node_contained.use_as_template(auth, changes, top_level=False, parent=new)
                 except PermissionsError:
                     pass
-                else:
-                    NodeRelation.objects.get_or_create(
-                        parent=new, child=templated_child,
-                        is_node_link=False
-                    )
-                    templated_child.save()  # Recompute root on save()
 
+        new.root = None
+        new.save()  # Recompute root on save()
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
@@ -2024,7 +2162,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         returns a list of [(node, [children]), ...]
         """
         ret = []
-        for node in self._nodes.order_by('date_created').all():
+        for node in self._nodes.order_by('created').all():
             if condition(auth, node):
                 # base case
                 ret.append((node, []))
@@ -2242,6 +2380,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
+        if 'old_subjects' in kwargs.keys():
+            # TODO: send this data to SHARE
+            kwargs.pop('old_subjects')
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2261,6 +2402,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return ret
 
+    def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
+        """
+        If an earlier version of the on_node_updated task exists in the queue, update it
+        with the appropriate saved_fields. Otherwise, enqueue on_node_updated.
+
+        This ensures that on_node_updated is only queued once for a given node.
+        """
+        # All arguments passed as kwargs so that we can check signature.kwargs and update as necessary
+        task = get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == self._id)
+        if task:
+            # Ensure saved_fields is JSON-serializable by coercing it to a list
+            task.kwargs['saved_fields'] = list(set(task.kwargs['saved_fields']).union(saved_fields))
+        else:
+            enqueue_task(node_tasks.on_node_updated.s(node_id=self._id, user_id=user_id, first_save=first_save, saved_fields=saved_fields))
+
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
@@ -2271,15 +2427,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         if self.preprint_file:
             # avoid circular imports
-            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.tasks import update_or_enqueue_on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
+                update_or_enqueue_on_preprint_updated(preprint._id)
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
@@ -2287,18 +2443,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             super(AbstractNode, self).save()
 
     def _get_spam_content(self, saved_fields):
-        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
         content = []
         for field in spam_fields:
-            if field == 'wiki_pages_current':
+            if field == 'wiki_pages_latest':
                 newest_wiki_page = None
-                for wiki_page_id in self.wiki_pages_current.values():
-                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                for wiki_page in self.get_wiki_pages_latest():
                     if not newest_wiki_page:
                         newest_wiki_page = wiki_page
-                    elif wiki_page.date > newest_wiki_page.date:
+                    elif wiki_page.created > newest_wiki_page.created:
                         newest_wiki_page = wiki_page
                 if newest_wiki_page:
                     content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
@@ -2330,6 +2484,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ))
         if is_spam:
             self._check_spam_user(user)
+            for preprint in self.preprints.get_queryset():
+                preprint.flag_spam()
+                preprint.save()
+
         return is_spam
 
     def _check_spam_user(self, user):
@@ -2345,7 +2503,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
-                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
+                )
             user.save()
 
             # Make public nodes private from this contributor
@@ -2535,6 +2699,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth)
         return updated
 
+    def add_remove_node_log(self, auth, date):
+        node_to_log = self.parent_node if self.parent_node else self
+        log_action = NodeLog.NODE_REMOVED if self.parent_node else NodeLog.PROJECT_DELETED
+        node_to_log.add_log(
+            log_action,
+            params={
+                'project': self._primary_key,
+            },
+            auth=auth,
+            log_date=date,
+            save=True,
+        )
+
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
 
@@ -2543,7 +2720,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :type date: `datetime.datetime` or `None`
+        :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
         if not self.can_edit(auth):
@@ -2551,38 +2728,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True):
+        if Node.objects.get_children(self, active=True).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
-        for addon in self.get_addons():
-            message = addon.after_delete(self, auth.user)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+        remove_addons(auth, [self])
 
         log_date = date or timezone.now()
 
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(node=self).update(root_target=None)
+
         # Add log to parent
-        if self.parent_node:
-            self.parent_node.add_log(
-                NodeLog.NODE_REMOVED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
-        else:
-            self.add_log(
-                NodeLog.PROJECT_DELETED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
+        self.add_remove_node_log(auth=auth, date=log_date)
 
         self.is_deleted = True
         self.deleted_date = date
@@ -2599,33 +2757,69 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public
         )
 
-    def include_wiki_settings(self, user):
-        """Check if node meets requirements to make publicly editable."""
+    def admin_of_wiki(self, user):
         return (
-            self.admin_public_wiki(user) or
-            any(
-                each.admin_public_wiki(user)
-                for each in self.get_descendants_recursive()
-            )
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin')
         )
 
-    def get_wiki_page(self, name=None, version=None, id=None):
-        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return self.get_descendants_recursive()
+
+    def get_wiki_pages_latest(self):
+        WikiVersion = apps.get_model('addons_wiki.WikiVersion')
+        wiki_page_ids = self.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
+        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids)
+
+    def get_wiki_page(self, name=None, id=None):
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
         if name:
-            name = (name or '').strip()
-            key = to_mongo_key(name)
             try:
-                if version and (isinstance(version, int) or version.isdigit()):
-                    id = self.wiki_pages_versions[key][int(version) - 1]
-                elif version == 'previous':
-                    id = self.wiki_pages_versions[key][-2]
-                elif version == 'current' or version is None:
-                    id = self.wiki_pages_current[key]
-                else:
-                    return None
-            except (KeyError, IndexError):
+                name = (name or '').strip()
+                return self.wikis.get(page_name__iexact=name, deleted__isnull=True)
+            except WikiPage.DoesNotExist:
                 return None
-        return NodeWikiPage.load(id)
+        return WikiPage.load(id)
+
+    def get_wiki_version(self, name=None, version=None, id=None):
+        WikiVersion = apps.get_model('addons_wiki.WikiVersion')
+        if name:
+            wiki_page = self.get_wiki_page(name)
+            if not wiki_page:
+                return None
+
+            if version == 'previous':
+                version = wiki_page.current_version_number - 1
+            elif version == 'current' or version is None:
+                version = wiki_page.current_version_number
+            elif not ((isinstance(version, int) or version.isdigit())):
+                return None
+
+            try:
+                return wiki_page.get_version(version=version)
+            except WikiVersion.DoesNotExist:
+                return None
+        return WikiVersion.load(id)
+
+    def create_or_update_node_wiki(self, name, content, auth):
+        """Create a WikiPage and a WikiVersion if none exist, otherwise, just create a WikiVersion
+
+        :param page: A string, the page's name, e.g. ``"home"``.
+        :param content: A string, the posted content.
+        :param auth: All the auth information including user, API key.
+        """
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+        wiki_page = self.get_wiki_page(name)
+        if not wiki_page:
+            wiki_page = WikiPage(
+                page_name=name,
+                user=auth.user,
+                node=self
+            )
+            wiki_page.save()
+        new_version = wiki_page.create_version(user=auth.user, content=content)
+        return wiki_page, new_version
 
     def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
@@ -2634,67 +2828,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
-        Comment = apps.get_model('osf.Comment')
-
-        name = (name or '').strip()
-        key = to_mongo_key(name)
-        has_comments = False
-        current = None
-
-        if key not in self.wiki_pages_current:
-            if key in self.wiki_pages_versions:
-                version = len(self.wiki_pages_versions[key]) + 1
-            else:
-                version = 1
-        else:
-            current = NodeWikiPage.load(self.wiki_pages_current[key])
-            version = current.version + 1
-            current.save()
-            if Comment.objects.filter(root_target=current.guids.all()[0]).exists():
-                has_comments = True
-
-        new_page = NodeWikiPage(
-            page_name=name,
-            version=version,
-            user=auth.user,
-            node=self,
-            content=content
-        )
-        new_page.save()
-
-        if has_comments:
-            Comment.objects.filter(root_target=current.guids.all()[0]).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.all()[0]).update(target=Guid.load(new_page._id))
-
-        if current:
-            for contrib in self.contributors:
-                if contrib.comments_viewed_timestamp.get(current._id, None):
-                    timestamp = contrib.comments_viewed_timestamp[current._id]
-                    contrib.comments_viewed_timestamp[new_page._id] = timestamp
-                    del contrib.comments_viewed_timestamp[current._id]
-                    contrib.save()
-
-        # check if the wiki page already exists in versions (existed once and is now deleted)
-        if key not in self.wiki_pages_versions:
-            self.wiki_pages_versions[key] = []
-        self.wiki_pages_versions[key].append(new_page._primary_key)
-        self.wiki_pages_current[key] = new_page._primary_key
+        wiki_page, new_version = self.create_or_update_node_wiki(name, content, auth)
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': new_page.page_name,
-                'page_id': new_page._primary_key,
-                'version': new_page.version,
+                'page': wiki_page.page_name,
+                'page_id': wiki_page._primary_key,
+                'version': new_version.identifier,
             },
             auth=auth,
-            log_date=new_page.date,
+            log_date=new_version.created,
             save=False,
         )
         self.save()
+
+        return wiki_page, new_version
 
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
@@ -2711,18 +2862,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             PageConflictError,
             PageNotFoundError,
         )
-
         name = (name or '').strip()
-        key = to_mongo_key(name)
         new_name = (new_name or '').strip()
-        new_key = to_mongo_key(new_name)
         page = self.get_wiki_page(name)
+        existing_wiki_page = self.get_wiki_page(new_name)
+        key = wiki_utils.to_mongo_key(name)
+        new_key = wiki_utils.to_mongo_key(new_name)
 
         if key == 'home':
             raise PageCannotRenameError('Cannot rename wiki home page')
         if not page:
             raise PageNotFoundError('Wiki page not found')
-        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
+        if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
                     new_name,
@@ -2736,10 +2887,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # TODO: merge historical records like update (prevents log breaks)
         # transfer the old page versions/current keys to the new name.
         if key != new_key:
-            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
-            del self.wiki_pages_versions[key]
-            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
-            del self.wiki_pages_current[key]
             if key in self.wiki_private_uuids:
                 self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
                 del self.wiki_private_uuids[key]
@@ -2752,20 +2899,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'page': page.page_name,
                 'page_id': page._primary_key,
                 'old_page': old_name,
-                'version': page.version,
+                'version': page.current_version_number,
             },
             auth=auth,
             save=True,
         )
 
-    def delete_node_wiki(self, name, auth):
-        name = (name or '').strip()
-        key = to_mongo_key(name)
-        page = self.get_wiki_page(key)
+        return page
 
-        del self.wiki_pages_current[key]
-        if key != 'home':
-            del self.wiki_pages_versions[key]
+    def delete_node_wiki(self, name_or_page, auth):
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+        page = name_or_page
+        if not isinstance(name_or_page, WikiPage):
+            page = self.get_wiki_page(name_or_page)
+        if page.page_name.lower() == 'home':
+            raise ValidationError('The home wiki page cannot be deleted.')
+        page.deleted = timezone.now()
+        page.save()
+
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
@@ -2853,6 +3006,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    def get_doi_client(self):
+        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
+            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
+        else:
+            return None
 
 class Node(AbstractNode):
     """
@@ -2878,37 +3036,20 @@ class Node(AbstractNode):
         )
 
 
-class Collection(AbstractNode):
-    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
+def remove_addons(auth, resource_object_list):
+    for config in AbstractNode.ADDONS_AVAILABLE:
+        try:
+            settings_model = config.node_settings
+        except LookupError:
+            settings_model = None
 
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
-
-    def remove_node(self, auth, date=None):
-        if self.is_bookmark_collection:
-            raise NodeStateError('Bookmark collections may not be deleted.')
-        # Remove all the collections that this is pointing at.
-        for pointed in self.linked_nodes.all():
-            if pointed.is_collection:
-                pointed.remove_node(auth=auth)
-        return super(Collection, self).remove_node(auth=auth, date=date)
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
+        if settings_model:
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
+            for addon in addon_list:
+                addon.after_delete(auth.user)
 
 
 ##### Signal listeners #####
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -2923,7 +3064,6 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
@@ -2940,19 +3080,17 @@ def add_project_created_log(sender, instance, created, **kwargs):
             log_action,
             params=log_params,
             auth=Auth(user=instance.creator),
-            log_date=instance.date_created,
+            log_date=instance.created,
             save=True,
         )
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
@@ -2961,7 +3099,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
                 instance.add_addon(addon.short_name, auth=None, log=False)
 
 
-@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 @receiver(post_save, sender='osf.QuickFilesNode')

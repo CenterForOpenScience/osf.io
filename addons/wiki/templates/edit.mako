@@ -47,7 +47,9 @@
                 </div>
                 <div id="grid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
@@ -156,6 +158,7 @@
                           <!-- ko foreach: showCollaborators -->
                              <!-- ko ifnot: id === ${ user_id | sjson, n } -->
                                 <li><a data-bind="attr: { href: url }" >
+                                          ## our shareJS explicitly passes back 'gravatar' despite our generalization
                                           <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
@@ -164,6 +167,9 @@
                                 <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
+                              <div id="aceLoadingBall" class="ball-scale ball-scale-blue absolute-center">
+                                  <div></div>
+                              </div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
@@ -243,6 +249,7 @@
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
 
+
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -260,7 +267,9 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="spinner-loading-wrapper">
-                <div class="logo-spin logo-xl"></div>
+                <div class="ball-scale ball-scale-blue">
+                    <div></div>
+                </div>
                  <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
             </div>
         </div>
@@ -388,7 +397,7 @@ ${parent.javascript_bottom()}
             userId: ${user_id | sjson, n },
             userName: ${ user_full_name | sjson, n },
             userUrl: ${ user_url | sjson, n },
-            userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
+            userProfileImage: ${ urls['profile_image'] | sjson, n }.replace('&amp;', '&')
         }
     };
     window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
@@ -401,5 +410,7 @@ ${parent.javascript_bottom()}
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
+<link href="${mfr_url}/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="${mfr_url}/static/js/mfr.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>

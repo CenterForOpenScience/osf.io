@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
 from website.exceptions import NodeStateError
-from website.util.sanitize import strip_html
+from osf.utils.sanitize import strip_html
 
 # TODO: This should be a class method of Node
 def new_node(category, title, user, description='', parent=None):
@@ -52,7 +52,7 @@ def new_bookmark_collection(user):
     existing_bookmark_collections = Collection.objects.filter(
         is_bookmark_collection=True,
         creator=user,
-        is_deleted=False
+        deleted__isnull=True
     ).exists()
 
     if existing_bookmark_collections:

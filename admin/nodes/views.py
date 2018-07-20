@@ -1,11 +1,17 @@
 from __future__ import unicode_literals
 
+import pytz
+from datetime import datetime
+
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
-from django.views.generic import ListView, DeleteView
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.views.generic import ListView, DeleteView, View, TemplateView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.http import HttpResponse
+from django.db.models import Q
 
 from website import search
 from osf.models import NodeLog
@@ -13,6 +19,7 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
+from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -25,7 +32,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
+from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
 from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
 
@@ -116,7 +123,7 @@ class NodeDeleteBase(DeleteView):
         return super(NodeDeleteBase, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
 
 class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
@@ -194,12 +201,45 @@ class NodeView(PermissionRequiredMixin, GuidView):
     def get_context_data(self, **kwargs):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
         return kwargs
 
     def get_object(self, queryset=None):
         guid = self.kwargs.get('guid')
         node = Node.load(guid) or Registration.load(guid)
         return serialize_node(node)
+
+
+class AdminNodeLogView(PermissionRequiredMixin, ListView):
+    """ Allow admins to see logs"""
+
+    template_name = 'nodes/node_logs.html'
+    context_object_name = 'node'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+
+    def get_queryset(self):
+        node = self.get_object()
+        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
+
+    def get_context_data(self, **kwargs):
+        query_set = self.get_queryset()
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'logs': map(serialize_log, query_set),
+            'page': page,
+        }
 
 
 class RegistrationListView(PermissionRequiredMixin, ListView):
@@ -210,7 +250,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
@@ -229,12 +269,52 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         }
 
 
+class StuckRegistrationListView(RegistrationListView):
+    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """
+
+    def get_queryset(self):
+        return Registration.find_failed_registrations().order_by(self.ordering)
+
+
+class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
+    """ Allow authorized admin user to update the embargo of a registration
+    """
+    permission_required = ('osf.change_node')
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        validation_only = (request.POST.get('validation_only', False) == 'True')
+        end_date = request.POST.get('date')
+        user = request.user
+        registration = self.get_object()
+
+        try:
+            end_date = pytz.utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
+        except ValueError:
+            return HttpResponse('Please enter a valid date.', status=400)
+
+        try:
+            if validation_only:
+                validate_embargo_date(registration, user, end_date)
+            else:
+                change_embargo_date(registration, user, end_date)
+        except ValidationError as e:
+            return HttpResponse(e, status=409)
+        except PermissionDenied as e:
+            return HttpResponse(e, status=403)
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
+
 class NodeSpamList(PermissionRequiredMixin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True
@@ -265,7 +345,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         ]
         for nid in node_ids:
             node = Node.load(nid)
-            osf_admin_change_status_identifier(node, 'unavailable | spam')
+            osf_admin_change_status_identifier(node)
             node.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
@@ -292,7 +372,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        osf_admin_change_status_identifier(node, 'unavailable | spam')
+        osf_admin_change_status_identifier(node)
         node.confirm_spam(save=True)
         update_admin_log(
             user_id=self.request.user.id,
@@ -311,7 +391,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_ham(save=True)
-        osf_admin_change_status_identifier(node, 'public')
+        osf_admin_change_status_identifier(node)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -359,4 +439,31 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
             message='Node Reindexed (Elastic): {}'.format(node._id),
             action_flag=REINDEX_ELASTIC
         )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
+    template_name = 'nodes/restart_registrations_modal.html'
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    context_object_name = 'node'
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
+
+    def post(self, request, *args, **kwargs):
+        from osf.management.commands.force_archive import archive, verify
+        stuck_reg = self.get_object()
+        if verify(stuck_reg):
+            try:
+                archive(stuck_reg)
+                messages.success(request, 'Registration archive processes has restarted')
+            except Exception as exc:
+                messages.error(request, 'This registration cannot be unstuck due to {} '
+                                        'if the problem persists get a developer to fix it.'.format(exc.__class__.__name__))
+
+        else:
+            messages.error(request, 'This registration may not technically be stuck,'
+                                    ' if the problem persists get a developer to fix it.')
+
         return redirect(reverse_node(self.kwargs.get('guid')))

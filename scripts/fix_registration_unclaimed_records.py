@@ -18,7 +18,7 @@ def main():
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
-        qs = Registration.objects.filter(_contributors__is_registered=False)
+        qs = Registration.objects.filter(_contributors__is_registered=False, is_deleted=False)
         logger.info('Found {} registrations with unregistered contributors'.format(qs.count()))
         for registration in qs:
             registration_id = registration._id

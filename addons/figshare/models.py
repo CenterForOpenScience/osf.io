@@ -7,7 +7,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, Folder, FileVersion, BaseFileNode
+from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
@@ -25,20 +25,17 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     version_identifier = 'ref'
 
-    def touch(self, bearer, revision=None, **kwargs):
-        return super(FigshareFile, self).touch(bearer, revision=None, **kwargs)
+    @property
+    def _hashes(self):
+        # figshare API doesn't provide this metadata
+        return None
 
-    def update(self, revision, data, save=True, user=None):
+    def update(self, revision, data, user=None, save=True):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
+        Call super to update _history and last_touched anyway.
         """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-        if save:
-            self.save()
-
-        version = FileVersion(identifier=None)
-        version.update_metadata(data, save=False)
+        version = super(FigshareFile, self).update(None, data, user=user, save=save)
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
@@ -81,25 +78,25 @@ class FigshareProvider(ExternalProvider):
 
         return {
             'provider_id': about['id'],
-            'display_name': '{} {}'.format(about['first_name'], about.get('last_name')),
+            'display_name': u'{} {}'.format(about['first_name'], about.get('last_name')),
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     folder_path = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -202,7 +199,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     # Callbacks #
     #############
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

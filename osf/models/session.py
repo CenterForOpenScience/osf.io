@@ -1,11 +1,8 @@
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
 
 
 class Session(ObjectIDMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
     data = DateTimeAwareJSONField(default=dict, blank=True)
 
     @property

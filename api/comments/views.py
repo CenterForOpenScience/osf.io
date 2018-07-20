@@ -21,7 +21,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from osf.models import AbstractNode, Comment, BaseFileNode
-from addons.wiki.models import NodeWikiPage
+from addons.wiki.models import WikiPage
 
 
 class CommentMixin(object):
@@ -34,13 +34,7 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
-
-        # Deleted root targets still appear as tuples in the database and are included in
-        # the above query, requiring an additional check
-        if comment.root_target.referent.is_deleted:
-            comment.root_target = None
-            comment.save()
+        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False, guids___id__isnull=False)
 
         if comment.root_target is None:
             raise NotFound
@@ -52,100 +46,7 @@ class CommentMixin(object):
 
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
-    """Details about a specific comment. *Writeable*.
-
-    ###Permissions
-
-    Comments on public nodes are given read-only access to everyone. Comments on private nodes are only visible
-    to contributors and administrators on the parent node. Only the user who created the comment has permission
-    to edit and delete the comment.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ##Attributes
-
-    OSF comment entities have the "comments" `type`.
-
-        name           type               description
-        =================================================================================
-        content        string             content of the comment
-        date_created   iso8601 timestamp  timestamp that the comment was created
-        date_modified  iso8601 timestamp  timestamp when the comment was last updated
-        modified       boolean            has this comment been edited?
-        deleted        boolean            is this comment deleted?
-        is_abuse       boolean            is this flagged or confirmed spam?
-        is_ham         boolean            has admin checked the legitimacy of this comment?
-        has_report     boolean            has the current user reported this as spam?
-        has_children   boolean            does this comment have replies?
-        can_edit       boolean            can the current user edit this comment?
-
-    ##Relationships
-
-    ###User
-
-    The user who created the comment.
-
-    ###Node
-
-    The project associated with this comment.
-
-    ###Target
-
-    The "parent" of the comment. If the comment was made on a node, the target is the node. If the comment
-    is a reply, its target is the comment it was in reply to.
-
-    ###Replies
-    List of replies to this comment. New replies can be created through this endpoint.
-
-    ###Reports
-    List of spam reports for this comment. Only users with permission to create comments can
-    access this endpoint, and users can only see reports that they have created.
-
-    ##Links
-
-        self:  the canonical api endpoint of this comment
-
-    ##Actions
-
-    ###Update
-
-        Method:        PUT / PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "comments",   # required
-                           "id":   {comment_id}, # required
-                           "attributes": {
-                             "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # mandatory
-                           }
-                         }
-                       }
-        Success:       200 OK + comment representation
-
-    To update a comment, issue either a PUT or a PATCH request against the `/links/self` URL.  The `content`
-    and `deleted` fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
-    stringified, but we make no promises about the stringification output.  So don't do that.
-
-    To restore a deleted comment, issue a PATCH request against the `/links/self` URL, with `deleted: False`.
-
-    ###Delete
-
-        Method:        DELETE
-        URL:           /links/self
-        Query Params:  <none>
-        Success:       204 No Content
-
-    To delete a comment send a DELETE request to the `/links/self` URL.  Nothing will be returned in the response
-    body. Attempting to delete an already deleted comment will result in a 400 Bad Request response.
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/comments_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -167,10 +68,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
 
         if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
-        elif isinstance(comment.target.referent, (NodeWikiPage,
-                                                  BaseFileNode)):
+        elif isinstance(comment.target.referent, (WikiPage,
+                                                 BaseFileNode)):
             comment_node = comment.target.referent.node
-
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
 
@@ -254,7 +154,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     view_category = 'comments'
     view_name = 'comment-reports'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         user_id = self.request.user._id

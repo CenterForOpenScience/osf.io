@@ -44,41 +44,122 @@ class TestNodeCount(OsfTestCase):
         self.deleted_node = ProjectFactory(is_deleted=True)
         self.deleted_node2 = ProjectFactory(is_deleted=True)
 
-        self.date = timezone.now() - datetime.timedelta(1)
+        self.date = timezone.now() - datetime.timedelta(days=1)
 
         for node in AbstractNode.objects.all():
-            node.date_created = self.date - datetime.timedelta(0.1)
+            node.created = self.date
             node.save()
         # modify_node_dates_in_mongo(self.date - datetime.timedelta(0.1))
 
         self.results = NodeSummary().get_events(self.date.date())[0]
 
-    def test_get_node_count(self):
+    def test_counts(self):
+
+    # test_get_node_count
         nodes = self.results['nodes']
 
         assert_equal(nodes['total'], 3)  # 2 Projects, 1 component
         assert_equal(nodes['public'], 1)  # 1 Project
         assert_equal(nodes['private'], 2)  # 1 Project, 1 Component
+        assert_equal(nodes['total_daily'], 3)  # 2 Projects, 1 component
+        assert_equal(nodes['public_daily'], 1)  # 1 Project
+        assert_equal(nodes['private_daily'], 2)  # 1 Project, 1 Component
 
-    def test_get_project_count(self):
+    # test_get_project_count
         projects = self.results['projects']
 
         assert_equal(projects['total'], 2)
         assert_equal(projects['public'], 1)
         assert_equal(projects['private'], 1)
+        assert_equal(projects['total_daily'], 2)
+        assert_equal(projects['public_daily'], 1)
+        assert_equal(projects['private_daily'], 1)
 
-    def test_get_registered_nodes_count(self):
+
+    # test_get_registered_nodes_count
         registered_nodes = self.results['registered_nodes']
 
         assert_equal(registered_nodes['total'], 5)
         assert_equal(registered_nodes['public'], 4)  # 3 Registrations, 1 Withdrawn registration
         assert_equal(registered_nodes['withdrawn'], 1)
         assert_equal(registered_nodes['embargoed'], 1)
+        assert_equal(registered_nodes['embargoed_v2'], 1)
+        assert_equal(registered_nodes['total_daily'], 5)
+        assert_equal(registered_nodes['public_daily'], 4)  # 3 Registrations, 1 Withdrawn registration
+        assert_equal(registered_nodes['withdrawn_daily'], 1)
+        assert_equal(registered_nodes['embargoed_daily'], 1)
+        assert_equal(registered_nodes['embargoed_v2_daily'], 1)
 
-    def test_get_registered_projects_count(self):
+    # test_get_registered_projects_count
         registered_projects = self.results['registered_projects']
 
         assert_equal(registered_projects['total'], 4)  # Not including a Registration Component
         assert_equal(registered_projects['public'], 3)
         assert_equal(registered_projects['withdrawn'], 1)
         assert_equal(registered_projects['embargoed'], 1)
+        assert_equal(registered_projects['embargoed_v2'], 1)
+
+        assert_equal(registered_projects['total_daily'], 4)
+        assert_equal(registered_projects['public_daily'], 3)
+        assert_equal(registered_projects['withdrawn_daily'], 1)
+        assert_equal(registered_projects['embargoed_daily'], 1)
+        assert_equal(registered_projects['embargoed_v2_daily'], 1)
+
+        # Modify date to zero out dailies
+        for node in AbstractNode.objects.all():
+            node.created = self.date - datetime.timedelta(days=1)
+            node.save()
+
+        self.results = NodeSummary().get_events(self.date.date())[0]
+
+    # test_get_node_count daily zero
+        nodes = self.results['nodes']
+
+        assert_equal(nodes['total'], 3)  # 2 Projects, 1 component
+        assert_equal(nodes['public'], 1)  # 1 Project
+        assert_equal(nodes['private'], 2)  # 1 Project, 1 Component
+
+        assert_equal(nodes['total_daily'], 0)  # 2 Projects, 1 component
+        assert_equal(nodes['public_daily'], 0)  # 1 Project
+        assert_equal(nodes['private_daily'], 0)  # 1 Project, 1 Component
+
+    # test_get_project_count daily zero
+        projects = self.results['projects']
+
+        assert_equal(projects['total'], 2)
+        assert_equal(projects['public'], 1)
+        assert_equal(projects['private'], 1)
+
+        assert_equal(projects['total_daily'], 0)
+        assert_equal(projects['public_daily'], 0)
+        assert_equal(projects['private_daily'], 0)
+
+    # test_get_registered_nodes_count daily zero
+        registered_nodes = self.results['registered_nodes']
+
+        assert_equal(registered_nodes['total'], 5)
+        assert_equal(registered_nodes['public'], 4)  # 3 Registrations, 1 Withdrawn registration
+        assert_equal(registered_nodes['withdrawn'], 1)
+        assert_equal(registered_nodes['embargoed'], 1)
+        assert_equal(registered_nodes['embargoed_v2'], 1)
+
+        assert_equal(registered_nodes['total_daily'], 0)
+        assert_equal(registered_nodes['public_daily'], 0)  # 3 Registrations, 1 Withdrawn registration
+        assert_equal(registered_nodes['withdrawn_daily'], 0)
+        assert_equal(registered_nodes['embargoed_daily'], 0)
+        assert_equal(registered_nodes['embargoed_v2_daily'], 0)
+
+    # test_get_registered_projects_count daily zero
+        registered_projects = self.results['registered_projects']
+
+        assert_equal(registered_projects['total'], 4)  # Not including a Registration Component
+        assert_equal(registered_projects['public'], 3)
+        assert_equal(registered_projects['withdrawn'], 1)
+        assert_equal(registered_projects['embargoed'], 1)
+        assert_equal(registered_projects['embargoed_v2'], 1)
+
+        assert_equal(registered_projects['total_daily'], 0)
+        assert_equal(registered_projects['public_daily'], 0)
+        assert_equal(registered_projects['withdrawn_daily'], 0)
+        assert_equal(registered_projects['embargoed_daily'], 0)
+        assert_equal(registered_projects['embargoed_v2_daily'], 0)

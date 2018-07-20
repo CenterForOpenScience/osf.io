@@ -3,17 +3,18 @@ import requests
 
 from framework.auth import Auth
 
-from website import util
 from website import settings
 from osf.models import MailRecord
+from api.base.utils import waterbutler_api_url_for
 
 
-def record_message(message, nodes_created, users_created):
+def record_message(message, node_created, user_created):
     record = MailRecord.objects.create(
         data=message.raw,
     )
-    record.users_created.add(*users_created),
-    record.nodes_created.add(*nodes_created)
+    if user_created:
+        record.users_created.add(user_created)
+    record.nodes_created.add(node_created)
     record.save()
 
 
@@ -56,9 +57,9 @@ def prepare_contributors(admins):
 
 def upload_attachment(user, node, attachment):
     attachment.seek(0)
-    name = '/' + (attachment.filename or settings.MISSING_FILE_NAME)
+    name = (attachment.filename or settings.MISSING_FILE_NAME)
     content = attachment.read()
-    upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user, _internal=True)
+    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, cookie=user.get_or_create_cookie(), _internal=True)
 
     requests.put(
         upload_url,

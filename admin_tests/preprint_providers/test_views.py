@@ -1,6 +1,7 @@
 import json
 from io import StringIO
 
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -159,6 +160,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
+            'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
             'preprint_word': 'preprint'
@@ -178,6 +180,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
+            'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
@@ -188,7 +191,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
         stripped_description = '<span>Open Preprints Open Science</span>'
-        stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
+        stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
 
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -223,7 +226,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
     def test_post(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
-        nt.assert_equal(content_dict['model'], 'osf.preprintprovider')
+        nt.assert_equal(content_dict['fields']['type'], 'osf.preprintprovider')
         nt.assert_equal(content_dict['fields']['name'], self.preprint_provider.name)
         nt.assert_equal(res.__getitem__('content-type'), 'text/json')
 
@@ -240,6 +243,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         content_dict = json.loads(res.content)
 
         content_dict['fields']['_id'] = 'new_id'
+        content_dict['fields']['name'] = 'Awesome New Name'
         data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
@@ -250,6 +254,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         nt.assert_equal(res.status_code, 302)
         nt.assert_equal(new_provider._id, 'new_id')
+        nt.assert_equal(new_provider.name, 'Awesome New Name')
         nt.assert_equal(new_provider.subjects.all().count(), 1)
         nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
         nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
@@ -262,6 +267,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         content_dict = json.loads(res.content)
 
         content_dict['fields']['_id'] = 'new_id'
+        content_dict['fields']['name'] = 'Awesome New Name'
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
 
@@ -275,6 +281,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         nt.assert_equal(res.status_code, 302)
         nt.assert_equal(new_provider._id, 'new_id')
+        nt.assert_equal(new_provider.name, 'Awesome New Name')
 
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored
@@ -359,3 +366,100 @@ class TestGetSubjectDescendants(AdminTestCase):
             content_dict['all_descendants'],
             [self.child_1.id, self.child_2.id, self.grandchild_1.id]
         )
+
+
+class TestProcessCustomTaxonomy(AdminTestCase):
+    def setUp(self):
+
+        self.user = AuthUserFactory()
+
+        self.subject1 = SubjectFactory()
+        self.subject2 = SubjectFactory()
+        self.subject3 = SubjectFactory()
+
+        self.subject1_1 = SubjectFactory(parent=self.subject1)
+        self.subject2_1 = SubjectFactory(parent=self.subject2)
+        self.subject3_1 = SubjectFactory(parent=self.subject3)
+
+        self.subject1_1_1 = SubjectFactory(parent=self.subject1_1)
+
+        self.preprint_provider = PreprintProviderFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.ProcessCustomTaxonomy()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def test_process_taxonomy_changes_subjects(self):
+        custom_taxonomy = {
+            'include': [self.subject1.text, self.subject3_1.text],
+            'exclude': [self.subject1_1.text],
+            'custom': {
+                'Changed Subject Name': {'parent': self.subject2.text, 'bepress': self.subject2_1.text},
+                self.subject2.text: {'parent': '', 'bepress': self.subject2.text}
+            }
+        }
+        self.request.POST = {
+            'custom_taxonomy_json': json.dumps(custom_taxonomy),
+            'provider_id': self.preprint_provider.id
+        }
+
+        self.view.post(self.request)
+
+        actual_preprint_provider_subjects = self.preprint_provider.subjects.all().values_list('text', flat=True)
+        expected_subjects = [self.subject1.text, self.subject2.text, self.subject3_1.text, 'Changed Subject Name']
+
+        nt.assert_items_equal(actual_preprint_provider_subjects, expected_subjects)
+        assert self.preprint_provider.subjects.get(text='Changed Subject Name').parent.text == self.subject2.text
+
+    def test_process_taxonomy_invalid_returns_feedback(self):
+        custom_taxonomy = {
+            'include': [],
+            'exclude': [],
+            'custom': {
+                'Changed Subject Name': {'parent': self.subject2.text, 'bepress': self.subject2_1.text},
+            }
+        }
+        self.request.POST = {
+            'custom_taxonomy_json': json.dumps(custom_taxonomy),
+            'provider_id': self.preprint_provider.id
+        }
+
+        with nt.assert_raises(AssertionError):
+            self.view.post(self.request)
+
+
+class TestShareSourcePreprintProvider(AdminTestCase):
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.preprint_provider = PreprintProviderFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.ShareSourcePreprintProvider()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+
+    @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
+    def test_update_share_token_and_source(self, share_resp):
+        token = 'tokennethbranagh'
+        label = 'sir'
+        share_resp.return_value = {
+            'included': [{
+                'attributes': {
+                    'token': token,
+                },
+                'type': 'ShareUser',
+            }, {
+                'attributes': {
+                    'label': label
+                },
+                'type': 'SourceConfig',
+            }]
+        }
+
+        self.view.get(self.request)
+        self.preprint_provider.refresh_from_db()
+
+        assert self.preprint_provider.access_token == token
+        assert self.preprint_provider.share_source == label

@@ -1,0 +1,10 @@
+{
+  "gitlab_file_added" : "${user} added file ${path} to GitLab repo ${gitlab_repo} in ${node}",
+  "gitlab_file_removed" : "${user} removed file ${path} in GitLab repo ${gitlab_repo} in ${node}",
+  "gitlab_file_updated" : "${user} updated file ${path} in GitLab repo ${gitlab_repo} in ${node}",
+  "gitlab_folder_created" : "${user} created folder ${path} in GitLab repo ${gitlab_repo} in ${node}",
+  "gitlab_node_authorized" : "${user} authorized the GitLab addon for ${node}",
+  "gitlab_node_deauthorized" : "${user} deauthorized the GitLab addon for ${node}",
+  "gitlab_node_deauthorized_no_user" : "GitLab addon for ${node} deauthorized",
+  "gitlab_repo_linked" : "${user} linked GitLab repo ${gitlab_repo} to ${node}"
+}

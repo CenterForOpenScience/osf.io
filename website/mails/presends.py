@@ -4,7 +4,7 @@ from django.utils import timezone
 from website import settings
 
 def no_addon(email):
-    return len(email.user.get_addons()) == 0
+    return len([addon for addon in email.user.get_addons() if addon.config.short_name != 'osfstorage']) == 0
 
 def no_login(email):
     from osf.models.queued_mail import QueuedMail, NO_LOGIN_TYPE
@@ -31,6 +31,23 @@ def new_public_project(email):
         return False
     public = email.find_sent_of_same_type_and_user()
     return node.is_public and not len(public)
+
+def prereg_reminder(email):
+    """ Check make sure the draft still exists, has not already received a reminder,
+     and has not been submitted.
+
+    :param email: QueuedMail object, with the 'draft_id' in its data field
+    :return: boolean based on whether the email should be sent
+    """
+    # In line import to prevent circular importing
+    from osf.models.queued_mail import QueuedMail
+    from osf.models import DraftRegistration
+
+    draft_id = email.data['draft_id']
+    draft = DraftRegistration.load(draft_id)
+    reminders_sent = QueuedMail.objects.filter(data__draft_id=draft_id).exclude(sent_at=None).exists()
+
+    return draft and not draft.deleted and not reminders_sent and not draft.registered_node
 
 def welcome_osf4m(email):
     """ presend has two functions. First is to make sure that the user has not

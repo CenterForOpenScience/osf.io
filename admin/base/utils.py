@@ -1,11 +1,20 @@
 """
 Utility functions and classes
 """
-from osf.models import Subject, NodeLicense
+from osf.models import Subject, NodeLicense, DraftRegistration
+from website.prereg.utils import get_prereg_schema
 
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.core.urlresolvers import reverse
 from django.utils.http import urlencode
+from django.utils import timezone
 
+from osf.models.admin_log_entry import (
+    update_admin_log,
+    EMBARGO_UPDATED
+)
+
+from website import settings
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
     base_url = reverse(view, urlconf=urlconf, args=args, kwargs=kwargs, current_app=current_app)
@@ -88,8 +97,54 @@ def get_subject_rules(subjects_selected):
 
 
 def get_nodelicense_choices():
-    return NodeLicense.objects.values_list('id', 'name')
+    return NodeLicense.objects.exclude(license_id='OTHER').values_list('id', 'name')
 
+def get_defaultlicense_choices():
+    no_default = ('', '---------')
+    licenses = NodeLicense.objects.exclude(license_id='OTHER')
+    return [no_default] + [(lic.id, lic.__unicode__) for lic in licenses]
 
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')
+
+def get_submitted_preregistrations(order='-approval__initiation_date'):
+    return DraftRegistration.objects.filter(
+        registration_schema=get_prereg_schema(),
+        approval__isnull=False
+    ).order_by(order).select_related('initiator', 'registration_schema', 'approval')
+
+def validate_embargo_date(registration, user, end_date):
+    if not user.has_perm('osf.change_node'):
+        raise PermissionDenied('Only osf_admins may update a registration embargo.')
+    if end_date - registration.registered_date >= settings.EMBARGO_END_DATE_MAX:
+        raise ValidationError('Registrations can only be embargoed for up to four years.')
+    elif end_date < timezone.now():
+        raise ValidationError('Embargo end date must be in the future.')
+
+
+def change_embargo_date(registration, user, end_date):
+    """Update the embargo period of a registration
+    :param registration: Registration that is being updated
+    :param user: osf_admin that is updating a registration
+    :param end_date: Date when the registration should be made public
+    """
+
+    validate_embargo_date(registration, user, end_date)
+
+    registration._initiate_embargo(user, end_date,
+                                         for_existing_registration=True,
+                                         notify_initiator_on_complete=False)
+
+    if registration.is_public:
+        registration.is_public = False
+        registration.save()
+
+    update_admin_log(
+        user_id=user.id,
+        object_id=registration.id,
+        object_repr='Registration',
+        message='User {} changed the embargo end date of {} to {}.'.format(
+            user.pk, registration.pk, end_date
+        ),
+        action_flag=EMBARGO_UPDATED
+    )

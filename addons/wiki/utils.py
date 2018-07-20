@@ -6,6 +6,7 @@ import uuid
 import ssl
 from pymongo import MongoClient
 import requests
+from bs4 import BeautifulSoup
 
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
@@ -25,7 +26,6 @@ def to_mongo(item):
 
 def to_mongo_key(item):
     return to_mongo(item).strip().lower()
-
 
 def generate_private_uuid(node, wname):
     """
@@ -182,6 +182,7 @@ def serialize_wiki_settings(user, nodes):
         assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, 'read')
+        is_admin = node.has_permission(user, 'admin')
         include_wiki_settings = node.include_wiki_settings(user)
 
         if not include_wiki_settings:
@@ -189,13 +190,14 @@ def serialize_wiki_settings(user, nodes):
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
 
-        if node.admin_public_wiki(user):
+        wiki = node.get_addon('wiki')
+        if wiki:
             children_tree.append({
                 'select': {
                     'title': 'permission',
                     'permission':
                         'public'
-                        if node.get_addon('wiki').is_publicly_editable
+                        if wiki.is_publicly_editable
                         else 'private'
                 },
             })
@@ -207,6 +209,7 @@ def serialize_wiki_settings(user, nodes):
                 'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public
             },
             'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
@@ -214,9 +217,40 @@ def serialize_wiki_settings(user, nodes):
             'category': node.category,
             'permissions': {
                 'view': can_read,
+                'admin': is_admin,
             },
         }
 
         items.append(item)
 
     return items
+
+
+def serialize_wiki_widget(node):
+    wiki = node.get_addon('wiki')
+    wiki_version = node.get_wiki_version('home')
+
+    # Show "Read more" link if there are multiple pages or has > 400 characters
+    more = node.wikis.filter(deleted__isnull=True).count() >= 2
+    MAX_DISPLAY_LENGTH = 400
+    rendered_before_update = False
+    if wiki_version and wiki_version.html(node):
+        wiki_html = BeautifulSoup(wiki_version.html(node)).text
+        if len(wiki_html) > MAX_DISPLAY_LENGTH:
+            wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
+            more = True
+
+        rendered_before_update = wiki_version.rendered_before_update
+    else:
+        wiki_html = None
+
+    wiki_widget_data = {
+        'complete': True,
+        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
+        'rendered_before_update': rendered_before_update,
+        'more': more,
+        'include': False,
+    }
+    wiki_widget_data.update(wiki.config.to_json())
+    return wiki_widget_data

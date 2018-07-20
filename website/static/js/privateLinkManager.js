@@ -5,6 +5,7 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 
+
 var NODE_OFFSET = 25;
 
 // TODO: Remove dependency on global scope
@@ -57,7 +58,7 @@ var PrivateLinkViewModel = function(url) {
 
     function onFetchError() {
         $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact ' + $osf.osfSupportLink() + ' if the ' +
                 'problem persists.');
     }
 

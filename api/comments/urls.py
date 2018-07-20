@@ -1,6 +1,8 @@
 from django.conf.urls import url
 from api.comments import views
 
+app_name = 'osf'
+
 urlpatterns = [
     url(r'^(?P<comment_id>\w+)/$', views.CommentDetail.as_view(), name=views.CommentDetail.view_name),
     url(r'^(?P<comment_id>\w+)/reports/$', views.CommentReportsList.as_view(), name=views.CommentReportsList.view_name),

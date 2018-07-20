@@ -6,7 +6,6 @@ import httplib as http
 import logging
 import unittest
 
-import httpretty
 import markupsafe
 import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
@@ -31,10 +30,10 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
-from website.util import web_url_for, api_url_for, permissions
+from website.util import web_url_for, api_url_for
 
 from api_tests import utils as test_utils
 
@@ -144,7 +143,7 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=['read', 'write', 'admin'],
             save=True)
-        res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
+        res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
     def test_sees_correct_title_home_page(self):
@@ -222,12 +221,19 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
-        wiki_page = 'home'
+        wiki_page_name = 'home'
         wiki_content = 'Kittens'
-        NodeWikiFactory(user=self.user, node=project, content=wiki_content, page_name=wiki_page)
+        wiki_page = WikiFactory(
+            user=self.user,
+            node=project,
+        )
+        wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+            content=wiki_content
+        )
         res = self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
-            wiki_page,
+            wiki_page_name,
         ), auth=self.auth)
         assert_not_in('Add important information, links, or images here to describe your project.', res)
         assert_in(wiki_content, res)
@@ -236,12 +242,9 @@ class TestAUser(OsfTestCase):
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
-        self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            non_ascii
-        ), auth=self.auth, expect_errors=True)
-        project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
-        assert_in(non_ascii, project.wiki_pages_current)
+        project.update_node_wiki('WöRlÐé', 'new content', Auth(self.user))
+        wv = project.get_wiki_version(non_ascii)
+        assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -514,7 +517,10 @@ class TestShortUrls(OsfTestCase):
         # improvements to factories from @rliebz
         self.component.set_privacy('public', auth=self.consolidate_auth)
         self.component.set_privacy('private', auth=self.consolidate_auth)
-        self.wiki = NodeWikiFactory(user=self.user, node=self.component)
+        self.wiki = WikiFactory(
+            user=self.user,
+            node=self.component,
+        )
 
     def _url_to_body(self, url):
         return self.app.get(
@@ -808,14 +814,14 @@ class TestExplorePublicActivity(OsfTestCase):
 
         # New and Noteworthy
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()), res)
+        assert_in(str(self.project.created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
 
         # Popular Projects and Registrations
         assert_in(str(self.popular_project.title), res)
-        assert_in(str(self.popular_project.date_created.date()), res)
+        assert_in(str(self.popular_project.created.date()), res)
         assert_in(str(self.popular_registration.title), res)
         assert_in(str(self.popular_registration.registered_date.date()), res)
 

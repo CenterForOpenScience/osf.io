@@ -36,6 +36,13 @@ class BitbucketFile(BitbucketFileNode, File):
         revision = revision or commitSha or branch
         return super(BitbucketFile, self).touch(auth_header, revision=revision, **kwargs)
 
+    @property
+    def _hashes(self):
+        try:
+            return {'commit': self._history[-1]['extra']['commitSha']}
+        except (IndexError, KeyError):
+            return None
+
 class BitbucketProvider(ExternalProvider):
     """Provider to handler Bitbucket OAuth workflow
 
@@ -80,7 +87,7 @@ class BitbucketProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific bitbucket information
 
     Quirks::
@@ -101,14 +108,14 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
         return None
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = BitbucketProvider
     serializer = BitbucketSerializer
 
     user = models.TextField(blank=True, null=True)
     repo = models.TextField(blank=True, null=True)
     hook_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -190,8 +197,14 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     @property
     def is_private(self):
+        repo = self.fetch_repo()
+        if repo:
+            return repo['is_private']
+        return None
+
+    def fetch_repo(self):
         connection = BitbucketClient(access_token=self.api.fetch_access_token())
-        return connection.repo(user=self.user, repo=self.repo)['is_private']
+        return connection.repo(user=self.user, repo=self.repo)
 
     def fetch_access_token(self):
         return self.api.fetch_access_token()
@@ -309,34 +322,46 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         if self.user_settings is None:
             return messages
 
-        node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if self.is_private else 'public'
-        if repo_permissions != node_permissions:
+        repo_data = self.fetch_repo()
+        if repo_data:
+            node_permissions = 'public' if node.is_public else 'private'
+            repo_permissions = 'private' if repo_data['is_private'] else 'public'
+            if repo_permissions != node_permissions:
+                message = (
+                    'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
+                    'repo {user} / {repo} is {repo_perm}.'.format(
+                        category=markupsafe.escape(node.project_or_component),
+                        node_perm=markupsafe.escape(node_permissions),
+                        repo_perm=markupsafe.escape(repo_permissions),
+                        user=markupsafe.escape(self.user),
+                        repo=markupsafe.escape(self.repo),
+                    )
+                )
+                if repo_permissions == 'private':
+                    message += (
+                        ' Users can view the contents of this private Bitbucket '
+                        'repository through this public project.'
+                    )
+                else:
+                    message += (
+                        ' The files in this Bitbucket repo can be viewed on Bitbucket '
+                        '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
+                    ).format(
+                        user=self.user,
+                        repo=self.repo,
+                    )
+                messages.append(message)
+        else:
             message = (
-                'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
-                'repo {user} / {repo} is {repo_perm}.'.format(
+                'Warning: the Bitbucket repo {user} / {repo} connected to this OSF {category} has been deleted.'.format(
                     category=markupsafe.escape(node.project_or_component),
-                    node_perm=markupsafe.escape(node_permissions),
-                    repo_perm=markupsafe.escape(repo_permissions),
                     user=markupsafe.escape(self.user),
                     repo=markupsafe.escape(self.repo),
                 )
             )
-            if repo_permissions == 'private':
-                message += (
-                    ' Users can view the contents of this private Bitbucket '
-                    'repository through this public project.'
-                )
-            else:
-                message += (
-                    ' The files in this Bitbucket repo can be viewed on Bitbucket '
-                    '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
-                ).format(
-                    user=self.user,
-                    repo=self.repo,
-                )
             messages.append(message)
-            return messages
+
+        return messages
 
     def before_remove_contributor_message(self, node, removed):
         """
@@ -418,6 +443,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             is_private = self.is_private
         except NotFoundError:
             return None
+
         if is_private:
             return (
                 'This {cat} is connected to a private Bitbucket repository. Users '
@@ -427,5 +453,5 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 cat=node.project_or_component,
             )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)

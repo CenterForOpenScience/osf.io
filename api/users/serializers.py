@@ -1,27 +1,27 @@
 from guardian.models import GroupObjectPermission
 
+from django.utils import timezone
 from rest_framework import serializers as ser
 
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink, ShowIfCurrentUser
+    WaterbutlerLink, ShowIfCurrentUser, DevOnly
 )
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from website import util as website_utils
 
 
 class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
-        upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
             'meta': {}
@@ -41,20 +41,26 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
+    writeable_method_fields = frozenset([
+        'accepted_terms_of_service',
+    ])
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
-    date_registered = HideIfDisabled(DateByVersion(read_only=True))
+    date_registered = HideIfDisabled(VersionedDateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
+    employment = DevOnly(ser.ListField(child=ser.DictField(), source='jobs', read_only=True))
+    education = DevOnly(ser.ListField(child=ser.DictField(), source='schools', read_only=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
+    accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
     links = HideIfDisabled(LinksField(
         {
@@ -74,10 +80,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    registrations = DevOnly(HideIfDisabled(RelationshipField(
+    registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
-    )))
+    ))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
@@ -86,8 +92,8 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
-    actions = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-action-list',
+    preprints = HideIfDisabled(RelationshipField(
+        related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
@@ -115,6 +121,9 @@ class UserSerializer(JSONAPISerializer):
         group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
         return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
 
+    def get_accepted_terms_of_service(self, obj):
+        return bool(obj.accepted_terms_of_service)
+
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
@@ -133,6 +142,9 @@ class UserSerializer(JSONAPISerializer):
                                 detail='{} only accept a list of one single value'. format(key)
                             )
                         instance.social[key] = val[0]
+            elif 'accepted_terms_of_service' == attr:
+                if value and not instance.accepted_terms_of_service:
+                    instance.accepted_terms_of_service = timezone.now()
             else:
                 setattr(instance, attr, value)
         try:
@@ -198,6 +210,7 @@ class UserQuickFilesSerializer(QuickFilesSerializer):
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
+        'move': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
     })
 

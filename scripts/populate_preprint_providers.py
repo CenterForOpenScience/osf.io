@@ -6,14 +6,12 @@ import logging
 import sys
 
 from django.db import transaction
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from website.app import init_app
 from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
-from osf.models import Subject, PreprintProvider, NodeLicense
+from osf.models import Subject, PreprintProvider, NodeLicense, NotificationSubscription
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -39,8 +37,8 @@ def get_subject_id(name):
 
 def get_license(name):
     try:
-        license = NodeLicense.find_one(Q('name', 'eq', name))
-    except NoResultsFound:
+        license = NodeLicense.objects.get(name=name)
+    except NodeLicense.DoesNotExist:
         raise Exception('License: "{}" not found'.format(name))
     return license
 

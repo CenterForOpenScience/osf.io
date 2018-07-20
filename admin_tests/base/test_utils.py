@@ -1,14 +1,17 @@
 from nose.tools import *  # flake8: noqa
+import datetime as datetime
 
 from django.db.models import Q
+from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError, PermissionDenied
 
 from tests.base import AdminTestCase
 
-from osf_tests.factories import SubjectFactory
+from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory
 
 from osf.models import Subject
-from osf.models.preprint_provider import rules_to_subjects
-from admin.base.utils import get_subject_rules
+from osf.models.provider import rules_to_subjects
+from admin.base.utils import get_subject_rules, change_embargo_date
 
 
 import logging
@@ -108,3 +111,50 @@ class TestSubjectRules(AdminTestCase):
         returned_subjects = rules_to_subjects(rules)
 
         self.assertItemsEqual(subject_queryset_ideal, returned_subjects)
+
+class TestNodeChanges(AdminTestCase):
+    def setUp(self):
+        super(TestNodeChanges, self).setUp()
+        self.registration = RegistrationFactory(is_public=True)
+        self.user = UserFactory()
+        self.user.is_staff = True
+        self.user.groups.add(Group.objects.get(name='osf_admin'))
+        self.user.save()
+
+        self.date_valid = self.registration.registered_date + datetime.timedelta(days=365)
+        self.date_valid2 = self.registration.registered_date + datetime.timedelta(days=375)
+        self.date_too_late = self.registration.registered_date + datetime.timedelta(days=1825)
+        self.date_too_soon = self.registration.registered_date + datetime.timedelta(days=-1)
+
+    def test_change_embargo_date(self):
+
+        assert_false(self.registration.embargo)
+        assert_true(self.registration.is_public)
+
+        # Note: Date comparisons accept a difference up to a day because embargoes start at midnight
+
+        # Create an embargo from a registration with none
+        change_embargo_date(self.registration, self.user, self.date_valid)
+        assert_almost_equal(self.registration.embargo.end_date, self.date_valid, delta=datetime.timedelta(days=1))
+
+        # Make sure once embargo is set, registration is made private
+        self.registration.reload()
+        assert_false(self.registration.is_public)
+
+        # Update an embargo end date
+        change_embargo_date(self.registration, self.user, self.date_valid2)
+        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+
+        # Test invalid dates
+        with assert_raises(ValidationError):
+            change_embargo_date(self.registration, self.user, self.date_too_late)
+        with assert_raises(ValidationError):
+            change_embargo_date(self.registration, self.user, self.date_too_soon)
+
+        # Test that checks user has permission
+        with assert_raises( PermissionDenied):
+            change_embargo_date(self.registration, UserFactory(), self.date_valid)
+
+        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+
+        # Add a test to check privatizing

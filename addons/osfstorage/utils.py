@@ -16,11 +16,12 @@ logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 
-def update_analytics(node, file_id, version_idx):
+def update_analytics(node, file_id, version_idx, action='download'):
     """
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
     :param int version_idx: Zero-based version index
+    :param str action: is this logged as download or a view
     """
     # Pass in contributors to check that contributors' downloads
     # do not count towards total download count
@@ -31,8 +32,8 @@ def update_analytics(node, file_id, version_idx):
         'contributors': contributors
     }
 
-    update_counter('download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
-    update_counter('download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
+    update_counter('{0}:{1}:{2}'.format(action, node._id, file_id), node_info=node_info)
+    update_counter('{0}:{1}:{2}:{3}'.format(action, node._id, file_id, version_idx), node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):
@@ -55,7 +56,7 @@ def serialize_revision(node, record, version, index, anon=False):
     return {
         'user': user,
         'index': index + 1,
-        'date': version.date_created.isoformat(),
+        'date': version.created.isoformat(),
         'downloads': version._download_count if hasattr(version, '_download_count') else record.get_download_count(version=index),
         'md5': version.metadata.get('md5'),
         'sha256': version.metadata.get('sha256'),
@@ -86,7 +87,7 @@ def get_filename(version_idx, file_version, file_record):
     name, ext = os.path.splitext(file_record.name)
     return u'{name}-{date}{ext}'.format(
         name=name,
-        date=file_version.date_created.isoformat(),
+        date=file_version.created.isoformat(),
         ext=ext,
     )
 

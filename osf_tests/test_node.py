@@ -1,25 +1,31 @@
 import datetime
 
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from django.db.models import Q
 import mock
 import pytest
 import pytz
+import random
+import string
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
-from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
-from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
+from osf.utils import permissions
+from website.util import api_url_for, web_url_for
+from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
+from website.views import find_bookmark_collection
+
+from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
     AbstractNode,
+    Email,
     Node,
     Tag,
     NodeLog,
@@ -33,9 +39,8 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -47,16 +52,19 @@ from osf_tests.factories import (
     UnregUserFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
+    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
-    CollectionFactory,
     NodeRelationFactory,
     InstitutionFactory,
     SessionFactory,
+    SubjectFactory,
     TagFactory,
+    CollectionFactory,
+    CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
 
 pytestmark = pytest.mark.django_db
@@ -76,6 +84,10 @@ def project(user):
 @pytest.fixture()
 def auth(user):
     return Auth(user)
+
+@pytest.fixture()
+def subject():
+    return SubjectFactory()
 
 
 class TestParentNode:
@@ -182,17 +194,15 @@ class TestParentNode:
         grandchild2 = NodeFactory(parent=child)
         grandchild3 = NodeFactory(parent=child)
         grandchild_1 = NodeFactory(parent=child1)
-        grandchild1_1 = NodeFactory(parent=child1)
-        grandchild2_1 = NodeFactory(parent=child1)
-        grandchild3_1 = NodeFactory(parent=child1)
-        grandchild_2 = NodeFactory(parent=child2)
-        grandchild1_2 = NodeFactory(parent=child2)
-        grandchild2_2 = NodeFactory(parent=child2)
-        grandchild3_2 = NodeFactory(parent=child2)
-        greatgrandchild = NodeFactory(parent=grandchild)
-        greatgrandchild1 = NodeFactory(parent=grandchild1)
-        greatgrandchild2 = NodeFactory(parent=grandchild2)
-        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        for _ in range(0, 3):
+            NodeFactory(parent=child1)
+        for _ in range(0, 4):
+            NodeFactory(parent=child2)
+
+        NodeFactory(parent=grandchild)
+        NodeFactory(parent=grandchild1)
+        NodeFactory(parent=grandchild2)
+        NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
         assert 20 == Node.objects.get_children(root).count()
@@ -234,17 +244,15 @@ class TestParentNode:
         grandchild2 = NodeFactory(parent=child)
         grandchild3 = NodeFactory(parent=child)
         grandchild_1 = NodeFactory(parent=child1)
-        grandchild1_1 = NodeFactory(parent=child1)
-        grandchild2_1 = NodeFactory(parent=child1)
-        grandchild3_1 = NodeFactory(parent=child1)
-        grandchild_2 = NodeFactory(parent=child2)
-        grandchild1_2 = NodeFactory(parent=child2)
-        grandchild2_2 = NodeFactory(parent=child2)
-        grandchild3_2 = NodeFactory(parent=child2)
-        greatgrandchild = NodeFactory(parent=grandchild)
-        greatgrandchild1 = NodeFactory(parent=grandchild1)
-        greatgrandchild2 = NodeFactory(parent=grandchild2)
-        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        for _ in range(0, 3):
+            NodeFactory(parent=child1)
+        for _ in range(0, 4):
+            NodeFactory(parent=child2)
+
+        NodeFactory(parent=grandchild)
+        NodeFactory(parent=grandchild1)
+        NodeFactory(parent=grandchild2)
+        NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
         child.add_node_link(root, auth=Auth(root.creator))
@@ -287,9 +295,9 @@ class TestParentNode:
 
     def test_get_roots_distinct(self):
         top_level = ProjectFactory()
-        child1 = ProjectFactory(parent=top_level)
-        child2 = ProjectFactory(parent=top_level)
-        child3 = ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
+        ProjectFactory(parent=top_level)
 
         assert AbstractNode.objects.get_roots().count() == 1
         assert top_level in AbstractNode.objects.get_roots()
@@ -308,7 +316,7 @@ class TestParentNode:
         assert child.parent_node._id == project._id
 
     def test_grandchild_has_parent_of_child(self, child):
-        grandchild = NodeFactory(parent=child, description="Spike")
+        grandchild = NodeFactory(parent=child, description='Spike')
         assert grandchild.parent_node._id == child._id
 
     def test_registration_has_no_parent(self, registration):
@@ -322,6 +330,19 @@ class TestParentNode:
         registration_child = NodeFactory(parent=registration)
         registration_grandchild = NodeFactory(parent=registration_child)
         assert registration_grandchild.parent_node._id == registration_child._id
+
+    def test_recursive_registrations_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        NodeFactory(parent=child)
+
+        with disconnected_from_listeners(after_create_registration):
+            reg_root = project.register_node(get_default_metaschema(), auth, '', None)
+        reg_child = reg_root._nodes.first()
+        reg_grandchild = reg_child._nodes.first()
+
+        assert reg_root.root == reg_root
+        assert reg_child.root == reg_root
+        assert reg_grandchild.root == reg_root
 
     def test_fork_has_no_parent(self, project, auth):
         fork = project.fork_node(auth=auth)
@@ -338,6 +359,18 @@ class TestParentNode:
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.parent_node._id == fork_child._id
 
+    def test_recursive_forks_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        NodeFactory(parent=child)
+
+        fork_root = project.fork_node(auth=auth)
+        fork_child = fork_root._nodes.first()
+        fork_grandchild = fork_child._nodes.first()
+
+        assert fork_root.root == fork_root
+        assert fork_child.root == fork_root
+        assert fork_grandchild.root == fork_root
+
     def test_template_has_no_parent(self, template):
         assert template.parent_node is None
 
@@ -349,6 +382,18 @@ class TestParentNode:
         template_child = NodeFactory(parent=template)
         new_project_grandchild = NodeFactory(parent=template_child)
         assert new_project_grandchild.parent_node._id == template_child._id
+
+    def test_recursive_templates_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        NodeFactory(parent=child)
+
+        template_root = project.use_as_template(auth=auth)
+        template_child = template_root._nodes.first()
+        template_grandchild = template_child._nodes.first()
+
+        assert template_root.root == template_root
+        assert template_child.root == template_root
+        assert template_grandchild.root == template_root
 
     def test_template_project_does_not_copy_deleted_components(self, project, child, deleted_child, template):
         """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
@@ -484,8 +529,7 @@ class TestNodeMODMCompat:
         node_1 = ProjectFactory(is_public=False)
         node_2 = ProjectFactory(is_public=True)
 
-        results = Node.find()
-        assert len(results) == 2
+        assert Node.objects.all().count() == 2
 
         private = Node.objects.filter(is_public=False)
         assert node_1 in private
@@ -509,18 +553,10 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
 
-    def test_remove_one(self):
-        node = ProjectFactory()
-        node2 = ProjectFactory()
-        assert len(Node.find()) == 2  # sanity check
-        Node.remove_one(node)
-        assert len(Node.find()) == 1
-        assert node2 in Node.find()
-
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
-        assert node in Node.objects.filter(guids___id=node._id)
+        assert node in Node.objects.filter(guids___id=node._id, guids___id__isnull=False)
 
 
 # copied from tests/test_models.py
@@ -609,7 +645,7 @@ class TestProject:
         assert node.category == 'project'
         assert bool(node._id)
         # assert_almost_equal(
-        #     node.date_created, timezone.now(),
+        #     node.created, timezone.now(),
         #     delta=datetime.timedelta(seconds=5),
         # )
         assert node.is_public is False
@@ -673,8 +709,8 @@ class TestLogging:
         # date is tzaware
         assert last_log.date.tzinfo == pytz.utc
 
-        # updates node.date_modified
-        assert_datetime_equal(node.date_modified, last_log.date)
+        # updates node.modified
+        assert_datetime_equal(node.modified, last_log.date)
 
 
 class TestTagging:
@@ -781,7 +817,7 @@ class TestNodeCreation:
         assert first_log.action == NodeLog.PROJECT_CREATED
         params = first_log.params
         assert params['node'] == node._id
-        assert_datetime_equal(first_log.date, node.date_created)
+        assert_datetime_equal(first_log.date, node.created)
 
 # Copied from tests/test_models.py
 class TestContributorMethods:
@@ -1122,38 +1158,48 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
+    def test_add_contributor_fullname_email_exists_as_secondary(self, user, node):
+        registered_user = UserFactory()
+        secondary_email = 'secondary@test.test'
+        Email.objects.create(address=secondary_email, user=registered_user)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor = contributor_obj.user
+        assert contributor == registered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
 class TestContributorProperties:
 
     def test_admin_contributors(self, user):
         project = ProjectFactory(creator=user)
-        assert list(project.admin_contributors) == []
+        assert list(project.admin_contributors) == [user]
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert list(child1.admin_contributors) == [project.creator]
+        assert list(child1.admin_contributors) == sorted([project.creator, child1.creator], key=lambda user: user.family_name)
         assert (
             list(child2.admin_contributors) ==
-            sorted([project.creator, child1.creator], key=lambda user: user.family_name)
+            sorted([project.creator, child1.creator, child2.creator], key=lambda user: user.family_name)
         )
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=['read', 'write', 'admin'])
         project.set_permissions(project.creator, ['read', 'write'])
         project.save()
-        assert list(child1.admin_contributors) == [admin]
-        assert list(child2.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
+        assert list(child1.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
+        assert list(child2.admin_contributors) == sorted([child2.creator, child1.creator, admin], key=lambda user: user.family_name)
 
     def test_admin_contributor_ids(self, user):
         project = ProjectFactory(creator=user)
-        assert project.admin_contributor_ids == set()
+        assert project.admin_contributor_ids == {user._id}
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert child1.admin_contributor_ids == {project.creator._id}
-        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id}
+        assert child1.admin_contributor_ids == {project.creator._id, child1.creator._id}
+        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id, child2.creator._id}
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=['read', 'write', 'admin'])
         project.set_permissions(project.creator, ['read', 'write'])
         project.save()
-        assert child1.admin_contributor_ids == {admin._id}
-        assert child2.admin_contributor_ids == {child1.creator._id, admin._id}
+        assert child1.admin_contributor_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_ids == {child2.creator._id, child1.creator._id, admin._id}
 
 
 class TestContributorAddedSignal:
@@ -1593,6 +1639,31 @@ class TestPermissions:
         assert project.has_permission(project.creator, 'dance') is False
 
 
+class TestNodeSubjects:
+
+    @pytest.fixture()
+    def write_contrib(self, project):
+        write_contrib = AuthUserFactory()
+        project.add_contributor(write_contrib, auth=Auth(project.creator), permissions=(READ, WRITE))
+        project.save()
+        return write_contrib
+
+    def test_nonadmin_cannot_set_subjects(self, project, subject, write_contrib):
+        initial_subjects = list(project.subjects.all())
+        with pytest.raises(PermissionsError):
+            project.set_subjects([[subject._id]], auth=Auth(write_contrib))
+
+        project.reload()
+        assert initial_subjects == list(project.subjects.all())
+
+    def test_admin_can_set_subjects(self, project, subject):
+        initial_subjects = list(project.subjects.all())
+        project.set_subjects([[subject._id]], auth=Auth(project.creator))
+
+        project.reload()
+        assert initial_subjects != list(project.subjects.all())
+
+
 class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth):
@@ -1611,6 +1682,16 @@ class TestRegisterNode:
                 data=None
             )
         assert err.value.message == 'Cannot register deleted node.'
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_copies_subjects(self, mock_signal, subject):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.set_subjects([[subject._id]], auth=Auth(user))
+        node.save()
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_makes_private_registration(self, mock_signal):
@@ -1950,21 +2031,21 @@ class TestPrivateLinks:
         link.save()
         assert link in node.private_links.all()
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = True
 
-        link1 = PrivateLinkFactory(key="link1")
+        link1 = PrivateLinkFactory(key='link1')
         link1.nodes.add(node)
         link1.save()
 
         user2 = UserFactory()
-        auth2 = Auth(user=user2, private_key="link1")
+        auth2 = Auth(user=user2, private_key='link1')
 
         assert has_anonymous_link(node, auth2) is True
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_no_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = False
@@ -2013,7 +2094,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -2486,29 +2567,6 @@ class TestPointerMethods:
         with pytest.raises(NodeStateError):
             registration.add_pointer(node, auth=auth)
 
-    def test_get_points_exclude_folders(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        # Project is in a organizer collection
-        folder = CollectionFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
-
-        assert pointer_project in pointed_project.get_points(folders=False)
-        assert folder not in pointed_project.get_points(folders=False)
-        assert folder in pointed_project.get_points(folders=True)
-
-    def test_get_points_exclude_deleted(self):
-        user = UserFactory()
-        pointer_project = ProjectFactory(is_public=True, is_deleted=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        assert pointer_project not in pointed_project.get_points(deleted=False)
-        assert pointer_project in pointed_project.get_points(deleted=True)
-
     def test_add_pointer_already_present(self, node, user, auth):
         node2 = NodeFactory(creator=user)
         node.add_pointer(node2, auth=auth)
@@ -2521,7 +2579,7 @@ class TestPointerMethods:
         node.rm_pointer(node_relation, auth=auth)
         # assert Pointer.load(pointer._id) is None
         # assert len(node.nodes) == 0
-        assert len(node2.get_points()) == 0
+        assert NodeRelation.objects.filter(child=node2, is_node_link=True).count() == 0
         assert (
             node.logs.latest().action == NodeLog.POINTER_REMOVED
         )
@@ -2553,6 +2611,12 @@ class TestPointerMethods:
         child.save()
         fork = node.fork_node(auth=auth)
         assert not fork.nodes
+
+    def test_cannot_template_deleted_node(self, node, auth):
+        child = NodeFactory(parent=node, is_deleted=True)
+        child.save()
+        template = node.use_as_template(auth=auth, top_level=False)
+        assert not template.nodes
 
     def _fork_pointer(self, node, content, auth):
         pointer = node.add_pointer(content, auth=auth)
@@ -2617,12 +2681,17 @@ class TestForkNode:
         assert fork._id in [n._id for n in original.forks.all()]
         # Note: Must cast ForeignList to list for comparison
         assert list(fork.contributors.all()) == [fork_user]
-        assert (fork_date - fork.date_created) < datetime.timedelta(seconds=30)
-        assert fork.forked_date != original.date_created
+        assert (fork_date - fork.created) < datetime.timedelta(seconds=30)
+        assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
         assert(
             list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
+        )
+
+        # Test that subjects were copied correctly
+        assert(
+            list(original.subjects.all()) == list(fork.subjects.all())
         )
 
         # Test that add-ons were copied correctly
@@ -2643,7 +2712,7 @@ class TestForkNode:
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, project, user, auth, request_context):
+    def test_fork_recursion(self, mock_push_status_message, project, user, subject, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
@@ -2660,6 +2729,9 @@ class TestForkNode:
         project.add_addon('dropbox', auth)
         component.add_addon('dropbox', auth)
         subproject.add_addon('dropbox', auth)
+
+        # Add subject to test copying
+        project.set_subjects([[subject._id]], auth)
 
         # Log time
         fork_date = timezone.now()
@@ -2795,26 +2867,34 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.wiki_pages_versions == {}
-        assert fork.wiki_pages_current == {}
+        assert fork.get_wiki_pages_latest().exists() is False
+        assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
     def test_forking_clones_project_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user, is_public=True)
         # TODO: Unmock when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            wiki = NodeWikiFactory(node=project)
-            current_wiki = NodeWikiFactory(node=project, version=2)
+            wiki_page = WikiFactory(
+                user=user,
+                node=project,
+            )
+            wiki = WikiVersionFactory(
+                wiki_page=wiki_page,
+            )
+            current_wiki = WikiVersionFactory(wiki_page=wiki_page, identifier=2)
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
-        assert registration_wiki_current.node == fork
-        assert registration_wiki_current._id != current_wiki._id
+        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        assert fork_wiki_current.wiki_page.node == fork
+        assert fork_wiki_current._id != current_wiki._id
+        assert fork_wiki_current.identifier == 2
 
-        registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
-        assert registration_wiki_version.node == fork
-        assert registration_wiki_version._id != wiki._id
+        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        assert fork_wiki_version.wiki_page.node == fork
+        assert fork_wiki_version._id != wiki._id
+        assert fork_wiki_version.identifier == 1
 
 class TestContributorOrdering:
 
@@ -3307,28 +3387,55 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
+    @pytest.fixture()
+    def registration(self, node):
+        return RegistrationFactory(is_public=True)
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
-    @mock.patch('osf.models.node.enqueue_task')
-    def test_enqueue_called(self, enqueue_task, node, user, request_context):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
         node.save()
 
-        (task, ) = enqueue_task.call_args[0]
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
-        assert task.args[0] == node._id
-        assert task.args[1] == user._id
-        assert task.args[2] is False
-        assert 'title' in task.args[3]
+        assert task.kwargs['node_id'] == node._id
+        assert task.kwargs['user_id'] == user._id
+        assert task.kwargs['first_save'] is False
+        assert 'title' in task.kwargs['saved_fields']
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
-    @mock.patch('website.project.tasks.requests')
-    def test_skips_no_settings(self, requests, node, user, request_context):
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert requests.post.called is False
+    @mock.patch('osf.models.identifiers.IdentifierMixin.request_identifier_update')
+    def test_queueing_on_node_updated(self, mock_request_update, node, user):
+        node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
+        node.title = 'Something New'
+        node.save()
+
+        # make sure on_node_updated is in the queue
+        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+
+        # adding a contributor to the node will also trigger on_node_updated
+        new_person = UserFactory()
+        node.add_contributor(new_person)
+
+        # so will updating a license
+        new_license = NodeLicenseRecordFactory()
+        node.set_node_license(
+            {
+                'id': new_license.license_id,
+                'year': '2018',
+                'copyrightHolders': ['LeBron', 'Ladron']
+            },
+            Auth(node.creator),
+        )
+        node.save()
+
+        # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        assert 'contributors' in task.kwargs['saved_fields']
+        assert 'node_license' in task.kwargs['saved_fields']
+        mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3346,7 +3453,7 @@ class TestOnNodeUpdate:
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
-    def test_update_share_correctly(self, requests, node, user, request_context):
+    def test_update_share_correctly_for_projects(self, requests, node, user, request_context):
         cases = [{
             'is_deleted': False,
             'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
@@ -3371,6 +3478,118 @@ class TestOnNodeUpdate:
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert graph[1]['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations(self, requests, registration, user, request_context):
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True}
+        }, {
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(registration, attr, value)
+            registration.save()
+
+            on_node_updated(registration._id, user._id, False, {'is_public'})
+
+            assert registration.is_registration
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_tags(self, requests, node, user, request_context):
+        node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_tags(self, requests, registration, user, request_context):
+        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, node, user, request_context):
+        node.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        node.save()
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        node.title = 'Not a qa title'
+        node.save()
+        assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
+        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        registration.save()
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.title = 'Not a qa title'
+        registration.save()
+        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
@@ -3476,7 +3695,7 @@ class TestTemplateNode:
         )
 
         assert new.title == self._default_title(project)
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_simple_template_title_changed(self, project, auth):
@@ -3494,7 +3713,7 @@ class TestTemplateNode:
         )
 
         assert new.title == changed_title
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):
@@ -3515,6 +3734,16 @@ class TestTemplateNode:
 
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
+
+    def test_can_template_a_registration(self, user, auth):
+        registration = RegistrationFactory(creator=user)
+        new = registration.use_as_template(auth=auth)
+        assert new.is_registration is False
+
+    def test_cannot_template_deleted_registration(self, project, auth):
+        registration = RegistrationFactory(project=project, is_deleted=True)
+        new = registration.use_as_template(auth=auth)
+        assert not new.nodes
 
     @pytest.fixture()
     def pointee(self, project, user, auth):
@@ -3541,7 +3770,7 @@ class TestTemplateNode:
 
         # create templated node
         project1 = ProjectFactory(creator=user)
-        subproject1 = ProjectFactory(creator=user, parent=project1)
+        ProjectFactory(creator=user, parent=project1)
 
         new = project1.use_as_template(auth=auth)
 
@@ -3611,10 +3840,13 @@ class TestTemplateNode:
         new = project.use_as_template(
             auth=auth
         )
-        assert 'template' in project.wiki_pages_current
-        assert 'template' in project.wiki_pages_versions
-        assert new.wiki_pages_current == {}
-        assert new.wiki_pages_versions == {}
+        assert project.get_wiki_page('template').page_name == 'template'
+        latest_version = project.get_wiki_version('template')
+        assert latest_version.identifier == 1
+        assert latest_version.is_current is True
+
+        assert new.get_wiki_page('template') is None
+        assert new.get_wiki_version('template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)
@@ -3982,3 +4214,127 @@ class TestAdminImplicitRead(object):
 
         assert lvl1component in qs
         assert project not in qs
+
+
+class TestPreprintProperties:
+
+    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
+        node = ProjectFactory(is_public=True)
+        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
+        PreprintFactory(project=node, is_published=False, filename='file2.txt')
+        assert node.preprint_url == published.url
+
+class TestCollectionProperties:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collector(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider(self):
+        return CollectionProviderFactory()
+
+    @pytest.fixture()
+    def collection_one(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_two(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_public(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+
+    @pytest.fixture()
+    def public_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=True)
+
+    @pytest.fixture()
+    def private_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=False)
+
+    @pytest.fixture()
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    def test_collection_project_views(
+            self, user, node, collection_one, collection_two, collection_public,
+            public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
+
+        # test_collection_properties
+        assert not node.is_collected
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        assert node.is_collected
+        assert len(node.collecting_metadata_list) == 3
+
+        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_expected = {collection_one._id, collection_two._id, collection_public._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+
+        assert ids_not_expected.isdisjoint(ids_actual)
+        assert ids_actual == ids_expected
+
+    def test_permissions_collection_project_views(
+            self, user, node, contrib, collection_one, collection_two,
+            collection_public, public_non_provided_collection, private_non_provided_collection,
+            bookmark_collection, collector):
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        ## test_not_logged_in_user_only_sees_public_collection_info
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
+        node.add_contributor(contributor=contrib, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        assert len(collection_summary) == 1
+        assert collection_public._id == collection_summary[0]['url'].strip('/')
+
+        ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
+        node.add_contributor(contributor=collector, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
+        assert ids_actual == ids_expected
+
+        ## test_node_contrib_cannot_see_public_bookmark_collections
+        bookmark_collection_public = bookmark_collection
+        bookmark_collection_public.is_public = True
+        bookmark_collection_public.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
+        assert bookmark_collection_public._id not in ids_actual

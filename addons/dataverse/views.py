@@ -23,7 +23,6 @@ from website.project.decorators import (
     must_be_contributor_or_public
 )
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'
@@ -130,12 +129,6 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse', {}).get('alias')
     doi = request.json.get('dataset', {}).get('doi')
@@ -294,23 +287,6 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def dataverse_root_folder(node_addon, auth, **kwargs):
     return _dataverse_root_folder(node_addon, auth=auth)
-
-## Widget ##
-
-@must_be_contributor_or_public
-@must_have_addon(SHORT_NAME, 'node')
-def dataverse_widget(node_addon, **kwargs):
-
-    node = node_addon.owner
-    widget_url = node.api_url_for('dataverse_get_widget_contents')
-
-    ret = {
-        'complete': node_addon.complete,
-        'widget_url': widget_url,
-    }
-    ret.update(node_addon.config.to_json())
-
-    return ret, http.OK
 
 
 @must_be_contributor_or_public

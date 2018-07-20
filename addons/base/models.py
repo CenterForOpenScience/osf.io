@@ -17,7 +17,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
-from website.util import waterbutler_url_for
 
 lookup = TemplateLookup(
     directories=[
@@ -84,7 +83,8 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
 
 
 class BaseUserSettings(BaseAddonSettings):
-    owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
+    owner = models.OneToOneField(OSFUser, related_name='%(app_label)s_user_settings',
+                                 blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -347,7 +347,8 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
 
 class BaseNodeSettings(BaseAddonSettings):
-    owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
+    owner = models.OneToOneField(AbstractNode, related_name='%(app_label)s_node_settings',
+                                 null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -521,7 +522,7 @@ class BaseNodeSettings(BaseAddonSettings):
         """
         return None, None
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         """
 
         :param Node node:
@@ -540,7 +541,7 @@ class GenericRootNode(object):
     name = ''
 
 
-class BaseStorageAddon(BaseModel):
+class BaseStorageAddon(object):
     """
     Mixin class for traversing file trees of addons with files
     """
@@ -559,26 +560,38 @@ class BaseStorageAddon(BaseModel):
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
-        kwargs = dict(
-            provider=self.config.short_name,
-            path=filenode.get('path', ''),
-            node=self.owner,
-            user=user,
-            view_only=True,
-        )
-        if cookie:
-            kwargs['cookie'] = cookie
+        from api.base.utils import waterbutler_api_url_for
+
+        kwargs = {}
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
+        if cookie:
+            kwargs['cookie'] = cookie
+        elif user:
+            kwargs['cookie'] = user.get_or_create_cookie()
+
+        metadata_url = waterbutler_api_url_for(
+            self.owner._id,
+            self.config.short_name,
+            path=filenode.get('path', '/'),
+            user=user,
+            view_only=True,
+            _internal=True,
+            **kwargs
+        )
 
         res = requests.get(metadata_url)
+
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={'error': res.json()})
 
         # TODO: better throttling?
         time.sleep(1.0 / 5.0)
-        return res.json().get('data', [])
+
+        data = res.json().get('data', None)
+        if data:
+            return [child['attributes'] for child in data]
+        return []
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
         """
@@ -589,7 +602,7 @@ class BaseStorageAddon(BaseModel):
             'kind': 'folder',
             'name': self.root_node.name,
         }
-        if filenode.get('kind') == 'file' or 'size' in filenode:
+        if filenode.get('kind') == 'file':
             return filenode
 
         kwargs = {
@@ -607,7 +620,8 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
     external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
-                                         related_name='%(app_label)s_node_settings')
+                                         related_name='%(app_label)s_node_settings',
+                                         on_delete=models.CASCADE)
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     # user_settings = fields.AbstractForeignField()
@@ -775,9 +789,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             )
 
             if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
+                url = node.web_url_for('node_addons')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -924,7 +938,7 @@ class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
         self.clear_auth()
         self.save()
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
 
     def on_delete(self):

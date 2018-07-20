@@ -31,6 +31,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+    NODE_ACCESS_REQUESTS_ENABLED = 'node_access_requests_enabled'
+    NODE_ACCESS_REQUESTS_DISABLED = 'node_access_requests_disabled'
 
     POINTER_CREATED = NODE_LINK_CREATED = 'pointer_created'
     POINTER_FORKED = NODE_LINK_FORKED = 'pointer_forked'
@@ -116,11 +118,14 @@ class NodeLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
     PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
+    SUBJECTS_UPDATED = 'subjects_updated'
+
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
 
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
+                NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
                 NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
                 WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
                 MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
@@ -145,11 +150,13 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
+                             null=True, blank=True, on_delete=models.CASCADE)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('AbstractNode', related_name='logs',
-                             db_index=True, null=True, blank=True)
-    original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
+                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    original_node = models.ForeignKey('AbstractNode', db_index=True,
+                                      null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
@@ -170,24 +177,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     @property
     def absolute_url(self):
         return self.absolute_api_v2_url
-
-    def clone_node_log(self, node_id):
-        """
-        When a node is forked or registered, all logs on the node need to be
-        cloned for the fork or registration.
-
-        :param node_id:
-        :return: cloned log
-        """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        original_log = self.load(self._id)
-        node = AbstractNode.load(node_id)
-        log_clone = original_log.clone()
-        log_clone.node = node
-        log_clone.original_node = original_log.original_node
-        log_clone.user = original_log.user
-        log_clone.save()
-        return log_clone
 
     def _natural_key(self):
         return self._id

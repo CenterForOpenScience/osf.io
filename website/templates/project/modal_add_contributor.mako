@@ -17,7 +17,7 @@
                                 <div class="input-group m-b-sm">
                                     <input class='form-control'
                                             data-bind="value:query"
-                                            placeholder='Search by name' autofocus/>
+                                            placeholder='Search by name or user profile information' autofocus/>
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
@@ -69,7 +69,7 @@
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                            <img data-bind="attr: {src: contributor.profile_image_url}" height=35 width=35 />
                                         </td>
                                         <td width="75%" >
                                             <a  data-bind="attr: {href: contributor.profile_url}" target="_blank">
@@ -92,14 +92,75 @@
                                                     </span><br>
                                                 </span>
 
-                                                <span class= 'small'
+                                                <span>
+                                                    <span class= 'small'
                                                       data-bind= "text: contributor.displayProjectsInCommon">
+                                                    </span><br>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.personal">
+                                                    <a data-bind="attr: {href: contributor.social.personal}" data-toggle="tooltip" title="Personal Website"  target="_blank">
+                                                        <i class="fa fa-globe social-icons fa-lg"></i>
+                                                    </a>
                                                 </span>
 
+                                                <span data-bind="visible: contributor.social.twitter">
+                                                    <a data-bind="attr: {href: contributor.social.twitter}" data-toggle="tooltip" title="Twitter" target="_blank">
+                                                        <i class="fa fa-twitter social-icons fa-lg"></i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.github">
+                                                    <a data-bind="attr: {href: contributor.social.github}" data-toggle="tooltip" title="Github" target="_blank">
+                                                        <i class="fa fa-github-alt social-icons fa-lg"></i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.linkedIn" >
+                                                    <a data-bind="attr: {href: contributor.social.linkedIn}" data-toggle="tooltip" title="LinkedIn" target="_blank">
+                                                        <i class="fa fa-linkedin social-icons fa-lg"></i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.scholar">
+                                                    <a data-bind="attr: {href: contributor.social.scholar}" data-toggle="tooltip" title="Google Scholar" target="_blank">
+                                                        <img class="social-icons fa-lg" src="/static/img/googlescholar.png">
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.impactStory">
+                                                    <a data-bind="attr: {href: contributor.social.impactStory}" data-toggle="tooltip" title="ImpactStory" target="_blank">
+                                                        <i class="fa fa-info-circle social-icons fa-lg"></i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.orcid">
+                                                    <a data-bind="attr: {href: contributor.social.orcid}" data-toggle="tooltip" title="ORCiD" target="_blank">
+                                                        <i class="fa social-icons fa-lg">iD</i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.researcherId">
+                                                    <a data-bind="attr: {href: contributor.social.researcherId}" data-toggle="tooltip" title="ResearcherID" target="_blank">
+                                                        <i class="fa social-icons fa-lg">R</i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.researchGate">
+                                                    <a data-bind="attr: {href: contributor.social.researchGate}" data-toggle="tooltip" title="ResearchGate" target="_blank">
+                                                        <img class="social-icons p-b-xs" src="/static/img/researchgate.jpg"></i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.academiaInstitution + social.academiaProfileID">
+                                                    <a data-bind="attr: {href: contributor.social.academiaInstitution + social.academiaProfileID}" data-toggle="tooltip" title="Academia" target="_blank">
+                                                        <i class="fa social-icons fa-lg">A</i>
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.baiduScholar">
+                                                    <a data-bind="attr: {href: contributor.social.baiduScholar}" data-toggle="tooltip" title="Baidu Scholar" target="_blank">
+                                                        <img class="social-icons fa-lg" src="/static/img/baiduscholar.png">
+                                                    </a>
+                                                </span>
+                                                <span data-bind="visible: contributor.social.ssrn">
+                                                    <a data-bind="attr: {href: contributor.social.ssrn}" data-toggle="tooltip" title="SSRN" target="_blank">
+                                                        <img class="social-icons fa-lg" src="/static/img/SSRN.png">
+                                                    </a>
+                                                </span>
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
-
                                         </td>
 
                                     </tr>
@@ -119,11 +180,6 @@
                                             <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                         </div>
                                     </p>
-                                </div>
-                                <div data-bind="if: parentPagination">
-                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                                    </ul>
                                 </div>
                                 <div data-bind="if: showLoading">
                                     <p class="text-muted">Searching contributors...</p>
@@ -186,7 +242,7 @@
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
+                                            <img data-bind="attr: {src: contributor.profile_image_url || '/static/img/unreg_profile_image.png'}" height=35 width=35 />
                                         </td>
 
                                         <td>
@@ -216,7 +272,6 @@
                         </div>
 
                     </div>
-
                 </div>
                 <!-- Component selection page -->
                 <div data-bind="visible:page()=='which'">
@@ -247,7 +302,9 @@
                     <div class="osf-treebeard">
                         <div id="addContributorsTreebeard">
                             <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-md"></div>
+                                <div class="ball-scale ball-scale-blue">
+                                    <div></div>
+                                </div>
                                 <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>

@@ -10,6 +10,9 @@ from admin.nodes.views import (
     NodeFlaggedSpamList,
     NodeKnownSpamList,
     NodeKnownHamList,
+    NodeConfirmHamView,
+    AdminNodeLogView,
+    RestartStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -18,6 +21,7 @@ from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
+from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
@@ -314,3 +318,127 @@ class TestNodeReindex(AdminTestCase):
         nt.assert_true(mock_update_search.called)
         nt.assert_true(mock_bulk_update_nodes.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+class TestNodeConfirmHamView(AdminTestCase):
+    def setUp(self):
+        super(TestNodeConfirmHamView, self).setUp()
+
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+
+        self.node = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user)
+
+    def test_confirm_node_as_ham(self):
+        view = NodeConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        self.node.refresh_from_db()
+        nt.assert_true(self.node.spam_status == 4)
+
+    def test_confirm_registration_as_ham(self):
+        view = NodeConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.spam_status == 4)
+
+
+class TestAdminNodeLogView(AdminTestCase):
+
+    def setUp(self):
+        super(TestAdminNodeLogView, self).setUp()
+
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_get_object(self):
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        nt.assert_true(self.node, view.get_object())
+
+    def test_get_queryset(self):
+
+        self.node.set_title('New Title', auth=self.auth, save=True)
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_queryset()
+
+        log_entry = logs.first()
+        nt.assert_true(log_entry.action == 'edit_title')
+        nt.assert_true(log_entry.params['title_new'] == u'New Title')
+
+    def test_get_context_data(self):
+
+        self.node.set_title('New Title', auth=self.auth, save=True)
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_context_data()['logs']
+        log_entry = logs[0][0]
+        log_params = logs[0][1]
+        nt.assert_true(log_entry.action == NodeLog.EDITED_TITLE)
+        nt.assert_true((u'title_new', u'New Title') in log_params)
+        nt.assert_true((u'node', self.node._id) in log_params)
+
+    def test_get_logs_for_children(self):
+        """ The "create component" action is actually logged as a create_project action
+        for its child with a log parameter 'node' having its guid as a value. We have to ensure
+        that all the components a parent has created appear in its admin app logs, so we can't just
+         do node.logs.all(), that will leave out component creation.
+        """
+
+        component = ProjectFactory(creator=self.user, parent=self.node)
+        component.save()
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_context_data()['logs']
+        log_entry = logs[0][0]
+        log_params = logs[0][1]
+
+        nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
+        nt.assert_true(log_entry.node._id == component._id)
+        nt.assert_true(('node', component._id) in log_params)
+
+
+class TestRestartStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRestartStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RestartStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_restart_stuck_registration(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')

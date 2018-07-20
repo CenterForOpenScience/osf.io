@@ -9,6 +9,7 @@ from os.path import splitext
 
 from flask import Request as FlaskRequest
 from framework import analytics
+from guardian.shortcuts import get_perms
 
 # OSF imports
 import itsdangerous
@@ -20,11 +21,11 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
-from django.db.models.signals import post_save
 from django.db import models
+from django.db.models import Count
+from django.db.models.signals import post_save
 from django.utils import timezone
 
-from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -34,7 +35,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -56,6 +57,7 @@ MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
+
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -102,7 +104,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class Email(BaseModel, TimeStampedModel):
+class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
 
@@ -231,6 +233,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
+    change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
+    # Logs number of times user attempted to change their password where their
+    # old password was invalid
+    old_password_invalid_attempts = models.PositiveIntegerField(default=0)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -331,6 +337,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # When the user was disabled.
     date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
+    # When the user was soft-deleted (GDPR)
+    deleted = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
+
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
@@ -350,6 +359,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
+
+    # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
+    accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     objects = OSFUserManager()
 
@@ -471,7 +483,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     def csl_name(self, node_id=None):
-        if self.is_registered:
+        # disabled users are set to is_registered = False but have a fullname
+        if self.is_registered or self.is_disabled:
             name = self.fullname
         else:
             name = self.get_unclaimed_record(node_id)['name']
@@ -564,6 +577,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         :param user: A User object to be merged.
         """
+
+        # Attempt to prevent self merges which end up removing self as a contributor from all projects
+        if self == user:
+            raise ValueError('Cannot merge a user into itself')
+
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
@@ -574,6 +592,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
+        self.is_superuser = self.is_superuser or user.is_superuser
+        self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
         if user.jobs and not self.jobs:
@@ -657,8 +677,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor
         for node in user.contributed:
-            # Skip bookmark collection node
-            if node.is_bookmark_collection:
+            # Skip quickfiles
+            if node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -678,11 +698,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             node.save()
 
+        # Skip bookmark collections
+        user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
+
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -812,12 +835,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Legacy methods
 
     @classmethod
-    def create(cls, username, password, fullname):
-        validate_email(username)  # Raises ValidationError if spam address
+    def create(cls, username, password, fullname, accepted_terms_of_service=None):
+        validate_email(username)  # Raises BlacklistedEmailError if spam address
 
         user = cls(
             username=username,
             fullname=fullname,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         user.update_guessed_names()
         user.set_password(password)
@@ -842,18 +866,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='plain',
-                user=self
+                mimetype='html',
+                user=self,
+                can_change_preferences=False,
+                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           do_confirm=True, campaign=None):
+                           do_confirm=True, campaign=None, accepted_terms_of_service=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        user = cls.create(username, password, fullname)
+        user = cls.create(username, password, fullname, accepted_terms_of_service)
         user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
         if external_identity:
@@ -1008,11 +1034,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_identity and self.emails.filter(address=email).exists():
-            raise ValueError('Email already confirmed to this user.')
-
         with reraise_django_validation_errors():
             validate_email(email)
+
+        if not external_identity and self.emails.filter(address=email).exists():
+            raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -1048,7 +1074,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise PermissionsError("Can't remove primary email")
         if self.emails.filter(address=email):
             self.emails.filter(address=email).delete()
-            signals.user_email_removed.send(self, email=email)
+            signals.user_email_removed.send(self, email=email, osf_contact_email=website_settings.OSF_CONTACT_EMAIL)
 
     def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.
@@ -1105,7 +1131,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
-    def register(self, username, password=None):
+    def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
         """
         self.username = username
@@ -1116,6 +1142,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = timezone.now()
+        if accepted_terms_of_service:
+            self.accepted_terms_of_service = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
@@ -1148,7 +1176,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
             unregistered_user = None
 
@@ -1233,6 +1261,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # TODO: Move validation to set_password
         issues = []
         if not self.check_password(raw_old_password):
+            self.old_password_invalid_attempts += 1
+            self.change_password_last_attempt = timezone.now()
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
@@ -1251,6 +1281,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if issues:
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
+        self.reset_old_password_invalid_attempts()
+
+    def reset_old_password_invalid_attempts(self):
+        self.old_password_invalid_attempts = 0
 
     def profile_image_url(self, size=None):
         """A generalized method for getting a user's profile picture urls.
@@ -1323,20 +1357,29 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, node, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param Node node: Node this unclaimed user was added to.
+        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
         :returns: The added record
         """
-        if not node.can_edit(user=referrer):
-            raise PermissionsError(
-                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
-            )
-        project_id = str(node._id)
+
+        from osf.models.provider import AbstractProvider
+        if isinstance(claim_origin, AbstractProvider):
+            if not bool(get_perms(referrer, claim_origin)):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                )
+        else:
+            if not claim_origin.can_edit(user=referrer):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to project {0}'.format(claim_origin._primary_key)
+                )
+
+        pid = str(claim_origin._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
@@ -1344,7 +1387,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             clean_email = None
         verification_key = generate_verification_key(verification_type='claim')
         try:
-            record = self.unclaimed_records[node._id]
+            record = self.unclaimed_records[claim_origin._id]
         except KeyError:
             record = None
         if record:
@@ -1356,7 +1399,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'expires': verification_key['expires'],
             'email': clean_email,
         }
-        self.unclaimed_records[project_id] = record
+        self.unclaimed_records[pid] = record
         return record
 
     def get_unclaimed_record(self, project_id):
@@ -1427,7 +1470,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user_session = Session.objects.filter(
             data__auth_user_id=self._id
         ).order_by(
-            '-date_modified'
+            '-modified'
         ).first()
 
         if not user_session:
@@ -1469,11 +1512,105 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
+    def gdpr_delete(self):
+        """
+        This function does not remove the user object reference from our database, but it does disable the account and
+        remove identifying in a manner compliant with GDPR guidelines.
+
+        Follows the protocol described in
+        https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
+
+        """
+        from osf.models import PreprintService, AbstractNode
+
+        user_nodes = self.nodes.all()
+        #  Validates the user isn't trying to delete things they deliberately made public.
+        if user_nodes.filter(type='osf.registration').exists():
+            raise UserStateError('You cannot delete this user because they have one or more registrations.')
+
+        if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
+            raise UserStateError('You cannot delete this user because they have one or more preprints.')
+
+        # Validates that the user isn't trying to delete things nodes they are the only admin on.
+        personal_nodes = AbstractNode.objects.annotate(contrib_count=Count('_contributors')).filter(contrib_count__lte=1).filter(contributor__user=self)
+        shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
+
+        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+            alternate_admins = Contributor.objects.select_related('user').filter(
+                node=node,
+                user__is_active=True,
+                admin=True,
+            ).exclude(user=self)
+            if not alternate_admins:
+                raise UserStateError(
+                    'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
+                        node._id))
+
+            for addon in node.get_addons():
+                if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:
+                    raise UserStateError('You cannot delete this user because they '
+                                         'have an external account for {} attached to Node {}, '
+                                         'which has other contributors.'.format(addon.short_name, node._id))
+
+        for node in shared_nodes.all():
+            logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
+            node.remove_contributor(self, auth=Auth(self), log=False)
+
+        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
+        self.disable_account()
+
+        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        for node in personal_nodes.all():
+            logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
+            node.remove_node(auth=Auth(self))
+
+        logger.info('Clearing identifying information...')
+        # This removes identifying info
+        # hard-delete all emails associated with the user
+        self.emails.all().delete()
+        # Change name to "Deleted user" so that logs render properly
+        self.fullname = 'Deleted user'
+        self.set_unusable_username()
+        self.set_unusable_password()
+        self.given_name = ''
+        self.family_name = ''
+        self.middle_names = ''
+        self.mailchimp_mailing_lists = {}
+        self.osf_mailing_lists = {}
+        self.verification_key = None
+        self.suffix = ''
+        self.jobs = []
+        self.schools = []
+        self.social = []
+        self.unclaimed_records = {}
+        self.notifications_configured = {}
+        # Scrub all external accounts
+        if self.external_accounts.exists():
+            logger.info('Clearing identifying information from external accounts...')
+            for account in self.external_accounts.all():
+                account.oauth_key = None
+                account.oauth_secret = None
+                account.refresh_token = None
+                account.provider_name = 'gdpr-deleted'
+                account.display_name = None
+                account.profile_url = None
+                account.save()
+            self.external_accounts.clear()
+        self.external_identity = {}
+        self.deleted = timezone.now()
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def add_default_user_addons(sender, instance, created, **kwargs):
+    if created:
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if 'user' in addon.added_default:
+                instance.add_addon(addon.short_name)
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):

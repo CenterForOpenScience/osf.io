@@ -2,9 +2,12 @@
 
 import time
 
+from flask import has_app_context
+from framework import sentry
 import mendeley
 from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
 from django.db import models
+from addons.base import exceptions
 from framework.exceptions import HTTPError
 from mendeley.exception import MendeleyApiException
 from oauthlib.oauth2 import InvalidGrantError
@@ -56,7 +59,7 @@ class Mendeley(CitationsOauthProvider):
             client_secret=self.client_secret,
             redirect_uri=web_url_for('oauth_callback',
                                      service_name='mendeley',
-                                     _absolute=True),
+                                     _absolute=True) if has_app_context() else None,
         )
         credentials = credentials or {
             'access_token': self.account.oauth_key,
@@ -258,7 +261,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     provider_name = 'mendeley'
     oauth_provider = Mendeley
     serializer = MendeleySerializer
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     list_id = models.TextField(blank=True, null=True)
     _api = None
@@ -267,3 +270,34 @@ class NodeSettings(BaseCitationsNodeSettings):
     def _fetch_folder_name(self):
         folder = self.api._folder_metadata(self.list_id)
         return folder.name
+
+    def get_folders(self, show_root=False, **kwargs):
+        if self.has_auth:
+            try:
+                folders = self.api._get_folders()
+                serialized_root_folder = {
+                    'name': 'All Documents',
+                    'provider_list_id': None,
+                    'id': 'ROOT',
+                    'parent_list_id': '__',
+                    'kind': 'folder',
+                    'addon': 'mendeley'
+                }
+                serialized_folders = [{
+                    'addon': 'mendeley',
+                    'kind': 'folder',
+                    'id': folder.json['id'],
+                    'name': folder.json['name'],
+                    'path': folder.json.get('parent_id', '/'),
+                    'parent_list_id': folder.json.get('parent_id', None),
+                    'provider_list_id': folder.json['id']
+                } for folder in folders]
+                if show_root:
+                    serialized_folders.insert(0, serialized_root_folder)
+                return serialized_folders
+            except MendeleyApiException as error:
+                sentry.log_exception()
+                sentry.log_message('Unexpected Mendeley Error when fetching folders.')
+                raise HTTPError(error.status)
+        else:
+            raise exceptions.InvalidAuthError()

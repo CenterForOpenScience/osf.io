@@ -28,6 +28,7 @@ var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
+var currentUserRequestState = ctx.currentUserRequestState;
 
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -42,7 +43,10 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
+    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
+
+    // Enable the otherActionsButton once the page is loaded so the menu is properly populated
+    $('#otherActionsButton').removeClass('disabled');
 });
 
 // Initialize comment pane w/ its viewmodel
@@ -98,6 +102,13 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+    // Allows dropdown elements to persist after being clicked
+    // Used for the "Share" button in the more actions menu
+    $('.dropdown').on('click', 'li', function (evt) {
+        var target = $(evt.target);
+        // If the clicked element has .keep-open, don't allow the event to propagate
+        return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
+    });
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
@@ -199,7 +210,7 @@ $(document).ready(function () {
                     document.getElementById('shareButtonsPopover'),
                     m.component(
                         SocialShare.ShareButtonsPopover,
-                        {title: window.contextVars.node.title, url: window.location.href}
+                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
                     )
                 );
             }
@@ -219,44 +230,76 @@ $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
+    var nodeType = window.contextVars.node.isRegistration ? 'registrations':'nodes';
+    var tagsApiUrl = $osf.apiV2Url(nodeType + '/' + window.contextVars.node.id + '/');
     $('#node-tags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
-        defaultText: 'add a tag to enhance discoverability',
+        defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function(tag) {
-            $('#node-tags_tag').attr('data-default', 'add a tag');
-            var url = nodeApiUrl + 'tags/';
-            var data = {tag: tag};
-            var request = $osf.postJSON(url, data);
-            request.done(function() {
-                window.contextVars.node.tags.push(tag);
-            });
+            $('#node-tags_tag').attr('data-default', 'Add a tag');
+            window.contextVars.node.tags.push(tag);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: window.contextVars.node.tags
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
-                        tag: tag, url: url, textStatus: textStatus, error: error
+                        tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                     }
                 });
             });
         },
         onRemoveTag: function(tag) {
-            var url = nodeApiUrl + 'tags/';
-            // Don't try to delete a blank tag (would result in a server error)
             if (!tag) {
                 return false;
             }
-            var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
-            request.done(function() {
-                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
-            });
+            window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: window.contextVars.node.tags
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.push(tag);
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
                     $osf.growl('Error', 'Could not remove tag');
                     Raven.captureMessage('Failed to remove tag', {
                         extra: {
-                            tag: tag, url: url, textStatus: textStatus, error: error
+                            tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                         }
                     });
                 }
@@ -289,9 +332,18 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
+            var rawText;
+            if(resp.wiki_content){
+                rawText = resp.wiki_content;
+            } else if(window.contextVars.currentUser.canEdit) {
+                rawText = '*Add important information, links, or images here to describe your project.*';
+            } else {
+                rawText = '*No wiki content.*';
+            }
+
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
-            var truncatedText = $.truncate(renderedText, {length: 400});
+            // don't truncate the text when length = 400
+            var truncatedText = $.truncate(renderedText, {length: 401});
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
@@ -299,10 +351,24 @@ $(document).ready(function () {
     }
 
     // Remove delete UI if not contributor
-    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+    if (!window.contextVars.currentUser.canEditTags) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
+    // Show or hide collection details
+    if ($('.collection-details').length) {
+        $('.collection-details').each( function() {
+            var caret = '#' + $(this).attr('id') + '-toggle';
+            $(this).on('hidden.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-up')
+                       .addClass('fa-angle-down');
+            }).on('shown.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-down')
+                        .addClass('fa-angle-up');
+            });
         });
     }
 });

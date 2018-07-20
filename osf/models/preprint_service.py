@@ -1,32 +1,38 @@
 # -*- coding: utf-8 -*-
 import urlparse
+import logging
 
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
-from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
-from osf.models import NodeLog, Subject
-from osf.models.validators import validate_subject_hierarchy
+from osf.models.mixins import ReviewableMixin
+from osf.models import NodeLog, OSFUser
 from osf.utils.fields import NonNaiveDateTimeField
-from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
+from osf.utils.workflows import ReviewStates
+from osf.utils.permissions import ADMIN
+from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
+from website.notifications.emails import get_user_subscriptions
+from website.notifications import utils
+from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
-from website.util.permissions import ADMIN
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website import settings, mails
-
-from reviews.models.mixins import ReviewableMixin
-from reviews.workflow import States
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
+from osf.models.mixins import TaxonomizableMixin
+from osf.models.spam import SpamMixin
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
+logger = logging.getLogger(__name__)
+
+class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
+    SPAM_CHECK_FIELDS = set()
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -40,9 +46,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
-    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
-
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
+    preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    withdrawal_justification = models.TextField(default='', blank=True)
+    ever_public = models.BooleanField(default=False, blank=True)
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -51,7 +59,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
 
     @property
     def verified_publishable(self):
@@ -62,6 +70,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if not self.node:
             return
         return self.node.preprint_file
+
+    @property
+    def is_retracted(self):
+        return self.date_withdrawn is not None
 
     @property
     def article_doi(self):
@@ -78,12 +90,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if not self.node:
             return
         return self.node.is_preprint_orphan
-
-    @cached_property
-    def subject_hierarchy(self):
-        return [
-            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
-        ]
 
     @property
     def deep_url(self):
@@ -111,34 +117,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)
-
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
-
-    def set_subjects(self, preprint_subjects, auth):
-        if not self.node.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj_list in preprint_subjects:
-            subj_hierarchy = []
-            for s in subj_list:
-                subj_hierarchy.append(s)
-            if subj_hierarchy:
-                validate_subject_hierarchy(subj_hierarchy)
-                for s_id in subj_hierarchy:
-                    self.subjects.add(Subject.load(s_id))
-
-        self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
@@ -185,8 +163,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.reviews_state = States.ACCEPTED.value
+            self.machine_state = ReviewStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
+
+            # This preprint will have a tombstone page when it's withdrawn.
+            self.ever_public = True
 
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
@@ -203,9 +184,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                     auth=None,
                     log=True
                 )
-
-            # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
 
             self._send_preprint_confirmation(auth)
 
@@ -230,34 +208,128 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if save:
             self.save()
 
-    def set_identifier_values(self, doi, ark, save=False):
+    def set_identifier_values(self, doi, save=False):
         self.set_identifier_value('doi', doi)
-        self.set_identifier_value('ark', ark)
+        self.preprint_doi_created = timezone.now()
 
         if save:
             self.save()
+
+    def get_doi_client(self):
+        if settings.CROSSREF_URL:
+            if self.provider._id == 'ecsarxiv':
+                return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
+            return CrossRefClient(base_url=settings.CROSSREF_URL)
+        else:
+            return None
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
+        if saved_fields:
+            request, user_id = get_request_and_user_id()
+            request_headers = {}
+            if not isinstance(request, DummyRequest):
+                request_headers = {
+                    k: v
+                    for k, v in get_headers_from_request(request).items()
+                    if isinstance(v, basestring)
+                }
+            user = OSFUser.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers)
+        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
+            raise ValidationError('Cannot set "ever_public" to False')
+
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
         return ret
+
+    def _get_spam_content(self, saved_fields):
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
+        content = []
+        for field in spam_fields:
+            content.append((getattr(self.node, field, None) or '').encode('utf-8'))
+        if self.node.all_tags.exists():
+            content.extend(map(lambda name: name.encode('utf-8'), self.node.all_tags.values_list('name', flat=True)))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.node.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers,
+        )
+        logger.info("Preprint ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self.node._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        self.node._check_spam_user(user)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(PreprintService, self).flag_spam()
+        self.node.flag_spam()
+
+    def confirm_spam(self, save=False):
+        super(PreprintService, self).confirm_spam(save=save)
+        self.node.confirm_spam(save=save)
+
+    def confirm_ham(self, save=False):
+        super(PreprintService, self).confirm_ham(save=save)
+        self.node.confirm_ham(save=save)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
+        recipient = self.node.creator
+        event_type = utils.find_subscription_type('global_reviews')
+        user_subscriptions = get_user_subscriptions(recipient, event_type)
         if self.provider._id == 'osf':
-            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
+            logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
+            logo = self.provider._id
+
+        context = {
+            'domain': settings.DOMAIN,
+            'reviewable': self,
+            'workflow': self.provider.reviews_workflow,
+            'provider_url': '{domain}preprints/{provider_id}'.format(
+                            domain=self.provider.domain or settings.DOMAIN,
+                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
+            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+            'no_future_emails': user_subscriptions['none'],
+            'is_creator': True,
+            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+            'logo': logo,
+        }
 
         mails.send_mail(
-            auth.user.username,
-            email_template,
-            user=auth.user,
-            node=self.node,
-            preprint=self
+            recipient.username,
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+            mimetype='html',
+            user=recipient,
+            **context
         )
