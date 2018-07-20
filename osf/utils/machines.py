@@ -295,5 +295,6 @@ class PreprintRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'reviewable': self.machineable.target,
-            'requester': self.machineable.creator
+            'requester': self.machineable.creator,
+            'is_request_email': True,
         }
