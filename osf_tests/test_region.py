@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from framework.auth import Auth
@@ -8,6 +9,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegionFactory
 )
+
 
 @pytest.mark.django_db
 class TestRegion:
@@ -45,6 +47,7 @@ class TestRegion:
 
         return root_node
 
+    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
     def test_regions_stay_after_registration(self, user, project_with_different_regions):
         """
         Registering a project with components of different regions should keep those regions after registration.

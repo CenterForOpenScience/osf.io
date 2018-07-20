@@ -87,6 +87,7 @@ def get_globals():
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
+
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',

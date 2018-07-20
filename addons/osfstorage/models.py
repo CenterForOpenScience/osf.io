@@ -436,6 +436,7 @@ class Region(models.Model):
     class Meta:
         unique_together = ('_id', 'name')
 
+
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
 
