@@ -180,6 +180,7 @@ var KeenTracker = (function() {
             var _defaultPrivateKeenPayload = function() {
                 var payload = _defaultKeenPayload();
                 var user = window.contextVars.currentUser;
+                var ip = window.contextVars.anonymizedIP;
                 payload.visitor = {
                     id: _getOrCreateKeenId(),
                     session: Cookie.get('keenSessionId'),
@@ -188,7 +189,7 @@ var KeenTracker = (function() {
                 payload.tech = {
                     browser: keenTracking.helpers.getBrowserProfile(),
                     ua: '${keen.user_agent}',
-                    ip: '${keen.ip}',
+                    ip: ip,
                     info: {},
                 };
                 payload.user = {

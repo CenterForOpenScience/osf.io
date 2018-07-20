@@ -236,6 +236,7 @@
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
+                anonymizedIP: ${ anonymized_ip | sjson, n}
             });
         </script>
 
