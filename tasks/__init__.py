@@ -232,21 +232,21 @@ def flake(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
     """Install python dependencies.
 
     Examples:
         inv requirements
-        inv requirements --quick
+        inv requirements --all
 
-    Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
-    day to day development.
+    You should use --all for updating your developement environment.
+    --all will install (in order): addons, dev and the base requirements.
 
     By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
     requirements will prevent dev, and base from running.
     """
-    if quick:
+    if all:
         base = True
         addons = True
         dev = True
