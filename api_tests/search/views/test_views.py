@@ -911,3 +911,11 @@ class TestSearchCollections(ApiSearchTestCase):
         assert res.json['links']['meta']['total'] == 1
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == node_with_abstract._id
+
+        # test_search_abstract_keyword_and_filter_provider
+        payload = self.post_payload(q='Khadja', status='asdf', provider=collection_public.provider._id)
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_with_abstract._id

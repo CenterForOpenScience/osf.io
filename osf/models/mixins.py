@@ -21,7 +21,7 @@ from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine, RequestMachine
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from website.exceptions import NodeStateError
@@ -545,14 +545,27 @@ class MachineableMixin(models.Model):
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
 
-class RequestableMixin(MachineableMixin):
-    """Something that users may request access or changes to.
+
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
     """
 
     class Meta:
         abstract = True
 
-    MachineClass = RequestMachine
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
 
 
 class ReviewableMixin(MachineableMixin):

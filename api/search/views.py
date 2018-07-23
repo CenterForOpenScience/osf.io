@@ -665,6 +665,7 @@ class SearchCollections(BaseSearchView):
             'contributors',
             'status',
             'subjects',
+            'provider',
             'title'
         ]
 
