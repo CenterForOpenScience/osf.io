@@ -842,473 +842,6 @@ class TestUserUpdate:
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == 'even_newer_github'
 
-    def test_user_put_schools_200(self, app, user_one, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth)
-        user_one.reload()
-        assert res.status_code == 200
-        assert user_one.schools == [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                     }]
-
-    def test_user_put_schools_401(self, app, user_one, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, expect_errors=True)
-        assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
-
-    def test_user_put_schools_403(self, app, user_two, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_two._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_two.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
-
-    def test_user_put_schools_validation(self, app, user_one, url_user_one):
-        # Tests to make sure schools fields correct structure
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': {}
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
-
-        # Tests to make sure structure is lists of dicts consisting of proper fields
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{}]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        print res.json
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
-
-        # Tests to make sure institution is not empty string
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': ''
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
-
-        # Tests to make sure ongoing is bool
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'ongoing': '???',
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
-
-    def test_user_put_schools_date_validation(self, app, user_one, url_user_one):
-
-        # Not valid datatypes for dates
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 'string',
-                                   'startMonth': 9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
-
-        # Not valid values for dates
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': -2,
-                                   'startMonth': -9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
-
-        # endDates for ongoing position
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
-
-        # End date is greater then start date
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1992,
-                                   'startMonth': 9,
-                                   'endYear': 1991,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
-
-    def test_user_put_jobs_200(self, app, user_one, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth)
-        user_one.reload()
-        assert res.status_code == 200
-        assert user_one.jobs == [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                  }]
-
-    def test_user_put_jobs_401(self, app, user_one, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, expect_errors=True)
-        assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
-
-    def test_user_put_jobs_403(self, app, user_two, url_user_one):
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_two._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_two.fullname,
-                    'education': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                },
-            }
-        }, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
-
-    def test_user_put_jobs_validation(self, app, user_one, url_user_one):
-        # Tests to make sure jobs fields correct structure
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': {}
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
-
-        # Tests to make sure structure is lists of dicts consisting of proper fields
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{}]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
-
-        # Tests to make sure institution is not empty string
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': ''
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
-
-        # Tests to make sure ongoing is bool
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'ongoing': '???',
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
-
-    def test_user_put_jobs_date_validation(self, app, user_one, url_user_one):
-
-        # Not valid datatypes for dates
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 'string',
-                                   'startMonth': 9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
-
-        # Not valid values for dates
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': -2,
-                                   'startMonth': -9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
-
-        # endDates for ongoing position
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': True,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
-
-        # End date is greater then start date
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1992,
-                                   'startMonth': 9,
-                                   'endYear': 1991,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                },
-            }
-        }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
-
     def test_put_user_logged_in(self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
         res = app.put_json_api(
@@ -1456,3 +989,167 @@ class TestDeactivatedUser:
         assert urlparse.urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
+
+
+@pytest.mark.django_db
+class UserProfileMixin(object):
+
+    @pytest.fixture()
+    def request_payload(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def request_key(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_one_url(self, user_one):
+        return '/v2/users/{}/'.format(user_one._id)
+
+    def test_user_put_profile_200(self, app, user_one, user_one_url, request_payload, request_key, user_attr):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+
+    def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+    def test_user_put_profile_403(self, app, user_two, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+    def test_user_put_profile_validate_dict(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure profile's fields have correct structure
+        request_payload['data']['attributes'][request_key] = {}
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
+
+    def test_user_put_profile_validation_list(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure structure is lists of dicts consisting of proper fields
+        request_payload['data']['attributes'][request_key] = [{}]
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
+
+    def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure institution is not empty string
+        request_payload['data']['attributes'][request_key][0]['institution'] = ''
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
+
+    def test_user_put_profile_validation_ongoing_bool(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure ongoing is bool
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = '???'
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
+
+    def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid datatypes for dates
+
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        print res.json['errors'][0]
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
+
+    def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid values for dates
+        request_payload['data']['attributes'][request_key][0]['startYear'] = -2
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
+
+    def test_user_put_profile_date_validate_ongoing_position(self, app, user_one, user_one_url, request_payload, request_key):
+        # endDates for ongoing position
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
+
+    def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
+        # End date is greater then start date
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 2000
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
+
+
+@pytest.mark.django_db
+class TestUserSchools(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'education': [{'degree': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                   }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'education'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'schools'
+
+
+@pytest.mark.django_db
+class TestUserJobs(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'employment': [{'title': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                    }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'employment'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'jobs'
