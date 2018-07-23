@@ -115,6 +115,14 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
+    @property
+    def has_pending_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal', machine_state='pending').exists()
+
+    @property
+    def has_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal').exists()
+
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)
 
