@@ -7,6 +7,7 @@ import mock
 import pytest
 from nose.tools import *  # flake8: noqa
 from django.middleware import csrf
+from waffle.testutils import override_switch
 
 from framework.auth import cas, core, oauth_scopes
 from website.util import api_v2_url
@@ -493,31 +494,43 @@ class TestCSRFValidation:
         session_cookie = user.get_or_create_cookie()
         app.set_cookie(COOKIE_NAME, str(session_cookie))
 
+    def test_waffle_switch_inactive_does_not_enforce_csrf(self, app, url, payload):
+        with override_switch('enforce_csrf', active=False):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
+        assert res.status_code == 201
+
     def test_post_no_csrf_cookie(self, app, url, payload):
-        res = app.post_json_api(
-            url,
-            payload,
-            expect_errors=True
-        )
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
         assert res.status_code == 403
         assert csrf.REASON_NO_CSRF_COOKIE in res.json['errors'][0]['detail']
 
     def test_post_without_csrf_in_headers(self, app, csrf_token, url, payload):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        res = app.post_json_api(
-            url,
-            payload,
-            expect_errors=True
-        )
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
         assert res.status_code == 403
         assert csrf.REASON_BAD_TOKEN in res.json['errors'][0]['detail']
 
     def test_send_csrf_cookie_and_headers(self, app, csrf_token, url, payload):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        res = app.post_json_api(
-            url,
-            payload,
-            headers={'X-CSRFToken': csrf_token},
-            expect_errors=True
-        )
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                headers={'X-CSRFToken': csrf_token},
+                expect_errors=True
+            )
         assert res.status_code == 201
