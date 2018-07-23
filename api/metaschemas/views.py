@@ -7,7 +7,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from api.metaschemas.serializers import MetaSchemaSerializer, RegistrationMetaSchemaSerializer
 
 
@@ -31,7 +31,7 @@ class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
+        return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
 
 class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -52,7 +52,7 @@ class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
-        return get_object_or_error(MetaSchema, schema_id, self.request)
+        return get_object_or_error(RegistrationSchema, schema_id, self.request)
 
 
 class DeprecatedMetaSchemasList(DeprecatedView, RegistrationMetaschemaList):
