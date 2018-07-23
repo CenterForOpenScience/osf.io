@@ -158,6 +158,14 @@ class UserSerializer(JSONAPISerializer):
             elif history.get('endYear') or history.get('endMonth'):
                 raise InvalidModelValueError(detail='Ongoing positions cannot have end dates.')
 
+    def validate_employment(self, value):
+        self._validate_user_json(value, 'employment-schema.json')
+        return value
+
+    def validate_education(self, value):
+        self._validate_user_json(value, 'education-schema.json')
+        return value
+
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
@@ -173,12 +181,9 @@ class UserSerializer(JSONAPISerializer):
                             )
                         instance.social[key] = val[0]
             elif 'schools' == attr:
-                self._validate_user_json(value, 'education-schema.json')
                 instance.schools = value
             elif 'jobs' == attr:
-                self._validate_user_json(value, 'employment-schema.json')
                 instance.jobs = value
-
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
