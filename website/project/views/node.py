@@ -875,6 +875,7 @@ def serialize_collections(cgms, auth):
         'url': '/{}/'.format(cgm.collection._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
