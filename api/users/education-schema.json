@@ -36,8 +36,6 @@
 			}
 		},
 		"required": [
-			"startYear",
-			"startMonth",
 			"ongoing",
 			"department",
 			"institution",
@@ -46,7 +44,9 @@
 		"additionalProperties": false,
 		"dependencies": {
 			"endMonth": ["endYear"],
-			"endYear": ["endMonth"]
+			"endYear": ["endMonth"],
+			"startMonth": ["startYear"],
+			"startYear": ["startMonth"]
 		}
 	}
 }

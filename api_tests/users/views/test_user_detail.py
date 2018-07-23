@@ -1042,7 +1042,7 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key] = [{}]
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'startYear' is a required property"
+        assert res.json['errors'][0]['detail'] == "u'ongoing' is a required property"
 
     def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure institution is not empty string
