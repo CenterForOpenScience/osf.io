@@ -34,7 +34,7 @@ from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
-                        NodeLog, DraftRegistration, MetaSchema,
+                        NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
@@ -197,7 +197,7 @@ def check_access(node, auth, action, cas_resp):
     # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
         allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.objects.filter(
             branched_from__in=allowed_nodes,
@@ -208,7 +208,7 @@ def check_access(node, auth, action, cas_resp):
                     prereg_draft_registration.count() > 0 and \
                     auth.user.has_perm('osf.administer_prereg'):
             return True
-    except MetaSchema.DoesNotExist:
+    except RegistrationSchema.DoesNotExist:
         pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
