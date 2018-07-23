@@ -139,10 +139,10 @@ class TestGitLabViews(OsfTestCase):
         if mock_branches is None:
             mock_branches = gitlab_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.gitlab.repo.return_value['default_branch']
-        for each in mock_branches.return_value:
-            if each['name'] == branch:
-                branch_sha = each['commit']['id']
+            branch = self.gitlab.repo.attributes['default_branch']
+        for each in mock_branches:
+            if each.name == branch:
+                branch_sha = each.commit['id']
         return branch_sha
 
     # Tests for _get_refs
@@ -150,14 +150,14 @@ class TestGitLabViews(OsfTestCase):
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_get_refs_defaults(self, mock_repo, mock_branches):
         gitlab_mock = self.gitlab
-        mock_repo.return_value = gitlab_mock.repo.return_value
+        mock_repo.return_value = gitlab_mock.repo
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
-            gitlab_mock.repo.return_value['default_branch']
+            gitlab_mock.repo.attributes['default_branch']
         )
-        assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
+        assert_equal(sha, branches[0].commit['id'])  # Get refs for default branch
         assert_equal(
             branches,
             gitlab_mock.branches.return_value
@@ -171,8 +171,7 @@ class TestGitLabViews(OsfTestCase):
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
-        branch_sha = self._get_sha_for_branch('master')
-        assert_equal(sha, branch_sha)
+        assert_equal(sha, branches[0].commit['id'])
         assert_equal(
             branches,
             gitlab_mock.branches.return_value
@@ -221,12 +220,13 @@ class TestGitLabViews(OsfTestCase):
                 'project_access': {'access_level': 20, 'notification_level': 3}
             },
         }
-        mock_repo.return_value = mock_repository
+        mock_repo.attributes.return_value = mock_repository
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
 
     # make a branch with a different commit than the commit being passed into check_permissions
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
-    def test_permissions_not_head(self, mock_has_auth):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions_not_head(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
         mock_has_auth.return_value = True
         connection = gitlab_mock
@@ -258,7 +258,10 @@ class TestGitLabViews(OsfTestCase):
         assert_equal(urls['download'], expected_urls['download'])
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
-    def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_hook_callback_add_file_not_thro_osf(self, mock_repo, mock_verify):
+        gitlab_mock = self.gitlab
+        gitlab_mock.repo = mock_repo
         url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
         timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(

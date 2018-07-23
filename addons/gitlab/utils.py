@@ -70,15 +70,15 @@ def get_refs(addon, branch=None, sha=None, connection=None):
         repo = connection.repo(addon.repo_id)
         if repo is None:
             return None, None, None
-        branch = repo['default_branch']
 
+        branch = repo.attributes['default_branch']
     # Get data from GitLab API if not registered
     branches = connection.branches(addon.repo_id)
 
     # Use registered SHA if provided
     for each in branches:
-        if branch == each['name']:
-            sha = each['commit']['id']
+        if branch == each.name:
+            sha = each.commit['id']
             break
 
     return branch, sha, branches
@@ -92,7 +92,6 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     has_auth = bool(user_settings and user_settings.has_auth)
     if has_auth:
         repo = repo or connection.repo(node_settings.repo_id)
-
         project_permissions = repo['permissions'].get('project_access') or {}
         group_permissions = repo['permissions'].get('group_access') or {}
         has_access = (
