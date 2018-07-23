@@ -16,7 +16,7 @@ def remove_support_page_waffle_flags(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0119_add_asset_perms'),
+        ('osf', '0120_merge_20180716_1457'),
     ]
 
     operations = [
