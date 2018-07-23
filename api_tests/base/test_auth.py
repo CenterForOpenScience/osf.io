@@ -3,7 +3,6 @@ Tests related to authenticating API requests
 """
 
 import mock
-import itsdangerous
 
 import pytest
 from nose.tools import *  # flake8: noqa
@@ -18,7 +17,6 @@ from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 
 from api.base.settings import API_BASE, SECRET_KEY, CSRF_COOKIE_NAME
-from osf.models import Session
 
 
 class TestBasicAuthenticationValidation(ApiTestCase):
@@ -467,7 +465,7 @@ class TestCSRFValidation:
 
     @pytest.fixture
     def user(self):
-        return AuthUserFactory()
+        return UserFactory()
 
     @pytest.fixture
     def url(self):
@@ -492,8 +490,7 @@ class TestCSRFValidation:
 
     @pytest.fixture(autouse=True)
     def set_session_cookie(self, user, app):
-        session = Session.objects.create(data={'auth_user_id': user._id})
-        session_cookie = itsdangerous.Signer(SECRET_KEY).sign(session._id)
+        session_cookie = user.get_or_create_cookie()
         app.set_cookie(COOKIE_NAME, str(session_cookie))
 
     def test_post_no_csrf_cookie(self, app, url, payload):
