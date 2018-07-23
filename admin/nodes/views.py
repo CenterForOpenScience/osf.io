@@ -479,8 +479,8 @@ class RemoveStuckRegistrationsView(StuckRegistrationsView):
         from osf.management.commands.force_archive import verify
         stuck_reg = self.get_object()
         if verify(stuck_reg):
-                stuck_reg.delete_registration_tree(save=True)
-                messages.success(request, 'The registration has been deleted')
+            stuck_reg.delete_registration_tree(save=True)
+            messages.success(request, 'The registration has been deleted')
         else:
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')
