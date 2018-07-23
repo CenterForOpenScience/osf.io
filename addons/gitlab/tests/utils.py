@@ -38,7 +38,7 @@ def create_mock_gitlab(user='osfio', private=False):
     """
     gitlab_mock = mock.create_autospec(GitLabClient)
 
-    gitlab_mock.repo.attributes = {
+    gitlab_mock.repo = mock.Mock(**{
         u'approvals_before_merge': 0,
         u'archived': False,
         u'avatar_url': None,
@@ -87,7 +87,7 @@ def create_mock_gitlab(user='osfio', private=False):
         u'visibility_level': 0,
         u'web_url': u'https://gitlab.com/{}/mock-repo'.format(user),
         u'wiki_enabled': True
-    }
+    })
 
     branch = mock.Mock(**{
         u'commit': {u'author_email': u'{}@gmail.com'.format(user),
