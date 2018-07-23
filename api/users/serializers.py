@@ -15,7 +15,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from api.users.schemas import get_user_social_jsonschema
+from api.users.schemas import from_json
 from api.users.schemas.utils import validate_user_json
 
 
@@ -140,7 +140,7 @@ class UserSerializer(JSONAPISerializer):
         return value
 
     def validate_social(self, value):
-        schema = get_user_social_jsonschema()
+        schema = from_json('social-schema.json')
         try:
             jsonschema.validate(value, schema)
         except jsonschema.ValidationError as e:
