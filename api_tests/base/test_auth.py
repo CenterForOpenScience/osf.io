@@ -6,16 +6,18 @@ import mock
 
 import pytest
 from nose.tools import *  # flake8: noqa
+from django.middleware import csrf
+from waffle.testutils import override_switch
 
 from framework.auth import cas, core, oauth_scopes
 from website.util import api_v2_url
 from addons.twofactor.tests import _valid_code
-from website.settings import API_DOMAIN
+from website.settings import API_DOMAIN, COOKIE_NAME
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 
-from api.base.settings import API_BASE
+from api.base.settings import API_BASE, SECRET_KEY, CSRF_COOKIE_NAME
 
 
 class TestBasicAuthenticationValidation(ApiTestCase):
@@ -458,3 +460,78 @@ class TestOAuthScopedAccess(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_not_in('email', res.json['data']['attributes'])
         assert_not_in(self.user2.username, res.json)
+
+
+@pytest.mark.django_db
+class TestCSRFValidation:
+
+    @pytest.fixture
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+    @pytest.fixture
+    def csrf_token(self):
+        return str(csrf._get_new_csrf_token())
+
+    @pytest.fixture
+    def payload(self):
+        return {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'Test',
+                    'description': 'Test',
+                    'category': 'data'
+                }
+            }
+        }
+
+    @pytest.fixture(autouse=True)
+    def set_session_cookie(self, user, app):
+        session_cookie = user.get_or_create_cookie()
+        app.set_cookie(COOKIE_NAME, str(session_cookie))
+
+    def test_waffle_switch_inactive_does_not_enforce_csrf(self, app, url, payload):
+        with override_switch('enforce_csrf', active=False):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
+        assert res.status_code == 201
+
+    def test_post_no_csrf_cookie(self, app, url, payload):
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
+        assert res.status_code == 403
+        assert csrf.REASON_NO_CSRF_COOKIE in res.json['errors'][0]['detail']
+
+    def test_post_without_csrf_in_headers(self, app, csrf_token, url, payload):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                expect_errors=True
+            )
+        assert res.status_code == 403
+        assert csrf.REASON_BAD_TOKEN in res.json['errors'][0]['detail']
+
+    def test_send_csrf_cookie_and_headers(self, app, csrf_token, url, payload):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+        with override_switch('enforce_csrf', active=True):
+            res = app.post_json_api(
+                url,
+                payload,
+                headers={'X-CSRFToken': csrf_token},
+                expect_errors=True
+            )
+        assert res.status_code == 201
