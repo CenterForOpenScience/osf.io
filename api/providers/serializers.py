@@ -85,6 +85,25 @@ class CollectionProviderSerializer(ProviderSerializer):
         'name',
     ])
 
+class RegistrationProviderSerializer(ProviderSerializer):
+    class Meta:
+        type_ = 'registration-providers'
+
+    primary_collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<primary_collection._id>'}
+    )
+
+    filterable_fields = frozenset([
+        'allow_submissions',
+        'allow_commenting',
+        'description',
+        'domain',
+        'domain_redirect_enabled',
+        'id',
+        'name',
+    ])
+
 class PreprintProviderSerializer(ProviderSerializer):
 
     class Meta:

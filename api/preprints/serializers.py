@@ -124,7 +124,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     files = NoneIfWithdrawal(RelationshipField(
-        related_view='nodes:node-providers',
+        related_view='nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'}
     ))
 

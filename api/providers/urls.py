@@ -26,4 +26,13 @@ urlpatterns = [
         url(r'^(?P<provider_id>\w+)/taxonomies/highlighted/$', views.CollectionProviderHighlightedSubjectList.as_view(), name=views.CollectionProviderHighlightedSubjectList.view_name),
     ], namespace='collection-providers')),
 
+    url(r'^registrations/', include([
+        url(r'^$', views.RegistrationProviderList.as_view(), name=views.RegistrationProviderList.view_name),
+        url(r'^(?P<provider_id>\w+)/$', views.RegistrationProviderDetail.as_view(), name=views.RegistrationProviderDetail.view_name),
+        url(r'^(?P<provider_id>\w+)/licenses/$', views.RegistrationProviderLicenseList.as_view(), name=views.RegistrationProviderLicenseList.view_name),
+        url(r'^(?P<provider_id>\w+)/submissions/$', views.RegistrationProviderSubmissionList.as_view(), name=views.RegistrationProviderSubmissionList.view_name),
+        url(r'^(?P<provider_id>\w+)/taxonomies/$', views.RegistrationProviderTaxonomies.as_view(), name=views.RegistrationProviderTaxonomies.view_name),
+        url(r'^(?P<provider_id>\w+)/taxonomies/highlighted/$', views.RegistrationProviderHighlightedSubjectList.as_view(), name=views.RegistrationProviderHighlightedSubjectList.view_name),
+    ], namespace='registration-providers')),
+
 ]

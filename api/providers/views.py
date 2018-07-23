@@ -18,11 +18,11 @@ from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
-from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer
+from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.workflows import RequestTypes
 
 
@@ -51,6 +51,13 @@ class CollectionProviderList(GenericProviderList):
     serializer_class = CollectionProviderSerializer
     view_category = 'collection-providers'
     view_name = 'collection-providers-list'
+
+
+class RegistrationProviderList(GenericProviderList):
+    model_class = RegistrationProvider
+    serializer_class = RegistrationProviderSerializer
+    view_category = 'registration-providers'
+    view_name = 'registration-providers-list'
 
 
 class PreprintProviderList(GenericProviderList):
@@ -106,6 +113,13 @@ class CollectionProviderDetail(GenericProviderDetail):
     serializer_class = CollectionProviderSerializer
     view_category = 'collection-providers'
     view_name = 'collection-provider-detail'
+
+
+class RegistrationProviderDetail(GenericProviderDetail):
+    model_class = RegistrationProvider
+    serializer_class = RegistrationProviderSerializer
+    view_category = 'registration-providers'
+    view_name = 'registration-provider-detail'
 
 
 class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
@@ -175,6 +189,9 @@ class CollectionProviderTaxonomies(GenericProviderTaxonomies):
     view_category = 'collection-providers'
     _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
+class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
@@ -206,6 +223,11 @@ class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubject
     _model_class = CollectionProvider
 
 
+class RegistrationProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider
+
+
 class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
     view_category = 'preprint-providers'
     _model_class = PreprintProvider
@@ -233,6 +255,11 @@ class GenericProviderLicenseList(LicenseList):
 class CollectionProviderLicenseList(GenericProviderLicenseList):
     view_category = 'collection-providers'
     _model_class = CollectionProvider
+
+
+class RegistrationProviderLicenseList(GenericProviderLicenseList):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider
 
 
 class PreprintProviderLicenseList(GenericProviderLicenseList):
@@ -319,6 +346,43 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     def perform_create(self, serializer):
         user = self.request.user
         provider = get_object_or_error(CollectionProvider, self.kwargs['provider_id'], self.request, display_name='CollectionProvider')
+        if provider and provider.primary_collection:
+            return serializer.save(creator=user, collection=provider.primary_collection)
+        raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
+
+
+class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectedGuidMetadata
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'provider-collected-registration-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectedMetaCreateSerializer
+        else:
+            return CollectedMetaSerializer
+
+    def get_default_queryset(self):
+        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
+        if provider and provider.primary_collection:
+            return provider.primary_collection.collectedguidmetadata_set.all()
+        return CollectedGuidMetadata.objects.none()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
         if provider and provider.primary_collection:
             return serializer.save(creator=user, collection=provider.primary_collection)
         raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))

@@ -79,7 +79,7 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeForksSerializer,
     NodeDetailSerializer,
-    NodeProviderSerializer,
+    NodeStorageProviderSerializer,
     DraftRegistrationSerializer,
     DraftRegistrationDetailSerializer,
     NodeContributorsSerializer,
@@ -1208,7 +1208,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         return node_addon.get_folders(path=path, folder_id=folder_id)
 
 
-class NodeProvider(object):
+class NodeStorageProvider(object):
 
     def __init__(self, provider, node):
         self.path = '/'
@@ -1221,7 +1221,7 @@ class NodeProvider(object):
         self.id = node.id
 
 
-class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
     """
     permission_classes = (
@@ -1234,14 +1234,14 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderSerializer
+    serializer_class = NodeStorageProviderSerializer
     view_category = 'nodes'
-    view_name = 'node-providers'
+    view_name = 'node-storage-providers'
 
     ordering = ('-id',)
 
     def get_provider_item(self, provider):
-        return NodeProvider(provider, self.get_node())
+        return NodeStorageProvider(provider, self.get_node())
 
     def get_queryset(self):
         return [
@@ -1252,7 +1252,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             and addon.configured
         ]
 
-class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read).
     """
     permission_classes = (
@@ -1265,12 +1265,12 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderSerializer
+    serializer_class = NodeStorageProviderSerializer
     view_category = 'nodes'
-    view_name = 'node-provider-detail'
+    view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeProvider(self.kwargs['provider'], self.get_node())
+        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
