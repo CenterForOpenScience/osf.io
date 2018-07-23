@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -14,7 +14,7 @@ class TestMetaSchemaDetail:
     def test_metaschemas_detail_visibility(self, app):
 
         user = AuthUserFactory()
-        schema = MetaSchema.objects.filter(
+        schema = RegistrationSchema.objects.filter(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION).first()
 
@@ -33,7 +33,7 @@ class TestMetaSchemaDetail:
         assert res.status_code == 200
 
         # test_inactive_metaschema_returned
-        inactive_schema = MetaSchema.objects.get(
+        inactive_schema = RegistrationSchema.objects.get(
             name='Election Research Preacceptance Competition', active=False)
         url = '/{}metaschemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
         res = app.get(url)
@@ -42,7 +42,7 @@ class TestMetaSchemaDetail:
         assert res.json['data']['attributes']['active'] is False
 
         # test_non_latest_version_metaschema_returned
-        old_schema = MetaSchema.objects.get(
+        old_schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=1)
         url = '/{}metaschemas/registrations/{}/'.format(API_BASE, old_schema._id)
