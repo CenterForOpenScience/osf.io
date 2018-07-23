@@ -180,10 +180,6 @@ class UserSerializer(JSONAPISerializer):
                                 detail='{} only accept a list of one single value'. format(key)
                             )
                         instance.social[key] = val[0]
-            elif 'schools' == attr:
-                instance.schools = value
-            elif 'jobs' == attr:
-                instance.jobs = value
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
