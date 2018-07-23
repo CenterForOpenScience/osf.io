@@ -1,5 +1,6 @@
 import logging
 
+import mock
 import pytest
 from faker import Factory
 from website import settings as website_settings
@@ -50,3 +51,62 @@ def override_settings():
 @pytest.fixture()
 def fake():
     return Factory.create()
+
+_MOCKS = {
+    'osf.models.user.new_bookmark_collection': {
+        'mark': 'enable_bookmark_creation',
+        'replacement': lambda *args, **kwargs: None,
+    },
+    'osf.models.user._create_quickfiles_project': {
+        'mark': 'enable_quickfiles_creation',
+        'replacement': lambda *args, **kwargs: None,
+    },
+    'framework.celery_tasks.handlers._enqueue_task': {
+        'mark': 'enable_enqueue_task',
+        'replacement': lambda *args, **kwargs: None,
+    },
+    'osf.models.base.BaseModel.full_clean': {
+        'mark': 'enable_implicit_clean',
+        'replacement': lambda *args, **kwargs: None,
+    },
+    'osf.models.base._check_blacklist': {
+        'mark': 'enable_blacklist_check',
+        'replacement': lambda *args, **kwargs: False,
+    },
+    'website.search.search.search_engine': {
+        'mark': 'enable_search',
+        'replacement': mock.MagicMock()
+    },
+    'website.search.elastic_search': {
+        'mark': 'enable_search',
+        'replacement': mock.MagicMock()
+    }
+}
+
+@pytest.fixture(autouse=True, scope='session')
+def _test_speedups():
+    mocks = {}
+
+    for target, config in _MOCKS.items():
+        mocks[target] = mock.patch(target, config['replacement'])
+        mocks[target].start()
+
+    yield mocks
+
+    for patcher in mocks.values():
+        patcher.stop()
+
+
+@pytest.fixture(autouse=True)
+def _test_speedups_disable(request, settings, _test_speedups):
+    patchers = []
+    for target, config in _MOCKS.items():
+        if not request.node.get_marker(config['mark']):
+            continue
+        patchers.append(_test_speedups[target])
+        patchers[-1].stop()
+
+    yield
+
+    for patcher in patchers:
+        patcher.start()
