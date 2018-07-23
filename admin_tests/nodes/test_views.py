@@ -13,7 +13,8 @@ from admin.nodes.views import (
     NodeKnownHamList,
     NodeConfirmHamView,
     AdminNodeLogView,
-    RestartStuckRegistrationsView
+    RestartStuckRegistrationsView,
+    RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -442,3 +443,35 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
         view.post(self.request)
 
         nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
+
+
+class TestRemoveStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RemoveStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_remove_stuck_registration(self):
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.is_deleted)
