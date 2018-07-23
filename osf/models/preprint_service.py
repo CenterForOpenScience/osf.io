@@ -63,7 +63,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.node.is_preprint and not self.node.is_deleted
+        return self.is_published and self.node.is_preprint and not (self.is_retracted or self.node.is_deleted)
 
     @property
     def primary_file(self):
