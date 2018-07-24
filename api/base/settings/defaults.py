@@ -28,6 +28,9 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
+        'TEST': {
+            'SERIALIZE': False,
+        },
     }
 }
 
@@ -225,9 +228,7 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 
-# Disabled to make a test work (TestNodeLog.test_formatted_date)
-# TODO Try to understand what's happening to cause the test to break when that line is active.
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
