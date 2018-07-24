@@ -51,7 +51,13 @@ def get_task_from_queue(name, predicate):
     return False
 
 
+# Wrapper function allows enqueue_task to be
+# mock patched in a single location
 def enqueue_task(signature):
+    return _enqueue_task(signature)
+
+
+def _enqueue_task(signature):
     """If working in a request context, push task signature to thread-local
     queue to run after request is complete; else run signature immediately.
     :param signature: Celery task signature

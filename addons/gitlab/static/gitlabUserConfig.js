@@ -42,7 +42,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
 
         // Designated host, specified from select or input element
         self.host = ko.pureComputed(function() {
-            return self.useCustomHost() ? self.customHost() : self.selectedHost();
+            return self.useCustomHost() ? 'https://' + self.customHost() : self.selectedHost();
         });
         // Hosts visible in select element. Includes presets and "Other" option
         self.visibleHosts = ko.pureComputed(function() {

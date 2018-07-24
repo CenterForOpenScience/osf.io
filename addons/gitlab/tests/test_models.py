@@ -55,7 +55,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # GitLab's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'host': 'https://some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
+        expected = {'host': 'some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
         assert_equal(settings, expected)
 
     @mock.patch(
@@ -214,6 +214,7 @@ class TestCallbacks(OsfTestCase):
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
+
 
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):

@@ -665,6 +665,7 @@ class TestDeleteHook(HookTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -908,7 +909,10 @@ class TestMoveHook(HookTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestCopyHook(HookTestCase):
+
+    @pytest.mark.enable_implicit_clean
     def test_can_copy_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
@@ -1032,6 +1036,7 @@ class TestFileTags(StorageTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
 
     def test_file_views(self):
