@@ -9,12 +9,12 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 @pytest.mark.django_db
-class TestMetaSchemaList:
+class TestSchemaList:
 
-    def test_metaschemas_list_crud(self, app):
+    def test_schemas_list_crud(self, app):
 
         user = AuthUserFactory()
-        url = '/{}metaschemas/registrations/'.format(API_BASE)
+        url = '/{}schemas/registrations/'.format(API_BASE)
 
         # test_pass_authenticated_user_can_view_schemas
         res = app.get(url, auth=user.auth)

@@ -18,8 +18,13 @@ class TestMetaSchemaDetail:
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION).first()
 
-        # test_pass_authenticated_user_can_retrieve_schema
+        # test deprecated /metaschemas/registrations/ route
         url = '/{}metaschemas/registrations/{}/'.format(API_BASE, schema._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+        # test_pass_authenticated_user_can_retrieve_schema
+        url = '/{}schemas/registrations/{}/'.format(API_BASE, schema._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']['attributes']
@@ -35,7 +40,7 @@ class TestMetaSchemaDetail:
         # test_inactive_metaschema_returned
         inactive_schema = RegistrationSchema.objects.get(
             name='Election Research Preacceptance Competition', active=False)
-        url = '/{}metaschemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
+        url = '/{}schemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
@@ -45,13 +50,13 @@ class TestMetaSchemaDetail:
         old_schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=1)
-        url = '/{}metaschemas/registrations/{}/'.format(API_BASE, old_schema._id)
+        url = '/{}schemas/registrations/{}/'.format(API_BASE, old_schema._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'OSF-Standard Pre-Data Collection Registration'
         assert res.json['data']['attributes']['schema_version'] == 1
 
         # test_invalid_metaschema_not_found
-        url = '/{}metaschemas/registrations/garbage/'.format(API_BASE)
+        url = '/{}schemas/registrations/garbage/'.format(API_BASE)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
