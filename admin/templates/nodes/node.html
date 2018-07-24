@@ -53,6 +53,11 @@
                                    class="btn btn-warning">
                                     Restart Registration
                                 </a>
+                                <a href="{% url 'nodes:remove-stuck-registrations' guid=node.id %}"
+                                   data-toggle="modal" data-target="#confirmRemoveRegistration"
+                                   class="btn btn-danger">
+                                    Remove Registration
+                                </a>
                             {% endif %}
 
                         {% endif %}
@@ -93,6 +98,12 @@
                         </div>
                     </div>
                     <div class="modal" id="confirmRestartRegistration">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
+                    <div class="modal" id="confirmRemoveRegistration">
                         <div class="modal-dialog">
                             <div class="modal-content"></div>
                             {# Data from above link #}

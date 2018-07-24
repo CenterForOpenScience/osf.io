@@ -34,6 +34,7 @@ class OAuthAddonModelTestSuiteMixinBase(object):
         pass
 
 
+@pytest.mark.enable_quickfiles_creation
 class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def setUp(self):
@@ -183,7 +184,6 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
         self.user.add_addon(self.short_name)
         self.user.external_accounts.add(self.external_account)
-        self.user.save()
 
         self.user_settings = self.user.get_addon(self.short_name)
         self.user_settings.grant_oauth_access(
@@ -194,17 +194,9 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.user_settings.save()
 
         self.node_settings = self.NodeSettingsFactory(
+            external_account=self.external_account,
             **self._node_settings_class_kwargs(self.node, self.user_settings)
         )
-        self.node_settings.external_account = self.external_account
-        self.node_settings.save()
-
-    def tearDown(self):
-        super(OAuthAddonNodeSettingsTestSuiteMixin, self).tearDown()
-        self.user_settings.delete()
-        self.external_account.delete()
-        self.node.delete()
-        self.user.delete()
 
     @pytest.mark.django_db
     def test_configured_true(self):
