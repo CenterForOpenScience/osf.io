@@ -129,9 +129,9 @@ class TestGitLabViews(OsfTestCase):
         self.node_settings = self.project.get_addon('gitlab')
         self.node_settings.user_settings = self.project.creator.get_addon('gitlab')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.gitlab.repo.return_value['owner']['name']
-        self.node_settings.repo = self.gitlab.repo.return_value['name']
-        self.node_settings.repo_id = self.gitlab.repo.return_value['id']
+        self.node_settings.user = self.gitlab.repo.return_value.owner.name
+        self.node_settings.repo = self.gitlab.repo.return_value.name
+        self.node_settings.repo_id = self.gitlab.repo.return_value.id
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
@@ -139,7 +139,7 @@ class TestGitLabViews(OsfTestCase):
         if mock_branches is None:
             mock_branches = gitlab_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.gitlab.repo.attributes['default_branch']
+            branch = self.gitlab.repo.default_branch
         for each in mock_branches:
             if each.name == branch:
                 branch_sha = each.commit['id']
@@ -155,7 +155,7 @@ class TestGitLabViews(OsfTestCase):
         branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
-            gitlab_mock.repo.attributes['default_branch']
+            gitlab_mock.repo.default_branch
         )
         assert_equal(sha, branches[0].commit['id'])  # Get refs for default branch
         assert_equal(
@@ -213,13 +213,13 @@ class TestGitLabViews(OsfTestCase):
         mock_has_auth.return_value = True
         connection = gitlab_mock
         branch = 'master'
-        mock_repository = {
+        mock_repository = mock.Mock(**{
             'user': 'fred',
             'repo': 'mock-repo',
             'permissions': {
                 'project_access': {'access_level': 20, 'notification_level': 3}
             },
-        }
+        })
         mock_repo.attributes.return_value = mock_repository
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
 
@@ -230,9 +230,9 @@ class TestGitLabViews(OsfTestCase):
         gitlab_mock = self.gitlab
         mock_has_auth.return_value = True
         connection = gitlab_mock
-        mock_branch = {
+        mock_branch = mock.Mock(**{
             'commit': {'id': '67890'}
-        }
+        })
         connection.branches.return_value = mock_branch
         sha = '12345'
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
