@@ -9,6 +9,7 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
 from django.apps import apps
 from django.utils import timezone
@@ -46,6 +47,7 @@ def get_default_metaschema():
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
+
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
@@ -92,8 +94,6 @@ class UserFactory(DjangoModelFactory):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -101,7 +101,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return
@@ -301,6 +301,22 @@ class CollectionProviderFactory(DjangoModelFactory):
 
     class Meta:
         model = models.CollectionProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
+class RegistrationProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.RegistrationProvider
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -915,6 +931,11 @@ class NodeRequestFactory(DjangoModelFactory):
 
     comment = factory.Faker('text')
 
+class PreprintRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PreprintRequest
+
+    comment = factory.Faker('text')
 
 osfstorage_settings = apps.get_app_config('addons_osfstorage')
 

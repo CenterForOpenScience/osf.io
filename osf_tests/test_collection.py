@@ -25,6 +25,7 @@ def auth(user):
     return Auth(user)
 
 # copied from tests/test_models.py
+@pytest.mark.enable_bookmark_creation
 class TestBookmarkCollection:
 
     @pytest.fixture()

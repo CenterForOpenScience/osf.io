@@ -110,6 +110,10 @@ class ProviderSubjectsMixin(ProviderMixinBase):
     |            +------->E       |
     |                             |
     |  O                          |
+    |                             |
+    |  Z                          |
+    |                             |
+    |  Other Sub                  |
     +-----------------------------+
     '''
     @pytest.fixture(autouse=True)
@@ -172,6 +176,14 @@ class ProviderSubjectsMixin(ProviderMixinBase):
     def subO(self):
         return SubjectFactory(text='O')
 
+    @pytest.fixture(autouse=True)
+    def subOther(self):
+        return SubjectFactory(text='Other Sub')
+
+    @pytest.fixture(autouse=True)
+    def subZ(self):
+        return SubjectFactory(text='Z')
+
     @pytest.fixture()
     def rules(self, subA, subB, subD, subH, subI, subJ, subL):
         return [
@@ -223,7 +235,7 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(lawless_url)
 
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 15
+        assert res.json['links']['meta']['total'] == 17
 
     def test_rules_only_grab_acceptable_subjects(self, app, ruled_url):
         res = app.get(ruled_url)
@@ -235,7 +247,7 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(lawless_url + 'filter[parents]=null')
 
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 4
+        assert res.json['links']['meta']['total'] == 6
 
     def test_rules_enforced_with_null_parent_filter(self, app, ruled_url):
         res = app.get(ruled_url + 'filter[parents]=null')
@@ -382,6 +394,10 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         assert 'D' in texts
         assert 'C' not in texts
 
+    def test_taxonomy_other_ordering(self, app, lawless_url, subOther):
+        res = app.get(lawless_url)
+        assert res.json['data'][-1]['id'] == subOther._id
+
 
 @pytest.mark.django_db
 class ProviderSpecificSubjectsMixin(ProviderMixinBase):
@@ -401,6 +417,10 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
     @pytest.fixture(autouse=True)
     def parent_subject_1(self, provider_1, root_subject_1):
         return SubjectFactory(text='P1', provider=provider_1, parent=root_subject_1)
+
+    @pytest.fixture(autouse=True)
+    def rootOther(self, provider_1):
+        return SubjectFactory(text='Other 1', provider=provider_1)
 
     @pytest.fixture(autouse=True)
     def child_subject_1(self, provider_1, parent_subject_1):
@@ -432,7 +452,7 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
 
         assert res_1.status_code == 200
         assert res_2.status_code == 200
-        assert res_1.json['links']['meta']['total'] == 3
+        assert res_1.json['links']['meta']['total'] == 4
         assert res_2.json['links']['meta']['total'] == 3
 
         assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
@@ -441,7 +461,7 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
 
         assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
                    set([d['attributes']['text'] for d in res_2.json['data']])) \
-               == 6
+               == 7
 
     def test_mapped_subjects_are_not_shared_filter(self, app, url_1, url_2, root_subject_1, root_subject_2):
         res_1 = app.get(
@@ -480,3 +500,7 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         assert res_2.status_code == 200
         assert res_1.json['links']['meta']['total'] == 0
         assert res_2.json['links']['meta']['total'] == 0
+
+    def test_taxonomy_other_ordering(self, app, url_1, rootOther):
+        res = app.get(url_1)
+        assert res.json['data'][-1]['id'] == rootOther._id
