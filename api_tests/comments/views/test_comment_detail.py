@@ -19,6 +19,7 @@ from rest_framework import exceptions
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class CommentDetailMixin(object):
 
     @pytest.fixture()

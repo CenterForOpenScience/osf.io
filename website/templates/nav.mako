@@ -21,6 +21,9 @@
                 <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">OSF<b>PREPRINTS</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
+                % if institutional_landing_flag:
+                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">OSF<b>INSTITUTIONS</b></a></li>
+                % endif
             </ul>
         </div>
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>

@@ -11,7 +11,7 @@ from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
 from include import IncludeQuerySet
 
-from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
@@ -21,9 +21,9 @@ from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine, RequestMachine
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -263,7 +263,7 @@ class AddonModelMixin(models.Model):
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
-        ret.save()  # TODO This doesn't feel right
+        ret.save(clean=False)  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
@@ -485,6 +485,8 @@ class CommentableMixin(object):
 
 
 class MachineableMixin(models.Model):
+    TriggersClass = DefaultTriggers
+
     class Meta:
         abstract = True
 
@@ -503,7 +505,7 @@ class MachineableMixin(models.Model):
         Params:
             user: The user triggering this transition.
         """
-        return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
+        return self._run_transition(self.TriggersClass.SUBMIT.value, user=user)
 
     def run_accept(self, user, comment, **kwargs):
         """Run the 'accept' state transition and create a corresponding Action.
@@ -512,7 +514,7 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment, **kwargs)
+        return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
@@ -521,7 +523,7 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.REJECT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
 
     def run_edit_comment(self, user, comment):
         """Run the 'edit_comment' state transition and create a corresponding Action.
@@ -530,9 +532,9 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: New comment text.
         """
-        return self.__run_transition(DefaultTriggers.EDIT_COMMENT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
 
-    def __run_transition(self, trigger, **kwargs):
+    def _run_transition(self, trigger, **kwargs):
         machine = self.MachineClass(self, 'machine_state')
         trigger_fn = getattr(machine, trigger)
         with transaction.atomic():
@@ -543,19 +545,35 @@ class MachineableMixin(models.Model):
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
 
-class RequestableMixin(MachineableMixin):
-    """Something that users may request access or changes to.
+
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
     """
 
     class Meta:
         abstract = True
 
-    MachineClass = RequestMachine
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
 
 
 class ReviewableMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
+    TriggersClass = ReviewTriggers
+
+    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -568,6 +586,15 @@ class ReviewableMixin(MachineableMixin):
         if not public_states:
             return False
         return self.machine_state in public_states
+
+    def run_withdraw(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
 
 
 class ReviewProviderMixin(models.Model):
@@ -598,7 +625,7 @@ class ReviewProviderMixin(models.Model):
         return counts
 
     def add_to_group(self, user, group):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
         user_id = user.id
@@ -610,7 +637,7 @@ class ReviewProviderMixin(models.Model):
         return GroupHelper(self).get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
-        from api.preprint_providers.permissions import GroupHelper
+        from api.providers.permissions import GroupHelper
         _group = GroupHelper(self).get_group(group)
         if group == 'admin':
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
@@ -650,7 +677,7 @@ class GuardianMixin(models.Model):
 
     @property
     def group_names(self):
-        return [self.format_group(name) for name in self.groups_dict]
+        return [self.format_group(name) for name in self.groups]
 
     @property
     def group_objects(self):
@@ -687,9 +714,11 @@ class TaxonomizableMixin(models.Model):
 
     @cached_property
     def subject_hierarchy(self):
-        return [
-            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
-        ]
+        if self.subjects.exists():
+            return [
+                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
+            ]
+        return []
 
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
@@ -701,12 +730,17 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        PreprintService = apps.get_model('osf.PreprintService')
+        CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
-        if getattr(self, 'is_collection', False):
-            raise NodeStateError('Collections may not have subjects')
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change subjects.')
+        if isinstance(self, (AbstractNode, PreprintService)):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, CollectedGuidMetadata):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()

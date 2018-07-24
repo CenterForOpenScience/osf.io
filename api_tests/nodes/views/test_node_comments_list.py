@@ -22,6 +22,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class NodeCommentsListMixin(object):
 
     @pytest.fixture()
@@ -285,6 +286,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class NodeCommentsCreateMixin(object):
 
     @pytest.fixture()

@@ -42,7 +42,7 @@ class TestEmail(unittest.TestCase):
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype='txt',
+            mimetype='html',
             client=mock_client,
             categories=(category1, category2)
         )
@@ -56,7 +56,7 @@ class TestEmail(unittest.TestCase):
         assert_equal(first_call_arg.from_email, from_addr)
         assert_equal(first_call_arg.to[0], to_addr)
         assert_equal(first_call_arg.subject, subject)
-        assert_equal(first_call_arg.text, message)
+        assert_in(message, first_call_arg.html)
         # Categories are set
         assert_equal(first_call_arg.smtpapi.data['category'], (category1, category2))
 
@@ -71,7 +71,7 @@ class TestEmail(unittest.TestCase):
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype='txt',
+            mimetype='html',
             client=mock_client
         )
         assert_false(ret)

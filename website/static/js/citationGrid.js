@@ -117,7 +117,7 @@ var makeButtons = function(item, col, buttons) {
                         class: button.css,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'data-clipboard-target': item.data.csl ? item.data.csl.id : button.clipboard,
+                        'data-clipboard-target': item.data.csl ? '[id*="' + item.data.csl.id + '"]' : button.clipboard,
                         config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {
@@ -150,11 +150,11 @@ var buildExternalUrl = function(csl) {
 
 var makeClipboardConfig = function(getText) {
     return function(elm, isInit, ctx) {
-        var $elm = $(elm);
         if (!elm._client) {
             elm._client = clipboard(elm);
             // Attach `beforecopy` handler to ensure updated clipboard text
             if (getText) {
+                var $elm = $(elm);
                 elm._client.on('beforecopy', function() {
                     $elm.attr('data-clipboard-text', getText());
                 });
@@ -175,7 +175,6 @@ var renderActions = function(item, col) {
             icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
             tooltip: 'Copy citation',
-            clipboard: self.getCitation(item),
             config: makeClipboardConfig()
         });
         // Add link to external document
@@ -204,15 +203,6 @@ var renderActions = function(item, col) {
             });
         }
     } else if (item.kind === 'folder' && item.open && item.children.length) {
-        buttons.push({
-            name: '',
-            icon: 'fa fa-file-o',
-            css: 'btn btn-default btn-xs',
-            tooltip: 'Copy citations',
-            config: makeClipboardConfig(function() {
-                return self.getCitations(item).join('\n');
-            })
-        });
         buttons.push({
             name: '',
             icon: 'fa fa-arrow-circle-o-down',
@@ -377,25 +367,25 @@ CitationGrid.prototype.makeBibliography = function(folder, format) {
     return {};
 };
 
-CitationGrid.prototype.getBibliography = function(folder, format) {
-    if (format) {
-        return this.makeBibliography(folder, format);
+CitationGrid.prototype.getBibliography = function(folder) {
+
+    if(!this.bibliographies[folder.id]){
+        this.bibliographies[folder.id] =  this.makeBibliography(folder);
     }
-    this.bibliographies[folder.id] = this.bibliographies[folder.id] || this.makeBibliography(folder);
     return this.bibliographies[folder.id];
 };
 
-CitationGrid.prototype.getCitation = function(item, format) {
-    var bibliography = this.getBibliography(item.parent(), format);
+CitationGrid.prototype.getCitation = function(item) {
+    var bibliography = this.getBibliography(item.parent());
     return bibliography[item.data.csl.id];
 };
 
-CitationGrid.prototype.getCitations = function(folder, format) {
+CitationGrid.prototype.getCitations = function(folder) {
     var self = this;
     return folder.children.filter(function(child) {
         return child.kind === 'file';
     }).map(function(child) {
-        return self.getCitation(child, format);
+        return self.getCitation(child);
     });
 };
 

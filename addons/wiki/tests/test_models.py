@@ -3,16 +3,17 @@ import pytz
 import datetime
 from addons.wiki.exceptions import NameMaximumLengthError
 
-from addons.wiki.models import WikiPage
+from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import NodeFactory, UserFactory, ProjectFactory
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 
 pytestmark = pytest.mark.django_db
 
 # from website/addons/wiki/tests/test_wiki.py
 class TestWikiPageModel:
 
+    @pytest.mark.enable_implicit_clean
     def test_page_name_cannot_be_greater_than_100_characters(self):
         bad_name = 'a' * 101
         page = WikiPage(page_name=bad_name)
@@ -83,3 +84,22 @@ class TestWikiPage(OsfTestCase):
         wiki.save()
         url = '{}wiki/{}/'.format(self.project.url, wiki.page_name)
         assert wiki.url == url
+
+    # Regression test for an issue on prod:
+    #   https://www.flowdock.com/app/cos/archiver/threads/I09794CXgkkFK22_2kpEQfeIws2
+    # We can't assume that WikiVersion.identifier follows a contiguous
+    # sequence. There was a WikiPage that had versions (ordered by creation):
+    #   1, 2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 5
+    # This test reproduces that state and makes sure that
+    # WikiPage.current_version_number, WikiPage.get_version, and WikiVersion.is_current
+    # behave as expected
+    def test_current_version_number_with_non_contiguous_version_numbers(self):
+        wiki = WikiFactory()
+        for i in range(1, 9):
+            WikiVersion(wiki_page=wiki, identifier=i, content=fake.sentence()).save()
+        for i in range(2, 6):
+            WikiVersion(wiki_page=wiki, identifier=i, content=fake.sentence()).save()
+        assert wiki.current_version_number == 5
+        latest_version = wiki.versions.order_by('-created')[0]
+        assert latest_version.is_current
+        assert wiki.get_version(5) == latest_version

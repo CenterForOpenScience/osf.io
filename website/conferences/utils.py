@@ -9,12 +9,13 @@ from api.base.utils import waterbutler_api_url_for
 from website.exceptions import NodeStateError
 
 
-def record_message(message, nodes_created, users_created):
+def record_message(message, node_created, user_created):
     record = MailRecord.objects.create(
         data=message.raw,
     )
-    record.users_created.add(*users_created),
-    record.nodes_created.add(*nodes_created)
+    if user_created:
+        record.users_created.add(user_created)
+    record.nodes_created.add(node_created)
     record.save()
 
 

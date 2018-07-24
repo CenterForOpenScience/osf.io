@@ -16,6 +16,7 @@ from rest_framework.mixins import RetrieveModelMixin
 from api.base import utils
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
+from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
@@ -135,6 +136,13 @@ class ShowIfCurrentUser(ConditionalField):
         return request and request.user == instance
 
 
+class ShowIfAdminScopeOrAnonymous(ConditionalField):
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        return request and (request.user.is_anonymous or utils.has_admin_scope(request))
+
+
 class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
@@ -160,6 +168,18 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class NoneIfWithdrawal(ConditionalField):
+    """
+    If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
+    """
+
+    def should_hide(self, instance):
+        return instance.is_retracted
+
+    def should_be_none(self, instance):
+        return True
+
+
 class HideIfWithdrawal(ConditionalField):
     """
     If registration is withdrawn, this field will return None.
@@ -170,6 +190,20 @@ class HideIfWithdrawal(ConditionalField):
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
+
+class HideIfNotWithdrawal(ConditionalField):
+
+    def should_hide(self, instance):
+        return not instance.is_retracted
+
+class HideIfWikiDisabled(ConditionalField):
+    """
+    If wiki is disabled, don't show relationship field, only available in version 2.8
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        return not utils.is_deprecated(request.version, '2.8', '2.8') and not instance.has_addon('wiki')
 
 
 class HideIfNotNodePointerLog(ConditionalField):
@@ -586,11 +620,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 elif utils.is_falsy(show_related_counts):
                     continue
                 elif self.field_name in field_counts_requested:
-                    meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 else:
                     continue
             elif key == 'projects_in_common':
@@ -598,9 +632,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     continue
                 if not self.context['request'].query_params.get('show_projects_in_common', False):
                     continue
-                meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
             else:
-                meta[key] = utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = functional.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -786,6 +820,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return relationship
 
 
+class TypedRelationshipField(RelationshipField):
+    """ Overrides get_url to inject a typed namespace.
+
+        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+    """
+
+    def get_url(self, obj, view_name, request, format):
+        if len(view_name.split(':')) == 2:
+            untyped_view = view_name
+            view_parts = view_name.split(':')
+            try:
+                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
+            except AttributeError:
+                # List Serializer, use the child's type
+                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            self.view_name = view_name = ':'.join(view_parts)
+            for k, v in self.views.items():
+                if v == untyped_view:
+                    self.views[k] = view_name
+        return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
+
+
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':
@@ -862,7 +918,7 @@ class TargetField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+        meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
 
 
@@ -1134,7 +1190,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = utils.rapply(self.validated_data, sanitize.strip_html)
+            self._validated_data = functional.rapply(self.validated_data, sanitize.strip_html)
 
         for data in self._validated_data:
             data.pop('type', None)
@@ -1276,7 +1332,12 @@ class JSONAPISerializer(BaseAPISerializer):
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                data['attributes'][field.field_name] = None
+                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                    # if this is a RelationshipField, serialize as a null relationship
+                    data['relationships'][field.field_name] = {'data': None}
+                else:
+                    # otherwise, serialize as an null attribute
+                    data['attributes'][field.field_name] = None
             else:
                 try:
                     if hasattr(field, 'child_relation'):
@@ -1367,7 +1428,7 @@ class JSONAPISerializer(BaseAPISerializer):
         return ret
 
     def sanitize_data(self):
-        return utils.rapply(self.validated_data, sanitize.strip_html)
+        return functional.rapply(self.validated_data, sanitize.strip_html)
 
 
 class JSONAPIRelationshipSerializer(BaseAPISerializer):

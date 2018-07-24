@@ -5,9 +5,10 @@ from datetime import datetime
 
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import ListView, DeleteView, View
+from django.views.generic import ListView, DeleteView, View, TemplateView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
 from django.db.models import Q
@@ -200,6 +201,7 @@ class NodeView(PermissionRequiredMixin, GuidView):
     def get_context_data(self, **kwargs):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
         return kwargs
 
     def get_object(self, queryset=None):
@@ -265,6 +267,14 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
             'nodes': map(serialize_node, query_set),
             'page': page,
         }
+
+
+class StuckRegistrationListView(RegistrationListView):
+    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """
+
+    def get_queryset(self):
+        return Registration.find_failed_registrations().order_by(self.ordering)
 
 
 class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
@@ -335,7 +345,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         ]
         for nid in node_ids:
             node = Node.load(nid)
-            osf_admin_change_status_identifier(node, 'unavailable | spam')
+            osf_admin_change_status_identifier(node)
             node.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
@@ -362,7 +372,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        osf_admin_change_status_identifier(node, 'unavailable | spam')
+        osf_admin_change_status_identifier(node)
         node.confirm_spam(save=True)
         update_admin_log(
             user_id=self.request.user.id,
@@ -381,7 +391,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_ham(save=True)
-        osf_admin_change_status_identifier(node, 'public')
+        osf_admin_change_status_identifier(node)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -429,4 +439,50 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
             message='Node Reindexed (Elastic): {}'.format(node._id),
             action_flag=REINDEX_ELASTIC
         )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    context_object_name = 'node'
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
+
+
+class RestartStuckRegistrationsView(StuckRegistrationsView):
+    template_name = 'nodes/restart_registrations_modal.html'
+
+    def post(self, request, *args, **kwargs):
+        from osf.management.commands.force_archive import archive, verify
+        stuck_reg = self.get_object()
+        if verify(stuck_reg):
+            try:
+                archive(stuck_reg)
+                messages.success(request, 'Registration archive processes has restarted')
+            except Exception as exc:
+                messages.error(request, 'This registration cannot be unstuck due to {} '
+                                        'if the problem persists get a developer to fix it.'.format(exc.__class__.__name__))
+
+        else:
+            messages.error(request, 'This registration may not technically be stuck,'
+                                    ' if the problem persists get a developer to fix it.')
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class RemoveStuckRegistrationsView(StuckRegistrationsView):
+    template_name = 'nodes/remove_registrations_modal.html'
+
+    def post(self, request, *args, **kwargs):
+        from osf.management.commands.force_archive import verify
+        stuck_reg = self.get_object()
+        if verify(stuck_reg):
+            stuck_reg.delete_registration_tree(save=True)
+            messages.success(request, 'The registration has been deleted')
+        else:
+            messages.error(request, 'This registration may not technically be stuck,'
+                                    ' if the problem persists get a developer to fix it.')
+
         return redirect(reverse_node(self.kwargs.get('guid')))

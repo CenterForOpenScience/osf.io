@@ -213,6 +213,7 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
+                % if waffle.switch_is_active('ezid'):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -227,6 +228,7 @@
                   </p>
                   <!-- /ko -->
                 </span>
+                % endif
                 <p>
                     Category: <span data-bind="css: icon"></span>
                     <span id="nodeCategoryEditable">${node['category']}</span>
@@ -291,6 +293,37 @@
 
 % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
+% endif
+
+% if node['is_collected']:
+    <div class="collections-container">
+    % for i, collection in enumerate(node['collections'][:5]):
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <div style="margin-top: 5px;">
+                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
+            % if any([collection['type'], collection['status']]):
+              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            % endif
+            </div>
+            <div id="metadata${i}" class="collection-details collapse">
+                <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
+
+                    % if collection['type']:
+                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
+                    % endif
+
+                    % if collection['status']:
+                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                    % endif
+
+                </ul>
+            </div>
+        </div>
+    </div>
+    % endfor
+    </div>
 % endif
 
 % if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):

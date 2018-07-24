@@ -242,6 +242,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         if 'edit' in request.args:
             if wiki_settings.is_publicly_editable:
                 raise HTTPError(http.UNAUTHORIZED)
+            if node.can_view(auth):
+                return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True))
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 

@@ -10,9 +10,9 @@
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
 
-"@centerforopenscience/osf-style@https://github.com/CenterForOpenScience/osf-style#b09451d759c8544d2fab4bd7dbd5ca8b6dc242b8":
-  version "1.6.0"
-  resolved "https://github.com/CenterForOpenScience/osf-style#b09451d759c8544d2fab4bd7dbd5ca8b6dc242b8"
+"@centerforopenscience/osf-style@https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a":
+  version "1.7.0"
+  resolved "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a"
 
 URIjs@^1.14.1:
   version "1.16.1"
@@ -2881,9 +2881,9 @@ markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/markdown-it-sanitizer/-/markdown-it-sanitizer-0.3.2.tgz#052cb45504d39737829c83e84e2f18cc1905d9dc"
 
-markdown-it-video@~0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.2.tgz#35ba1345655321f47b94dbff328d111f58c75d6d"
+markdown-it-video@~0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.3.tgz#ee96a8fce4a262872f8aaf9706c31540d40104c2"
 
 markdown-it@~4.1.0:
   version "4.1.2"

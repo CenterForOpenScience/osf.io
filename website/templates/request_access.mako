@@ -20,7 +20,7 @@
                                        css: {'disabled': accessRequestPendingOrDenied()},
                                        tooltip: {title: accessRequestTooltip(),'disabled': true, 'placement': 'top'}">
                     </button>
-                    <a type="button" class="btn btn-default" href="${reauth_url}" >Switch account</a>
+                    <a type="button" class="btn btn-default" href="${web_url_for('auth_logout', next=node['url'])}" >Switch account</a>
                 </div>
                 <div>
                     <p style="margin-top: 10px;" data-bind="html: supportMessage"></p>

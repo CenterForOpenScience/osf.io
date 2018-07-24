@@ -5,7 +5,6 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
 
 logger = logging.getLogger(__name__)
 
@@ -56,83 +55,56 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
-def get_doi_and_metadata_for_object(target_object):
-    from osf.models import PreprintService
+def request_identifiers(target_object):
+    """Request identifiers for the target object using the appropriate client.
 
-    metadata_function = datacite_metadata_for_node
-    if isinstance(target_object, PreprintService):
-        metadata_function = datacite_metadata_for_preprint
-
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=target_object._id)
-    datacite_metadata = metadata_function(target_object, doi)
-
-    return doi, datacite_metadata
-
-
-def build_ezid_metadata(target_object):
-    """Build metadata for submission to EZID using the DataCite profile. See
-    http://ezid.cdlib.org/doc/apidoc.html for details.
-    Moved from website/project/views/register.py for use by other modules
+    :param target_object: object to request identifiers for
+    :return: dict with keys relating to the status of the identifier
+                 response - response from the DOI client
+                 already_exists - the DOI has already been registered with a client
+                 only_doi - boolean; only include the DOI (and not the ARK) identifier
+                            when processing this response in get_or_create_identifiers
     """
-    doi, datacite_metadata = get_doi_and_metadata_for_object(target_object)
-    metadata = {
-        '_target': target_object.absolute_url,
-        'datacite': datacite_metadata
+    from website.identifiers.clients import exceptions
+    client = target_object.get_doi_client()
+    if not client:
+        return
+    doi = client.build_doi(target_object)
+    already_exists = False
+    only_doi = True
+    try:
+        identifiers = target_object.request_identifier(category='doi')
+    except exceptions.IdentifierAlreadyExists as error:
+        identifiers = client.get_identifier(doi)
+        already_exists = True
+        only_doi = False
+    except exceptions.ClientResponseError as error:
+        raise HTTPError(error.response.status_code)
+    return {
+        'doi': identifiers.get('doi'),
+        'already_exists': already_exists,
+        'only_doi': only_doi
     }
-    return doi, metadata
 
 
-def get_ezid_client():
-    from website.identifiers.client import EzidClient
-
-    return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-
-
-def request_identifiers_from_ezid(target_object):
-    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
-        doi, metadata = build_ezid_metadata(target_object)
-
-        client = get_ezid_client()
-        already_exists = False
-        only_doi = True
-        try:
-            resp = client.create_identifier(doi, metadata)
-        except HTTPError as error:
-            already_exists = True
-            if 'identifier already exists' not in error.message.lower():
-                raise
-            resp = client.get_identifier(doi)
-            only_doi = False
-        return {
-            'response': resp,
-            'already_exists': already_exists,
-            'only_doi': only_doi
-        }
-
-
-def parse_identifiers(ezid_response):
+def parse_identifiers(doi_client_response):
     """
     Note: ARKs include a leading slash. This is stripped here to avoid multiple
     consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    resp = ezid_response['response']
-    exists = ezid_response['already_exists']
-
+    resp = doi_client_response['response']
+    exists = doi_client_response.get('already_exists', None)
     if exists:
         doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
+        suffix = doi.strip(settings.EZID_DOI_NAMESPACE)
         return {
             'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+            'ark': '{0}{1}'.format(settings.EZID_ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
-        identifiers = dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-        return {'doi': identifiers['doi']}
+        return {'doi': resp['doi']}
 
 
 def get_or_create_identifiers(target_object):
@@ -142,25 +114,14 @@ def get_or_create_identifiers(target_object):
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
-        response_dict = request_identifiers_from_ezid(target_object)
+    response_dict = request_identifiers(target_object)
+    ark = target_object.get_identifier(category='ark')
+    doi = response_dict['doi']
+    if not doi:
+        client = target_object.get_doi_client()
+        doi = client.build_doi(target_object)
+    response = {'doi': doi}
+    if ark:
+        response['ark'] = ark.value
 
-        resp = response_dict['response']
-        exists = response_dict['already_exists']
-        only_doi = response_dict['only_doi']
-        if exists:
-            doi = resp['success']
-            suffix = doi.strip(settings.DOI_NAMESPACE)
-            if not only_doi:
-                return {
-                    'doi': doi.replace('doi:', ''),
-                    'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-                }
-            else:
-                return {'doi': doi.replace('doi:', '')}
-        else:
-            identifiers = dict(
-                [each.strip('/') for each in pair.strip().split(':')]
-                for pair in resp['success'].split('|')
-            )
-            return {'doi': identifiers['doi']}
+    return response

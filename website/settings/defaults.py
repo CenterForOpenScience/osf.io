@@ -46,8 +46,17 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Minimum seconds between attempts to change password
+CHANGE_PASSWORD_THROTTLE = 30
+
+# Number of incorrect password attempts allowed before throttling.
+INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
+
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+
+# Seconds that must elapse before change password attempts are reset(currently 1 hour)
+TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -336,15 +345,37 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
-# Test identifier namespaces
-DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:99999/fk4'
+####################
+#   Identifiers   #
+###################
+DOI_URL_PREFIX = 'https://dx.doi.org/'
 
-# For creating DOIs and ARKs through the EZID service
+# General Format for DOIs
+DOI_FORMAT = '{prefix}/osf.io/{guid}'
+
+# ezid
+EZID_DOI_NAMESPACE = 'doi:10.5072'
+EZID_ARK_NAMESPACE = 'ark:99999'
 EZID_USERNAME = None
 EZID_PASSWORD = None
-# Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+# datacite
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_URL = None
+DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+# Minting DOIs only works on Datacite's production server, so 
+# disable minting on staging and development environments by default
+DATACITE_MINT_DOIS = not DEV_MODE
+
+# crossref
+CROSSREF_USERNAME = None
+CROSSREF_PASSWORD = None
+CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
+
+ECSARXIV_CROSSREF_USERNAME = None
+ECSARXIV_CROSSREF_PASSWORD = None
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
@@ -398,16 +429,16 @@ class CeleryConfig:
         'framework.celery_tasks',
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
-        'scripts.osfstorage.glacier_inventory',
         'scripts.analytics.tasks',
-        'scripts.osfstorage.files_audit',
-        'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
     }
 
     med_pri_modules = {
@@ -416,9 +447,6 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
     }
 
     high_pri_modules = {
@@ -486,15 +514,13 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
+        'scripts.add_missing_identifiers_to_preprints',
     )
 
     # Modules that need metrics and release requirements
     # imports += (
-    #     'scripts.osfstorage.glacier_inventory',
-    #     'scripts.osfstorage.glacier_audit',
     #     'scripts.osfstorage.usage_audit',
     #     'scripts.stuck_registration_audit',
-    #     'scripts.osfstorage.files_audit',
     #     'scripts.analytics.tasks',
     #     'scripts.analytics.upload',
     # )
@@ -612,36 +638,6 @@ class CeleryConfig:
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
-        #     },
-        #     'glacier_inventory': {
-        #         'task': 'scripts.osfstorage.glacier_inventory',
-        #         'schedule': crontab(minute=0, hour=5, day_of_week=0),  # Sunday 12:00 a.m.
-        #         'args': (),
-        #     },
-        #     'glacier_audit': {
-        #         'task': 'scripts.osfstorage.glacier_audit',
-        #         'schedule': crontab(minute=0, hour=11, day_of_week=0),  # Sunday 6:00 a.m.
-        #         'kwargs': {'dry_run': False},
-        #     },
-        #     'files_audit_0': {
-        #         'task': 'scripts.osfstorage.files_audit.0',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_1': {
-        #         'task': 'scripts.osfstorage.files_audit.1',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_2': {
-        #         'task': 'scripts.osfstorage.files_audit.2',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_3': {
-        #         'task': 'scripts.osfstorage.files_audit.3',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         # })
 
@@ -1850,9 +1846,10 @@ BLACKLISTED_DOMAINS = [
 ]
 
 # reCAPTCHA API
+# NOTE: Using the recaptcha.net domain h/t https://github.com/google/recaptcha/issues/87#issuecomment-368252094
 RECAPTCHA_SITE_KEY = None
 RECAPTCHA_SECRET_KEY = None
-RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
@@ -1912,4 +1909,28 @@ CUSTOM_CITATIONS = {
     'bluebook-inline': 'bluebook'
 }
 
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
+OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
+
+INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
+
+FOOTER_LINKS = {
+    'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
+    'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
+    'cookies': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies',
+    'cos': 'https://cos.io',
+    'statusPage': 'https://status.cos.io/',
+    'apiDocs': 'https://developer.osf.io/',
+    'topGuidelines': 'http://cos.io/top/',
+    'rpp': 'https://osf.io/ezcuj/wiki/home/',
+    'rpcb': 'https://osf.io/e81xl/wiki/home/',
+    'twitter': 'http://twitter.com/OSFramework',
+    'facebook': 'https://www.facebook.com/CenterForOpenScience/',
+    'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
+    'github': 'https://www.github.com/centerforopenscience',
+}

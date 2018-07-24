@@ -39,11 +39,17 @@ a {
 /* Footer
 -------------------------------------------------- */
 .footer {
-    text-shadow: 0 1px 0 #fff;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    padding-top: 10px;
+    margin-top: 20px;
+    text-shadow: 0 1px 0 #FFF;
     width: 100%;
-    color: #555;
+    color: #515151;
+    text-align: center;
+    background-color: #efefef;
+}
+
+.footer a {
+    color: #2d6a9f;
 }
 
 
@@ -51,6 +57,44 @@ a {
     padding: 0;
     margin: 0;
     list-style-type: none;
+}
+
+/* Cookie Banner */
+#cookieBanner {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    margin-bottom: 0px;
+    left:0;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border: 0px;
+    display: none;
+    align-items: center;
+}
+
+#cookieText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+#cookieAccept {
+   margin-right: 10%
+}
+
+#cookieBanner a {
+    color: white;
+    text-decoration: underline;
+}
+
+#cookieBanner a:hover {
+    color: #ADCCE6;
+}
+
+#cookieBanner a:visited {
+    color: #ADCCE6;
 }
 
 /* Footer slide-in */
@@ -675,6 +719,11 @@ span.ball-pulse-small>div {
 }
 
 /* To be added to osf-style: generic dropdown-menu */
+
+.generic-dropdown .dropdown-menu {
+    /* Prevents dropdowns from obscuring navs and subnavs */
+    z-index: 98;
+}
 .generic-dropdown ul.dropdown-menu > li > a {
     color: #000;
 }
@@ -808,4 +857,37 @@ table.add-links {
 /* Prevents comment from overlapping with counter*/
 .comment-box {
     padding-bottom: 25px;
+}
+
+/* Collection list */
+
+.collections-container {
+    margin-bottom: 20px;
+}
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
+
+/* Override jumbotron to be a bit smaller.
+   Used for the updated terms of service banner on all pages. */
+.jumbotron {
+    padding: 10px 40px 10px 40px;
+    margin-bottom: 0;
+}
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
 }

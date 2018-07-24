@@ -1,8 +1,7 @@
-import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -12,6 +11,7 @@ from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionCreateRoot(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
@@ -46,7 +46,6 @@ class TestReviewActionCreateRoot(object):
     def preprint(self, node_admin, provider):
         preprint = PreprintFactory(
             provider=provider,
-            node__creator=node_admin,
             is_published=False
         )
         preprint.node.add_contributor(
@@ -61,9 +60,8 @@ class TestReviewActionCreateRoot(object):
         moderator.groups.add(GroupHelper(provider).get_group('moderator'))
         return moderator
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_create_permissions(
-            self, mock_ezid, app, url, preprint, node_admin, moderator
+            self, app, url, preprint, node_admin, moderator
     ):
         assert preprint.machine_state == 'initial'
 
@@ -137,9 +135,6 @@ class TestReviewActionCreateRoot(object):
         assert preprint.machine_state == 'accepted'
         assert preprint.is_published
 
-        # Check if "get_and_set_preprint_identifiers" is called once.
-        assert mock_ezid.call_count == 1
-
     def test_cannot_create_actions_for_unmoderated_provider(
             self, app, url, preprint, provider, node_admin
     ):
@@ -161,9 +156,16 @@ class TestReviewActionCreateRoot(object):
                 ('initial', 'accept'),
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
+                ('initial', 'withdraw'),
                 ('pending', 'submit'),
                 ('rejected', 'reject'),
                 ('rejected', 'submit'),
+                ('rejected', 'withdraw'),
+                ('withdrawn', 'submit'),
+                ('withdrawn', 'accept'),
+                ('withdrawn', 'reject'),
+                ('withdrawn', 'edit_comment'),
+                ('withdrawn', 'withdraw'),
             ],
             'pre-moderation': [
                 ('accepted', 'accept'),
@@ -171,7 +173,14 @@ class TestReviewActionCreateRoot(object):
                 ('initial', 'accept'),
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
+                ('initial', 'withdraw'),
                 ('rejected', 'reject'),
+                ('rejected', 'withdraw'),
+                ('withdrawn', 'submit'),
+                ('withdrawn', 'accept'),
+                ('withdrawn', 'reject'),
+                ('withdrawn', 'edit_comment'),
+                ('withdrawn', 'withdraw'),
             ]
         }
         for workflow, transitions in invalid_transitions.items():
@@ -209,29 +218,32 @@ class TestReviewActionCreateRoot(object):
         )
         assert res.status_code == 400
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_valid_transitions(
-            self, mock_ezid, app, url, preprint, provider, moderator
+            self, app, url, preprint, provider, moderator
     ):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),
                 ('accepted', 'reject', 'rejected'),
+                ('accepted', 'withdraw', 'withdrawn'),
                 ('initial', 'submit', 'pending'),
                 ('pending', 'accept', 'accepted'),
                 ('pending', 'edit_comment', 'pending'),
                 ('pending', 'reject', 'rejected'),
+                ('pending', 'withdraw', 'withdrawn'),
                 ('rejected', 'accept', 'accepted'),
                 ('rejected', 'edit_comment', 'rejected'),
             ],
             'pre-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),
                 ('accepted', 'reject', 'rejected'),
+                ('accepted', 'withdraw', 'withdrawn'),
                 ('initial', 'submit', 'pending'),
                 ('pending', 'accept', 'accepted'),
                 ('pending', 'edit_comment', 'pending'),
                 ('pending', 'reject', 'rejected'),
                 ('pending', 'submit', 'pending'),
+                ('pending', 'withdraw', 'withdrawn'),
                 ('rejected', 'accept', 'accepted'),
                 ('rejected', 'edit_comment', 'rejected'),
                 ('rejected', 'submit', 'pending'),
@@ -244,6 +256,7 @@ class TestReviewActionCreateRoot(object):
                 preprint.machine_state = from_state
                 preprint.is_published = False
                 preprint.date_published = None
+                preprint.date_withdrawn = None
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
@@ -258,12 +271,9 @@ class TestReviewActionCreateRoot(object):
                 if preprint.in_public_reviews_state:
                     assert preprint.is_published
                     assert preprint.date_published == action.created
-                    assert mock_ezid.called
-                    mock_ezid.reset_mock()
                 else:
                     assert not preprint.is_published
                     assert preprint.date_published is None
-                    assert not mock_ezid.called
 
                 if trigger == 'edit_comment':
                     assert preprint.date_last_transitioned is None

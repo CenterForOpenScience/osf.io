@@ -17,7 +17,7 @@ from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
-from api.base.utils import rapply
+from osf.utils.functional import rapply
 
 from website import language
 
@@ -401,6 +401,26 @@ def configure_comments(node, **kwargs):
 def configure_requests(node, **kwargs):
     access_requests_enabled = request.get_json().get('accessRequestsEnabled')
     node.access_requests_enabled = access_requests_enabled
+    if node.access_requests_enabled:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
+    else:
+        node.add_log(
+            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+            {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+            },
+            auth=kwargs.get('auth', None)
+        )
     node.save()
     return {'access_requests_enabled': access_requests_enabled}, 200
 
@@ -677,6 +697,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -743,6 +764,8 @@ def _view_project(node, auth, primary=False,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
+            'is_collected': node.is_collected,
+            'collections': serialize_collections(node.collecting_metadata_list, auth),
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
@@ -846,6 +869,18 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
+
+def serialize_collections(cgms, auth):
+    return [{
+        'title': cgm.collection.title,
+        'name': cgm.collection.provider.name,
+        'url': '/{}/'.format(cgm.collection._id),
+        'status': cgm.status,
+        'type': cgm.collected_type,
+        'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.get_asset_url('favicon')
+    } for cgm in cgms if cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
 def serialize_children(child_list, nested, indent=0):
     """
@@ -966,6 +1001,7 @@ def serialize_child_tree(child_list, user, nested):
                 'is_public': child.is_public,
                 'contributors': contributors,
                 'is_admin': child.has_admin_perm,
+                'is_preprint': child.is_preprint,
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
@@ -1029,7 +1065,8 @@ def node_child_tree(user, node):
             'title': node.title,
             'is_public': node.is_public,
             'contributors': contributors,
-            'is_admin': is_admin
+            'is_admin': is_admin,
+            'is_preprint': node.is_preprint,
         },
         'user_id': user._id,
         'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

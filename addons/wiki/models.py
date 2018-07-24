@@ -126,7 +126,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     @property
     def is_current(self):
-        return not self.wiki_page.deleted and self.identifier == self.wiki_page.current_version_number
+        return not self.wiki_page.deleted and self.id == self.wiki_page.versions.order_by('-created').first().id
 
     def html(self, node):
         """The cleaned HTML of the page"""
@@ -345,19 +345,20 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def current_version_number(self):
-        return self.versions.count()
+        return self.versions.order_by('-created').values_list('identifier', flat=True).first() or 0
 
     @property
     def url(self):
         return u'{}wiki/{}/'.format(self.node.url, self.page_name)
 
     def get_version(self, version=None):
-        try:
-            if version:
-                return self.versions.get(identifier=version)
-            return self.versions.last()
-        except (WikiVersion.DoesNotExist, ValueError):
-            raise VersionNotFoundError(version)
+        if version:
+            ret = self.versions.filter(identifier=version).order_by('-created').first()
+            if not ret:
+                raise VersionNotFoundError(version)
+            return ret
+        else:
+            return self.versions.order_by('-created').first()
 
     def get_versions(self):
         return self.versions.all().order_by('-created')

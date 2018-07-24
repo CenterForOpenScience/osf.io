@@ -1,3 +1,4 @@
+import pytest
 import mock
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
@@ -11,7 +12,9 @@ from admin.nodes.views import (
     NodeKnownSpamList,
     NodeKnownHamList,
     NodeConfirmHamView,
-    AdminNodeLogView
+    AdminNodeLogView,
+    RestartStuckRegistrationsView,
+    RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -253,6 +256,9 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_equal(response.status_code, 200)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super(TestNodeReindex, self).setUp()
@@ -295,27 +301,23 @@ class TestNodeReindex(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_node_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_node_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_registration_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_registration_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 class TestNodeConfirmHamView(AdminTestCase):
@@ -409,3 +411,67 @@ class TestAdminNodeLogView(AdminTestCase):
         nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
         nt.assert_true(log_entry.node._id == component._id)
         nt.assert_true(('node', component._id) in log_params)
+
+
+class TestRestartStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRestartStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RestartStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_restart_stuck_registration(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
+
+
+class TestRemoveStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RemoveStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_remove_stuck_registration(self):
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.is_deleted)

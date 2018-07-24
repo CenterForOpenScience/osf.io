@@ -220,7 +220,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and source_field_name == '_id':
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -430,6 +430,12 @@ class ListFilterMixin(FilterMixin):
                 else self.model_class.primary_identifier_name
             )
             operation['op'] = 'in'
+        if field_name == 'subjects':
+            if Subject.objects.filter(_id=operation['value']).exists():
+                operation['source_field_name'] = 'subjects___id'
+            else:
+                operation['source_field_name'] = 'subjects__text'
+                operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

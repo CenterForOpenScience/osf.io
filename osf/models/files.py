@@ -5,6 +5,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
+from django.apps import apps
 from django.db import models
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
@@ -214,6 +215,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return guids
 
+    def has_permission(self, user, perm):
+        return self.node and self.node.has_permission(user, perm)
+
     def to_storage(self, **kwargs):
         storage = super(BaseFileNode, self).to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
@@ -319,18 +323,25 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
-        Currently only useful for OsfStorage
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
         _, count = get_basic_counters(page)
 
         return count or 0
+
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
@@ -389,6 +400,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 child.delete(user=user, save=save, deleted_on=deleted_on)
         else:
             self.recast(TrashedFile._typedmodels_type)
+
+            guid = self.guids.first()
+            if guid:
+                Comment = apps.get_model('osf.Comment')
+                Comment.objects.filter(root_target=guid).update(root_target=None)
 
         if save:
             self.save()
@@ -665,6 +681,14 @@ class TrashedFolder(TrashedFileNode):
         return tf
 
 
+class FileVersionUserMetadata(BaseModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    file_version = models.ForeignKey('FileVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'file_version')
+
+
 class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
@@ -688,6 +712,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
 
     includable_objects = IncludeManager()
 

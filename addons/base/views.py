@@ -35,7 +35,7 @@ from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema,
-                        Guid)
+                        Guid, FileVersionUserMetadata)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -134,6 +134,8 @@ permission_map = {
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
+    'render': 'read',
+    'export': 'read',
     'upload': 'write',
     'delete': 'write',
     'copy': 'write',
@@ -176,16 +178,16 @@ def check_access(node, auth, action, cas_resp):
 
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
-    # all `copyto` actions as well as `copyfrom` actions if the component
+    # all `upload` actions as well as `copyfrom` actions if the component
     # in question is not public. To get around this, we have to recursively
     # check the node's parent node to determine if they have `write`
     # permissions up the stack.
     # TODO(hrybacki): is there a way to tell if this is for a registration?
-    # All nodes being registered that receive the `copyto` action will have
+    # All nodes being registered that receive the `upload` action will have
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
     # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-    if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
+    if action == 'copyfrom' or (action == 'upload' and node.is_registration):
         parent = node.parent_node
         while parent:
             if parent.can_edit(auth):
@@ -309,6 +311,21 @@ DOWNLOAD_ACTIONS = set([
 ])
 
 
+# TODO: Use this to mark file versions as seen when
+# MFR callback endpoint is implemented
+def mark_file_version_as_seen(user, path, version):
+    """
+    Mark a file version as seen by the given user.
+    If no version is included, default to the most recent version.
+    """
+    file_to_update = OsfStorageFile.objects.get(_id=path)
+    if version:
+        file_version = file_to_update.versions.get(identifier=version)
+    else:
+        file_version = file_to_update.versions.order_by('-created').first()
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+
+
 @must_be_signed
 @no_auto_transaction
 @must_be_valid_project(quickfiles_valid=True)
@@ -316,15 +333,17 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions
+            # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
+                node = AbstractNode.load(payload['metadata']['nid'])
                 return {'status': 'success'}
+
+            user = OSFUser.load(auth['id'])
+            if user is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        user = OSFUser.load(auth['id'])
-        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
@@ -411,7 +430,6 @@ def create_waterbutler_log(payload, **kwargs):
                     source_node=source_node,
                     destination_node=destination_node,
                     source_path=payload['source']['materialized'],
-                    destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
                     osf_support_email=settings.OSF_SUPPORT_EMAIL

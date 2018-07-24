@@ -105,6 +105,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert WikiVersion.objects.get_for_node(self.project, 'home').content == 'Hello world'
         assert WikiVersion.objects.get_for_node(self.project, 'second').content == 'Hola mundo'
 
+    @pytest.mark.enable_implicit_clean
     def test_update_name_invalid(self):
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
@@ -193,6 +194,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert res['more']
 
 
+@pytest.mark.enable_implicit_clean
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):

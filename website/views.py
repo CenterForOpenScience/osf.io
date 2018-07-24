@@ -21,21 +21,21 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import get_current_user_id
+from framework.auth.core import get_current_user_id, _get_current_user
 from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from api.preprint_providers.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -129,7 +129,6 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
-@ember_flag_is_active('ember_home_page')
 def index():
     try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
@@ -145,6 +144,10 @@ def index():
     except Institution.DoesNotExist:
         pass
 
+    return home()
+
+@ember_flag_is_active('ember_home_page')
+def home():
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
         all_institutions = (
@@ -287,12 +290,11 @@ def resolve_guid(guid, suffix=None):
                     # the routing scheme - if a preprint is not published, only
                     # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    group_helper = GroupHelper(referent.provider)
-                    admin_group = group_helper.get_group('admin')
-                    mod_group = group_helper.get_group('moderator')
-                    # Check if user isn't a nonetype or that the user has admin/moderator permissions
-                    if auth.user is None or not (referent.node.has_permission(auth.user, permissions.ADMIN) or (mod_group.user_set.all() | admin_group.user_set.all()).filter(id=auth.user.id).exists()):
+                    # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
+                    if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider) or
+                            referent.node.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
+
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
                 file_referent = referent
@@ -329,7 +331,10 @@ def resolve_guid(guid, suffix=None):
 
         if isinstance(referent, Node) and not referent.is_registration and suffix:
             page = suffix.strip('/').split('/')[0]
-            if waffle.flag_is_active(request, 'ember_project_{}_page'.format(page)):
+            flag_name = 'ember_project_{}_page'.format(page)
+            request.user = _get_current_user() or MockUser()
+
+            if waffle.flag_is_active(request, flag_name):
                 use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)

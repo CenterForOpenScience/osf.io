@@ -34,8 +34,10 @@ from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
-
 from api.preprints.permissions import PreprintPublishedOrAdmin
+from api.requests.permissions import PreprintRequestPermission
+from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
+from api.requests.views import PreprintRequestMixin
 
 
 class PreprintMixin(NodeMixin):
@@ -43,14 +45,15 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except PreprintService.DoesNotExist:
             raise NotFound
 
-        if preprint.node.is_deleted:
+        if preprint.node.is_deleted or (preprint.is_retracted and not preprint.ever_public):
             raise NotFound
+
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
@@ -317,7 +320,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('preprint_providers:preprint_provider-detail', kwargs={
+                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
                     'provider_id': target.provider._id,
                     'version': self.request.parser_context['kwargs']['version']
                 })
@@ -330,5 +333,34 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         return get_review_actions_queryset().filter(target_id=self.get_preprint().id)
 
     # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_REQUESTS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    serializer_class = PreprintRequestSerializer
+
+    view_category = 'preprint-requests'
+    view_name = 'preprint-request-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintRequestCreateSerializer
+        else:
+            return PreprintRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_target().requests.all()
+
     def get_queryset(self):
         return self.get_queryset_from_request()
