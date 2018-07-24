@@ -75,7 +75,7 @@ class TestUserIdentitiesDetail:
         assert res.json['data']['attributes']['status'] == 'VERIFIED'
         assert res.json['data']['attributes']['external_id'] == '0000-0001-9143-4653'
         assert res.json['data']['type'] == 'external-identities'
-        assert res.json['data']['links']['self'] == 'http://localhost:8000/v2/users/{}/settings/identities/ORCID/'.format(user._id)
+        assert '/v2/users/{}/settings/identities/ORCID/'.format(user._id) in res.json['data']['links']['self']
 
     def test_delete_204(self, app, user, url):
         res = app.delete(url, auth=user.auth)
