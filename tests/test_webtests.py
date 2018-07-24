@@ -90,11 +90,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
 
-    def test_can_see_homepage(self):
-        # Goes to homepage
-        res = self.app.get('/').maybe_follow()  # Redirects
-        assert_equal(res.status_code, 200)
-
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
@@ -125,15 +120,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
 
-    def test_logged_in_index_route_renders_home_template(self):
-        res = self.app.get('/', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('ember', res)  # Will change once home page populated
-
-    def test_logged_out_index_route_renders_landing_page(self):
-        res = self.app.get('/')
-        assert_in('ember', res)
-
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
         assert_not_in('OSF Storage', res)
@@ -146,12 +132,6 @@ class TestAUser(OsfTestCase):
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
-
-    def test_sees_correct_title_home_page_ember(self):
-        # User goes to homepage
-        res = self.app.get('/', auto_follow=True)
-        title = res.html.title.string
-        assert_in('ember', res)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
