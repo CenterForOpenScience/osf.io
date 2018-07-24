@@ -8,7 +8,7 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
+    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
@@ -59,7 +59,7 @@ class UserSerializer(JSONAPISerializer):
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
-    social = ListDictField(required=False)
+    social = ser.DictField(required=False)
     employment = JSONAPIListField(required=False, source='jobs')
     education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
@@ -151,10 +151,7 @@ class UserSerializer(JSONAPISerializer):
             # Ignore fields that are not specified in the current social fields list
             if key not in schema['properties'].keys():
                 continue
-            if key == 'profileWebsites':
-                social_dict[key] = val
-            else:
-                social_dict[key] = val[0]
+            social_dict[key] = val
 
         return social_dict
 

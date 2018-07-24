@@ -426,13 +426,13 @@ class TestUserUpdate:
                     'suffix': 'Sr.',
                     'social': {
                         'github': ['http://github.com/even_newer_github/'],
-                        'scholar': ['http://scholar.google.com/citations?user=newScholar'],
+                        'scholar': 'http://scholar.google.com/citations?user=newScholar',
                         'profileWebsites': ['http://www.newpersonalwebsite.com'],
                         'twitter': ['http://twitter.com/newtwitter'],
                         'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
-                        'impactStory': ['https://impactstory.org/newImpactStory'],
-                        'orcid': ['http://orcid.org/newOrcid'],
-                        'researcherId': ['http://researcherid.com/rid/newResearcherId'],
+                        'impactStory': 'https://impactstory.org/newImpactStory',
+                        'orcid': 'http://orcid.org/newOrcid',
+                        'researcherId': 'http://researcherid.com/rid/newResearcherId',
                     }},
             }}
 
@@ -793,29 +793,29 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
 
     def test_patch_all_social_fields(self, app, user_one, url_user_one):
         social_payload = {
             'github': ['the_coolest_coder'],
-            'scholar': ['neat'],
+            'scholar': 'neat',
             'profileWebsites': ['http://yeah.com', 'http://cool.com'],
-            'baiduScholar': ['ok'],
+            'baiduScholar': 'ok',
             'twitter': ['tweetmaster'],
             'linkedIn': ['networkingmaster'],
-            'academiaProfileID': ['okokokok'],
-            'ssrn': ['aaaa'],
-            'impactStory': ['why not'],
-            'orcid': ['ork-id'],
-            'researchGate': ['Why are there so many of these'],
-            'researcherId': ['okalstone']
+            'academiaProfileID': 'okokokok',
+            'ssrn': 'aaaa',
+            'impactStory': 'why not',
+            'orcid': 'ork-id',
+            'researchGate': 'Why are there so many of these',
+            'researcherId': 'ok-lastone'
         }
 
         fake_fields = {
@@ -841,10 +841,7 @@ class TestUserUpdate:
         assert res.status_code == 200
         user_one.reload()
         for key, value in res.json['data']['attributes']['social'].iteritems():
-            if key == 'profileWebsites':
-                assert user_one.social[key] == value == social_payload[key]
-            else:
-                assert user_one.social[key] == value[0] == social_payload[key][0]
+            assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(
             self, app, user_one, url_user_one):
@@ -867,16 +864,16 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
         social = res.json['data']['attributes']['social']
-        assert user_one.social['github'] in social['github'][0]
+        assert user_one.social['github'][0] in social['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == user_one.social['github']
@@ -900,13 +897,13 @@ class TestUserUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
-        assert 'even_newer_github' in res.json['data']['attributes']['social']['github'][0]
+        assert 'even_newer_github' in res.json['data']['attributes']['social']['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
 
     def test_put_user_logged_in(self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
@@ -925,9 +922,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
         user_one.reload()
         assert user_one.fullname == data_new_user_one['data']['attributes']['full_name']
         assert user_one.given_name == data_new_user_one['data']['attributes']['given_name']
@@ -938,9 +935,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
 
     def test_update_user_sanitizes_html_properly(
             self, app, user_one, url_user_one):

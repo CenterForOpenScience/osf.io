@@ -7,19 +7,11 @@
   "properties": {
     "researcherId": {
       "description": "The researcherId for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "baiduScholar": {
       "description": "The baiduScholar for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "twitter": {
       "description": "The twitter for the given user",
@@ -31,27 +23,15 @@
     },
     "ssrn": {
       "description": "The ssrn for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "impactStory": {
       "description": "The impactStory for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "researchGate": {
       "description": "The researchGate for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "github": {
       "description": "The github for the given user",
@@ -62,12 +42,8 @@
       "maxItems": 1
     },
     "scholar": {
-      "description": "The scholar for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "description": "The google scholar ID for the given user",
+      "type": "string"
     },
     "profileWebsites": {
       "description": "The profileWebsites for the given user",
@@ -86,19 +62,11 @@
     },
     "academiaProfileID": {
       "description": "The academiaProfileID for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     },
     "orcid": {
       "description": "The orcid for the given user",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 1
+      "type": "string"
     }
   }
 }
