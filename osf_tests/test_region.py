@@ -27,15 +27,15 @@ class TestRegion:
         """
         parent_node = root_node = ProjectFactory(creator=user)
 
-        # components nested five deep
-        for _ in range(0, 5):
+        # components have nested children
+        for _ in range(0, 1):
             parent_node = ProjectFactory(creator=user, parent=parent_node)
             addon = parent_node.get_addon('osfstorage')
             addon.region = RegionFactory()
             addon.save()
 
-        # root project has three direct children
-        for _ in range(0, 2):
+        # root project has two direct children
+        for _ in range(0, 1):
             parent_node = ProjectFactory(creator=user, parent=root_node)
             addon = parent_node.get_addon('osfstorage')
             addon.region = RegionFactory()
