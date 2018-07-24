@@ -8,10 +8,10 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
 from osf.models import RegistrationSchema
-from api.metaschemas.serializers import MetaSchemaSerializer, RegistrationMetaSchemaSerializer
+from api.schemas.serializers import SchemaSerializer, RegistrationSchemaSerializer
 
 
-class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
+class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
 
     """
@@ -23,9 +23,9 @@ class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = RegistrationMetaSchemaSerializer
-    view_category = 'registration-metaschemas'
-    view_name = 'registration-metaschema-list'
+    serializer_class = RegistrationSchemaSerializer
+    view_category = 'registration-schemas'
+    view_name = 'registration-schema-list'
 
     ordering = ('-id',)
 
@@ -34,7 +34,7 @@ class RegistrationMetaschemaList(JSONAPIBaseView, generics.ListAPIView):
         return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
 
-class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
     """
     permission_classes = (
@@ -42,32 +42,32 @@ class RegistrationMetaschemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.METASCHEMA_READ]
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = RegistrationMetaSchemaSerializer
-    view_category = 'registration-metaschemas'
-    view_name = 'registration-metaschema-detail'
+    serializer_class = RegistrationSchemaSerializer
+    view_category = 'registration-schemas'
+    view_name = 'registration-schema-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
-        schema_id = self.kwargs['metaschema_id']
+        schema_id = self.kwargs['schema_id']
         return get_object_or_error(RegistrationSchema, schema_id, self.request)
 
 
-class DeprecatedMetaSchemasList(DeprecatedView, RegistrationMetaschemaList):
+class DeprecatedMetaSchemasList(DeprecatedView, RegistrationSchemaList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
     """
     max_version = '2.7'
     view_category = 'metaschemas'
     view_name = 'metaschema-list'
-    serializer_class = MetaSchemaSerializer
+    serializer_class = SchemaSerializer
 
 
-class DeprecatedMetaSchemaDetail(DeprecatedView, RegistrationMetaschemaDetail):
+class DeprecatedMetaSchemaDetail(DeprecatedView, RegistrationSchemaDetail):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
     """
     max_version = '2.7'
     view_category = 'metaschemas'
     view_name = 'metaschema-detail'
-    serializer_class = MetaSchemaSerializer
+    serializer_class = SchemaSerializer

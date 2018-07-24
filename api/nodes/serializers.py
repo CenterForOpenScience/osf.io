@@ -1162,8 +1162,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:registration-metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'}
     )
 
     links = LinksField({

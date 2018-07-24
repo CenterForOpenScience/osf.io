@@ -55,7 +55,7 @@ class RegistrationSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/metaschemas/registrations/{}/'.format(self._id)
+        path = '/schemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
 
     @classmethod
