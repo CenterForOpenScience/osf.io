@@ -452,8 +452,8 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         CurrentUser,
     )
 
-    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     view_category = 'users'
     view_name = 'user-account-export'
@@ -483,7 +483,7 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         CurrentUser,
     )
 
-    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     view_category = 'users'
