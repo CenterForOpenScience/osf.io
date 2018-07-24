@@ -422,16 +422,6 @@ CROSSREF_ERROR = Mail(
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
 )
 
-CROSSREF_CSV = Mail(
-    'crossref_csv',
-    subject='[auto] Here is a CSV of DOIs related to crossref: ${csv_type}'
-)
-
-PREPRINT_DOI_CHANGE = Mail(
-    'preprint_doi_change',
-    subject='Improvements to OSF Preprints DOIs'
-)
-
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
     subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
