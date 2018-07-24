@@ -2,8 +2,16 @@
 Changelog
 *********
 
+0.149.0 (2018-07-22)
+====================
+
+- Remove "Copy citations" button for Zotero folders and optimize loading large folders.
+- Improve speed of test suite.
+- Admin: Add ability to remove stuck registrations
+
 0.148.0 (2018-07-18)
 ====================
+
 - Create RegistrationProvider model
 - Create PreprintWithdrawalRequest model
 - Add collections logos to project overview
@@ -15,6 +23,7 @@ Changelog
 
 0.147.0 (2018-07-11)
 ====================
+
 - Add choices for ProviderAssetFileNames
 - Add Comments to Reviews email
 - Add ProviderAssetFile API endpoints, AbstractProvider relationship
@@ -67,6 +76,7 @@ Changelog
 
 0.142.0 (2018-05-29)
 ====================
+
 - Add UI with metadata when a project is in a public collection
 - Add /v2/providers/<type> routes, version out /preprint_providers/
 - Add post-submission call-to-action emails for preprints
