@@ -129,9 +129,9 @@ class TestGitLabViews(OsfTestCase):
         self.node_settings = self.project.get_addon('gitlab')
         self.node_settings.user_settings = self.project.creator.get_addon('gitlab')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.gitlab.repo.return_value.owner.name
-        self.node_settings.repo = self.gitlab.repo.return_value.name
-        self.node_settings.repo_id = self.gitlab.repo.return_value.id
+        self.node_settings.user = 'fred'
+        self.node_settings.repo = 'mock-repo'
+        self.node_settings.repo_id = 1748448
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
