@@ -441,8 +441,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
 class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """
-    REMEMBER TO WRITE DEV DOCS!!!
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/...).
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -470,8 +469,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     """
-    REMEMBER TO WRITE DEV DOCS!!!
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/...).
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
