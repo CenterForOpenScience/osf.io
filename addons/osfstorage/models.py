@@ -517,7 +517,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         clone = self.clone()
         clone.owner = registration
         clone.on_add()
-        clone.region_id = node.get_addon('osfstorage').region_id
+        clone.region_id = self.region_id
         clone.save()
 
         return clone, None
