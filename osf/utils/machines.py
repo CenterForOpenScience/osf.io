@@ -156,10 +156,20 @@ class ReviewsMachine(BaseMachine):
 
     def notify_withdraw(self, ev):
         context = self.get_context()
+        try:
+            preprint_request_action = PreprintRequestAction.objects.get(target__id=self.machineable.id,
+                                                                   from_state='pending',
+                                                                   to_state='accepted',
+                                                                   trigger='accept')
+            context['requester'] = preprint_request_action.target.creator
+        except PreprintRequestAction.DoesNotExist:
+            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
+            context['withdrawal_submitter_is_moderator_or_admin'] = True
+
         for contributor in self.machineable.node.contributors.all():
             context['contributor'] = contributor
-            context['withdrawal_submitter_is_moderator_or_admin'] = self.withdrawal_submitter_is_moderator_or_admin(self.action.creator)
-            context['is_submitter'] = self.action.creator.username == contributor.username
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
             mails.send_mail(
                 contributor.username,
                 mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
