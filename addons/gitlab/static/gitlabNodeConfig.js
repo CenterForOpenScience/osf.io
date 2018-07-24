@@ -171,7 +171,7 @@ var ViewModel = oop.extend(UserViewModel,{
             return Boolean(self.selectedHost());
         });
         self.tokenUrl = ko.pureComputed(function() {
-            return self.host() ? 'https://' + self.host() + '/profile/personal_access_tokens' : null;
+            return self.host() ? self.host() + '/profile/personal_access_tokens' : null;
         });
     },
     authSuccessCallback: function() {
