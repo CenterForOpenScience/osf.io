@@ -2,6 +2,7 @@
 '''Unit tests for models and their factories.'''
 import unittest
 
+import pytest
 from django.core.exceptions import ValidationError
 from nose.tools import *  # PEP8 asserts
 
@@ -14,6 +15,7 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 from tests.base import OsfTestCase
 
 
+@pytest.mark.enable_implicit_clean
 class TestMetaData(OsfTestCase):
 
     def test_ensure_schemas(self):

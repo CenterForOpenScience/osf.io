@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
@@ -11,6 +12,7 @@ from osf_tests.factories import UserFactory, CommentFactory
 from osf.models import SpamStatus
 
 
+@pytest.mark.enable_implicit_clean
 class TestSpamMixin(OsfTestCase):
 
     def setUp(self):

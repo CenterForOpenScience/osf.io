@@ -14,6 +14,7 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCreateSerializer
+from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
@@ -21,7 +22,8 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.utils.workflows import RequestTypes
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -321,6 +323,30 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
             return serializer.save(creator=user, collection=provider.primary_collection)
         raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
 
+
+class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+    view_category = 'requests'
+    view_name = 'provider-withdrawal-request-list'
+
+    required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = PreprintRequestSerializer
+
+    def get_provider(self):
+        # used in perms class
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
+    def get_default_queryset(self):
+        return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 class ModeratorMixin(object):
     model_class = OSFUser
