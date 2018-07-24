@@ -11,7 +11,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from framework import sentry
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.base import BaseModel, TypedObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
@@ -23,7 +23,10 @@ from website import settings
 from website.util import api_v2_url
 
 
-class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+    class Meta:
+        unique_together = ('_id', 'type')
+
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
