@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import logging
 
+from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations
 from django.db.models import Q
 from django.contrib.auth.models import Group
@@ -23,6 +24,8 @@ def get_new_admin_permissions():
 
 
 def add_group_permissions(*args):
+    # this is to make sure that the permissions created in an earlier migration exist!
+    emit_post_migrate_signal(2, False, 'default')
 
     # Add permissions for the read only group
     read_only_group = Group.objects.get(name='read_only')

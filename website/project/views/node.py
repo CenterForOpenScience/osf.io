@@ -695,6 +695,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -883,6 +884,7 @@ def serialize_collections(cgms, auth):
         'status': cgm.status,
         'type': cgm.collected_type,
         'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 

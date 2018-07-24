@@ -47,3 +47,7 @@ class NodeRequestAction(BaseAction):
         default=permissions.READ
     )
     visible = models.BooleanField(default=True)
+
+
+class PreprintRequestAction(BaseAction):
+    target = models.ForeignKey('PreprintRequest', related_name='actions', on_delete=models.CASCADE)
