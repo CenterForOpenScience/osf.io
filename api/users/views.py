@@ -458,8 +458,8 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     serializer_class = UserIdentitiesSerializer
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     view_category = 'users'
     view_name = 'user-identities-list'
@@ -484,8 +484,8 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         CurrentUser,
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     serializer_class = UserIdentitiesSerializer
 
