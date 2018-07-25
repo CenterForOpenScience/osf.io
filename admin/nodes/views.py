@@ -19,7 +19,6 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
-from osf.management.commands.force_archive import archive, verify
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
@@ -456,6 +455,8 @@ class RestartStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/restart_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
+        # Prevents circular imports that cause admin app to hang at startup
+        from osf.management.commands.force_archive import archive, verify
         stuck_reg = self.get_object()
         if verify(stuck_reg):
             try:
