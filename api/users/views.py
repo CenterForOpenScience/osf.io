@@ -459,7 +459,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     serializer_class = UserIdentitiesSerializer
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
-    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'users'
     view_name = 'user-identities-list'
