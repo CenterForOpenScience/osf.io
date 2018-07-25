@@ -36,17 +36,12 @@
 			}
 		},
 		"required": [
-			"ongoing",
-			"department",
-			"institution",
-			"degree"
+			"institution"
 		],
 		"additionalProperties": false,
 		"dependencies": {
 			"endMonth": ["endYear"],
-			"endYear": ["endMonth"],
-			"startMonth": ["startYear"],
-			"startYear": ["startMonth"]
+			"startMonth": ["startYear"]
 		}
 	}
 }

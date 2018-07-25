@@ -148,13 +148,16 @@ class UserSerializer(JSONAPISerializer):
     def _validate_dates(self, info):
         for history in info:
 
-            startDate = datetime.date(history['startYear'], history['startMonth'], 1)
+            if history.get('startYear'):
+                startDate = datetime.date(history['startYear'], history['startMonth'], 1)
 
             if not history['ongoing']:
-                endDate = datetime.date(history['endYear'], history['endMonth'], 1)
+                if history.get('endYear'):
+                    endDate = datetime.date(history['endYear'], history.get('endMonth', 1), 1)
 
-                if (endDate - startDate).days <= 0:
-                    raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+                if history.get('startYear') and history.get('endYear'):
+                    if (endDate - startDate).days <= 0:
+                        raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
             elif history.get('endYear') or history.get('endMonth'):
                 raise InvalidModelValueError(detail='Ongoing positions cannot have end dates.')
 

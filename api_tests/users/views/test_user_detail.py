@@ -1005,6 +1005,33 @@ class UserProfileMixin(object):
         raise NotImplementedError
 
     @pytest.fixture()
+    def bad_request_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['bad_key'] = 'bad_value'
+        return request_payload
+
+    @pytest.fixture()
+    def end_dates_no_start_dates_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        del request_payload['data']['attributes'][request_key][0]['startMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def start_dates_no_end_dates_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        del request_payload['data']['attributes'][request_key][0]['endMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def end_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        return request_payload
+
+    @pytest.fixture()
+    def start_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        return request_payload
+
+    @pytest.fixture()
     def request_key(self):
         raise NotImplementedError
 
@@ -1025,6 +1052,11 @@ class UserProfileMixin(object):
         user_one.reload()
         assert res.status_code == 200
         assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+
+    def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
+        res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "Additional properties are not allowed (u'bad_key' was unexpected)"
 
     def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
         res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
@@ -1048,7 +1080,7 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key] = [{}]
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'ongoing' is a required property"
+        assert res.json['errors'][0]['detail'] == "u'institution' is a required property"
 
     def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure institution is not empty string
@@ -1093,6 +1125,32 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
+
+    def test_user_put_profile_date_validate_end_month_dependency(self, app, user_one, user_one_url, end_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, end_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'endYear' is a dependency of u'endMonth'"
+
+    def test_user_put_profile_date_validate_start_month_dependency(self, app, user_one, user_one_url, start_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'startMonth'"
+
+    def test_user_put_profile_date_validate_start_date_no_end_date(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
+        # End date is greater then start date
+        res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr) == start_dates_no_end_dates_payload['data']['attributes'][request_key]
+
+    def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
+        # End dates, but no start dates
+        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr) == end_dates_no_start_dates_payload['data']['attributes'][request_key]
 
 
 @pytest.mark.django_db
