@@ -46,7 +46,7 @@ class WikiMixin(object):
             raise NotFound(detail='The wiki for this node has been disabled.')
 
         if wiki.deleted:
-            raise Gone
+            raise Gone(detail='The wiki for this node has been deleted.')
 
         if wiki.node.is_registration and self.request.method not in drf_permissions.SAFE_METHODS:
             raise MethodNotAllowed(method=self.request.method)
@@ -138,7 +138,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
     view_name = 'wiki-detail'
 
     def get_serializer_class(self):
-        if self.get_wiki().node.is_registration:
+        wiki = self.get_wiki(check_permissions=False)
+        if wiki.node.is_registration:
             return RegistrationWikiDetailSerializer
         return NodeWikiDetailSerializer
 

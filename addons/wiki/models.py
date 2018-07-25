@@ -18,7 +18,7 @@ from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
-from osf.models import NodeLog, OSFUser
+from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
@@ -480,6 +480,8 @@ class WikiPage(GuidMixin, BaseModel):
         if self.page_name.lower() == 'home':
             raise ValidationError('The home wiki page cannot be deleted.')
         self.deleted = timezone.now()
+
+        Comment.objects.filter(root_target=self.guids.first()).update(root_target=None)
 
         self.node.add_log(
             action=NodeLog.WIKI_DELETED,
