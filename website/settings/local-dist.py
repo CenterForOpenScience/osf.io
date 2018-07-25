@@ -135,3 +135,6 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 # CROSSREF_PASSWORD = 'changeme'
 # CROSSREF_URL = https://test.crossref.org/servlet/deposit
 # CROSSREF_DEPOSITOR_EMAIL = 'changeme'  # This email will receive confirmation/error messages from CrossRef on submission
+
+CHRONOS_USE_FAKE_FILE = True
+CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'

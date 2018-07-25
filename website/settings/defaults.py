@@ -1934,3 +1934,10 @@ FOOTER_LINKS = {
     'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
     'github': 'https://www.github.com/centerforopenscience',
 }
+
+CHRONOS_USE_FAKE_FILE = False
+CHRONOS_FAKE_FILE_URL = ''
+CHRONOS_USERNAME = os_env.get('CHRONOS_USERNAME', '')
+CHRONOS_PASSWORD = os_env.get('CHRONOS_PASSWORD', '')
+CHRONOS_API_KEY = os_env.get('CHRONOS_API_KEY', '')
+CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'http://sandbox.api.chronos-oa.com')

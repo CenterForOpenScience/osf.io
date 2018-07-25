@@ -7,6 +7,10 @@ from osf.models import ChronosJournal
 from osf.models import ChronosSubmission
 from osf.utils.workflows import ChronosSubmissionStatus
 from addons.osfstorage.models import OsfStorageFile
+from website.settings import (
+    DOMAIN, CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
+    CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST
+)
 
 
 class ChronosSerializer(object):
@@ -120,27 +124,30 @@ class ChronosSerializer(object):
         """
         assert file_node.is_file
 
-        # if preprint.primary_file == file_node:
-        #     category = 'articleContent'
-        # else:
-        #     category = 'supplementaryMaterial'
+        if CHRONOS_USE_FAKE_FILE:
+            file_url = CHRONOS_FAKE_FILE_URL
+        else:
+            file_url = '/'.join([DOMAIN.strip('/'), file_node.get_guid(create=True)._id, 'download'])
 
         return {
-            # 'FILE_DOWNLOAD_URL': file_node.deep_url,
-            'FILE_DOWNLOAD_URL': 'https://osf.io/2k3jp/download',
+            'FILE_DOWNLOAD_URL': file_url,
             'FILE_NAME': file_node.name,
             'MANUSCRIPT_FILE_CATEGORY': 'Publication Files',
         }
 
 class ChronosClient(object):
 
-    def __init__(self, username, password, api_key, host='http://sandbox.api.chronos-oa.com'):
+    def __init__(self, username=None, password=None, api_key=None, host=None):
+        username = username or CHRONOS_USERNAME
+        password = password or CHRONOS_PASSWORD
+        api_key = api_key or CHRONOS_API_KEY
+        host = host or CHRONOS_HOST
         self._client = ChronosRestClient(username, password, api_key, host=host)
 
     def sync_journals(self):
         journals = []
         for journal in self._client.get_journals():
-            journals.append(ChronosJournal.objects.get_or_create(journal_id=journal['JOURNAL_ID'], defaults={
+            journals.append(ChronosJournal.objects.update_or_create(journal_id=journal['JOURNAL_ID'], defaults={
                 'raw_response': journal,
                 'title': journal['TITLE'],
                 'name': journal['PUBLISHER_NAME'],
