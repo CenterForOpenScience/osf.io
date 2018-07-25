@@ -18,4 +18,6 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/relationships/institutions/$', views.UserInstitutionsRelationship.as_view(), name=views.UserInstitutionsRelationship.view_name),
     url(r'^(?P<user_id>\w+)/settings/identities/$', views.UserIdentitiesList.as_view(), name=views.UserIdentitiesList.view_name),
     url(r'^(?P<user_id>\w+)/settings/identities/(?P<identity_id>\w+)/$', views.UserIdentitiesDetail.as_view(), name=views.UserIdentitiesDetail.view_name),
+    url(r'^(?P<user_id>\w+)/settings/export/$', views.UserAccountExport.as_view(), name=views.UserAccountExport.view_name),
+    url(r'^(?P<user_id>\w+)/settings/deactivate/$', views.UserAccountDeactivate.as_view(), name=views.UserAccountDeactivate.view_name),
 ]

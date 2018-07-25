@@ -31,6 +31,9 @@ class CoreScopes(object):
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
 
+    USER_SETTINGS_READ = 'user.settings_read'
+    USER_SETTINGS_WRITE = 'user.settings_write'
+
     USER_EMAIL_READ = 'users.email_read'
 
     USER_ADDON_READ = 'users.addon_read'
@@ -150,8 +153,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ, CoreScopes.USER_SETTINGS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE, CoreScopes.USER_SETTINGS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions

@@ -179,6 +179,7 @@ REST_FRAMEWORK = {
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',
+        'send-email': '2/minute',
     }
 }
 

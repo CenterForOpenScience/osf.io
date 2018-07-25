@@ -276,3 +276,16 @@ class UserIdentitiesSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'external-identities'
+
+class UserAccountExportSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-export-form'
+
+
+class UserAccountDeactivateSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-deactivate-form'
