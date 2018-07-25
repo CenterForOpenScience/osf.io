@@ -23,10 +23,10 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserSettingsSerializer,
+                                   UserSettingsUpdateSerializer,
                                    UserQuickFilesSerializer,
-                                   ReadEmailUserDetailSerializer,
-                                   UserMailingListWriteSerializer,
-                                   UserMailingListReadSerializer)
+                                   ReadEmailUserDetailSerializer)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from rest_framework import permissions as drf_permissions
@@ -439,33 +439,30 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user.save()
 
 
-class UserMailingListView(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
-
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        CurrentUser
+        CurrentUser,
     )
 
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
     view_category = 'users'
-    view_name = 'user-mailing-list'
+    view_name = 'user-settings'
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    serializer_class = UserSettingsSerializer
 
-    serializer_class = UserMailingListReadSerializer
-
+    # overrides RetrieveUpdateAPIView
     def get_serializer_class(self):
-        if self.request.method in ('PATCH', 'PUT'):
-            return UserMailingListWriteSerializer
-        if self.request.method == 'GET':
-            return UserMailingListReadSerializer
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
 
+    # overrides RetrieveUpdateAPIView
     def get_object(self):
         return self.get_user()
-
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        context = JSONAPIBaseView.get_serializer_context(self)
-        context['request'] = self.request
-        return context

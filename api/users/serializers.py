@@ -1,8 +1,11 @@
 from guardian.models import GroupObjectPermission
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
+from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
@@ -15,7 +18,6 @@ from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
-
 
 class QuickFilesRelationshipField(RelationshipField):
 
@@ -255,26 +257,19 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         type_ = 'institutions'
 
 
-class UserMailingListBaseSerializer(JSONAPISerializer):
-    id = ser.CharField(required=True, source='_id')
-    links = LinksField({'self': 'get_self_url', 'html': 'get_absolute_url'})
-
-    def get_self_url(self, obj):
-        return absolute_reverse('users:user-mailing-list', kwargs={
-            'user_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
-
-    def get_absolute_url(self, obj):
-        return obj.absolute_api_v2_url
-
-    class Meta:
-        type_ = 'user-settings'
-
-
-class UserMailingListReadSerializer(UserMailingListBaseSerializer):
+class UserSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    two_factor_enabled = ser.SerializerMethodField()
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+
+    def get_two_factor_enabled(self, obj):
+        try:
+            two_factor = TwoFactorUserSettings.objects.get(owner_id=obj.id)
+            return not two_factor.deleted
+        except TwoFactorUserSettings.DoesNotExist:
+            return False
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
@@ -282,19 +277,79 @@ class UserMailingListReadSerializer(UserMailingListBaseSerializer):
     def get_subscribe_osf_help_email(self, obj):
         return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
 
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
 
-class UserMailingListWriteSerializer(UserMailingListBaseSerializer):
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-settings',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    class Meta:
+        type_ = 'user-settings'
+
+
+class UserSettingsUpdateSerializer(UserSettingsSerializer):
+    id = IDField(source='_id', required=True)
+    two_factor_enabled = ser.BooleanField(write_only=True, required=False)
+    two_factor_verification = ser.IntegerField(write_only=True, required=False)
     subscribe_osf_general_email = ser.BooleanField(read_only=False, required=False)
     subscribe_osf_help_email = ser.BooleanField(read_only=False, required=False)
 
+    # Keys represent field names values represent the human readable names stored in DB.
     MAP_MAIL = {
         'subscribe_osf_help_email': OSF_HELP_LIST,
         'subscribe_osf_general_email': MAILCHIMP_GENERAL_LIST,
     }
 
-    def update(self, instance, validated_data):
+    def update_email_preferences(self, instance, attr, value):
         # switch field names back to human readable names stored in DB
-        user_mailing_lists = dict((self.MAP_MAIL[key], value) for (key, value) in validated_data.items())
-        instance.osf_mailing_lists.update(user_mailing_lists)
+        user_mailing_list = {self.MAP_MAIL[attr]: value}
+        instance.osf_mailing_lists.update(user_mailing_list)
         instance.save()
+
+    def update_two_factor(self, instance, value, two_factor_addon):
+        if value:
+            if not two_factor_addon:
+                two_factor_addon = instance.get_or_add_addon('twofactor')
+                two_factor_addon.save()
+        else:
+            auth = get_user_auth(self.context['request'])
+            instance.delete_addon('twofactor', auth=auth)
+
+        return two_factor_addon
+
+    def verify_two_factor(self, instance, value, two_factor_addon):
+        if not two_factor_addon:
+            raise exceptions.ValidationError(detail='Two-factor authentication is not enabled.')
+        if two_factor_addon.verify_code(value):
+            two_factor_addon.is_confirmed = True
+        else:
+            raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
+        two_factor_addon.save()
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        return UserSettingsSerializer(instance=instance, context=context).data
+
+    def update(self, instance, validated_data):
+
+        with transaction.atomic():
+            two_factor_addon = instance.get_addon('twofactor')
+            for attr, value in validated_data.items():
+                if 'two_factor_enabled' == attr:
+                    two_factor_addon = self.update_two_factor(instance, value, two_factor_addon)
+                elif 'two_factor_verification' == attr:
+                    self.verify_two_factor(instance, value, two_factor_addon)
+                elif attr in self.MAP_MAIL.keys():
+                    self.update_email_preferences(instance, attr, value)
+
         return instance
