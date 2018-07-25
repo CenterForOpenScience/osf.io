@@ -257,6 +257,20 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         type_ = 'institutions'
 
 
+class UserAccountExportSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-export-form'
+
+
+class UserAccountDeactivateSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-deactivate-form'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()

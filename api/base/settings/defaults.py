@@ -179,6 +179,7 @@ REST_FRAMEWORK = {
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',
+        'send-email': '2/minute',
     }
 }
 
@@ -228,9 +229,7 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 
-# Disabled to make a test work (TestNodeLog.test_formatted_date)
-# TODO Try to understand what's happening to cause the test to break when that line is active.
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 

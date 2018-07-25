@@ -8,6 +8,7 @@ import httplib as http
 import pytz
 from django.utils import timezone
 
+import pytest
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.exceptions import HTTPError
@@ -26,6 +27,7 @@ from tests.test_registrations.base import RegistrationsTestBase
 from tests.base import get_default_metaschema
 from osf.models import Registration
 
+@pytest.mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
 
     def test_node_register_page_not_registration_redirects(self):
@@ -87,6 +89,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FOUND)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_submit_draft_for_review(self):

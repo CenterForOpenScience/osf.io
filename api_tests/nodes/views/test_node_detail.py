@@ -1085,6 +1085,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_set_node_with_preprint_private_updates_doi(
             self, mock_update_doi_metadata, app, user,
@@ -1141,6 +1142,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestNodeDelete(NodeCRUDTestCase):
 
     def test_deletes_node_errors(
