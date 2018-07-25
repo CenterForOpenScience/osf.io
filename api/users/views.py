@@ -22,6 +22,7 @@ from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
+                                   UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
                                    UserQuickFilesSerializer,
@@ -442,6 +443,73 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for val in data:
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
+        user.save()
+
+
+class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+    )
+
+    serializer_class = UserIdentitiesSerializer
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'users'
+    view_name = 'user-identities-list'
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        user = self.get_user()
+        identities = []
+        for key, value in user.external_identity.iteritems():
+            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
+
+        return identities
+
+
+class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    serializer_class = UserIdentitiesSerializer
+
+    view_category = 'users'
+    view_name = 'user-identities-detail'
+
+    def get_object(self):
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            identity = user.external_identity[identity_id]
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
+        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+
+    def perform_destroy(self, instance):
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            user.external_identity.pop(identity_id)
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
         user.save()
 
 
