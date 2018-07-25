@@ -11,13 +11,13 @@ import factory
 import pytz
 import factory.django
 from factory.django import DjangoModelFactory
+from django.apps import apps
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory
 from waffle.models import Flag, Sample, Switch
 
-from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
@@ -587,6 +587,7 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 def sync_set_identifiers(preprint):
     from website.identifiers.clients import EzidClient
+    from website import settings
     client = preprint.get_doi_client()
 
     if isinstance(client, EzidClient):
@@ -936,14 +937,41 @@ class PreprintRequestFactory(DjangoModelFactory):
 
     comment = factory.Faker('text')
 
-class RegionFactory(DjangoModelFactory):
+osfstorage_settings = apps.get_app_config('addons_osfstorage')
 
+
+generic_location = {
+    'service': 'cloud',
+    osfstorage_settings.WATERBUTLER_RESOURCE: 'resource',
+    'object': '1615307',
+}
+
+generic_waterbutler_settings = {
+    'storage': {
+        'provider': 'glowcloud',
+        'container': 'osf_storage',
+        'use_public': True,
+    }
+}
+
+generic_waterbutler_credentials = {
+    'storage': {
+        'region': 'PartsUnknown',
+        'username': 'mankind',
+        'token': 'heresmrsocko'
+    }
+}
+
+
+class RegionFactory(DjangoModelFactory):
     class Meta:
         model = Region
 
-    name = factory.Faker('country')
-    waterbutler_settings = {u'storage': {u'folder': u'/code/website/osfstoragecache', u'provider': u'filesystem'}}
-    waterbutler_credentials = {u'storage': {}}
+    name = factory.Sequence(lambda n: 'Region {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
 
 
 class ProviderAssetFileFactory(DjangoModelFactory):

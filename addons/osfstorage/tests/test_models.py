@@ -11,7 +11,7 @@ from nose.tools import *  # noqa
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.utils.fields import EncryptedJSONField
-from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -580,7 +580,7 @@ class TestNodeSettingsModel(StorageTestCase):
 
     def test_region_wb_url_from_creators_defaults(self):
         user = UserFactory()
-        region = factories.RegionFactory()
+        region = RegionFactory()
 
         user_settings = user.get_addon('osfstorage')
         user_settings.default_region = region
@@ -598,7 +598,7 @@ class TestNodeSettingsModel(StorageTestCase):
                 'hey': ['woo', 'yeah', 'great']
             }
         }
-        region = factories.RegionFactory()
+        region = RegionFactory()
         region.waterbutler_credentials = new_test_creds
         region.save()
 

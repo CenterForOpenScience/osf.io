@@ -23,7 +23,6 @@ from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.tests.factories import RegionFactory
 from framework.auth import cas
 from framework.auth.core import generate_verification_key
 from framework import auth
@@ -90,6 +89,7 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
+    RegionFactory
 )
 
 @mock_app.route('/errorexc')
