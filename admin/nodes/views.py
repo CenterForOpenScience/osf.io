@@ -19,6 +19,7 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
+from osf.management.commands.force_archive import archive, verify
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
@@ -455,7 +456,6 @@ class RestartStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/restart_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
-        from osf.management.commands.force_archive import archive, verify
         stuck_reg = self.get_object()
         if verify(stuck_reg):
             try:
@@ -476,9 +476,8 @@ class RemoveStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/remove_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
-        from osf.management.commands.force_archive import verify
         stuck_reg = self.get_object()
-        if verify(stuck_reg):
+        if Registration.find_failed_registrations().filter(id=stuck_reg.id).exists():
             stuck_reg.delete_registration_tree(save=True)
             messages.success(request, 'The registration has been deleted')
         else:
