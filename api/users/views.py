@@ -463,9 +463,6 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     # overrides RetrieveUpdateAPIView
     def get_serializer_class(self):
-        """
-        Use NodeDetailSerializer which requires 'id'
-        """
         if self.request.method in ('PUT', 'PATCH'):
             return UserSettingsUpdateSerializer
         return UserSettingsSerializer
