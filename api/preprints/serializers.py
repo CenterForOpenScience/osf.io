@@ -139,6 +139,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'preprint_id': '<_id>'}
     ))
 
+    requests = NoneIfWithdrawal(RelationshipField(
+        related_view='preprints:preprint-request-list',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    ))
+
     links = LinksField(
         {
             'self': 'get_preprint_url',
