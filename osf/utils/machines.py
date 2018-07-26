@@ -64,6 +64,7 @@ class BaseMachine(Machine):
             from_state=self.from_state.name,
             to_state=ev.state.name,
             comment=ev.kwargs.get('comment', ''),
+            auto=ev.kwargs.get('auto', False),
         )
 
     def update_last_transitioned(self, ev):
@@ -246,7 +247,7 @@ class PreprintRequestMachine(BaseMachine):
         elif ev.event.name == DefaultTriggers.SUBMIT.value:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
-                self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+                self.machineable.run_accept(user=self.machineable.creator, comment=self.action.comment, auto=True)
         elif ev.event.name == DefaultTriggers.ACCEPT.value:
             # If moderator accepts the withdrawal request
             self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
