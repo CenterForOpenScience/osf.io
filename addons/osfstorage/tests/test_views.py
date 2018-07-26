@@ -60,7 +60,7 @@ class TestGetMetadataHook(HookTestCase):
     def test_empty(self):
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': self.node_settings.get_root()._id},
+            {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
             {},
         )
         assert_true(isinstance(res.json, list))
@@ -88,7 +88,7 @@ class TestGetMetadataHook(HookTestCase):
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
-            {'fid': record.parent._id},
+            {'fid': record.parent._id, 'user_id': self.user._id},
             {},
         )
         assert_equal(len(res.json), 1)
@@ -105,6 +105,10 @@ class TestGetMetadataHook(HookTestCase):
 
         res_date_modified = parse_datetime(res_data.pop('modified'))
         res_date_created = parse_datetime(res_data.pop('created'))
+
+        # latestVersionSeen should not be present in record.serialize, because it has to do
+        # with the user making the request itself, which isn't important when serializing the record
+        expected_data['latestVersionSeen'] = None
 
         assert_equal(res_date_modified, expected_date_modified)
         assert_equal(res_date_created, expected_date_created)
@@ -661,6 +665,7 @@ class TestDeleteHook(HookTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -904,7 +909,10 @@ class TestMoveHook(HookTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestCopyHook(HookTestCase):
+
+    @pytest.mark.enable_implicit_clean
     def test_can_copy_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
@@ -1028,6 +1036,7 @@ class TestFileTags(StorageTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
 
     def test_file_views(self):

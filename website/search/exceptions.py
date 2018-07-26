@@ -13,3 +13,6 @@ class MalformedQueryError(SearchException):
 
 class SearchUnavailableError(SearchException):
     pass
+
+class BulkUpdateError(SearchException):
+    pass

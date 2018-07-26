@@ -2,6 +2,7 @@
 import mock
 import pytest
 import urlparse
+import datetime as dt
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
@@ -20,6 +21,7 @@ from website.views import find_bookmark_collection
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUserDetail:
 
     @pytest.fixture()
@@ -133,6 +135,8 @@ class TestUserDetail:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_bookmark_creation
 class TestUserRoutesNodeRoutes:
 
     @pytest.fixture()
@@ -376,6 +380,7 @@ class TestUserRoutesNodeRoutes:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUserUpdate:
 
     @pytest.fixture()
@@ -897,8 +902,49 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['family_name'] == strip_html(
             bad_family_name)
 
+    def test_update_accepted_tos_sets_field(
+            self, app, user_one, url_user_one):
+        assert user_one.accepted_terms_of_service is None
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'accepted_terms_of_service': True,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.accepted_terms_of_service is not None
+        assert isinstance(user_one.accepted_terms_of_service, dt.datetime)
+
+    def test_update_accepted_tos_false(
+            self, app, user_one, url_user_one):
+        assert user_one.accepted_terms_of_service is None
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'accepted_terms_of_service': False,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.accepted_terms_of_service is None
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestDeactivatedUser:
 
     @pytest.fixture()

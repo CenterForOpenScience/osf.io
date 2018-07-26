@@ -140,6 +140,16 @@
     ${self.content_wrap()}
 
 % if not user_id:
+<div id="cookieBanner" class="alert">
+    <div id="cookieText">
+        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+        see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
+        and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
+    </div>
+    <div id="cookieAccept">
+        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    </div>
+</div>
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
@@ -192,6 +202,7 @@
             ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
             ga('set', 'dimension2', '${self.resource()}');
             ga('set', 'dimension3', '${self.public()}');
+            ga('set', 'anonymizeIp', true);
             ga('send', 'pageview');
             </script>
 
@@ -389,10 +400,10 @@
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
     % else:
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>

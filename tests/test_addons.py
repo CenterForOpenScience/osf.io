@@ -11,6 +11,7 @@ import itsdangerous
 import jwe
 import jwt
 import mock
+import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
@@ -19,6 +20,7 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
+from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
@@ -26,9 +28,11 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, MetaSchema, QuickFilesNode
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode
+from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -98,6 +102,28 @@ class TestAddonAuth(OsfTestCase):
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
 
+    def test_auth_render_action_returns_200(self):
+        url = self.build_url(action='render')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_render_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='render', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_auth_export_action_returns_200(self):
+        url = self.build_url(action='export')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_export_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='export', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.app.get(url, expect_errors=True)
@@ -139,8 +165,17 @@ class TestAddonLogs(OsfTestCase):
     def setUp(self):
         super(TestAddonLogs, self).setUp()
         self.user = AuthUserFactory()
+        self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
+        self.file = OsfStorageFileNode.create(
+            node=self.node,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
@@ -201,6 +236,7 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @pytest.mark.enable_quickfiles_creation
     def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
@@ -305,11 +341,16 @@ class TestAddonLogs(OsfTestCase):
             'github_addon_file_renamed',
         )
 
-    def test_action_downloads(self):
+    def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
+        wb_url = settings.WATERBUTLER_URL + '?version=1'
         for action in download_actions:
-            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
+            payload = self.build_payload(metadata={'path': '/testfile',
+                                                   'nid': self.node._id},
+                                         action_meta={'is_mfr_render': False},
+                                         request_meta={'url': wb_url},
+                                         action=action)
             nlogs = self.node.logs.count()
             res = self.app.put_json(
                 url,
@@ -376,7 +417,7 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
-    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+    def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
         ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
@@ -384,7 +425,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = registration._nodes.first()
 
         assert_false(component_registration.has_permission(self.user, 'write'))
-        res = views.check_access(component_registration, Auth(user=self.user), 'copyto', None)
+        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -397,13 +438,13 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
-    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+    def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto', None)
+            views.check_access(component, Auth(user=self.user), 'upload', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
@@ -757,6 +798,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -776,6 +818,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -809,6 +852,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    @pytest.mark.enable_bookmark_creation
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
         with mock.patch('addons.github.models.NodeSettings.is_private',
                         new_callable=mock.PropertyMock) as mock_is_private:
@@ -1187,6 +1231,8 @@ class TestViewUtils(OsfTestCase):
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
+        self.mock_api_credentials_are_valid.start()
 
     def configure_addon(self):
         self.user.add_addon('github')

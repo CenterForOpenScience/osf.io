@@ -52,7 +52,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/metaschemas/{}/'.format(self._id)
+        path = '/metaschemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
 
     @classmethod

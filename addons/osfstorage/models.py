@@ -6,13 +6,17 @@ from django.apps import apps
 from django.db import models, connection
 from psycopg2._psycopg import AsIs
 
-from addons.base.models import BaseNodeSettings, BaseStorageAddon
+from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from osf.utils.fields import EncryptedJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
 from osf.utils import permissions
 from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
+from website import settings as website_settings
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -413,12 +417,37 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
+class Region(models.Model):
+    _id = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=200)
+    waterbutler_credentials = EncryptedJSONField(default=dict)
+    waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    class Meta:
+        unique_together = ('_id', 'name')
+
+class UserSettings(BaseUserSettings):
+    default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+
+    def on_add(self):
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        self.default_region = default_region
+
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
+
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
     root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
+
+    region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
@@ -431,19 +460,29 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         if self.root_node:
             return
 
+        creator_user_settings = UserSettings.objects.get(owner=self.owner.creator)
+        self.user_settings = creator_user_settings
+        self.region_id = creator_user_settings.default_region_id
+
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
-        self.save()
+        self.save(clean=False)
         # Note: The "root" node will always be "named" empty string
         root = OsfStorageFolder(name='', node=self.owner)
         root.save()
         self.root_node = root
-        self.save()
+        self.save(clean=False)
+
+    def before_fork(self, node, user):
+        pass
 
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
+        clone.user_settings = self.user_settings
+        clone.region_id = self.region_id
+
         clone.save()
         if not self.root_node:
             self.on_add()
@@ -462,18 +501,18 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        return dict(settings.WATERBUTLER_SETTINGS, **{
+        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': self.owner.api_url_for(
                 'osfstorage_get_metadata',
                 _absolute=True,
                 _internal=True
-            )
+            ),
         })
 
     def serialize_waterbutler_credentials(self):
-        return settings.WATERBUTLER_CREDENTIALS
+        return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):
         params = {

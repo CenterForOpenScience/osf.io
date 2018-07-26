@@ -1,3 +1,6 @@
+import logging
+
+from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -6,15 +9,19 @@ from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from include import IncludeManager
+from framework.celery_tasks.handlers import enqueue_task
 
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.mixins import GuardianMixin
+from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
+from website.search.exceptions import SearchUnavailableError
 
-class CollectedGuidMetadata(BaseModel):
+logger = logging.getLogger(__name__)
+
+class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
     class Meta:
@@ -29,9 +36,46 @@ class CollectedGuidMetadata(BaseModel):
 
     @cached_property
     def _id(self):
-        return self.guid._id
+        return '{}-{}'.format(self.guid._id, self.collection._id)
 
-class Collection(GuidMixin, BaseModel, GuardianMixin):
+    @classmethod
+    def load(cls, data, select_for_update=False):
+        try:
+            cgm_id, collection_id = data.split('-')
+        except ValueError:
+            raise ValueError('Invalid CollectedGuidMetadata object <_id {}>'.format(data))
+        else:
+            if cgm_id and collection_id:
+                try:
+                    if isinstance(data, basestring):
+                        return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
+                                else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
+                except cls.DoesNotExist:
+                    return None
+            return None
+
+    def update_index(self):
+        if self.collection.is_public:
+            from website.search.search import update_collected_metadata
+            try:
+                update_collected_metadata(self.guid._id, collection_id=self.collection.id)
+            except SearchUnavailableError as e:
+                logger.exception(e)
+
+    def remove_from_index(self):
+        from website.search.search import update_collected_metadata
+        try:
+            update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
+        except SearchUnavailableError as e:
+            logger.exception(e)
+
+    def save(self, *args, **kwargs):
+        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
+        ret = super(CollectedGuidMetadata, self).save(*args, **kwargs)
+        self.update_index()
+        return ret
+
+class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
 
     groups = {
@@ -95,6 +139,14 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
     def linked_registrations_related_url(self):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
+    @classmethod
+    def bulk_update_search(cls, cgms, op='update', index=None):
+        from website import search
+        try:
+            search.search.bulk_update_collected_metadata(cgms, op=op, index=index)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+
     def save(self, *args, **kwargs):
         first_save = self.id is None
         if self.is_bookmark_collection:
@@ -103,14 +155,24 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             if self.title != 'Bookmarks':
                 # Bookmark collections are always named 'Bookmarks'
                 self.title = 'Bookmarks'
+        saved_fields = self.get_dirty_fields() or []
         ret = super(Collection, self).save(*args, **kwargs)
+
         if first_save:
             # Set defaults for M2M
             self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
             # Set up initial permissions
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)
+
+        elif 'is_public' in saved_fields:
+            from website.collections.tasks import on_collection_updated
+            enqueue_task(on_collection_updated.s(self._id))
+
         return ret
+
+    def has_permission(self, user, perm):
+        return user.has_perms(self.groups[perm], self)
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
         """ Adds object to collection, creates CollectedGuidMetadata reference
@@ -155,11 +217,14 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
         """
         if isinstance(obj, CollectedGuidMetadata):
             if obj.collection == self:
+                obj.remove_from_index()
                 self.collectedguidmetadata_set.filter(id=obj.id).delete()
                 return
         else:
-            if self.collectedguidmetadata_set.filter(guid=obj.guids.first()).exists():
-                self.collectedguidmetadata_set.filter(guid=obj.guids.first()).delete()
+            cgm = self.collectedguidmetadata_set.get(guid=obj.guids.first())
+            if cgm:
+                cgm.remove_from_index()
+                cgm.delete()
                 return
         raise ValueError('Node link does not belong to the requested node.')
 
@@ -170,7 +235,12 @@ class Collection(GuidMixin, BaseModel, GuardianMixin):
             # Not really the right exception to raise, but it's for back-compatibility
             # TODO: Use a more correct exception and catch it in the necessary places
             raise NodeStateError('Bookmark collections may not be deleted.')
+
         self.deleted = timezone.now()
+
+        if self.is_public:
+            self.bulk_update_search(list(self.collectedguidmetadata_set.all()), op='delete')
+
         self.save()
 
 

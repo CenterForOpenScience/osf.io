@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
-import functools
 import logging
 
 from flask import request
@@ -57,24 +55,6 @@ def update_counter(page, node_info=None):
     """
     from osf.models import PageCounter
     return PageCounter.update_counter(page, node_info)
-
-def update_counters(rex, node_info=None):
-    """Create a decorator that updates analytics in `pagecounters` when the
-    decorated function is called. Note: call inner function before incrementing
-    counters so that counters are not changed if inner function fails.
-
-    :param rex: Pattern for building page key from keyword arguments of
-        decorated function
-    """
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            ret = func(*args, **kwargs)
-            page = build_page(rex, kwargs)
-            update_counter(page, node_info)
-            return ret
-        return wrapped
-    return wrapper
 
 
 def get_basic_counters(page):

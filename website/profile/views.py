@@ -23,9 +23,11 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -143,6 +145,10 @@ def update_user(auth):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
+            except BlacklistedEmailError:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long=language.BLACKLISTED_EMAIL)
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -171,11 +177,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username,
-                            osf_contact_email=settings.OSF_CONTACT_EMAIL)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -762,6 +772,7 @@ def request_export(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
@@ -782,6 +793,7 @@ def request_deactivation(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True

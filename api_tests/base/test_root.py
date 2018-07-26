@@ -3,7 +3,9 @@ import itsdangerous
 import mock
 from nose.tools import *  # flake8: noqa
 import unittest
+from django.utils import timezone
 
+import pytest
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory
@@ -17,6 +19,7 @@ from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()
@@ -40,6 +43,24 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(
             res.json['meta']['current_user']['data']['attributes']['given_name'],
             self.user.given_name
+        )
+
+    def test_current_user_accepted_tos(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(
+            res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
+            False
+        )
+        self.user.accepted_terms_of_service = timezone.now()
+        self.user.save()
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(
+            res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
+            True
         )
 
     def test_returns_302_redirect_for_base_url(self):

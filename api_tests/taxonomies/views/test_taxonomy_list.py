@@ -1,5 +1,7 @@
 import pytest
 
+from django.db.models import BooleanField, Case, When
+
 from api.base.settings.defaults import API_BASE
 from osf.models import Subject
 from osf_tests.factories import SubjectFactory
@@ -8,21 +10,33 @@ from osf_tests.factories import SubjectFactory
 @pytest.mark.django_db
 class TestTaxonomy:
 
-    @pytest.fixture()
+    @pytest.fixture(autouse=True)
     def subject(self):
-        return SubjectFactory()
+        return SubjectFactory(text='A')
 
-    @pytest.fixture()
+    @pytest.fixture(autouse=True)
+    def subject_other(self):
+        return SubjectFactory(text='Other Sub')
+
+    @pytest.fixture(autouse=True)
+    def subject_a(self):
+        return SubjectFactory(text='Z')
+
+    @pytest.fixture(autouse=True)
     def subject_child_one(self, subject):
         return SubjectFactory(parent=subject)
 
-    @pytest.fixture()
+    @pytest.fixture(autouse=True)
     def subject_child_two(self, subject):
         return SubjectFactory(parent=subject)
 
     @pytest.fixture()
     def subjects(self):
-        return Subject.objects.all().order_by('-id')
+        return Subject.objects.all().annotate(is_other=Case(
+            When(text__istartswith='other', then=True),
+            default=False,
+            output_field=BooleanField()
+        )).order_by('is_other', 'text')
 
     @pytest.fixture()
     def url_subject_list(self):
@@ -35,6 +49,9 @@ class TestTaxonomy:
     @pytest.fixture()
     def data_subject_list(self, app, res_subject_list):
         return res_subject_list.json['data']
+
+    def test_taxonomy_other_ordering(self, subject_other, data_subject_list):
+        assert data_subject_list[-1]['id'] == subject_other._id
 
     def test_taxonomy_success(
             self, subject, subject_child_one, subject_child_two,

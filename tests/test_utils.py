@@ -17,7 +17,8 @@ from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename, throttle_period_expired
-from api.base.utils import waterbutler_api_url_for, rapply
+from api.base.utils import waterbutler_api_url_for
+from osf.utils.functional import rapply
 from website.routes import process_rules, OsfWebRenderer
 from website import settings
 from website.util import paths

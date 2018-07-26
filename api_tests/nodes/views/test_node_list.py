@@ -141,6 +141,8 @@ class TestNodeList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_bookmark_creation
 class TestNodeFiltering:
 
     @pytest.fixture()
@@ -899,6 +901,8 @@ class TestNodeFiltering:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeCreate:
 
     @pytest.fixture()
@@ -3002,6 +3006,24 @@ class TestNodeBulkDelete:
             url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
+    # Regression test for PLAT-889
+    def test_bulk_delete_project_with_linked_node(
+            self, app, user_one,
+            public_project_parent,
+            public_component, url):
+
+        node_link = NodeFactory(is_public=True, creator=user_one)
+        public_project_parent.add_pointer(node_link, auth=Auth(user_one))
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_component._id, 'type': 'nodes'}
+        ]}
+
+        res = app.delete_json_api(
+            url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
 
 @pytest.mark.django_db
 class TestNodeBulkDeleteSkipUneditable:
@@ -3149,6 +3171,7 @@ class TestNodeBulkDeleteSkipUneditable:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeListPagination:
 
     @pytest.fixture()

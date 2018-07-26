@@ -6,6 +6,8 @@
 pytest==3.0.3
 pytest-xdist==1.15.0
 pytest-django==3.2.1
+pytest-cov==2.5.1
+python-coveralls==2.9.1
 nose
 factory-boy==2.10.0
 webtest-plus==0.3.3
@@ -36,3 +38,6 @@ pydevd==0.0.6
 
 # n+1 query detection
 nplusone==0.8.2
+
+# Profiling
+django-silk==2.0.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE

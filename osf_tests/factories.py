@@ -9,6 +9,7 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -26,6 +27,7 @@ from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
+from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
@@ -35,6 +37,9 @@ fake = Factory.create()
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
 fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
+# Do this out of a cls context to avoid setting "t" as a local
+PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
+
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return models.MetaSchema.objects.first()
@@ -42,6 +47,7 @@ def get_default_metaschema():
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
+
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
@@ -88,8 +94,6 @@ class UserFactory(DjangoModelFactory):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -97,7 +101,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return
@@ -288,6 +292,40 @@ class CollectionFactory(DjangoModelFactory):
 
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
+
+
+class CollectionProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.CollectionProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
+class RegistrationProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.RegistrationProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
 
 class RegistrationFactory(BaseNodeFactory):
 
@@ -548,15 +586,21 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value = {
-        'response': {
-            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            )
-        },
+    from website.identifiers.clients import EzidClient
+    client = preprint.get_doi_client()
+
+    if isinstance(client, EzidClient):
+        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
+        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
+        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
+    else:
+        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
+
+    doi_client_return_value = {
+        'response': return_value,
         'already_exists': False
     }
-    id_dict = parse_identifiers(ezid_return_value)
+    id_dict = parse_identifiers(doi_client_return_value)
     preprint.set_identifier_values(doi=id_dict['doi'])
 
 
@@ -582,6 +626,7 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
 
@@ -619,6 +664,7 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
+        update_task_patcher.stop()
 
         if finish:
             auth = Auth(user)
@@ -628,9 +674,9 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
+            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
-            if is_published:
+            if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
             instance.set_published(is_published, auth=auth)
@@ -650,6 +696,17 @@ class TagFactory(DjangoModelFactory):
     name = factory.Faker('word')
     system = False
 
+class DismissedAlertFactory(DjangoModelFactory):
+    class Meta:
+        model = models.DismissedAlert
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['_id'] = kwargs.get('_id', 'adblock')
+        kwargs['user'] = kwargs.get('user', UserFactory())
+        kwargs['location'] = kwargs.get('location', 'iver/settings')
+
+        return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
@@ -872,3 +929,24 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+class PreprintRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PreprintRequest
+
+    comment = factory.Faker('text')
+
+class ProviderAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProviderAssetFile
+
+    name = FuzzyChoice(choices=PROVIDER_ASSET_NAME_CHOICES)
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        providers = kwargs.pop('providers', [])
+        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.providers = providers
+        instance.save()
+        return instance

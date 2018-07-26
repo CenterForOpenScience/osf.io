@@ -44,15 +44,6 @@ github_import_auth = generic_views.import_auth(
     GitHubSerializer
 )
 
-def _get_folders(node_addon, folder_id):
-    pass
-
-github_folder_list = generic_views.folder_list(
-    SHORT_NAME,
-    FULL_NAME,
-    _get_folders
-)
-
 github_get_config = generic_views.get_config(
     SHORT_NAME,
     GitHubSerializer
@@ -182,6 +173,15 @@ def github_root_folder(*args, **kwargs):
 #########
 # Repos #
 #########
+
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def github_folder_list(node_addon, **kwargs):
+    """ Returns all repos for user.
+    """
+
+    return node_addon.get_folders()
 
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')

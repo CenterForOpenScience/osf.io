@@ -40,6 +40,7 @@ pytestmark = pytest.mark.django_db
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
@@ -84,7 +85,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self):
+    def test_wiki_url_with_edit_get_redirects_to_no_edit_params_with_no_write_permission(self):
         self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
         self.project.save()
@@ -94,15 +95,16 @@ class TestWikiViews(OsfTestCase):
             wname='funpage',
             compare=1,
         )
-        res = self.app.get(url)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+        # Public project, can_view, redirects without edit params
         url = self.project.web_url_for(
             'project_wiki_view',
             wname='funpage',
         ) + '?edit'
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(res.status_code, 200)
 
         # Check publicly editable
         wiki = self.project.get_addon('wiki')
@@ -569,6 +571,7 @@ class TestWikiDelete(OsfTestCase):
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
 
+@pytest.mark.enable_implicit_clean
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
@@ -758,6 +761,7 @@ class TestWikiLinks(OsfTestCase):
         )
 
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
@@ -1304,6 +1308,7 @@ class TestPublicWiki(OsfTestCase):
 
         assert_equal(data, expected)
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiMenu(OsfTestCase):
 
     def setUp(self):

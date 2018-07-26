@@ -7,19 +7,17 @@ from api.base.settings.defaults import API_BASE
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
-
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-
-@pytest.fixture()
-def quickfiles(user):
-    return QuickFilesNode.objects.get(creator=user)
-
-
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUserQuickFiles:
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def quickfiles(self, user):
+        return QuickFilesNode.objects.get(creator=user)
 
     @pytest.fixture(autouse=True)
     def add_quickfiles(self, quickfiles):
@@ -105,12 +103,11 @@ class TestUserQuickFiles:
         assert file_detail_json['relationships']['user']['links']['related']['href'].split(
             '/')[-2] == user._id
 
-    def test_get_files_has_links(self, app, user, url):
+    def test_get_files_has_links(self, app, user, url, quickfiles):
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data'][0]
-        quickfiles_node = quickfiles(user)
         waterbutler_url = utils.waterbutler_api_url_for(
-            quickfiles_node._id,
+            quickfiles._id,
             'osfstorage',
             file_detail_json['attributes']['path']
         )
@@ -139,3 +136,10 @@ class TestUserQuickFiles:
         for i in range(len(date_modified_list) - 1):
             if date_modified_list[i] > date_modified_list[i + 1]:
                 assert False
+
+    def test_disabled_users_quickfiles_gets_410(self, app, user, quickfiles, url):
+        user.is_disabled = True
+        user.save()
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 410
+        assert res.content_type == 'application/vnd.api+json'
