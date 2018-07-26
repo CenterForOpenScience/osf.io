@@ -68,5 +68,6 @@
       "description": "The orcid for the given user",
       "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }

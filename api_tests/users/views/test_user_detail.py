@@ -825,9 +825,9 @@ class TestUserUpdate:
             }
         }
 
+        # Payload with fields not in the schema should fail
         new_fields = social_payload.copy()
         new_fields.update(fake_fields)
-
         res = app.patch_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -836,9 +836,20 @@ class TestUserUpdate:
                     'social': new_fields
                 }
             }
-        }, auth=user_one.auth)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
 
-        assert res.status_code == 200
+        # Payload only containing fields in schema are OK
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': social_payload
+                }
+            }
+        }, auth=user_one.auth)
         user_one.reload()
         for key, value in res.json['data']['attributes']['social'].iteritems():
             assert user_one.social[key] == value == social_payload[key]

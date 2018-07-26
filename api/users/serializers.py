@@ -146,14 +146,7 @@ class UserSerializer(JSONAPISerializer):
         except jsonschema.ValidationError as e:
             raise InvalidModelValueError(e)
 
-        social_dict = {}
-        for key, val in value.iteritems():
-            # Ignore fields that are not specified in the current social fields list
-            if key not in schema['properties'].keys():
-                continue
-            social_dict[key] = val
-
-        return social_dict
+        return value
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
