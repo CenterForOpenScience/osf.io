@@ -128,11 +128,11 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 def index():
-    try:  # Check if we're on an institution landing page
-        #TODO : make this way more robust
-        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
-        return redirect('{}institutions/{}/'.format(DOMAIN, institution._id))
-    except Institution.DoesNotExist:
+    # Check if we're on an institution landing page
+    institution = Institution.objects.filter(domains__icontains=[request.host], is_deleted=False)
+    if institution.exists():
+        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
+    else:
         return use_ember_app()
 
 def find_bookmark_collection(user):

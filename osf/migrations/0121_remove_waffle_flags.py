@@ -11,7 +11,7 @@ EMBER_WAFFLE_PAGES = [
 ]
 
 def format_ember_waffle_flag_name(page):
-    return '{}{}{}'.format('ember_', page, '_page')
+    return 'ember_{}_page'.format(page)
 
 def add_ember_waffle_flags(state, schema):
     for page in EMBER_WAFFLE_PAGES:
