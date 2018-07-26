@@ -1,50 +1,70 @@
 # -*- coding: utf-8 -*-
 
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
+from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.collections.serializers import CollectedMetaSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
+from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectedGuidMetadata
 
-from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 
 
-class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
+class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
     required_read_scopes = [CoreScopes.SEARCH]
     required_write_scopes = [CoreScopes.NULL]
 
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        IsAuthenticatedOrReadOnlyForSearch,
         base_permissions.TokenHasScope,
     )
 
     pagination_class = SearchPagination
 
+    @property
+    def search_fields(self):
+        # Should be overridden in subclasses to provide a list of keys found
+        # in the relevant elastic doc.
+        raise NotImplementedError
+
     def __init__(self):
         super(BaseSearchView, self).__init__()
         self.doc_type = getattr(self, 'doc_type', None)
 
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
+    def get_parsers(self):
+        if self.request.method == 'POST':
+            return (SearchParser(), )
+        return super(BaseSearchView, self).get_parsers()
+
+    def get_queryset(self, query=None):
         page = int(self.request.query_params.get('page', '1'))
         page_size = min(int(self.request.query_params.get('page[size]', REST_FRAMEWORK['PAGE_SIZE'])), MAX_PAGE_SIZE)
         start = (page - 1) * page_size
+        if query:
+            # Parser has built query, but needs paging info
+            query['from'] = start
+            query['size'] = page_size
+        else:
+            query = build_query(self.request.query_params.get('q', '*'), start=start, size=page_size)
         try:
-            results = search.search(build_query(query, start=start, size=page_size), doc_type=self.doc_type, raw=True)
+            results = search.search(query, doc_type=self.doc_type, raw=True)
         except MalformedQueryError as e:
             raise ValidationError(e.message)
         return results
@@ -624,3 +644,37 @@ class SearchInstitutions(BaseSearchView):
     doc_type = 'institution'
     view_category = 'search'
     view_name = 'search-institution'
+
+
+class SearchCollections(BaseSearchView):
+    """
+    """
+
+    model_class = CollectedGuidMetadata
+    serializer_class = CollectedMetaSerializer
+
+    doc_type = 'collectionSubmission'
+    view_category = 'search'
+    view_name = 'search-collected-metadata'
+
+    @property
+    def search_fields(self):
+        return [
+            'abstract',
+            'collectedType',
+            'contributors',
+            'status',
+            'subjects',
+            'provider',
+            'title'
+        ]
+
+    def create(self, request, *args, **kwargs):
+        # Override POST methods to behave like list, with header query parsing
+        queryset = self.filter_queryset(self.get_queryset(request.data))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

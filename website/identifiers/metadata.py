@@ -12,7 +12,6 @@ E = lxml.builder.ElementMaker(nsmap={
     None: NAMESPACE,
     'xsi': XSI},
 )
-DOI_URL_PREFIX = 'https://dx.doi.org/'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
@@ -122,7 +121,7 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         root.append(E.rightsList(E.rights(preprint.license.name)))
 
     if preprint.article_doi:
-        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(settings.DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
     # set xsi:schemaLocation
     root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)

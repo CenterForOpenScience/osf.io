@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -12,6 +13,7 @@ from osf.utils import permissions as osf_permissions
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
@@ -37,6 +39,7 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionCreateRelated(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
@@ -211,8 +214,9 @@ class TestReviewActionCreateRelated(object):
             expect_errors=True)
         assert res.status_code == 400
 
+    @mock.patch('website.preprints.tasks.update_or_create_preprint_identifiers')
     def test_valid_transitions(
-            self, app, url, preprint, provider, moderator):
+            self, mock_update_or_create_preprint_identifiers, app, url, preprint, provider, moderator):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),

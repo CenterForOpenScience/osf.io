@@ -14,6 +14,7 @@ from framework import sentry
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
+from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -23,7 +24,8 @@ from website.util import api_v2_url
 
 
 class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
-
+    primary_collection = models.ForeignKey('Collection', related_name='+',
+                                           null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     advisory_board = models.TextField(default='', blank=True)
     description = models.TextField(default='', blank=True)
@@ -44,9 +46,12 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
+
+    def __unicode__(self):
+        return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
 
     @property
     def all_subjects(self):
@@ -67,10 +72,34 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
+        return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
+
+    @property
+    def readable_type(self):
+        raise NotImplementedError
+
+    def get_asset_url(self, name):
+        """ Helper that returns an associated ProviderAssetFile's url, or None
+
+        :param str name: Name to perform lookup by
+        :returns str|None: url of file
+        """
+        try:
+            return self.asset_files.get(name=name).file.url
+        except ProviderAssetFile.DoesNotExist:
+            return None
+
 
 class CollectionProvider(AbstractProvider):
-    primary_collection = models.ForeignKey('Collection', related_name='+',
-                                           null=True, blank=True, on_delete=models.SET_NULL)
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_collectionprovider', 'Can view collection provider details'),
+        )
+
+    @property
+    def readable_type(self):
+        return 'collection'
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -80,6 +109,25 @@ class CollectionProvider(AbstractProvider):
         path = '/providers/collections/{}/'.format(self._id)
         return api_v2_url(path)
 
+
+class RegistrationProvider(AbstractProvider):
+    class Meta:
+        permissions = (
+            # custom permissions for use in the OSF Admin App
+            ('view_registrationprovider', 'Can view registration provider details'),
+        )
+
+    @property
+    def readable_type(self):
+        return 'registration'
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/providers/registrations/{}/'.format(self._id)
+        return api_v2_url(path)
 
 class PreprintProvider(AbstractProvider):
 
@@ -97,6 +145,7 @@ class PreprintProvider(AbstractProvider):
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
     access_token = EncryptedTextField(null=True, blank=True)
+    doi_prefix = models.CharField(blank=True, max_length=32)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -113,6 +162,10 @@ class PreprintProvider(AbstractProvider):
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
+
+    @property
+    def readable_type(self):
+        return 'preprint'
 
     @property
     def all_subjects(self):
@@ -201,6 +254,7 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
         )
 
 @receiver(post_save, sender=CollectionProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_primary_collection_for_provider(sender, instance, created, **kwargs):
     if created:
         Collection = apps.get_model('osf.Collection')
@@ -218,8 +272,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
             instance.save()
         else:
             # A user is required for Collections / Groups
-            sentry.log_message('Unable to create primary_collection for CollectionProvider {}'.format(instance.name))
-
+            sentry.log_message('Unable to create primary_collection for {}Provider {}'.format(instance.readable_type.capitalize(), instance.name))
 
 class WhitelistedSHAREPreprintProvider(BaseModel):
     id = models.AutoField(primary_key=True)

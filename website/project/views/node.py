@@ -695,6 +695,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -875,6 +876,7 @@ def serialize_collections(cgms, auth):
         'status': cgm.status,
         'type': cgm.collected_type,
         'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
@@ -997,6 +999,7 @@ def serialize_child_tree(child_list, user, nested):
                 'is_public': child.is_public,
                 'contributors': contributors,
                 'is_admin': child.has_admin_perm,
+                'is_preprint': child.is_preprint,
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
@@ -1060,7 +1063,8 @@ def node_child_tree(user, node):
             'title': node.title,
             'is_public': node.is_public,
             'contributors': contributors,
-            'is_admin': is_admin
+            'is_admin': is_admin,
+            'is_preprint': node.is_preprint,
         },
         'user_id': user._id,
         'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

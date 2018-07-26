@@ -11,6 +11,7 @@ from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionCreateRoot(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
@@ -155,9 +156,16 @@ class TestReviewActionCreateRoot(object):
                 ('initial', 'accept'),
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
+                ('initial', 'withdraw'),
                 ('pending', 'submit'),
                 ('rejected', 'reject'),
                 ('rejected', 'submit'),
+                ('rejected', 'withdraw'),
+                ('withdrawn', 'submit'),
+                ('withdrawn', 'accept'),
+                ('withdrawn', 'reject'),
+                ('withdrawn', 'edit_comment'),
+                ('withdrawn', 'withdraw'),
             ],
             'pre-moderation': [
                 ('accepted', 'accept'),
@@ -165,7 +173,14 @@ class TestReviewActionCreateRoot(object):
                 ('initial', 'accept'),
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
+                ('initial', 'withdraw'),
                 ('rejected', 'reject'),
+                ('rejected', 'withdraw'),
+                ('withdrawn', 'submit'),
+                ('withdrawn', 'accept'),
+                ('withdrawn', 'reject'),
+                ('withdrawn', 'edit_comment'),
+                ('withdrawn', 'withdraw'),
             ]
         }
         for workflow, transitions in invalid_transitions.items():
@@ -210,21 +225,25 @@ class TestReviewActionCreateRoot(object):
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),
                 ('accepted', 'reject', 'rejected'),
+                ('accepted', 'withdraw', 'withdrawn'),
                 ('initial', 'submit', 'pending'),
                 ('pending', 'accept', 'accepted'),
                 ('pending', 'edit_comment', 'pending'),
                 ('pending', 'reject', 'rejected'),
+                ('pending', 'withdraw', 'withdrawn'),
                 ('rejected', 'accept', 'accepted'),
                 ('rejected', 'edit_comment', 'rejected'),
             ],
             'pre-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),
                 ('accepted', 'reject', 'rejected'),
+                ('accepted', 'withdraw', 'withdrawn'),
                 ('initial', 'submit', 'pending'),
                 ('pending', 'accept', 'accepted'),
                 ('pending', 'edit_comment', 'pending'),
                 ('pending', 'reject', 'rejected'),
                 ('pending', 'submit', 'pending'),
+                ('pending', 'withdraw', 'withdrawn'),
                 ('rejected', 'accept', 'accepted'),
                 ('rejected', 'edit_comment', 'rejected'),
                 ('rejected', 'submit', 'pending'),
@@ -237,6 +256,7 @@ class TestReviewActionCreateRoot(object):
                 preprint.machine_state = from_state
                 preprint.is_published = False
                 preprint.date_published = None
+                preprint.date_withdrawn = None
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)

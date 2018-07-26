@@ -12,7 +12,7 @@
     "truncate": "https://github.com/CenterForOpenScience/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "xhook": "1.3.0",
     "osf-panel": "https://github.com/CenterForOpenScience/osf-panel.git#fda8e05d9f3ba8ed7bd43b46ceffe265b3d73b39",
-    "styles": "https://github.com/CenterForOpenScience/styles.git#f9893aff9043b3085fb46410c225d7241bafb835",
+    "styles": "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4",
     "locales": "https://github.com/CenterForOpenScience/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "2.1.0",
     "clipboard": "^1.6.1",

@@ -16,6 +16,7 @@ urlpatterns = [
                 url(r'^', include('waffle.urls')),
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
+                url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
             ],
         )
         ),
@@ -54,10 +55,17 @@ urlpatterns = [
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
                 url(r'^_waffle/', include('api.waffle.urls', namespace='waffle')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
+                url(r'^alerts/', include('api.alerts.urls', namespace='alerts')),
             ],
         )
         ),
     url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
+
+# Add django-silk URLs if it's in INSTALLED_APPS
+if 'silk' in settings.INSTALLED_APPS:
+    urlpatterns += [
+        url(r'^silk/', include('silk.urls', namespace='silk'))
+    ]
 
 handler404 = views.error_404

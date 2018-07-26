@@ -30,6 +30,8 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class NodeCRUDTestCase:
 
     @pytest.fixture()
@@ -104,6 +106,8 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -319,6 +323,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1239,6 +1245,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1300,6 +1308,8 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_enqueue_task
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2850,6 +2860,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorFiltering:
 
     @pytest.fixture()

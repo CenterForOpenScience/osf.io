@@ -109,6 +109,7 @@ typings/
 .webassets-cache
 website/static/public/
 website/static/mfr/
+assets/
 # Allow robots.txt to be deployment-specific
 website/static/robots.local.txt
 website/static/sitemaps/
@@ -195,3 +196,6 @@ docker-compose.override.yml
 .unison*
 .docker-sync/
 ssl/
+
+# pyenv
+.python-version

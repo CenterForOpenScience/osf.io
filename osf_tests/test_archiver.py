@@ -504,12 +504,8 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_node_fail(self):
         settings.MAX_ARCHIVE_SIZE = 100
         results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
-        with mock.patch('website.archiver.tasks.ArchiverTask.on_failure') as mock_fail:
-            try:
-                archive_node.apply(args=(results, self.archive_job._id))
-            except:
-                pass
-        assert_true(isinstance(mock_fail.call_args[0][0], ArchiverSizeExceeded))
+        with pytest.raises(ArchiverSizeExceeded):  # Note: Requires task_eager_propagates = True in celery
+            archive_node.apply(args=(results, self.archive_job._id))
 
     @mock.patch('website.project.signals.archive_callback.send')
     @mock.patch('website.archiver.tasks.archive_addon.delay')
@@ -1244,6 +1240,7 @@ class TestArchiverBehavior(OsfTestCase):
             listeners.archive_callback(reg)
         assert_equal(mock_update_search.call_count, 1)
 
+    @pytest.mark.enable_search
     @mock.patch('website.search.elastic_search.delete_doc')
     @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):

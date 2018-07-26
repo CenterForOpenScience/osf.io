@@ -56,6 +56,7 @@ from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
+from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -124,6 +125,7 @@ class TestViewsAreAtomic(OsfTestCase):
         assert_equal(OSFUser.objects.count(), original_user_count + 1)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
@@ -265,6 +267,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
             check_can_access(self.project, noncontrib)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestProjectViews(OsfTestCase):
 
     def setUp(self):
@@ -1067,6 +1070,9 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(children, [])
 
 
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1421,6 +1427,8 @@ class TestUserProfile(OsfTestCase):
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put_json(url, payload, auth=self.user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
 
         assert mock_client.lists.unsubscribe.called
         mock_client.lists.unsubscribe.assert_called_with(
@@ -1765,6 +1773,7 @@ class TestUserAccount(OsfTestCase):
         assert_not_in("steward@james.com", unconfirmed_emails)
 
 
+@pytest.mark.enable_implicit_clean
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
@@ -2310,6 +2319,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_false(send_mail.called)
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -2688,6 +2699,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPointerViews(OsfTestCase):
 
     def setUp(self):
@@ -3057,6 +3069,7 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -4018,6 +4031,7 @@ class TestAddonUserViews(OsfTestCase):
         assert_false(self.user.get_addon('github'))
 
 
+@pytest.mark.enable_enqueue_task
 class TestConfigureMailingListViews(OsfTestCase):
 
     @classmethod
@@ -4075,6 +4089,8 @@ class TestConfigureMailingListViews(OsfTestCase):
         payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
         user.reload()
 
         # check user.mailing_lists is updated
@@ -4303,6 +4319,8 @@ class TestWikiWidgetViews(OsfTestCase):
         assert_false(_should_show_wiki_widget(self.project, None))
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestProjectCreation(OsfTestCase):
 
     def setUp(self):
@@ -4805,7 +4823,8 @@ class TestIndexView(OsfTestCase):
             assert_in(self.inst_four._id, institution_ids)
             assert_not_in(self.inst_five._id, institution_ids)
 
-
+@pytest.mark.enable_quickfiles_creation
+@mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super(TestResolveGuid, self).setUp()

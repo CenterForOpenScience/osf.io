@@ -1,7 +1,7 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists
+from django.db.models import Q, OuterRef, Exists, Subquery
 from django.utils import timezone
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
@@ -49,7 +49,6 @@ from api.base.views import (
     LinkedRegistrationsRelationship,
     WaterButlerMixin
 )
-from api.caching.tasks import ban_url
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
 from api.comments.serializers import (CommentCreateSerializer,
@@ -101,9 +100,8 @@ from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
@@ -334,6 +332,16 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         except NodeStateError as err:
             raise ValidationError(err.message)
         node.save()
+
+    def get_renderer_context(self):
+        context = super(NodeDetail, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('related_counts', False))
+        if show_counts:
+            node = self.get_object()
+            context['meta'] = {
+                'templated_by_count': node.templated_list.count(),
+            }
+        return context
 
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
@@ -905,6 +913,54 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         res = super(NodeForksList, self).get_parser_context(http_request)
         res['attributes_required'] = False
         return res
+
+
+class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-linked-by-nodes'
+    ordering = ('-modified',)
+
+    serializer_class = NodeSerializer
+
+    def get_queryset(self):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
+        return Node.objects.filter(id__in=Subquery(node_relation_subquery), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link)
+
+
+class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-linked-by-registrations'
+    ordering = ('-modified',)
+
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
+        return Registration.objects.filter(id__in=Subquery(node_relation_subquery), retraction__isnull=True).can_view(user=auth.user, private_link=auth.private_link)
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
@@ -1759,8 +1815,8 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
         link.save()
-        enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
-
+        # FIXME: Doesn't work because instance isn't JSON-serializable
+        # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
 
 class NodeIdentifierList(NodeMixin, IdentifierList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_identifiers_list).
@@ -1849,7 +1905,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
             return NodeRequestSerializer
 
     def get_default_queryset(self):
-        return self.get_node().requests.all()
+        return self.get_target().requests.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()

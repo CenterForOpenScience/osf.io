@@ -21,9 +21,9 @@ from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine, RequestMachine
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -263,7 +263,7 @@ class AddonModelMixin(models.Model):
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
-        ret.save()  # TODO This doesn't feel right
+        ret.save(clean=False)  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
@@ -485,6 +485,8 @@ class CommentableMixin(object):
 
 
 class MachineableMixin(models.Model):
+    TriggersClass = DefaultTriggers
+
     class Meta:
         abstract = True
 
@@ -503,7 +505,7 @@ class MachineableMixin(models.Model):
         Params:
             user: The user triggering this transition.
         """
-        return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
+        return self._run_transition(self.TriggersClass.SUBMIT.value, user=user)
 
     def run_accept(self, user, comment, **kwargs):
         """Run the 'accept' state transition and create a corresponding Action.
@@ -512,7 +514,7 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment, **kwargs)
+        return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
@@ -521,7 +523,7 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.REJECT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
 
     def run_edit_comment(self, user, comment):
         """Run the 'edit_comment' state transition and create a corresponding Action.
@@ -530,9 +532,9 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: New comment text.
         """
-        return self.__run_transition(DefaultTriggers.EDIT_COMMENT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
 
-    def __run_transition(self, trigger, **kwargs):
+    def _run_transition(self, trigger, **kwargs):
         machine = self.MachineClass(self, 'machine_state')
         trigger_fn = getattr(machine, trigger)
         with transaction.atomic():
@@ -543,19 +545,35 @@ class MachineableMixin(models.Model):
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
 
-class RequestableMixin(MachineableMixin):
-    """Something that users may request access or changes to.
+
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
     """
 
     class Meta:
         abstract = True
 
-    MachineClass = RequestMachine
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
 
 
 class ReviewableMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
+    TriggersClass = ReviewTriggers
+
+    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -568,6 +586,15 @@ class ReviewableMixin(MachineableMixin):
         if not public_states:
             return False
         return self.machine_state in public_states
+
+    def run_withdraw(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
 
 
 class ReviewProviderMixin(models.Model):

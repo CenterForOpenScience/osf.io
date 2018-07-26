@@ -10,6 +10,7 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
@@ -27,7 +28,7 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework import status
-from framework.celery_tasks.handlers import enqueue_task
+from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from osf.exceptions import ValidationValueError
@@ -62,7 +63,8 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
-from website.identifiers.tasks import update_ezid_metadata_on_change
+from website.identifiers.tasks import update_doi_metadata_on_change
+from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
 from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
@@ -139,7 +141,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
-        if user is not None:
+        if user is not None and not isinstance(user, AnonymousUser):
             if isinstance(user, OSFUser):
                 user = user.pk
             if not isinstance(user, int):
@@ -230,6 +232,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'is_deleted',
         'node_license',
         'preprint_file',
+    }
+
+    # Node fields that trigger an identifier update on save
+    IDENTIFIER_UPDATE_FIELDS = {
+        'title',
+        'description',
+        'is_public',
+        'contributors',
+        'is_deleted',
+        'node_license'
     }
 
     # Node fields that trigger a check to the spam filter on save
@@ -1228,6 +1240,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        auth=auth, email_template=send_email)
             self.update_search()
             self.save_node_preprints()
+
+            # enqueue on_node_updated to update DOI metadata when a contributor is added
+            if self.get_identifier_value('doi'):
+                request, user_id = get_request_and_user_id()
+                self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
+
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1332,19 +1350,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
-
-            try:
+            contributor = get_user(email=email)
+            if contributor:
+                if self.contributor_set.filter(user=contributor).exists():
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                    send_email=send_email, permissions=permissions, save=True)
+            else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
                     send_email=send_email, permissions=permissions,
                     visible=bibliographic, save=True
                 )
-            except ValidationError:
-                contributor = get_user(email=email)
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     send_email=send_email, permissions=permissions, save=True)
 
         auth.user.email_last_sent = timezone.now()
         auth.user.save()
@@ -1462,6 +1479,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         project_signals.contributor_removed.send(self, user=contributor)
 
         self.save_node_preprints()
+
+        # enqueue on_node_updated to update DOI metadata when a contributor is removed
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1540,6 +1562,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
+            self.update_or_enqueue_on_node_updated(auth.user._id, first_save=False, saved_fields={'node_license'})
 
         if save:
             self.save()
@@ -1592,7 +1615,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Update existing identifiers
         if self.get_identifier('doi'):
             doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_ezid_metadata_on_change.s(self._id, status=doi_status))
+            enqueue_task(update_doi_metadata_on_change.s(self._id, status=doi_status))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -2379,6 +2402,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return ret
 
+    def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
+        """
+        If an earlier version of the on_node_updated task exists in the queue, update it
+        with the appropriate saved_fields. Otherwise, enqueue on_node_updated.
+
+        This ensures that on_node_updated is only queued once for a given node.
+        """
+        # All arguments passed as kwargs so that we can check signature.kwargs and update as necessary
+        task = get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == self._id)
+        if task:
+            # Ensure saved_fields is JSON-serializable by coercing it to a list
+            task.kwargs['saved_fields'] = list(set(task.kwargs['saved_fields']).union(saved_fields))
+        else:
+            enqueue_task(node_tasks.on_node_updated.s(node_id=self._id, user_id=user_id, first_save=first_save, saved_fields=saved_fields))
+
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
@@ -2389,15 +2427,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         if self.preprint_file:
             # avoid circular imports
-            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.tasks import update_or_enqueue_on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
+                update_or_enqueue_on_preprint_updated(preprint._id)
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
@@ -2446,6 +2484,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ))
         if is_spam:
             self._check_spam_user(user)
+            for preprint in self.preprints.get_queryset():
+                preprint.flag_spam()
+                preprint.save()
+
         return is_spam
 
     def _check_spam_user(self, user):
@@ -2678,7 +2720,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :type date: `datetime.datetime` or `None`
+        :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
         if not self.can_edit(auth):
@@ -2964,6 +3006,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    def get_doi_client(self):
+        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
+            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
+        else:
+            return None
 
 class Node(AbstractNode):
     """
