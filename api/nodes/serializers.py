@@ -328,7 +328,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_draft_registration_count'}
     ))
 
     registrations = HideIfRegistration(RelationshipField(
@@ -457,6 +458,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         registrations = [node for node in obj.registrations_all if node.can_view(auth)]
         return len(registrations)
+
+    def get_draft_registration_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if obj.has_permission(auth.user, osf_permissions.ADMIN):
+            return obj.draft_registrations_active.count()
 
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
