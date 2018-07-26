@@ -149,7 +149,7 @@ class UserSerializer(JSONAPISerializer):
         for history in info:
 
             if history.get('startYear'):
-                startDate = datetime.date(history['startYear'], history['startMonth'], 1)
+                startDate = datetime.date(history['startYear'], history.get('startMonth', 1), 1)
 
             if not history['ongoing']:
                 if history.get('endYear'):
