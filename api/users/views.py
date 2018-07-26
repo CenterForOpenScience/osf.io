@@ -22,6 +22,7 @@ from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
+                                   UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
                                    UserSettingsSerializer,
@@ -446,30 +447,71 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user.save()
 
 
-class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
+    """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+    )
+
+    serializer_class = UserIdentitiesSerializer
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'users'
+    view_name = 'user-identities-list'
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        user = self.get_user()
+        identities = []
+        for key, value in user.external_identity.iteritems():
+            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
+
+        return identities
+
+
+class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
         CurrentUser,
     )
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
+    serializer_class = UserIdentitiesSerializer
+
     view_category = 'users'
-    view_name = 'user-settings'
+    view_name = 'user-identities-detail'
 
-    serializer_class = UserSettingsSerializer
-
-    # overrides RetrieveUpdateAPIView
-    def get_serializer_class(self):
-        if self.request.method in ('PUT', 'PATCH'):
-            return UserSettingsUpdateSerializer
-        return UserSettingsSerializer
-
-    # overrides RetrieveUpdateAPIView
     def get_object(self):
-        return self.get_user()
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            identity = user.external_identity[identity_id]
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
+        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+
+    def perform_destroy(self, instance):
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            user.external_identity.pop(identity_id)
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
+        user.save()
 
 
 class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
@@ -533,3 +575,29 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.requested_deactivation = True
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-settings'
+
+    serializer_class = UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_user()
