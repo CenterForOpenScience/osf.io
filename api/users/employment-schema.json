@@ -42,6 +42,37 @@
 		"dependencies": {
 			"endMonth": ["endYear"],
 			"startMonth": ["startYear"]
+		},
+		"anyOf": [
+		  {
+			"not": {
+			  "properties": {
+				"ongoing": {
+					"enum": [true]
+				}
+			  },
+			  "required": ["ongoing"]
+			}
+		  },
+		  { "required": ["startYear"]}
+		],
+		"anyOf": [
+		  {
+			"not": {
+			  "properties": {
+				"ongoing": { "enum": [false] }
+			  },
+			  "required": ["ongoing"]
+			}
+		  },
+		  { "required": ["endYear"] }
+		],
+		"not": {
+			"properties": {
+				"ongoing": {"enum": [true]}
+			},
+			"required": ["endYear"],
+			"message": "Ongoing positions cannot have end dates."
 		}
 	}
 }

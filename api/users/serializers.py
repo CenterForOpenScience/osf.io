@@ -136,9 +136,10 @@ class UserSerializer(JSONAPISerializer):
         try:
             jsonschema.validate(value, from_json(json_schema))
         except jsonschema.ValidationError as e:
+            if type(e.validator_value) == dict and e.validator_value.get('message'):
+                raise InvalidModelValueError(e.validator_value.get('message'))
             if len(e.path) > 1:
                 raise InvalidModelValueError("For '{}' the field value {}".format(e.path[-1], e.message))
-
             raise InvalidModelValueError(e.message)
         except jsonschema.SchemaError as e:
             raise InvalidModelValueError(e.message)
@@ -158,8 +159,6 @@ class UserSerializer(JSONAPISerializer):
                 if history.get('startYear') and history.get('endYear'):
                     if (endDate - startDate).days <= 0:
                         raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
-            elif history.get('endYear') or history.get('endMonth'):
-                raise InvalidModelValueError(detail='Ongoing positions cannot have end dates.')
 
     def validate_employment(self, value):
         self._validate_user_json(value, 'employment-schema.json')
