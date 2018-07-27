@@ -26,6 +26,7 @@ from website.notifications.utils import check_if_all_global_subscriptions_are_no
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
                                         must_be_contributor_or_public, must_be_contributor)
+from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
@@ -555,7 +556,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
-        elif node.has_published_preprint:
+        elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
             logo = settings.OSF_PREPRINTS_LOGO
@@ -582,7 +583,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             branded_service=preprint_provider,
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

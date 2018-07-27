@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, PreprintContributor
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -687,14 +687,6 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
-    try:
-        if node.linked_preprint is None:
-            preprint_contributor = None
-        else:
-            preprint_contributor = node.linked_preprint.preprintcontributor_set.get(user=user)
-    except PreprintContributor.DoesNotExist:
-        preprint_contributor = None
-
     parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
@@ -708,7 +700,6 @@ def _view_project(node, auth, primary=False,
     addons = list(node.get_addons())
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
-    node_linked_preprint = node.linked_preprint
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
@@ -786,20 +777,9 @@ def _view_project(node, auth, primary=False,
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'visible_preprints': serialize_preprints(node, user),
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'has_published_preprint': node.has_published_preprint,
-            'has_submitted_preprint': node.has_submitted_preprint,
-            'attached_preprint_title': node_linked_preprint.title if node_linked_preprint else '',
-            'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
-            'has_withdrawn_preprint': node_linked_preprint.date_withdrawn is not None if node_linked_preprint else '',
-            'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
-            'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
-            'preprint_provider': {
-                'name': node_linked_preprint.provider.name,
-                'workflow': node_linked_preprint.provider.reviews_workflow
-            } if node_linked_preprint else {},
-            'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
         },
         'parent_node': {
@@ -817,7 +797,6 @@ def _view_project(node, auth, primary=False,
         },
         'user': {
             'is_contributor': bool(contributor),
-            'is_preprint_contributor': bool(preprint_contributor),
             'is_admin': bool(contributor) and contributor.admin,
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': bool(contributor) and contributor.write and not node.is_registration,
@@ -886,6 +865,21 @@ def serialize_collections(cgms, auth):
         'is_public': cgm.collection.is_public,
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
+
+def serialize_preprints(node, user):
+    return [
+        {
+            'title': preprint.title,
+            'is_moderated': preprint.provider.reviews_workflow,
+            'is_withdrawn': preprint.date_withdrawn is not None,
+            'state': preprint.machine_state,
+            'word': preprint.provider.preprint_word,
+            'provider': {'name': preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
+            'url': preprint.url,
+            'absolute_url': preprint.absolute_url
+        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user)
+    ]
+
 
 def serialize_children(child_list, nested, indent=0):
     """

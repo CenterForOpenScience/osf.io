@@ -4205,31 +4205,26 @@ class TestAdminImplicitRead(object):
 
 
 class TestNodeProperties:
-    def test_has_published_preprint(self, project, preprint, user):
+    def test_has_linked_published_preprints(self, project, preprint, user):
         # If no preprints, is False
-        assert project.has_published_preprint is False
+        assert project.has_linked_published_preprints is False
 
         # A published preprint attached to a project is True
         preprint.node = project
         preprint.save()
-        assert project.has_published_preprint is True
+        assert project.has_linked_published_preprints is True
 
         # Abandoned preprint is False
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
-        assert project.has_published_preprint is False
+        assert project.has_linked_published_preprints is False
 
         # Unpublished preprint is False
         preprint.machine_state = DefaultStates.ACCEPTED.value
         preprint.is_published = False
         preprint.save()
-        assert project.has_published_preprint is False
+        assert project.has_linked_published_preprints is False
 
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        assert node.preprint_url == published.url
 
 class TestCollectionProperties:
 

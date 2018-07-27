@@ -1387,10 +1387,10 @@ class TestSetPreprintFile(OsfTestCase):
             self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
 
     def test_set_supplemental_node_already_has_a_preprint(self):
-        with assert_raises(PreprintProviderError):
-            project_two = ProjectFactory(creator=self.preprint.creator)
-            preprint = PreprintFactory(project=project_two, provider=self.preprint.provider)
-            self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)
+        project_two = ProjectFactory(creator=self.preprint.creator)
+        preprint = PreprintFactory(project=project_two, provider=self.preprint.provider)
+        self.preprint.set_supplemental_node(project_two, auth=self.auth, save=True)
+        assert project_two.preprints.count() == 2
 
     def test_preprint_made_public(self):
         # Testing for migrated preprints, that may have had is_public = False

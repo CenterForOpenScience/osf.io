@@ -205,7 +205,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    preprint = ser.BooleanField(read_only=True, source='has_published_preprint')
+    preprint = ser.SerializerMethodField()
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
@@ -399,6 +399,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
+
+    def get_preprint(self, obj):
+        # Whether the node has supplemental material for a preprint the user can view
+        user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
+        return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     class Meta:
         type_ = 'nodes'

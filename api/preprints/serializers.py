@@ -22,7 +22,6 @@ from api.nodes.serializers import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
-from osf.exceptions import PreprintProviderError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions as osf_permissions
@@ -290,9 +289,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             raise exceptions.PermissionDenied(detail=e.message)
         except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=e.message)
-        except PreprintProviderError as e:
-            if 'Only one preprint per provider can be submitted for a node' in e.message:
-                raise Conflict(e.message)
 
 
 class PreprintCreateSerializer(PreprintSerializer):

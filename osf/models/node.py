@@ -51,7 +51,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
 from osf.utils import sanitize
-from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -448,38 +447,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return list(self.collecting_metadata_qs)
 
     @property
-    def has_submitted_preprint(self):
-        # Attached to a submitted preprint
-        return self.preprints.filter(
-            deleted__isnull=True).filter(Q(date_withdrawn__isnull=True) | Q(ever_public=True)).exclude(machine_state=DefaultStates.INITIAL.value).exists()
-
-    @property
-    def has_published_preprint(self):
-        # Attached to a published preprint - anyone can view this preprint
-        return self.published_preprints_queryset.exists()
-
-    @property
-    def published_preprints_queryset(self):
+    def has_linked_published_preprints(self):
+        # Node holds supplemental material for published preprint(s)
         Preprint = apps.get_model('osf.Preprint')
-        return self.preprints.filter(Preprint.objects.no_user_query)
-
-    @property
-    def preprint_url(self):
-        node_linked_preprint = self.linked_preprint
-        if node_linked_preprint:
-            return node_linked_preprint.url
-
-    @property
-    def linked_preprint(self):
-        try:
-            # if multiple preprints per project are supported on the front end this needs to change.
-            published_preprint = self.published_preprints_queryset.first()
-            if published_preprint:
-                return published_preprint
-            else:
-                return self.preprints.get_queryset()[0]
-        except IndexError:
-            pass
+        return self.preprints.filter(Preprint.objects.no_user_query).exists()
 
     @property
     def is_collection(self):

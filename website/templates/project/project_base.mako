@@ -92,7 +92,6 @@
         relations.extend([
             node['registered_from_url'],
             node['forked_from_display_absolute_url'],
-            node['preprint_url'] or '',
             parent_node['absolute_url'] if parent_node['exists'] else ''
         ])
         return relations

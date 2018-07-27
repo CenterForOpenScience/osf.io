@@ -324,39 +324,39 @@
     </div>
 % endif
 
-% if node['has_submitted_preprint'] and (user['is_preprint_contributor'] or node['has_published_preprint']):
+% for i, preprint in enumerate(node['visible_preprints']):
 <div class="row">
    <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
        <div style="margin-top: 5px; margin-bottom: 5px;">
-           Has supplemental material for <a href="${node['preprint_url']}" target="_blank">${node['attached_preprint_title']}</a>
-           on ${node['preprint_provider']['name']}
-         &nbsp;<span id="metadatapreprint-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint"></span>
+           Has supplemental material for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
+           on ${preprint['provider']['name']}
+         &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
        </div>
-       <div id="metadatapreprint" class="collection-details collapse">
+       <div id="metadatapreprint${i}" class="collection-details collapse">
            <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
                 <li>
                     Status:&nbsp;&nbsp;
                         <b>
-                            % if node['has_withdrawn_preprint']:
+                            % if preprint['is_withdrawn']:
                                 Withdrawn
                             % else:
-                                ${node['preprint_state'].capitalize()}
+                                ${preprint['state'].capitalize()}
                             % endif
                         </b>
-                    % if node['has_moderated_preprint'] and not node['has_withdrawn_preprint']:
+                    % if preprint['is_moderated'] and not preprint['is_withdrawn']:
                         <% icon_tooltip = ''%>
-                        % if node['preprint_state'] == 'pending':
-                            % if node['preprint_provider']['workflow'] == 'post-moderation':
+                        % if preprint['state'] == 'pending':
+                            % if preprint['provider']['workflow'] == 'post-moderation':
                                 <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                                ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
                             % else:
                                 <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                                'by a moderator.'.format(preprint_word=preprint['word'])%>
                             % endif
-                        % elif node['preprint_state'] == 'accepted':
-                            <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
+                        % elif preprint['state'] == 'accepted':
+                            <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
                         % else:
-                            <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+                            <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
                         % endif
                         <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                     % endif
@@ -365,7 +365,8 @@
        </div>
    </div>
 </div>
-% endif
+% endfor
+
 
 <div class="row">
 

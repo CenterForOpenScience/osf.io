@@ -485,7 +485,7 @@ class TestPreprintCreate(ApiTestCase):
             res.json['errors'][0]['detail'],
             'This file is not a valid primary file for this preprint.')
 
-    def test_already_a_preprint_with_conflicting_provider(self):
+    def test_already_has_supplemental_node_on_another_preprint(self):
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(
             preprint.node._id, preprint.provider._id)
@@ -494,13 +494,10 @@ class TestPreprintCreate(ApiTestCase):
             already_preprint_payload,
             auth=self.user.auth,
             expect_errors=True)
+        # One preprint per provider per node constraint has been lifted
+        assert_equal(res.status_code, 201)
 
-        assert_equal(res.status_code, 409)
-        assert_in(
-            'Only one preprint per provider can be submitted for a node.',
-            res.json['errors'][0]['detail'])
-
-    def test_read_write_user_already_a_preprint_with_conflicting_provider(
+    def test_read_write_user_already_a_preprint_with_same_provider(
             self):
         assert_in(self.other_user, self.public_project.contributors)
 
@@ -513,7 +510,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.other_user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 409)
+        assert_equal(res.status_code, 201)
 
     def test_publish_preprint_fails_with_no_primary_file(self):
         no_file_payload = build_preprint_create_payload(

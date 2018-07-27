@@ -367,10 +367,9 @@ class TestPreprintUpdate:
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 409
-        assert 'Only one preprint per provider can be submitted for a node' in res.json['errors'][0]['detail']
+        assert res.status_code == 200
         preprint.reload()
-        assert preprint.node is None
+        assert preprint.node == node
 
     def test_update_deleted_node(self, app, user, preprint, url):
         assert preprint.node is None

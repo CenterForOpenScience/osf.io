@@ -48,7 +48,7 @@ from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode
 
 from framework.sentry import log_exception
 from osf.exceptions import (
-    PreprintStateError, InvalidTagError, TagNotFoundError, PreprintProviderError
+    PreprintStateError, InvalidTagError, TagNotFoundError
 )
 
 logger = logging.getLogger(__name__)
@@ -694,10 +694,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if not node.has_permission(auth.user, 'write'):
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
-
-        node_preprints = node.preprints.filter(provider=self.provider)
-        if node_preprints.exists():
-            raise PreprintProviderError('Only one preprint per provider can be submitted for a node. Check preprint `{}`.'.format(node_preprints.first()._id))
 
         if node.is_deleted:
             raise ValueError('Cannot attach a deleted project to a preprint.')

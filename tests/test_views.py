@@ -2029,7 +2029,9 @@ class TestAddingContributorViews(OsfTestCase):
             branded_service=None,
             can_change_preferences=False,
             logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            published_preprints=[]
+
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
