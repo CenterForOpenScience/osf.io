@@ -79,3 +79,8 @@ class RegistrationSchema(AbstractSchema):
         except jsonschema.SchemaError as e:
             raise ValidationValueError(e.message)
         return
+
+
+class FileMetadataSchema(AbstractSchema):
+
+    serializer_class = None
