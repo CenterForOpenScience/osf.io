@@ -25,6 +25,18 @@
 				"minimum": 1900
 			},
 			"ongoing": {
+				"oneOf": [{
+						"enum": [false],
+						"required": ["startYear", "endYear"]
+					},
+					{
+						"enum": [true],
+						"required": ["startYear"],
+						"not": {
+							"required": ["endYear"]
+						}
+					}
+				],
 				"type": "boolean"
 			},
 			"department": {
@@ -41,38 +53,9 @@
 		"additionalProperties": false,
 		"dependencies": {
 			"endMonth": ["endYear"],
-			"startMonth": ["startYear"]
-		},
-		"anyOf": [
-		  {
-			"not": {
-			  "properties": {
-				"ongoing": {
-					"enum": [true]
-				}
-			  },
-			  "required": ["ongoing"]
-			}
-		  },
-		  { "required": ["startYear"]}
-		],
-		"anyOf": [
-		  {
-			"not": {
-			  "properties": {
-				"ongoing": { "enum": [false] }
-			  },
-			  "required": ["ongoing"]
-			}
-		  },
-		  { "required": ["endYear"] }
-		],
-		"not": {
-			"properties": {
-				"ongoing": {"enum": [true]}
-			},
-			"required": ["endYear"],
-			"message": "Ongoing positions cannot have end dates."
+			"startMonth": ["startYear"],
+			"startYear": ["ongoing"],
+			"endYear": ["ongoing"]
 		}
 	}
 }

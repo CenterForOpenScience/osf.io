@@ -136,8 +136,6 @@ class UserSerializer(JSONAPISerializer):
         try:
             jsonschema.validate(value, from_json(json_schema))
         except jsonschema.ValidationError as e:
-            if type(e.validator_value) == dict and e.validator_value.get('message'):
-                raise InvalidModelValueError(e.validator_value.get('message'))
             if len(e.path) > 1:
                 raise InvalidModelValueError("For '{}' the field value {}".format(e.path[-1], e.message))
             raise InvalidModelValueError(e.message)

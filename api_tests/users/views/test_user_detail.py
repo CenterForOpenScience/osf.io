@@ -1017,6 +1017,7 @@ class UserProfileMixin(object):
 
     @pytest.fixture()
     def start_dates_no_end_dates_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
         del request_payload['data']['attributes'][request_key][0]['endYear']
         del request_payload['data']['attributes'][request_key][0]['endMonth']
         return request_payload
@@ -1089,12 +1090,12 @@ class UserProfileMixin(object):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
 
-    def test_user_put_profile_validation_ongoing_bool(self, app, user_one, user_one_url, request_payload, request_key):
+    def test_user_put_profile_validation_ongoing_dependency(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure ongoing is bool
-        request_payload['data']['attributes'][request_key][0]['ongoing'] = '???'
+        del request_payload['data']['attributes'][request_key][0]['ongoing']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value u'???' is not of type u'boolean'"
+        assert res.json['errors'][0]['detail'] == "u'ongoing' is a dependency of u'endYear'"
 
     def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
         # Not valid datatypes for dates
@@ -1115,9 +1116,10 @@ class UserProfileMixin(object):
     def test_user_put_profile_date_validate_ongoing_position(self, app, user_one, user_one_url, request_payload, request_key):
         # endDates for ongoing position
         request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        del request_payload['data']['attributes'][request_key][0]['endYear']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Ongoing positions cannot have end dates.'
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
 
     def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
         # End date is greater then start date
@@ -1143,9 +1145,7 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "{{u'startYear': 1991, u'{}': u'', u'startMonth': 9, u'ongoing':" \
-                                                  " False, u'department': u'', u'institution': u'Fake U'}}" \
-                                                  ' is not valid under any of the given schemas'.format('title' if user_attr == 'jobs' else 'degree')
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
 
     def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
         # End dates, but no start dates
