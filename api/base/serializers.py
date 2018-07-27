@@ -198,12 +198,12 @@ class HideIfNotWithdrawal(ConditionalField):
 
 class HideIfWikiDisabled(ConditionalField):
     """
-    If wiki is disabled, don't show relationship field, only available in version 2.8
+    If wiki is disabled, don't show relationship field, only available after 2.7
     """
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, '2.8', '2.8') and not instance.has_addon('wiki')
+        return not utils.is_deprecated(request.version, min_version='2.8') and not instance.has_addon('wiki')
 
 
 class HideIfNotNodePointerLog(ConditionalField):

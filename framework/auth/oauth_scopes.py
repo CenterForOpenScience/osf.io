@@ -115,6 +115,9 @@ class CoreScopes(object):
     NODE_REQUESTS_READ = 'node_requests_read'
     NODE_REQUESTS_WRITE = 'node_requests_write'
 
+    NODE_SETTINGS_READ = 'node_settings_read'
+    NODE_SETTINGS_WRITE = 'node_settings_write'
+
     PREPRINT_REQUESTS_READ = 'preprint_requests_read'
     PREPRINT_REQUESTS_WRITE = 'preprint_requests_write'
 
@@ -209,11 +212,11 @@ class ComposedScopes(object):
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
                              CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE)
+                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ

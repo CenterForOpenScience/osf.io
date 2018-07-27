@@ -3309,6 +3309,22 @@ class TestNodeUpdate:
         assert latest_log.params['description_original'], old_desc
         assert latest_log.params['description_new'], 'new description'
 
+    def test_set_access_requests(self, node, auth):
+        assert node.access_requests_enabled is True
+        node.set_access_requests_enabled(False, auth=auth, save=True)
+        assert node.access_requests_enabled is False
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
+
+        node.set_access_requests_enabled(True, auth=auth, save=True)
+        assert node.access_requests_enabled is True
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
+
+    def test_set_access_requests_non_admin(self, node, auth):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node, write=True, read=True, visible=True)
+        with pytest.raises(PermissionsError):
+            node.set_access_requests_enabled(True, auth=Auth(contrib))
+
     def test_validate_categories(self):
         with pytest.raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
