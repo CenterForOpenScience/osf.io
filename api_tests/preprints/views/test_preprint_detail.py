@@ -5,6 +5,7 @@ from rest_framework import exceptions
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
+from api.providers.permissions import GroupHelper
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import PreprintService, NodeLicense
@@ -46,7 +47,16 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def preprint_pre_mod(self, user):
-        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        pp.node.is_public = True
+        pp.node.save()
+        return pp
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod):
+        mod = AuthUserFactory()
+        GroupHelper(preprint_pre_mod.provider).get_group('moderator').user_set.add(mod)
+        return mod
 
     @pytest.fixture()
     def unpublished_preprint(self, user):
@@ -102,7 +112,7 @@ class TestPreprintDetail:
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_withdrawn_preprint(self, app, user, preprint_pre_mod):
+    def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
         # test_retracted_fields
         url = '/{}preprints/{}/'.format(API_BASE, preprint_pre_mod._id)
         res = app.get(url, auth=user.auth)
@@ -120,6 +130,10 @@ class TestPreprintDetail:
         assert preprint_pre_mod.is_retracted
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        res = app.get(url, auth=moderator.auth)
+        assert res.status_code == 200
 
         ## retracted and ever_public (True)
         preprint_pre_mod.ever_public = True
