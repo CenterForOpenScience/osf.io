@@ -353,7 +353,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --quick &&
+      - invoke requirements --all &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /

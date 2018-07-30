@@ -442,8 +442,7 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
-class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
-    template_name = 'nodes/restart_registrations_modal.html'
+class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
     context_object_name = 'node'
@@ -451,7 +450,12 @@ class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
     def get_object(self, queryset=None):
         return Registration.load(self.kwargs.get('guid'))
 
+
+class RestartStuckRegistrationsView(StuckRegistrationsView):
+    template_name = 'nodes/restart_registrations_modal.html'
+
     def post(self, request, *args, **kwargs):
+        # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import archive, verify
         stuck_reg = self.get_object()
         if verify(stuck_reg):
@@ -462,6 +466,21 @@ class RestartStuckRegistrationsView(PermissionRequiredMixin, TemplateView):
                 messages.error(request, 'This registration cannot be unstuck due to {} '
                                         'if the problem persists get a developer to fix it.'.format(exc.__class__.__name__))
 
+        else:
+            messages.error(request, 'This registration may not technically be stuck,'
+                                    ' if the problem persists get a developer to fix it.')
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class RemoveStuckRegistrationsView(StuckRegistrationsView):
+    template_name = 'nodes/remove_registrations_modal.html'
+
+    def post(self, request, *args, **kwargs):
+        stuck_reg = self.get_object()
+        if Registration.find_failed_registrations().filter(id=stuck_reg.id).exists():
+            stuck_reg.delete_registration_tree(save=True)
+            messages.success(request, 'The registration has been deleted')
         else:
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')

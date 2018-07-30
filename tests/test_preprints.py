@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import pytest
 import urlparse
 import pytest
 
@@ -356,6 +357,8 @@ class TestPreprintIdentifiers(OsfTestCase):
         preprint.node.add_tag('qatest', self.auth)
         assert preprint.get_doi_client() is None
 
+
+@pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

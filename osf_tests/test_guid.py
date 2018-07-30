@@ -127,6 +127,7 @@ class TestReferent:
             pytest.fail('Multiple objects returned for {} with multiple guids. {}'.format(Factory._meta.model, ex))
 
 
+@pytest.mark.enable_bookmark_creation
 class TestResolveGuid(OsfTestCase):
 
     def setUp(self):

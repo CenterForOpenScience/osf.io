@@ -252,3 +252,40 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserIdentitiesSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    external_id = ser.CharField(read_only=True)
+    status = ser.CharField(read_only=True)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-identities-detail',
+            kwargs={
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+                'identity_id': obj['_id']
+            }
+        )
+
+    class Meta:
+        type_ = 'external-identities'
+
+class UserAccountExportSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-export-form'
+
+
+class UserAccountDeactivateSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-deactivate-form'

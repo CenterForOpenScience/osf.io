@@ -1,12 +1,15 @@
 import itsdangerous
 
+from django.middleware.csrf import get_token
 from django.utils.translation import ugettext_lazy as _
 
+import waffle
 from rest_framework import authentication
-from rest_framework.authentication import BasicAuthentication
+from rest_framework.authentication import BasicAuthentication, CSRFCheck
 from rest_framework import exceptions
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
+from api.base import settings as api_settings
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
 from framework.auth import cas
@@ -100,9 +103,26 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         user_id = session.data.get('auth_user_id')
         user = OSFUser.load(user_id)
         if user:
+            if waffle.switch_is_active('enforce_csrf'):
+                self.enforce_csrf(request)
+                # CSRF passed with authenticated user
             check_user(user)
             return user, None
         return None
+
+    def enforce_csrf(self, request):
+        """
+        Same implementation as django-rest-framework's SessionAuthentication.
+        Enforce CSRF validation for session based authentication.
+        """
+        reason = CSRFCheck().process_view(request, None, (), {})
+        if reason:
+            # CSRF failed, bail with explicit error message
+            raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
+
+        if not request.COOKIES.get(api_settings.CSRF_COOKIE_NAME):
+            # Make sure the CSRF cookie is set for next time
+            get_token(request)
 
 
 class OSFBasicAuthentication(BasicAuthentication):
