@@ -16,8 +16,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import EZID_FORMAT, DOI_NAMESPACE
-
+from website.settings import DOI_FORMAT
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -132,6 +131,7 @@ class TestPreprintDetail:
         assert 'assumptions no longer apply' == data['attributes']['withdrawal_justification']
         assert 'date_withdrawn' in data['attributes']
 
+    @pytest.mark.enable_quickfiles_creation
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
             API_BASE, preprint._id)
@@ -151,30 +151,21 @@ class TestPreprintDetail:
         assert 'preprint_doi' not in res.json['data']['links'].keys()
         assert res.json['data']['attributes']['preprint_doi_created'] is None
 
-    def test_published_preprint_doi_link_returned_before_datacite_request(
+    def test_published_preprint_doi_link_not_returned_before_doi_request(
             self, app, user, unpublished_preprint, unpublished_url):
         unpublished_preprint.is_published = True
         unpublished_preprint.save()
         res = app.get(unpublished_url, auth=user.auth)
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is True
-        assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
-            guid=unpublished_preprint._id).replace(
-            'doi:',
-            '').upper()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
-            expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is None
+        assert 'preprint_doi' not in res.json['data']['links'].keys()
 
-    def test_published_preprint_doi_link_returned_after_datacite_request(
+    def test_published_preprint_doi_link_returned_after_doi_request(
             self, app, user, preprint, url):
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
-            guid=preprint._id).replace(
-            'doi:',
-            '')
+        expected_doi = DOI_FORMAT.format(
+            prefix=preprint.provider.doi_prefix,
+            guid=preprint._id
+        )
         preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
@@ -182,7 +173,7 @@ class TestPreprintDetail:
         assert 'preprint_doi' in res.json['data']['links'].keys()
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
             expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is not None
+        assert res.json['data']['attributes']['preprint_doi_created']
 
     def test_preprint_embed_identifiers(self, app, user, preprint, url):
         embed_url = url + '?embed=identifiers'
@@ -255,6 +246,7 @@ class TestPreprintDelete:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_enqueue_task
 class TestPreprintUpdate:
 
     @pytest.fixture()
@@ -408,7 +400,7 @@ class TestPreprintUpdate:
         assert preprint_detail['links']['doi'] == 'https://dx.doi.org/{}'.format(
             new_doi)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_description_and_title(
             self, mock_preprint_updated, app, user, preprint, url):
         new_title = 'Brother Nero'
@@ -434,8 +426,8 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
+    def test_update_tags(self, mock_update_doi_metadata, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -458,11 +450,12 @@ class TestPreprintUpdate:
                     'name',
                     flat=True))
         ) == new_tags
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @pytest.mark.enable_quickfiles_creation
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
-            self, mock_update_ezid, app, user, preprint, url):
+            self, mock_update_doi_metadata, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
@@ -492,7 +485,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
@@ -615,7 +608,7 @@ class TestPreprintUpdate:
 
         assert unpublished.node.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_preprint_task_called_on_api_update(
             self, mock_on_preprint_updated, app, user, preprint, url):
         update_doi_payload = build_preprint_update_payload(

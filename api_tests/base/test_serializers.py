@@ -134,7 +134,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'preprint',
             'subjects']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -143,7 +143,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             if field not in visible_on_withdrawals and field not in non_registration_fields:
                 assert_true(
                     isinstance(reg_field, base_serializers.HideIfWithdrawal) or
-                    isinstance(reg_field, base_serializers.ShowIfVersion)
+                    isinstance(reg_field, base_serializers.ShowIfVersion) or
+                    isinstance(reg_field, base_serializers.ShowIfAdminScopeOrAnonymous)
                 )
 
     def test_hide_if_registration_fields(self):

@@ -300,7 +300,6 @@ services:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
@@ -354,7 +353,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --quick &&
+      - invoke requirements --all &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /

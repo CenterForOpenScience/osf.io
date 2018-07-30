@@ -58,7 +58,6 @@ from website.identifiers import views as identifier_views
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
-
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -150,6 +149,7 @@ def get_globals():
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
         'footer_links': settings.FOOTER_LINKS,
+        'waffle': waffle,
     }
 
 
@@ -230,7 +230,8 @@ def ember_app(path=None):
         raise HTTPError(http.NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
-        url = urlparse.urljoin(ember_app['server'], request.path[len(ember_app['path']):])
+        path = request.path[len(ember_app['path']):]
+        url = urlparse.urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
@@ -352,6 +353,20 @@ def make_url_map(app):
                     notemplate
                 )
             ])
+            if 'routes' in EXTERNAL_EMBER_APPS['ember_osf_web']:
+                for route in EXTERNAL_EMBER_APPS['ember_osf_web']['routes']:
+                    process_rules(app, [
+                        Rule(
+                            [
+                                '/',
+                                '/<path:path>',
+                            ],
+                            'get',
+                            ember_osf_web_views.use_ember_app,
+                            notemplate,
+                            endpoint_suffix='__' + route
+                        )
+                    ], prefix='/' + route)
 
     ### Base ###
 
@@ -1705,6 +1720,7 @@ def make_url_map(app):
     # Set up static routing for addons and providers
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
+    provider_static_path = os.path.abspath('assets')
     if settings.DEV_MODE:
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
@@ -1713,8 +1729,7 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            assets_path = os.path.join(settings.BASE_PATH, 'assets')
-            return send_from_directory(assets_path, filename)
+            return send_from_directory(provider_static_path, filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():

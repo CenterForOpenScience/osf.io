@@ -190,7 +190,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         date = timezone.now().date().strftime('%-d %B %Y')
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.node.title,
-                self.published_preprint.provider.name,
+                'OSF Preprints',
                 date)
         )
 

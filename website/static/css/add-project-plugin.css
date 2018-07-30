@@ -17,3 +17,8 @@ select option:first-child {
 .help-text {
     color: grey;
 }
+
+/*  Tiny hack to allow dropdowns to work responsively https://github.com/twbs/bootstrap/issues/7968 */
+.dropdown-backdrop {
+    position: static;
+}
