@@ -1090,12 +1090,12 @@ class UserProfileMixin(object):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
 
-    def test_user_put_profile_validation_ongoing_dependency(self, app, user_one, user_one_url, request_payload, request_key):
+    def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure ongoing is bool
         del request_payload['data']['attributes'][request_key][0]['ongoing']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'ongoing' is a dependency of u'endYear'"
+        assert res.json['errors'][0]['detail'] == "u'ongoing' is a dependency of u'startYear'"
 
     def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
         # Not valid datatypes for dates
@@ -1138,7 +1138,7 @@ class UserProfileMixin(object):
         # No endMonth with endYear
         res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'startMonth'"
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
 
     def test_user_put_profile_date_validate_start_date_no_end_date_not_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
         # End date is greater then start date
@@ -1149,10 +1149,10 @@ class UserProfileMixin(object):
 
     def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
         # End dates, but no start dates
-        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth)
+        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
-        assert res.status_code == 200
-        assert getattr(user_one, user_attr) == end_dates_no_start_dates_payload['data']['attributes'][request_key]
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
 
 
 @pytest.mark.django_db

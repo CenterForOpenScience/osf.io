@@ -55,7 +55,8 @@
 			"endMonth": ["endYear"],
 			"startMonth": ["startYear"],
 			"startYear": ["ongoing"],
-			"endYear": ["ongoing"]
+			"endYear": ["ongoing"],
+			"endYear": ["startYear"]
 		}
 	}
 }
