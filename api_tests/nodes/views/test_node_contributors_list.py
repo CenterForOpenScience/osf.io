@@ -596,6 +596,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
+    def test_add_contributor_dont_expose_email( self, app, user, user_two, project_public, data_user_two, url_public):
+
+        res = app.post_json_api(
+            url_public,
+            data_user_two,
+            auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes'].get('email') is None
+
     def test_add_contributor_is_visible_by_default(
             self, app, user, user_two, project_public,
             data_user_two, url_public):

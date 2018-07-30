@@ -906,7 +906,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     id = IDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
-    email = ser.EmailField(required=False, source='user.email')
+    email = ser.EmailField(required=False, source='user.email', write_only=True)
     index = ser.IntegerField(required=False, source='_order')
 
     users = RelationshipField(
