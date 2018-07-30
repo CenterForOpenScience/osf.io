@@ -1,5 +1,4 @@
 from rest_framework import generics, permissions as drf_permissions
-from api.base.views import DeprecatedView
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
@@ -8,7 +7,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
 from osf.models import RegistrationSchema
-from api.schemas.serializers import SchemaSerializer, RegistrationSchemaSerializer
+from api.schemas.serializers import RegistrationSchemaSerializer
 
 
 class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView):
@@ -53,21 +52,3 @@ class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         schema_id = self.kwargs['schema_id']
         return get_object_or_error(RegistrationSchema, schema_id, self.request)
-
-
-class DeprecatedMetaSchemasList(DeprecatedView, RegistrationSchemaList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
-    """
-    max_version = '2.7'
-    view_category = 'metaschemas'
-    view_name = 'metaschema-list'
-    serializer_class = SchemaSerializer
-
-
-class DeprecatedMetaSchemaDetail(DeprecatedView, RegistrationSchemaDetail):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
-    """
-    max_version = '2.7'
-    view_category = 'metaschemas'
-    view_name = 'metaschema-detail'
-    serializer_class = SchemaSerializer
