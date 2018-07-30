@@ -172,7 +172,7 @@ class ChronosClient(object):
 
     def submit_manuscript(self, journal, preprint, submitter):
         if ChronosSubmission.objects.filter(journal=journal, preprint=preprint).exists():
-            raise ValueError('{!r} already has an existing submission to {!r}. Use {!r}.update_manuscript'.format(preprint, journal, self))
+            raise ValueError('{!r} already has an existing submission to {!r}.'.format(preprint, journal))
 
         body = ChronosSerializer.serialize_manuscript(journal.journal_id, preprint)
         body['USER'] = ChronosSerializer.serialize_user(submitter)
