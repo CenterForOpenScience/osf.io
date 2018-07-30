@@ -24,11 +24,11 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
         abstract = True
         unique_together = ('name', 'schema_version')
 
-
-class RegistrationSchema(AbstractSchema):
     def __unicode__(self):
         return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
 
+
+class RegistrationSchema(AbstractSchema):
     @property
     def _config(self):
         return self.schema.get('config', {})
