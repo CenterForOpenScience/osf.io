@@ -69,6 +69,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
+    IsContributor,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -89,6 +90,8 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
+    NodeSettingsSerializer,
+    NodeSettingsUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
@@ -1945,3 +1948,39 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsContributor,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.NODE_SETTINGS_WRITE]
+
+    serializer_class = NodeSettingsSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-settings'
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_node()
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            return NodeSettingsUpdateSerializer
+        return NodeSettingsSerializer
+
+    def get_serializer_context(self):
+        """
+        Extra context for NodeSettingsSerializer - this will prevent loading
+        addons multiple times in SerializerMethodFields
+        """
+        context = super(NodeSettings, self).get_serializer_context()
+        node = self.get_node(check_object_permissions=False)
+        context['wiki_addon'] = node.get_addon('wiki')
+        context['forward_addon'] = node.get_addon('forward')
+        return context

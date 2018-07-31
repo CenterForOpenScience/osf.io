@@ -11,7 +11,7 @@ from osf.exceptions import ValidationValueError
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 
-class MetaSchema(ObjectIDMixin, BaseModel):
+class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
@@ -21,11 +21,14 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     schema_version = models.IntegerField()
 
     class Meta:
+        abstract = True
         unique_together = ('name', 'schema_version')
 
     def __unicode__(self):
         return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
 
+
+class RegistrationSchema(AbstractSchema):
     @property
     def _config(self):
         return self.schema.get('config', {})
@@ -52,7 +55,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/metaschemas/registrations/{}/'.format(self._id)
+        path = '/schemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
 
     @classmethod

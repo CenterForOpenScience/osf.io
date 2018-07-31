@@ -1,5 +1,6 @@
 import itsdangerous
 
+from django.middleware.csrf import get_token
 from django.utils.translation import ugettext_lazy as _
 
 import waffle
@@ -8,6 +9,7 @@ from rest_framework.authentication import BasicAuthentication, CSRFCheck
 from rest_framework import exceptions
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
+from api.base import settings as api_settings
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
 from framework.auth import cas
@@ -117,6 +119,10 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         if reason:
             # CSRF failed, bail with explicit error message
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
+
+        if not request.COOKIES.get(api_settings.CSRF_COOKIE_NAME):
+            # Make sure the CSRF cookie is set for next time
+            get_token(request)
 
 
 class OSFBasicAuthentication(BasicAuthentication):

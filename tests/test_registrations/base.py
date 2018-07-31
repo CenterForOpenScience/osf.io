@@ -5,7 +5,7 @@ from django.utils import timezone
 from framework.auth import Auth
 
 from osf.utils import permissions
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
@@ -26,7 +26,7 @@ class RegistrationsTestBase(OsfTestCase):
         )
         self.non_contrib = AuthUserFactory()
 
-        self.meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+        self.meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         self.draft = DraftRegistrationFactory(
             initiator=self.user,

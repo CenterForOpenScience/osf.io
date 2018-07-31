@@ -2385,6 +2385,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
             self.save_node_preprints()
 
+    def set_access_requests_enabled(self, access_requests_enabled, auth, save=False):
+        user = auth.user
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can modify access requests enabled')
+        self.access_requests_enabled = access_requests_enabled
+        if self.access_requests_enabled:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        else:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         if 'old_subjects' in kwargs.keys():

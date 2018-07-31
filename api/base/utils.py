@@ -186,8 +186,10 @@ def has_admin_scope(request):
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
 
 
-def is_deprecated(request_version, min_version, max_version):
-    if request_version < min_version or request_version > max_version:
+def is_deprecated(request_version, min_version=None, max_version=None):
+    if not min_version and not max_version:
+        raise NotImplementedError('Must specify min or max version.')
+    if min_version and request_version < min_version or max_version and request_version > max_version:
         return True
     return False
 

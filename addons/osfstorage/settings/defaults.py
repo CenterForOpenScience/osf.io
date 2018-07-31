@@ -7,8 +7,8 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_REGION_NAME = 'N. Virginia'
-DEFAULT_REGION_ID = 'us-east-1'
+DEFAULT_REGION_NAME = 'United States'
+DEFAULT_REGION_ID = 'us'
 
 WATERBUTLER_CREDENTIALS = {
     'storage': {}
