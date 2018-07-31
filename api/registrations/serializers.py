@@ -176,8 +176,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     ))
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:registration-metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registered_schema_id>'}
     )
 
     settings = HideIfRegistration(RelationshipField(
