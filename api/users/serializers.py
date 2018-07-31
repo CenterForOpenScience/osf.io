@@ -1,6 +1,3 @@
-import datetime
-
-import jsonschema
 from guardian.models import GroupObjectPermission
 
 from django.utils import timezone
@@ -17,7 +14,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from api.users.schemas import from_json
+from api.users.schemas.utils import validate_user_json
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -132,38 +129,12 @@ class UserSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
-    def _validate_user_json(self, value, json_schema):
-        try:
-            jsonschema.validate(value, from_json(json_schema))
-        except jsonschema.ValidationError as e:
-            if len(e.path) > 1:
-                raise InvalidModelValueError("For '{}' the field value {}".format(e.path[-1], e.message))
-            raise InvalidModelValueError(e.message)
-        except jsonschema.SchemaError as e:
-            raise InvalidModelValueError(e.message)
-
-        self._validate_dates(value)
-
-    def _validate_dates(self, info):
-        for history in info:
-
-            if history.get('startYear'):
-                startDate = datetime.date(history['startYear'], history.get('startMonth', 1), 1)
-
-            if not history['ongoing']:
-                if history.get('endYear'):
-                    endDate = datetime.date(history['endYear'], history.get('endMonth', 1), 1)
-
-                if history.get('startYear') and history.get('endYear'):
-                    if (endDate - startDate).days <= 0:
-                        raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
-
     def validate_employment(self, value):
-        self._validate_user_json(value, 'employment-schema.json')
+        validate_user_json(value, 'employment-schema.json')
         return value
 
     def validate_education(self, value):
-        self._validate_user_json(value, 'education-schema.json')
+        validate_user_json(value, 'education-schema.json')
         return value
 
     def update(self, instance, validated_data):
