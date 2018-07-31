@@ -15,6 +15,7 @@ from flask import request, send_from_directory, Response, stream_with_context
 from framework import sentry
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import email_required
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -130,6 +131,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 
+@email_required
 def index():
     # Check if we're on an institution landing page
     institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
