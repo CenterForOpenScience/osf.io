@@ -134,10 +134,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     ))
 
-    review_actions = NoneIfWithdrawal(RelationshipField(
+    review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    ))
+    )
 
     requests = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-request-list',
