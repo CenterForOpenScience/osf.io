@@ -1,3 +1,4 @@
+import datetime as dt
 import pytest
 import mock
 
@@ -17,8 +18,9 @@ from admin.nodes.views import (
     RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
-
+from website import settings
 from nose import tools as nt
+from django.utils import timezone
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -26,7 +28,7 @@ from django.contrib.auth.models import Permission
 from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
+from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory
 
 
 class TestNodeView(AdminTestCase):
@@ -429,10 +431,12 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
         nt.assert_true(self.registration, view.get_object())
 
     def test_restart_stuck_registration(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
-        from django.contrib.messages.storage.fallback import FallbackStorage
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -448,8 +452,14 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 class TestRemoveStuckRegistrationsView(AdminTestCase):
     def setUp(self):
         super(TestRemoveStuckRegistrationsView, self).setUp()
-        self.user = AuthUserFactory()
+        self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user)
+        # Make the registration "stuck"
+        archive_job = self.registration.archive_job
+        archive_job.datetime_initiated = (
+            timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA - dt.timedelta(hours=1)
+        )
+        archive_job.save()
         self.registration.save()
         self.view = RemoveStuckRegistrationsView
         self.request = RequestFactory().post('/fake_path')
@@ -461,9 +471,10 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         nt.assert_true(self.registration, view.get_object())
 
     def test_remove_stuck_registration(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
         view = RemoveStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        from django.contrib.messages.storage.fallback import FallbackStorage
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -473,5 +484,18 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
 
         view.post(self.request)
 
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.is_deleted)
+
+    def test_remove_stuck_registration_with_an_addon(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        self.registration.add_addon('github', auth=Auth(self.user))
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+        view.post(self.request)
         self.registration.refresh_from_db()
         nt.assert_true(self.registration.is_deleted)

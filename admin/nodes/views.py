@@ -455,6 +455,7 @@ class RestartStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/restart_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
+        # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import archive, verify
         stuck_reg = self.get_object()
         if verify(stuck_reg):
@@ -476,9 +477,8 @@ class RemoveStuckRegistrationsView(StuckRegistrationsView):
     template_name = 'nodes/remove_registrations_modal.html'
 
     def post(self, request, *args, **kwargs):
-        from osf.management.commands.force_archive import verify
         stuck_reg = self.get_object()
-        if verify(stuck_reg):
+        if Registration.find_failed_registrations().filter(id=stuck_reg.id).exists():
             stuck_reg.delete_registration_tree(save=True)
             messages.success(request, 'The registration has been deleted')
         else:
