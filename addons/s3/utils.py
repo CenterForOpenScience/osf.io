@@ -1,5 +1,6 @@
 import re
 import httplib
+from urlsparse import urlparse
 
 from boto import exception
 from boto.s3.connection import S3Connection
@@ -39,6 +40,13 @@ def connect_s3(
         host=host
     )
     return connection
+
+
+def parse_provider_id(provider_id):
+    parsed = urlparse(provider_id)
+    user_id, host_port = parsed.split(str="@")
+    host, port = host_port.split(str=":")
+    return parsed.scheme, user_id, host, port
 
 
 def get_bucket_names(node_settings):

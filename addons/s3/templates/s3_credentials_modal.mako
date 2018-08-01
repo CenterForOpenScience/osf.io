@@ -40,7 +40,7 @@
                                 <div class="form-group encrypted">
                                     <label class="form-check-label" for="encrypted">
                                         Use TLS Encryption<br>
-                                        <input class="form-check-input" type="checkbox" id="encrypted" name="encrypted" data-lpignore=true autocomplete=off />
+                                        <input class="form-check-input" data-bind="checked: encrypted" type="checkbox" id="_encrypted" name="_encrypted" data-lpignore=true autocomplete=off />
                                     </label>
                                 </div>
                             </div>

@@ -23,10 +23,14 @@ var ExternalAccount = oop.defclass({
         self.id = data.id;
         self.profileUrl = data.profile_url;
         self.providerName = data.provider_name;
-        self.host = data.host;
-        self.port = data.port;
-        self.encrypted = data.encrypted;
-
+        var parser = document.createElement'a')
+        parser.href = data.provider_id
+        self.host = parser.hostname.split('@')[1]
+        self.port = parser.port;
+        self.encrypted = {
+            'http': false,
+            'https': true
+        }[parser.scheme];
         self.connectedNodes = ko.observableArray();
 
         ko.utils.arrayMap(data.nodes, function(item) {

@@ -11,5 +11,8 @@ class InvalidFolderError(AddonError):
 class InvalidAuthError(AddonError):
     pass
 
+class InvalidSettingsError(AddonError):
+    pass
+
 class HookError(AddonError):
     pass

@@ -63,11 +63,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     # Needed for account serialization
     provider_name = models.CharField(max_length=255, blank=False, null=False)
 
-    # The location of the service
-    host = models.CharField(max_length=255, null=True)
-    port = models.PositiveIntegerField(null=True)
-    encrypted = models.BooleanField(default=True)
-
     # The unique, persistent ID on the remote service.
     provider_id = models.CharField(max_length=255, blank=False, null=False)
 
@@ -87,7 +82,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     class Meta:
         unique_together = [
-            ('provider', 'provider_id', 'host', 'port')
+            ('provider', 'provider_id')
         ]
 
 

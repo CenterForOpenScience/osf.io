@@ -3,7 +3,6 @@ import abc
 from framework.auth.decorators import collect_auth
 from website.util import api_url_for, web_url_for
 
-
 class AddonSerializer(object):
     __metaclass__ = abc.ABCMeta
 
@@ -111,9 +110,6 @@ class OAuthAddonSerializer(AddonSerializer):
             'provider_short_name': external_account.provider,
             'display_name': external_account.display_name,
             'profile_url': external_account.profile_url,
-            'host': external_account.host,
-            'port': external_account.port,
-            'encrypted': external_account.encrypted,
             'nodes': [
                 self.serialize_granted_node(node)
                 for node in self.user_settings.get_attached_nodes(

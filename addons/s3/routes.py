@@ -17,14 +17,6 @@ api_routes = {
             [
                 '/settings/s3/accounts/',
             ],
-            'put',
-            views.s3_modify_user_account,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/settings/s3/accounts/',
-            ],
             'get',
             views.s3_account_list,
             json_renderer,

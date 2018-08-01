@@ -1,6 +1,10 @@
 from website.util import web_url_for
+from addons.base import exceptions
 from addons.base.serializer import StorageAddonSerializer
 from addons.s3 import utils
+from addons.s3.utils import (
+    parse_provider_id
+)
 
 class S3Serializer(StorageAddonSerializer):
     addon_short_name = 's3'
@@ -40,8 +44,7 @@ class S3Serializer(StorageAddonSerializer):
             'nodeHasAuth': node_settings.has_auth,
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
-            'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-            'host': node_settings.external_account.host
+            'userHasAuth': current_user_settings is not None and current_user_settings.has_auth
         }
 
         if node_settings.has_auth:
@@ -67,12 +70,19 @@ class S3Serializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client=None):
         if user_settings:
             for account in user_settings.external_accounts.all():
+                scheme, user_id, host, port = parse_provider_id(account.provider_id)
+                if scheme == 'https':
+                    encrypted = True
+                elif scheme == 'http':
+                    encrypted = False
+                else:
+                    raise exceptions.InvalidSettingsError()
                 if utils.can_list(
-                    account.host,
-                    account.port,
+                    host,
+                    port,
                     account.oauth_key,
                     account.oauth_secret,
-                    account.encrypted
+                    encrypted
                 ):
                     return True
         return False
