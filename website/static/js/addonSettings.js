@@ -23,9 +23,9 @@ var ExternalAccount = oop.defclass({
         self.id = data.id;
         self.profileUrl = data.profile_url;
         self.providerName = data.provider_name;
-        var parser = document.createElement'a')
-        parser.href = data.provider_id
-        self.host = parser.hostname.split('@')[1]
+        var parser = document.createElement('a');
+        parser.href = data.provider_id;
+        self.host = parser.hostname.split('@')[1];
         self.port = parser.port;
         self.encrypted = {
             'http': false,
