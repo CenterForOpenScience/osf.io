@@ -39,6 +39,7 @@
                                 </div>
                             <!-- /ko -->
                         </th>
+                    </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
                 <tbody data-bind="foreach: connectedNodes()">
