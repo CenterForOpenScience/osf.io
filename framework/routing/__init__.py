@@ -100,22 +100,21 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     :return: Wrapped view function
 
     """
-    renderer_kwargs = renderer_kwargs or {}
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
+        kw = renderer_kwargs or {}
         if session:
             session_error_code = session.data.get('auth_error_code')
         else:
             session_error_code = None
         if session_error_code:
-            renderer_kwargs = renderer_kwargs or {}
             return renderer(
                 HTTPError(session_error_code),
-                **renderer_kwargs
+                **kw
             )
         try:
-            if renderer_kwargs:
-                kwargs.update(renderer_kwargs)
+            if kw:
+                kwargs.update(kw)
             data = fn(*args, **kwargs)
         except HTTPError as error:
             data = error
@@ -129,7 +128,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
                 http.INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
-        return renderer(data, **renderer_kwargs)
+        return renderer(data, **kw)
     return wrapped
 
 

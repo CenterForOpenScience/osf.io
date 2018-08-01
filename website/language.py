@@ -230,7 +230,7 @@ TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = "Contact " + settings.OSF_SUPPORT_EMAIL + "for further assistance."
+SUPPORT = 'Contact ' + settings.OSF_SUPPORT_EMAIL + 'for further assistance.'
 
 SUPPORT_LINK = 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'
 

@@ -94,7 +94,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         return app
 
     logger.info('Initializing the application from process {}, thread {}.'.format(
-        os.getpid(), thread.get_ident()
+        os.getpid(), _thread.get_ident()
     ))
     setup_django()
 

@@ -1,8 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
-
-
 import copy
 import functools
 import logging
