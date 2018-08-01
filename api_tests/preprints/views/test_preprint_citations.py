@@ -128,17 +128,33 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.third_contrib.family_name = 'Schematics'
         self.third_contrib.save()
 
-        self.MLA_DATE_FORMAT = '%-d %b. %Y'
+        self.MLA_DATE_FORMAT = '%-d {month} %Y'
+        self.MLA_MONTH_MAP = {
+            1: 'Jan.',
+            2: 'Feb.',
+            3: 'Mar.',
+            4: 'Apr.',
+            5: 'May',
+            6: 'June',
+            7: 'July',
+            8: 'Aug.',
+            9: 'Sept.',
+            10: 'Oct.',
+            11: 'Nov.',
+            12: 'Dec.',
+        }
+
+        date = timezone.now().date()
+        self.formated_date = date.strftime(self.MLA_DATE_FORMAT).format(month=self.MLA_MONTH_MAP[date.month])
 
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
-            date)
+            self.formated_date)
         )
 
         # test_suffix
@@ -147,11 +163,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., Junior. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
-            date)
+            self.formated_date)
         )
 
         # test_no_middle_names
@@ -161,11 +176,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
-            date)
+            self.formated_date)
         )
 
     def test_citation_no_repeated_periods(self):
@@ -174,11 +188,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
-                date)
+                self.formated_date)
         )
 
     def test_citation_osf_provider(self):
@@ -189,11 +202,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 'OSF Preprints',
-                date)
+                self.formated_date)
         )
 
     def test_two_authors(self):
@@ -202,11 +214,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
-                date)
+                self.formated_date)
         )
 
     def test_three_authors(self):
@@ -216,12 +227,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
-        print date
         assert_equal(citation, u'McGee, Grapes C. B., et al. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
-                date)
+                self.formated_date)
         )
 
         # first name suffix
@@ -230,11 +239,10 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., Jr., et al. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
-                date)
+                self.formated_date)
         )
 
 
