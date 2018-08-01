@@ -299,7 +299,7 @@
     <div class="collections-container">
     % for i, collection in enumerate(node['collections'][:5]):
     <div class="row">
-        <div class="col-xs-12 col-md-6">
+        <div class="col-xs-12">
             <div style="margin-top: 5px;">
                 Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
                 <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
@@ -318,6 +318,20 @@
                       <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
                     % endif
 
+                    % if collection['subjects']:
+                      <li>
+                        <dl class="dl-horizontal dl-subjects">
+                          <dt>Subjects:&nbsp;&nbsp;</dt>
+                          <dd>
+                          % for subject in collection['subjects']:
+                            <span class='subject-preview'>
+                              <small> ${subject} </small>
+                            </span>
+                          % endfor
+                          </dd>
+                        </dl>
+                      </li>
+                    % endif
                 </ul>
             </div>
         </div>

@@ -63,7 +63,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.node.is_preprint and not self.node.is_deleted
+        return self.is_published and self.node.is_preprint and not (self.is_retracted or self.node.is_deleted)
 
     @property
     def primary_file(self):
@@ -114,6 +114,14 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
     def absolute_api_v2_url(self):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
+
+    @property
+    def has_pending_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal', machine_state='pending').exists()
+
+    @property
+    def has_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal').exists()
 
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)

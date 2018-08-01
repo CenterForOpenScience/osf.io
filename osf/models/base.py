@@ -207,6 +207,26 @@ class ObjectIDMixin(BaseIDMixin):
         abstract = True
 
 
+class TypedObjectIDMixin(ObjectIDMixin):
+    class Meta:
+        abstract = True
+        # On subclasses, be sure to add a unique_together constraint on '_id' and 'type'
+
+    _id = models.CharField(max_length=24, default=generate_object_id, db_index=True)
+
+    @classmethod
+    def load(cls, q, select_for_update=False):
+        try:
+            return cls.objects.get(_id=q, type=cls._typedmodels_type) if not select_for_update else cls.objects.filter(_id=q, type=cls._typedmodels_type).select_for_update().get()
+        except cls.DoesNotExist:
+            # modm doesn't throw exceptions when loading things that don't exist
+            return None
+        except AttributeError as e:
+            # load has been called on an Abstract typed class
+            e.message = '"load" must be called on a typed class, got {}'.format(cls.__name__)
+            raise
+
+
 class InvalidGuid(Exception):
     pass
 
