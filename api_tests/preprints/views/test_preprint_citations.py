@@ -128,11 +128,13 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.third_contrib.family_name = 'Schematics'
         self.third_contrib.save()
 
+        self.MLA_DATE_FORMAT = '%-d %b. %Y'
+
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
@@ -145,7 +147,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., Junior. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
@@ -159,7 +161,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes. “{}.” {}, {}. Web.'.format(
             self.node.title,
             self.published_preprint.provider.name,
@@ -172,7 +174,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -187,7 +189,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
                 self.node.title,
                 'OSF Preprints',
@@ -200,7 +202,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -214,7 +216,8 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
+        print date
         assert_equal(citation, u'McGee, Grapes C. B., et al. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
@@ -227,7 +230,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        date = timezone.now().date().strftime('%-d %B %Y')
+        date = timezone.now().date().strftime(self.MLA_DATE_FORMAT)
         assert_equal(citation, u'McGee, Grapes C. B., Jr., et al. “{}.” {}, {}. Web.'.format(
                 self.node.title,
                 self.published_preprint.provider.name,
