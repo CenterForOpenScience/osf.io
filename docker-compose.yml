@@ -353,15 +353,12 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --all &&
-        (python -m compileall /usr/local/lib/python2.7 || true) &&
-        rm -Rf /python2.7/* &&
-        cp -Rf -p /usr/local/lib/python2.7 /
+      - invoke requirements --all
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - osf_requirements_vol:/python2.7
+      - osf_requirements_vol:/python3.6
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
@@ -370,7 +367,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -382,7 +379,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -413,7 +410,7 @@ services:
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7
+#      - osf_requirements_vol:/usr/local/lib/python3.6
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
 
@@ -432,7 +429,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -456,7 +453,7 @@ services:
       - .docker-compose.env
     stdin_open: true
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -477,7 +474,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -498,7 +495,7 @@ services:
       - .docker-compose.env
       - .docker-compose.sharejs.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web

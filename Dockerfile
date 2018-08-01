@@ -1,4 +1,4 @@
-FROM python:2.7-slim-jessie
+FROM python:3.6-slim-jessie
 
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \
@@ -126,9 +126,7 @@ RUN for reqs_file in \
         pip install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
     && (pip uninstall uritemplate.py --yes || true) \
-    && pip install --no-cache-dir uritemplate.py==0.3.0 \
-    # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python -m compileall /usr/local/lib/python2.7 || true
+    && pip install --no-cache-dir uritemplate.py==0.3.0
 
 # OSF: Assets
 COPY ./.bowerrc ./bower.json ./
