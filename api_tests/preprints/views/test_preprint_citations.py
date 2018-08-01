@@ -129,6 +129,9 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.third_contrib.save()
 
         self.MLA_DATE_FORMAT = '%-d {month} %Y'
+
+        # MLA month abreviations here
+        #  http://www.pomfret.ctschool.net/computer_classes/documents/mla-abbreviationsofmonths.pdf
         self.MLA_MONTH_MAP = {
             1: 'Jan.',
             2: 'Feb.',
