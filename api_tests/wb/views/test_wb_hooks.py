@@ -67,6 +67,8 @@ def sign_payload(payload):
     return signing.sign_data(signing.default_signer, payload)
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestMove():
     @pytest.fixture()
     def move_url(self, node):
@@ -379,6 +381,8 @@ class TestMove():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestCopy():
     @pytest.fixture()
     def copy_url(self, node):

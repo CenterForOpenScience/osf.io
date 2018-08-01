@@ -30,7 +30,7 @@ def preprint_csl(preprint, node):
     csl = node.csl
 
     csl['id'] = preprint._id
-    csl['publisher'] = preprint.provider.name
+    csl['publisher'] = 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name
     csl['URL'] = display_absolute_url(preprint)
 
     if preprint.original_publication_date:
@@ -46,7 +46,6 @@ def preprint_csl(preprint, node):
         csl['DOI'] = article_doi
     elif preprint_doi and preprint.is_published and preprint.preprint_doi_created:
         csl['DOI'] = preprint_doi
-
     return csl
 
 

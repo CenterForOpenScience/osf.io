@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import pytest
 import urlparse
 import pytest
 
@@ -350,6 +351,7 @@ class TestPreprintIdentifiers(OsfTestCase):
         ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
         assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
+@pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

@@ -127,6 +127,7 @@ class TestReferent:
             pytest.fail('Multiple objects returned for {} with multiple guids. {}'.format(Factory._meta.model, ex))
 
 
+@pytest.mark.enable_bookmark_creation
 class TestResolveGuid(OsfTestCase):
 
     def setUp(self):
@@ -212,6 +213,83 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download/')
         assert res.status_code == 302
         assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+    @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
+    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
+        'preprints': {
+            'server': 'http://localhost:4200',
+            'path': '/preprints/'
+        },
+    })
+    def test_resolve_guid_download_file_from_emberapp_preprints_unpublished(self):
+        # non-branded domains
+        provider = PreprintProviderFactory(_id='sockarxiv', name='Sockarxiv', reviews_workflow='pre-moderation')
+
+        # branded domains
+        branded_provider = PreprintProviderFactory(_id='spot', name='Spotarxiv', reviews_workflow='pre-moderation')
+        branded_provider.allow_submissions = False
+        branded_provider.domain = 'https://www.spotarxiv.com'
+        branded_provider.description = 'spots not dots'
+        branded_provider.domain_redirect_enabled = True
+        branded_provider.share_publish_type = 'Thesis'
+        branded_provider.save()
+
+        # test_provider_submitter_can_download_unpublished
+        submitter = AuthUserFactory()
+        project = NodeFactory(creator=submitter)
+        pp = PreprintFactory(finish=True, provider=provider, is_published=False, project=project)
+        pp.run_submit(submitter)
+        pp_branded = PreprintFactory(finish=True, provider=branded_provider, is_published=False, project=project, filename='preprint_file_two.txt')
+        pp_branded.run_submit(submitter)
+
+        res = self.app.get('{}download'.format(pp.url), auth=submitter.auth)
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('{}download'.format(pp_branded.url), auth=submitter.auth)
+        assert res.status_code == 302
+
+        # test_provider_super_user_can_download_unpublished
+        super_user = AuthUserFactory()
+        super_user.is_superuser = True
+        super_user.save()
+
+        res = self.app.get('{}download'.format(pp.url), auth=super_user.auth)
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('{}download'.format(pp_branded.url), auth=super_user.auth)
+        assert res.status_code == 302
+
+        # test_provider_moderator_can_download_unpublished
+        moderator = AuthUserFactory()
+        provider.add_to_group(moderator, 'moderator')
+        provider.save()
+
+        res = self.app.get('{}download'.format(pp.url), auth=moderator.auth)
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        branded_provider.add_to_group(moderator, 'moderator')
+        branded_provider.save()
+
+        res = self.app.get('{}download'.format(pp_branded.url), auth=moderator.auth)
+        assert res.status_code == 302
+
+        # test_provider_admin_can_download_unpublished
+        admin = AuthUserFactory()
+        provider.add_to_group(admin, 'admin')
+        provider.save()
+
+        res = self.app.get('{}download'.format(pp.url), auth=admin.auth)
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        branded_provider.add_to_group(admin, 'admin')
+        branded_provider.save()
+
+        res = self.app.get('{}download'.format(pp_branded.url), auth=admin.auth)
+        assert res.status_code == 302
 
     def test_resolve_guid_download_file_export(self):
         pp = PreprintFactory(finish=True)

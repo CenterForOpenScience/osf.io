@@ -34,7 +34,7 @@ env:
     - BOTO_CONFIG=/dev/null
   matrix:
     - TEST_BUILD="addons"
-    - TEST_BUILD="else"
+    - TEST_BUILD="website"
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
     - TEST_BUILD="api3_and_osf"
@@ -131,24 +131,28 @@ install:
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
 
-    - nvm install 8.6.0
-    - nvm use 8.6.0
-    - curl -o- -L https://yarnpkg.com/install.sh | bash
-    - export PATH=$HOME/.yarn/bin:$PATH
+    - |
+      if [ "$TEST_BUILD" = "api1_and_js" ]; then
+       nvm install 8.6.0
+       nvm use 8.6.0
+       curl -o- -L https://yarnpkg.com/install.sh | bash
+       export PATH=$HOME/.yarn/bin:$PATH
+       travis_retry invoke assets --dev
+      fi
 
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
     - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
-    - travis_retry invoke assets --dev
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD -n 4
+    - export COVERAGE=`if [ "$TRAVIS_BRANCH" == "master-w-coverage" ]; then echo "--coverage"; else echo ""; fi`
+    - invoke test_travis_$TEST_BUILD -n 4 $COVERAGE
 
 after_success:
-    - coveralls || true
+    - if [[ "$TRAVIS_BRANCH" == "master-w-coverage" ]]; then coveralls; fi
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http

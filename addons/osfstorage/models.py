@@ -456,7 +456,6 @@ class UserSettings(BaseUserSettings):
     def on_add(self):
         default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
         self.default_region = default_region
-        self.save()
 
     def merge(self, user_settings):
         """Merge `user_settings` into this instance"""
@@ -491,12 +490,12 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
-        self.save()
+        self.save(clean=False)
         # Note: The "root" node will always be "named" empty string
         root = OsfStorageFolder(name='', target=self.owner, is_root=True)
         root.save()
         self.root_node = root
-        self.save()
+        self.save(clean=False)
 
     def before_fork(self, node, user):
         pass
