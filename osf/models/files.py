@@ -117,6 +117,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     class Meta:
         base_manager_name = 'objects'
+        index_together = (
+            ('target_content_type', 'target_object_id', )
+        )
 
     @property
     def history(self):
