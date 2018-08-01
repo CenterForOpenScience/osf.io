@@ -154,7 +154,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
-        self.check_object_permissions(self.request, file)
+        self.check_object_permissions(self.request, self.file)
         return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
 
     def get_serializer_context(self):
