@@ -868,7 +868,9 @@ class TestContributorMethods:
 
         with pytest.raises(ValidationValueError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
-        assert excinfo.value.message == 'Unregistered users cannot be added as contributors without unclaimed records.'
+        assert excinfo.value.message == 'Unregistered users cannot be added as contributors without unclaimed records. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
