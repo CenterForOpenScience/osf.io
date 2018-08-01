@@ -81,6 +81,7 @@ def export_files(node, user, current_dir):
     os.mkdir(files_dir)
     response = requests.get(
         url=waterbutler_api_url_for(
+            node.osfstorage_region.waterbutler_url,
             node_id=node._id,
             _internal=True,
             provider='osfstorage',

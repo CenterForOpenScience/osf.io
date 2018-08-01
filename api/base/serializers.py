@@ -1093,7 +1093,7 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        url = utils.waterbutler_api_url_for(obj.node.osfstorage_region.waterbutler_url, obj.node._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
         else:

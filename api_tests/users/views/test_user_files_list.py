@@ -107,6 +107,7 @@ class TestUserQuickFiles:
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data'][0]
         waterbutler_url = utils.waterbutler_api_url_for(
+            None,
             quickfiles._id,
             'osfstorage',
             file_detail_json['attributes']['path']

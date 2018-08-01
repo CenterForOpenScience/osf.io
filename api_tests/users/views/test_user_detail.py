@@ -101,7 +101,7 @@ class TestUserDetail:
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
         waterbutler_upload = waterbutler_api_url_for(
-            quickfiles._id, 'osfstorage')
+            None, quickfiles._id, 'osfstorage')
 
         assert upload_url == waterbutler_upload
 

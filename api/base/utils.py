@@ -194,9 +194,11 @@ def is_deprecated(request_version, min_version=None, max_version=None):
     return False
 
 
-def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
+def waterbutler_api_url_for(waterbutler_url, node_id, provider, path='/', _internal=False, **kwargs):
     assert path.startswith('/'), 'Path must always start with /'
-    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
+    if provider != 'osfstorage':
+        waterbutler_url = None
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (waterbutler_url or website_settings.WATERBUTLER_URL))
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)

@@ -344,7 +344,8 @@ class TestAddonLogs(OsfTestCase):
     def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
-        wb_url = settings.WATERBUTLER_URL + '?version=1'
+        base_url = self.node.osfstorage_region.waterbutler_url
+        wb_url = base_url + '?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',
                                                    'nid': self.node._id},
