@@ -6,7 +6,7 @@ import importlib
 import json
 import logging
 import os
-import thread
+import _thread
 from collections import OrderedDict
 
 import django

@@ -100,6 +100,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     :return: Wrapped view function
 
     """
+    renderer_kwargs = renderer_kwargs or {}
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         if session:
@@ -107,9 +108,10 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         else:
             session_error_code = None
         if session_error_code:
+            renderer_kwargs = renderer_kwargs or {}
             return renderer(
                 HTTPError(session_error_code),
-                **renderer_kwargs or {}
+                **renderer_kwargs
             )
         try:
             if renderer_kwargs:
@@ -127,7 +129,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
                 http.INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
-        return renderer(data, **renderer_kwargs or {})
+        return renderer(data, **renderer_kwargs)
     return wrapped
 
 
@@ -362,7 +364,7 @@ class JSONRenderer(Renderer):
                 try:
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
-                    return unicode(obj)
+                    return str(obj)
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
@@ -512,7 +514,7 @@ class WebRenderer(Renderer):
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
