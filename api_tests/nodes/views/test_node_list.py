@@ -17,6 +17,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     RegionFactory
 )
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
@@ -143,7 +144,7 @@ class TestNodeList:
     def test_node_list_embed_region(self, app, url, public_project):
         res = app.get('{}?embed=region'.format(url))
         assert res.status_code == 200
-        assert res.json['data'][0]['embeds']['region']['data']['id'] == 'us-east-1'
+        assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
 
 
 @pytest.mark.django_db
