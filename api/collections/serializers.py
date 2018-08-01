@@ -121,7 +121,7 @@ class CollectionSerializer(JSONAPISerializer):
         """
         assert isinstance(collection, Collection), 'collection must be a Collection'
         if validated_data:
-            for key, value in validated_data.iteritems():
+            for key, value in validated_data.items():
                 if key == 'title' and collection.is_bookmark_collection:
                     raise InvalidModelValueError('Bookmark collections cannot be renamed.')
                 setattr(collection, key, value)

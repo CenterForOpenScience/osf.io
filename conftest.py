@@ -87,20 +87,20 @@ _MOCKS = {
 def _test_speedups():
     mocks = {}
 
-    for target, config in _MOCKS.items():
+    for target, config in list(_MOCKS.items()):
         mocks[target] = mock.patch(target, config['replacement'])
         mocks[target].start()
 
     yield mocks
 
-    for patcher in mocks.values():
+    for patcher in list(mocks.values()):
         patcher.stop()
 
 
 @pytest.fixture(autouse=True)
 def _test_speedups_disable(request, settings, _test_speedups):
     patchers = []
-    for target, config in _MOCKS.items():
+    for target, config in list(_MOCKS.items()):
         if not request.node.get_marker(config['mark']):
             continue
         patchers.append(_test_speedups[target])

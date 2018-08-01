@@ -21,6 +21,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 from website import settings
 from website.util import api_v2_url
+from functools import reduce
 
 
 class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
@@ -213,7 +214,7 @@ class PreprintProvider(AbstractProvider):
         dirty_fields = self.get_dirty_fields()
         old_id = dirty_fields.get('_id', None)
         if old_id:
-            for permission_type in GROUPS.keys():
+            for permission_type in list(GROUPS.keys()):
                 Group.objects.filter(
                     name=GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
                 ).update(

@@ -257,7 +257,7 @@ def generate_file_tree(nodes):
         selected = select_files_from_tree(file_tree)
         selected_file_node_index.update({
             sha256: n._id
-            for sha256 in selected.keys()
+            for sha256 in list(selected.keys())
         })
         selected_files.update(selected)  # select files from each Node
     return file_trees, selected_files, selected_file_node_index
@@ -270,7 +270,7 @@ def generate_schema_from_data(data):
                 'type': 'object',
                 'properties': [
                     from_property(pid, sp)
-                    for pid, sp in prop['value'].items()
+                    for pid, sp in list(prop['value'].items())
                 ]
             }
         else:
@@ -290,7 +290,7 @@ def generate_schema_from_data(data):
                 'type': 'object',
                 'properties': [
                     from_property(id, value)
-                    for id, value in question.get('value').items()
+                    for id, value in list(question.get('value').items())
                 ]
             }
         else:
@@ -308,7 +308,7 @@ def generate_schema_from_data(data):
             'id': 'page1',
             'questions': [
                 from_question(qid, q)
-                for qid, q in data.items()
+                for qid, q in list(data.items())
             ]
         }]
     }
@@ -346,7 +346,7 @@ def generate_metadata(file_trees, selected_files, node_index):
                 'nodeId': node_index[sha256]
             }]
         }
-        for sha256, selected_file in selected_files.items()
+        for sha256, selected_file in list(selected_files.items())
     }
     data.update(uploader_types)
     object_types = {
@@ -369,7 +369,7 @@ def generate_metadata(file_trees, selected_files, node_index):
                 }
             }
         }
-        for sha256, selected_file in selected_files.items()
+        for sha256, selected_file in list(selected_files.items())
     }
     data.update(object_types)
     other_questions = {
@@ -582,10 +582,10 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
                 registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
+                for key, question in list(registration.registered_meta[schema._id].items()):
                     target = None
                     if isinstance(question.get('value'), dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
+                        target = [v for v in list(question['value'].values()) if 'extra' in v and 'sha256' in v['extra'][0]][0]
                     elif 'extra' in question and 'hashes' in question['extra'][0]:
                         target = question
                     if target:
@@ -626,7 +626,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
                 registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
+                for key, question in list(registration.registered_meta[schema._id].items()):
                     assert_equal(question['extra'][0]['selectedFileName'], fake_file_name)
 
     def test_archive_success_with_deeply_nested_schema(self):
@@ -642,7 +642,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
                 }]
             }
-            for sha256, selected_file in selected_files.items()
+            for sha256, selected_file in list(selected_files.items())
         }
         schema = generate_schema_from_data(data)
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
@@ -650,10 +650,10 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
                 registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
+                for key, question in list(registration.registered_meta[schema._id].items()):
                     target = None
                     if isinstance(question['value'], dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
+                        target = [v for v in list(question['value'].values()) if 'extra' in v and 'sha256' in v['extra'][0]][0]
                     elif 'extra' in question and 'sha256' in question['extra'][0]:
                         target = question
                     if target:
@@ -688,10 +688,10 @@ class TestArchiverTasks(ArchiverTestCase):
 
             registration.reload()
 
-            for key, question in registration.registered_meta[schema._id].items():
+            for key, question in list(registration.registered_meta[schema._id].items()):
                 target = None
                 if isinstance(question['value'], dict):
-                    target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]]
+                    target = [v for v in list(question['value'].values()) if 'extra' in v and 'sha256' in v['extra'][0]]
                 elif 'extra' in question and 'sha256' in question['extra']:
                     target = question
 
@@ -739,7 +739,7 @@ class TestArchiverTasks(ArchiverTestCase):
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
-                for key, question in registration.registered_meta[schema._id].items():
+                for key, question in list(registration.registered_meta[schema._id].items()):
                     assert_equal(question['extra'][0]['selectedFileName'], fake_file['name'])
 
     def test_archive_failure_different_name_same_sha(self):
@@ -776,7 +776,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_success_same_file_in_component(self):
         file_tree = file_tree_factory(3, 3, 3)
-        selected = select_files_from_tree(file_tree).values()[0]
+        selected = list(select_files_from_tree(file_tree).values())[0]
 
         child_file_tree = file_tree_factory(0, 0, 0)
         child_file_tree['children'] = [selected]
@@ -806,7 +806,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 archive_success(registration._id, job._id)
                 registration.reload()
                 child_reg = registration.nodes[0]
-                for key, question in registration.registered_meta[schema._id].items():
+                for key, question in list(registration.registered_meta[schema._id].items()):
                     assert_in(child_reg._id, question['extra'][0]['viewUrl'])
 
 

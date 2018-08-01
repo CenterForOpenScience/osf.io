@@ -398,8 +398,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the Bitbucket add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the Bitbucket add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
@@ -409,7 +409,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

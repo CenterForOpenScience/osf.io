@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import os
-import httplib
+import http.client
 import logging
 import functools
 
@@ -64,7 +64,7 @@ def serialize_revision(node, record, version, index, anon=False):
 
 
 SIGNED_REQUEST_ERROR = HTTPError(
-    httplib.SERVICE_UNAVAILABLE,
+    http.client.SERVICE_UNAVAILABLE,
     data={
         'message_short': 'Upload service unavailable',
         'message_long': (
@@ -85,7 +85,7 @@ def get_filename(version_idx, file_version, file_record):
     if version_idx == len(file_record.versions):
         return file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return u'{name}-{date}{ext}'.format(
+    return '{name}-{date}{ext}'.format(
         name=name,
         date=file_version.created.isoformat(),
         ext=ext,

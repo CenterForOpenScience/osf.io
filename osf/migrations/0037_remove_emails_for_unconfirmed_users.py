@@ -3,7 +3,7 @@
 """Removes Email objects that associated with unconfirmed users. These
 were incorrectly created in 0033_user_emails_to_fk.
 """
-from __future__ import unicode_literals
+
 
 from django.db import migrations
 

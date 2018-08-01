@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.django_db
 def test_factory():
     inst = InstitutionFactory()
-    assert isinstance(inst.name, basestring)
+    assert isinstance(inst.name, str)
     assert len(inst.domains) > 0
     assert len(inst.email_domains) > 0
 

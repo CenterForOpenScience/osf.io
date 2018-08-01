@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import urlparse
+import urllib.parse
 import logging
 
 from dirtyfields import DirtyFieldsMixin
@@ -105,7 +105,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(
+        return urllib.parse.urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
             self.url
         )
@@ -233,8 +233,8 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
             if not isinstance(request, DummyRequest):
                 request_headers = {
                     k: v
-                    for k, v in get_headers_from_request(request).items()
-                    if isinstance(v, basestring)
+                    for k, v in list(get_headers_from_request(request).items())
+                    if isinstance(v, str)
                 }
             user = OSFUser.load(user_id)
             if user:
@@ -255,7 +255,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         for field in spam_fields:
             content.append((getattr(self.node, field, None) or '').encode('utf-8'))
         if self.node.all_tags.exists():
-            content.extend(map(lambda name: name.encode('utf-8'), self.node.all_tags.values_list('name', flat=True)))
+            content.extend([name.encode('utf-8') for name in self.node.all_tags.values_list('name', flat=True)])
         if not content:
             return None
         return ' '.join(content)

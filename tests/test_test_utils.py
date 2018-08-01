@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
-from urlparse import urlparse
+from urllib.parse import urlparse
 from nose.tools import *  # flake8: noqa
 import unittest
 

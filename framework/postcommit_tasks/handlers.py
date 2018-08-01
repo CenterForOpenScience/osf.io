@@ -40,17 +40,17 @@ def postcommit_after_request(response, base_status_error_code=500):
         if postcommit_queue():
             number_of_threads = 30  # one db connection per greenlet, let's share
             pool = Pool(number_of_threads)
-            for func in postcommit_queue().values():
+            for func in list(postcommit_queue().values()):
                 pool.spawn(func)
             pool.join(timeout=5.0, raise_error=True)  # 5 second timeout and reraise exceptions
 
         if postcommit_celery_queue():
             if settings.USE_CELERY:
-                for task_dict in postcommit_celery_queue().values():
+                for task_dict in list(postcommit_celery_queue().values()):
                     task = Signature.from_dict(task_dict)
                     task.apply_async()
             else:
-                for task in postcommit_celery_queue().values():
+                for task in list(postcommit_celery_queue().values()):
                     task()
 
     except AttributeError as ex:
@@ -60,7 +60,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
 def get_task_from_postcommit_queue(name, predicate, celery=True):
     queue = postcommit_celery_queue() if celery else postcommit_queue()
-    matches = [task for key, task in queue.iteritems() if task.type.name == name and predicate(task)]
+    matches = [task for key, task in queue.items() if task.type.name == name and predicate(task)]
     if len(matches) == 1:
         return matches[0]
     elif len(matches) > 1:

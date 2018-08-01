@@ -1,8 +1,8 @@
 import hmac
 import uuid
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hashlib
-import httplib as http
+import http.client as http
 
 from framework.exceptions import HTTPError
 from addons.base.exceptions import HookError
@@ -46,7 +46,7 @@ def verify_hook_signature(node_settings, data, headers):
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return urllib.parse.unquote_plus(path)
     elif required:
         raise HTTPError(http.BAD_REQUEST)
 

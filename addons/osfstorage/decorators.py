@@ -1,4 +1,4 @@
-import httplib
+import http.client
 import functools
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -21,11 +21,11 @@ def handle_django_errors(func):
         try:
             return func(*args, **kwargs)
         except ObjectDoesNotExist:
-            raise HTTPError(httplib.NOT_FOUND)
+            raise HTTPError(http.client.NOT_FOUND)
         except IntegrityError:
-            raise HTTPError(httplib.CONFLICT)
+            raise HTTPError(http.client.CONFLICT)
         except exceptions.VersionNotFoundError:
-            raise HTTPError(httplib.NOT_FOUND)
+            raise HTTPError(http.client.NOT_FOUND)
     return wrapped
 
 def autoload_filenode(must_be=None, default_root=False):
@@ -46,7 +46,7 @@ def autoload_filenode(must_be=None, default_root=False):
                 file_node = OsfStorageFileNode.get(kwargs.get('fid'), node)
 
             if must_be and file_node.kind != must_be:
-                raise HTTPError(httplib.BAD_REQUEST, data={
+                raise HTTPError(http.client.BAD_REQUEST, data={
                     'message_short': 'incorrect type',
                     'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
                 })
@@ -80,7 +80,7 @@ def waterbutler_opt_hook(func):
                 'name': payload['destination']['name'],
             })
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http.client.BAD_REQUEST)
 
         return func(*args, **kwargs)
     return wrapped

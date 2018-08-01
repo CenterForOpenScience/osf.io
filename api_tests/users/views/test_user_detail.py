@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+import urllib.parse
 import datetime as dt
 
 from django.db import connection, transaction
@@ -84,8 +84,8 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         profile_image_url = user_json['links']['profile_image']
-        query_dict = urlparse.parse_qs(
-            urlparse.urlparse(profile_image_url).query)
+        query_dict = urllib.parse.parse_qs(
+            urllib.parse.urlparse(profile_image_url).query)
         assert int(query_dict.get('s')[0]) == size
 
     #   test_profile_image_in_links
@@ -125,7 +125,7 @@ class TestUserDetail:
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
-        assert 'node' not in res.json['data']['relationships'].keys()
+        assert 'node' not in list(res.json['data']['relationships'].keys())
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-8966
     def test_browsable_api_for_user_detail(self, app, user_one):
@@ -991,7 +991,7 @@ class TestDeactivatedUser:
         assert res.json['errors'][0]['meta']['given_name'] == user_one.given_name
         assert res.json['errors'][0]['meta']['middle_names'] == user_one.middle_names
         assert res.json['errors'][0]['meta']['full_name'] == user_one.fullname
-        assert urlparse.urlparse(
+        assert urllib.parse.urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
 
@@ -1103,7 +1103,7 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        print res.json['errors'][0]
+        print(res.json['errors'][0])
         assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
 
     def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):

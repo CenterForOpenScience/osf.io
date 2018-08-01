@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import httplib as http
+import http.client as http
 import logging
 import time
 

@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 import json
 import requests
@@ -207,7 +207,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                 }
         else:
             response_data = {
-                'message': 'There is a problem with the form. Here are some details: ' + unicode(provider_form.errors),
+                'message': 'There is a problem with the form. Here are some details: ' + str(provider_form.errors),
                 'feedback_type': 'error'
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
@@ -221,7 +221,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         data = serializers.serialize('json', [preprint_provider])
         cleaned_data = json.loads(data)[0]
-        cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+        cleaned_fields = {key: value for key, value in cleaned_data['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = preprint_provider.default_license.license_id if preprint_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
@@ -287,7 +287,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             file_json = json.loads(file_str)
             current_fields = [f.name for f in PreprintProvider._meta.get_fields()]
             # make sure not to import an exported access token for SHARE
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
+            cleaned_result = {key: value for key, value in file_json['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
             preprint_provider = self.create_or_update_provider(cleaned_result)
             return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
@@ -312,7 +312,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         subject_data = provider_data.pop('subjects', False)
 
         if provider:
-            for key, val in provider_data.iteritems():
+            for key, val in provider_data.items():
                 setattr(provider, key, val)
         else:
             provider = PreprintProvider(**provider_data)

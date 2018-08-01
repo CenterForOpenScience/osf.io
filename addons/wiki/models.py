@@ -156,8 +156,8 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
+                for k, v in list(get_headers_from_request(request).items())
+                if isinstance(v, str)
             }
         user = OSFUser.load(user_id)
         if user:
@@ -230,7 +230,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def url(self):
-        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
     def create_version(self, user, content):
         version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
@@ -261,7 +261,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def deep_url(self):
-        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     def clone_wiki_page(self, copy, user, save=True):
         """Clone a wiki page.
@@ -333,11 +333,11 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def deep_url(self):
-        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     @property
     def url(self):
-        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def rendered_before_update(self):

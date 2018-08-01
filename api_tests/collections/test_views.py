@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.utils.timezone import now
 
@@ -1506,7 +1506,7 @@ class TestCollectionNodeLinkDetail:
         # test_can_not_delete_collection_public_node_link_unauthenticated
         res = app.delete(url_node_link_public, expect_errors=True)
         assert res.status_code == 401
-        assert 'detail' in res.json['errors'][0].keys()
+        assert 'detail' in list(res.json['errors'][0].keys())
 
         # test_can_not_delete_collection_public_node_pointer_unauthorized
         node_count_before = collection.guid_links.count()

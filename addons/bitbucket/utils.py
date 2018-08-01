@@ -1,5 +1,5 @@
-import urllib
-import httplib as http
+import urllib.request, urllib.parse, urllib.error
+import http.client as http
 
 from framework.exceptions import HTTPError
 
@@ -9,7 +9,7 @@ from addons.bitbucket.api import BitbucketClient
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return urllib.parse.unquote_plus(path)
     elif required:
         raise HTTPError(http.BAD_REQUEST)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+import http.client as http
 
 from framework.exceptions import HTTPError
 from osf.models import NodeLog
@@ -25,7 +25,7 @@ def node_identifiers_post(auth, node, **kwargs):
         identifiers = get_or_create_identifiers(node)
     except HTTPError:
         raise HTTPError(http.BAD_REQUEST)
-    for category, value in identifiers.iteritems():
+    for category, value in identifiers.items():
         node.set_identifier_value(category, value)
     node.add_log(
         NodeLog.EXTERNAL_IDS_ADDED,

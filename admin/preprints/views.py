@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 from django.views.generic import ListView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -84,7 +84,7 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'preprints': map(serialize_preprint, query_set),
+            'preprints': list(map(serialize_preprint, query_set)),
             'page': page,
         }
 
@@ -96,7 +96,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
         if not request.user.has_perm('auth.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
         preprint_ids = [
-            pid for pid in request.POST.keys()
+            pid for pid in list(request.POST.keys())
             if pid != 'csrfmiddlewaretoken'
         ]
         for pid in preprint_ids:

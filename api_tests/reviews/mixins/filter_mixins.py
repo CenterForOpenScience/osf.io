@@ -15,7 +15,7 @@ from osf_tests.factories import (
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
     url = furl(url)
-    for k, v in filters.items():
+    for k, v in list(filters.items()):
         url.args['filter[{}]'.format(k)] = v
     if sort is not None:
         url.args['sort'] = sort

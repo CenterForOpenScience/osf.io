@@ -236,7 +236,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
-            nt.assert_not_in(field, content_dict['fields'].keys())
+            nt.assert_not_in(field, list(content_dict['fields'].keys()))
 
     def test_export_to_import_new_provider(self):
         update_taxonomies('test_bepress_taxonomy.json')
@@ -246,7 +246,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(str(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
@@ -273,7 +273,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
 
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(str(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
@@ -302,7 +302,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         content_dict['fields']['subjects'] = json.dumps(new_subject_data)
         content_dict['fields']['licenses_acceptable'] = ['CCBY']
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(str(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)

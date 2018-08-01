@@ -1,6 +1,6 @@
 import mock
 import pytest
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
@@ -176,8 +176,8 @@ class TestResolveGuid(OsfTestCase):
 
         pp.primary_file.create_version(
             creator=pp.node.creator,
-            location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
-            metadata={u'contentType': u'img/png', u'size': 9001}
+            location={'folder': 'osf', 'object': 'deadbe', 'service': 'cloud'},
+            metadata={'contentType': 'img/png', 'size': 9001}
         )
         pp.primary_file.save()
 
@@ -297,34 +297,34 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get(pp.url + 'download/?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         pp.primary_file.create_version(
             creator=pp.node.creator,
-            location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
-            metadata={u'contentType': u'img/png', u'size': 9001}
+            location={'folder': 'osf', 'object': 'deadbe', 'service': 'cloud'},
+            metadata={'contentType': 'img/png', 'size': 9001}
         )
         pp.primary_file.save()
 
         res = self.app.get(pp.url + 'download/?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D2' in quarams
@@ -333,7 +333,7 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download/?format=asdf&version=1')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.parse.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D1' in quarams
@@ -344,7 +344,7 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 302
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), unpub_pp.node._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.parse.quote(WATERBUTLER_URL), unpub_pp.node._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D1' in quarams

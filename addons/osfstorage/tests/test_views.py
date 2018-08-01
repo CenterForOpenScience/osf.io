@@ -1,5 +1,5 @@
 # encoding: utf-8
-from __future__ import unicode_literals
+
 
 import json
 import mock
@@ -67,7 +67,7 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.json, [])
 
     def test_file_metdata(self):
-        path = u'kind/of/magíc.mp3'
+        path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
         record.versions.add(version)
@@ -81,7 +81,7 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.json, record.parent.serialize(True))
 
     def test_children_metadata(self):
-        path = u'kind/of/magíc.mp3'
+        path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
         record.versions.add(version)

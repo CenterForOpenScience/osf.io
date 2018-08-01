@@ -4,7 +4,7 @@
 #   2. It may need to be ran more than once. (Unlikely, but possible).
 #   3. A reverse migration isn't possible without making a back-up table.
 
-from __future__ import unicode_literals
+
 import logging
 
 from django.core.management.base import BaseCommand

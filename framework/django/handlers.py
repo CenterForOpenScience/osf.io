@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 import logging
 
 from django.db import close_old_connections, reset_queries

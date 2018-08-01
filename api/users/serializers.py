@@ -139,9 +139,9 @@ class UserSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
-        for attr, value in validated_data.items():
+        for attr, value in list(validated_data.items()):
             if 'social' == attr:
-                for key, val in value.items():
+                for key, val in list(value.items()):
                     # currently only profileWebsites are a list, the rest of the social key only has one value
                     if key == 'profileWebsites':
                         instance.social[key] = val

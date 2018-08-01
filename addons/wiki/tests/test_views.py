@@ -235,7 +235,7 @@ class TestRenameNodeWiki(OsfTestCase):
                 self.project.rename_node_wiki(*args, auth=self.auth)
 
     def test_rename_page_not_found(self):
-        for args in [('abc123', 'New Home'), (u'ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
+        for args in [('abc123', 'New Home'), ('ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
             with pytest.raises(PageNotFoundError):
                 self.project.rename_node_wiki(*args, auth=self.auth)
 

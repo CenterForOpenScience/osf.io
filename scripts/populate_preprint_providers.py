@@ -50,19 +50,16 @@ def update_or_create(provider_data):
     default_license = provider_data.pop('default_license', False)
 
     if provider:
-        provider_data['subjects_acceptable'] = map(
-            lambda rule: (map(get_subject_id, rule[0]), rule[1]),
-            provider_data['subjects_acceptable']
-        )
+        provider_data['subjects_acceptable'] = [(list(map(get_subject_id, rule[0])), rule[1]) for rule in provider_data['subjects_acceptable']]
         if licenses:
             provider.licenses_acceptable.add(*licenses)
         if default_license:
             provider.default_license = get_license(default_license)
-        for key, val in provider_data.iteritems():
+        for key, val in provider_data.items():
             setattr(provider, key, val)
         changed_fields = provider.save()
         if changed_fields:
-            print('Updated {}: {}'.format(provider.name, changed_fields))
+            print(('Updated {}: {}'.format(provider.name, changed_fields)))
         return provider, False
     else:
         new_provider = PreprintProvider(**provider_data)
@@ -73,7 +70,7 @@ def update_or_create(provider_data):
             new_provider.default_license = get_license(default_license)
             new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
-        print('Added new preprint provider: {}'.format(provider._id))
+        print(('Added new preprint provider: {}'.format(provider._id)))
         return new_provider, True
 
 
@@ -1254,6 +1251,6 @@ if __name__ == '__main__':
     if not env:
         env = 'prod'
     elif env not in ENVS:
-        print('A specified environment must be one of: {}'.format(ENVS))
+        print(('A specified environment must be one of: {}'.format(ENVS)))
         sys.exit(1)
     main(env)

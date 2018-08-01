@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
+
 import datetime as dt
 import mock
-import httplib as http
+import http.client as http
 import pytz
 from django.utils import timezone
 
@@ -107,8 +107,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
-            u'registration_choice': unicode(self.embargo_payload['registrationChoice']),
-            u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
+            'registration_choice': str(self.embargo_payload['registrationChoice']),
+            'embargo_end_date': str(self.embargo_payload['embargoEndDate'])
         })
 
     def test_submit_draft_for_review_invalid_registrationChoice(self):

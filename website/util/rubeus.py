@@ -33,8 +33,8 @@ DEFAULT_PERMISSIONS = {
 
 def default_urls(node_api, short_name):
     return {
-        'fetch': u'{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': u'{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
+        'fetch': '{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
+        'upload': '{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
     }
 
 
@@ -73,7 +73,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):
-        name = u'{0}: {1}'.format(node_settings.config.full_name, name)
+        name = '{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
@@ -288,7 +288,7 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
 
     """
     js = []
-    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
+    for addon_config in list(settings.ADDONS_AVAILABLE_DICT.values()):
         # JS modules configured in each addon's __init__ file
         js.extend(addon_config.include_js.get(config_entry, []))
         # Webpack bundle
@@ -305,7 +305,7 @@ def collect_addon_css(node, visited=None):
     :rtype: list
     """
     css = []
-    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
+    for addon_config in list(settings.ADDONS_AVAILABLE_DICT.values()):
         # CSS modules configured in each addon's __init__ file
         css.extend(addon_config.include_css.get('files', []))
     return css

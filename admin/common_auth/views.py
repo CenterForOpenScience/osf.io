@@ -1,4 +1,4 @@
-from __future__ import absolute_import, unicode_literals
+
 
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import Http404

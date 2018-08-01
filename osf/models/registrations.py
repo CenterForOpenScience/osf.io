@@ -1,6 +1,6 @@
 import logging
 import datetime
-import urlparse
+import urllib.parse
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -484,7 +484,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema = meta_schema.schema
             flags = schema.get('flags', {})
             dirty = False
-            for flag, value in flags.iteritems():
+            for flag, value in flags.items():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
                     dirty = True
@@ -505,7 +505,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urllib.parse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -565,7 +565,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         changes = []
         # Prevent comments on approved drafts
         if not self.is_approved:
-            for question_id, value in metadata.iteritems():
+            for question_id, value in metadata.items():
                 old_value = self.registration_metadata.get(question_id)
                 if old_value:
                     old_comments = {
@@ -578,7 +578,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                     }
                     old_comments.update(new_comments)
                     metadata[question_id]['comments'] = sorted(
-                        old_comments.values(),
+                        list(old_comments.values()),
                         key=lambda c: c['created']
                     )
                     if old_value.get('value') != value.get('value'):

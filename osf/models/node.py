@@ -2,7 +2,7 @@ import functools
 import itertools
 import logging
 import re
-import urlparse
+import urllib.parse
 import warnings
 import markupsafe
 
@@ -136,7 +136,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, basestring):
+            if not isinstance(private_link, str):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -285,7 +285,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
-                                choices=CATEGORY_MAP.items(),
+                                choices=list(CATEGORY_MAP.items()),
                                 blank=True,
                                 default='')
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -381,7 +381,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         filter_kwargs = {}
         if 'is_node_link' in kwargs:
             filter_kwargs['is_node_link'] = kwargs.pop('is_node_link')
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             filter_kwargs['child__{}'.format(key)] = val
         node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
                         .select_related('child')
@@ -538,7 +538,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def absolute_url(self):
         if not self.url:
             return None
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urllib.parse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def deep_url(self):
@@ -860,7 +860,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         try:
             contributor = self.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
-            raise ValueError(u'User {0} not in contributors'.format(user))
+            raise ValueError('User {0} not in contributors'.format(user))
         return contributor.visible
 
     def has_permission(self, user, permission, check_parent=True):
@@ -1141,7 +1141,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
-            raise ValueError(u'User {0} not in contributors'.format(user))
+            raise ValueError('User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
             Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
@@ -2090,7 +2090,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.description = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -2330,7 +2330,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save_node_preprints()
 
         with transaction.atomic():
-            if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+            if to_remove or permissions_changed and ['read'] in list(permissions_changed.values()):
                 project_signals.write_permissions_revoked.send(self)
 
     # TODO: optimize me
@@ -2372,7 +2372,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     save=save
                 )
                 with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
+                    if ['read'] in list(permissions_changed.values()):
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
@@ -2408,10 +2408,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
-        if 'old_subjects' in kwargs.keys():
+        if 'old_subjects' in list(kwargs.keys()):
             # TODO: send this data to SHARE
             kwargs.pop('old_subjects')
-        if 'suppress_log' in kwargs.keys():
+        if 'suppress_log' in list(kwargs.keys()):
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
         else:
@@ -2452,8 +2452,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
+                for k, v in list(get_headers_from_request(request).items())
+                if isinstance(v, str)
             }
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
@@ -2651,7 +2651,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':

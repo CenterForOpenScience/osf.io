@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 import functools
 import jwt
 from flask import request

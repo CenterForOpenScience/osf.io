@@ -77,7 +77,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
-        for attr, value in validated_data.iteritems():
+        for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance

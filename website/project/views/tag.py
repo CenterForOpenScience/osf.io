@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 
 from flask import request
 from django.core.exceptions import ValidationError

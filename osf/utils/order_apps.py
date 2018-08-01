@@ -14,7 +14,7 @@ def sort_dependencies(app_list):
     # Process the list of models, and get the list of dependencies
     model_dependencies = []
     models = set()
-    for app_label, model_list in app_list.iteritems():
+    for app_label, model_list in app_list.items():
         if model_list is None:
             model_list = apps.get_app_config(app_label).models
 
@@ -89,12 +89,12 @@ def get_ordered_models():
 
     model_mapping = OrderedDict()
 
-    for app_label, model_tuples in all_models.iteritems():
+    for app_label, model_tuples in all_models.items():
         # short circuit, we only get osf apps for now
         if not ('osf' in app_label or 'addons' in app_label):
             continue
-        for model_name, model_class in model_tuples.iteritems():
-            if app_label not in model_mapping.keys():
+        for model_name, model_class in model_tuples.items():
+            if app_label not in list(model_mapping.keys()):
                 model_mapping[app_label] = []
             model_mapping[app_label].append(model_class)
 

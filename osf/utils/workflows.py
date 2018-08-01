@@ -1,6 +1,6 @@
 
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from enum import Enum
 from enum import unique
@@ -9,7 +9,7 @@ from enum import unique
 class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
-        return tuple((v, unicode(v).title()) for v in cls.values())
+        return tuple((v, str(v).title()) for v in list(cls.values()))
 
     @classmethod
     def values(cls):

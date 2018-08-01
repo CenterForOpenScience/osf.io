@@ -77,7 +77,7 @@ class TestWikiContentView(ApiWikiTestCase):
         self._set_up_public_registration_with_wiki_page()
         withdrawal = self.public_registration.retract_registration(
             user=self.user, save=True)
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         withdrawal.approve_retraction(self.user, token)
         withdrawal.save()
         res = self.app.get(

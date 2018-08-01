@@ -3,7 +3,7 @@
 #   1. It makes no changes to database structure (e.g. AlterField), only database content.
 #   2. It may need to be ran more than once, as it skips failed registrations.
 
-from __future__ import unicode_literals
+
 from datetime import timedelta
 import logging
 

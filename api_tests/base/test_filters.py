@@ -166,7 +166,7 @@ class TestFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         start = parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
         stop = start + datetime.timedelta(days=1)
-        for key, field_name in fields.iteritems():
+        for key, field_name in fields.items():
             for match in field_name['date_field']:
                 if match['op'] == 'gte':
                     assert_equal(match['value'], start)
@@ -181,7 +181,7 @@ class TestFilterMixin(ApiTestCase):
             'filter[int_field][lte]': 9000
         }
         fields = self.view.parse_query_params(query_params)
-        for key, field_name in fields.iteritems():
+        for key, field_name in fields.items():
             if field_name['int_field']['op'] == 'gt':
                 assert_equal(field_name['int_field']['value'], 42)
             elif field_name['int_field']['op'] == 'lte':
@@ -195,7 +195,7 @@ class TestFilterMixin(ApiTestCase):
             'filter[string_field][icontains]': 'bar'
         }
         fields = self.view.parse_query_params(query_params)
-        for key, field_name in fields.iteritems():
+        for key, field_name in fields.items():
             if field_name['string_field']['op'] == 'contains':
                 assert_equal(field_name['string_field']['value'], 'foo')
             elif field_name['string_field']['op'] == 'icontains':
@@ -264,7 +264,7 @@ class TestFilterMixin(ApiTestCase):
         # FIXME: This test may only be checking one field
         fields = self.view.parse_query_params(query_params)
         assert_in('string_field', fields.get('filter[string_field]'))
-        for key, field_name in fields.iteritems():
+        for key, field_name in fields.items():
             assert_in(field_name['string_field']['value'], ('foo', 'bar'))
 
     def test_convert_value_bool(self):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urlparse
+import urllib.parse
 
 from django.db import models
 import markupsafe
@@ -337,8 +337,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the GitLab add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the GitLab add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
@@ -348,7 +348,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -406,7 +406,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 self.user, self.repo,
                 'web',
                 {
-                    'url': urlparse.urljoin(
+                    'url': urllib.parse.urljoin(
                         hook_domain,
                         os.path.join(
                             self.owner.api_url, 'gitlab', 'hook/'

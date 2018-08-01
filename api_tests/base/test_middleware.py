@@ -3,7 +3,7 @@ import pytest
 
 from django.http import HttpResponse
 
-from urlparse import urlparse
+from urllib.parse import urlparse
 import mock
 from nose.tools import *  # flake8: noqa
 from rest_framework.test import APIRequestFactory

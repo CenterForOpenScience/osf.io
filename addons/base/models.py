@@ -200,7 +200,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             self.oauth_grants[node._id][external_account._id] = {}
 
         # update the metadata with the supplied values
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             self.oauth_grants[node._id][external_account._id][key] = value
 
         self.save()
@@ -264,7 +264,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             return False
 
         # Verify every key/value pair is in the grants dict
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             if key not in grants or grants[key] != value:
                 return False
 
@@ -272,9 +272,9 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        for node_id, grants in self.oauth_grants.iteritems():
+        for node_id, grants in self.oauth_grants.items():
             node = AbstractNode.load(node_id)
-            if external_account._id in grants.keys() and not node.is_deleted:
+            if external_account._id in list(grants.keys()) and not node.is_deleted:
                 yield node
 
     def get_attached_nodes(self, external_account):
@@ -294,11 +294,11 @@ class BaseOAuthUserSettings(BaseUserSettings):
         if user_settings.__class__ is not self.__class__:
             raise TypeError('Cannot merge different addons')
 
-        for node_id, data in user_settings.oauth_grants.iteritems():
+        for node_id, data in user_settings.oauth_grants.items():
             if node_id not in self.oauth_grants:
                 self.oauth_grants[node_id] = data
             else:
-                node_grants = user_settings.oauth_grants[node_id].iteritems()
+                node_grants = iter(user_settings.oauth_grants[node_id].items())
                 for ext_acct, meta in node_grants:
                     if ext_acct not in self.oauth_grants[node_id]:
                         self.oauth_grants[node_id][ext_acct] = meta
@@ -339,7 +339,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
         super(BaseOAuthUserSettings, self).on_delete()
-        nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
+        nodes = [AbstractNode.load(node_id) for node_id in list(self.oauth_grants.keys())]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
             if node_addon and node_addon.user_settings == self:
@@ -453,9 +453,9 @@ class BaseNodeSettings(BaseAddonSettings):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the {addon} add-on, your authentication will not be '
-                    u'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    'Because you have not configured the {addon} add-on, your authentication will not be '
+                    'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
+                    'in the new fork on the settings page.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -463,19 +463,19 @@ class BaseNodeSettings(BaseAddonSettings):
 
             elif self.user_settings and self.user_settings.owner == user:
                 return (
-                    u'Because you have authorized the {addon} add-on for this '
-                    u'{category}, forking it will also transfer your authentication to '
-                    u'the forked {category}.'
+                    'Because you have authorized the {addon} add-on for this '
+                    '{category}, forking it will also transfer your authentication to '
+                    'the forked {category}.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
                 )
             else:
                 return (
-                    u'Because the {addon} add-on has been authorized by a different '
-                    u'user, forking it will not transfer authentication to the forked '
-                    u'{category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    'Because the {addon} add-on has been authorized by a different '
+                    'user, forking it will not transfer authentication to the forked '
+                    '{category}. You may authorize and configure the {addon} add-on '
+                    'in the new fork on the settings page.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -756,9 +756,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         """
         if self.has_auth and self.user_settings.owner == removed:
             return (
-                u'The {addon} add-on for this {category} is authenticated by {name}. '
-                u'Removing this user will also remove write access to {addon} '
-                u'unless another contributor re-authenticates the add-on.'
+                'The {addon} add-on for this {category} is authenticated by {name}. '
+                'Removing this user will also remove write access to {addon} '
+                'unless another contributor re-authenticates the add-on.'
             ).format(
                 addon=self.config.full_name,
                 category=node.project_or_component,
@@ -779,8 +779,8 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             self.user_settings.save()
             self.clear_auth()
             message = (
-                u'Because the {addon} add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the {addon} add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 addon=self.config.full_name,
                 category=markupsafe.escape(node.category_display),
@@ -791,7 +791,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_addons')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -828,9 +828,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         """
         if self.has_auth:
             return (
-                u'The contents of {addon} add-ons cannot be registered at this time; '
-                u'the {addon} add-on linked to this {category} will not be included '
-                u'as part of this registration.'
+                'The contents of {addon} add-ons cannot be registered at this time; '
+                'the {addon} add-on linked to this {category} will not be included '
+                'as part of this registration.'
             ).format(
                 addon=self.config.full_name,
                 category=node.project_or_component,

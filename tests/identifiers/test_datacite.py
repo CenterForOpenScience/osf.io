@@ -108,8 +108,8 @@ class TestDataCiteClient:
     def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
-        visible_contrib2.given_name = u'ヽ༼ ಠ益ಠ ༽ﾉ'
-        visible_contrib2.family_name = u'ლ(´◉❥◉｀ლ)'
+        visible_contrib2.given_name = 'ヽ༼ ಠ益ಠ ༽ﾉ'
+        visible_contrib2.family_name = 'ლ(´◉❥◉｀ლ)'
         visible_contrib2.save()
         invisible_contrib = AuthUserFactory()
         invisible_contrib.given_name = 'Shady'
@@ -124,12 +124,12 @@ class TestDataCiteClient:
 
         metadata_xml = datacite_client.build_metadata(registration)
         # includes visible contrib name
-        assert u'<givenName>{}</givenName>'.format(visible_contrib.given_name) in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(visible_contrib.family_name) in metadata_xml
+        assert '<givenName>{}</givenName>'.format(visible_contrib.given_name) in metadata_xml
+        assert '<familyName>{}</familyName>'.format(visible_contrib.family_name) in metadata_xml
 
         # doesn't include invisible contrib name
-        assert u'<givenName>{}</givenName>'.format(invisible_contrib.given_name) not in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(invisible_contrib.family_name) not in metadata_xml
+        assert '<givenName>{}</givenName>'.format(invisible_contrib.given_name) not in metadata_xml
+        assert '<familyName>{}</familyName>'.format(invisible_contrib.family_name) not in metadata_xml
 
 
 @pytest.mark.django_db

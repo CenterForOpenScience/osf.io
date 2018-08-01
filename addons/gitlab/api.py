@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import requests
 
 import gitlab
@@ -128,12 +128,12 @@ class GitLabClient(object):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urllib.parse.urlencode({
         key: value
         for key, value in {
             'branch': branch,
             'sha': sha,
-        }.iteritems()
+        }.items()
         if value
     })
     if params:

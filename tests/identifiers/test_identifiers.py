@@ -27,7 +27,7 @@ class TestMetadataGeneration(OsfTestCase):
     def setUp(self):
         OsfTestCase.setUp(self)
         self.visible_contrib = AuthUserFactory()
-        visible_contrib2 = AuthUserFactory(given_name=u'ヽ༼ ಠ益ಠ ༽ﾉ', family_name=u'ლ(´◉❥◉｀ლ)')
+        visible_contrib2 = AuthUserFactory(given_name='ヽ༼ ಠ益ಠ ༽ﾉ', family_name='ლ(´◉❥◉｀ლ)')
         self.invisible_contrib = AuthUserFactory()
         self.node = RegistrationFactory(is_public=True)
         self.identifier = Identifier(referent=self.node, category='catid', value='cat:7')
@@ -98,7 +98,7 @@ class TestMetadataGeneration(OsfTestCase):
         contributors_with_orcids = 0
         guid_identifiers = []
         for creator_xml in formatted_creators:
-            assert creator_xml.find('creatorName').text != u'{}, {}'.format(self.invisible_contrib.family_name, self.invisible_contrib.given_name)
+            assert creator_xml.find('creatorName').text != '{}, {}'.format(self.invisible_contrib.family_name, self.invisible_contrib.given_name)
 
             name_identifiers = creator_xml.findall('nameIdentifier')
 

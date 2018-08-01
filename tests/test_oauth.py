@@ -1,9 +1,9 @@
 from datetime import datetime
-import httplib as http
+import http.client as http
 import logging
 import json
 import time
-import urlparse
+import urllib.parse
 
 import responses
 from nose.tools import *  # noqa
@@ -357,8 +357,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urllib.parse.urlparse(url)
+            params = urllib.parse.parse_qs(parsed.query)
 
             # check parameters
             assert_equal(

@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 """Views tests for the OSF."""
 
-from __future__ import absolute_import
+
 
 import datetime as dt
-import httplib as http
+import http.client as http
 import json
 import time
 import unittest
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from flask import request
 import mock
@@ -1099,7 +1099,7 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        for key, value in payload.iteritems():
+        for key, value in payload.items():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
@@ -2534,7 +2534,7 @@ class TestClaimViews(OsfTestCase):
 
         assert_not_in(
             self.project._primary_key,
-            self.user.unclaimed_records.keys()
+            list(self.user.unclaimed_records.keys())
         )
 
     def test_user_with_claim_url_cannot_claim_twice(self):
@@ -2547,7 +2547,7 @@ class TestClaimViews(OsfTestCase):
 
         assert_not_in(
             self.project._primary_key,
-            self.user.unclaimed_records.keys()
+            list(self.user.unclaimed_records.keys())
         )
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
@@ -2604,7 +2604,7 @@ class TestClaimViews(OsfTestCase):
         self.user.add_unclaimed_record(p2, referrer=self.referrer,
                                        given_name=fake.name())
         self.user.save()
-        assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
+        assert_true(len(list(self.user.unclaimed_records.keys())) > 1)  # sanity check
         url = self.user.get_claim_url(self.project._primary_key)
         self.app.post(url, {
             'username': self.given_email,
@@ -2733,7 +2733,7 @@ class TestPointerViews(OsfTestCase):
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        for i in xrange(3):
+        for i in range(3):
             self.project.add_pointer(ProjectFactory(creator=self.user),
                                      auth=Auth(user=self.user))
         self.project.save()
@@ -3449,7 +3449,7 @@ class TestAuthViews(OsfTestCase):
 
     def test_add_invalid_email(self):
         # Do not return expired token and removes it from user.email_verifications
-        email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
+        email = '\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
         # illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
         # illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
         # email = 'test@mail.com'
@@ -3526,7 +3526,7 @@ class TestAuthViews(OsfTestCase):
         unclaimed_user.save()
 
         # sanity check
-        assert_equal(len(unclaimed_user.email_verifications.keys()), 1)
+        assert_equal(len(list(unclaimed_user.email_verifications.keys())), 1)
 
         # user goes to email confirmation link
         token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
@@ -3537,7 +3537,7 @@ class TestAuthViews(OsfTestCase):
         # unclaimed records and token are cleared
         unclaimed_user.reload()
         assert_equal(unclaimed_user.unclaimed_records, {})
-        assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
+        assert_equal(len(list(unclaimed_user.email_verifications.keys())), 0)
 
     def test_confirmation_link_registers_user(self):
         user = OSFUser.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
@@ -4057,7 +4057,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_get_notifications(self):
         user = AuthUserFactory()
-        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        mailing_lists = dict(list(user.osf_mailing_lists.items()) + list(user.mailchimp_mailing_lists.items()))
         url = api_url_for('user_notifications')
         res = self.app.get(url, auth=user.auth)
         assert_equal(mailing_lists, res.json['mailing_lists'])
@@ -4377,7 +4377,7 @@ class TestProjectCreation(OsfTestCase):
 
     def test_title_must_be_less_than_200(self):
         payload = {
-            'title': ''.join([str(x) for x in xrange(0, 250)])
+            'title': ''.join([str(x) for x in range(0, 250)])
         }
         res = self.app.post_json(
             self.url, payload, auth=self.creator.auth, expect_errors=True)
@@ -4740,7 +4740,7 @@ class TestResetPassword(OsfTestCase):
         assert_equal(res.status_code, 302)
         location = res.headers.get('Location')
         assert_true('login?service=' in location)
-        assert_true('username={}'.format(urllib.quote(self.user.username, safe='@')) in location)
+        assert_true('username={}'.format(urllib.parse.quote(self.user.username, safe='@')) in location)
         assert_true('verification_key={}'.format(self.user.verification_key) in location)
 
         # check if password was updated

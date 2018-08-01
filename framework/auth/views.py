@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
-import httplib as http
-import urllib
+import http.client as http
+import urllib.request, urllib.parse, urllib.error
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -514,8 +514,8 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
-    provider = verification['external_identity'].keys()[0]
-    provider_id = verification['external_identity'][provider].keys()[0]
+    provider = list(verification['external_identity'].keys())[0]
+    provider_id = list(verification['external_identity'][provider].keys())[0]
     # wrong provider
     if provider not in user.external_identity:
         raise HTTPError(http.BAD_REQUEST)
@@ -549,7 +549,7 @@ def external_login_confirm_email_get(auth, uid, token):
             user=user,
             osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
-        service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
+        service_url += '&{}'.format(urllib.parse.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
             user=user,

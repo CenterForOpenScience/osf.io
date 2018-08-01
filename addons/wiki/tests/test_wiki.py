@@ -3,7 +3,7 @@
 
 # PEP8 asserts
 from copy import deepcopy
-import httplib as http
+import http.client as http
 import time
 import mock
 import pytest
@@ -37,8 +37,8 @@ from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 pytestmark = pytest.mark.django_db
 
 # forward slashes are not allowed, typically they would be replaced with spaces
-SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
-SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
+SPECIAL_CHARACTERS_ALL = '`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
+SPECIAL_CHARACTERS_ALLOWED = '`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
 @pytest.mark.enable_bookmark_creation
 class TestWikiViews(OsfTestCase):
@@ -213,7 +213,7 @@ class TestWikiViews(OsfTestCase):
     def test_project_wiki_edit_post_with_non_ascii_title(self):
         # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
         # wname doesn't exist in the db, so it will be created
-        new_wname = u'øˆ∆´ƒøßå√ß'
+        new_wname = 'øˆ∆´ƒøßå√ß'
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
         res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
@@ -347,7 +347,7 @@ class TestWikiViews(OsfTestCase):
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
-        text = u'你好'
+        text = '你好'
         self.project.update_node_wiki('home', text, Auth(self.user))
 
         # can view wiki preview from project dashboard
@@ -596,7 +596,7 @@ class TestWikiRename(OsfTestCase):
         )
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
-    def test_rename_wiki_page_valid(self, mock_sharejs, new_name=u'away'):
+    def test_rename_wiki_page_valid(self, mock_sharejs, new_name='away'):
         self.app.put_json(
             self.url,
             {'value': new_name},
@@ -613,7 +613,7 @@ class TestWikiRename(OsfTestCase):
         assert_equal(new_wiki.content, self.page.content)
         assert_equal(new_wiki.identifier, self.page.identifier)
 
-    def test_rename_wiki_page_invalid(self, new_name=u'invalid/name'):
+    def test_rename_wiki_page_invalid(self, new_name='invalid/name'):
         res = self.app.put_json(
             self.url,
             {'value': new_name},
@@ -706,15 +706,15 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_with_valid_html(self):
         # script is not an issue since data is sanitized via bleach or mako before display.
-        self.test_rename_wiki_page_valid(new_name=u'<html>hello<html>')
+        self.test_rename_wiki_page_valid(new_name='<html>hello<html>')
 
     def test_rename_wiki_page_with_invalid_html(self):
         # script is not an issue since data is sanitized via bleach or mako before display.
         # with that said routes still do not accept forward slashes
-        self.test_rename_wiki_page_invalid(new_name=u'<html>hello</html>')
+        self.test_rename_wiki_page_invalid(new_name='<html>hello</html>')
 
     def test_rename_wiki_page_with_non_ascii_title(self):
-        self.test_rename_wiki_page_valid(new_name=u'øˆ∆´ƒøßå√ß')
+        self.test_rename_wiki_page_valid(new_name='øˆ∆´ƒøßå√ß')
 
     def test_rename_wiki_page_with_valid_special_character_title(self):
         self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS_ALLOWED)
@@ -743,7 +743,7 @@ class TestWikiLinks(OsfTestCase):
 
     # Regression test for https://sentry.osf.io/osf/production/group/310/
     def test_bad_links(self):
-        content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
+        content = '<span></span><iframe src="http://httpbin.org/"></iframe>'
         user = AuthUserFactory()
         node = ProjectFactory()
         wiki_page = WikiFactory(

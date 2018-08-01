@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import time
 import unittest
@@ -475,7 +475,7 @@ class TestRegistrationRetractions(OsfTestCase):
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -506,7 +506,7 @@ class TestRegistrationRetractions(OsfTestCase):
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -679,7 +679,7 @@ class TestPublicNodes(OsfTestCase):
             'home': 'Hammer to fall',
             'swag': '#YOLO'
         }
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -767,8 +767,8 @@ class TestAddContributor(OsfTestCase):
     def setUp(self):
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
-        self.name3 = u'j\xc3\xb3ebert3 Smith3'
-        self.name4 = u'B\xc3\xb3bbert4 Jones4'
+        self.name3 = 'j\xc3\xb3ebert3 Smith3'
+        self.name4 = 'B\xc3\xb3bbert4 Jones4'
 
         with run_celery_tasks():
             super(TestAddContributor, self).setUp()
@@ -1052,28 +1052,28 @@ class TestSearchMigration(OsfTestCase):
     def test_first_migration_no_remove(self):
         migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_remove(self):
-        for n in xrange(1, 21):
+        for n in range(1, 21):
             migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_remove(self):
         migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_remove(self):
-        for n in xrange(1, 21, 2):
+        for n in range(1, 21, 2):
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
     def test_migration_institutions(self):
@@ -1089,7 +1089,7 @@ class TestSearchMigration(OsfTestCase):
         institution_bucket_found = False
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
         for bucket in res['aggregations']['counts']['buckets']:
-            if bucket['key'] == u'institution':
+            if bucket['key'] == 'institution':
                 institution_bucket_found = True
 
         assert_equal(institution_bucket_found, True)

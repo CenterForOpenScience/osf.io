@@ -377,7 +377,7 @@ class TestAdminNodeLogView(AdminTestCase):
 
         log_entry = logs.first()
         nt.assert_true(log_entry.action == 'edit_title')
-        nt.assert_true(log_entry.params['title_new'] == u'New Title')
+        nt.assert_true(log_entry.params['title_new'] == 'New Title')
 
     def test_get_context_data(self):
 
@@ -390,8 +390,8 @@ class TestAdminNodeLogView(AdminTestCase):
         log_entry = logs[0][0]
         log_params = logs[0][1]
         nt.assert_true(log_entry.action == NodeLog.EDITED_TITLE)
-        nt.assert_true((u'title_new', u'New Title') in log_params)
-        nt.assert_true((u'node', self.node._id) in log_params)
+        nt.assert_true(('title_new', 'New Title') in log_params)
+        nt.assert_true(('node', self.node._id) in log_params)
 
     def test_get_logs_for_children(self):
         """ The "create component" action is actually logged as a create_project action
@@ -436,7 +436,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+        nt.assert_equal(self.registration.archive_job.status, 'INITIATED')
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -446,7 +446,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view.post(self.request)
 
-        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
+        nt.assert_equal(self.registration.archive_job.status, 'SUCCESS')
 
 
 class TestRemoveStuckRegistrationsView(AdminTestCase):

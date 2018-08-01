@@ -120,7 +120,7 @@ def email_template_for_campaign(campaign):
 
 def campaign_for_user(user):
     campaigns = get_campaigns()
-    for campaign, config in campaigns.items():
+    for campaign, config in list(campaigns.items()):
         if config.get('system_tag') in user.system_tags:
             return campaign
     return None
@@ -196,7 +196,7 @@ def get_external_domains():
 
     campaigns = get_campaigns()
     external_domains = []
-    for campaign, config in campaigns.items():
+    for campaign, config in list(campaigns.items()):
         external_url = config.get('external_url', None)
         if external_url:
             external_domains.append(external_url)

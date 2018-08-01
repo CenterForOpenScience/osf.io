@@ -3,7 +3,7 @@
 
 import os
 from types import NoneType
-from xmlrpclib import DateTime
+from xmlrpc.client import DateTime
 
 import mock
 from nose.tools import *  # flake8: noqa

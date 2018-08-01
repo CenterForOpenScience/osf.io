@@ -197,7 +197,7 @@ class Command(shell_plus.Command):
         }
         # Import models and common django imports
         shell_plus_imports = shell_plus.Command.get_imported_objects(self, options)
-        for name, object in shell_plus_imports.items():
+        for name, object in list(shell_plus_imports.items()):
             if isinstance(object, type) and issubclass(object, Model):
                 groups['models'][name] = object
             else:
@@ -218,7 +218,7 @@ class Command(shell_plus.Command):
     def get_imported_objects(self, options):
         # Merge all the values of grouped_imports
         imported_objects = {}
-        for imports in self.grouped_imports.values():
+        for imports in list(self.grouped_imports.values()):
             imported_objects.update(imports)
         return imported_objects
 

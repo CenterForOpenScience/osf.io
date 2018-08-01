@@ -88,4 +88,4 @@ class DeskClient(object):
             case_list = self.call_get('cases/search', params)
         except DeskError:
             raise
-        return case_list[u'_embedded'][u'entries']
+        return case_list['_embedded']['entries']

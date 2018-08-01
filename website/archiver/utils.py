@@ -297,7 +297,7 @@ def migrate_file_metadata(dst, schema):
     metadata = dst.registered_meta[schema._id]
     missing_files = []
     selected_files = find_selected_files(schema, metadata)
-    for path, selected in selected_files.items():
+    for path, selected in list(selected_files.items()):
         for registration_file, node_id, index in find_registration_files(selected, dst):
             if not registration_file:
                 missing_files.append({

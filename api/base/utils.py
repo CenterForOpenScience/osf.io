@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import furl
-import urlparse
+import urllib.parse
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
@@ -79,7 +79,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     obj = query = None
     select_for_update = check_select_for_update(request)
-    if isinstance(query_or_pk, basestring):
+    if isinstance(query_or_pk, str):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name
@@ -142,14 +142,14 @@ def default_node_list_permission_queryset(user, model_cls):
     return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
 
 def extend_querystring_params(url, params):
-    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
-    orig_params = urlparse.parse_qs(query)
+    scheme, netloc, path, query, _ = urllib.parse.urlsplit(url)
+    orig_params = urllib.parse.parse_qs(query)
     orig_params.update(params)
-    query = urllib.urlencode(orig_params, True)
-    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+    query = urllib.parse.urlencode(orig_params, True)
+    return urllib.parse.urlunsplit([scheme, netloc, path, query, ''])
 
 def extend_querystring_if_key_exists(url, request, key):
-    if key in request.query_params.keys():
+    if key in list(request.query_params.keys()):
         return extend_querystring_params(url, {key: request.query_params.get(key)})
     return url
 

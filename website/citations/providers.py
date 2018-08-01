@@ -1,5 +1,5 @@
 import abc
-import httplib as http
+import http.client as http
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -72,9 +72,7 @@ class CitationsOauthProvider(ExternalProvider):
 
         return self._citations_for_folder(list_id)
 
-class CitationsProvider(object):
-
-    __metaclass__ = abc.ABCMeta
+class CitationsProvider(object, metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def serializer(self):

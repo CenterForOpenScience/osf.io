@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 from website import settings
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from api.base.serializers import (
     JSONAPISerializer,

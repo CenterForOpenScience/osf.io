@@ -51,7 +51,7 @@ def find_queued_mails_ready_to_be_sent():
     return QueuedMail.objects.filter(send_at__lt=timezone.now(), sent_at__isnull=True)
 
 def pop_and_verify_mails_for_each_user(user_queue):
-    for user_emails in user_queue.values():
+    for user_emails in list(user_queue.values()):
         mail = user_emails[0]
         mails_past_week = mail.user.queuedmail_set.filter(sent_at__gt=timezone.now() - settings.WAIT_BETWEEN_MAILS)
         if not mails_past_week.count():

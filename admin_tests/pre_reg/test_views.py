@@ -339,7 +339,7 @@ class TestPreregFiles(AdminTestCase):
             'q26': OsfStorageFileNode(node=self.node, name='26')
         }
         data = {}
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             guid = f.get_guid(create=True)._id
             f.save()
             if q == 'q26':
@@ -395,7 +395,7 @@ class TestPreregFiles(AdminTestCase):
         view = setup_user_view(view, request, self.admin_user,
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
@@ -410,7 +410,7 @@ class TestPreregFiles(AdminTestCase):
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
         view2.checkin_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -427,7 +427,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -441,7 +441,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -456,7 +456,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -515,13 +515,13 @@ class TestPreregFiles(AdminTestCase):
         nt.assert_equal(7, len(questions))
         nt.assert_list_equal(
             [
-                (u'q7', u'Data collection procedures'),
-                (u'q11', u'Manipulated variables'),
-                (u'q12', u'Measured variables'),
-                (u'q13', u'Indices'),
-                (u'q16', u'Study design'),
-                (u'q19', u'Statistical models'),
-                (u'q26', u'Upload an analysis script with clear comments')
+                ('q7', 'Data collection procedures'),
+                ('q11', 'Manipulated variables'),
+                ('q12', 'Measured variables'),
+                ('q13', 'Indices'),
+                ('q16', 'Study design'),
+                ('q19', 'Statistical models'),
+                ('q26', 'Upload an analysis script with clear comments')
             ],
             questions
         )

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-import httplib
-import httplib as http  # TODO: Inconsistent usage of aliased import
+import http.client
+import http.client as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
@@ -50,10 +50,10 @@ def validate_user(data, user):
     """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http.client.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+        raise HTTPError(http.client.BAD_REQUEST, data={'message_long': '"id" is required'})
 
 @must_be_logged_in
 def resend_confirmation(auth):
@@ -62,7 +62,7 @@ def resend_confirmation(auth):
 
     validate_user(data, user)
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST,
+        raise HTTPError(http.client.BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
@@ -70,10 +70,10 @@ def resend_confirmation(auth):
         confirmed = data['email']['confirmed']
         address = data['email']['address'].strip().lower()
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http.client.BAD_REQUEST)
 
     if primary or confirmed:
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+        raise HTTPError(http.client.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
 
     user.add_unconfirmed_email(address)
 
@@ -107,7 +107,7 @@ def update_user(auth):
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
         if user.username.strip().lower() not in emails_list:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http.client.FORBIDDEN)
 
         available_emails = [
             each.strip().lower() for each in
@@ -121,14 +121,14 @@ def update_user(auth):
         ]
 
         if user.username.strip().lower() in removed_emails:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http.client.FORBIDDEN)
 
         for address in removed_emails:
             if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
-                    raise HTTPError(httplib.FORBIDDEN, e.message)
+                    raise HTTPError(http.client.FORBIDDEN, e.message)
             user.remove_unconfirmed_email(address)
 
         # additions
@@ -172,7 +172,7 @@ def update_user(auth):
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
             if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
-                raise HTTPError(httplib.FORBIDDEN)
+                raise HTTPError(http.client.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
@@ -188,7 +188,7 @@ def update_user(auth):
             )
 
             # Remove old primary email from subscribed mailing lists
-            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
+            for list_name, subscription in user.mailchimp_mailing_lists.items():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
             user.username = username
@@ -211,7 +211,7 @@ def update_user(auth):
 
     # Update subscribed mailing lists with new primary email
     # TODO: move to user.save()
-    for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
+    for list_name, subscription in user.mailchimp_mailing_lists.items():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
@@ -348,7 +348,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
+        'mailing_lists': dict(list(auth.user.mailchimp_mailing_lists.items()) + list(auth.user.osf_mailing_lists.items()))
     }
 
 @must_be_logged_in
@@ -475,7 +475,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
-        for list_name, subscribe in json_data.items():
+        for list_name, subscribe in list(json_data.items()):
             # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
             if list_name == settings.OSF_HELP_LIST:
                 update_osf_help_mails_subscription(user=user, subscribe=subscribe)
@@ -695,7 +695,7 @@ def unserialize_social(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
-    for soc in user.SOCIAL_FIELDS.keys():
+    for soc in list(user.SOCIAL_FIELDS.keys()):
         user.social[soc] = json_data.get(soc)
 
     try:
@@ -764,7 +764,7 @@ def unserialize_schools(auth, **kwargs):
 def request_export(auth):
     user = auth.user
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST,
+        raise HTTPError(http.client.BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 

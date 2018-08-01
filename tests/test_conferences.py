@@ -5,7 +5,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from StringIO import StringIO
+from io import StringIO
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -126,7 +126,7 @@ class ContextTestCase(OsfTestCase):
         data.update(kwargs.pop('data', {}))
         data = {
             key: value
-            for key, value in data.iteritems()
+            for key, value in data.items()
             if value is not None
         }
         return self.app.app.test_request_context(method=method, data=data, **kwargs)
@@ -326,10 +326,10 @@ class TestMessage(ContextTestCase):
     def test_sender_name(self):
         names = [
             (' Fred', 'Fred'),
-            (u'Me‰¨ü', u'Me‰¨ü'),
-            (u'fred@queen.com', u'fred@queen.com'),
-            (u'Fred <fred@queen.com>', u'Fred'),
-            (u'"Fred" <fred@queen.com>', u'Fred'),
+            ('Me‰¨ü', 'Me‰¨ü'),
+            ('fred@queen.com', 'fred@queen.com'),
+            ('Fred <fred@queen.com>', 'Fred'),
+            ('"Fred" <fred@queen.com>', 'Fred'),
         ]
         for name in names:
             with self.make_context(data={'from': name[0]}):
@@ -338,8 +338,8 @@ class TestMessage(ContextTestCase):
 
     def test_sender_email(self):
         emails = [
-            (u'fred@queen.com', u'fred@queen.com'),
-            (u'FRED@queen.com', u'fred@queen.com')
+            ('fred@queen.com', 'fred@queen.com'),
+            ('FRED@queen.com', 'fred@queen.com')
         ]
         for email in emails:
             with self.make_context(data={'from': email[0]}):

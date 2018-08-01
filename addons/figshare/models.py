@@ -39,7 +39,7 @@ class FigshareFile(FigshareFileNode, File):
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
-            return (version, u'''
+            return (version, '''
             <style>
             .file-download{{display: none;}}
             .file-share{{display: none;}}
@@ -78,7 +78,7 @@ class FigshareProvider(ExternalProvider):
 
         return {
             'provider_id': about['id'],
-            'display_name': u'{} {}'.format(about['first_name'], about.get('last_name')),
+            'display_name': '{} {}'.format(about['first_name'], about.get('last_name')),
         }
 
 
@@ -108,7 +108,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self._api
 
     def fetch_folder_name(self):
-        return u'{0}:{1}'.format(self.folder_name or 'Unnamed {0}'.format(self.folder_path or ''), self.folder_id)
+        return '{0}:{1}'.format(self.folder_name or 'Unnamed {0}'.format(self.folder_path or ''), self.folder_id)
 
     def fetch_full_folder_path(self):
         return self.folder_name

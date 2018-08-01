@@ -1,8 +1,8 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -62,7 +62,7 @@ def get_default_mailing_lists():
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: u'{surname}, {initial}.'.format(
+    'initials': lambda user: '{surname}, {initial}.'.format(
         surname=user.family_name,
         initial=user.given_name_initial,
     ),
@@ -141,19 +141,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.org/{}',
-        'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citations?user={}',
-        'twitter': u'http://twitter.com/{}',
+        'orcid': 'http://orcid.org/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citations?user={}',
+        'twitter': 'http://twitter.com/{}',
         'profileWebsites': [],
-        'linkedIn': u'https://www.linkedin.com/{}',
-        'impactStory': u'https://impactstory.org/u/{}',
-        'researcherId': u'http://researcherid.com/rid/{}',
-        'researchGate': u'https://researchgate.net/profile/{}',
-        'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
-        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+        'linkedIn': 'https://www.linkedin.com/{}',
+        'impactStory': 'https://impactstory.org/u/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
+        'researchGate': 'https://researchgate.net/profile/{}',
+        'academiaInstitution': 'https://{}',
+        'academiaProfileID': '.academia.edu/{}',
+        'baiduScholar': 'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     # The primary email address for the account.
@@ -382,7 +382,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urllib.parse.urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -426,15 +426,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return [
             each['email']
             for each
-            in email_verifications.values()
+            in list(email_verifications.values())
         ]
 
     @property
     def social_links(self):
         social_user_fields = {}
-        for key, val in self.social.items():
+        for key, val in list(self.social.items()):
             if val and key in self.SOCIAL_FIELDS:
-                if not isinstance(val, basestring):
+                if not isinstance(val, str):
                     social_user_fields[key] = val
                 else:
                     social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
@@ -619,7 +619,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
         if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.iteritems():
+            for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
                 signals.user_merged.send(self, list_name=key, subscription=subscription)
@@ -627,7 +627,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # clear subscriptions for merged user
                 signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
-        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+        for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
             elif timestamp > self.comments_viewed_timestamp[target_id]:
@@ -636,7 +636,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Give old user's emails to self
         user.emails.update(user=self)
 
-        for k, v in user.email_verifications.iteritems():
+        for k, v in user.email_verifications.items():
             email_to_confirm = v['email']
             if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
@@ -645,7 +645,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
 
         for service in user.external_identity:
-            for service_id in user.external_identity[service].iterkeys():
+            for service_id in user.external_identity[service].keys():
                 if not (
                     service_id in self.external_identity.get(service, '') and
                     self.external_identity[service][service_id] == 'VERIFIED'
@@ -804,7 +804,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in list(self.external_identity.values())], [])
         )
         self.is_active = (
             self.is_registered and
@@ -927,7 +927,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         unconfirmed_emails = []
         if self.email_verifications:
-            for token, value in self.email_verifications.iteritems():
+            for token, value in self.email_verifications.items():
                 if not value.get('external_identity'):
                     unconfirmed_emails.append(value.get('email'))
         return unconfirmed_emails
@@ -1061,7 +1061,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        for token, value in self.email_verifications.iteritems():
+        for token, value in self.email_verifications.items():
             if value.get('email') == email:
                 del self.email_verifications[token]
                 return True
@@ -1087,7 +1087,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :raises: KeyError if there no token for the email.
         """
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
-        for token, info in self.email_verifications.items():
+        for token, info in list(self.email_verifications.items()):
             if info['email'].lower() == email.lower():
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired
@@ -1128,7 +1128,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urllib.parse.urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):

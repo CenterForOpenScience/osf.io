@@ -20,7 +20,7 @@ class Tag(BaseModel):
     def __unicode__(self):
         if self.system:
             return 'System Tag: {}'.format(self.name)
-        return u'{}'.format(self.name)
+        return '{}'.format(self.name)
 
     def _natural_key(self):
         return hash(self.name + str(self.system))

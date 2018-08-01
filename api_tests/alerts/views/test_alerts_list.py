@@ -1,5 +1,5 @@
 import pytest
-import httplib as http
+import http.client as http
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -22,7 +22,7 @@ class TestDismissedAlertList:
 
     @pytest.fixture(autouse=True)
     def alerts_user_one(self, user_one):
-        for i in xrange(3):
+        for i in range(3):
             DismissedAlertFactory(
                 user=user_one,
                 location='solar/eclipse{}/'.format(i),

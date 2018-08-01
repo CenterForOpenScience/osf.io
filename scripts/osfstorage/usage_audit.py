@@ -65,11 +65,12 @@ def get_usage(node):
     usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
     trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])
 
-    return map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+    return list(map(sum, list(zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary])))))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
-def limit_filter(limit, (item, usage)):
+def limit_filter(limit, xxx_todo_changeme):
     """Note: usage is a tuple(current_usage, deleted_usage)"""
+    (item, usage) = xxx_todo_changeme
     return item not in WHITE_LIST and sum(usage) >= limit
 
 
@@ -91,14 +92,14 @@ def main(send_email=False):
         projects[node._id] = get_usage(node)
         for contrib in node.contributors:
             if node.can_edit(user=contrib):
-                users[contrib._id] = tuple(map(sum, zip(users[contrib._id], projects[node._id])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+                users[contrib._id] = tuple(map(sum, list(zip(users[contrib._id], projects[node._id]))))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
         if i % 25 == 0:
             gc.collect()
     progress_bar.finish()
 
     for model, collection, limit in ((OSFUser, users, USER_LIMIT), (AbstractNode, projects, PROJECT_LIMIT)):
-        for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
+        for item, (used, deleted) in filter(functools.partial(limit_filter, limit), list(collection.items())):
             line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(model.load(item), limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
             logger.info(line)
             lines.append(line)

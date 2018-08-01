@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm
@@ -59,7 +59,7 @@ class GroupHelper(object):
         return Group.objects.get(name=self.format_group(name))
 
     def update_provider_auth_groups(self):
-        for group_name, group_permissions in GROUPS.items():
+        for group_name, group_permissions in list(GROUPS.items()):
             group, created = Group.objects.get_or_create(name=self.format_group(group_name))
             to_remove = set(get_perms(group, self.provider)).difference(group_permissions)
             for p in to_remove:

@@ -377,7 +377,7 @@ mock_folders = {
            "selfLink": "https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE",
            "alternateLink": "https://docs.google.com/folderview?id=0B8IkoNBph4qJeU9OSWQtaUNwbFE&usp=drivesdk",
            "iconLink": "https://ssl.gstatic.com/docs/doclist/images/icon_11_collection_list.png",
-           "title": u"Новая папка",  # Google drive actually sends back in unicode, this will work without the u".."
+           "title": "Новая папка",  # Google drive actually sends back in unicode, this will work without the u".."
            "mimeType": "application/vnd.google-apps.folder",
            "labels": {
             "starred": False,

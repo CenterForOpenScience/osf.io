@@ -6,7 +6,7 @@ from osf_tests.factories import (
     ProjectFactory,
     PrivateLinkFactory,
 )
-from test_log_detail import LogsTestCase
+from .test_log_detail import LogsTestCase
 
 # TODO add tests for other log params
 

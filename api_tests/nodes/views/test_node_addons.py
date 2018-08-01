@@ -743,11 +743,11 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'test name/test',
-                u'kind': u'repo',
-                u'name': u'test',
-                u'provider': u'github',
-                u'id': u'12345'}
+        return {'path': 'test name/test',
+                'kind': 'repo',
+                'name': 'test',
+                'provider': 'github',
+                'id': '12345'}
 
 
 class TestNodeMendeleyAddon(
@@ -839,11 +839,11 @@ class TestNodeZoteroAddon(
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'18497322',
-                u'kind': u'library',
-                u'name': u'Group Library I',
-                u'provider': u'zotero',
-                u'id': u'18497322'}
+        return {'path': '18497322',
+                'kind': 'library',
+                'name': 'Group Library I',
+                'provider': 'zotero',
+                'id': '18497322'}
 
     @mock.patch('addons.zotero.models.Zotero._get_folders')
     def test_sub_folder_list_GET_expected_behavior(self, mock_folders):

@@ -150,16 +150,16 @@ def create_mock_published_file(id='54321'):
 
 mock_responses = {
     'contents': {
-        u'kind': u'item',
-        u'name': u'file.txt',
-        u'ext': u'.txt',
-        u'file_id': u'54321',
-        u'urls': {u'download': u'/project/xxxxx/dataverse/file/54321/download/',
-                 u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
-                 u'view': u'/project/xxxxx/dataverse/file/54321/'},
-        u'permissions': {u'edit': False, u'view': True},
-        u'addon': u'dataverse',
-        u'hasPublishedFiles': True,
-        u'state': 'published',
+        'kind': 'item',
+        'name': 'file.txt',
+        'ext': '.txt',
+        'file_id': '54321',
+        'urls': {'download': '/project/xxxxx/dataverse/file/54321/download/',
+                 'delete': '/api/v1/project/xxxxx/dataverse/file/54321/',
+                 'view': '/project/xxxxx/dataverse/file/54321/'},
+        'permissions': {'edit': False, 'view': True},
+        'addon': 'dataverse',
+        'hasPublishedFiles': True,
+        'state': 'published',
     }
 }

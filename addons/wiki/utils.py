@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import uuid
 
 import ssl
@@ -20,7 +20,7 @@ mongo_map = {
 }
 
 def to_mongo(item):
-    for key, value in mongo_map.items():
+    for key, value in list(mongo_map.items()):
         item = item.replace(key, value)
     return item
 
@@ -130,7 +130,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data
     )
 
     if action == 'redirect' or action == 'delete':
-        redirect_url = urllib.quote(
+        redirect_url = urllib.parse.quote(
             node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )
@@ -246,7 +246,7 @@ def serialize_wiki_widget(node):
 
     wiki_widget_data = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': str(wiki_html) if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'rendered_before_update': rendered_before_update,
         'more': more,

@@ -3,7 +3,7 @@
 import os
 import json
 import datetime as dt
-import urlparse
+import urllib.parse
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
@@ -92,7 +92,7 @@ class TestOSFUser:
             username=email, password='foobar', fullname=name
         )
         assert user.is_registered is False
-        assert len(user.email_verifications.keys()) == 1
+        assert len(list(user.email_verifications.keys())) == 1
         assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_unconfirmed_with_campaign(self):
@@ -118,7 +118,7 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is False
-        assert len(user.email_verifications.keys()) == 1
+        assert len(list(user.email_verifications.keys())) == 1
         assert user.email_verifications.popitem()[1]['external_identity'] == external_identity
         assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
@@ -343,7 +343,7 @@ class TestOSFUser:
         confirmed = u.confirm_email(token)
         u.save()
         assert bool(confirmed) is True
-        assert len(u.email_verifications.keys()) == 0
+        assert len(list(u.email_verifications.keys())) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
         assert bool(u.is_claimed) is True
@@ -448,7 +448,7 @@ class TestOSFUser:
     def test_absolute_url(self, user):
         assert(
             user.absolute_url ==
-            urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
+            urllib.parse.urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
 
     def test_profile_image_url(self, user):
@@ -481,7 +481,7 @@ class TestOSFUser:
                                          user,
                                          use_ssl=True)
         assert user.profile_image_url() == expected
-        size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
+        size = urllib.parse.parse_qs(urllib.parse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None
 
     def test_activity_points(self, user):
@@ -781,7 +781,7 @@ class TestIsActive:
                 date_confirmed=timezone.now(),
             )
             user.set_password('secret')
-            for attr, value in attrs.items():
+            for attr, value in list(attrs.items()):
                 setattr(user, attr, value)
             return user
         return func
@@ -835,9 +835,9 @@ class TestAddUnconfirmedEmail:
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        assert len(u.email_verifications.keys()) == 0
+        assert len(list(u.email_verifications.keys())) == 0
         u.add_unconfirmed_email('foo@bar.com')
-        assert len(u.email_verifications.keys()) == 1
+        assert len(list(u.email_verifications.keys())) == 1
         assert u.email_verifications[token]['email'] == 'foo@bar.com'
 
     @mock.patch('website.security.random_string')
@@ -909,7 +909,7 @@ class TestUnregisteredUser:
         assert bool(u.username) is True
         assert bool(u.fullname) is True
         assert bool(u.password) is True
-        assert len(u.email_verifications.keys()) == 1
+        assert len(list(u.email_verifications.keys())) == 1
 
     def test_add_unclaimed_record(self, unreg_user, unreg_moderator, email, referrer, provider, project):
         # test_unreg_contrib
@@ -1712,7 +1712,7 @@ class TestUserMerging(OsfTestCase):
         self.user.reload()
 
         # check each field/value pair
-        for k, v in expected.iteritems():
+        for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
                 assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
@@ -1749,7 +1749,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.password[0] == '!'
         assert self.unconfirmed.verification_key is None
         # The mergee's email no longer needs to be confirmed by merger
-        unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
+        unconfirmed_emails = [record['email'] for record in list(self.user.email_verifications.values())]
         assert unconfirmed_username not in unconfirmed_emails
 
     def test_merge_preserves_external_identity(self):
@@ -1836,7 +1836,7 @@ class TestUserValidation(OsfTestCase):
                 assert self.user.social['profileWebsites'] == [should_pass]
             except ValidationError:
                 fails_at_end = True
-                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
+                print(('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass]))
 
         for should_fail in data['testsNegative']:
             self.user.social = {'profileWebsites': [should_fail]}
@@ -1845,7 +1845,7 @@ class TestUserValidation(OsfTestCase):
                     self.user.save()
             except AssertionError:
                 fails_at_end = True
-                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
+                print(('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail]))
         if fails_at_end:
             raise
 

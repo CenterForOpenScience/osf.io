@@ -1,5 +1,5 @@
 from datetime import timedelta
-import httplib as http
+import http.client as http
 
 from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -21,7 +21,7 @@ def set_preprint_providers():
         'psyarxiv': 'PsyArXiv',
     }
 
-    for key, value in providers.items():
+    for key, value in list(providers.items()):
         provider = factories.PreprintProviderFactory()
         provider._id = key
         provider.name = value
@@ -175,43 +175,43 @@ class TestCampaignsAuthViews(OsfTestCase):
                 'title_landing': 'The Election Research Preacceptance Competition is Now Closed'
             },
         }
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             value.update({'url_login': web_url_for('auth_login', campaign=key)})
             value.update({'url_register': web_url_for('auth_register', campaign=key)})
             value.update({'url_landing': campaigns.campaign_url_for(key)})
         self.user = factories.AuthUserFactory()
 
     def test_campaign_register_view_logged_in(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_register'], auth=self.user.auth)
             assert_equal(resp.status_code, http.FOUND)
             assert_equal(value['url_landing'], resp.headers['Location'])
 
     def test_campaign_register_view_logged_out(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_register'])
             assert_equal(resp.status_code, http.OK)
             assert_in(value['title_register'], resp)
 
     def test_campaign_login_logged_in(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_login'], auth=self.user.auth)
             assert_equal(resp.status_code, http.FOUND)
             assert_in(value['url_landing'], resp.headers['Location'])
 
     def test_campaign_login_logged_out(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_login'])
             assert_equal(resp.status_code, http.FOUND)
             assert_in(value['url_register'], resp.headers['Location'])
 
     def test_campaign_landing_logged_in(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_landing'], auth=self.user.auth)
             assert_equal(resp.status_code, http.OK)
 
     def test_auth_prereg_landing_page_logged_out(self):
-        for key, value in self.campaigns.items():
+        for key, value in list(self.campaigns.items()):
             resp = self.app.get(value['url_landing'])
             assert_equal(resp.status_code, http.OK)
 
@@ -223,7 +223,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
         super(TestRegistrationThroughCampaigns, self).setUp()
 
     def test_confirm_email_get_with_campaign(self):
-        for key, value in campaigns.CAMPAIGNS.items():
+        for key, value in list(campaigns.CAMPAIGNS.items()):
             user = factories.UnconfirmedUserFactory()
             user.add_system_tag(value.get('system_tag'))
             user.save()

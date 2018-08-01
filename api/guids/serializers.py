@@ -1,4 +1,4 @@
-import urlparse
+import urllib.parse
 
 from django.urls import resolve, reverse
 
@@ -71,7 +71,7 @@ class GuidSerializer(JSONAPISerializer):
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, BaseFileNode):
             return obj.referent.absolute_url
-        return urlparse.urljoin(website_settings.DOMAIN, '/{}/'.format(obj._id))
+        return urllib.parse.urljoin(website_settings.DOMAIN, '/{}/'.format(obj._id))
 
     def to_representation(self, obj):
         if self.context['view'].kwargs.get('is_embedded'):
@@ -81,6 +81,6 @@ class GuidSerializer(JSONAPISerializer):
                 get_related_view(obj),
                 kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')}
             )).func.cls.serializer_class()
-            [ser.context.update({k: v}) for k, v in self.context.iteritems()]
+            [ser.context.update({k: v}) for k, v in self.context.items()]
             return ser.to_representation(obj)
         return super(GuidSerializer, self).to_representation(obj)

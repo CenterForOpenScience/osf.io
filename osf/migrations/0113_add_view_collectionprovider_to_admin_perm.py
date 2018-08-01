@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 import logging
 
 from django.core.management.sql import emit_post_migrate_signal

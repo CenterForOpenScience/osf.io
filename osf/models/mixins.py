@@ -194,10 +194,10 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        return filter(None, [
+        return [_f for _f in [
             self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
-        ])
+        ] if _f]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().
@@ -272,7 +272,7 @@ class AddonModelMixin(models.Model):
         :param dict config: Mapping between add-on names and enabled / disabled
             statuses
         """
-        for addon_name, enabled in config.iteritems():
+        for addon_name, enabled in config.items():
             if enabled:
                 self.add_addon(addon_name, auth)
             else:
@@ -693,7 +693,7 @@ class GuardianMixin(models.Model):
         return Group.objects.get(name=self.format_group(name))
 
     def update_group_permissions(self):
-        for group_name, group_permissions in self.groups.items():
+        for group_name, group_permissions in list(self.groups.items()):
             group, created = Group.objects.get_or_create(name=self.format_group(group_name))
             to_remove = set(get_perms(group, self)).difference(group_permissions)
             for p in to_remove:

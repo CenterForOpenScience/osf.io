@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from settings import ADMIN_BASE
+from .settings import ADMIN_BASE
 
 from . import views
 

@@ -62,7 +62,7 @@ EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with you
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = u'The email {email} has already been registered.'
+ALREADY_REGISTERED = 'The email {email} has already been registered.'
 
 BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, please report this to {}.'.format(settings.OSF_SUPPORT_EMAIL)
 
@@ -92,7 +92,7 @@ LOGOUT = '''
 You have successfully logged out.
 '''
 
-EMAIL_NOT_FOUND = u'''
+EMAIL_NOT_FOUND = '''
 {email} was not found in our records.
 '''
 
@@ -127,10 +127,10 @@ MERGE_COMPLETE = 'Accounts successfully merged.'
 MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
 
 MERGE_CONFIRMATION_REQUIRED_LONG = (
-    u'<p>This email is confirmed to another account. '
-    u'Would you like to merge <em>{src_user}</em> with the account '
-    u'<em>{dest_user}</em>?<p>'
-    u'<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
+    '<p>This email is confirmed to another account. '
+    'Would you like to merge <em>{src_user}</em> with the account '
+    '<em>{dest_user}</em>?<p>'
+    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
@@ -141,18 +141,18 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. These links will be '
-    u'copied into your registration, but the projects that they link to will '
-    u'not be registered. If you wish to register the linked projects, they '
-    u'must be registered separately. Learn more about <a href="http://help.osf.io'
-    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
+    'This {category} contains links to other projects. These links will be '
+    'copied into your registration, but the projects that they link to will '
+    'not be registered. If you wish to register the linked projects, they '
+    'must be registered separately. Learn more about <a href="http://help.osf.io'
+    '/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your fork, but the projects that they link to will not be forked. '
-    u'If you wish to fork the linked projects, they need to be forked from the '
-    u'original project.'
+    'This {category} contains links to other projects. Links will be copied '
+    'into your fork, but the projects that they link to will not be forked. '
+    'If you wish to fork the linked projects, they need to be forked from the '
+    'original project.'
 )
 
 REGISTRATION_INFO = '''
@@ -230,13 +230,13 @@ TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = u"Contact " + settings.OSF_SUPPORT_EMAIL + u"for further assistance."
+SUPPORT = "Contact " + settings.OSF_SUPPORT_EMAIL + "for further assistance."
 
 SUPPORT_LINK = 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'
 
 # Custom Error Messages w/ support  # TODO: Where are these used? See [#OSF-6101]
-STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
-BLANK_OR_CORRUPT_TABLE_ERROR = u'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
+STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
+BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
 
 #disk saving mode
 DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'

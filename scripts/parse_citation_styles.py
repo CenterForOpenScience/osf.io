@@ -77,4 +77,4 @@ def get_style_files(path):
 
 if __name__ == '__main__':
     total = main()
-    print("Parsed {} styles".format(total))
+    print(("Parsed {} styles".format(total)))

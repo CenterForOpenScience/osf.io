@@ -41,8 +41,8 @@ class FileEvent(Event):
         """Most basic html message"""
         f_type, action = self.action.split('_')
         if self.payload['metadata']['materialized'].endswith('/'):
-            f_type = u'folder'
-        return u'{action} {f_type} "<b>{name}</b>".'.format(
+            f_type = 'folder'
+        return '{action} {f_type} "<b>{name}</b>".'.format(
             action=markupsafe.escape(action),
             f_type=markupsafe.escape(f_type),
             name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
@@ -53,8 +53,8 @@ class FileEvent(Event):
         """Most basic message without html tags. For future use."""
         f_type, action = self.action.split('_')
         if self.payload['metadata']['materialized'].endswith('/'):
-            f_type = u'folder'
-        return u'{action} {f_type} "{name}".'.format(
+            f_type = 'folder'
+        return '{action} {f_type} "{name}".'.format(
             action=action,
             f_type=f_type,
             name=self.payload['metadata']['materialized'].lstrip('/')
@@ -88,7 +88,7 @@ class FileAdded(FileEvent):
 
     @property
     def event_type(self):
-        return u'{}_file_updated'.format(self.waterbutler_id)
+        return '{}_file_updated'.format(self.waterbutler_id)
 
 
 @register(NodeLog.FILE_UPDATED)
@@ -97,7 +97,7 @@ class FileUpdated(FileEvent):
 
     @property
     def event_type(self):
-        return u'{}_file_updated'.format(self.waterbutler_id)
+        return '{}_file_updated'.format(self.waterbutler_id)
 
 
 @register(NodeLog.FILE_REMOVED)
@@ -123,7 +123,7 @@ class ComplexFileEvent(FileEvent):
     def _build_message(self, html=False):
         addon, f_type, action = tuple(self.action.split('_'))
         # f_type is always file for the action
-        if self.payload['destination']['kind'] == u'folder':
+        if self.payload['destination']['kind'] == 'folder':
             f_type = 'folder'
 
         destination_name = self.payload['destination']['materialized'].lstrip('/')
@@ -131,9 +131,9 @@ class ComplexFileEvent(FileEvent):
 
         if html:
             return (
-                u'{action} {f_type} "<b>{source_name}</b>" '
-                u'from {source_addon} in {source_node_title} '
-                u'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
+                '{action} {f_type} "<b>{source_name}</b>" '
+                'from {source_addon} in {source_node_title} '
+                'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
             ).format(
                 action=markupsafe.escape(action),
                 f_type=markupsafe.escape(f_type),
@@ -145,9 +145,9 @@ class ComplexFileEvent(FileEvent):
                 dest_node_title=markupsafe.escape(self.payload['destination']['node']['title']),
             )
         return (
-            u'{action} {f_type} "{source_name}" '
-            u'from {source_addon} in {source_node_title} '
-            u'to "{dest_name}" in {dest_addon} in {dest_node_title}.'
+            '{action} {f_type} "{source_name}" '
+            'from {source_addon} in {source_node_title} '
+            'to "{dest_name}" in {dest_addon} in {dest_node_title}.'
         ).format(
             action=action,
             f_type=f_type,
@@ -173,10 +173,10 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def event_type(self):
-        if self.payload['destination']['kind'] != u'folder':
-            return u'{}_file_updated'.format(self.waterbutler_id)  # file
+        if self.payload['destination']['kind'] != 'folder':
+            return '{}_file_updated'.format(self.waterbutler_id)  # file
 
-        return u'file_updated'  # folder
+        return 'file_updated'  # folder
 
     @property
     def source_url(self):
@@ -192,7 +192,7 @@ class AddonFileRenamed(ComplexFileEvent):
 
     @property
     def html_message(self):
-        return u'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
+        return 'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
             kind=markupsafe.escape(self.payload['destination']['kind']),
             source_name=markupsafe.escape(self.payload['source']['materialized']),
             destination_name=markupsafe.escape(self.payload['destination']['materialized']),
@@ -200,7 +200,7 @@ class AddonFileRenamed(ComplexFileEvent):
 
     @property
     def text_message(self):
-        return u'renamed {kind} "{source_name}" to "{destination_name}".'.format(
+        return 'renamed {kind} "{source_name}" to "{destination_name}".'.format(
             kind=self.payload['destination']['kind'],
             source_name=self.payload['source']['materialized'],
             destination_name=self.payload['destination']['materialized'],
@@ -228,12 +228,12 @@ class AddonFileMoved(ComplexFileEvent):
             super(AddonFileMoved, self).perform()
             return
         # File
-        if self.payload['destination']['kind'] != u'folder':
+        if self.payload['destination']['kind'] != 'folder':
             moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
                                                                  self.event_type, self.node)
-            warn_message = u'{} You are no longer tracking that file based on the settings you selected for the component.'.format(self.html_message)
-            remove_message = (u'{} Your subscription has been removed'
-                              u' due to insufficient permissions in the new component.').format(self.html_message)
+            warn_message = '{} You are no longer tracking that file based on the settings you selected for the component.'.format(self.html_message)
+            remove_message = ('{} Your subscription has been removed'
+                              ' due to insufficient permissions in the new component.').format(self.html_message)
         # Folder
         else:
             # Gets all the files in a folder to look for permissions conflicts
@@ -244,11 +244,11 @@ class AddonFileMoved(ComplexFileEvent):
             moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
 
             # For users that don't have individual file subscription but has permission on the new node
-            warn_message = u'{} You are no longer tracking that folder or files within based on the settings you selected for the component.'.format(self.html_message)
+            warn_message = '{} You are no longer tracking that folder or files within based on the settings you selected for the component.'.format(self.html_message)
             # For users without permission on the new node
-            remove_message = (u'{} Your subscription has been removed for the folder,'
-                              u' or a file within,'
-                              u' due to insufficient permissions in the new component.').format(self.html_message)
+            remove_message = ('{} Your subscription has been removed for the folder,'
+                              ' or a file within,'
+                              ' due to insufficient permissions in the new component.').format(self.html_message)
 
         # Move the document from one subscription to another because the old one isn't needed
         utils.move_subscription(rm_users, self.event_type, self.source_node, self.event_type, self.node)
@@ -285,7 +285,7 @@ class AddonFileCopied(ComplexFileEvent):
         if self.node == self.source_node:
             super(AddonFileCopied, self).perform()
             return
-        if self.payload['destination']['kind'] != u'folder':
+        if self.payload['destination']['kind'] != 'folder':
             moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
                                                                  self.event_type, self.node)
         else:

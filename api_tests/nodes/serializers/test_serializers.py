@@ -1,6 +1,6 @@
 from dateutil.parser import parse as parse_date
 import pytest
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
@@ -121,7 +121,7 @@ class TestNodeRegistrationSerializer:
         relationships = data['relationships']
         relationship_urls = {
             k: v['links']['related']['href'] for k,
-            v in relationships.items()}
+            v in list(relationships.items())}
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(

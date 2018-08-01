@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 import csv
 import pytz
@@ -186,7 +186,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'users': map(serialize_user, query_set),
+            'users': list(map(serialize_user, query_set)),
             'page': page,
         }
 
@@ -199,7 +199,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
         if not request.user.get_perms('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
-            uid for uid in request.POST.keys()
+            uid for uid in list(request.POST.keys())
             if uid != 'csrfmiddlewaretoken'
         ]
         for uid in user_ids:
@@ -514,7 +514,7 @@ class GetUserClaimLinks(GetUserLink):
     def get_claim_links(self, user):
         links = []
 
-        for guid, value in user.unclaimed_records.iteritems():
+        for guid, value in user.unclaimed_records.items():
             node = Node.load(guid)
             url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
                 base_url=DOMAIN,

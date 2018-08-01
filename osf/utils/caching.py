@@ -9,7 +9,7 @@ NOTE: Properties will *not* be cached if they return `None`. Use
 `django.utils.functional.cached_property` for properties that
 can return `None` and do not need a setter.
 """
-from __future__ import unicode_literals
+
 
 from functools import wraps
 

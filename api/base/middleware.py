@@ -1,5 +1,5 @@
 import gc
-import StringIO
+import io
 import cProfile
 import pstats
 import threading
@@ -78,10 +78,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                 elif (
                     self._context.request.method == 'OPTIONS' and
                     'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
-                    'authorization' in map(
-                        lambda h: h.strip(),
-                        self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
-                    )
+                    'authorization' in [h.strip() for h in self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')]
                 ):
                     return None
 
@@ -132,7 +129,7 @@ class ProfileMiddleware(object):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
             self.prof.disable()
 
-            s = StringIO.StringIO()
+            s = io.StringIO()
             ps = pstats.Stats(self.prof, stream=s).sort_stats('cumtime')
             ps.print_stats()
             response.content = s.getvalue()

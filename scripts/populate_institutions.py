@@ -4,7 +4,7 @@
 
 import logging
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import django
 from django.db import transaction
@@ -24,22 +24,22 @@ SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CA
 
 
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return urllib.parse.quote(val, safe='~()*!.\'')
 
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
-        for key, val in inst_data.iteritems():
+        for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
-        print('Updated {}'.format(inst.name))
+        print(('Updated {}'.format(inst.name)))
         update_institution(inst)
         return inst, False
     else:
         inst = Institution(**inst_data)
         inst.save()
-        print('Added new institution: {}'.format(inst._id))
+        print(('Added new institution: {}'.format(inst._id)))
         update_institution(inst)
         return inst, True
 
@@ -1258,6 +1258,6 @@ def main(env):
 if __name__ == '__main__':
     env = str(sys.argv[1]).lower() if len(sys.argv) == 2 else None
     if env not in ENVS:
-        print('An environment must be specified : {}', ENVS)
+        print(('An environment must be specified : {}', ENVS))
         sys.exit(1)
     main(env)

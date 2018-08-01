@@ -37,10 +37,10 @@ def get_or_create(name, description, save=True):
     try:
         scope_obj = ApiOAuth2Scope.objects.get(name=name)
         setattr(scope_obj, 'description', description)
-        print('Updating existing database entry for: {}'.format(name))
+        print(('Updating existing database entry for: {}'.format(name)))
     except ApiOAuth2Scope.DoesNotExist:
         scope_obj = ApiOAuth2Scope(name=name, description=description)
-        print('Created new database entry for: {}'.format(name))
+        print(('Created new database entry for: {}'.format(name)))
 
     if save:
         scope_obj.save()
@@ -59,7 +59,7 @@ def do_populate(clear=False):
     if clear:
         ApiOAuth2Scope.objects.all().delete()
 
-    for name, scope in scope_dict.iteritems():
+    for name, scope in scope_dict.items():
         # Update a scope if it exists, else populate
         if scope.is_public is True:
             get_or_create(name, scope.description, save=True)

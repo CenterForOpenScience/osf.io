@@ -4,10 +4,7 @@ from framework.auth.decorators import collect_auth
 from website.util import api_url_for, web_url_for
 
 
-class AddonSerializer(object):
-    __metaclass__ = abc.ABCMeta
-
-    # TODO take addon_node_settings, addon_user_settings
+class AddonSerializer(object, metaclass=abc.ABCMeta):
     def __init__(self, node_settings=None, user_settings=None):
         self.node_settings = node_settings
         self.user_settings = user_settings

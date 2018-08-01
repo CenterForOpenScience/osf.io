@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 import logging
 import os
 
@@ -258,7 +258,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         )
 
     def __repr__(self):
-        return u'<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        return '<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
     def after_delete(self, user):

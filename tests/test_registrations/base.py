@@ -42,15 +42,15 @@ class RegistrationsTestBase(OsfTestCase):
 
         valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
-            u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
-            u'registrationChoice': 'embargo'
+            'embargoEndDate': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + ' GMT',
+            'registrationChoice': 'embargo'
         }
         self.invalid_embargo_date_payload = {
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            'embargoEndDate': "Thu, 01 {month} {year} 05:00:00 GMT".format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),
-            u'registrationChoice': 'embargo'
+            'registrationChoice': 'embargo'
         }
         self.immediate_payload = {
             'registrationChoice': 'immediate'

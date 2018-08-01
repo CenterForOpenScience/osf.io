@@ -271,7 +271,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             'data': {
                 'type': 'users',
                 'id': self.user._id,
-                'attributes': {u'suffix': u'VIII'}
+                'attributes': {'suffix': 'VIII'}
             }
         }
 
@@ -308,7 +308,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             'data': {
                 'type': 'users',
                 'id': self.user._id,
-                'attributes': {u'suffix': u'VIII'}
+                'attributes': {'suffix': 'VIII'}
             }
         }
 
@@ -329,7 +329,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             ['osf.nodes.full_write']
         )
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        payload = {u'suffix': u'VIII'}
+        payload = {'suffix': 'VIII'}
 
         res = self.app.get(
             url, params=payload,

@@ -6,7 +6,7 @@
 import json
 import random
 import string
-from cStringIO import StringIO
+from io import StringIO
 
 from locust import HttpLocust, TaskSet, task
 

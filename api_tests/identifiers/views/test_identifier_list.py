@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from osf.models import Identifier

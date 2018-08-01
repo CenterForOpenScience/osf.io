@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import logging
 
@@ -50,7 +50,7 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
             if has_external_account:
                 if user_settings.has_auth:
                     num_enabled += 1
-                    node_settings_list = [AbstractNode.load(guid).get_addon(short_name) for guid in user_settings.oauth_grants.keys()]
+                    node_settings_list = [AbstractNode.load(guid).get_addon(short_name) for guid in list(user_settings.oauth_grants.keys())]
             else:
                 num_enabled += 1
                 node_settings_list = [AbstractNode.load(guid).get_addon(short_name) for guid in user_settings.nodes_authorized]
@@ -77,7 +77,7 @@ class AddonSnapshot(SnapshotAnalytics):
         counts = []
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
-        for short_name, addon in addons_available.iteritems():
+        for short_name, addon in addons_available.items():
 
             has_external_account = hasattr(addon.models.get('nodesettings'), 'external_account')
 

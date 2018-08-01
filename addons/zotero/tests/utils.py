@@ -263,7 +263,7 @@ mock_responses = {
     ]
 }
 
-mock_responses = {k: dumps(v) for k, v in mock_responses.iteritems()}
+mock_responses = {k: dumps(v) for k, v in mock_responses.items()}
 
 
 mock_responses_with_filed_and_unfiled = {
@@ -365,4 +365,4 @@ mock_responses_with_filed_and_unfiled = {
     ]
 }
 
-mock_responses_with_filed_and_unfiled = {k: dumps(v) for k, v in mock_responses_with_filed_and_unfiled.iteritems()}
+mock_responses_with_filed_and_unfiled = {k: dumps(v) for k, v in mock_responses_with_filed_and_unfiled.items()}

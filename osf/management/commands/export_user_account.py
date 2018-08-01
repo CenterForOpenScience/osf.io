@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 import datetime as dt
 import time
 import io
@@ -210,7 +210,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
-    proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    proceed = input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
         exit(1)
@@ -248,7 +248,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))
-    print('Creating {output}.zip ...').format(**locals())
+    print(('Creating {output}.zip ...').format(**locals()))
     shutil.make_archive(output, 'zip', base_dir)
     shutil.rmtree(base_dir)
 

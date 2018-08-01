@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import httplib as http
+import http.client as http
 import mock
 from nose.tools import assert_equal
 import pytest

@@ -1,6 +1,6 @@
 import pytz
 import functools
-import httplib as http
+import http.client as http
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -187,7 +187,7 @@ class TokenApprovableSanction(Sanction):
         """
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
-                for authorizer in self.approval_state.values()):
+                for authorizer in list(self.approval_state.values())):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 

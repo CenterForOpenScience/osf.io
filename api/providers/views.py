@@ -80,7 +80,7 @@ class PreprintProviderList(GenericProviderList):
             value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
             if any(p not in PERMISSIONS for p in permissions):
-                valid_permissions = ', '.join(PERMISSIONS.keys())
+                valid_permissions = ', '.join(list(PERMISSIONS.keys()))
                 raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 

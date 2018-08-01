@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import furl
-import httplib as http
+import http.client as http
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from lxml import etree
 import requests
@@ -152,13 +152,13 @@ class CasClient(object):
         resp = CasResponse()
         doc = etree.fromstring(xml)
         auth_doc = doc.xpath('/cas:serviceResponse/*[1]', namespaces=doc.nsmap)[0]
-        resp.status = unicode(auth_doc.xpath('local-name()'))
+        resp.status = str(auth_doc.xpath('local-name()'))
         if (resp.status == 'authenticationSuccess'):
             resp.authenticated = True
-            resp.user = unicode(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
+            resp.user = str(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
-                resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+                resp.attributes[str(attribute.xpath('local-name()'))] = str(attribute.text)
             scopes = resp.attributes.get('accessTokenScope')
             resp.attributes['accessTokenScope'] = set(scopes.split(' ') if scopes else [])
         else:
@@ -224,7 +224,7 @@ def get_login_url(*args, **kwargs):
 
 
 def get_institution_target(redirect_url):
-    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
+    return '/login?service={}&auto=true'.format(urllib.parse.quote(redirect_url, safe='~()*!.\''))
 
 
 def get_logout_url(*args, **kwargs):
@@ -292,7 +292,7 @@ def make_response_from_ticket(ticket, service_url):
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],

@@ -9,9 +9,7 @@ from tests.utils import mock_auth
 from website.util import web_url_for
 
 
-class AddonSerializerTestSuiteMixin(object):
-
-    __metaclass__ = abc.ABCMeta
+class AddonSerializerTestSuiteMixin(object, metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def Serializer(self):

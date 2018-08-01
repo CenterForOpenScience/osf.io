@@ -5,9 +5,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.auth import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
-class AddonNodeLoggerTestSuiteMixinBase(object):
-
-    __metaclass__ = abc.ABCMeta
+class AddonNodeLoggerTestSuiteMixinBase(object, metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def addon_short_name(self):

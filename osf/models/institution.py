@@ -64,7 +64,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         super(Institution, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
-        return u'{} : ({})'.format(self.name, self._id)
+        return '{} : ({})'.format(self.name, self._id)
 
     @property
     def api_v2_url(self):

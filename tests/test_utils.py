@@ -249,7 +249,7 @@ class TestFrameworkUtils(unittest.TestCase):
 
         assert_equal(
             'i_contain_cool_umlauts.txt',
-            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+            secure_filename('i contain cool \xfcml\xe4uts.txt')
         )
 
 
@@ -299,7 +299,7 @@ class TestWebsiteUtils(unittest.TestCase):
         rapply(outputs, r_assert)
 
     def test_rapply_on_list(self):
-        inputs = range(5)
+        inputs = list(range(5))
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
@@ -327,14 +327,14 @@ class TestWebsiteUtils(unittest.TestCase):
         outputs = rapply(input, convert)
 
         assert_equal("BOB", outputs)
-        assert_true(isinstance(outputs, basestring))
+        assert_true(isinstance(outputs, str))
 
     def test_rapply_preserves_args_and_kwargs(self):
         def zero_if_not_check(item, check, checkFn=lambda n: n):
             if check and checkFn(item):
                 return item
             return 0
-        inputs = range(5)
+        inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
         assert_equal(outputs, [0, 1, 0, 3, 0])
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)

@@ -1,6 +1,6 @@
 import requests
 import json
-import httplib as http
+import http.client as http
 
 import celery
 from celery.utils.log import get_task_logger

@@ -2731,7 +2731,7 @@ class TestNodeBulkDelete:
             auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 409
-        assert res.json['errors'][0]['detail'] == u'A bulk DELETE can only have a body or query parameters, not both.'
+        assert res.json['errors'][0]['detail'] == 'A bulk DELETE can only have a body or query parameters, not both.'
 
     #   test_bulk_delete_with_query_params_no_type
         res_url = '{}?{}'.format(url, public_query_params)
@@ -2739,7 +2739,7 @@ class TestNodeBulkDelete:
             res_url, auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == u'Type query parameter is also required for a bulk DELETE using query parameters.'
+        assert res.json['errors'][0]['detail'] == 'Type query parameter is also required for a bulk DELETE using query parameters.'
 
     #   test_bulk_delete_with_query_params_wrong_type
         res_url = '{}?{}&{}'.format(
@@ -2748,7 +2748,7 @@ class TestNodeBulkDelete:
             res_url, auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 409
-        assert res.json['errors'][0]['detail'] == u'Type needs to match type expected at this endpoint.'
+        assert res.json['errors'][0]['detail'] == 'Type needs to match type expected at this endpoint.'
 
     #   test_bulk_delete_nodes_blank_request
         res = app.delete_json_api(

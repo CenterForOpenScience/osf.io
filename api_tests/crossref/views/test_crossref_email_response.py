@@ -25,8 +25,8 @@ class TestCrossRefEmailResponse:
             'timestamp': '123',
             'recipient': ['test@test.osf.io'],
             'sender': ['test-admin@crossref.org'],
-            'Content-Type': [u'text/plain; charset="UTF-8"'],
-            'Subject': [u'CrossRef submission ID: 1390671938'],
+            'Content-Type': ['text/plain; charset="UTF-8"'],
+            'Subject': ['CrossRef submission ID: 1390671938'],
             'token': 'secret'
         }
 
@@ -46,7 +46,7 @@ class TestCrossRefEmailResponse:
         data.update(mailgun_payload)
         data = {
             key: value
-            for key, value in data.iteritems()
+            for key, value in data.items()
             if value is not None
         }
         return data

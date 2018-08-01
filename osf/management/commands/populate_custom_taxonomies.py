@@ -42,18 +42,18 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
             assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
         included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
-    for cust_name, map_dict in customs.iteritems():
+    for cust_name, map_dict in customs.items():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=map_dict.get('bepress')).exists(), 'Unable to find specified BePress subject with text {}'.format(map_dict.get('bepress'))
         if map_dict.get('parent'):  # Null parent possible
             assert map_dict['parent'] in set(customs.keys()) | set(included_subjects.values_list('text', flat=True)), 'Unable to find specified parent with text {} in mapped set'.format(map_dict['parent'])
             # TODO: hierarchy length validation? Probably more trouble than worth here, done on .save
     logger.info('Successfully validated `custom`')
-    included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in customs.values()])
-    for merged_from, merged_into in merges.iteritems():
+    included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in list(customs.values())])
+    for merged_from, merged_into in merges.items():
         assert not included_subjects.filter(text=merged_from).exists(), 'Cannot merge subject "{}" that will be included'.format(merged_from)
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
-    included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
+    included_subjects = included_subjects | Subject.objects.filter(text__in=list(merges.keys()))
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
     if not add_missing:
         assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
@@ -126,7 +126,7 @@ def do_custom_mapping(custom_provider, customs):
         if tries == 10:
             raise RuntimeError('Unable to map custom subjects with 10 iterations -- invalid input')
         successes = []
-        for cust_name, map_dict in unmapped_customs.iteritems():
+        for cust_name, map_dict in unmapped_customs.items():
             if map_custom_subject(custom_provider, cust_name, map_dict.get('parent'), map_dict.get('bepress')):
                 successes.append(cust_name)
             else:
@@ -142,7 +142,7 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         old_hier = preprint.subject_hierarchy
         subjects_to_map = [hier[-1] for hier in old_hier]
         merged_subject_ids = set(Subject.objects.filter(provider=custom_provider, text__in=[merge_dict[k] for k in set(merge_dict.keys()) & set([s.text for s in subjects_to_map])]).values_list('id', flat=True))
-        subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in merge_dict.keys())
+        subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in list(merge_dict.keys()))
         aliased_subject_ids = set(Subject.objects.filter(bepress_subject__id__in=subject_ids_to_map, provider=custom_provider).values_list('id', flat=True)) | merged_subject_ids
         aliased_hiers = [s.object_hierarchy for s in Subject.objects.filter(id__in=aliased_subject_ids)]
         old_subjects = list(preprint.subjects.values_list('id', flat=True))

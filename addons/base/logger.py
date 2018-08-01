@@ -1,12 +1,11 @@
 import abc
 
-class AddonNodeLogger(object):
+class AddonNodeLogger(object, metaclass=abc.ABCMeta):
     """Helper class for adding correctly-formatted addon logs to nodes.
 
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
     """
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
     def addon_short_name(self):

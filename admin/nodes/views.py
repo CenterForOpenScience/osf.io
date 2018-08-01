@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 import pytz
 from datetime import datetime
@@ -237,7 +237,7 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'logs': map(serialize_log, query_set),
+            'logs': list(map(serialize_log, query_set)),
             'page': page,
         }
 
@@ -264,7 +264,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': map(serialize_node, query_set),
+            'nodes': list(map(serialize_node, query_set)),
             'page': page,
         }
 
@@ -328,7 +328,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': map(serialize_node, query_set),
+            'nodes': list(map(serialize_node, query_set)),
             'page': page,
         }
 
@@ -340,7 +340,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         if not request.user.has_perm('auth.mark_spam'):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
         node_ids = [
-            nid for nid in request.POST.keys()
+            nid for nid in list(request.POST.keys())
             if nid != 'csrfmiddlewaretoken'
         ]
         for nid in node_ids:

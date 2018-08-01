@@ -142,7 +142,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         resource_object_list = self.get_requested_resources(request=request, request_data=data)
 
         for item in data:
-            item_type = item[u'type']
+            item_type = item['type']
             if item_type != object_type:
                 raise Conflict('Type needs to match type expected at this endpoint.')
 

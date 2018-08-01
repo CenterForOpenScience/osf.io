@@ -20,7 +20,7 @@ class CollectionProviderForm(forms.ModelForm):
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
-            return u''
+            return ''
         return bleach.clean(
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
@@ -31,7 +31,7 @@ class CollectionProviderForm(forms.ModelForm):
 
     def clean_footer_links(self, *args, **kwargs):
         if not self.data.get('footer_links'):
-            return u''
+            return ''
         return bleach.clean(
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],

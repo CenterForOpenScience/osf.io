@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+import http.client as http
 import logging
 
 from flask import request, make_response
@@ -151,7 +151,7 @@ def bitbucket_download_starball(node_addon, **kwargs):
     )
 
     resp = make_response(data)
-    for key, value in headers.iteritems():
+    for key, value in headers.items():
         resp.headers[key] = value
 
     return resp

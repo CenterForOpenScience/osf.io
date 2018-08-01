@@ -32,7 +32,7 @@ Examples:
 ...will create 3 preprints with the providers osf and test_provider
 
 """
-from __future__ import print_function, absolute_import
+
 
 import ast
 import sys
@@ -349,7 +349,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
 
 def render_generations_from_parent(parent, creator, num_generations):
     current_gen = parent
-    for generation in xrange(0, num_generations):
+    for generation in range(0, num_generations):
         next_gen = NodeFactory(
             parent=current_gen,
             creator=creator,

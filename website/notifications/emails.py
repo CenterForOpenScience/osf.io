@@ -228,4 +228,4 @@ def localize_timestamp(timestamp, user):
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
 
-    return u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+    return '{time} on {date}'.format(time=formatted_time, date=formatted_date)

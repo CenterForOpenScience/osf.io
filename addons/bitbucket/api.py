@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from framework.exceptions import HTTPError
 
@@ -166,9 +166,9 @@ class BitbucketClient(BaseClient):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urllib.parse.urlencode({
         key: value
-        for key, value in {'branch': branch, 'sha': sha}.iteritems()
+        for key, value in {'branch': branch, 'sha': sha}.items()
         if value
     })
     if params:

@@ -1,6 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import httplib as http
+import http.client as http
 import json
 
 import pytz
@@ -229,7 +229,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
         assert_true(self.registration.is_pending_embargo)
-        num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
+        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.embargo.approval_state.values())])
         assert_equal(num_of_approvals, 1)
 
         # Second admin approves
@@ -237,7 +237,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.embargo.approve_embargo(admin2, approval_token)
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.is_pending_embargo)
-        num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
+        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.embargo.approval_state.values())])
         assert_equal(num_of_approvals, 2)
 
     # Embargo#disapprove_embargo tests
@@ -804,26 +804,26 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         current_year = timezone.now().strftime('%Y')
 
         self.valid_make_public_payload = json.dumps({
-            u'embargoEndDate': u'Fri, 01, {month} {year} 00:00:00 GMT'.format(
+            'embargoEndDate': 'Fri, 01, {month} {year} 00:00:00 GMT'.format(
                 month=current_month,
                 year=current_year
             ),
-            u'registrationChoice': 'immediate',
-            u'summary': unicode(fake.sentence())
+            'registrationChoice': 'immediate',
+            'summary': str(fake.sentence())
         })
         valid_date = timezone.now() + datetime.timedelta(days=180)
         self.valid_embargo_payload = json.dumps({
-            u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
-            u'registrationChoice': 'embargo',
-            u'summary': unicode(fake.sentence())
+            'embargoEndDate': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + ' GMT',
+            'registrationChoice': 'embargo',
+            'summary': str(fake.sentence())
         })
         self.invalid_embargo_date_payload = json.dumps({
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            'embargoEndDate': "Thu, 01 {month} {year} 05:00:00 GMT".format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),
-            u'registrationChoice': 'embargo',
-            u'summary': unicode(fake.sentence())
+            'registrationChoice': 'embargo',
+            'summary': str(fake.sentence())
         })
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -1011,7 +1011,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
@@ -1045,7 +1045,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
@@ -1068,7 +1068,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()

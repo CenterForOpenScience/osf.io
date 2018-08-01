@@ -48,7 +48,7 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
 
 
 def format_contributor(contributor):
-    return remove_control_characters(u'{}, {}'.format(contributor.family_name, contributor.given_name))
+    return remove_control_characters('{}, {}'.format(contributor.family_name, contributor.given_name))
 
 
 # This function is OSF specific.
@@ -79,9 +79,9 @@ def format_creators(preprint):
 
         # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
         if contributor.external_identity.get('ORCID'):
-            verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
+            verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
             if verified:
-                creator.append(E.nameIdentifier(contributor.external_identity['ORCID'].keys()[0], nameIdentifierScheme='ORCID', schemeURI='http://orcid.org/'))
+                creator.append(E.nameIdentifier(list(contributor.external_identity['ORCID'].keys())[0], nameIdentifierScheme='ORCID', schemeURI='http://orcid.org/'))
 
         creators.append(creator)
 

@@ -28,14 +28,14 @@ def make_failure_response():
     )
 
 
-def make_external_response(release=True, unicode=False):
+def make_external_response(release=True, str=False):
     attributes = {
             'accessToken': fake.md5(),
     }
     if release:
         attributes.update({
-            'given-names': fake.first_name() if not unicode else u'нет',
-            'family-name': fake.last_name() if not unicode else u'Да',
+            'given-names': fake.first_name() if not str else 'нет',
+            'family-name': fake.last_name() if not str else 'Да',
         })
     return cas.CasResponse(
         authenticated=True,
@@ -346,7 +346,7 @@ class TestCASExternalLogin(OsfTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_handles_unicode(self, mock_service_validate):
-        mock_response = make_external_response(unicode=True)
+        mock_response = make_external_response(str=True)
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'

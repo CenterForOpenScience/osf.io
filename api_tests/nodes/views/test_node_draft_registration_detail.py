@@ -13,7 +13,7 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from rest_framework import exceptions
-from test_node_draft_registration_list import DraftRegistrationTestCase
+from .test_node_draft_registration_list import DraftRegistrationTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 

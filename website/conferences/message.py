@@ -117,7 +117,7 @@ class ConferenceMessage(object):
         else:
             # sender format: email@domain.tld
             name = self.sender
-        return unicode(HumanName(name))
+        return str(HumanName(name))
 
     @cached_property
     def sender_email(self):
@@ -165,13 +165,13 @@ class ConferenceMessage(object):
             count = int(count)
         except (TypeError, ValueError):
             count = 0
-        return filter(
+        return list(filter(
             lambda value: value is not None,
-            map(
+            list(map(
                 lambda idx: self.request.files.get('attachment-{0}'.format(idx + 1)),
-                range(count),
-            ),
-        )
+                list(range(count)),
+            )),
+        ))
 
     @property
     def allowed_types(self):

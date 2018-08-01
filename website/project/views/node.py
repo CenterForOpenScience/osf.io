@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import httplib as http
+import http.client as http
 import math
 from collections import defaultdict
 from itertools import islice
@@ -812,7 +812,7 @@ def _view_project(node, auth, primary=False,
         'addon_widget_css': css,
         'node_categories': [
             {'value': key, 'display_name': value}
-            for key, value in settings.NODE_CATEGORY_MAP.iteritems()
+            for key, value in settings.NODE_CATEGORY_MAP.items()
         ]
     }
     if embed_contributors and not anonymous:
@@ -876,7 +876,7 @@ def serialize_children(child_list, nested, indent=0):
             'parent_id': child.parentnode_id,
             'indent': indent
         })
-        if child._id in nested.keys():
+        if child._id in list(nested.keys()):
             results.extend(serialize_children(nested.get(child._id), nested, indent + 1))
     return results
 
@@ -982,7 +982,7 @@ def serialize_child_tree(child_list, user, nested):
                 'is_preprint': child.is_preprint,
             },
             'user_id': user._id,
-            'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
+            'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in list(nested.keys()) else [],
             'nodeType': 'project' if not child.parentnode_id else 'component',
             'category': child.category,
             'permissions': {
@@ -1047,7 +1047,7 @@ def node_child_tree(user, node):
             'is_preprint': node.is_preprint,
         },
         'user_id': user._id,
-        'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
+        'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in list(nested.keys()) else [],
         'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
         'nodeType': node.project_or_component,
         'category': node.category,

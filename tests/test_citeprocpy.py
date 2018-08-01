@@ -8,9 +8,9 @@ from osf.models import OSFUser
 
 class Node:
     _id = '2nthu'
-    csl = {'publisher': 'Open Science Framework', 'author': [{'given': u'Henrique', 'family': u'Harman'}],
+    csl = {'publisher': 'Open Science Framework', 'author': [{'given': 'Henrique', 'family': 'Harman'}],
            'URL': 'localhost:5000/2nthu', 'issued': {'date-parts': [[2016, 12, 6]]},
-           'title': u'The study of chocolate in its many forms', 'type': 'webpage', 'id': u'2nthu'}
+           'title': 'The study of chocolate in its many forms', 'type': 'webpage', 'id': '2nthu'}
     visible_contributors = ''
 
 
@@ -27,14 +27,14 @@ class TestCiteprocpy(OsfTestCase):
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)['fails']
         matches = []
-        for k, v in data.iteritems():
+        for k, v in data.items():
             try:
                 citeprocpy = render_citation(node, k)
             except (TypeError, AttributeError):
                 citeprocpy = ''
             if citeprocpy == v:
                 matches.append(k)
-                print k
+                print(k)
         assert(len(matches) == 0)
 
     def test_passing_citations(self):
@@ -45,7 +45,7 @@ class TestCiteprocpy(OsfTestCase):
             data = json.load(url_test_data)['passes']
         not_matches = []
         citation = []
-        for k, v in data.iteritems():
+        for k, v in data.items():
             try:
                 citeprocpy = render_citation(node, k)
             except (TypeError, AttributeError):
@@ -53,5 +53,5 @@ class TestCiteprocpy(OsfTestCase):
             if citeprocpy != v:
                 not_matches.append(k)
                 citation.append(citeprocpy)
-                print k
+                print(k)
         assert(len(not_matches) == 0)

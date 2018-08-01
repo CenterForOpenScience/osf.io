@@ -3,7 +3,7 @@
 # This migration is skippable if `scripts/premigrate_created_modified.py`
 # is utilized. It allows the larger of these tables to be updated asynchronously without downtime.
 # It requires not releasing these model changes until the beat tasks are approximately complete.
-from __future__ import unicode_literals
+
 import logging
 
 from django.db import migrations

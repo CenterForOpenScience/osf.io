@@ -115,7 +115,7 @@ def subscriptions_users_union(emails_1, emails_2):
             list(
                 set(emails_1[notification]).union(set(emails_2[notification]))
             )
-        for notification in constants.NOTIFICATION_TYPES.keys()
+        for notification in list(constants.NOTIFICATION_TYPES.keys())
     }
 
 
@@ -125,7 +125,7 @@ def subscriptions_users_difference(emails_1, emails_2):
             list(
                 set(emails_1[notification]).difference(set(emails_2[notification]))
             )
-        for notification in constants.NOTIFICATION_TYPES.keys()
+        for notification in list(constants.NOTIFICATION_TYPES.keys())
     }
 
 

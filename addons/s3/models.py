@@ -53,7 +53,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def display_name(self):
-        return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
+        return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
         if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):

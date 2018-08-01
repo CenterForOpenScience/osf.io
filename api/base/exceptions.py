@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
@@ -23,8 +23,8 @@ def dict_error_formatting(errors, index=None):
     else:
         index = str(index) + '/'
 
-    for error_key, error_description in errors.iteritems():
-        if isinstance(error_description, basestring):
+    for error_key, error_description in errors.items():
+        if isinstance(error_description, str):
             error_description = [error_description]
 
         if error_key in top_level_error_keys:
@@ -70,7 +70,7 @@ def json_api_exception_handler(exc, context):
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, None))
         else:
-            if isinstance(message, basestring):
+            if isinstance(message, str):
                 message = [message]
             for index, error in enumerate(message):
                 if isinstance(error, dict):

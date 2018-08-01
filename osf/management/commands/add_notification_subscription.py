@@ -3,7 +3,7 @@
 #   1. It makes no changes to database structure (e.g. AlterField), only database content.
 #   2. It takes a long time to run and the site doesn't need to be down that long.
 
-from __future__ import unicode_literals
+
 import logging
 
 import django

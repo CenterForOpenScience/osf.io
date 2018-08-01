@@ -198,7 +198,7 @@ class FilterMixin(object):
         }
         """
         query = {}
-        for key, value in query_params.iteritems():
+        for key, value in query_params.items():
             match = self.QUERY_PATTERN.match(key)
             if match:
                 match_dict = match.groupdict()
@@ -363,10 +363,10 @@ class ListFilterMixin(FilterMixin):
         query_parts = []
 
         if filters:
-            for key, field_names in filters.iteritems():
+            for key, field_names in filters.items():
 
                 sub_query_parts = []
-                for field_name, data in field_names.iteritems():
+                for field_name, data in field_names.items():
                     operations = data if isinstance(data, list) else [data]
                     if isinstance(queryset, list):
                         for operation in operations:

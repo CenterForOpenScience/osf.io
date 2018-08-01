@@ -1,5 +1,5 @@
 import bleach
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 # TODO: Test me @jmcarp
 
@@ -11,7 +11,7 @@ def process_data(data, func):
     if isinstance(data, dict):
         return {
             key: process_data(value, func)
-            for key, value in data.items()
+            for key, value in list(data.items())
         }
     elif isinstance(data, list):
         return [
@@ -24,14 +24,14 @@ def process_data(data, func):
 def process_payload(data):
     return process_data(
         data,
-        lambda value: urllib.quote(value.encode('utf-8') if value else '', safe=' ')
+        lambda value: urllib.parse.quote(value.encode('utf-8') if value else '', safe=' ')
     )
 
 
 def unprocess_payload(data):
     return process_data(
         data,
-        lambda value: urllib.unquote(value.encode('utf-8') if value else '')
+        lambda value: urllib.parse.unquote(value.encode('utf-8') if value else '')
     )
 
 

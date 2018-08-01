@@ -43,7 +43,7 @@ class BootstrapTextArea(TextArea):
 def push_errors_to_status(errors):
     # TODO: Review whether errors contain custom HTML. If so this change might cause some display anomalies.
     if errors:
-        for field, _ in errors.items():
+        for field, _ in list(errors.items()):
             for error in errors[field]:
                 status.push_status_message(error, trust=False)
 
@@ -57,7 +57,7 @@ class NoHtmlCharacters(object):
     """
     # TODO: Improve this for a post-bleach world
     def __init__(self, message=None):
-        self.message = message or u'HTML is not allowed in form field'
+        self.message = message or 'HTML is not allowed in form field'
 
     def __call__(self, form, field):
         if not field.data == strip_html(field.data):

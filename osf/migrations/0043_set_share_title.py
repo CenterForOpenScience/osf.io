@@ -3,7 +3,7 @@
 """Sets the share_title field on production PreprintProviders. Makes no
 updates if the listed providers don't exist in the current envirionment.
 """
-from __future__ import unicode_literals
+
 
 from django.db import migrations
 

@@ -200,11 +200,11 @@ def rebuild_search(ctx):
         uri=settings.ELASTIC_URI.rstrip('/'),
         index=settings.ELASTIC_INDEX,
     )
-    print('Deleting index {}'.format(settings.ELASTIC_INDEX))
-    print('----- DELETE {}*'.format(url))
+    print(('Deleting index {}'.format(settings.ELASTIC_INDEX)))
+    print(('----- DELETE {}*'.format(url)))
     requests.delete(url + '*')
-    print('Creating index {}'.format(settings.ELASTIC_INDEX))
-    print('----- PUT {}'.format(url))
+    print(('Creating index {}'.format(settings.ELASTIC_INDEX)))
+    print(('----- PUT {}'.format(url)))
     requests.put(url)
     migrate_search(ctx, delete=False)
 
@@ -306,10 +306,10 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, basestring) else module
+    modules = [module] if isinstance(module, str) else module
     args.extend(modules)
     if params:
-        params = [params] if isinstance(params, basestring) else params
+        params = [params] if isinstance(params, str) else params
         args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
@@ -366,33 +366,33 @@ ADMIN_TESTS = [
 @task
 def test_osf(ctx, numprocesses=None, coverage=False):
     """Run the OSF test suite."""
-    print('Testing modules "{}"'.format(OSF_TESTS))
+    print(('Testing modules "{}"'.format(OSF_TESTS)))
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
 def test_website(ctx, numprocesses=None, coverage=False):
     """Run the old test suite."""
-    print('Testing modules "{}"'.format(WEBSITE_TESTS))
+    print(('Testing modules "{}"'.format(WEBSITE_TESTS)))
     test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
 def test_api1(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
+    print(('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS)))
     test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
 def test_api2(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS2))
+    print(('Testing modules "{}"'.format(API_TESTS2)))
     test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
 def test_api3(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
+    print(('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS)))
     # NOTE: There may be some concurrency issues with ES
     test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
@@ -408,7 +408,7 @@ def test_admin(ctx, numprocesses=None, coverage=False):
 def test_addons(ctx, numprocesses=None, coverage=False):
     """Run all the tests in the addons directory.
     """
-    print('Testing modules "{}"'.format(ADDON_TESTS))
+    print(('Testing modules "{}"'.format(ADDON_TESTS)))
     test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
@@ -538,7 +538,7 @@ def addon_requirements(ctx):
 
         requirements_file = os.path.join(path, 'requirements.txt')
         if os.path.isdir(path) and os.path.isfile(requirements_file):
-            print('Installing requirements for {0}'.format(directory))
+            print(('Installing requirements for {0}'.format(directory)))
             ctx.run(
                 pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
@@ -643,10 +643,10 @@ def hotfix(ctx, name, finish=False, push=False):
     print('Checking out master to calculate curent version')
     ctx.run('git checkout master')
     latest_version = latest_tag_info()['current_version']
-    print('Current version is: {}'.format(latest_version))
+    print(('Current version is: {}'.format(latest_version)))
     major, minor, patch = latest_version.split('.')
     next_patch_version = '.'.join([major, minor, str(int(patch) + 1)])
-    print('Bumping to next patch version: {}'.format(next_patch_version))
+    print(('Bumping to next patch version: {}'.format(next_patch_version)))
     print('Renaming branch...')
 
     new_branch_name = 'hotfix/{}'.format(next_patch_version)
@@ -828,7 +828,7 @@ def generate_self_signed(ctx, domain):
 def update_citation_styles(ctx):
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
-    print('Parsed {} styles'.format(total))
+    print(('Parsed {} styles'.format(total)))
 
 
 @task
@@ -864,7 +864,7 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
         invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
     """
     state = set_maintenance(message, level, start, end)
-    print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))
+    print(('Maintenance notice up {} to {}.'.format(state['start'], state['end'])))
 
 
 @task

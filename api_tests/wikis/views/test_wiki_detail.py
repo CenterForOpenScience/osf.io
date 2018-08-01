@@ -3,7 +3,7 @@ import pytest
 import furl
 import pytz
 import datetime
-from urlparse import urlparse
+from urllib.parse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from addons.wiki.models import WikiVersion
@@ -276,7 +276,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal = self.public_registration.retract_registration(
                 user=self.user, save=True)
-            token = withdrawal.approval_state.values()[0]['approval_token']
+            token = list(withdrawal.approval_state.values())[0]['approval_token']
             withdrawal.approve_retraction(self.user, token)
             withdrawal.save()
         res = self.app.get(

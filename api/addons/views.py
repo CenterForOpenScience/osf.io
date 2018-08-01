@@ -77,7 +77,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ()
 
     def get_default_queryset(self):
-        return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
+        return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.values() if 'accounts' in conf.configs]
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -88,12 +88,12 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         queryset = set(default_queryset)
 
         if filters:
-            for key, field_names in filters.iteritems():
+            for key, field_names in filters.items():
                 match = self.QUERY_PATTERN.match(key)
                 fields = match.groupdict()['fields']
                 statement = len(re.findall(self.FILTER_FIELDS, fields)) > 1  # This indicates an OR statement
                 sub_query = set() if statement else set(default_queryset)
-                for field_name, data in field_names.iteritems():
+                for field_name, data in field_names.items():
                     operations = data if isinstance(data, list) else [data]
                     for operation in operations:
                         if statement:

@@ -85,7 +85,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
                 raise NotFound
             nodes_to_add.append(node)
 
-        return nodes_to_add, diff['remove'].values()
+        return nodes_to_add, list(diff['remove'].values())
 
     def get_eligible_nodes(self, nodes):
         return [

@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 from copy import deepcopy
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -31,7 +31,7 @@ class MeetingListView(PermissionRequiredMixin, ListView):
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size
         )
-        kwargs.setdefault('meetings', map(serialize_meeting, queryset))
+        kwargs.setdefault('meetings', list(map(serialize_meeting, queryset)))
         kwargs.setdefault('page', page)
         return super(MeetingListView, self).get_context_data(**kwargs)
 
@@ -127,7 +127,7 @@ def get_custom_fields(data):
     """Return two dicts, one of field_names and the other regular fields."""
     data_copy = deepcopy(data)
     field_names = {}
-    for key, value in data.iteritems():
+    for key, value in data.items():
         if key in DEFAULT_FIELD_NAMES:
             field_names[key] = data_copy.pop(key)
     return field_names, data_copy

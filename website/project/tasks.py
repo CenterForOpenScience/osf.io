@@ -1,6 +1,6 @@
 from django.apps import apps
 import logging
-import urlparse
+import urllib.parse
 import random
 import requests
 
@@ -137,7 +137,7 @@ def format_registration(node):
 
     to_visit = [
         registration_graph,
-        GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
+        GraphNode('workidentifier', creative_work=registration_graph, uri=urllib.parse.urljoin(settings.DOMAIN, node.url))
     ]
 
     registration_graph.attrs['tags'] = [

@@ -581,7 +581,7 @@ def has(data, sub_data):
     # :param sub_data: subset being checked for
     # :return: True or False
     try:
-        (item for item in data if item == sub_data).next()
+        next((item for item in data if item == sub_data))
         return True
     except StopIteration:
         lists_and_dicts = list_or_dict(data)
@@ -1617,7 +1617,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_timezone(self):
@@ -1629,7 +1629,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_locale(self):
@@ -1641,7 +1641,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale('en')
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_handles_unicode(self):
@@ -1653,7 +1653,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
 
@@ -1694,19 +1694,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = list(get_users_emails(send_type))
         expected = [
             {
-                u'user_id': self.user_1._id,
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d._id
+                'user_id': self.user_1._id,
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': d._id
                 }]
             },
             {
-                u'user_id': self.user_2._id,
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d2._id
+                'user_id': self.user_2._id,
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': d2._id
                 }]
             }
         ]
@@ -1746,19 +1746,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = list(get_users_emails(send_type))
         expected = [
             {
-                u'user_id': unicode(self.user_1._id),
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d._id)
+                'user_id': str(self.user_1._id),
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': str(d._id)
                 }]
             },
             {
-                u'user_id': unicode(self.user_2._id),
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d2._id)
+                'user_id': str(self.user_2._id),
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': str(d2._id)
                 }]
             }
         ]
@@ -1915,7 +1915,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_submit_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info['message'] = u'submitted {}.'.format(self.context_info['reviewable'].node.title)
+        self.context_info['message'] = 'submitted {}.'.format(self.context_info['reviewable'].node.title)
         self.context_info['profile_image_url'] = get_profile_image_url(self.context_info['referrer'])
         self.context_info['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info[

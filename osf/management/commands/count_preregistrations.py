@@ -21,6 +21,6 @@ class Command(BaseCommand):
             for schema in schemas:
                 registrations = Registration.objects.filter(registered_schema=schema).get_roots()
                 count = registrations.count()
-                print('{} (Version {}): {}'.format(schema_name, schema.schema_version, count))
+                print(('{} (Version {}): {}'.format(schema_name, schema.schema_version, count)))
                 total += count
-        print('Total: {}'.format(total))
+        print(('Total: {}'.format(total)))

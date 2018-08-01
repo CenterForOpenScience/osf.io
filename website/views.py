@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 import itertools
-import httplib as http
+import http.client as http
 import logging
 import math
 import os
 import requests
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import waffle
 
 from django.apps import apps
@@ -236,9 +236,9 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
-    if not isinstance(url, unicode):
+    if not isinstance(url, str):
         url = url.decode('utf-8')
-    return u'/{0}/'.format(url)
+    return '/{0}/'.format(url)
 
 
 def resolve_guid_download(guid, suffix=None, provider=None):
@@ -304,7 +304,7 @@ def resolve_guid(guid, suffix=None):
                 request.args = request.args.copy()
                 request.args.update({'action': 'download'})
                 # Do not include the `download` suffix in the url rebuild.
-                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                url = _build_guid_url(urllib.parse.unquote(file_referent.deep_url))
                 return proxy_url(url)
 
         # Handle Ember Applications
@@ -337,7 +337,7 @@ def resolve_guid(guid, suffix=None):
             if waffle.flag_is_active(request, flag_name):
                 use_ember_app()
 
-        url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
+        url = _build_guid_url(urllib.parse.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists

@@ -1,7 +1,7 @@
 from django.core.files.storage import FileSystemStorage
 from django.utils.encoding import filepath_to_uri
 from storages.backends.gcloud import GoogleCloudStorage
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from website.settings import DOMAIN
 

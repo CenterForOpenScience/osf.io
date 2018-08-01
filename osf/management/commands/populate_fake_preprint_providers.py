@@ -16,7 +16,7 @@ to populate subjects (if you haven't already). The update_taxonomies script
 will create the OSF preprint provider.
 '''
 
-from __future__ import unicode_literals
+
 import json
 import logging
 
@@ -126,10 +126,7 @@ def populate_preprint_providers(*args):
         custom_taxonomy = data.pop('custom_taxonomy', False)
 
         if data.get('subjects_acceptable'):
-            data['subjects_acceptable'] = map(
-                lambda rule: (map(get_subject_id, rule[0]), rule[1]),
-                data['subjects_acceptable']
-            )
+            data['subjects_acceptable'] = [(list(map(get_subject_id, rule[0])), rule[1]) for rule in data['subjects_acceptable']]
 
         provider, created = PreprintProvider.objects.update_or_create(_id=_id, defaults=data)
 

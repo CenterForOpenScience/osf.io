@@ -46,15 +46,15 @@ def prepare_mock_wb_response(
     wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None)
 
     default_file = {
-        u'contentType': None,
-        u'extra': {u'downloads': 0, u'version': 1},
-        u'kind': u'file',
-        u'modified': None,
-        u'name': u'NewFile',
-        u'path': u'/NewFile',
-        u'provider': provider,
-        u'size': None,
-        u'materialized': '/',
+        'contentType': None,
+        'extra': {'downloads': 0, 'version': 1},
+        'kind': 'file',
+        'modified': None,
+        'name': 'NewFile',
+        'path': '/NewFile',
+        'provider': provider,
+        'size': None,
+        'materialized': '/',
     }
 
     if len(files):
@@ -73,7 +73,7 @@ def prepare_mock_wb_response(
         responses.Response(
             method,
             wb_url,
-            json={u'data': jsonapi_data},
+            json={'data': jsonapi_data},
             status=status_code,
             content_type='application/json'
         )
@@ -260,7 +260,7 @@ class TestNodeFilesList(ApiTestCase):
         wb_request = responses.calls[-1].request
         url = furl.furl(wb_request.url)
 
-        assert_equal(url.query, 'meta=True&view_only={}'.format(unicode(vol.key, 'utf-8')))
+        assert_equal(url.query, 'meta=True&view_only={}'.format(str(vol.key, 'utf-8')))
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
         assert_in(vol.key, res.json['data'][0]['links']['info'])
