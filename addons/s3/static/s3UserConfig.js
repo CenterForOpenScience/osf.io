@@ -23,9 +23,12 @@ var $modal = $('#s3InputCredentials');
 function ViewModel(url) {
     var self = this;
 
-    self.properName = 'Amazon S3';
+    self.properName = 'S3 Object Storage';
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
+    self.host = ko.observable();
+    self.port = ko.observable();
+    self.encrypted = ko.observable(true);
     self.account_url = '/api/v1/settings/s3/accounts/';
     self.accounts = ko.observableArray();
 
@@ -37,29 +40,61 @@ function ViewModel(url) {
         self.messageClass('text-info');
         self.accessKey(null);
         self.secretKey(null);
+        var advSettingsHeading = document.querySelectorAll('.advanced_settings_heading')[0];
+        var advSettings = document.querySelectorAll('.advanced_settings')[0];
+        advSettingsHeading.firstElementChild.className = 'fa fa-caret-right';
+        advSettings.style.display = 'none';
+        self.advancedOpen = false;
     };
+
+    self.advancedOpen = false
+    self.toggleAdvanced = function(context, event) {
+        var advSettings = document.querySelectorAll('.advanced_settings')[0];
+        if (self.advancedOpen) {
+            event.currentTarget.firstElementChild.className = 'fa fa-caret-right';
+            advSettings.style.display = 'none';
+            self.advancedOpen = false;
+        } else {
+            event.currentTarget.firstElementChild.className = 'fa fa-caret-down';
+            advSettings.style.display = 'block';
+            self.advancedOpen = true;
+        }
+
+    };
+
     /** Send POST request to authorize S3 */
     self.connectAccount = function() {
         // Selection should not be empty
-        if( !self.accessKey() && !self.secretKey() ){
+        if (!self.host) {
+            self.changeMessage('A host name is required to connect an s3 provider.', 'text-danger');
+            return;
+        }
+        if (!self.port) {
+            self.changeMessage('A host name is required to connect an s3 provider.', 'text-danger');
+            return;
+        }
+        if (!self.accessKey() && !self.secretKey()) {
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
             return;
         }
 
-        if (!self.accessKey() ){
+        if (!self.accessKey()) {
             self.changeMessage('Please enter an API access key.', 'text-danger');
             return;
         }
 
-        if (!self.secretKey() ){
+        if (!self.secretKey()) {
             self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
         return osfHelpers.postJSON(
             self.account_url,
             ko.toJS({
+                host: self.host,
+                port: self.port,
+                encrypted: self.encrypted(),
                 access_key: self.accessKey,
-                secret_key: self.secretKey,
+                secret_key: self.secretKey
             })
         ).done(function() {
             self.clearModal();
@@ -126,6 +161,7 @@ function ViewModel(url) {
         });
     };
 
+  
     self.disconnectAccount = function(account) {
         var self = this;
         var url = '/api/v1/oauth/accounts/' + account.id + '/';

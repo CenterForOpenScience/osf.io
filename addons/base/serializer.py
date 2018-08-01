@@ -3,7 +3,6 @@ import abc
 from framework.auth.decorators import collect_auth
 from website.util import api_url_for, web_url_for
 
-
 class AddonSerializer(object):
     __metaclass__ = abc.ABCMeta
 

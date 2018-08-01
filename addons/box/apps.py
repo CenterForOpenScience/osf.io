@@ -12,7 +12,7 @@ class BoxAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
-    max_file_size = 250  # MB
+    max_file_size = 999999999999999999999999  # MB
 
     @property
     def get_hgrid_data(self):

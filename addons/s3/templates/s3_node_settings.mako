@@ -42,6 +42,11 @@
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">
+                    <span data-bind="if: host">
+                        <strong>Current Host:</strong>
+                        <a data-bind="attr: {href: host}, text: host"></a>
+                    </span>
+                    <br>
                     <strong>Current Bucket:</strong>
                     <span data-bind="if: folderName">
                         <a data-bind="attr: {href: urls().files}, text: folderName"></a>

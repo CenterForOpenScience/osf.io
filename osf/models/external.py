@@ -82,7 +82,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     class Meta:
         unique_together = [
-            ('provider', 'provider_id',)
+            ('provider', 'provider_id')
         ]
 
 

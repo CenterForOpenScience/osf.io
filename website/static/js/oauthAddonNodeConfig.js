@@ -193,7 +193,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 return {
                     name: account.display_name,
                     profile: account.profile_url,
-                    id: account.id
+                    id: account.id,
+                    host: account.host
                 };
             }));
         }).fail(function(xhr, textStatus, error) {
@@ -208,8 +209,15 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
     },
    formatExternalName: function(item) {
+        var display_name;
+
+        if (item.name) {
+            display_name = item.name
+        } else {
+            display_name = item.host
+        }
         return {
-            text: $osf.htmlEscape(item.name),
+            text: $osf.htmlEscape(display_name),
             value: item.id
         };
     }

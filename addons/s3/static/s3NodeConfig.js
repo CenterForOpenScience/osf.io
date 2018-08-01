@@ -21,6 +21,10 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
+        self.encrypted = ko.observable(true);
+        self.host = ko.observable('');
+        self.port = ko.observable('');
+
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -46,6 +50,44 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             },
             tbOpts
         );
+    },
+
+    toggleAdvanced: function() {
+        console.log('HELLO');
+    },
+
+    updateFromData: function(data) {
+        var self = this;
+        var ret = $.Deferred();
+        var applySettings = function(settings){
+            self.ownerName(settings.ownerName);
+            self.nodeHasAuth(settings.nodeHasAuth);
+            self.userIsOwner(settings.userIsOwner);
+            self.userHasAuth(settings.userHasAuth);
+            self.folder(settings.folder || {
+                name: null,
+                path: null,
+                id: null
+            });
+            self.library(settings.library || {
+                name: null,
+                path: null,
+                id: null
+            });
+            self.urls(settings.urls);
+            self._updateCustomFields(settings);
+            self.afterUpdate();
+            ret.resolve();
+        };
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
+            self.fetchFromServer()
+                .done(applySettings)
+                .fail(ret.reject);
+        }
+        else{
+            applySettings(data);
+        }
+        return ret.promise();
     },
 
     connectAccount: function() {

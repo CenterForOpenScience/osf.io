@@ -369,7 +369,7 @@ var FileViewPage = {
             var fileType = mime.lookup(self.file.name.toLowerCase());
             // Only allow files < 200kb to be editable (should sync with MFR limit)
             // No files on figshare are editable.
-            if (self.file.size < 204800 && fileType && self.file.provider !== 'figshare') { //May return false
+            if (self.file.size < 204800 && fileType && self.file.provider !== 'figshare' && self.file.provider !== 'box') { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
