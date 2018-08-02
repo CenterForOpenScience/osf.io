@@ -620,7 +620,7 @@ class ReviewProviderMixin(models.Model):
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
         qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in DefaultStates}
+        counts = {state.value: 0 for state in ReviewsStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
