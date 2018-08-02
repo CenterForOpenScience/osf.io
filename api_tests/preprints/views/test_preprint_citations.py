@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from api.base.settings.defaults import API_BASE
+from api.citations.utils import display_absolute_url, render_citation
 from django.utils import timezone
-from api.citations.utils import display_absolute_url
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
@@ -128,37 +128,11 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.third_contrib.family_name = 'Schematics'
         self.third_contrib.save()
 
-        self.MLA_DATE_FORMAT = '%-d {month} %Y'
-
-        # MLA month abreviations here
-        #  http://www.pomfret.ctschool.net/computer_classes/documents/mla-abbreviationsofmonths.pdf
-        self.MLA_MONTH_MAP = {
-            1: 'Jan.',
-            2: 'Feb.',
-            3: 'Mar.',
-            4: 'Apr.',
-            5: 'May',
-            6: 'June',
-            7: 'July',
-            8: 'Aug.',
-            9: 'Sept.',
-            10: 'Oct.',
-            11: 'Nov.',
-            12: 'Dec.',
-        }
-
-        date = timezone.now().date()
-        self.formated_date = date.strftime(self.MLA_DATE_FORMAT).format(month=self.MLA_MONTH_MAP[date.month])
-
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {}. Web.'.format(
-            self.node.title,
-            self.published_preprint.provider.name,
-            self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
         # test_suffix
         self.admin_contributor.suffix = 'Junior'
@@ -166,11 +140,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B., Junior. “{}.” {}, {}. Web.'.format(
-            self.node.title,
-            self.published_preprint.provider.name,
-            self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
         # test_no_middle_names
         self.admin_contributor.suffix = ''
@@ -179,11 +149,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes. “{}.” {}, {}. Web.'.format(
-            self.node.title,
-            self.published_preprint.provider.name,
-            self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
     def test_citation_no_repeated_periods(self):
         self.node.title = 'A Study of Coffee.'
@@ -191,11 +157,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
-                self.node.title,
-                self.published_preprint.provider.name,
-                self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
     def test_citation_osf_provider(self):
         self.node.title = 'A Study of Coffee.'
@@ -205,11 +167,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B. “{}” {}, {}. Web.'.format(
-                self.node.title,
-                'OSF Preprints',
-                self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
     def test_two_authors(self):
         self.node.add_contributor(self.second_contrib)
@@ -217,11 +175,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. “{}.” {}, {}. Web.'.format(
-                self.node.title,
-                self.published_preprint.provider.name,
-                self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
     def test_three_authors(self):
         self.node.add_contributor(self.second_contrib)
@@ -230,11 +184,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B., et al. “{}.” {}, {}. Web.'.format(
-                self.node.title,
-                self.published_preprint.provider.name,
-                self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
         # first name suffix
         self.admin_contributor.suffix = 'Jr.'
@@ -242,11 +192,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B., Jr., et al. “{}.” {}, {}. Web.'.format(
-                self.node.title,
-                self.published_preprint.provider.name,
-                self.formated_date)
-        )
+        assert_equal(citation, render_citation(self.published_preprint, 'modern-language-association'))
 
 
 class TestPreprintCitationContentAPA(ApiTestCase):
