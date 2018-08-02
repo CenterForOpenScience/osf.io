@@ -17,4 +17,7 @@ OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 # Max render size in bytes; no max if None
 MAX_RENDER_SIZE = None
 
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 100
+
 CACHE = False
