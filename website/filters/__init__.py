@@ -28,8 +28,8 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
     return url
 
 def profile_image_url(profile_image_filter, *args, **kwargs):
-    filter = filter_providers[profile_image_filter]
-    return(list(filter(*args, **kwargs)))
+    fl = filter_providers[profile_image_filter]
+    return fl(*args, **kwargs)
 
 
 filter_providers = {'gravatar': gravatar}
