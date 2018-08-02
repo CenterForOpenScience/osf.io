@@ -6,7 +6,7 @@ from rest_framework.exceptions import APIException, NotFound
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
+from api.base.renderers import JSONAPIRenderer
 
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
@@ -37,7 +37,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     ordering = ('-id',)
 
@@ -73,7 +73,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):

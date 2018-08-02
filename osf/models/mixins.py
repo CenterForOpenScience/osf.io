@@ -180,7 +180,7 @@ class AddonModelMixin(models.Model):
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
     ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base'])
+        config.label != 'base'], key=lambda cls: cls.short_name)
 
     class Meta:
         abstract = True

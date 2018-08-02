@@ -102,7 +102,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     settings = importlib.import_module(settings_module)
 
     init_addons(settings, routes)
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
 
     app.debug = settings.DEBUG_MODE

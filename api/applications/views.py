@@ -6,7 +6,7 @@ from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
+from api.base.renderers import JSONAPIRenderer
 
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
@@ -47,7 +47,7 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMix
     view_category = 'applications'
     view_name = 'application-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     ordering = ('-created',)
 
@@ -83,7 +83,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_object(self):
         return self.get_app()
@@ -121,7 +121,7 @@ class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin
 
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     view_category = 'applications'
     view_name = 'application-reset'

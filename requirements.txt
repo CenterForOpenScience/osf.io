@@ -18,7 +18,8 @@ kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
 httplib2==0.10.3
-itsdangerous==0.24
+# Contains fix for signing strings on Py3. See https://github.com/pallets/itsdangerous/issues/89
+git+git://github.com/pallets/itsdangerous.git
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.5.3
