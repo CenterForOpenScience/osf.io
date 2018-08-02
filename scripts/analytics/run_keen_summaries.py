@@ -23,4 +23,4 @@ def run_main(date=None, yesterday=False):
 
 
 if __name__ == '__main__':
-    SummaryHarness().main()
+    run_main(yesterday=True)
