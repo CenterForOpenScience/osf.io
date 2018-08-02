@@ -19,7 +19,7 @@ amqp==2.2.2
 vine==1.1.4
 httplib2==0.10.3
 # Contains fix for signing strings on Py3. See https://github.com/pallets/itsdangerous/issues/89
-git+git://github.com/pallets/itsdangerous.git
+git+git://github.com/cos-forks/itsdangerous.git@07659517a6dbc60ebe80095052585293f00e9125
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.5.3
