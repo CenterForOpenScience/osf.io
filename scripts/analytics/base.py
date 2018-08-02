@@ -11,10 +11,8 @@ from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
 from scripts import utils as script_utils
 
-logger = logging.getLogger('scripts.analytics')
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-script_utils.add_file_logger(logger, 'keen_analytics')
 
 
 class BaseAnalytics(object):
