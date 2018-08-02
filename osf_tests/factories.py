@@ -649,7 +649,7 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         preprint_file = OsfStorageFile.create(
-            node=instance.node,
+            target=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))

@@ -13,8 +13,7 @@ Mako==1.0.7
 Markdown==2.6.9
 WTForms==1.0.4
 beautifulsoup4==4.6.0
-# Fork of celery 4.2.1 with https://github.com/celery/celery/pull/4839 merged
-git+https://github.com/cos-forks/celery@v4.2.1+cos0
+celery==4.2.1
 kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4

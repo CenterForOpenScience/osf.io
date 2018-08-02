@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Guid
 from website import settings, language
 from website.util import web_url_for
 
@@ -147,11 +147,11 @@ def must_not_be_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        if kwargs.get('nid') or kwargs.get('pid'):
+            _inject_nodes(kwargs)
+        target = kwargs.get('node') or getattr(Guid.load(kwargs.get('guid')), 'referent', None)
 
-        _inject_nodes(kwargs)
-        node = kwargs['node']
-
-        if node.is_registration and not node.archiving:
+        if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
@@ -263,11 +263,19 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            _inject_nodes(kwargs)
+            response = None
+            target = None
+            guid = Guid.load(kwargs.get('guid'))
+            if guid:
+                target = getattr(guid, 'referent', None)
+            else:
+                _inject_nodes(kwargs)
+
+            target = target or kwargs.get('node')
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
-            response = check_contributor_auth(kwargs['node'], kwargs['auth'], include_public, include_view_only_anon)
+            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon)
 
             return response or func(*args, **kwargs)
 
@@ -376,8 +384,9 @@ def must_have_permission(permission):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             # Ensure `project` and `node` kwargs
-            _inject_nodes(kwargs)
-            node = kwargs['node']
+            if kwargs.get('nid') or kwargs.get('pid'):
+                _inject_nodes(kwargs)
+            target = kwargs.get('node') or getattr(Guid.load(kwargs.get('guid')), 'referent', None)
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
@@ -387,7 +396,7 @@ def must_have_permission(permission):
                 raise HTTPError(http.UNAUTHORIZED)
 
             # User must have permissions
-            if not node.has_permission(user, permission):
+            if not target.has_permission(user, permission):
                 raise HTTPError(http.FORBIDDEN)
 
             # Call view function
