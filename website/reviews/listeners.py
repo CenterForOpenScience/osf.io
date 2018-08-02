@@ -62,7 +62,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
     # Set message
-    context['message'] = u'submitted {}.'.format(context['reviewable'].node.title)
+    context['message'] = u'submitted "{}".'.format(context['reviewable'].node.title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
@@ -85,4 +85,48 @@ def reviews_submit_notification_moderators(self, timestamp, context):
                         context['reviewable'].node,
                         timestamp,
                         abstract_provider=context['reviewable'].provider,
+                        **context)
+
+
+# Handle email notifications to notify moderators of new withdrawal requests
+@reviews_signals.reviews_email_withdrawal_requests.connect
+def reviews_withdrawal_requests_notification(self, timestamp, context):
+    # imports moved here to avoid AppRegistryNotReady error
+    from osf.models import NotificationSubscription
+    from website.profile.utils import get_profile_image_url
+    from website.notifications import emails
+    from website import settings
+
+    # Get NotificationSubscription instance, which contains reference to all subscribers
+    provider_subscription = NotificationSubscription.load(
+        '{}_new_pending_submissions'.format(context['reviewable'].provider._id))
+    preprint = context['reviewable']
+    preprint_word = preprint.provider.preprint_word
+
+    # Set message
+    context['message'] = u'has requested withdrawal of {} "{}".'.format(preprint_word, preprint.node.title)
+    # Set url for profile image of the submitter
+    context['profile_image_url'] = get_profile_image_url(context['requester'])
+    # Set submission url
+    context['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                           preprint.provider._id,
+                                                                           preprint._id)
+    # Store emails to be sent to subscribers instantly (at a 5 min interval)
+    emails.store_emails(provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
+                        'email_transactional',
+                        'new_pending_submissions',
+                        context['requester'],
+                        preprint.node,
+                        timestamp,
+                        abstract_provider=preprint.provider,
+                        **context)
+
+    # Store emails to be sent to subscribers daily
+    emails.store_emails(provider_subscription.email_digest.all().values_list('guids___id', flat=True),
+                        'email_digest',
+                        'new_pending_submissions',
+                        context['requester'],
+                        preprint.node,
+                        timestamp,
+                        abstract_provider=preprint.provider,
                         **context)

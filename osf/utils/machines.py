@@ -104,6 +104,13 @@ class ReviewsMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
+    def withdrawal_submitter_is_moderator_or_admin(self, submitter):
+        # Returns True if the submitter of the request is a moderator or admin for the provider.
+        from api.providers.permissions import GroupHelper
+        provider = self.machineable.provider
+        return GroupHelper(provider).get_group('moderator').user_set.filter(id=submitter.id).exists() or \
+               GroupHelper(provider).get_group('admin').user_set.filter(id=submitter.id).exists()
+
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
@@ -149,8 +156,27 @@ class ReviewsMachine(BaseMachine):
                                                action=self.action)
 
     def notify_withdraw(self, ev):
-        # TODO [IN-284]: language
-        pass
+        context = self.get_context()
+        try:
+            preprint_request_action = PreprintRequestAction.objects.get(target__id=self.machineable.id,
+                                                                   from_state='pending',
+                                                                   to_state='accepted',
+                                                                   trigger='accept')
+            context['requester'] = preprint_request_action.target.creator
+        except PreprintRequestAction.DoesNotExist:
+            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
+            context['withdrawal_submitter_is_moderator_or_admin'] = True
+
+        for contributor in self.machineable.node.contributors.all():
+            context['contributor'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
+            mails.send_mail(
+                contributor.username,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
+                mimetype='html',
+                **context
+            )
 
     def get_context(self):
         return {
@@ -255,15 +281,14 @@ class PreprintRequestMachine(BaseMachine):
 
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
-        return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value \
-            and not self.machineable.target.ever_public
+        return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
-        # TODO: [IN-284]
-        pass
+        context = self.get_context()
+        if not self.auto_approval_allowed():
+            reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        # TODO: [IN-331]
         pass
 
     def notify_edit_comment(self, ev):
@@ -280,6 +305,7 @@ class PreprintRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'preprint': self.machineable.target,
-            'requester': self.machineable.creator
+            'reviewable': self.machineable.target,
+            'requester': self.machineable.creator,
+            'is_request_email': True,
         }
