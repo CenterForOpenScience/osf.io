@@ -86,9 +86,9 @@ def s3_add_user_account(auth, **kwargs):
     )
     if not user_info:
         return {
-            'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list buckets.')
+            'message': '''Unable to access account.\n Check to make sure that
+            the above credentials are valid, and that they have permission to
+            list buckets.'''
         }, httplib.BAD_REQUEST
 
     if not utils.can_list(
@@ -99,8 +99,8 @@ def s3_add_user_account(auth, **kwargs):
         encrypted
     ):
         return {
-            'message': ('Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM')
+            'message': '''Unable to list buckets.\n Listing buckets is
+            required permission that can be changed via IAM'''
         }, httplib.BAD_REQUEST
 
     account = None
@@ -110,6 +110,10 @@ def s3_add_user_account(auth, **kwargs):
         host,
         port
     )
+    if user_info.display_name is not None or user_info.display_name is not "":
+        display_name = user_info.display_name
+    else:
+        display_name = '{}:{}'.format(host, port)
     try:
         account = ExternalAccount(
             provider=SHORT_NAME,
@@ -117,7 +121,7 @@ def s3_add_user_account(auth, **kwargs):
             oauth_key=access_key,
             oauth_secret=secret_key,
             provider_id=provider_id,
-            display_name=user_info.display_name
+            display_name=display_name
         )
         account.save()
     except ValidationError:
