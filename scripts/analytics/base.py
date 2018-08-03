@@ -9,6 +9,7 @@ from django.utils import timezone
 from website.app import init_app
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
+from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
