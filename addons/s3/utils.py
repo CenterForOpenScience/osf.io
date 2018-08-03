@@ -1,13 +1,19 @@
 import re
 import httplib
-from urlsparse import urlparse
+#TODO #python3upgrade When upgrading to python3, change to:
+# from urllib.parse import urlparse
+from urlparse import urlparse
 
 from boto import exception
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 
 from framework.exceptions import HTTPError
-from addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.base.exceptions import (
+    InvalidAuthError,
+    InvalidFolderError,
+    InvalidSettingsError
+)
 from addons.s3.settings import BUCKET_LOCATIONS
 
 
@@ -25,12 +31,19 @@ def connect_s3(
     """
     if node_settings is not None:
         if node_settings.external_account is not None:
-            host = node_settings.external_account.host
-            port = node_settings.external_account.port
+            account = node_settings.external_account
+            scheme, user_id, host, port = parse_provider_id(account.provider_id)
+            if scheme == 'https':
+                encrypted = True
+            elif scheme == 'http':
+                encrypted = False
+            else:
+                raise InvalidSettingsError()
+            host = host
+            port = port
             access_key = node_settings.external_account.oauth_key
             secret_key = node_settings.external_account.oauth_secret
-            encrypted = node_settings.external_account.encrypted
-
+            encrypted = encrypted
     connection = S3Connection(
         access_key,
         secret_key,
@@ -44,9 +57,9 @@ def connect_s3(
 
 def parse_provider_id(provider_id):
     parsed = urlparse(provider_id)
-    user_id, host_port = parsed.split(str="@")
-    host, port = host_port.split(str=":")
-    return parsed.scheme, user_id, host, port
+    user_id, host_port = parsed.netloc.split("@")
+    host, port_string = host_port.split(":")
+    return parsed.scheme, user_id, host, int(port_string)
 
 
 def get_bucket_names(node_settings):
@@ -152,6 +165,7 @@ def get_user_info(
 ):
     """Returns an S3 User with .display_name and .id, or None
     """
+
     if not (host and port and access_key and secret_key):
         return None
 

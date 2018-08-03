@@ -53,7 +53,7 @@ s3_set_config = generic_views.set_config(
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 def s3_folder_list(node_addon, **kwargs):
-    """ Returns all the subsequent folders under the folder id passed.
+    """Returns all the subsequent folders under the folder id passed.
     """
     return node_addon.get_folders()
 
@@ -61,13 +61,16 @@ def s3_folder_list(node_addon, **kwargs):
 def s3_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     try:
-        host = request.json['host']
-        port = int(request.json['port'])
-        encrypted = request.json['encrypted']
-        access_key = request.json['access_key']
-        secret_key = request.json['secret_key']
+        host = request.json.get('host', 's3.amazonaws.com').strip()
+        port = int(request.json.get('port', '443').strip())
+        encrypted = request.json.get('encrypted', True)
+        access_key = request.json['access_key'].strip()
+        secret_key = request.json['secret_key'].strip()
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        return {
+            'message': '''The request was malformed - it did not contain all of
+            the parameters required to create an account on s3.'''
+        }, httplib.BAD_REQUEST
 
     if not any({access_key, secret_key, host, port}):
         return {
@@ -101,7 +104,7 @@ def s3_add_user_account(auth, **kwargs):
         }, httplib.BAD_REQUEST
 
     account = None
-    provider_id='http{}://{}@{}:{}'.format(
+    provider_id = 'http{}://{}@{}:{}'.format(
         's' if encrypted else '',
         user_info.id,
         host,
@@ -128,7 +131,7 @@ def s3_add_user_account(auth, **kwargs):
 
         if (
             account.oauth_key != access_key or
-            account.oauth_secret != secret_key or
+            account.oauth_secret != secret_key
         ):
             account.oauth_key = access_key
             account.oauth_secret = secret_key
