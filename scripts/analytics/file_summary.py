@@ -38,10 +38,10 @@ class FileSummary(SummaryAnalytics):
             target_content_type=ContentType.objects.get_for_model(QuickFilesNode)
         )
 
-        public_query = (quickfiles_query | Q(
+        public_query = Q(
             target_object_id__in=Node.objects.filter(is_public=True).values('id'),
             target_content_type=node_content_type
-        ))
+        )
 
         private_query = Q(
             target_object_id__in=Node.objects.filter(is_public=False).values('id'),
@@ -57,10 +57,10 @@ class FileSummary(SummaryAnalytics):
             # OsfStorageFiles - the number of files on OsfStorage
             'osfstorage_files_including_quickfiles': {
                 'total': file_qs.count(),
-                'public': file_qs.filter(public_query).count(),
+                'public': file_qs.filter(public_query).count() + file_qs.filter(quickfiles_query).count(),
                 'private': file_qs.filter(private_query).count(),
                 'total_daily': file_qs.filter(daily_query).count(),
-                'public_daily': file_qs.filter(public_query & daily_query).count(),
+                'public_daily': file_qs.filter(public_query & daily_query).count() + file_qs.filter(quickfiles_query & daily_query).count(),
                 'private_daily': file_qs.filter(private_query & daily_query).count(),
             },
         }
