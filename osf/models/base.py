@@ -23,20 +23,21 @@ ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 logger = logging.getLogger(__name__)
 
 
+def _check_blacklist(guid):
+    return BlackListGuid.objects.filter(guid=guid).exists()
+
+
 def generate_guid(length=5):
     while True:
         guid_id = ''.join(random.sample(ALPHABET, length))
 
-        try:
-            # is the guid in the blacklist
-            BlackListGuid.objects.get(guid=guid_id)
-        except BlackListGuid.DoesNotExist:
-            # it's not, check and see if it's already in the database
-            try:
-                Guid.objects.get(_id=guid_id)
-            except Guid.DoesNotExist:
-                # valid and unique guid
-                return guid_id
+        # is the guid in the blacklist
+        if _check_blacklist(guid_id):
+            continue
+
+        # it's not, check and see if it's already in the database
+        if not Guid.objects.filter(_id=guid_id).exists():
+            return guid_id
 
 
 def generate_object_id():
@@ -91,8 +92,8 @@ class BaseModel(TimeStampedModel):
     def reload(self):
         return self.refresh_from_db()
 
-    def refresh_from_db(self):
-        super(BaseModel, self).refresh_from_db()
+    def refresh_from_db(self, **kwargs):
+        super(BaseModel, self).refresh_from_db(**kwargs)
         # Django's refresh_from_db does not uncache GFKs
         for field in self._meta.private_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
@@ -116,7 +117,7 @@ class BaseModel(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
-        if not kwargs.get('force_insert') and not kwargs.get('force_update'):
+        if kwargs.pop('clean', True) and not (kwargs.get('force_insert') or kwargs.get('force_update')):
             try:
                 self.full_clean()
             except DjangoValidationError as err:
@@ -271,6 +272,8 @@ class GuidMixinQuerySet(IncludeQuerySet):
         return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
 
     def all(self):
+        if self._fields:
+            return super(GuidMixinQuerySet, self).all()
         return super(GuidMixinQuerySet, self).all().include('guids')
 
     def count(self):

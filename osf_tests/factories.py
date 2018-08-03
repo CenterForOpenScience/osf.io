@@ -9,6 +9,7 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -46,6 +47,7 @@ def get_default_metaschema():
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
+
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
@@ -92,8 +94,6 @@ class UserFactory(DjangoModelFactory):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -101,7 +101,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return
@@ -648,7 +648,7 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         preprint_file = OsfStorageFile.create(
-            node=instance.node,
+            target=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))

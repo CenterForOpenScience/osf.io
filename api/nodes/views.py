@@ -3,6 +3,7 @@ import re
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -969,8 +970,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
@@ -1035,7 +1036,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             raise NotFound
 
         sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
-        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('node__guids', 'versions', 'tags', 'guids')
+        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -1047,7 +1048,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             if isinstance(fobj, list):
                 node = self.get_node(check_object_permissions=False)
                 base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
-                return base_class.objects.filter(node=node, _path=path)
+                return base_class.objects.filter(
+                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path
+                )
             elif isinstance(fobj, OsfStorageFolder):
                 return BaseFileNode.objects.filter(id=fobj.id)
             else:
@@ -1062,8 +1065,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
@@ -1220,6 +1223,9 @@ class NodeStorageProvider(object):
         self.pk = node._id
         self.id = node.id
 
+    @property
+    def target(self):
+        return self.node
 
 class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).

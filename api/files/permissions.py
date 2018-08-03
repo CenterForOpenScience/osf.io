@@ -16,14 +16,14 @@ class CheckedOutOrAdmin(permissions.BasePermission):
             return False
         return obj.checkout is None \
             or obj.checkout == auth.user \
-            or obj.node.has_permission(auth.user, 'admin')
+            or obj.target.has_permission(auth.user, 'admin')
 
 
 class IsPreprintFile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, BaseFileNode), 'obj must be a BaseFileNode, got {}'.format(obj)
 
-        if request.method == 'DELETE' and obj.node.preprint_file == obj and not obj.node._has_abandoned_preprint:
+        if request.method == 'DELETE' and (obj.target.hasattr('preprint_file') and obj.target.preprint_file == obj) and not obj.target._has_abandoned_preprint:
             return False
 
         return True

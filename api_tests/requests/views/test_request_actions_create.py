@@ -7,6 +7,8 @@ from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestM
 from osf.utils import permissions
 
 @pytest.mark.django_db
+@pytest.mark.enable_enqueue
+@pytest.mark.enable_quickfiles_creation
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
@@ -254,6 +256,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
     @pytest.fixture()
     def url(self, pre_request, post_request, none_request):

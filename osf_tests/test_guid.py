@@ -127,6 +127,7 @@ class TestReferent:
             pytest.fail('Multiple objects returned for {} with multiple guids. {}'.format(Factory._meta.model, ex))
 
 
+@pytest.mark.enable_bookmark_creation
 class TestResolveGuid(OsfTestCase):
 
     def setUp(self):
@@ -386,4 +387,6 @@ class TestResolveGuid(OsfTestCase):
         pp.node.save()
 
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 410
+        # assert res.status_code == 410
+        # This will throw an unauthorized error before it reaches deleted
+        assert res.status_code == 403

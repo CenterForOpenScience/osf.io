@@ -290,7 +290,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_folder_metadata_not_children(self):
         folder = GithubFolder(
             name='Folder',
-            node=self.project,
+            target=self.project,
             path='/Folder/'
         )
         folder.save()

@@ -20,6 +20,8 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestContributorDetail:
 
     @pytest.fixture()
@@ -169,6 +171,7 @@ class TestContributorDetail:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorOrdering:
 
     @pytest.fixture()
@@ -457,6 +460,7 @@ class TestNodeContributorOrdering:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorUpdate:
 
     @pytest.fixture()
@@ -878,6 +882,7 @@ class TestNodeContributorUpdate:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorPartialUpdate:
 
     @pytest.fixture()
