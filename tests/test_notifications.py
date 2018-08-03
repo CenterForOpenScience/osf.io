@@ -24,6 +24,7 @@ from website import settings
 from osf_tests import factories
 from tests.base import capture_signals
 from tests.base import OsfTestCase, NotificationTestCase
+from tests.utils import assert_items_equal
 
 
 

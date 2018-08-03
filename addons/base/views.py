@@ -292,7 +292,7 @@ def get_auth(auth, **kwargs):
                 _internal=True
             ),
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY).decode('utf-8')}
 
 
 LOG_ACTION_MAP = {

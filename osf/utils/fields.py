@@ -30,6 +30,8 @@ def encrypt_string(value, prefix='jwe:::'):
                     pass
                 else:
                     raise
+            else:
+                return value.decode('utf-8')
     return value
 
 

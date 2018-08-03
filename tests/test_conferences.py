@@ -118,8 +118,8 @@ class ContextTestCase(OsfTestCase):
             'timestamp': '123',
             'token': 'secret',
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
-                msg='{}{}'.format('123', 'secret'),
+                key=settings.MAILGUN_API_KEY.encode('utf-8'),
+                msg='{}{}'.format('123', 'secret').encode('utf-8'),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }

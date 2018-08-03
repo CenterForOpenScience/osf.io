@@ -74,7 +74,7 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
     # make a hash of the pertinent data
     raw = [fn.__name__, fn.__module__, args, kwargs]
     m = hashlib.md5()
-    m.update('-'.join([x.__repr__() for x in raw]))
+    m.update('-'.join([x.__repr__() for x in raw]).encode('utf-8'))
     key = m.hexdigest()
 
     if not once_per_request:
