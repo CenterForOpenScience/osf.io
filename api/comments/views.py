@@ -68,8 +68,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
 
         if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
-        elif isinstance(comment.target.referent, (WikiPage,
-                                                 BaseFileNode)):
+        elif isinstance(comment.target.referent, BaseFileNode):
+            comment_node = comment.target.referent.target
+        elif isinstance(comment.target.referent, WikiPage):
             comment_node = comment.target.referent.node
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer

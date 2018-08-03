@@ -53,6 +53,7 @@ from .factories import (
     PreprintFactory
 )
 from tests.base import OsfTestCase
+from tests.utils import run_celery_tasks
 
 
 pytestmark = pytest.mark.django_db
@@ -71,6 +72,8 @@ def auth(user):
     return Auth(user)
 
 # Tests copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestOSFUser:
 
     def test_create(self):
@@ -1154,6 +1157,9 @@ class TestCitationProperties:
         )
 
 # copied from tests/test_models.py
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestMergingUsers:
 
     @pytest.yield_fixture()
@@ -1220,6 +1226,7 @@ class TestMergingUsers:
             merge_dupe()
             assert mock_signals.signals_sent() == set([user_merged])
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
@@ -1378,6 +1385,8 @@ class TestDisablingUsers(OsfTestCase):
             self.user.disable_account()
 
 # Copied from tests/modes/test_user.py
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
@@ -1519,6 +1528,9 @@ class TestUser(OsfTestCase):
 
 
 # Copied from tests/models/test_user.py
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
@@ -1545,6 +1557,7 @@ class TestUserMerging(OsfTestCase):
         )
         self.project_with_unreg_contrib.save()
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
@@ -1691,10 +1704,10 @@ class TestUserMerging(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
-        # perform the merge
-        self.user.merge_user(other_user)
-        self.user.save()
-        handlers.celery_teardown_request()
+        with run_celery_tasks():
+            # perform the merge
+            self.user.merge_user(other_user)
+            self.user.save()
 
         self.user.reload()
 
@@ -1787,6 +1800,7 @@ class TestUserMerging(OsfTestCase):
         assert mock_notify.called is False
 
 
+@pytest.mark.enable_implicit_clean
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):
@@ -1971,6 +1985,7 @@ class TestUserValidation(OsfTestCase):
                 self.user.save()
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestUserGdprDelete:
 
     @pytest.fixture()

@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 import mock
+import pytest
 from nose.tools import *  # noqa
 
 from tests.base import fake, OsfTestCase
@@ -34,6 +35,7 @@ DUMMY_TOKEN = tokens.encode({
 })
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationEmbargoModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoModelsTestCase, self).setUp()
@@ -433,6 +435,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert registration.is_deleted is False
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
 
     def setUp(self):
@@ -512,6 +515,7 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             assert_false(node.embargo_end_date)
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoApprovalDisapprovalViewsTestCase, self).setUp()
@@ -787,6 +791,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 410)
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoViewsTestCase, self).setUp()
