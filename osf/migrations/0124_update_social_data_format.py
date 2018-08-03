@@ -11,9 +11,8 @@ from django.db import migrations
 logger = logging.getLogger(__name__)
 
 
-SOCIAL_LIST_FIELDS = [
+FIELDS_TO_MIGRATE = [
     'github',
-    'profileWebsites',
     'linkedIn',
     'twitter'
 ]
@@ -32,10 +31,7 @@ def update_social_fields(state, schema):
         new_social = {}
         for key, value in user.social.iteritems():
             if key in SOCIAL_LIST_FIELDS:
-                if isinstance(value, list):
-                    new_social[key] = value
-                else:
-                    new_social[key] = [value]
+                new_social[key] = [value]
             else:
                 new_social[key] = value
         user.social = new_social
@@ -58,8 +54,10 @@ def reset_social_fields(state, schema):
     for user in users_with_social:
         old_social = {}
         for key, value in user.social.iteritems():
-            if key in SOCIAL_LIST_FIELDS and key != 'profileWebsites':
-                    old_social[key] = value[0]
+            if key in FIELDS_TO_MIGRATE:
+                if len(value) > 1:
+                    raise ValueError('Current social list field has more than one value, cannot reset to just one value.')
+                old_social[key] = value[0]
             else:
                 old_social[key] = value
         user.social = old_social
@@ -74,7 +72,7 @@ def reset_social_fields(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0111_auto_20180605_1240'),
+        ('osf', '0123_merge_20180803_1346'),
     ]
 
     operations = [
