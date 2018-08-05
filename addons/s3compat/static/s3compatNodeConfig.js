@@ -15,7 +15,9 @@ var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeC
 var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
-        self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
+        // TODO: [OSF-7069]
+        self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
+        self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
         // Non-OAuth fields
         self.availableServices = ko.observableArray(s3compatSettings['availableServices']);
         self.selectedService = ko.observable(s3compatSettings['availableServices'][0]);
@@ -24,7 +26,7 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
-            OauthAddonFolderPicker.prototype.treebeardOptions,
+            self.treebeardOptions,
             {   // TreeBeard Options
                 columnTitles: function() {
                     return [{
