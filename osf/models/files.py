@@ -25,6 +25,7 @@ from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url
+from website.settings import DOMAIN, DOI_FORMAT, DATACITE_PREFIX
 
 __all__ = (
     'File',
@@ -175,6 +176,50 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if self.history:
             return len(self.history)
         return 1
+
+    @property
+    def datacite_metadata(self):
+        creators = []
+        for contrib in self.node.contributors:
+            creator = {
+                'creatorName': contrib.fullname,
+                'givenName': contrib.given_name,
+                'familyName': contrib.family_name,
+                'nameIdentifiers': [{
+                    'nameIdentifier': contrib._id,
+                    'nameIdentifierScheme': 'OSF',
+                    'schemeURI': DOMAIN
+                }]
+            }
+
+            if contrib.external_identity:
+                for key, value in contrib.external_identity.items():
+                    creator['nameIdentifiers'].append({
+                        'nameIdentifier': value.keys()[0],  # This is only good for ORCID and likely to break unless more validation is put in.
+                        'nameIdentifierScheme': key
+                    })
+
+            creators.append(creator)
+
+        schema = {
+            'identifier': {
+                'identifier': DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid=self._id),
+                'identifierType': 'DOI',
+            },
+            'creators': creators,
+            'titles': [
+                {'title': self.name},
+                {'title': self.node.title, 'titleType': 'AlternativeTitle'}
+            ],
+            'publisher': 'Open Science Framework',
+            'publicationYear': str(self.created.year),
+            'resourceType': {
+                'resourceType': '(:unas)',
+                'resourceTypeGeneral': 'Other'
+            }
+        }
+
+        return schema
 
     @classmethod
     def create(cls, **kwargs):
