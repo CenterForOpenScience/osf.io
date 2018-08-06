@@ -3,6 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import PreprintRequestTestMixin
 
+@pytest.mark.enable_quickfiles_creation
 @pytest.mark.django_db
 class TestPreprintRequestActionList(PreprintRequestTestMixin):
     def url(self, request):
