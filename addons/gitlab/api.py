@@ -5,7 +5,7 @@ import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from addons.gitlab.exceptions import NotFoundError
+from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
 # Initialize caches
@@ -30,7 +30,11 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        self.gitlab.auth()
+        try:
+            self.gitlab.auth()
+        except gitlab.GitlabGetError as exc:
+            raise AuthError(exc.error_message)
+
         return self.gitlab.users.get(self.gitlab.user.id)
 
     def repo(self, repo_id):
