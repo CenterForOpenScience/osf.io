@@ -391,7 +391,13 @@ class TestNotificationsModels(OsfTestCase):
         user = factories.AuthUserFactory()
         unregistered_contributor = factories.UnregUserFactory()
         project = factories.ProjectFactory(creator=user)
-        project.add_unregistered_contributor(unregistered_contributor.fullname, unregistered_contributor.email, Auth(user))
+        project.add_unregistered_contributor(
+            unregistered_contributor.fullname,
+            unregistered_contributor.email,
+            Auth(user),
+            existing_user=unregistered_contributor
+        )
+
         contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
         assert_equal(len(contributor_subscriptions), 0)
 

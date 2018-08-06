@@ -2325,7 +2325,7 @@ class TestManageContributors:
             unregistered.email,
             auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
-            save=True
+            existing_user=unregistered
         )
         users = [
             {'id': node.creator._id, 'permission': READ, 'visible': True},

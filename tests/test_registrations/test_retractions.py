@@ -809,7 +809,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             unreg.fullname,
             unreg.email,
             auth=Auth(self.user),
-            permissions=['read', 'write', 'admin']
+            permissions=['read', 'write', 'admin'],
+            existing_user=unreg
         )
         self.registration.save()
         self.app.post_json(
