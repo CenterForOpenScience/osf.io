@@ -21,8 +21,9 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
-from django.db.models.signals import post_save
 from django.db import models
+from django.db.models import Count
+from django.db.models.signals import post_save
 from django.utils import timezone
 
 from framework.auth import Auth, signals, utils
@@ -34,7 +35,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -335,6 +336,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # When the user was disabled.
     date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
+
+    # When the user was soft-deleted (GDPR)
+    deleted = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
@@ -709,13 +713,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             file_node.save()
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
-        from addons.osfstorage.models import OsfStorageFileNode
         primary_quickfiles = QuickFilesNode.objects.get(creator=self)
         merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
         for merging_user_file in files_in_merging_user_quickfiles:
-            if OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name).exists():
+            if primary_quickfiles.files.filter(name=merging_user_file.name).exists():
                 digit = 1
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
@@ -730,7 +733,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 # check if new name conflicts, update til it does not (try up to 1000 times)
                 rename_count = 0
-                while OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=new_name).exists():
+                while primary_quickfiles.files.filter(name=new_name).exists():
                     digit += 1
                     new_name = new_name_format.format(name_without_extension, digit, extension)
                     rename_count += 1
@@ -740,7 +743,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 merging_user_file.name = new_name
                 merging_user_file.save()
 
-            merging_user_file.node = primary_quickfiles
+            merging_user_file.target = primary_quickfiles
             merging_user_file.save()
 
         # finalize the merge
@@ -1508,6 +1511,93 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
+    def gdpr_delete(self):
+        """
+        This function does not remove the user object reference from our database, but it does disable the account and
+        remove identifying in a manner compliant with GDPR guidelines.
+
+        Follows the protocol described in
+        https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
+
+        """
+        from osf.models import PreprintService, AbstractNode
+
+        user_nodes = self.nodes.all()
+        #  Validates the user isn't trying to delete things they deliberately made public.
+        if user_nodes.filter(type='osf.registration').exists():
+            raise UserStateError('You cannot delete this user because they have one or more registrations.')
+
+        if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
+            raise UserStateError('You cannot delete this user because they have one or more preprints.')
+
+        # Validates that the user isn't trying to delete things nodes they are the only admin on.
+        personal_nodes = AbstractNode.objects.annotate(contrib_count=Count('_contributors')).filter(contrib_count__lte=1).filter(contributor__user=self)
+        shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
+
+        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+            alternate_admins = Contributor.objects.select_related('user').filter(
+                node=node,
+                user__is_active=True,
+                admin=True,
+            ).exclude(user=self)
+            if not alternate_admins:
+                raise UserStateError(
+                    'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
+                        node._id))
+
+            for addon in node.get_addons():
+                if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:
+                    raise UserStateError('You cannot delete this user because they '
+                                         'have an external account for {} attached to Node {}, '
+                                         'which has other contributors.'.format(addon.short_name, node._id))
+
+        for node in shared_nodes.all():
+            logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
+            node.remove_contributor(self, auth=Auth(self), log=False)
+
+        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
+        self.disable_account()
+
+        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        for node in personal_nodes.all():
+            logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
+            node.remove_node(auth=Auth(self))
+
+        logger.info('Clearing identifying information...')
+        # This removes identifying info
+        # hard-delete all emails associated with the user
+        self.emails.all().delete()
+        # Change name to "Deleted user" so that logs render properly
+        self.fullname = 'Deleted user'
+        self.set_unusable_username()
+        self.set_unusable_password()
+        self.given_name = ''
+        self.family_name = ''
+        self.middle_names = ''
+        self.mailchimp_mailing_lists = {}
+        self.osf_mailing_lists = {}
+        self.verification_key = None
+        self.suffix = ''
+        self.jobs = []
+        self.schools = []
+        self.social = []
+        self.unclaimed_records = {}
+        self.notifications_configured = {}
+        # Scrub all external accounts
+        if self.external_accounts.exists():
+            logger.info('Clearing identifying information from external accounts...')
+            for account in self.external_accounts.all():
+                account.oauth_key = None
+                account.oauth_secret = None
+                account.refresh_token = None
+                account.provider_name = 'gdpr-deleted'
+                account.display_name = None
+                account.profile_url = None
+                account.save()
+            self.external_accounts.clear()
+        self.external_identity = {}
+        self.deleted = timezone.now()
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -1527,9 +1617,14 @@ def create_bookmark_collection(sender, instance, created, **kwargs):
         new_bookmark_collection(instance)
 
 
-@receiver(post_save, sender=OSFUser)
-def create_quickfiles_project(sender, instance, created, **kwargs):
+# Allows this hook to be easily mock.patched
+def _create_quickfiles_project(instance):
     from osf.models.quickfiles import QuickFilesNode
 
+    QuickFilesNode.objects.create_for_user(instance)
+
+
+@receiver(post_save, sender=OSFUser)
+def create_quickfiles_project(sender, instance, created, **kwargs):
     if created:
-        QuickFilesNode.objects.create_for_user(instance)
+        _create_quickfiles_project(instance)

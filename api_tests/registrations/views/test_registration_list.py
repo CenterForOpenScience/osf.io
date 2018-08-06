@@ -25,6 +25,7 @@ from website.views import find_bookmark_collection
 from osf.utils import permissions
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -111,6 +112,7 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.project._id, ids)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestRegistrationFiltering(ApiTestCase):
 
     def setUp(self):
@@ -305,7 +307,7 @@ class TestRegistrationFiltering(ApiTestCase):
         self.project_one.add_tag('caT', Auth(self.user_one))
         self.project_one.add_tag('CAT', Auth(self.user_one))
         self.project_one_reg = RegistrationFactory(
-            creator=self.user_one, project=self.project_one, is_public=True)
+            creator=self.user_one, project=self.project_one, is_public=True, title='No search terms!')
         res = self.app.get(
             '/{}registrations/?filter[tags]=cat'.format(
                 API_BASE

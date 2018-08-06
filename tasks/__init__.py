@@ -9,7 +9,6 @@ import json
 import platform
 import subprocess
 import logging
-from time import sleep
 
 import invoke
 from invoke import Collection
@@ -232,21 +231,21 @@ def flake(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
     """Install python dependencies.
 
     Examples:
         inv requirements
-        inv requirements --quick
+        inv requirements --all
 
-    Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
-    day to day development.
+    You should use --all for updating your developement environment.
+    --all will install (in order): addons, dev and the base requirements.
 
     By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
     requirements will prevent dev, and base from running.
     """
-    if quick:
+    if all:
         base = True
         addons = True
         dev = True
@@ -281,7 +280,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -289,12 +288,22 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
+    numprocesses = int(numprocesses)
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    if nocapture:
-        args = []
-    else:
-        args = ['-s']
+    args = []
+    if coverage:
+        args.extend([
+            '--cov-report', 'term-missing',
+            '--cov', 'admin',
+            '--cov', 'addons',
+            '--cov', 'api',
+            '--cov', 'framework',
+            '--cov', 'osf',
+            '--cov', 'website',
+        ])
+    if not nocapture:
+        args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
@@ -310,7 +319,7 @@ OSF_TESTS = [
     'osf_tests',
 ]
 
-ELSE_TESTS = [
+WEBSITE_TESTS = [
     'tests',
 ]
 
@@ -355,62 +364,52 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None):
+def test_osf(ctx, numprocesses=None, coverage=False):
     """Run the OSF test suite."""
     print('Testing modules "{}"'.format(OSF_TESTS))
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_else(ctx, numprocesses=None):
+def test_website(ctx, numprocesses=None, coverage=False):
     """Run the old test suite."""
-    print('Testing modules "{}"'.format(ELSE_TESTS))
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(WEBSITE_TESTS))
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_api1(ctx, numprocesses=None):
+def test_api1(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api2(ctx, numprocesses=None):
+def test_api2(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_api3(ctx, numprocesses=None):
+def test_api3(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses)
+    # NOTE: There may be some concurrency issues with ES
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_admin(ctx, numprocesses=None):
+def test_admin(ctx, numprocesses=None, coverage=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_addons(ctx, numprocesses=None):
+def test_addons(ctx, numprocesses=None, coverage=False):
     """Run all the tests in the addons directory.
     """
     print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
-
-
-@task
-def test_varnish(ctx):
-    """Run the Varnish test suite."""
-    proc = apiserver(ctx, wait=False, autoreload=False)
-    try:
-        sleep(5)
-        test_module(ctx, module='api/caching/tests/test_caching.py')
-    finally:
-        proc.kill()
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
@@ -422,7 +421,7 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_else(ctx)  # /tests
+    test_website(ctx)  # /tests
     test_api1(ctx)
     test_api2(ctx)
     test_api3(ctx)  # also /osf_tests
@@ -433,70 +432,69 @@ def test(ctx, all=False, syntax=False):
         test_admin(ctx)
         karma(ctx)
 
+@task
+def travis_setup(ctx):
+    ctx.run('npm install -g bower', echo=True)
+
+    with open('package.json', 'r') as fobj:
+        package_json = json.load(fobj)
+        ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
+
+    with open('bower.json', 'r') as fobj:
+        bower_json = json.load(fobj)
+        ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
-def test_js(ctx):
-    jshint(ctx)
-    karma(ctx)
-
-@task
-def test_travis_addons(ctx, numprocesses=None):
+def test_travis_addons(ctx, numprocesses=None, coverage=False):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
+    travis_setup(ctx)
     flake(ctx)
-    jshint(ctx)
-    test_addons(ctx, numprocesses=numprocesses)
-
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def test_travis_else(ctx, numprocesses=None):
+def test_travis_website(ctx, numprocesses=None, coverage=False):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
-    flake(ctx)
-    jshint(ctx)
-    test_else(ctx, numprocesses=numprocesses)
+    # flake(ctx)
+    # jshint(ctx)
+    travis_setup(ctx)
+    test_website(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None):
-    flake(ctx)
-    jshint(ctx)
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
+    # flake(ctx)
+    # jshint(ctx)
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
-    test_api1(ctx, numprocesses=numprocesses)
+    travis_setup(ctx)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None):
-    flake(ctx)
-    jshint(ctx)
-    test_api2(ctx, numprocesses=numprocesses)
+def test_travis_api2(ctx, numprocesses=None, coverage=False):
+    # flake(ctx)
+    # jshint(ctx)
+    travis_setup(ctx)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None):
-    flake(ctx)
-    jshint(ctx)
-    test_api3(ctx, numprocesses=numprocesses)
-
-
-@task
-def test_travis_varnish(ctx):
-    """
-    Run the fast and quirky JS tests and varnish tests in isolation
-    """
-    flake(ctx)
-    jshint(ctx)
-    test_js(ctx)
-    test_varnish(ctx)
-
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
+    # flake(ctx)
+    # jshint(ctx)
+    travis_setup(ctx)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
 
 @task
-def karma(ctx):
+def karma(ctx, travis=False):
     """Run JS tests with Karma. Requires Chrome to be installed."""
+    if travis:
+        return ctx.run('yarn test-travis', echo=True)
     ctx.run('yarn test', echo=True)
 
 

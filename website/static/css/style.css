@@ -59,6 +59,44 @@ a {
     list-style-type: none;
 }
 
+/* Cookie Banner */
+#cookieBanner {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    margin-bottom: 0px;
+    left:0;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border: 0px;
+    display: none;
+    align-items: center;
+}
+
+#cookieText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+#cookieAccept {
+   margin-right: 10%
+}
+
+#cookieBanner a {
+    color: white;
+    text-decoration: underline;
+}
+
+#cookieBanner a:hover {
+    color: #ADCCE6;
+}
+
+#cookieBanner a:visited {
+    color: #ADCCE6;
+}
+
 /* Footer slide-in */
 #footerSlideIn {
     position:fixed;

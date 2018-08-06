@@ -15,6 +15,7 @@ import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
@@ -386,7 +387,7 @@ def serialize_node(node, category):
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q(node=node)):
+    for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
         update_file(file_, index=index)
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
@@ -441,6 +442,7 @@ def serialize_cgm(cgm):
         'abstract': getattr(obj, 'description', ''),
         'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
+        'provider': getattr(cgm.collection.provider, '_id', None),
         'status': cgm.status,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
@@ -550,14 +552,15 @@ def update_user(user, index=None):
 @requires_search
 def update_file(file_, index=None, delete=False):
     index = index or INDEX
+    target = file_.target
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
     file_node_is_qa = bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
     ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))
-    ) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
+    ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not target.is_public or delete or target.is_deleted or target.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -569,15 +572,15 @@ def update_file(file_, index=None, delete=False):
 
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
-    file_deep_url = '/{node_id}/files/{provider}{path}/'.format(
-        node_id=file_.node._id,
+    file_deep_url = '/{target_id}/files/{provider}{path}/'.format(
+        target_id=target._id,
         provider=file_.provider,
         path=file_.path,
     )
-    if file_.node.is_quickfiles:
-        node_url = '/{user_id}/quickfiles/'.format(user_id=file_.node.creator._id)
+    if target.is_quickfiles:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
     else:
-        node_url = '/{node_id}/'.format(node_id=file_.node._id)
+        node_url = '/{target_id}/'.format(target_id=target._id)
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
@@ -591,10 +594,10 @@ def update_file(file_, index=None, delete=False):
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,
-        'node_title': file_.node.title,
-        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
-        'is_registration': file_.node.is_registration,
-        'is_retracted': file_.node.is_retracted,
+        'node_title': getattr(target, 'title', None),
+        'parent_id': target.parent_node._id if getattr(target, 'parent_node', None) else None,
+        'is_registration': getattr(target, 'is_registration', False),
+        'is_retracted': getattr(target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
     }
 
@@ -688,45 +691,57 @@ def create_index(index=None):
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
-        mapping = {
-            'properties': {
-                'tags': NOT_ANALYZED_PROPERTY,
-                'license': {
-                    'properties': {
-                        'id': NOT_ANALYZED_PROPERTY,
-                        'name': NOT_ANALYZED_PROPERTY,
-                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
-                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
-                        'year': {'type': 'string'},
+        if type_ == 'collectionSubmission':
+            mapping = {
+                'properties': {
+                    'collectedType': NOT_ANALYZED_PROPERTY,
+                    'subjects': NOT_ANALYZED_PROPERTY,
+                    'status': NOT_ANALYZED_PROPERTY,
+                    'provider': NOT_ANALYZED_PROPERTY,
+                    'title': ENGLISH_ANALYZER_PROPERTY,
+                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                }
+            }
+        else:
+            mapping = {
+                'properties': {
+                    'tags': NOT_ANALYZED_PROPERTY,
+                    'license': {
+                        'properties': {
+                            'id': NOT_ANALYZED_PROPERTY,
+                            'name': NOT_ANALYZED_PROPERTY,
+                            # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                            # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                            'year': {'type': 'string'},
+                        }
                     }
                 }
             }
-        }
-        if type_ in project_like_types:
-            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
-                         for field in analyzed_fields}
-            mapping['properties'].update(analyzers)
+            if type_ in project_like_types:
+                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                             for field in analyzed_fields}
+                mapping['properties'].update(analyzers)
 
-        if type_ == 'user':
-            fields = {
-                'job': {
-                    'type': 'string',
-                    'boost': '1',
-                },
-                'all_jobs': {
-                    'type': 'string',
-                    'boost': '0.01',
-                },
-                'school': {
-                    'type': 'string',
-                    'boost': '1',
-                },
-                'all_schools': {
-                    'type': 'string',
-                    'boost': '0.01'
-                },
-            }
-            mapping['properties'].update(fields)
+            if type_ == 'user':
+                fields = {
+                    'job': {
+                        'type': 'string',
+                        'boost': '1',
+                    },
+                    'all_jobs': {
+                        'type': 'string',
+                        'boost': '0.01',
+                    },
+                    'school': {
+                        'type': 'string',
+                        'boost': '1',
+                    },
+                    'all_schools': {
+                        'type': 'string',
+                        'boost': '0.01'
+                    },
+                }
+                mapping['properties'].update(fields)
         client().indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search

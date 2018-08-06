@@ -1242,6 +1242,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/<guid>/files/<provider>/<path:path>/',
                 '/project/<pid>/files/<provider>/<path:path>/',
                 '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
@@ -1257,6 +1258,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/<guid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
@@ -1720,6 +1722,7 @@ def make_url_map(app):
     # Set up static routing for addons and providers
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
+    provider_static_path = os.path.abspath('assets')
     if settings.DEV_MODE:
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
@@ -1728,8 +1731,7 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            assets_path = os.path.join(settings.BASE_PATH, 'assets')
-            return send_from_directory(assets_path, filename)
+            return send_from_directory(provider_static_path, filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():

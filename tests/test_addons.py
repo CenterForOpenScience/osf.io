@@ -11,6 +11,7 @@ import itsdangerous
 import jwe
 import jwt
 import mock
+import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
@@ -168,7 +169,7 @@ class TestAddonLogs(OsfTestCase):
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
         self.file = OsfStorageFileNode.create(
-            node=self.node,
+            target=self.node,
             path='/testfile',
             _id='testfile',
             name='testfile',
@@ -235,6 +236,7 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @pytest.mark.enable_quickfiles_creation
     def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
@@ -415,7 +417,7 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
-    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+    def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
         ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
@@ -423,7 +425,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = registration._nodes.first()
 
         assert_false(component_registration.has_permission(self.user, 'write'))
-        res = views.check_access(component_registration, Auth(user=self.user), 'copyto', None)
+        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -436,13 +438,13 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
-    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+    def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto', None)
+            views.check_access(component, Auth(user=self.user), 'upload', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
@@ -663,7 +665,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test',
-            node=self.project,
+            target=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
         )
@@ -676,7 +678,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -689,7 +691,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -702,7 +704,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -796,6 +798,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -815,6 +818,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -848,6 +852,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    @pytest.mark.enable_bookmark_creation
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
         with mock.patch('addons.github.models.NodeSettings.is_private',
                         new_callable=mock.PropertyMock) as mock_is_private:
@@ -965,7 +970,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -973,7 +978,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
             name='folder',
-            node=self.project,
+            target=self.project,
             path='/test/folder/',
             materialized_path='/test/folder/',
         )
@@ -985,7 +990,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 

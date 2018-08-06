@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import pytest
 import urlparse
 import pytest
 
@@ -81,14 +82,14 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
@@ -192,7 +193,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -223,7 +224,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -350,6 +351,7 @@ class TestPreprintIdentifiers(OsfTestCase):
         ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
         assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
+@pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

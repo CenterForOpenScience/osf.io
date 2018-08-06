@@ -523,6 +523,7 @@ class TestRoot:
                 assert p.parent_node._id in parent_list
 
 
+@pytest.mark.enable_implicit_clean
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
@@ -1132,6 +1133,7 @@ class TestContributorMethods:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
@@ -1299,6 +1301,7 @@ class TestContributorVisibility:
             project.set_visible(UserFactory(), True)
 
 
+@pytest.mark.enable_implicit_clean
 class TestPermissionMethods:
 
     @pytest.fixture()
@@ -1772,6 +1775,7 @@ class TestRegisterNode:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, node, user, auth):
@@ -3057,6 +3061,7 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
+@pytest.mark.enable_implicit_clean
 class TestDOIValidation:
 
     def test_validate_bad_doi(self):
@@ -3259,6 +3264,7 @@ class TestCitationsProperties:
 
 
 # copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeUpdate:
 
     def test_update_title(self, fake, auth, node):
@@ -3409,6 +3415,7 @@ class TestNodeUpdate:
     # TODO: test permissions, non-writable fields
 
 
+@pytest.mark.enable_enqueue_task
 class TestOnNodeUpdate:
 
     @pytest.fixture(autouse=True)
@@ -4258,6 +4265,7 @@ class TestPreprintProperties:
         PreprintFactory(project=node, is_published=False, filename='file2.txt')
         assert node.preprint_url == published.url
 
+@pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:
 
     @pytest.fixture()

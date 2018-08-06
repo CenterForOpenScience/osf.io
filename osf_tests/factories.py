@@ -9,6 +9,7 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -26,6 +27,7 @@ from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
+from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
@@ -35,6 +37,9 @@ fake = Factory.create()
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
 fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
+# Do this out of a cls context to avoid setting "t" as a local
+PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
+
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return models.MetaSchema.objects.first()
@@ -42,6 +47,7 @@ def get_default_metaschema():
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
+
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
@@ -88,8 +94,6 @@ class UserFactory(DjangoModelFactory):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -97,7 +101,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return
@@ -297,6 +301,22 @@ class CollectionProviderFactory(DjangoModelFactory):
 
     class Meta:
         model = models.CollectionProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
+class RegistrationProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.RegistrationProvider
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -628,7 +648,7 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         preprint_file = OsfStorageFile.create(
-            node=instance.node,
+            target=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
@@ -909,3 +929,24 @@ class NodeRequestFactory(DjangoModelFactory):
         model = models.NodeRequest
 
     comment = factory.Faker('text')
+
+class PreprintRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PreprintRequest
+
+    comment = factory.Faker('text')
+
+class ProviderAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProviderAssetFile
+
+    name = FuzzyChoice(choices=PROVIDER_ASSET_NAME_CHOICES)
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        providers = kwargs.pop('providers', [])
+        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.providers = providers
+        instance.save()
+        return instance

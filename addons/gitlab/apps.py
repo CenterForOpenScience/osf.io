@@ -52,22 +52,22 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + ref,
-        'zip': 'https://{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo['path_with_namespace'], ref),
-        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo['path_with_namespace'], ref)
+        'zip': 'https://{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
+        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref)
     }
 
-    branch_names = [each['name'] for each in branches]
+    branch_names = [each.name for each in branches]
     if not branch_names:
         branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
 
     return [rubeus.build_addon_root(
         node_settings,
-        repo['path_with_namespace'],
+        repo.path_with_namespace,
         urls=urls,
         permissions=permissions,
         branches=branch_names,
         private_key=kwargs.get('view_only', None),
-        default_branch=repo['default_branch'],
+        default_branch=repo.default_branch,
     )]
 
 HERE = os.path.dirname(os.path.abspath(__file__))
