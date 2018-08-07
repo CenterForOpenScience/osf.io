@@ -24,6 +24,7 @@ def test_attach_handlers():
         framework.postcommit_tasks.handlers.postcommit_before_request,
         framework.sessions.prepare_private_key,
         framework.sessions.before_request,
+        framework.csrf.handlers.before_request,
     }
 
     assert_after_funcs = {
@@ -32,6 +33,7 @@ def test_attach_handlers():
         framework.celery_tasks.handlers.celery_after_request,
         framework.transactions.handlers.transaction_after_request,
         framework.sessions.after_request,
+        framework.csrf.handlers.after_request,
     }
 
     assert_teardown_funcs = {
