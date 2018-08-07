@@ -28,15 +28,18 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserQuickFilesSerializer,
                                    UserAccountExportSerializer,
                                    UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer,)
+                                   ReadEmailUserDetailSerializer,
+                                   UserResetPasswordSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
+from framework.auth.exceptions import ChangePasswordError
+from framework.utils import throttle_period_expired
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
 from osf.models import (Contributor,
                         ExternalAccount,
                         QuickFilesNode,
@@ -573,4 +576,48 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.email_last_sent = timezone.now()
         user.requested_deactivation = True
         user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-password'
+
+    serializer_class = UserChangePasswordSerializer
+    throttle_classes = (SendEmailThrottle, )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        existing_password = request.data['existing_password']
+        confirm_new_password = request.data['confirm_new_password']
+        new_password = request.data['new_password']
+
+        # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+        if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+            user.reset_old_password_invalid_attempts()
+
+        # There have been more than 3 failed attempts and throttle hasn't expired.
+        if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
+                user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        try:
+            user.change_password(existing_password, new_password, confirm_new_password)
+            if user.verification_key_v2:
+                user.verification_key_v2['expires'] = timezone.now()
+            user.save()
+        except ChangePasswordError as error:
+            raise ValidationError(error.messages)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
