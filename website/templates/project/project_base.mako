@@ -194,7 +194,8 @@
             urls: {
                 api: nodeApiUrl,
                 web: ${ node['url'] | sjson, n },
-                update: ${ node['update_url'] | sjson, n }
+                update: ${ node['update_url'] | sjson, n },
+                waterbutler: ${node['waterbutler_url']| sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
@@ -211,7 +212,7 @@
             childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
-            contributors: ${ node['contributors'] | sjson, n }
+            contributors: ${ node['contributors'] | sjson, n },
         }
     });
 </script>

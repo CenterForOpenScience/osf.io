@@ -388,6 +388,8 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
+    item.data.waterbutlerURL = parent.data.waterbutlerURL;
+
     if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
@@ -1120,7 +1122,7 @@ function _createFolder(event, dismissCallback, helpText) {
 
     var extra = {};
     var path = parent.data.path || '/';
-    var options = {name: val, kind: 'folder'};
+    var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
 
     if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;

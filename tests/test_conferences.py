@@ -201,6 +201,7 @@ class TestProvisionNode(ContextTestCase):
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=file_name
         )
@@ -220,6 +221,7 @@ class TestProvisionNode(ContextTestCase):
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=settings.MISSING_FILE_NAME,
         )

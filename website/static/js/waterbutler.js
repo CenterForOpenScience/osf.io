@@ -8,8 +8,22 @@ function buildUrl(path, provider, nid, options) {
     if (path.charAt(0) !== '/') {
         path = '/' + path;
     }
-    var baseUrl = window.contextVars.waterbutlerURL + 'v1/resources/' + nid + '/providers/' + provider + path + '?';
-    return baseUrl + $.param($.extend(getDefaultOptions(), options));
+    var params = $.extend({}, options);
+    var waterbutlerURL = null;
+    if ('waterbutlerURL' in params) {
+        waterbutlerURL = params['waterbutlerURL'];
+        delete params['waterbutlerURL'];
+        if (provider !== 'osfstorage') {
+            waterbutlerURL = null;
+        }
+    }
+
+    waterbutlerURL = waterbutlerURL || window.contextVars.waterbutlerURL;
+    if (waterbutlerURL.charAt(waterbutlerURL.length - 1) !== '/') {
+        waterbutlerURL = waterbutlerURL + '/';
+    }
+    var baseUrl = waterbutlerURL + 'v1/resources/' + nid + '/providers/' + provider + path + '?';
+    return baseUrl + $.param($.extend(getDefaultOptions(), params));
 }
 
 function getDefaultOptions() {
@@ -29,6 +43,8 @@ function getViewOnly() {
 }
 
 function buildFromTreebeard(item, options) {
+    options = options || {};
+    options['waterbutlerURL'] = item.data.waterbutlerURL;
     return buildUrl(item.data.path, item.data.provider, item.data.nodeId, options);
 }
 
