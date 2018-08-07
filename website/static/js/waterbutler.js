@@ -8,10 +8,11 @@ function buildUrl(path, provider, nid, options) {
     if (path.charAt(0) !== '/') {
         path = '/' + path;
     }
+    var params = $.extend({}, options);
     var waterbutlerURL = null;
-    if ('waterbutlerURL' in options) {
-        waterbutlerURL = options['waterbutlerURL'];
-        delete options['waterbutlerURL'];
+    if ('waterbutlerURL' in params) {
+        waterbutlerURL = params['waterbutlerURL'];
+        delete params['waterbutlerURL'];
         if (provider !== 'osfstorage') {
             waterbutlerURL = null;
         }
@@ -22,7 +23,7 @@ function buildUrl(path, provider, nid, options) {
         waterbutlerURL = waterbutlerURL + '/';
     }
     var baseUrl = waterbutlerURL + 'v1/resources/' + nid + '/providers/' + provider + path + '?';
-    return baseUrl + $.param($.extend(getDefaultOptions(), options));
+    return baseUrl + $.param($.extend(getDefaultOptions(), params));
 }
 
 function getDefaultOptions() {

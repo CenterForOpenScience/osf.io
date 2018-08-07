@@ -205,7 +205,7 @@ def archive_addon(addon_short_name, job_pk):
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     rename = '{}{}'.format(folder_name, rename_suffix)
-    url = waterbutler_api_url_for(src.osfstorage_region.waterbutler_url, src._id, addon_short_name, _internal=True, **params)
+    url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
 

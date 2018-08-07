@@ -155,7 +155,7 @@ def perform_wb_copy(reg, node_settings):
         'resource': dst._id,
         'provider': ARCHIVE_PROVIDER,
     }
-    url = waterbutler_api_url_for(src.osfstorage_region.waterbutler_url, src._id, node_settings.short_name, _internal=True, **params)
+    url = waterbutler_api_url_for(src._id, node_settings.short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     res = requests.post(url, data=json.dumps(data))
     if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
         raise HTTPError(res.status_code)

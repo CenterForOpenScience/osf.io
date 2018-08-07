@@ -1098,7 +1098,11 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = utils.waterbutler_api_url_for(obj.target.osfstorage_region.waterbutler_url, obj.target._id, obj.provider, obj.path, **self.kwargs)
+        base_url = None
+        if hasattr(obj.target, 'osfstorage_region'):
+            base_url = obj.target.osfstorage_region.waterbutler_url
+
+        url = utils.waterbutler_api_url_for(obj.target._id, obj.provider, obj.path, base_url=base_url, **self.kwargs)
         if not url:
             raise SkipField
         else:

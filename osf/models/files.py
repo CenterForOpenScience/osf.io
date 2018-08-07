@@ -284,11 +284,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             return None
 
     def generate_waterbutler_url(self, **kwargs):
+        base_url = None
+        if hasattr(self.target, 'osfstorage_region'):
+            base_url = self.target.osfstorage_region.waterbutler_url
         return waterbutler_api_url_for(
-            self.target.osfstorage_region.waterbutler_url,
             self.target._id,
             self.provider,
             self.path,
+            base_url=base_url,
             **kwargs
         )
 

@@ -415,7 +415,6 @@ class TestStorageAddonBase(ArchiverTestCase):
     def _test__get_file_tree(self, addon_short_name):
         for path in self.URLS:
             url = waterbutler_api_url_for(
-                self.src.osfstorage_region.waterbutler_url,
                 self.src._id,
                 addon_short_name,
                 meta=True,
@@ -423,6 +422,7 @@ class TestStorageAddonBase(ArchiverTestCase):
                 user=self.user,
                 view_only=True,
                 _internal=True,
+                base_url=self.src.osfstorage_region.waterbutler_url
             )
             responses.add(
                 responses.Response(

@@ -198,10 +198,10 @@ class TestProvisionNode(ContextTestCase):
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node.osfstorage_region.waterbutler_url,
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=file_name
         )
@@ -218,10 +218,10 @@ class TestProvisionNode(ContextTestCase):
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node.osfstorage_region.waterbutler_url,
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=settings.MISSING_FILE_NAME,
         )

@@ -81,12 +81,12 @@ def export_files(node, user, current_dir):
     os.mkdir(files_dir)
     response = requests.get(
         url=waterbutler_api_url_for(
-            node.osfstorage_region.waterbutler_url,
             node_id=node._id,
             _internal=True,
             provider='osfstorage',
             zip='',
-            cookie=user.get_or_create_cookie()
+            cookie=user.get_or_create_cookie(),
+            base_url=node.osfstorage_region.waterbutler_url
         )
     )
     if response.status_code == 200:

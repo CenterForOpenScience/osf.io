@@ -43,7 +43,7 @@ def prepare_mock_wb_response(
     """
     node = node
     files = files or []
-    wb_url = waterbutler_api_url_for(node.osfstorage_region.waterbutler_url, node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None)
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None, base_url=node.osfstorage_region.waterbutler_url)
 
     default_file = {
         u'contentType': None,
@@ -367,7 +367,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
-        wb_url = waterbutler_api_url_for(self.project.osfstorage_region.waterbutler_url, self.project._id, _internal=True, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True, base_url=self.project.osfstorage_region.waterbutler_url)
         self.add_github()
         responses.add(
             responses.Response(
@@ -414,7 +414,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
-        wb_url = waterbutler_api_url_for(self.project.osfstorage_region.waterbutler_url, self.project._id, _internal=True, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True, base_url=self.project.osfstorage_region.waterbutler_url)
         responses.add(
             responses.Response(
                 responses.GET,

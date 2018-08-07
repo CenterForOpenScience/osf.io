@@ -571,13 +571,13 @@ class BaseStorageAddon(object):
             kwargs['cookie'] = user.get_or_create_cookie()
 
         metadata_url = waterbutler_api_url_for(
-            self.owner.osfstorage_region.waterbutler_url,
             self.owner._id,
             self.config.short_name,
             path=filenode.get('path', '/'),
             user=user,
             view_only=True,
             _internal=True,
+            base_url=self.owner.osfstorage_region.waterbutler_url,
             **kwargs
         )
 
