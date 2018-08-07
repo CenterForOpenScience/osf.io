@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.150.0 (2018-08-01)
+====================
+
+- Change relationship between BaseFileNode and Node from a foreign key to a generic foreign key. This
+  is in preparation for files to be attached to preprints.
+
 0.149.0 (2018-07-22)
 ====================
 

@@ -1,12 +1,14 @@
 import django
 django.setup()
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
+from osf.models import Node, QuickFilesNode
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -27,12 +29,24 @@ class FileSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
-        query_datetime = timestamp_datetime + timedelta(days=1)
 
         file_qs = OsfStorageFile.objects
+        node_content_type = ContentType.objects.get_for_model(Node)
 
-        public_query = Q(node__is_public=True)
-        private_query = Q(node__is_public=False)
+        quickfiles_query = Q(
+            target_object_id__in=QuickFilesNode.objects.values('id'),
+            target_content_type=ContentType.objects.get_for_model(QuickFilesNode)
+        )
+
+        public_query = Q(
+            target_object_id__in=Node.objects.filter(is_public=True).values('id'),
+            target_content_type=node_content_type
+        )
+
+        private_query = Q(
+            target_object_id__in=Node.objects.filter(is_public=False).values('id'),
+            target_content_type=node_content_type
+        )
 
         daily_query = Q(created__gte=timestamp_datetime)
 
@@ -43,10 +57,10 @@ class FileSummary(SummaryAnalytics):
             # OsfStorageFiles - the number of files on OsfStorage
             'osfstorage_files_including_quickfiles': {
                 'total': file_qs.count(),
-                'public': file_qs.filter(public_query).count(),
+                'public': file_qs.filter(public_query).count() + file_qs.filter(quickfiles_query).count(),
                 'private': file_qs.filter(private_query).count(),
                 'total_daily': file_qs.filter(daily_query).count(),
-                'public_daily': file_qs.filter(public_query & daily_query).count(),
+                'public_daily': file_qs.filter(public_query & daily_query).count() + file_qs.filter(quickfiles_query & daily_query).count(),
                 'private_daily': file_qs.filter(private_query & daily_query).count(),
             },
         }

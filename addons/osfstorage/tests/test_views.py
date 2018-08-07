@@ -21,8 +21,8 @@ from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
+from website.util import rubeus, api_url_for
 from framework.auth import cas
-from website.util import rubeus
 
 from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
@@ -32,7 +32,7 @@ from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
 
-from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory
+from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -45,14 +45,14 @@ def create_record_with_version(path, node_settings, **kwargs):
 @pytest.mark.django_db
 class HookTestCase(StorageTestCase):
 
-    def send_hook(self, view_name, view_kwargs, payload, method='get', **kwargs):
+    def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
         method = getattr(self.app, method)
+        guid = view_kwargs.pop('guid', None) or target._id
         return method(
-            self.project.api_url_for(view_name, **view_kwargs),
+            api_url_for(view_name, guid=guid, **view_kwargs),
             signing.sign_data(signing.default_signer, payload),
             **kwargs
         )
-
 
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
@@ -62,6 +62,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_children',
             {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
             {},
+            self.node
         )
         assert_true(isinstance(res.json, list))
         assert_equal(res.json, [])
@@ -76,6 +77,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': record.parent._id},
             {},
+            self.node
         )
         assert_true(isinstance(res.json, dict))
         assert_equal(res.json, record.parent.serialize(True))
@@ -90,6 +92,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_children',
             {'fid': record.parent._id, 'user_id': self.user._id},
             {},
+            self.node
         )
         assert_equal(len(res.json), 1)
         res_data = res.json[0]
@@ -130,7 +133,7 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(root, expected)
 
     def test_root_default(self):
-        res = self.send_hook('osfstorage_get_metadata', {}, {})
+        res = self.send_hook('osfstorage_get_metadata', {}, {}, self.node)
 
         assert_equal(res.json['fullPath'], '/')
         assert_equal(res.json['id'], self.node_settings.get_root()._id)
@@ -139,6 +142,7 @@ class TestGetMetadataHook(HookTestCase):
         res = self.send_hook(
             'osfstorage_get_metadata',
             {'fid': 'somebogusid'}, {},
+            self.node,
             expect_errors=True,
         )
         assert_equal(res.status_code, 404)
@@ -147,6 +151,7 @@ class TestGetMetadataHook(HookTestCase):
         res = self.send_hook(
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
+            self.node,
             expect_errors=True,
         )
         assert_equal(res.status_code, 404)
@@ -161,11 +166,12 @@ class TestUploadFileHook(HookTestCase):
         self.record = recursively_create_file(self.node_settings, self.name)
         self.auth = make_auth(self.user)
 
-    def send_upload_hook(self, parent, payload=None, **kwargs):
+    def send_upload_hook(self, parent, target=None, payload=None, **kwargs):
         return self.send_hook(
             'osfstorage_create_child',
             {'fid': parent._id},
             payload=payload or {},
+            target=target or self.project,
             method='post_json',
             **kwargs
         )
@@ -178,7 +184,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_create(self):
         name = 'slightly-mad'
 
-        res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload(name=name))
+        res = self.send_upload_hook(self.node_settings.get_root(), self.project, self.make_payload(name=name))
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
@@ -213,7 +219,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_update(self):
         delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
         with AssertDeltas(delta):
-            res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
+            res = self.send_upload_hook(self.node_settings.get_root(), self.project, self.make_payload())
             self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
@@ -229,7 +235,7 @@ class TestUploadFileHook(HookTestCase):
         }
         version = self.record.create_version(self.user, location)
         with AssertDeltas(Delta(lambda: self.record.versions.count())):
-            res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
+            res = self.send_upload_hook(self.node_settings.get_root(), payload=self.make_payload())
             self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
@@ -240,7 +246,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_create_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.make_payload(name=name))
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
@@ -260,7 +266,7 @@ class TestUploadFileHook(HookTestCase):
         name = 'ლ(ಠ益ಠლ).unicode'
         self.node_settings.get_root().append_file(name)
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.make_payload(name=name))
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
@@ -284,7 +290,7 @@ class TestUploadFileHook(HookTestCase):
         file = root.find_child_by_name(name)
         file.checkout = user
         file.save()
-        res = self.send_upload_hook(root, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(root, payload=self.make_payload(name=name), expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
@@ -293,7 +299,7 @@ class TestUploadFileHook(HookTestCase):
         parent = self.node_settings.get_root().append_folder('cheesey')
         old_node = parent.append_file(name)
 
-        res = self.send_upload_hook(parent, self.make_payload(name=name))
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         old_node.reload()
         new_node = parent.find_child_by_name(name)
@@ -316,7 +322,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
 
         assert_equal(res.status_code, 400)
         assert_equal(len(parent.children), 0)
@@ -324,7 +330,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_to_file(self):
         name = 'carpe.png'
         parent = self.node_settings.get_root().append_file('cheesey')
-        res = self.send_upload_hook(parent, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
 
         assert_true(parent.is_file)
         assert_equal(res.status_code, 400)
@@ -337,7 +343,7 @@ class TestUploadFileHook(HookTestCase):
     def test_archive(self):
         name = 'ლ(ಠ益ಠლ).unicode'
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.make_payload(name=name, hashes={'sha256': 'foo'}))
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name, hashes={'sha256': 'foo'}))
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
@@ -346,6 +352,7 @@ class TestUploadFileHook(HookTestCase):
         res = self.send_hook(
             'osfstorage_update_metadata',
             {},
+            target=self.project,
             payload={'metadata': {
                 'vault': 'Vault 101',
                 'archive': '101 tluaV',
@@ -353,7 +360,7 @@ class TestUploadFileHook(HookTestCase):
             method='put_json',
         )
 
-        res = self.send_upload_hook(parent, self.make_payload(
+        res = self.send_upload_hook(parent, payload=self.make_payload(
             name=name,
             hashes={'sha256': 'foo'},
             metadata={
@@ -390,11 +397,12 @@ class TestUpdateMetadataHook(HookTestCase):
             'size': 321,  # Just to make sure the field is ignored
         }
 
-    def send_metadata_hook(self, payload=None, **kwargs):
+    def send_metadata_hook(self, payload=None, target=None, **kwargs):
         return self.send_hook(
             'osfstorage_update_metadata',
             {},
             payload=payload or self.payload,
+            target=target or self.node,
             method='put_json',
             **kwargs
         )
@@ -451,11 +459,12 @@ class TestGetRevisions(StorageTestCase):
         self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
         self.record.save()
 
-    def get_revisions(self, fid=None, **kwargs):
+    def get_revisions(self, fid=None, guid=None, **kwargs):
         return self.app.get(
-            self.project.api_url_for(
+            api_url_for(
                 'osfstorage_get_revisions',
                 fid=fid or self.record._id,
+                guid=guid or self.project._id,
                 **signing.sign_data(signing.default_signer, {})
             ),
             auth=self.user.auth,
@@ -491,17 +500,19 @@ class TestCreateFolder(HookTestCase):
         super(TestCreateFolder, self).setUp()
         self.root_node = self.node_settings.get_root()
 
-    def create_folder(self, name, parent=None, **kwargs):
+    def create_folder(self, name, parent=None, target=None, **kwargs):
         parent = parent or self.node_settings.get_root()
+        target = target or self.project
 
         return self.send_hook(
             'osfstorage_create_child',
-            {'fid': parent._id},
+            {'fid': parent._id, 'guid': target._id},
             payload={
                 'name': name,
                 'user': self.user._id,
                 'kind': 'folder'
             },
+            target=self.project,
             method='post_json',
             **kwargs
         )
@@ -518,8 +529,9 @@ class TestCreateFolder(HookTestCase):
     def test_no_data(self):
         resp = self.send_hook(
             'osfstorage_create_child',
-            {'fid': self.root_node._id},
+            {'fid': self.root_node._id, 'guid': self.project._id},
             payload={},
+            target=self.project,
             method='post_json',
             expect_errors=True
         )
@@ -549,11 +561,11 @@ class TestDeleteHook(HookTestCase):
         super(TestDeleteHook, self).setUp()
         self.root_node = self.node_settings.get_root()
 
-    def send_hook(self, view_name, view_kwargs, payload, method='get', **kwargs):
+    def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
         method = getattr(self.app, method)
         return method(
             '{url}?payload={payload}&signature={signature}'.format(
-                url=self.project.api_url_for(view_name, **view_kwargs),
+                url=api_url_for(view_name, guid=target._id, **view_kwargs),
                 **signing.sign_data(signing.default_signer, payload)
             ),
             **kwargs
@@ -566,6 +578,7 @@ class TestDeleteHook(HookTestCase):
             payload={
                 'user': self.user._id
             },
+            target=self.node,
             method='delete',
             **kwargs
         )
@@ -678,17 +691,18 @@ class TestMoveHook(HookTestCase):
         folder = self.root_node.append_folder('Nina Simone')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
                 'source': file._id,
-                'node': self.root_node._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': folder.name,
                 }
             },
+            target=self.node,
             method='post_json',)
         assert_equal(res.status_code, 200)
 
@@ -700,17 +714,18 @@ class TestMoveHook(HookTestCase):
         folder = self.root_node.append_folder('Nina Simone')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
-                'source': file._id,
-                'node': self.root_node._id,
+                'source': file._id,  # id of the actual file
+                'target': self.root_node._id,  # the source FOLDER
                 'user': self.user._id,
                 'destination': {
-                    'parent': folder._id,
-                    'node': folder.node._id,
+                    'parent': folder._id,  # the destination FOLDER
+                    'target': folder.target._id,  # The TARGET for the folder where it is going
                     'name': folder.name,
                 }
             },
+            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -721,21 +736,22 @@ class TestMoveHook(HookTestCase):
         file = folder.append_file('No I don\'t wanna go')
         file.checkout = self.user
         file.save()
-        
+
         folder_two = self.root_node.append_folder('To There')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
                 'source': folder._id,
-                'node': self.root_node._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder_two._id,
-                    'node': folder_two.node._id,
+                    'target': folder_two.target._id,
                     'name': folder_two.name,
                 }
             },
+            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -747,21 +763,22 @@ class TestMoveHook(HookTestCase):
         file = folder_nested.append_file('No I don\'t wanna go')
         file.checkout = self.user
         file.save()
-        
+
         folder_two = self.root_node.append_folder('To There')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
                 'source': folder._id,
-                'node': self.root_node._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder_two._id,
-                    'node': folder_two.node._id,
+                    'target': folder_two.target._id,
                     'name': folder_two.name,
                 }
             },
+            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -781,17 +798,18 @@ class TestMoveHook(HookTestCase):
         folder_two = project_root_node.append_folder('To There')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
-                'source': folder._id,
-                'node': self.root_node._id,
+                'source': file._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder_two._id,
-                    'node': folder_two.node._id,
+                    'target': folder_two.target._id,
                     'name': folder_two.name,
                 }
             },
+            target=project,
             method='post_json',
             expect_errors=True,
         )
@@ -813,17 +831,18 @@ class TestMoveHook(HookTestCase):
         folder_two = project_root_node.append_folder('far away')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
                 'source': folder._id,
-                'node': self.root_node._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder_two._id,
-                    'node': folder_two.node._id,
+                    'target': folder_two.target._id,
                     'name': folder_two.name,
                 }
             },
+            target=project,
             method='post_json',
             expect_errors=True,
         )
@@ -838,17 +857,18 @@ class TestMoveHook(HookTestCase):
         folder = self.root_node.append_folder('Frank Ocean')
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': self.root_node.node._id},
+            {'guid': self.root_node.target._id},
             payload={
                 'source': file._id,
-                'node': self.root_node._id,
+                'target': self.root_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': folder._id,
-                    'node': folder.node._id,
+                    'target': folder.target._id,
                     'name': folder.name,
                 }
             },
+            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -856,23 +876,24 @@ class TestMoveHook(HookTestCase):
 
     def test_can_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
-        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
 
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': quickfiles_node._id},
+            {'guid': quickfiles_node._id},
             payload={
-                'source': quickfiles_folder._id,
-                'node': quickfiles_node._id,
+                'source': quickfiles_file._id,
+                'target': quickfiles_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': dest_folder._id,
-                    'node': self.project._id,
+                    'target': self.project._id,
                     'name': dest_folder.name,
                 }
             },
+            target=quickfiles_node,
             method='post_json',
         )
         assert_equal(res.status_code, 200)
@@ -880,25 +901,26 @@ class TestMoveHook(HookTestCase):
     def test_can_rename_file_in_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         quickfiles_file = create_test_file(quickfiles_node, self.user, filename='road_dogg.mp3')
-        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
         new_name = 'JesseJames.mp3'
 
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'nid': quickfiles_node._id},
+            {'guid': quickfiles_node._id},
             payload={
                 'action': 'rename',
                 'source': quickfiles_file._id,
-                'node': quickfiles_node._id,
+                'target': quickfiles_node._id,
                 'user': self.user._id,
                 'name': quickfiles_file.name,
                 'destination': {
                     'parent': quickfiles_folder._id,
-                    'node': quickfiles_node._id,
+                    'target': quickfiles_node._id,
                     'name': new_name,
                 }
             },
+            target=quickfiles_node,
             method='post_json',
             expect_errors=True,
         )
@@ -915,23 +937,23 @@ class TestCopyHook(HookTestCase):
     @pytest.mark.enable_implicit_clean
     def test_can_copy_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
-        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
 
         res = self.send_hook(
             'osfstorage_copy_hook',
-            {'nid': quickfiles_node._id},
+            {'guid': quickfiles_node._id},
             payload={
                 'source': quickfiles_folder._id,
-                'node': quickfiles_node._id,
+                'target': quickfiles_node._id,
                 'user': self.user._id,
                 'destination': {
                     'parent': dest_folder._id,
-                    'node': self.project._id,
+                    'target': self.project._id,
                     'name': dest_folder.name,
                 }
             },
+            target=self.project,
             method='post_json',
         )
         assert_equal(res.status_code, 201)
@@ -944,7 +966,7 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('Good Morning.mp3')
         assert_not_in('Kanye_West', file.tags.values_list('name', flat=True))
 
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
         self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
         file.reload()
         assert_in('Kanye_West', file.tags.values_list('name', flat=True))
@@ -953,7 +975,7 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
         assert_not_in('コンサート', file.tags.values_list('name', flat=True))
 
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
         self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
         file.reload()
         assert_in('コンサート', file.tags.values_list('name', flat=True))
@@ -965,7 +987,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         assert_in('Graduation', file.tags.values_list('name', flat=True))
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
         self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
         assert_not_in('Graduation', file.tags.values_list('name', flat=True))
@@ -977,7 +999,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         assert_in('Run_the_Jewels', file.tags.values_list('name', flat=True))
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
         res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')
@@ -985,14 +1007,14 @@ class TestFileTags(StorageTestCase):
     def test_remove_nonexistent_tag(self):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
         assert_not_in('Chance', file.tags.values_list('name', flat=True))
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
         res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')
 
     def test_file_add_tag_creates_log(self):
         file = self.node_settings.get_root().append_file('Yeezy Season 3.mp4')
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
         res = self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
@@ -1006,7 +1028,7 @@ class TestFileTags(StorageTestCase):
         tag.save()
         file.tags.add(tag)
         file.save()
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
         res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
@@ -1018,7 +1040,7 @@ class TestFileTags(StorageTestCase):
         tag.save()
         file.tags.add(tag)
         file.save()
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
         res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
@@ -1028,7 +1050,7 @@ class TestFileTags(StorageTestCase):
     @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
         res = self.app.delete_json(url, {'tag': 'wonder'}, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
@@ -1040,7 +1062,7 @@ class TestFileTags(StorageTestCase):
 class TestFileViews(StorageTestCase):
 
     def test_file_views(self):
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
         url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
         # Test valid url file 200 on redirect
         redirect = self.app.get(url, auth=self.user.auth)
@@ -1059,7 +1081,7 @@ class TestFileViews(StorageTestCase):
         assert res.status_code == 200
 
     def test_download_file(self):
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
         folder = self.node_settings.get_root().append_folder('Folder')
 
         base_url = '/download/{}/'
@@ -1093,7 +1115,7 @@ class TestFileViews(StorageTestCase):
         mock_get_client.return_value = client
 
         base_url = '/download/{}/'
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
 
         responses.add(
             responses.Response(

@@ -169,7 +169,7 @@ class TestAddonLogs(OsfTestCase):
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
         self.file = OsfStorageFileNode.create(
-            node=self.node,
+            target=self.node,
             path='/testfile',
             _id='testfile',
             name='testfile',
@@ -666,7 +666,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test',
-            node=self.project,
+            target=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
         )
@@ -679,7 +679,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -692,7 +692,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -705,7 +705,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -971,7 +971,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -979,7 +979,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
             name='folder',
-            node=self.project,
+            target=self.project,
             path='/test/folder/',
             materialized_path='/test/folder/',
         )
@@ -991,7 +991,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 

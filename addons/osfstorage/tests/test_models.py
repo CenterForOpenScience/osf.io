@@ -33,7 +33,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_true(self.node_settings.root_node.parent is None)
 
     def test_node_reference(self):
-        assert_equal(self.project, self.node_settings.root_node.node)
+        assert_equal(self.project, self.node_settings.root_node.target)
 
     # def test_get_folder(self):
     #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
@@ -58,7 +58,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     #     assert_equal(file, models.OsfStorageFileNode.get_file(_id, self.node_settings))
 
     def test_serialize(self):
-        file = OsfStorageFile(name='MOAR PYLONS', node=self.node_settings.owner)
+        file = OsfStorageFile(name='MOAR PYLONS', target=self.node_settings.owner)
         file.save()
 
         assert_equals(file.serialize(), {
@@ -140,7 +140,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.node_settings.get_root().path, path)
 
     def test_file_path(self):
-        file = OsfStorageFile(name='MOAR PYLONS', node=self.node)
+        file = OsfStorageFile(name='MOAR PYLONS', target=self.node)
         file.save()
         assert_equal(file.name, 'MOAR PYLONS')
         assert_equal(file.path, '/{}'.format(file._id))
@@ -299,9 +299,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         child.reload()
 
         assert_equal(moved, to_move)
-        assert_equal(new_project, to_move.node)
-        assert_equal(new_project, move_to.node)
-        assert_equal(new_project, child.node)
+        assert_equal(new_project, to_move.target)
+        assert_equal(new_project, move_to.target)
+        assert_equal(new_project, child.target)
 
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
@@ -368,7 +368,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_get_file_guids_for_live_file(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
 
         file.get_guid(create=True)
@@ -376,11 +376,11 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert guid is not None
         assert guid in OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_live_folder(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -392,12 +392,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert len(guids) == len(files)
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_trashed_file(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
 
         file.get_guid(create=True)
@@ -406,11 +406,11 @@ class TestOsfstorageFileNode(StorageTestCase):
         file.delete()
         assert guid is not None
         assert guid in OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_trashed_folder(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -424,19 +424,19 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_live_file_wo_guid(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
         assert [] == OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_live_folder_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -444,20 +444,20 @@ class TestOsfstorageFileNode(StorageTestCase):
             files.append(folder.append_file('foo.{}'.format(i)))
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_trashed_file_wo_guid(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
         file.delete()
         assert [] == OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_trashed_folder_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -467,12 +467,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_for_live_folder_recursive(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -489,12 +489,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert len(guids) == len(files)
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_trashed_folder_recursive(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -513,12 +513,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_live_folder_recursive_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -530,12 +530,12 @@ class TestOsfstorageFileNode(StorageTestCase):
             files.append(subfolder.append_file('subfoo.{}'.format(i)))
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_for_trashed_folder_recursive_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -549,7 +549,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
 
@@ -834,6 +834,6 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)
-        self.file.node.remove_contributors([self.user], save=True)
+        self.file.target.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)

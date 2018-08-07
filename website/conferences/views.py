@@ -212,12 +212,12 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT osf_basefilenode.*
                 FROM osf_basefilenode
-                WHERE (
-                  osf_basefilenode.type = 'osf.osfstoragefile'
-                  AND osf_basefilenode.provider = 'osfstorage'
-                  AND osf_basefilenode.node_id = osf_abstractnode.id
-                )
-                LIMIT 1   -- Joins file
+                WHERE (osf_basefilenode.type = 'osf.osfstoragefile'
+                       AND osf_basefilenode.provider = 'osfstorage'
+                       AND osf_basefilenode.target_content_type_id = %s -- Content type for AbstractNode
+                       AND osf_basefilenode.target_object_id = osf_abstractnode.id)
+                ORDER BY osf_basefilenode.id ASC
+                LIMIT 1 -- Joins file
               ) FILE ON TRUE
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
@@ -245,6 +245,7 @@ def conference_submissions_sql(conf):
                 conference_url,
                 abstract_node_content_type_id,
                 osf_user_content_type_id,
+                abstract_node_content_type_id,
                 conf.endpoint
             ]
         )
