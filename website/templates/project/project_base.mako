@@ -195,7 +195,7 @@
                 api: nodeApiUrl,
                 web: ${ node['url'] | sjson, n },
                 update: ${ node['update_url'] | sjson, n },
-                waterbutlerURL: ${node['waterbutler_url']| sjson, n }
+                waterbutler: ${node['waterbutler_url']| sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },

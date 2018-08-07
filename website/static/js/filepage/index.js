@@ -145,14 +145,14 @@ var FileViewPage = {
         }
 
         $.extend(self.file.urls, {
-            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutlerURL}),
-            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutlerURL}),
-            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutlerURL}),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutlerURL, direct: true, mode: 'render'})
+            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, direct: true, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
-            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutlerURL, branch: $osf.urlParams().branch});
+            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, branch: $osf.urlParams().branch});
             $.ajax({
                 dataType: 'json',
                 async: true,
@@ -174,7 +174,7 @@ var FileViewPage = {
                     {branch: $osf.urlParams().branch}
                 );
             }
-            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch, waterbutlerURL: self.node.urls.waterbutlerURL});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch, waterbutlerURL: self.node.urls.waterbutler});
         }
 
         $(document).on('fileviewpage:delete', function() {
