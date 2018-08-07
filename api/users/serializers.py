@@ -300,7 +300,7 @@ class UserAccountDeactivateSerializer(BaseAPISerializer):
         type_ = 'user-account-deactivate-form'
 
 
-class UserChangePasswordSerializer(JSONAPISerializer):
+class UserChangePasswordSerializer(BaseAPISerializer):
     type = TypeField()
     existing_password = ser.CharField(write_only=True, required=True)
     confirm_new_password = ser.CharField(write_only=True, required=True)

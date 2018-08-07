@@ -29,7 +29,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserAccountExportSerializer,
                                    UserAccountDeactivateSerializer,
                                    ReadEmailUserDetailSerializer,
-                                   UserResetPasswordSerializer)
+                                   UserChangePasswordSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
