@@ -24,7 +24,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from osf.models import (Comment, DraftRegistration, Institution,
+from osf.models import (Comment, DraftRegistration, Institution, NodeLog,
                         RegistrationSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -109,11 +109,41 @@ class NodeCitationSerializer(JSONAPISerializer):
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
+    custom_citation_text = ser.CharField(allow_blank=True, max_length=255, required=False)
 
     links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
         return obj['URL']
+
+    def update(self, node, validated_data):
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous else None)
+        from django.utils import timezone
+
+        date = timezone.now()
+
+        if validated_data['custom_citation_text'] == '':
+            log_action = NodeLog.CUSTOM_CITATION_REMOVED
+        elif validated_data['custom_citation_text'] != '' and node.custom_citation_text != '':
+            log_action = NodeLog.CUSTOM_CITATION_EDITED
+        else:
+            log_action = NodeLog.CUSTOM_CITATION_ADDED
+
+        node.custom_citation_text = validated_data['custom_citation_text']
+        node.save()
+
+        node.add_log(
+            log_action,
+            params={
+                'node': node._primary_key,
+            },
+            auth=auth,
+            log_date=date,
+        )
+        csl = node.csl
+        csl['custom_citation_text'] = node.custom_citation_text
+        return csl
 
     class Meta:
         type_ = 'node-citation'
@@ -128,7 +158,6 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'styled-citations'
-
 
 def get_license_details(node, validated_data):
     license = node.license if isinstance(node, PreprintService) else node.node_license

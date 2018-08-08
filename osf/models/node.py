@@ -321,6 +321,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    custom_citation_text = models.CharField(blank=True, default='', max_length=255)
+
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = models.CharField(default='public', max_length=10)

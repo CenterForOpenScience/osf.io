@@ -634,7 +634,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         serializer.save(creator=user, parent=self.get_node())
 
 
-class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_list).
     """
     permission_classes = (
@@ -643,7 +643,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
 
     serializer_class = NodeCitationSerializer
     view_category = 'nodes'
@@ -654,8 +654,9 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         auth = get_user_auth(self.request)
         if not node.is_public and not node.can_view(auth):
             raise PermissionDenied if auth.user else NotAuthenticated
-        return node.csl
-
+        if self.request.method == 'GET':
+            return node.csl
+        return node
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
