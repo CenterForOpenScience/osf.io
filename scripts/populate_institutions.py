@@ -992,6 +992,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'itb',
+                'name': 'Institut Teknologi Bandung [Test]',
+                'description': 'Institut Teknologi Bandung - OSF Repository',
+                'banner_name': 'itb-banner.png',
+                'logo_name': 'itb-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-dev3.itb.ac.id/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-itb.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation [Test]',
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
