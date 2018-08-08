@@ -1142,6 +1142,15 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
         return self.make_instance_obj(node)
 
 
+class RegistrationSchemaRelationshipField(RelationshipField):
+
+    def to_internal_value(self, registration_schema_id):
+        schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
+        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
+            raise exceptions.ValidationError('Registration supplement must be an active schema.')
+        return {'registration_schema': schema}
+
+
 class DraftRegistrationSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
@@ -1160,7 +1169,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<initiator._id>'},
     )
 
-    registration_schema = RelationshipField(
+    registration_schema = RegistrationSchemaRelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
         required=True,
@@ -1178,10 +1187,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         initiator = get_user_auth(self.context['request']).user
         node = self.context['view'].get_node()
         metadata = validated_data.pop('registration_metadata', None)
-        schema_id = validated_data.pop('registration_schema')
-        schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
-        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
-            raise exceptions.ValidationError('Registration supplement must be an active schema.')
+        schema = validated_data.pop('registration_schema')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)

@@ -555,14 +555,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             assert not self.read_only, 'May not set both `read_only` and `required`'
             self.required = required
 
-    def bind(self, field_name, parent):
-        super(RelationshipField, self).bind(field_name, parent)
-        self.source_attrs = [field_name]
-
-    def get_attribute(self, instance):
-        self.source_attrs = []
-        return super(RelationshipField, self).get_attribute(instance)
-
     def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
