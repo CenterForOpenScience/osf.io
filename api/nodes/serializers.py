@@ -1175,11 +1175,10 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
-        node = validated_data.pop('node')
-        initiator = validated_data.pop('initiator')
+        initiator = get_user_auth(self.context['request']).user
+        node = self.context['view'].get_node()
         metadata = validated_data.pop('registration_metadata', None)
-
-        schema_id = validated_data.pop('registration_schema_id')
+        schema_id = validated_data.pop('registration_schema')
         schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
@@ -1210,7 +1209,6 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     """
     id = IDField(source='_id', required=True)
     registration_metadata = ser.DictField(required=True)
-    registration_supplement = ser.CharField(read_only=True, source='registration_schema._id')
 
     def update(self, draft, validated_data):
         """

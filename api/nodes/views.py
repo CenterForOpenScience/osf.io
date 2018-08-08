@@ -511,6 +511,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         base_permissions.TokenHasScope,
     )
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
@@ -529,12 +531,6 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
             branched_from=node,
             deleted__isnull=True
         )
-
-    # overrides ListBulkCreateJSONAPIView
-    def perform_create(self, serializer):
-        user = self.request.user
-        schema = self.request.data.get('id')
-        serializer.save(initiator=user, node=self.get_node(), registration_schema_id=schema)
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
