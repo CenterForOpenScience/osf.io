@@ -104,7 +104,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     preprint_word = preprint.provider.preprint_word
 
     # Set message
-    context['message'] = u'has requested withdrawal of {} "{}".'.format(preprint_word, preprint.node.title)
+    context['message'] = u'has requested withdrawal of the {} "{}".'.format(preprint_word, preprint.node.title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['requester'])
     # Set submission url
