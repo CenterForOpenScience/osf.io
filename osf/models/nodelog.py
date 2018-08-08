@@ -91,6 +91,10 @@ class NodeLog(ObjectIDMixin, BaseModel):
     CITATION_EDITED = 'citation_edited'
     CITATION_REMOVED = 'citation_removed'
 
+    CUSTOM_CITATION_ADDED = 'custom_citation_added'
+    CUSTOM_CITATION_EDITED = 'custom_citation_edited'
+    CUSTOM_CITATION_REMOVED = 'custom_citation_removed'
+
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
