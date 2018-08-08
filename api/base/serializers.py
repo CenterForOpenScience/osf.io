@@ -554,7 +554,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if required:
             assert not self.read_only, 'May not set both `read_only` and `required`'
             self.required = required
-    
+
     def bind(self, field_name, parent):
         super(RelationshipField, self).bind(field_name, parent)
         self.source_attrs = [field_name]

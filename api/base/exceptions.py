@@ -5,7 +5,12 @@ from rest_framework import status
 from rest_framework.exceptions import APIException, AuthenticationFailed
 
 
-def dict_error_formatting(errors, index=None):
+def get_resource_object_member(error_key, context):
+    from api.base.serializers import RelationshipField
+    field = context['view'].serializer_class._declared_fields[error_key]
+    return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
+
+def dict_error_formatting(errors, context, index=None):
     """
     Formats all dictionary error messages for both single and bulk requests
     """
@@ -34,10 +39,9 @@ def dict_error_formatting(errors, index=None):
         elif error_key == 'non_field_errors':
             formatted_error_list.extend([{'detail': description for description in error_description}])
         else:
-            formatted_error_list.extend([{'source': {'pointer': '/data/{}attributes/'.format(index) + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}{}/'.format(index, get_resource_object_member(error_key, context)) + error_key}, 'detail': reason} for reason in error_description])
 
     return formatted_error_list
-
 
 def json_api_exception_handler(exc, context):
     """
@@ -68,13 +72,13 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
         elif isinstance(message, dict):
-            errors.extend(dict_error_formatting(message, None))
+            errors.extend(dict_error_formatting(message, context, index=None))
         else:
             if isinstance(message, basestring):
                 message = [message]
             for index, error in enumerate(message):
                 if isinstance(error, dict):
-                    errors.extend(dict_error_formatting(error, index))
+                    errors.extend(dict_error_formatting(error, context, index=index))
                 else:
                     errors.append({'detail': error})
 
