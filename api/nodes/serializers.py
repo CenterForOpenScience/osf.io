@@ -1146,7 +1146,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    registration_supplement = ser.CharField(source='registration_schema._id', required=True)
     registration_metadata = ser.DictField(required=False)
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
@@ -1163,7 +1162,9 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<registration_schema._id>'}
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=True,
+        read_only=False
     )
 
     links = LinksField({
@@ -1178,7 +1179,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         initiator = validated_data.pop('initiator')
         metadata = validated_data.pop('registration_metadata', None)
 
-        schema_id = validated_data.pop('registration_schema').get('_id')
+        schema_id = validated_data.pop('registration_schema_id')
         schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')

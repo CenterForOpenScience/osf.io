@@ -533,7 +533,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(initiator=user, node=self.get_node())
+        schema = self.request.data.get('id')
+        serializer.save(initiator=user, node=self.get_node(), registration_schema_id=schema)
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
