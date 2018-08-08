@@ -106,7 +106,87 @@ class NodeCitationsMixin:
         res = app.get(public_url)
         assert res.status_code == 200
 
-    #   test_citations_are_read_only
+
+class TestNodeCitations(NodeCitationsMixin):
+    @pytest.fixture()
+    def public_url(self, public_project):
+        return '/{}nodes/{}/citation/'.format(API_BASE, public_project._id)
+
+    @pytest.fixture()
+    def private_url(self, private_project):
+        return '/{}nodes/{}/citation/'.format(API_BASE, private_project._id)
+
+    @pytest.fixture()
+    def payload(self):
+        return {
+            'data': {
+                'attributes': {
+                    'custom_citation_text': 'SB52-41-33/Weapon-X-HOF'
+                }
+            }
+        }
+
+    def test_node_add_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
+
+        res = app.put_json_api(public_url, payload, auth=admin_contributor.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['custom_citation_text'] == 'SB52-41-33/Weapon-X-HOF'
+
+        public_project.reload()
+        assert public_project.custom_citation_text == 'SB52-41-33/Weapon-X-HOF'
+        assert public_project.logs.first().action == 'custom_citation_added'
+
+    def test_node_edit_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
+        public_project.custom_citation_text = 'TheElderSporles'
+        public_project.save()
+
+        res = app.put_json_api(public_url, payload, auth=admin_contributor.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['custom_citation_text'] == 'SB52-41-33/Weapon-X-HOF'
+
+        public_project.reload()
+        assert public_project.custom_citation_text == 'SB52-41-33/Weapon-X-HOF'
+        assert public_project.logs.first().action == 'custom_citation_edited'
+
+    def test_node_remove_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
+        public_project.custom_citation_text = 'TheElderSporles'
+        public_project.save()
+        payload['data']['attributes']['custom_citation_text'] = ''
+
+        res = app.put_json_api(public_url, payload, auth=admin_contributor.auth, expect_errors=True)
+        assert res.status_code == 200
+        public_project.reload()
+        assert public_project.custom_citation_text == ''
+        assert public_project.logs.first().action == 'custom_citation_removed'
+
+    def test_node_citations_errors(self, app, admin_contributor, public_url):
+
+        #   test_citations_are_read_only
+        post_res = app.post_json_api(
+            public_url, {},
+            auth=admin_contributor.auth,
+            expect_errors=True)
+        assert post_res.status_code == 405
+        delete_res = app.delete_json_api(
+            public_url,
+            auth=admin_contributor.auth,
+            expect_errors=True)
+        assert delete_res.status_code == 405
+
+
+class TestNodeCitationsStyle(NodeCitationsMixin):
+    @pytest.fixture()
+    def public_url(self, public_project):
+        return '/{}nodes/{}/citation/apa/'.format(API_BASE, public_project._id)
+
+    @pytest.fixture()
+    def private_url(self, private_project):
+        return '/{}nodes/{}/citation/apa/'.format(
+            API_BASE, private_project._id)
+
+    def test_node_citations_errors(self, app, admin_contributor, public_url):
+
+        #   test_citations_are_read_only
         post_res = app.post_json_api(
             public_url, {},
             auth=admin_contributor.auth,
@@ -122,24 +202,3 @@ class NodeCitationsMixin:
             auth=admin_contributor.auth,
             expect_errors=True)
         assert delete_res.status_code == 405
-
-
-class TestNodeCitations(NodeCitationsMixin):
-    @pytest.fixture()
-    def public_url(self, public_project):
-        return '/{}nodes/{}/citation/'.format(API_BASE, public_project._id)
-
-    @pytest.fixture()
-    def private_url(self, private_project):
-        return '/{}nodes/{}/citation/'.format(API_BASE, private_project._id)
-
-
-class TestNodeCitationsStyle(NodeCitationsMixin):
-    @pytest.fixture()
-    def public_url(self, public_project):
-        return '/{}nodes/{}/citation/apa/'.format(API_BASE, public_project._id)
-
-    @pytest.fixture()
-    def private_url(self, private_project):
-        return '/{}nodes/{}/citation/apa/'.format(
-            API_BASE, private_project._id)
