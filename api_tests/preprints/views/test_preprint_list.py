@@ -6,7 +6,6 @@ from django.utils import timezone
 
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import (
@@ -170,7 +169,7 @@ class TestPreprintList(ApiTestCase):
         pp.node.is_public = True
         pp.node.save()
         mod = AuthUserFactory()
-        GroupHelper(pp.provider).get_group('moderator').user_set.add(mod)
+        pp.provider.get_group('moderator').user_set.add(mod)
         pp.date_withdrawn = timezone.now()
         pp.save()
 

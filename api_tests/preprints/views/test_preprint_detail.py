@@ -5,7 +5,6 @@ from rest_framework import exceptions
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import PreprintService, NodeLicense
@@ -55,7 +54,7 @@ class TestPreprintDetail:
     @pytest.fixture()
     def moderator(self, preprint_pre_mod):
         mod = AuthUserFactory()
-        GroupHelper(preprint_pre_mod.provider).get_group('moderator').user_set.add(mod)
+        preprint_pre_mod.provider.get_group('moderator').user_set.add(mod)
         return mod
 
     @pytest.fixture()

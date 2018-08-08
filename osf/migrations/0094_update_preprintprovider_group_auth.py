@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations
 
-from api.providers.permissions import GroupHelper
+from osf.management.utils import GroupHelper
 
 def update_group_auth(apps, schema):
     emit_post_migrate_signal(2, False, 'default')

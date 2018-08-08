@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations, models
 import django.db.models.deletion
-from api.providers.permissions import GroupHelper
+from osf.management.utils import GroupHelper
 import osf.models.base
 import osf.utils.fields
 

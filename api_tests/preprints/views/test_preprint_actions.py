@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -22,10 +21,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(
-                GroupHelper(
-                    preprint.provider
-                ).get_group('moderator'))
+            user.groups.add(preprint.provider.get_group('moderator'))
         else:
             preprint.node.add_contributor(
                 user,

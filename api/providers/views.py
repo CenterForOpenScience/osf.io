@@ -17,12 +17,13 @@ from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCr
 from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
-from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
+from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
 from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
 
 
@@ -86,8 +87,9 @@ class PreprintProviderList(GenericProviderList):
                 raise NotAuthenticated()
             value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
-            if any(p not in PERMISSIONS for p in permissions):
-                valid_permissions = ', '.join(PERMISSIONS.keys())
+            perm_options = [perm[0] for perm in REVIEW_PERMISSIONS]
+            if not set(permissions).issubset(set(perm_options)):
+                valid_permissions = ', '.join(perm_options)
                 raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
@@ -441,9 +443,8 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
 
     def get_default_queryset(self):
         provider = self.get_provider()
-        group_helper = GroupHelper(provider)
-        admin_group = group_helper.get_group('admin')
-        mod_group = group_helper.get_group('moderator')
+        admin_group = provider.get_group('admin')
+        mod_group = provider.get_group('moderator')
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
             When(groups=admin_group, then=Value('admin')),
             default=Value('moderator'),
@@ -473,7 +474,7 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         provider = self.get_provider()
         user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
         try:
-            perm_group = user.groups.filter(name__contains=GROUP_FORMAT.format(provider_id=provider._id, group='')).order_by('name').first().name.split('_')[-1]
+            perm_group = user.groups.filter(name__contains=PreprintProvider.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound
