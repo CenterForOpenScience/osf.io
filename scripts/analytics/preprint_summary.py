@@ -71,6 +71,7 @@ class PreprintSummary(SummaryAnalytics):
                     'total': resp['hits']['total'],
                 },
             })
+            logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
 
         return counts
 

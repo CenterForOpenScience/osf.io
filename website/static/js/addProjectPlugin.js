@@ -6,15 +6,11 @@
 require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
+var Cookie = require('js-cookie');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
-
-// XHR configuration to get apiserver connection to work
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
-};
 
 
 var AddProject = {
@@ -126,7 +122,7 @@ var AddProject = {
                 self.viewState('error');
                 self.isAdding(false);
             };
-            var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
+            var request = m.request({method : 'POST', url : url, data : data, config : mHelpers.apiV2Config()});
             if (self.institutions.length > 0) {
                 request.then(function (result) {
                     var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/', {query: {'version': '2.2'}});
@@ -142,7 +138,7 @@ var AddProject = {
                         )
                     };
                     if (data.data.length > 0){
-                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
+                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: mHelpers.apiV2Config()}).then(
                             function(){},
                             function(){
                                 self.viewState('instError');
