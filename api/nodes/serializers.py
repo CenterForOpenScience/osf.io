@@ -1210,6 +1210,11 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     id = IDField(source='_id', required=True)
     registration_metadata = ser.DictField(required=True)
 
+    registration_schema = RelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'}
+    )
+
     def update(self, draft, validated_data):
         """
         Update draft instance with the validated metadata.
