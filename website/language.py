@@ -32,15 +32,18 @@ TERMS_OF_SERVICE = """
     $('#continue').on('click', function() {{
         var accepted = $('#accept').prop('checked');
         $.ajax({{
-            url: '{}v2/users/me/',
+            url: '{api_domain}v2/users/me/',
             type: 'PATCH',
             contentType: 'application/json',
             xhrFields: {{
                 withCredentials: true
             }},
+            headers: {{
+                'X-CSRFToken': {csrf_token}
+            }},
             data: JSON.stringify({{
                 'data': {{
-                    'id': '{}',
+                    'id': '{user_id}',
                     'type': 'users',
                     'attributes': {{
                         'accepted_terms_of_service': accepted
