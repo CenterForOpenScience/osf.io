@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
+from addons.osfstorage.models import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
@@ -1082,6 +1083,9 @@ def validate_next_url(next_url):
     if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
         # CAS or MFR
         return True
+    for url in Region.objects.values_list('mfr_url', flat=True):
+        if next_url.startswith(url):
+            return True
     for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
         if next_url.startswith(url):
