@@ -133,7 +133,6 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),

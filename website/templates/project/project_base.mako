@@ -146,8 +146,8 @@
 <% from website import settings %>
 <script src="/static/vendor/citeproc-js/xmldom.js"></script>
 <script src="/static/vendor/citeproc-js/citeproc.js"></script>
-<link href="${mfr_url}/static/css/mfr.css" media="all" rel="stylesheet" />
-<script src="${mfr_url}/static/js/mfr.js"></script>
+<link href="${ node['mfr_url'] }/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="${ node['mfr_url'] }/static/js/mfr.js"></script>
 
 <script>
 

@@ -32,7 +32,7 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from addons.base.utils import format_last_known_metadata
+from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
@@ -42,7 +42,6 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.settings import MFR_SERVER_URL
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
@@ -597,7 +596,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'urls': {
                 'render': None,
                 'sharejs': None,
-                'mfr': settings.MFR_SERVER_URL,
+                'mfr': get_mfr_url(target, file_node.provider),
                 'profile_image': get_profile_image_url(auth.user, 25),
                 'files': target.web_url_for('collect_file_trees'),
             },
@@ -700,7 +699,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -797,7 +796,8 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+    mfr_url = get_mfr_url(node, file_node.provider)
+    render_url = furl.furl(mfr_url).set(
         path=['render'],
         args={'url': download_url.url}
     )
@@ -805,7 +805,7 @@ def addon_view_file(auth, node, file_node, version):
     ret.update({
         'urls': {
             'render': render_url.url,
-            'mfr': settings.MFR_SERVER_URL,
+            'mfr': mfr_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),

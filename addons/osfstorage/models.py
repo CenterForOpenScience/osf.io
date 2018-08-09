@@ -446,6 +446,7 @@ class Region(models.Model):
     name = models.CharField(max_length=200)
     waterbutler_credentials = EncryptedJSONField(default=dict)
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    mfr_url = models.URLField(default=website_settings.MFR_SERVER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     def get_absolute_url(self):
