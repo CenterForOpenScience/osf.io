@@ -49,7 +49,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
     addon = ser.CharField(read_only=True)
     bucket = ser.CharField(read_only=True)
-    citation_name = ser.CharField(read_only=True, source='citation.name')
     contributors = ser.SerializerMethodField(read_only=True)
     data_set = ser.CharField(read_only=True, source='dataset')
     destination = NodeLogFileParamsSerializer(read_only=True)
