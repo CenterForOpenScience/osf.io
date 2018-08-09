@@ -62,6 +62,7 @@ from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
+    IsAdminToUpdate,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
@@ -640,6 +641,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        IsAdminToUpdate
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]

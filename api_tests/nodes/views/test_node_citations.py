@@ -126,7 +126,15 @@ class TestNodeCitations(NodeCitationsMixin):
             }
         }
 
-    def test_node_add_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
+    def test_node_add_custom_citation(self, app, admin_contributor, read_contrib, public_url, public_project, payload):
+
+        res = app.put_json_api(public_url, payload, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+        res = app.put_json_api(public_url, payload, auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
         res = app.put_json_api(public_url, payload, auth=admin_contributor.auth)
         assert res.status_code == 200
