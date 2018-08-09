@@ -433,29 +433,78 @@
         % if not node['anonymous']:
 
          <div class="citations panel panel-default">
-            <div class="panel-heading clearfix">
+             <div class="panel-heading clearfix">
                 <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
                     <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
-            </div>
-            <div class="panel-body" style="display:none">
-                <div id="citationList" class="m-b-md">
-                    <div class="citation-list">
-                        <div class="f-w-xl">APA</div>
-                            <span data-bind="text: apa"></span>
-                        <div class="f-w-xl m-t-md">MLA</div>
-                            <span data-bind="text: mla"></span>
-                        <div class="f-w-xl m-t-md">Chicago</div>
-                            <span data-bind="text: chicago"></span>
-                    </div>
-                </div>
-                <p><strong>Get more citations</strong></p>
-                <div id="citationStylePanel" class="citation-picker">
-                    <input id="citationStyleInput" type="hidden" />
-                </div>
-                <pre id="citationText" class="formatted-citation"></pre>
-            </div>
+             </div>
+             <div id="citationList">
+                 <div class="panel-body" style="display: none;">
+                     <div data-bind="visible: page() == 'loading'">
+                        <div class="spinner-loading-wrapper">
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
+                            <p class="m-t-sm fg-load-message"> Loading citations...  </p>
+                        </div>
+                     </div>
+                     <div data-bind="visible: page() == 'standard'" style="display: none;">
+                         % if not node['is_registration'] and not node['anonymous'] and 'admin' in user['permissions']:
+                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
+                         % endif
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="f-w-xl">APA</div>
+                                 <span data-bind="text: apa"></span>
+                                 <div class="f-w-xl m-t-md">MLA</div>
+                                 <span data-bind="text: mla"></span>
+                                 <div class="f-w-xl m-t-md">Chicago</div>
+                                 <span data-bind="text: chicago"></span>
+                             </div>
+                         </div>
+                         <p><strong>Get more citations</strong></p>
+                         <div id="citationStylePanel" class="citation-picker">
+                             <input id="citationStyleInput" type="hidden" />
+                         </div>
+                         <pre id="citationText" class="formatted-citation"></pre>
+                     </div>
+                     <div data-bind="visible: page() == 'custom'" style="display: none;">
+                         % if not node['is_registration'] and not node['anonymous'] and 'admin' in user['permissions']:
+                            <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
+                         % endif
+
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="f-w-xl">Cite as:</div>
+                                 <span data-bind="text: customCitationText"></span>
+                             </div>
+                         </div>
+                     </div>
+                     <div data-bind="visible: page() == 'edit'" style="display: none;">
+                         <div class="row">
+                             <div class="col-md-12">
+                                 <h4>Create Custom Citation</h4>
+                             </div>
+                         </div>
+                         <div class="row">
+                             <div class="col-md-12 form-group">
+                                 <textarea class="form-control"
+                                           placeholder="Enter custom citation"
+                                           data-bind="value: customCitationText"
+                                           type="text">
+
+                                 </textarea>
+                             </div>
+                         </div>
+                         <div class=" pull-right" role="group">
+                             <button type="button" data-bind="click: cancelCitation" class="btn btn-default">Cancel</button>
+                             <button type="button" data-bind="click: clearCitation" class="btn btn-danger">Clear</button>
+                             <button type="button" data-bind="click: saveCitation" class="btn btn-success">Save</button>
+                         </div>
+                     </div>
+                 </div>
+             </div>
          </div>
         % endif
 
