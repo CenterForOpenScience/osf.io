@@ -3,15 +3,9 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
-from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations, models
 import django.db.models.deletion
 
-def emit_signal(apps, schema):
-    emit_post_migrate_signal(2, False, 'default')
-
-def noop(apps, schema):
-    pass
 
 class Migration(migrations.Migration):
 
@@ -69,5 +63,4 @@ class Migration(migrations.Migration):
             name='abstractprovidergroupobjectpermission',
             unique_together=set([('group', 'permission', 'content_object')]),
         ),
-        migrations.RunPython(emit_signal, noop)
     ]

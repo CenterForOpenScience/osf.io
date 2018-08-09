@@ -4,9 +4,8 @@ from django.db import migrations
 from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm, get_perms, remove_perm
 
-from osf.management.utils import GroupHelper
-
 logger = logging.getLogger(__file__)
+
 
 class GroupHelper(object):
     """ Helper for managing permission groups for a given provider during migrations.

@@ -6,25 +6,6 @@ from django.db import migrations, models
 from django.contrib.auth.models import Permission, Group
 
 
-def get_permissions():
-    return Permission.objects.filter(
-        models.Q(codename='change_osfuser') |
-        models.Q(codename='delete_osfuser')
-    )
-
-
-def fix_osfuser_permissions(*args):
-    osf_admin = Group.objects.get(name='osf_admin')
-    osf_admin.permissions.add(*get_permissions())
-    osf_admin.save()
-
-
-def revert_user_permissions(*args):
-    osf_admin = Group.objects.get(name='osf_admin')
-    osf_admin.permissions.remove(*get_permissions())
-    osf_admin.save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -36,5 +17,4 @@ class Migration(migrations.Migration):
             name='osfuser',
             options={'permissions': (('view_osfuser', 'Can view user details'),)},
         ),
-        migrations.RunPython(fix_osfuser_permissions, revert_user_permissions),
     ]

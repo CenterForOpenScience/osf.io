@@ -3,20 +3,10 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
-from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations, models
 import django.db.models.deletion
-from osf.management.utils import GroupHelper
 import osf.models.base
 import osf.utils.fields
-
-
-def create_provider_auth_groups(apps, schema_editor):
-    # this is to make sure that the permissions created in an earlier migration exist!
-    emit_post_migrate_signal(2, False, 'default')
-    PreprintProvider = apps.get_model('osf', 'PreprintProvider')
-    for provider in PreprintProvider.objects.all():
-        GroupHelper(provider).update_provider_auth_groups()
 
 
 class Migration(migrations.Migration):
@@ -79,7 +69,4 @@ class Migration(migrations.Migration):
             name='target',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions', to='osf.PreprintService'),
         ),
-        migrations.RunPython(
-            create_provider_auth_groups
-        )
     ]
