@@ -656,8 +656,6 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMi
         auth = get_user_auth(self.request)
         if not node.is_public and not node.can_view(auth):
             raise PermissionDenied if auth.user else NotAuthenticated
-        if self.request.method == 'GET':
-            return node.csl
         return node
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):

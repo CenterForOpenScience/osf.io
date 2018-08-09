@@ -56,6 +56,7 @@ var ViewModel = oop.defclass({
     },
     saveCitation: function() {
         var self = this;
+        self.loading(true);
         self.updateCustomCitation()
     },
     clearCitation: function() {

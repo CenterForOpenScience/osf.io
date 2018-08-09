@@ -1,4 +1,5 @@
 from django.db import connection
+from django.utils import timezone
 
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
@@ -109,22 +110,22 @@ class NodeCitationSerializer(JSONAPISerializer):
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
-    custom_citation_text = ser.CharField(allow_blank=True, max_length=255, required=False)
+    custom_citation_text = ser.CharField(allow_blank=True)
 
     links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
+        if self.context['request'].method == 'GET':
+            return obj.csl['URL']
         return obj['URL']
 
     def update(self, node, validated_data):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        from django.utils import timezone
-
-        date = timezone.now()
 
         if validated_data['custom_citation_text'] == '':
             log_action = NodeLog.CUSTOM_CITATION_REMOVED
+            old_citation_text = node.custom_citation_text
         elif validated_data['custom_citation_text'] != '' and node.custom_citation_text != '':
             log_action = NodeLog.CUSTOM_CITATION_EDITED
         else:
@@ -133,13 +134,15 @@ class NodeCitationSerializer(JSONAPISerializer):
         node.custom_citation_text = validated_data['custom_citation_text']
         node.save()
 
+        logged_citation = node.custom_citation_text if log_action != NodeLog.CUSTOM_CITATION_REMOVED else old_citation_text
         node.add_log(
             log_action,
             params={
+                'custom_citation': logged_citation,
                 'node': node._primary_key,
             },
             auth=auth,
-            log_date=date,
+            log_date=timezone.now(),
         )
         csl = node.csl
         csl['custom_citation_text'] = node.custom_citation_text
