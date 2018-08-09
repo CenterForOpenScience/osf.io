@@ -1,5 +1,0 @@
-{
-  "custom_citation_added" : "${user} added a custom citation ${citation} to ${node}",
-  "custom_citation_edited" : "${user} updated a custom citation ${citation} in ${node}",
-  "custom_citation_removed" : "${user} removed a custom citation ${citation} in ${node}"
-}
