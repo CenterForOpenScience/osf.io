@@ -3,6 +3,7 @@ import urllib
 import furl
 import urlparse
 from distutils.version import StrictVersion
+from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
@@ -28,6 +29,8 @@ TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
+
+hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz')
 
 def decompose_field(field):
     from api.base.serializers import (
