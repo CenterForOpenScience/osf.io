@@ -1268,8 +1268,8 @@ class TestNodeCreate:
             url, project, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
 
     #   test_create_project_invalid_title
         project = {
@@ -1454,7 +1454,7 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0

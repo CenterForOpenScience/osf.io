@@ -909,15 +909,6 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         else:
             mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
 
-    # overrides ListCreateAPIView
-    def get_parser_context(self, http_request):
-        """
-        Tells parser that attributes are not required in request
-        """
-        res = super(NodeForksList, self).get_parser_context(http_request)
-        res['attributes_required'] = False
-        return res
-
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (
