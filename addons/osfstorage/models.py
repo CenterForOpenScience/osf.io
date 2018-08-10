@@ -523,8 +523,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
-        clone.user_settings = self.user_settings
-        clone.region_id = self.region_id
+        user_settings = user.get_addon('osfstorage')
+        clone.user_settings = user_settings
+        clone.region_id = user_settings.default_region_id
 
         clone.save()
         if not self.root_node:
