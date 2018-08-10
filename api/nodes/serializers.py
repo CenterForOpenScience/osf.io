@@ -103,16 +103,21 @@ class NodeLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class NodeCitationSerializer(JSONAPISerializer):
+class CitationSerializer(JSONAPISerializer):
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
     author = ser.ListField(read_only=True)
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
-    custom_citation_text = ser.CharField(allow_blank=True)
 
     links = LinksField({'self': 'get_absolute_url'})
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+class NodeCitationSerializer(CitationSerializer):
+    custom_citation_text = ser.CharField(allow_blank=True)
 
     def get_absolute_url(self, obj):
         if self.context['request'].method == 'GET':

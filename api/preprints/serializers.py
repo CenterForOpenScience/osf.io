@@ -9,7 +9,7 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
-    NodeCitationSerializer,
+    CitationSerializer,
     NodeLicenseSerializer,
     get_license_details,
     NodeTagField
@@ -302,7 +302,7 @@ class PreprintCreateSerializer(PreprintSerializer):
         return self.update(preprint, validated_data)
 
 
-class PreprintCitationSerializer(NodeCitationSerializer):
+class PreprintCitationSerializer(CitationSerializer):
 
     class Meta:
         type_ = 'preprint-citation'
