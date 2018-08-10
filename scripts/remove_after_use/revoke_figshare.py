@@ -4,14 +4,14 @@ setup_django()
 import logging
 import sys
 from django.db import transaction
-from osf.models import Node, ExternalAccount
+from osf.models import Node, ExternalAccount, OSFUser
 from scripts import utils
 
 logger = logging.getLogger(__name__)
 
 
 # copied from BaseOAuthUserSettings.remove_oauth_access
-def revoke_oauth_access(user_settings, external_account):
+def deauthorize_nodes(user_settings, external_account):
     for node in user_settings.get_nodes_with_oauth_grants(external_account):
         try:
             node.get_addon(external_account.provider, deleted=True).deauthorize(auth=None,
@@ -20,17 +20,13 @@ def revoke_oauth_access(user_settings, external_account):
             # No associated addon settings despite oauth grant
             pass
 
-    if external_account.osfuser_set.count() == 1 and \
-            external_account.osfuser_set.filter(id=user_settings.owner.id).exists():
-        # Only this user is using the account, so revoke remote access as well.
-        user_settings.revoke_remote_oauth_access(external_account)
-
     for key in user_settings.oauth_grants:
         user_settings.oauth_grants[key].pop(external_account._id, None)
     user_settings.save()
 
 def main(guids, dry=False):
     with transaction.atomic():
+        user_external_accounts = {}
         for guid in set(guids):
             logger.info("Affected node: {}".format(guid))
             node = Node.load(guid)
@@ -51,12 +47,23 @@ def main(guids, dry=False):
                     continue
             else:
                 user = user_settings.owner
+
+            user_external_accounts[user._id] = external_account
+
+
+        for user_id, external_account in user_external_accounts.items():
+            user = OSFUser.load(user_id)
+            user_settings = user.get_addon('figshare')
+
             logger.info("Affected user: {}".format(user.username))
             # Revoke user's access to the external account
-            revoke_oauth_access(user_settings, external_account)
+            logger.debug("Deauthorizing nodes associated with {}".format(user_settings))
+            deauthorize_nodes(user_settings, external_account)
+            logger.debug("Removing {} from user".format(user_settings))
             user.external_accounts.remove(external_account)
             user.save()
 
+            logger.debug("Clearing data from ExternalAccount")
             # Clear out creds from external account
             external_account.oauth_key = None
             external_account.oauth_secret = None
