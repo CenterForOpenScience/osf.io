@@ -5,11 +5,10 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
-from django.db import connection, migrations, models
+from django.db import migrations, models
 
 from addons.osfstorage.models import NodeSettings, Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
-from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__name__)
 osfstorage_config = apps.get_app_config('addons_osfstorage')

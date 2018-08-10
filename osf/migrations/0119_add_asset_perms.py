@@ -55,7 +55,6 @@ def remove_group_permissions(*args):
     admin_group.save()
 
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
