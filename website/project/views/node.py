@@ -964,66 +964,56 @@ def serialize_child_tree(child_list, user, nested):
     """
     serialized_children = []
     for child in child_list:
-        contributors = [{
-            'id': contributor.user._id,
-            'is_admin': contributor.admin,
-            'is_confirmed': contributor.user.is_confirmed,
-            'visible': contributor.visible
-        } for contributor in child.contributor_set.all()]
+        if child.has_read_perm or child.has_permission_on_children(user, READ):
+            contributors = [{
+                'id': contributor.user._id,
+                'is_admin': contributor.admin,
+                'is_confirmed': contributor.user.is_confirmed,
+                'visible': contributor.visible
+            } for contributor in child.contributor_set.all()]
 
-        serialized_children.append({
-            'node': {
-                'id': child._id,
-                'url': child.url,
-                'title': child.title,
-                'is_public': child.is_public,
-                'contributors': contributors,
-                'is_admin': child.has_admin_perm,
-                'is_preprint': child.is_preprint,
-            },
-            'user_id': user._id,
-            'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
-            'nodeType': 'project' if not child.parentnode_id else 'component',
-            'category': child.category,
-            'permissions': {
-                'view': True,
-                'is_admin': child.has_admin_perm
-            }
-        })
+            serialized_children.append({
+                'node': {
+                    'id': child._id,
+                    'url': child.url,
+                    'title': child.title,
+                    'is_public': child.is_public,
+                    'contributors': contributors,
+                    'is_admin': child.has_admin_perm,
+                    'is_preprint': child.is_preprint,
+                },
+                'user_id': user._id,
+                'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
+                'nodeType': 'project' if not child.parentnode_id else 'component',
+                'category': child.category,
+                'permissions': {
+                    'view': True,
+                    'is_admin': child.has_admin_perm
+                }
+            })
 
     return sorted(serialized_children, key=lambda k: len(k['children']), reverse=True)
 
 def node_child_tree(user, node):
-    """
-    Returns the serialized representation (for treebeard) of a given node and its children.
-    The given user must have ADMIN access on the given node, and therefore the given user has
-    implicit read permisson on all of node's children (i.e. read permissions aren't checked here)
-
+    """ Returns the serialized representation (for treebeard) of a given node and its children.
     :param user: OSFUser object
     :param node: parent project Node object
     :return: treebeard-formatted data
     """
     serialized_nodes = []
-    is_contrib = node.is_contributor(user)
 
     assert node, '{} is not a valid Node.'.format(node._id)
 
-    if not is_contrib:
-        return []
-
-    is_admin = node.has_permission(user, ADMIN)
-
-    if is_admin:
-        is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
-        parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
-        children = (Node.objects.get_children(node)
-                    .filter(is_deleted=False)
-                    .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                    .annotate(has_admin_perm=Exists(is_admin_sqs))
-                    .include('contributor__user__guids')
-                    )
-    else:
-        children = []
+    is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
+    can_read_sqs = Contributor.objects.filter(node=OuterRef('pk'), read=True, user=user)
+    parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
+    children = (Node.objects.get_children(node)
+                .filter(is_deleted=False)
+                .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
+                .annotate(has_admin_perm=Exists(is_admin_sqs))
+                .annotate(has_read_perm=Exists(can_read_sqs))
+                .include('contributor__user__guids')
+                )
 
     nested = defaultdict(list)
     for child in children:
@@ -1036,26 +1026,29 @@ def node_child_tree(user, node):
         'visible': contributor.visible
     } for contributor in node.contributor_set.all().include('user__guids')]
 
-    serialized_nodes.append({
-        'node': {
-            'id': node._id,
-            'url': node.url,
-            'title': node.title,
-            'is_public': node.is_public,
-            'contributors': contributors,
-            'is_admin': is_admin,
-            'is_preprint': node.is_preprint,
-        },
-        'user_id': user._id,
-        'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
-        'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
-        'nodeType': node.project_or_component,
-        'category': node.category,
-        'permissions': {
-            'view': True,
-            'is_admin': is_admin
-        }
-    })
+    can_read = node.has_permission(user, READ)
+    is_admin = node.has_permission(user, ADMIN)
+
+    if can_read or node.has_permission_on_children(user, READ):
+        serialized_nodes.append({
+            'node': {
+                'id': node._id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public,
+                'contributors': contributors,
+                'is_admin': is_admin
+            },
+            'user_id': user._id,
+            'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+                'is_admin': is_admin
+            }
+        })
 
     return serialized_nodes
 

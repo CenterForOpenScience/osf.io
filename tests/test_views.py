@@ -1053,7 +1053,7 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json, [])
 
-    # Parent node should show because of user2 read access, the children should not
+    # Parent node should show because of user2 read access, and only child3
     def test_get_node_parent_not_admin(self):
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user2, auth=Auth(self.user))
@@ -1061,13 +1061,15 @@ class TestGetNodeTree(OsfTestCase):
         child1 = NodeFactory(parent=project, creator=self.user)
         child2 = NodeFactory(parent=project, creator=self.user)
         child3 = NodeFactory(parent=project, creator=self.user)
+        child3.add_contributor(self.user2, auth=Auth(self.user))
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user2.auth)
         tree = res.json[0]
         parent_node_id = tree['node']['id']
         children = tree['children']
         assert_equal(parent_node_id, project._primary_key)
-        assert_equal(children, [])
+        assert_equal(len(children), 1)
+        assert_equal(children[0]['node']['id'], child3._primary_key)
 
 
 @pytest.mark.enable_enqueue_task
