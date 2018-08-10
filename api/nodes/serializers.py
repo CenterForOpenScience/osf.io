@@ -116,6 +116,9 @@ class CitationSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj['URL']
 
+    class Meta:
+        type_ = 'citation'
+
 class NodeCitationSerializer(CitationSerializer):
     custom_citation_text = ser.CharField(allow_blank=True)
 
