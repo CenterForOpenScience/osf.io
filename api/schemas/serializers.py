@@ -27,3 +27,9 @@ class RegistrationSchemaSerializer(SchemaSerializer):
 
     class Meta:
         type_ = 'registration_schemas'
+
+
+class DeprecatedMetaSchemaSerializer(SchemaSerializer):
+
+    class Meta:
+        type_ = 'metaschemas'
