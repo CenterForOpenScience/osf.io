@@ -628,6 +628,7 @@ def confirm_email_get(token, auth=None, **kwargs):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
+            domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL
         )
 

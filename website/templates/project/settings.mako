@@ -136,7 +136,7 @@
                     <b>Storage location:</b> ${node['storage_location']}
                 </p>
                 <div class="help-block">
-                    <p class="text-muted">This is set on project creation and cannot be changed once set.</p>
+                    <p class="text-muted">Storage location cannot be changed after project is created.</p>
                 </div>
 
             </div>

@@ -59,5 +59,5 @@ def queue_osf4m_welcome_email(user, conference, node):
         fullname=user.fullname,
         fid=root_children[0]._id if len(root_children) else None,
         osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        domain=DOMAIN,
+        domain=settings.DOMAIN,
     )
