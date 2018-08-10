@@ -145,7 +145,7 @@ class TestNodeCitations(NodeCitationsMixin):
         assert public_project.logs.first().action == 'custom_citation_added'
 
     def test_node_edit_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
-        public_project.custom_citation_text = 'TheElderSporles'
+        public_project.custom_citation_text = 'TheElderSproles'
         public_project.save()
 
         res = app.put_json_api(public_url, payload, auth=admin_contributor.auth)
@@ -157,7 +157,7 @@ class TestNodeCitations(NodeCitationsMixin):
         assert public_project.logs.first().action == 'custom_citation_edited'
 
     def test_node_remove_custom_citation(self, app, admin_contributor, public_url, public_project, payload):
-        public_project.custom_citation_text = 'TheElderSporles'
+        public_project.custom_citation_text = 'TheElderSproles'
         public_project.save()
         payload['data']['attributes']['custom_citation_text'] = ''
 
@@ -169,7 +169,6 @@ class TestNodeCitations(NodeCitationsMixin):
 
     def test_node_citations_errors(self, app, admin_contributor, public_url):
 
-        #   test_citations_are_read_only
         post_res = app.post_json_api(
             public_url, {},
             auth=admin_contributor.auth,
