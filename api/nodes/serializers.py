@@ -420,7 +420,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute("""
                 WITH RECURSIVE parents AS (
                   SELECT parent_id, child_id
                   FROM osf_noderelation
@@ -446,7 +446,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
 
             return int(cursor.fetchone()[0])
 

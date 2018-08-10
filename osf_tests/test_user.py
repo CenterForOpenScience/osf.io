@@ -1186,7 +1186,7 @@ class TestMergingUsers:
     @pytest.fixture()
     def merge_dupe(self, master, dupe):
         def f():
-            '''Do the actual merge.'''
+            """Do the actual merge."""
             master.merge_user(dupe)
             master.save()
         return f
