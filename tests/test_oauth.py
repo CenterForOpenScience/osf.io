@@ -32,15 +32,15 @@ for logger in SILENT_LOGGERS:
 
 class MockOAuth1Provider(ExternalProvider):
     _oauth_version = OAUTH1
-    name = "Mock OAuth 1.0a Provider"
-    short_name = "mock1a"
+    name = 'Mock OAuth 1.0a Provider'
+    short_name = 'mock1a'
 
-    client_id = "mock1a_client_id"
-    client_secret = "mock1a_client_secret"
+    client_id = 'mock1a_client_id'
+    client_secret = 'mock1a_client_secret'
 
-    auth_url_base = "http://mock1a.com/auth"
-    request_token_url = "http://mock1a.com/request"
-    callback_url = "http://mock1a.com/callback"
+    auth_url_base = 'http://mock1a.com/auth'
+    request_token_url = 'http://mock1a.com/request'
+    callback_url = 'http://mock1a.com/callback'
 
     def handle_callback(self, response):
         return {
@@ -221,7 +221,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             url = self.provider.auth_url
 
             # The URL to which the user would be redirected
-            assert_equal(url, "http://mock1a.com/auth?oauth_token=temp_token")
+            assert_equal(url, 'http://mock1a.com/auth?oauth_token=temp_token')
 
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
@@ -302,10 +302,10 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
         user = UserFactory()
         account = ExternalAccountFactory(
-            provider="mock1a",
+            provider='mock1a',
             provider_name='Mock 1A',
-            oauth_key="temp_key",
-            oauth_secret="temp_secret"
+            oauth_key='temp_key',
+            oauth_secret='temp_secret'
         )
         account.save()
         # associate this ExternalAccount instance with the user
@@ -316,8 +316,8 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock1a/",
-                query_string="oauth_token=temp_key&oauth_verifier=mock_verifier"
+                path='/oauth/callback/mock1a/',
+                query_string='oauth_token=temp_key&oauth_verifier=mock_verifier'
         ):
             # make sure the user is logged in
             authenticate(user=malicious_user, access_token=None, response=None)
@@ -342,7 +342,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
     def test_start_flow(self):
         # Generate the appropriate URL and state token
 
-        with self.app.app.test_request_context("/oauth/connect/mock2/"):
+        with self.app.app.test_request_context('/oauth/connect/mock2/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
@@ -377,8 +377,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # check base URL
             assert_equal(
-                url.split("?")[0],
-                "https://mock2.com/auth",
+                url.split('?')[0],
+                'https://mock2.com/auth',
             )
 
     @responses.activate
@@ -392,8 +392,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock2/",
-                query_string="code=mock_code&state=mock_state"
+                path='/oauth/callback/mock2/',
+                query_string='code=mock_code&state=mock_state'
         ):
 
             # make sure the user is logged in
@@ -423,8 +423,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user = UserFactory()
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock2/",
-                query_string="code=mock_code&state=mock_state"
+                path='/oauth/callback/mock2/',
+                query_string='code=mock_code&state=mock_state'
         ):
             # make sure the user is logged in
             authenticate(user=user, access_token=None, response=None)
@@ -455,8 +455,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user = UserFactory()
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock2/",
-                query_string="error=mock_error&code=mock_code&state=mock_state"
+                path='/oauth/callback/mock2/',
+                query_string='error=mock_error&code=mock_code&state=mock_state'
         ):
             # make sure the user is logged in
             authenticate(user=user, access_token=None, response=None)
@@ -499,8 +499,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock2/",
-                query_string="code=mock_code&state=mock_state"
+                path='/oauth/callback/mock2/',
+                query_string='code=mock_code&state=mock_state'
         ) as ctx:
 
             # make sure the user is logged in

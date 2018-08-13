@@ -39,7 +39,7 @@ class FigshareFile(FigshareFileNode, File):
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
-            return (version, u'''
+            return (version, u"""
             <style>
             .file-download{{display: none;}}
             .file-share{{display: none;}}
@@ -50,7 +50,7 @@ class FigshareFile(FigshareFileNode, File):
             <a href="https://support.figshare.com/support/solutions">publish</a>
             it on figshare.
             </div>
-            '''.format(name=markupsafe.escape(self.name)))
+            """.format(name=markupsafe.escape(self.name)))
 
         return version
 

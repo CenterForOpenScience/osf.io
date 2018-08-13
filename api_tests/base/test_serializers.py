@@ -279,7 +279,7 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "The following fields are not embeddable: foo"
+            'The following fields are not embeddable: foo'
         )
 
     def test_embed_does_not_remove_relationship(self):

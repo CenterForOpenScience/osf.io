@@ -134,7 +134,7 @@ class BaseAnalyticsHarness(object):
 
     @property
     def analytics_classes(self):
-        raise NotImplementedError("Please specify a default set of classes to run with this analytics harness")
+        raise NotImplementedError('Please specify a default set of classes to run with this analytics harness')
 
     def parse_args(self):
         parser = argparse.ArgumentParser(description='Populate keen analytics!')

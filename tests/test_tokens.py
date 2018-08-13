@@ -17,8 +17,8 @@ from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
 NO_SANCTION_MSG = 'There is no {0} associated with this token.'
-APPROVED_MSG = "This registration is not pending {0}."
-REJECTED_MSG = "This registration {0} has been rejected."
+APPROVED_MSG = 'This registration is not pending {0}.'
+REJECTED_MSG = 'This registration {0} has been rejected.'
 
 class TestTokenHandler(OsfTestCase):
 

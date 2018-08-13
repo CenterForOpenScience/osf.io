@@ -95,13 +95,13 @@ class TestUrlForHelpers(unittest.TestCase):
         full_url = api_v2_url('/nodes/abcd3/contributors/',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
+        assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
 
         # Handles URL the same way whether or not user enters a leading slash
         full_url = api_v2_url('nodes/abcd3/contributors/',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
+        assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
 
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
@@ -110,14 +110,14 @@ class TestUrlForHelpers(unittest.TestCase):
                               base_route='https://api.osf.io/',
                               base_prefix='v2/',
                               page_size=10)
-        assert_equal(full_url, "https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10")
+        assert_equal(full_url, 'https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10')
 
     def test_api_v2_url_base_path(self):
         """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
         full_url = api_v2_url('',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, "http://localhost:8000/v2/")
+        assert_equal(full_url, 'http://localhost:8000/v2/')
 
     def test_web_url_for(self):
         with self.app.test_request_context():
@@ -326,11 +326,11 @@ class TestWebsiteUtils(unittest.TestCase):
         assert_true(isinstance(outputs, set))
 
     def test_rapply_on_str(self):
-        input = "bob"
+        input = 'bob'
         convert = lambda s: s.upper()
         outputs = rapply(input, convert)
 
-        assert_equal("BOB", outputs)
+        assert_equal('BOB', outputs)
         assert_true(isinstance(outputs, basestring))
 
     def test_rapply_preserves_args_and_kwargs(self):

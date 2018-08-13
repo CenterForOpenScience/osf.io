@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Custom exceptions for the framework.'''
+"""Custom exceptions for the framework."""
 import copy
 import httplib as http
 from flask import request

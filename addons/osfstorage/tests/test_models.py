@@ -624,7 +624,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.location)
         assert_true(retrieved.size)
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
-        assert_equal(retrieved.identifier, u"0")
+        assert_equal(retrieved.identifier, u'0')
         assert_true(retrieved.content_type)
         assert_true(retrieved.modified)
 
