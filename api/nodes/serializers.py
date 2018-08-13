@@ -5,7 +5,7 @@ from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  RelationshipPostMakesNoChanges)
 from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField, ValuesListField,
+                                  JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer,
@@ -208,7 +208,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
+    tags = ser.ListField(source='quick_tags', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
@@ -317,7 +317,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_node._id>'},
+        related_view_kwargs={'node_id': '<quick_parent_id>'},
         filter_key='parent_node'
     )
 
@@ -392,18 +392,35 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
-        user = self.context['request'].user
-        if user.is_anonymous:
-            return ['read']
-        permissions = obj.get_permissions(user=user)
-        if not permissions:
-            permissions = ['read']
-        return permissions
+        if hasattr(obj, 'contrib_admin'):
+            if obj.contrib_admin:
+                return ['admin', 'write', 'read']
+            elif obj.contrib_write:
+                return ['write', 'read']
+            else:
+                return ['read']
+        else:
+            user = self.context['request'].user
+            if user.is_anonymous:
+                return ['read']
+            permissions = obj.get_permissions(user=user)
+            if not permissions:
+                permissions = ['read']
+            return permissions
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.can_comment(auth)
+
+        if hasattr(obj, 'contrib_read'):
+            if obj.comment_level == 'public':
+                return auth.logged_in and (
+                    obj.is_public or
+                    (auth.user and obj.contrib_read)
+                )
+            return obj.contrib_read or False
+        else:
+            return obj.can_comment(auth)
 
     class Meta:
         type_ = 'nodes'
@@ -502,8 +519,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         affiliated_institutions = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'tags' in validated_data:
-            tags = validated_data.pop('tags')
+        if 'quick_tags' in validated_data:
+            tags = validated_data.pop('quick_tags')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -561,8 +578,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
-            if 'tags' in validated_data:
-                new_tags = set(validated_data.pop('tags', []))
+            if 'quick_tags' in validated_data:
+                new_tags = set(validated_data.pop('quick_tags', []))
                 node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)

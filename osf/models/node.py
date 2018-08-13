@@ -356,6 +356,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
+    def quick_parent_id(self):
+        """
+        Optimization property. If node has been annotated with "annotated_parent_id"
+        in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+        """
+        if hasattr(self, 'annotated_parent_id'):
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
+
+    @property
+    def quick_tags(self):
+        if hasattr(self, 'annotated_tags'):
+            return [] if self.annotated_tags == [None] else self.annotated_tags
+        else:
+            return self.tags.values_list('name', flat=True)
+
+    @property
     def nodes(self):
         """Return queryset of nodes."""
         return self.get_nodes()

@@ -1,12 +1,16 @@
+from django.db.models import OuterRef, Subquery, Exists, CharField, Value, BooleanField
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from guardian.core import ObjectPermissionChecker
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
+from django.contrib.contenttypes.models import ContentType
 from framework.auth.oauth_scopes import CoreScopes
-
+from addons.wiki.models import NodeSettings as WikiNodeSettings
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
+from api.base.utils import has_admin_scope
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
@@ -33,7 +37,16 @@ from api.collections.serializers import (
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 
-from osf.models import AbstractNode, CollectedGuidMetadata, Collection, Node, Registration
+from osf.models import (
+    AbstractNode,
+    CollectedGuidMetadata,
+    Collection,
+    Guid,
+    Node,
+    NodeRelation,
+    Registration,
+    Contributor
+)
 
 
 class CollectionMixin(object):
@@ -408,7 +421,22 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        admin_scope = has_admin_scope(self.request)
+        abstract_node_contenttype_id = ContentType.objects.get_for_model(AbstractNode).id
+        guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
+        parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
+        wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
+        contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
+        nodes = Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by(
+            '-modified').prefetch_related('root').prefetch_related('subjects').select_related('node_license').annotate(
+            contrib_read=Subquery(contribs.values('read')[:1])).annotate(
+            contrib_write=Subquery(contribs.values('write')[:1])).annotate(
+            contrib_admin=Subquery(contribs.values('admin')[:1])).annotate(
+            has_wiki_addon=Exists(wiki_addon)).annotate(
+            annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField())).annotate(
+            annotated_tags=ArrayAgg('tags__name')).annotate(
+            has_admin_scope=Value(admin_scope, output_field=BooleanField()))
+        return nodes
 
     # overrides APIView
     def get_parser_context(self, http_request):
