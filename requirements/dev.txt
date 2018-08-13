@@ -21,6 +21,7 @@ responses==0.8.1
 flake8==3.5.0
 flake8-quotes==1.0.0
 flake8-mutable==1.2.0
+pre-commit==1.10.5
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
