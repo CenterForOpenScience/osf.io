@@ -83,4 +83,4 @@ class RegistrationSchema(AbstractSchema):
 
 class FileMetadataSchema(AbstractSchema):
 
-    serializer_class = None
+    pass
