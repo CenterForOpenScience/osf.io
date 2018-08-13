@@ -17,9 +17,3 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
 
     class Meta:
         unique_together = ('file', 'schema')
-
-    def format(self, type='json'):
-        return self.schema.formatter.format(type)
-
-    def validate(self, data):
-        return self.schema.serializer_class.validate(self, data)
