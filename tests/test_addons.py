@@ -30,7 +30,7 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import Session, MetaSchema, QuickFilesNode
+from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
@@ -463,7 +463,7 @@ class TestCheckPreregAuth(OsfTestCase):
         administer_permission = Permission.objects.get(codename='administer_prereg')
         self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)

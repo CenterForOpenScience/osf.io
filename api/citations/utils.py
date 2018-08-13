@@ -15,8 +15,8 @@ from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
 
 def clean_up_common_errors(cit):
-    cit = re.sub(r"\.+", '.', cit)
-    cit = re.sub(r" +", ' ', cit)
+    cit = re.sub(r'\.+', '.', cit)
+    cit = re.sub(r' +', ' ', cit)
     return cit
 
 

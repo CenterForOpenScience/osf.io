@@ -219,13 +219,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $osf.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -233,7 +229,8 @@ var FileViewPage = {
                                     checkout: self.context.currentUser.id
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
@@ -249,13 +246,9 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:checkin', function() {
-            $.ajax({
-                method: 'put',
-                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                beforeSend: $osf.setXHRAuthorization,
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({
+            var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+            $osf.ajaxJSON('PUT', url, {
+                data: {
                     data: {
                         id: self.file.path.replace('/', ''),
                         type: 'files',
@@ -263,7 +256,8 @@ var FileViewPage = {
                             checkout: null
                         }
                     }
-                })
+                },
+                isCors: true
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
@@ -284,13 +278,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -298,7 +288,8 @@ var FileViewPage = {
                                     checkout: null
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {

@@ -15,44 +15,44 @@ class TestMigrateAnalytics(OsfTestCase):
         self.day_three = parse('2016-03-19').replace(tzinfo=pytz.UTC)
 
         self.keen_event = {
-            "keen": {
-                "timestamp": self.day_one.isoformat(),
-                "created_at": self.day_one.isoformat(),
-                "id": 1
+            'keen': {
+                'timestamp': self.day_one.isoformat(),
+                'created_at': self.day_one.isoformat(),
+                'id': 1
             },
-            "nodes": {
-                "deleted": 0,
-                "total": 1,
-                "connected": 1,
-                "disconnected": 0
+            'nodes': {
+                'deleted': 0,
+                'total': 1,
+                'connected': 1,
+                'disconnected': 0
             }
         }
 
         self.keen_event_2 = {
-            "keen": {
-                "timestamp": self.day_two.isoformat(),
-                "created_at": self.day_two.isoformat(),
-                "id": 2
+            'keen': {
+                'timestamp': self.day_two.isoformat(),
+                'created_at': self.day_two.isoformat(),
+                'id': 2
             },
-            "nodes": {
-                "deleted": 0,
-                "total": 5,
-                "connected": 4,
-                "disconnected": 1
+            'nodes': {
+                'deleted': 0,
+                'total': 5,
+                'connected': 4,
+                'disconnected': 1
             }
         }
 
         self.keen_event_3 = {
-            "keen": {
-                "timestamp": self.day_three.isoformat(),
-                "created_at": self.day_three.isoformat(),
-                "id": 2
+            'keen': {
+                'timestamp': self.day_three.isoformat(),
+                'created_at': self.day_three.isoformat(),
+                'id': 2
             },
-            "nodes": {
-                "deleted": 0,
-                "total": 8,
-                "connected": 6,
-                "disconnected": 2
+            'nodes': {
+                'deleted': 0,
+                'total': 8,
+                'connected': 6,
+                'disconnected': 2
             }
         }
 
@@ -67,7 +67,7 @@ class TestMigrateAnalytics(OsfTestCase):
 
         # check the totals are the same as the first event
         returned_totals = [event['nodes']['total'] for event in generated_events]
-        expected_totals = [self.keen_event["nodes"]["total"] for i in range(len(generated_events))]
+        expected_totals = [self.keen_event['nodes']['total'] for i in range(len(generated_events))]
         assert_items_equal(returned_totals, expected_totals)
 
     def test_fill_in_event_gaps(self):

@@ -29,7 +29,7 @@ def crossref_client():
 
 @pytest.fixture()
 def preprint():
-    node_license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
+    node_license = NodeLicense.objects.get(name='CC-By Attribution 4.0 International')
     user = AuthUserFactory()
     provider = PreprintProviderFactory()
     provider.doi_prefix = '10.31219'
@@ -104,10 +104,10 @@ class TestCrossRefClient:
         assert root.find('.//{%s}email_address' % crossref.CROSSREF_NAMESPACE).text == test_email
 
         # body
-        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
         assert len(contributors.getchildren()) == len(preprint.node.visible_contributors)
 
-        assert root.find(".//{%s}group_title" % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
+        assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
         assert root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text == preprint.node.title
         assert root.find('.//{%s}item_number' % crossref.CROSSREF_NAMESPACE).text == 'osf.io/{}'.format(preprint._id)
         assert root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE).text == preprint.node.description
@@ -143,9 +143,9 @@ class TestCrossRefClient:
         root = lxml.etree.fromstring(crossref_xml)
 
         # body
-        assert not root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+        assert not root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
-        assert root.find(".//{%s}group_title" % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
+        assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
         assert not root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text
         assert not root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE)
         assert not root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS)
@@ -219,7 +219,7 @@ class TestCrossRefClient:
 
         crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
-        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
         assert contributors.find('.//{%s}surname' % crossref.CROSSREF_NAMESPACE).text == 'Madonna'
         assert not contributors.find('.//{%s}given_name' % crossref.CROSSREF_NAMESPACE)
@@ -238,7 +238,7 @@ class TestCrossRefClient:
 
         crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
-        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
         assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
         assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'true'}
@@ -252,7 +252,7 @@ class TestCrossRefClient:
 
         crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
-        contributors = root.find(".//{%s}contributors" % crossref.CROSSREF_NAMESPACE)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
         assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
 

@@ -120,5 +120,5 @@ def run_main(dry_run=True):
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(False)

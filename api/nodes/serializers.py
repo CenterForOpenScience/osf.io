@@ -25,7 +25,7 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode, PrivateLink)
+                        RegistrationSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -209,7 +209,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
+    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
@@ -267,6 +267,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     files = RelationshipField(
         related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<_id>'}
+    )
+
+    settings = RelationshipField(
+        related_view='nodes:node-settings',
         related_view_kwargs={'node_id': '<_id>'}
     )
 
@@ -415,7 +420,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute("""
                 WITH RECURSIVE parents AS (
                   SELECT parent_id, child_id
                   FROM osf_noderelation
@@ -441,7 +446,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
 
             return int(cursor.fetchone()[0])
 
@@ -1157,8 +1162,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:registration-metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'}
     )
 
     links = LinksField({
@@ -1174,7 +1179,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
+        schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
@@ -1314,3 +1319,173 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
 
         link.save()
         return link
+
+
+class NodeSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    access_requests_enabled = ser.BooleanField()
+    anyone_can_comment = ser.SerializerMethodField()
+    anyone_can_edit_wiki = ser.SerializerMethodField()
+    wiki_enabled = ser.SerializerMethodField()
+    redirect_link_enabled = ser.SerializerMethodField()
+    redirect_link_url = ser.SerializerMethodField()
+    redirect_link_label = ser.SerializerMethodField()
+
+    view_only_links = RelationshipField(
+        related_view='nodes:node-view-only-links',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    def get_anyone_can_comment(self, obj):
+        return obj.comment_level == 'public'
+
+    def get_wiki_enabled(self, obj):
+        return self.context['wiki_addon'] is not None
+
+    def get_anyone_can_edit_wiki(self, obj):
+        wiki_addon = self.context['wiki_addon']
+        return wiki_addon.is_publicly_editable if wiki_addon else None
+
+    def get_redirect_link_enabled(self, obj):
+        return self.context['forward_addon'] is not None
+
+    def get_redirect_link_url(self, obj):
+        forward_addon = self.context['forward_addon']
+        return forward_addon.url if forward_addon else None
+
+    def get_redirect_link_label(self, obj):
+        forward_addon = self.context['forward_addon']
+        return forward_addon.label if forward_addon else None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-settings',
+            kwargs={
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    class Meta:
+        type_ = 'node-settings'
+
+
+class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
+    anyone_can_comment = ser.BooleanField(write_only=True, required=False)
+    wiki_enabled = ser.BooleanField(write_only=True, required=False)
+    anyone_can_edit_wiki = ser.BooleanField(write_only=True, required=False)
+    redirect_link_enabled = ser.BooleanField(write_only=True, required=False)
+    redirect_link_url = ser.URLField(write_only=True, required=False)
+    redirect_link_label = ser.CharField(max_length=50, write_only=True, required=False)
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        context['wiki_addon'] = instance.get_addon('wiki')
+        context['forward_addon'] = instance.get_addon('forward')
+        return NodeSettingsSerializer(instance=instance, context=context).data
+
+    def update(self, obj, validated_data):
+        user = self.context['request'].user
+        auth = get_user_auth(self.context['request'])
+        admin_only_field_names = [
+            'access_requests_enabled',
+            'anyone_can_comment',
+            'anyone_can_edit_wiki',
+            'wiki_enabled',
+        ]
+
+        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, 'admin'):
+            raise exceptions.PermissionDenied
+
+        self.update_node_fields(obj, validated_data, auth)
+        self.update_wiki_fields(obj, validated_data, auth)
+        self.update_forward_fields(obj, validated_data, auth)
+        return obj
+
+    def update_node_fields(self, obj, validated_data, auth):
+        access_requests_enabled = validated_data.get('access_requests_enabled')
+        anyone_can_comment = validated_data.get('anyone_can_comment')
+        save_node = False
+
+        if access_requests_enabled is not None:
+            obj.set_access_requests_enabled(access_requests_enabled, auth=auth)
+            save_node = True
+        if anyone_can_comment is not None:
+            obj.comment_level = 'public' if anyone_can_comment else 'private'
+            save_node = True
+        if save_node:
+            obj.save()
+
+    def update_wiki_fields(self, obj, validated_data, auth):
+        wiki_enabled = validated_data.get('wiki_enabled')
+        anyone_can_edit_wiki = validated_data.get('anyone_can_edit_wiki')
+        wiki_addon = self.context['wiki_addon']
+
+        if wiki_enabled is not None:
+            wiki_addon = self.enable_or_disable_addon(obj, wiki_enabled, 'wiki', auth)
+
+        if anyone_can_edit_wiki is not None:
+            if not obj.is_public and anyone_can_edit_wiki:
+                raise exceptions.ValidationError(detail='To allow all OSF users to edit the wiki, the project must be public.')
+            if wiki_addon:
+                try:
+                    wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
+                except NodeStateError:
+                    return
+                wiki_addon.save()
+            else:
+                raise exceptions.ValidationError(detail='You must have the wiki enabled before changing wiki settings.')
+
+    def update_forward_fields(self, obj, validated_data, auth):
+        redirect_link_enabled = validated_data.get('redirect_link_enabled')
+        redirect_link_url = validated_data.get('redirect_link_url')
+        redirect_link_label = validated_data.get('redirect_link_label')
+
+        save_forward = False
+        forward_addon = self.context['forward_addon']
+
+        if redirect_link_enabled is not None:
+            if not redirect_link_url and redirect_link_enabled:
+                raise exceptions.ValidationError(detail='You must include a redirect URL to enable a redirect.')
+            forward_addon = self.enable_or_disable_addon(obj, redirect_link_enabled, 'forward', auth)
+
+        if redirect_link_url is not None:
+            if not forward_addon:
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link URL.')
+            forward_addon.url = redirect_link_url
+            obj.add_log(
+                action='forward_url_changed',
+                params=dict(
+                    node=obj._id,
+                    project=obj.parent_id,
+                    forward_url=redirect_link_url,
+                ),
+                auth=auth
+            )
+            save_forward = True
+
+        if redirect_link_label is not None:
+            if not forward_addon:
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link label.')
+            forward_addon.label = redirect_link_label
+            save_forward = True
+
+        if save_forward:
+            forward_addon.save()
+
+    def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
+        """
+        Returns addon, if exists, otherwise returns None
+        """
+        addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
+        if type(addon) == bool:
+            addon = None
+        return addon

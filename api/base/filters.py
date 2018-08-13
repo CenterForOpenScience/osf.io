@@ -30,6 +30,7 @@ def lowercase(lower):
 
 def sort_multiple(fields):
     fields = list(fields)
+
     def sort_fn(a, b):
         sort_direction = 1
         for field in fields:

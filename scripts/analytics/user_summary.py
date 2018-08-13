@@ -11,6 +11,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
+from keen import exceptions as keen_exceptions
 
 from osf.models import OSFUser
 from website.app import init_app
@@ -117,7 +118,7 @@ class UserSummary(SummaryAnalytics):
         try:
             # Because this data reads from Keen it could fail if Keen read api fails while writing is still allowed
             counts['status']['stickiness'] = self.calculate_stickiness(timestamp_datetime, query_datetime)
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, keen_exceptions.InvalidProjectIdError):
             sentry.log_message('Unable to read from Keen. stickiness metric not collected for date {}'.format(timestamp_datetime.isoformat()))
 
         logger.info(

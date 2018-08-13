@@ -4,7 +4,7 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
+from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 from website import settings
@@ -530,7 +530,7 @@ class TestDraftRegistrations:
         assert draft.initiator == node.creator
 
         # Pick an arbitrary v2 schema
-        schema = MetaSchema.objects.filter(schema_version=2).first()
+        schema = RegistrationSchema.objects.filter(schema_version=2).first()
         data = {'some': 'data'}
         draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert draft.registration_schema == schema

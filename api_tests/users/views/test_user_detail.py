@@ -846,8 +846,7 @@ class TestUserUpdate:
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == 'even_newer_github'
 
-    def test_put_user_logged_in(
-            self, app, user_one, data_new_user_one, url_user_one):
+    def test_put_user_logged_in(self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
         res = app.put_json_api(
             url_user_one,
@@ -995,3 +994,228 @@ class TestDeactivatedUser:
         assert urlparse.urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+class UserProfileMixin(object):
+
+    @pytest.fixture()
+    def request_payload(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def bad_request_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['bad_key'] = 'bad_value'
+        return request_payload
+
+    @pytest.fixture()
+    def end_dates_no_start_dates_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        del request_payload['data']['attributes'][request_key][0]['startMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def start_dates_no_end_dates_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        del request_payload['data']['attributes'][request_key][0]['endMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def end_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        return request_payload
+
+    @pytest.fixture()
+    def start_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        return request_payload
+
+    @pytest.fixture()
+    def request_key(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_one_url(self, user_one):
+        return '/v2/users/{}/'.format(user_one._id)
+
+    def test_user_put_profile_200(self, app, user_one, user_one_url, request_payload, request_key, user_attr):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+
+    def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
+        res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "Additional properties are not allowed (u'bad_key' was unexpected)"
+
+    def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+    def test_user_put_profile_403(self, app, user_two, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+    def test_user_put_profile_validate_dict(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure profile's fields have correct structure
+        request_payload['data']['attributes'][request_key] = {}
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
+
+    def test_user_put_profile_validation_list(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure structure is lists of dicts consisting of proper fields
+        request_payload['data']['attributes'][request_key] = [{}]
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'institution' is a required property"
+
+    def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure institution is not empty string
+        request_payload['data']['attributes'][request_key][0]['institution'] = ''
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
+
+    def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure ongoing is bool
+        del request_payload['data']['attributes'][request_key][0]['ongoing']
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'ongoing' is a dependency of u'startYear'"
+
+    def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid datatypes for dates
+
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        print res.json['errors'][0]
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
+
+    def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid values for dates
+        request_payload['data']['attributes'][request_key][0]['startYear'] = -2
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
+
+    def test_user_put_profile_date_validate_ongoing_position(self, app, user_one, user_one_url, request_payload, request_key):
+        # endDates for ongoing position
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
+
+    def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
+        # End date is greater then start date
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 2000
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
+
+    def test_user_put_profile_date_validate_end_month_dependency(self, app, user_one, user_one_url, end_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, end_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'endYear' is a dependency of u'endMonth'"
+
+    def test_user_put_profile_date_validate_start_month_dependency(self, app, user_one, user_one_url, start_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
+
+    def test_user_put_profile_date_validate_start_date_no_end_date_not_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
+        # End date is greater then start date
+        res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
+
+    def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
+        # End dates, but no start dates
+        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
+
+
+@pytest.mark.django_db
+class TestUserSchools(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'education': [{'degree': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                   }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'education'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'schools'
+
+
+@pytest.mark.django_db
+class TestUserJobs(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'employment': [{'title': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                    }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'employment'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'jobs'

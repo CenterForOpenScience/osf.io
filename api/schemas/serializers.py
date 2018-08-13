@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, LinksField)
 
 
-class MetaSchemaSerializer(JSONAPISerializer):
+class SchemaSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -20,10 +20,16 @@ class MetaSchemaSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'metaschemas'
+        type_ = 'schemas'
 
 
-class RegistrationMetaSchemaSerializer(MetaSchemaSerializer):
+class RegistrationSchemaSerializer(SchemaSerializer):
 
     class Meta:
-        type_ = 'registration_metaschemas'
+        type_ = 'registration_schemas'
+
+
+class DeprecatedMetaSchemaSerializer(SchemaSerializer):
+
+    class Meta:
+        type_ = 'metaschemas'
