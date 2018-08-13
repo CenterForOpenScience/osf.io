@@ -86,7 +86,7 @@ class Sitemap(object):
         zip_file_path = file_path + '.gz'
         print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
-        xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = self.doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
 
@@ -132,7 +132,7 @@ class Sitemap(object):
         print('Writing `sitemap_index.xml`')
         file_name = 'sitemap_index.xml'
         file_path = os.path.join(self.sitemap_dir, file_name)
-        xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
         if settings.SITEMAP_TO_S3:
@@ -182,7 +182,7 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
+            .exclude(type__in=['osf.collection', 'osf.quickfilesnode'])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:

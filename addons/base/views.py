@@ -47,7 +47,7 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u'''
+ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -57,8 +57,8 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>''',
-                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+</p>""",
+                  'FILE_GONE_ACTOR_UNKNOWN': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -68,16 +68,16 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>''',
-                  'DONT_KNOW': u'''
+</p>""",
+                  'DONT_KNOW': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>''',
-                  'BLAME_PROVIDER': u'''
+</p>""",
+                  'BLAME_PROVIDER': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -88,13 +88,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>''',
-                  'FILE_SUSPENDED': u'''
+</p>""",
+                  'FILE_SUSPENDED': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.'''}
+This content has been removed."""}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 

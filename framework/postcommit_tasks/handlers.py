@@ -68,9 +68,9 @@ def get_task_from_postcommit_queue(name, predicate, celery=True):
     return False
 
 def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=True):
-    '''
+    """
     Any task queued with this function where celery=True will be run asynchronously.
-    '''
+    """
     # make a hash of the pertinent data
     raw = [fn.__name__, fn.__module__, args, kwargs]
     m = hashlib.md5()
@@ -92,17 +92,18 @@ handlers = {
 }
 
 def run_postcommit(once_per_request=True, celery=False):
-    '''
+    """
     Delays function execution until after the request's transaction has been committed.
     If you set the celery kwarg to True args and kwargs must be JSON serializable
     Tasks will only be run if the response's status code is < 500.
     Any task queued with this function where celery=True will be run asynchronously.
     :return:
-    '''
+    """
     def wrapper(func):
         # if we're local dev or running unit tests, run without queueing
         if settings.DEBUG_MODE:
             return func
+
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             enqueue_postcommit_task(func, args, kwargs, celery=celery, once_per_request=once_per_request)

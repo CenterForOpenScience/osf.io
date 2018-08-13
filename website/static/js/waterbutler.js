@@ -11,8 +11,8 @@ function buildUrl(path, provider, nid, options) {
     var params = $.extend({}, options);
     var waterbutlerURL = null;
     if ('waterbutlerURL' in params) {
-        waterbutlerURL = params['waterbutlerURL'];
-        delete params['waterbutlerURL'];
+        waterbutlerURL = params.waterbutlerURL;
+        delete params.waterbutlerURL;
         if (provider !== 'osfstorage') {
             waterbutlerURL = null;
         }
@@ -44,7 +44,7 @@ function getViewOnly() {
 
 function buildFromTreebeard(item, options) {
     options = options || {};
-    options['waterbutlerURL'] = item.data.waterbutlerURL;
+    options.waterbutlerURL = item.data.waterbutlerURL;
     return buildUrl(item.data.path, item.data.provider, item.data.nodeId, options);
 }
 

@@ -134,7 +134,7 @@ class UnregUserFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         ret = target_class.create_unregistered(email=kwargs.pop('email'), fullname=kwargs.pop('fullname'))
         for key, val in kwargs.items():
             setattr(ret, key, val)
@@ -161,7 +161,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, username, password, fullname):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
@@ -206,7 +206,7 @@ class ProjectWithAddonFactory(ProjectFactory):
     # TODO: Should use mock addon objects
     @classmethod
     def _build(cls, target_class, addon='s3', *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = ProjectFactory._build(target_class, *args, **kwargs)
         auth = Auth(user=instance.creator)
         instance.add_addon(addon, auth)

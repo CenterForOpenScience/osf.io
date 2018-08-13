@@ -818,7 +818,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'summary': unicode(fake.sentence())
         })
         self.invalid_embargo_date_payload = json.dumps({
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            u'embargoEndDate': u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),

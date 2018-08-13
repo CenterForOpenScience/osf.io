@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 A management command to populate preprint providers for local development.
 
 The preprint providers populated in this script do not accurately reflect
@@ -14,7 +14,7 @@ you should run the admin app which will allow you to edit a preprint provider.
 Before running this command, you should run the update_taxonomies script
 to populate subjects (if you haven't already). The update_taxonomies script
 will create the OSF preprint provider.
-'''
+"""
 
 from __future__ import unicode_literals
 import json

@@ -37,8 +37,8 @@ class RegistrationsTestBase(OsfTestCase):
             }
         )
 
-        current_month = timezone.now().strftime("%B")
-        current_year = timezone.now().strftime("%Y")
+        current_month = timezone.now().strftime('%B')
+        current_year = timezone.now().strftime('%Y')
 
         valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
@@ -46,7 +46,7 @@ class RegistrationsTestBase(OsfTestCase):
             u'registrationChoice': 'embargo'
         }
         self.invalid_embargo_date_payload = {
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            u'embargoEndDate': u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),

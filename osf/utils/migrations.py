@@ -82,7 +82,7 @@ def ensure_licenses(*args, **kwargs):
     nupdated = 0
     try:
         NodeLicense = args[0].get_model('osf', 'nodelicense')
-    except:
+    except Exception:
         # Working outside a migration
         from osf.models import NodeLicense
     with open(
@@ -133,7 +133,7 @@ def ensure_schemas(*args):
     schema_count = 0
     try:
         RegistrationSchema = args[0].get_model('osf', 'metaschema')
-    except:
+    except Exception:
         # Working outside a migration
         from osf.models import RegistrationSchema
     for schema in OSF_META_SCHEMAS:

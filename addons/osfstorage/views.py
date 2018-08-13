@@ -171,7 +171,7 @@ def osfstorage_get_children(file_node, **kwargs):
     user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
-        cursor.execute('''
+        cursor.execute("""
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
                     json_build_object(
@@ -255,7 +255,7 @@ def osfstorage_get_children(file_node, **kwargs):
             ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [
+        """, [
             user_content_type_id,
             file_node.target._id,
             user_pk,

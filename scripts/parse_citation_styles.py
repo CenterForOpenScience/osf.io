@@ -55,7 +55,7 @@ def main():
 
             # Optional
             try:
-                fields['short_title'] = root.find(selector + "title-short").text
+                fields['short_title'] = root.find(selector + 'title-short').text
             except AttributeError:
                 pass
 
@@ -77,4 +77,4 @@ def get_style_files(path):
 
 if __name__ == '__main__':
     total = main()
-    print("Parsed {} styles".format(total))
+    print('Parsed {} styles'.format(total))
