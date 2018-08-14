@@ -247,7 +247,7 @@ class TestAUser(OsfTestCase):
         non_ascii = to_mongo_key('WöRlÐé')
         project.update_node_wiki('WöRlÐé', 'new content', Auth(self.user))
         wv = project.get_wiki_version(non_ascii)
-        assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
+        assert wv.wiki_page.page_name.upper() == non_ascii.upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -374,7 +374,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in(b'Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -393,9 +393,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            b'is being viewed through a private, view-only link. '
+            b'Anyone with the link can view this project. Keep '
+            b'the link safe.',
             res.body
         )
 
@@ -408,9 +408,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': "not_valid"},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            b'is being viewed through a private, view-only link. '
+            b'Anyone with the link can view this project. Keep '
+            b'the link safe.',
             res.body
         )
 
@@ -708,7 +708,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
+        assert_in(b'Claim Contributor', res.body)
 
         form = res.forms['claimContributorForm']
         form['password'] = 'queenfan86'
@@ -800,7 +800,7 @@ class TestResendConfirmation(OsfTestCase):
     def test_resend_confirmation_get(self):
         res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
-        assert_in('Resend Confirmation', res.body)
+        assert_in(b'Resend Confirmation', res.body)
         assert_in('resendForm', res.forms)
 
     # test that unconfirmed user can receive resend confirmation email
@@ -889,7 +889,7 @@ class TestForgotPassword(OsfTestCase):
     def test_get_forgot_password(self):
         res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
-        assert_in('Forgot Password', res.body)
+        assert_in(b'Forgot Password', res.body)
         assert_in('forgotPasswordForm', res.forms)
 
     # test that existing user can receive reset password email
@@ -1082,19 +1082,19 @@ class TestPreprintBannerView(OsfTestCase):
     def test_public_project_published_preprint(self):
         url = self.project_one.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_not_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
     def test_private_project_published_preprint(self):
         self.project_one.is_public = False
         self.project_one.save()
         url = self.project_one.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
     def test_public_project_unpublished_preprint(self):
         url = self.project_two.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_not_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
     def test_private_project_unpublished_preprint(self):
         # Do not show banner on unpublished preprints
@@ -1102,19 +1102,19 @@ class TestPreprintBannerView(OsfTestCase):
         self.project_two.save()
         url = self.project_two.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_not_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
     def test_public_project_no_preprint(self):
         url = self.project_three.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_not_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
     def test_private_project_no_preprint(self):
         self.project_three.is_public = False
         self.project_three.save()
         url = self.project_three.web_url_for('view_project')
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_not_in(b'has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
 
 if __name__ == '__main__':
