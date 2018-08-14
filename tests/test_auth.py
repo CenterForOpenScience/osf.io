@@ -307,7 +307,7 @@ class TestPrivateLink(OsfTestCase):
             {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
-        assert_equal(res.body, 'success')
+        assert_equal(res.body, b'success')
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):

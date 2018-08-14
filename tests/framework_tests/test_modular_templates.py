@@ -150,7 +150,7 @@ class WebRendererTestCase(OsfTestCase):
         )
 
         self.assertIn(
-            'foo:bar',
+            b'foo:bar',
             resp.data
         )
 
@@ -170,7 +170,7 @@ class WebRendererTestCase(OsfTestCase):
         resp = self.r(err)
 
         self.assertIn(
-            err.to_data()['message_short'],
+            err.to_data()['message_short'].encode('utf-8'),
             resp[0],
         )
         self.assertEqual(
