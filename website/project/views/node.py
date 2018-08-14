@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import httplib as http
+import http.client as http
 import math
 from collections import defaultdict
 from itertools import islice

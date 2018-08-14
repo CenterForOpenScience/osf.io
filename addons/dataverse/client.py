@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 
 from dataverse import Connection
 from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError

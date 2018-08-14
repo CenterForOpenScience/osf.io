@@ -3,7 +3,7 @@ from nose.tools import assert_in, assert_equal
 import mock
 import pytest
 
-import httplib as http
+import http.client as http
 
 from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin

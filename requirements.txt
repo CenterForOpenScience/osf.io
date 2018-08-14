@@ -112,3 +112,6 @@ datacite==1.0.1
 
 # Metrics
 django-elasticsearch-metrics==5.0.0
+
+# Python 3 compat
+future

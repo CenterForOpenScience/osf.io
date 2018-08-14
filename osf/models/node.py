@@ -4,7 +4,7 @@ import logging
 import re
 import urlparse
 import warnings
-import httplib
+import http.client as http
 
 import bson
 from django.db.models import Q
@@ -2164,10 +2164,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             metadata = payload['metadata']
             node_addon = self.get_addon(payload['provider'])
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http.BAD_REQUEST)
 
         if node_addon is None:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http.BAD_REQUEST)
 
         metadata['path'] = metadata['path'].lstrip('/')
 

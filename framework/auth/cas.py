@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import furl
-import httplib as http
+import http.client as http
 import json
 import urllib
 

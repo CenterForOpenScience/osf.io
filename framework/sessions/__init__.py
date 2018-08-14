@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-import httplib as http
+import http.client as http
 import urllib
 import urlparse
 

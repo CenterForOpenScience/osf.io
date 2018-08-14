@@ -1,5 +1,5 @@
 import jwt
-import httplib as http
+import http.client as http
 
 import mock
 from django.db.models import Q

@@ -1,5 +1,5 @@
 import functools
-import httplib as http
+import http.client as http
 import itertools
 
 from operator import itemgetter

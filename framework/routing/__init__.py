@@ -2,7 +2,7 @@
 
 import copy
 import functools
-import httplib as http
+import http.client as http
 import json
 import logging
 import os

@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import httplib as http
+import http.client as http
 import time
 import functools
 

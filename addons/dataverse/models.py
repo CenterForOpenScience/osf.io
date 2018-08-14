@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+import http.client as http
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)

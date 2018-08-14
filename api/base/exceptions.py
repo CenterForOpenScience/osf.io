@@ -1,4 +1,4 @@
-import httplib as http
+import http.client as http
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status

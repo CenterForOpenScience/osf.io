@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import os
-import httplib as http
+import http.client as http
 import requests
 import urlparse
 import waffle
