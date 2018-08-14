@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-import http.client
 import http.client as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
@@ -50,10 +49,10 @@ def validate_user(data, user):
     """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
-            raise HTTPError(http.client.FORBIDDEN)
+            raise HTTPError(http.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
-        raise HTTPError(http.client.BAD_REQUEST, data={'message_long': '"id" is required'})
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': '"id" is required'})
 
 @must_be_logged_in
 def resend_confirmation(auth):
@@ -62,7 +61,7 @@ def resend_confirmation(auth):
 
     validate_user(data, user)
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(http.client.BAD_REQUEST,
+        raise HTTPError(http.BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
@@ -70,10 +69,10 @@ def resend_confirmation(auth):
         confirmed = data['email']['confirmed']
         address = data['email']['address'].strip().lower()
     except KeyError:
-        raise HTTPError(http.client.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
 
     if primary or confirmed:
-        raise HTTPError(http.client.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
 
     user.add_unconfirmed_email(address)
 
@@ -107,7 +106,7 @@ def update_user(auth):
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
         if user.username.strip().lower() not in emails_list:
-            raise HTTPError(http.client.FORBIDDEN)
+            raise HTTPError(http.FORBIDDEN)
 
         available_emails = [
             each.strip().lower() for each in
@@ -121,14 +120,14 @@ def update_user(auth):
         ]
 
         if user.username.strip().lower() in removed_emails:
-            raise HTTPError(http.client.FORBIDDEN)
+            raise HTTPError(http.FORBIDDEN)
 
         for address in removed_emails:
             if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
-                    raise HTTPError(http.client.FORBIDDEN, e.message)
+                    raise HTTPError(http.FORBIDDEN, e.message)
             user.remove_unconfirmed_email(address)
 
         # additions
@@ -172,7 +171,7 @@ def update_user(auth):
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
             if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
-                raise HTTPError(http.client.FORBIDDEN)
+                raise HTTPError(http.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
@@ -752,7 +751,7 @@ def unserialize_schools(auth, **kwargs):
 def request_export(auth):
     user = auth.user
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(http.client.BAD_REQUEST,
+        raise HTTPError(http.BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
