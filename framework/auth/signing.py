@@ -34,7 +34,7 @@ def order_recursive(data):
 
 def serialize_payload(payload):
     ordered = order_recursive(payload)
-    return base64.b64encode(json.dumps(ordered))
+    return base64.b64encode(json.dumps(ordered).encode('utf-8'))
 
 
 def unserialize_payload(message):
@@ -51,7 +51,7 @@ class Signer(object):
 
     def sign_message(self, message):
         return hmac.new(
-            key=self.secret,
+            key=self.secret.encode('utf-8'),
             digestmod=self.digest,
             msg=message,
         ).hexdigest()

@@ -35,7 +35,7 @@ class EzidClient(BaseClient, DataCiteClient):
             self._build_url('id', identifier),
             expects=(200, ),
         )
-        return utils.from_anvl(resp.content.strip('\n'))
+        return utils.from_anvl(resp.content.decode().strip('\n'))
 
     def create_identifier(self, object, category):
         if not waffle.switch_is_active(EZID_SWITCH):
@@ -50,11 +50,11 @@ class EzidClient(BaseClient, DataCiteClient):
                 data=utils.to_anvl(metadata or {}),
             )
             if resp.status_code != 201:
-                if 'identifier already exists' in resp.content:
+                if b'identifier already exists' in resp.content:
                     raise exceptions.IdentifierAlreadyExists()
                 else:
                     raise exceptions.ClientResponseError(resp)
-            resp = utils.from_anvl(resp.content)
+            resp = utils.from_anvl(resp.content.decode())
             return dict(
                 [each.strip('/') for each in pair.strip().split(':')]
                 for pair in resp['success'].split('|')

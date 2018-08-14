@@ -82,6 +82,10 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon.save()
 
     def build_url(self, **kwargs):
+
+        if kwargs.get('cookie'):
+            kwargs['cookie'] = kwargs['cookie'].decode()
+
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
@@ -219,7 +223,7 @@ class TestAddonLogs(OsfTestCase):
         }
         message, signature = signing.default_signer.sign_payload(options)
         return {
-            'payload': message,
+            'payload': message.decode(),
             'signature': signature,
         }
 

@@ -44,11 +44,11 @@ class ConferenceMessage(object):
         http://documentation.mailgun.com/user_manual.html#webhooks
         """
         signature = hmac.new(
-            key=settings.MAILGUN_API_KEY,
+            key=settings.MAILGUN_API_KEY.encode('utf-8'),
             msg='{}{}'.format(
                 self.form['timestamp'],
                 self.form['token'],
-            ),
+            ).encode('utf-8'),
             digestmod=hashlib.sha256,
         ).hexdigest()
         if signature != self.form['signature']:

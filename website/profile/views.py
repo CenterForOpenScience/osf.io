@@ -589,7 +589,7 @@ def serialize_social_addons(user):
     for user_settings in user.get_addons():
         config = user_settings.config
         if user_settings.public_id:
-            ret[config.short_name] = user_settings.public_id
+            ret[config.short_name] = user_settings.public_id.decode()
     return ret
 
 
