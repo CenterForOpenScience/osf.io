@@ -145,7 +145,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in(b'Title cannot be blank', res.body)
 
     def test_edit_private_link_invalid(self):
         node = ProjectFactory(creator=self.user)
@@ -155,7 +155,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid link name.', res.body)
+        assert_in(b'Invalid link name.', res.body)
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_can_be_anonymous_for_public_project(self, mock_property):
@@ -341,14 +341,14 @@ class TestProjectViews(OsfTestCase):
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in(b'Title cannot be blank', res.body)
 
     def test_edit_title_invalid(self):
         node = ProjectFactory(creator=self.user1)
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid title.', res.body)
+        assert_in(b'Invalid title.', res.body)
 
     def test_view_project_doesnt_select_for_update(self):
         node = ProjectFactory(creator=self.user1)
@@ -400,8 +400,8 @@ class TestProjectViews(OsfTestCase):
         self.child_project.save()
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
-        assert_not_in('Private Project', res.body)
-        assert_in('parent project', res.body)
+        assert_not_in(b'Private Project', res.body)
+        assert_in(b'parent project', res.body)
 
     def test_edit_description(self):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
@@ -757,7 +757,7 @@ class TestProjectViews(OsfTestCase):
         node.suspended = True
         node.save()
         url = node.api_url
-        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 451)
 
     def test_private_link_edit_name(self):
@@ -934,8 +934,8 @@ class TestProjectViews(OsfTestCase):
         url = registration.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
 
-        assert_not_in('Mako Runtime Error', res.body)
-        assert_in(registration.title, res.body)
+        assert_not_in(b'Mako Runtime Error', res.body)
+        assert_in(registration.title.encode('utf-8'), res.body)
         assert_equal(res.status_code, 200)
 
         for route in ['files', 'wiki/home', 'analytics', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
@@ -943,11 +943,11 @@ class TestProjectViews(OsfTestCase):
             assert_equal(res.status_code, 302, route)
             res = res.follow()
             assert_equal(res.status_code, 200, route)
-            assert_in('This project is a withdrawn registration of', res.body, route)
+            assert_in(b'This project is a withdrawn registration of', res.body, route)
 
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
-        assert_in('This project is a withdrawn registration of', res.body)
+        assert_in(b'This project is a withdrawn registration of', res.body)
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1472,7 +1472,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._id)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_in('Quick files', res.body)
+        assert_in(b'Quick files', res.body)
 
     def test_user_with_no_quickfiles(self):
         assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
@@ -1480,7 +1480,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._primary_key)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_not_in('Quick files', res.body)
+        assert_not_in(b'Quick files', res.body)
 
 
 class TestUserProfileApplicationsPage(OsfTestCase):
@@ -3346,7 +3346,7 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
-        login_url = 'login?service'
+        login_url = b'login?service'
         assert_in(login_url, res.body)
 
     def test_get_email_to_add_no_email(self):
