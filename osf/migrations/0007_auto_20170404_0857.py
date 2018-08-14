@@ -3,41 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from django.contrib.auth.models import Permission, Group
-from django.core.management.sql import emit_post_migrate_signal
-
-
-def get_preprintservice_permissions():
-    return Permission.objects.filter(
-        models.Q(codename='view_preprintservice') |
-        models.Q(codename='change_preprintservice') |
-        models.Q(codename='delete_preprintservice')
-    )
-
-
-def add_preprintservice_permissions(*args):
-    # this is to make sure that the permissions created earlier exist!
-    emit_post_migrate_signal(2, False, 'default')
-
-    osf_admin = Group.objects.get(name='osf_admin')
-    [osf_admin.permissions.add(perm) for perm in get_preprintservice_permissions()]
-    osf_admin.save()
-
-    view_preprintservice = Permission.objects.get(codename='view_preprintservice')
-    read_only = Group.objects.get(name='read_only')
-    read_only.permissions.add(view_preprintservice)
-    read_only.save()
-
-
-def remove_preprintservice_permissions(*args):
-    osf_admin = Group.objects.get(name='osf_admin')
-    [osf_admin.permissions.remove(perm) for perm in get_preprintservice_permissions()]
-    osf_admin.save()
-
-    view_preprintservice = Permission.objects.get(codename='view_preprintservice')
-    read_only = Group.objects.get(name='read_only')
-    read_only.permissions.remove(view_preprintservice)
-    read_only.save()
 
 
 class Migration(migrations.Migration):
@@ -51,5 +16,4 @@ class Migration(migrations.Migration):
             name='preprintservice',
             options={'permissions': (('view_preprintservice', 'Can view preprint service details in the admin app.'),)},
         ),
-        migrations.RunPython(add_preprintservice_permissions, remove_preprintservice_permissions),
     ]

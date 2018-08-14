@@ -106,10 +106,9 @@ class ReviewsMachine(BaseMachine):
 
     def withdrawal_submitter_is_moderator_or_admin(self, submitter):
         # Returns True if the submitter of the request is a moderator or admin for the provider.
-        from api.providers.permissions import GroupHelper
         provider = self.machineable.provider
-        return GroupHelper(provider).get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               GroupHelper(provider).get_group('admin').user_set.filter(id=submitter.id).exists()
+        return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
+               provider.get_group('admin').user_set.filter(id=submitter.id).exists()
 
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()

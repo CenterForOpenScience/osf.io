@@ -3,29 +3,12 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.contrib.auth.models import Group
-from django.contrib.auth.models import Permission
-from django.core.management.sql import emit_post_migrate_signal
 
 
-def get_preprint_requests_perms():
-    return Permission.objects.filter(codename__endswith='_preprintrequest').exclude(codename='add_preprintrequest')
-
-def add_to_osf_admin_group_permissions(*args):
-    # this is to make sure that the permissions created in an earlier migration exist!
-    emit_post_migrate_signal(2, False, 'default')
-
-    # Add preprintrequests permissions to OSF Admin group
-    admin_group = Group.objects.get(name='osf_admin')
-    [admin_group.permissions.add(perm) for perm in get_preprint_requests_perms()]
-    admin_group.save()
-
-def remove_from_osf_admin_group_permissions(*args):
-
-    # Remove preprintrequests permissions from OSF Admin group
-    admin_group = Group.objects.get(name='osf_admin')
-    [admin_group.permissions.remove(perm) for perm in get_preprint_requests_perms()]
-    admin_group.save()
+def noop(*args):
+    # This migration used to handle admin permissions
+    # This is now handled by the post_migrate signal
+    pass
 
 
 class Migration(migrations.Migration):
@@ -35,5 +18,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_to_osf_admin_group_permissions, remove_from_osf_admin_group_permissions),
+        migrations.RunPython(noop, noop),
     ]

@@ -3,30 +3,11 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.contrib.auth.models import Group, Permission
-from django.core.management.sql import emit_post_migrate_signal
 
-
-def add_banner_perms_to_groups(*args, **kwargs):
-    # this is to make sure that the permissions created in an earlier migration exist!
-    emit_post_migrate_signal(2, False, 'default')
-
-    edit_permission = Permission.objects.get(codename='change_maintenancestate')
-    delete_permission = Permission.objects.get(codename='delete_maintenancestate')
-
-    osf_admin = Group.objects.get(name='osf_admin')
-
-    [osf_admin.permissions.add(perm) for perm in [edit_permission, delete_permission]]
-    osf_admin.save()
-
-def remove_banner_perms_from_groups(*args, **kwargs):
-    edit_permission = Permission.objects.get(codename='change_maintenancestate')
-    delete_permission = Permission.objects.get(codename='delete_maintenancestate')
-
-    osf_admin = Group.objects.get(name='osf_admin')
-
-    [osf_admin.permissions.remove(perm) for perm in [edit_permission, delete_permission]]
-    osf_admin.save()
+def noop(*args):
+    # This migration used to add permissions,
+    # This is now handled by the post_migrate signal
+    pass
 
 class Migration(migrations.Migration):
 
@@ -35,5 +16,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_banner_perms_to_groups, remove_banner_perms_from_groups),
+        migrations.RunPython(noop, noop),
     ]
