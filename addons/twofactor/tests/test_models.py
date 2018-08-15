@@ -51,7 +51,7 @@ class TestCallbacks(unittest.TestCase):
 
 class TestUserSettingsModel(unittest.TestCase):
     TOTP_SECRET = 'b8f85986068f8079aa9d'
-    TOTP_SECRET_B32 = 'XD4FTBQGR6AHTKU5'
+    TOTP_SECRET_B32 = b'XD4FTBQGR6AHTKU5'
 
     def setUp(self):
         super(TestUserSettingsModel, self).setUp()
@@ -78,7 +78,7 @@ class TestUserSettingsModel(unittest.TestCase):
         assert_equal(url.path, '/OSF:{}'.format(self.user.username))
         assert_equal(
             parse_qs(url.query),
-            {'secret': [self.TOTP_SECRET_B32]}
+            {'secret': [str(self.TOTP_SECRET_B32)]}
         )
 
     def test_json(self):

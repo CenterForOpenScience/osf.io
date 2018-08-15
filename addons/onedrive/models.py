@@ -124,7 +124,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.folder_id != DEFAULT_ROOT_ID:
             # `urllib` does not properly handle unicode.
             # encode input to `str`, decode output back to `unicode`
-            return urllib.parse.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
+            return urllib.parse.unquote(os.path.split(self.folder_path)[1])
         else:
             return '/ (Full OneDrive)'
 

@@ -9,10 +9,10 @@ from addons.owncloud.models import UserSettings, NodeSettings
 class OwnCloudAccountFactory(ExternalAccountFactory):
     provider = 'owncloud'
     provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    profile_url = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
-    oauth_secret = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
-    display_name = 'catname'
-    oauth_key = 'meoword'
+    profile_url = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n).encode('utf-8'))
+    oauth_secret = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n).encode('utf-8'))
+    display_name = b'catname'
+    oauth_key = b'meoword'
 
 
 class OwnCloudUserSettingsFactory(DjangoModelFactory):

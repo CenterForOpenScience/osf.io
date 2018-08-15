@@ -44,8 +44,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_is_not_none(self.node_settings.external_account.oauth_secret)
         expected = {
             'host': self.node_settings.external_account.oauth_secret,
-            'password': 'meoword',
-            'username': 'catname'
+            'password': b'meoword',
+            'username': b'catname'
         }
 
         assert_equal(credentials, expected)

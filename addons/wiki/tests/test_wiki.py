@@ -780,8 +780,8 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid.encode('utf-8'), res.body)
+        assert_in(get_sharejs_uuid(self.project, self.wname).encode('utf-8'), res.body)
 
         # Revisit page; uuid has not changed
         res = self.app.get(url, auth=self.user.auth)
@@ -801,13 +801,13 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid.encode('utf-8'), res.body)
+        assert_in(get_sharejs_uuid(self.project, self.wname).encode('utf-8'), res.body)
 
         # Users without write permission should not be able to access
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(get_sharejs_uuid(self.project, self.wname).encode('utf-8'), res.body)
 
     def test_uuid_not_generated_without_write_permission(self):
         self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
@@ -911,7 +911,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_in(original_sharejs_uuid, res.body)
+        assert_in(original_sharejs_uuid.encode('utf-8'), res.body)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
@@ -949,7 +949,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_not_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_not_in(original_sharejs_uuid, res.body)
+        assert_not_in(original_sharejs_uuid.encode('utf-8'), res.body)
 
 
 @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')

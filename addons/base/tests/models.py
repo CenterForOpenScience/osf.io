@@ -514,7 +514,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
         # The first call to .api returns a new object
         with mock.patch.object(self.NodeSettingsClass, 'oauth_provider') as mock_api:
             api = self.node_settings.api
-            mock_api.assert_called_once()
+            mock_api.assert_called_once_with(account=self.external_account)
             assert_equal(api, mock_api())
 
     def test_api_cached(self):
@@ -661,7 +661,7 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
             mock_account.expires_at = timezone.now()
             self.provider.account = mock_account
             self.provider.client
-            mock_get_client.assert_called
+            mock_get_client.assert_called_with()
             assert_true(mock_get_client.called)
 
     def test_client_cached(self):

@@ -132,13 +132,15 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
 
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()
+
+        # json serialization will have stringified some byte objects
         expected = {
             'id': ea._id,
             'provider_id': ea.provider_id,
             'provider_name': ea.provider_name,
             'provider_short_name': ea.provider,
-            'display_name': ea.display_name,
-            'profile_url': ea.profile_url,
+            'display_name': ea.display_name.decode(),
+            'profile_url': ea.profile_url.decode(),
             'nodes': [],
         }
         assert_equal(self.ser.serialize_account(ea), expected)
