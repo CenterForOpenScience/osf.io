@@ -15,7 +15,7 @@ class DataverseSerializer(OAuthAddonSerializer):
         ret = super(DataverseSerializer, self).serialize_account(external_account)
         host = external_account.oauth_key
         ret.update({
-            'host': host,
+            'host': host.decode(),
             'host_url': 'https://{0}'.format(host),
         })
 
@@ -72,7 +72,7 @@ class DataverseSerializer(OAuthAddonSerializer):
             connection = client.connect_from_settings(self.node_settings)
             dataverses = client.get_dataverses(connection)
             result.update({
-                'dataverseHost': dataverse_host,
+                'dataverseHost': dataverse_host.decode(),
                 'connected': connection is not None,
                 'dataverses': [
                     {'title': dataverse.title, 'alias': dataverse.alias}

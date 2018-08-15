@@ -40,15 +40,17 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
 
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()
+
+        # json serialization will have stringified some byte objects
         expected = {
             'id': ea._id,
             'provider_id': ea.provider_id,
             'provider_name': ea.provider_name,
             'provider_short_name': ea.provider,
-            'display_name': ea.display_name,
-            'profile_url': ea.profile_url,
+            'display_name': ea.display_name.decode(),
+            'profile_url': ea.profile_url.decode(),
             'nodes': [],
-            'host': ea.oauth_key,
+            'host': ea.oauth_key.decode(),
             'host_url': 'https://{0}'.format(ea.oauth_key),
         }
         assert_equal(self.ser.serialize_account(ea), expected)

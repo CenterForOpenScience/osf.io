@@ -277,7 +277,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         datasetIsPublished=dataset_is_published,
         datasetDraftModified=dataset_draft_modified,
         version=version,
-        host=dataverse_host,
+        host=dataverse_host.decode(),
         hostCustomPublishText=host_custom_publish_text,
         private_key=kwargs.get('view_only', None),
     )]

@@ -11,9 +11,9 @@ class DataverseAccountFactory(ExternalAccountFactory):
     provider_name = 'Dataverse'
 
     provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
-    display_name = 'foo.bar.baz'
-    oauth_secret = 'doremi-abc-123'
+    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n).encode('utf-8'))
+    display_name = b'foo.bar.baz'
+    oauth_secret = b'doremi-abc-123'
 
 
 class DataverseUserSettingsFactory(DjangoModelFactory):
