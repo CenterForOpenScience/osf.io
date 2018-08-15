@@ -370,6 +370,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def quick_tags(self):
+        """
+        Optimization property. If node has been annotated with "annotated_tags"
+        in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+        """
         if hasattr(self, 'annotated_tags'):
             return [] if self.annotated_tags == [None] else self.annotated_tags
         else:
