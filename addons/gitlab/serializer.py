@@ -12,8 +12,8 @@ class GitLabSerializer(StorageAddonSerializer):
         ret = super(GitLabSerializer, self).serialize_account(external_account)
         host = external_account.oauth_secret
         ret.update({
-            'host': host,
-            'host_url': host,
+            'host': host.decode(),
+            'host_url': host.decode(),
         })
 
         return ret

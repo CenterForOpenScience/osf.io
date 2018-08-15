@@ -55,7 +55,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # GitLab's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'host': 'some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
+        expected = {'host': b'some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
         assert_equal(settings, expected)
 
     @mock.patch(
