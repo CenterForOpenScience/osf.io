@@ -703,6 +703,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
+        from addons.osfstorage.models import OsfStorageFolder
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
@@ -714,6 +715,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
         primary_quickfiles = QuickFilesNode.objects.get(creator=self)
+        primary_quickfiles_root = OsfStorageFolder.objects.get_root(target=primary_quickfiles)
         merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
@@ -743,7 +745,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 merging_user_file.name = new_name
                 merging_user_file.save()
 
-            merging_user_file.target = primary_quickfiles
+            merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
 
         # finalize the merge
