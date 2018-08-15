@@ -82,7 +82,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             self.project.logs.latest().action,
             '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
         )
-        mock_add_hook.assert_called_once()
+        mock_add_hook.assert_called_once_with(save=False)
 
 
 # TODO: Test remaining CRUD methods
@@ -202,6 +202,7 @@ class TestGitLabViews(OsfTestCase):
         non_authenticated_user = UserFactory()
         non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
+        self.node_settings.user_settings.owner = non_authenticated_user
         assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
 
     # make a repository that doesn't allow push access for this user;
@@ -228,21 +229,30 @@ class TestGitLabViews(OsfTestCase):
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_permissions_not_head(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
+        mock_repo.permissions = {
+            'project_access': {'access_level': 20, 'notification_level': 3}
+        }
         mock_has_auth.return_value = True
         connection = gitlab_mock
         mock_branch = mock.Mock(**{
             'commit': {'id': '67890'}
         })
         connection.branches.return_value = mock_branch
+        connection.repo.return_value = mock_repo
         sha = '12345'
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
 
     # make sure permissions are not granted for editing a registration
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
-    def test_permissions(self, mock_has_auth):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
-        mock_has_auth.return_value = True
+        mock_repo.permissions = {
+            'project_access': {'access_level': 20, 'notification_level': 3}
+        }
         connection = gitlab_mock
+        connection.repo.return_value = mock_repo
+        mock_has_auth.return_value = True
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
             assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
@@ -458,7 +468,7 @@ class TestGitLabSettings(OsfTestCase):
         assert_equal(self.node_settings.user, 'queen')
         assert_equal(self.node_settings.repo, 'night at the opera')
         assert_equal(self.project.logs.latest().action, 'gitlab_repo_linked')
-        mock_add_hook.assert_called_once()
+        mock_add_hook.assert_called_once_with(save=False)
 
     @mock.patch('addons.gitlab.models.NodeSettings.add_hook')
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
