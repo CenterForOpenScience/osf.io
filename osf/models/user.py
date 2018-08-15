@@ -1522,7 +1522,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         from osf.models import PreprintService, AbstractNode
 
-        user_nodes = self.nodes.all()
+        user_nodes = self.nodes.exclude(is_deleted=True)
         #  Validates the user isn't trying to delete things they deliberately made public.
         if user_nodes.filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
@@ -1531,7 +1531,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.
-        personal_nodes = AbstractNode.objects.annotate(contrib_count=Count('_contributors')).filter(contrib_count__lte=1).filter(contributor__user=self)
+        personal_nodes = (
+            AbstractNode.objects.annotate(contrib_count=Count('_contributors'))
+            .filter(contrib_count__lte=1)
+            .filter(contributor__user=self)
+            .exclude(is_deleted=True)
+        )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
