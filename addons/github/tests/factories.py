@@ -10,7 +10,7 @@ class GitHubAccountFactory(ExternalAccountFactory):
     provider = 'github'
     provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
-    display_name = 'abc'
+    display_name = b'abc'
 
 
 class GitHubUserSettingsFactory(DjangoModelFactory):
