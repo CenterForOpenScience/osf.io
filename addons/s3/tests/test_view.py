@@ -46,7 +46,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in(b'All the fields above are required.', rv.body)
 
     def test_s3_settings_input_empty_access_key(self):
         url = self.project.api_url_for('s3_add_user_account')
@@ -55,7 +55,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in(b'All the fields above are required.', rv.body)
 
     def test_s3_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('s3_add_user_account')
@@ -64,7 +64,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in(b'All the fields above are required.', rv.body)
 
     def test_s3_set_bucket_no_settings(self):
         user = AuthUserFactory()
@@ -109,7 +109,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
-        assert_in('Unable to list buckets.', rv.body)
+        assert_in(b'Unable to list buckets.', rv.body)
 
     def test_s3_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('s3_deauthorize_node')
@@ -278,7 +278,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
+        assert_equals(ret.body, b'{"message": "This should work", "title": "Problem connecting to S3"}')
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
@@ -292,4 +292,4 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equals(ret.body, '{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}')
+        assert_equals(ret.body, b'{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}')
