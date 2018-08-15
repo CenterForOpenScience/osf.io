@@ -160,6 +160,22 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'cmu',
+                'name': 'Carnegie Mellon University',
+                'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
+                               'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
+                               'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
+                               '>OSF Support</a> | <a href="https://library.cmu.edu/OSF/terms-of-us'
+                               'e">Terms of Use</a>',
+                'banner_name': 'cmu-banner.png',
+                'logo_name': 'cmu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.cmu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.library.cmu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'colorado',
                 'name': 'University of Colorado Boulder',
                 'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
