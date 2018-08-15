@@ -171,7 +171,7 @@ def main(env):
                 'logo_name': 'cmu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.cmu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
-                'domains': ['osf.cmu.edu'],
+                'domains': ['osf.library.cmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
