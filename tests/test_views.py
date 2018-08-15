@@ -607,10 +607,10 @@ class TestProjectViews(OsfTestCase):
     def test_private_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
-        payload = {"contributorID": self.user2._id,
-                   "nodeIDs": [self.project._id]}
+        payload = {'contributorID': self.user2._id,
+                   'nodeIDs': [self.project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             auth=self.auth2).maybe_follow()
         self.project.reload()
         assert_equal(res.status_code, 200)
@@ -623,10 +623,10 @@ class TestProjectViews(OsfTestCase):
         self.public_project = ProjectFactory(creator=self.user1, is_public=True)
         self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
         self.public_project.save()
-        payload = {"contributorID": self.user2._id,
-                   "nodeIDs": [self.public_project._id]}
+        payload = {'contributorID': self.user2._id,
+                   'nodeIDs': [self.public_project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             auth=self.auth2).maybe_follow()
         self.public_project.reload()
         assert_equal(res.status_code, 200)
@@ -636,10 +636,10 @@ class TestProjectViews(OsfTestCase):
     def test_project_remove_other_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {"contributorID": self.user1._id,
-                   "nodeIDs": [self.project._id]}
+        payload = {'contributorID': self.user1._id,
+                   'nodeIDs': [self.project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             expect_errors=True,
                             auth=self.auth2).maybe_follow()
         self.project.reload()
@@ -1766,12 +1766,12 @@ class TestUserAccount(OsfTestCase):
                 'AFI': 'LINK'
             }
         }
-        self.user.add_unconfirmed_email("james@steward.com")
-        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.add_unconfirmed_email('james@steward.com')
+        self.user.add_unconfirmed_email('steward@james.com', external_identity=external_identity)
         self.user.save()
         unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
-        assert_in("james@steward.com", unconfirmed_emails)
-        assert_not_in("steward@james.com", unconfirmed_emails)
+        assert_in('james@steward.com', unconfirmed_emails)
+        assert_not_in('steward@james.com', unconfirmed_emails)
 
 
 @pytest.mark.enable_implicit_clean
@@ -1826,7 +1826,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_true(res[2]['user']._id)
 
     def test_deserialize_contributors_validates_fullname(self):
-        name = "<img src=1 onerror=console.log(1)>"
+        name = '<img src=1 onerror=console.log(1)>'
         email = fake_email()
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [unreg_no_record]
@@ -1842,7 +1842,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_validates_email(self):
         name = fake.name()
-        email = "!@#$%%^&*"
+        email = '!@#$%%^&*'
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [unreg_no_record]
         contrib_data[0]['permission'] = 'admin'
@@ -3066,7 +3066,7 @@ class TestPointerViews(OsfTestCase):
 class TestPublicViews(OsfTestCase):
 
     def test_explore(self):
-        res = self.app.get("/explore/").maybe_follow()
+        res = self.app.get('/explore/').maybe_follow()
         assert_equal(res.status_code, 200)
 
 
@@ -3458,7 +3458,7 @@ class TestAuthViews(OsfTestCase):
             self.user.add_unconfirmed_email(email)
 
     def test_add_email_merge(self):
-        email = "copy@cat.com"
+        email = 'copy@cat.com'
         dupe = UserFactory(
             username=email,
         )
@@ -4141,7 +4141,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field is updated on the OSF
@@ -4174,7 +4174,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field does not change
@@ -4203,7 +4203,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field is updated on the OSF

@@ -400,28 +400,8 @@ def configure_comments(node, **kwargs):
 @must_not_be_registration
 def configure_requests(node, **kwargs):
     access_requests_enabled = request.get_json().get('accessRequestsEnabled')
-    node.access_requests_enabled = access_requests_enabled
-    if node.access_requests_enabled:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    else:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    node.save()
+    auth = kwargs.get('auth', None)
+    node.set_access_requests_enabled(access_requests_enabled, auth, save=True)
     return {'access_requests_enabled': access_requests_enabled}, 200
 
 

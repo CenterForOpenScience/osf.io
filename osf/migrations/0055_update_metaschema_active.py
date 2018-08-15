@@ -4,11 +4,11 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 def update_metaschema_active(*args, **kwargs):
+    MetaSchema = args[0].get_model('osf', 'metaschema')
     MetaSchema.objects.filter(schema_version__lt=LATEST_SCHEMA_VERSION).update(active=False)
 
 

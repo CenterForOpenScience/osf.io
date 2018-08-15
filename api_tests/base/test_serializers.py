@@ -134,7 +134,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'preprint',
             'subjects']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -279,7 +279,7 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "The following fields are not embeddable: foo"
+            'The following fields are not embeddable: foo'
         )
 
     def test_embed_does_not_remove_relationship(self):

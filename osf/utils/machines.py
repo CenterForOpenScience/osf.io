@@ -86,7 +86,7 @@ class ReviewsMachine(BaseMachine):
         if self.machineable.is_retracted:
             pass  # Do not alter published state
         elif should_publish and not self.machineable.is_published:
-            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.node == self.machineable.node):
+            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.target == self.machineable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

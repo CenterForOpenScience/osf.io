@@ -242,7 +242,7 @@ class TestFilterMixin(ApiTestCase):
                 r'one of (?P<ops>.+)\.$',
                 err.detail
             ).groupdict()['ops']
-            assert_equal(ops, "gt, gte, lt, lte, eq, ne")
+            assert_equal(ops, 'gt, gte, lt, lte, eq, ne')
 
         query_params = {
             'filter[string_field][bar]': 'foo'
@@ -254,7 +254,7 @@ class TestFilterMixin(ApiTestCase):
                 r'one of (?P<ops>.+)\.$',
                 err.detail
             ).groupdict()['ops']
-            assert_equal(ops, "contains, icontains, eq, ne")
+            assert_equal(ops, 'contains, icontains, eq, ne')
 
     def test_parse_query_params_supports_multiple_filters(self):
         query_params = {

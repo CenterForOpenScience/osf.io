@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models.metaschema import MetaSchema
+from osf.models.metaschema import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -9,17 +9,17 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 @pytest.mark.django_db
-class TestMetaSchemaList:
+class TestSchemaList:
 
-    def test_metaschemas_list_crud(self, app):
+    def test_schemas_list_crud(self, app):
 
         user = AuthUserFactory()
-        url = '/{}metaschemas/registrations/'.format(API_BASE)
+        url = '/{}schemas/registrations/'.format(API_BASE)
 
         # test_pass_authenticated_user_can_view_schemas
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert (len(res.json['data']) == MetaSchema.objects.filter(
+        assert (len(res.json['data']) == RegistrationSchema.objects.filter(
             active=True, schema_version=LATEST_SCHEMA_VERSION).count())
 
         # test_cannot_update_metaschemas

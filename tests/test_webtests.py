@@ -375,7 +375,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in('Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -394,9 +394,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -406,12 +406,12 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=['read'],
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -587,7 +587,7 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in_html(name2, res2)
 
-    @unittest.skip("as long as E-mails cannot be changed")
+    @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake_email()
@@ -735,7 +735,7 @@ class TestExplorePublicActivity(OsfTestCase):
         super(TestExplorePublicActivity, self).setUp()
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
-        self.private_project = ProjectFactory(title="Test private project")
+        self.private_project = ProjectFactory(title='Test private project')
         self.popular_project = ProjectFactory(is_public=True)
         self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 

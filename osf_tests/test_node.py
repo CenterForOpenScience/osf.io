@@ -30,7 +30,7 @@ from osf.models import (
     Tag,
     NodeLog,
     Contributor,
-    MetaSchema,
+    RegistrationSchema,
     Sanction,
     NodeRelation,
     Registration,
@@ -1729,7 +1729,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -2100,7 +2100,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.objects.first()
+        schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -3310,6 +3310,22 @@ class TestNodeUpdate:
         assert latest_log.action, NodeLog.EDITED_DESCRIPTION
         assert latest_log.params['description_original'], old_desc
         assert latest_log.params['description_new'], 'new description'
+
+    def test_set_access_requests(self, node, auth):
+        assert node.access_requests_enabled is True
+        node.set_access_requests_enabled(False, auth=auth, save=True)
+        assert node.access_requests_enabled is False
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
+
+        node.set_access_requests_enabled(True, auth=auth, save=True)
+        assert node.access_requests_enabled is True
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
+
+    def test_set_access_requests_non_admin(self, node, auth):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node, write=True, read=True, visible=True)
+        with pytest.raises(PermissionsError):
+            node.set_access_requests_enabled(True, auth=Auth(contrib))
 
     def test_validate_categories(self):
         with pytest.raises(ValidationError):

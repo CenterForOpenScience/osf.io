@@ -11,12 +11,12 @@ import bcrypt
 from website import settings
 
 def generate_password_hash(password, rounds=None):
-    '''Generates a password hash using `bcrypt`. Specifying `log_rounds` sets
+    """Generates a password hash using `bcrypt`. Specifying `log_rounds` sets
     the log_rounds parameter of `bcrypt.gensalt()` which determines the
     complexity of the salt. 12 is the default value.
 
     Returns the hashed password.
-    '''
+    """
 
     if rounds is None:
         rounds = settings.BCRYPT_LOG_ROUNDS
@@ -33,10 +33,10 @@ def generate_password_hash(password, rounds=None):
 
 
 def constant_time_compare(val1, val2):
-    '''Returns True if the two strings are equal, False otherwise.
+    """Returns True if the two strings are equal, False otherwise.
 
     The time taken is independent of the number of characters that match.
-    '''
+    """
 
     if len(val1) != len(val2):
         return False
@@ -49,10 +49,10 @@ def constant_time_compare(val1, val2):
 
 
 def check_password_hash(pw_hash, password):
-    '''Checks a hashed password against a password.
+    """Checks a hashed password against a password.
 
     Returns `True` if the password matched, `False` otherwise.
-    '''
+    """
 
     return constant_time_compare(
         bcrypt.hashpw(
