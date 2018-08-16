@@ -72,7 +72,7 @@ class NodeOptimizationMixin(object):
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
         contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
-        return queryset.prefetch_related('root').prefetch_related('subjects').select_related('node_license').annotate(
+        return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
             contrib_read=Subquery(contribs.values('read')[:1])).annotate(
             contrib_write=Subquery(contribs.values('write')[:1])).annotate(
             contrib_admin=Subquery(contribs.values('admin')[:1])).annotate(

@@ -36,6 +36,28 @@ from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
 
 
+def get_or_add_license_to_serializer_context(serializer, node):
+    """
+    Returns license, and adds license to serializer context with format
+    serializer.context['licenses'] = {<node_id>: <NodeLicenseRecord object>}
+
+    Used for both node_license field and license relationship in the NodeSerializer.
+    Prevents license from having to be fetched 2x per node.
+    """
+    license_context = serializer.context.get('licenses', {})
+    if license_context and node._id in license_context:
+        return license_context.get(node._id)
+    else:
+        license = node.license
+        if license_context:
+            license_context[node._id] = {}
+            license_context[node._id] = license
+        else:
+            serializer.context['licenses'] = {}
+            serializer.context['licenses'][node._id] = license
+        return license
+
+
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
         current_items={inst._id: inst for inst in institutions.all()},
@@ -93,7 +115,21 @@ class NodeLicenseSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'node_licenses'
 
+    def get_attribute(self, instance):
+        """
+        Returns node license and caches license in serializer context for optimization purposes.
+        """
+        return get_or_add_license_to_serializer_context(self, instance)
+
+
 class NodeLicenseRelationshipField(RelationshipField):
+
+    def lookup_attribute(self, obj, lookup_field):
+        """
+        Returns node license id and caches license in serializer context for optimization purposes.
+        """
+        license = get_or_add_license_to_serializer_context(self, obj)
+        return license.node_license._id if getattr(license, 'node_license', None) else None
 
     def to_internal_value(self, license_id):
         node_license = NodeLicense.load(license_id)
