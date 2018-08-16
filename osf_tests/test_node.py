@@ -17,7 +17,7 @@ from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, format_registration
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
@@ -3398,6 +3398,17 @@ class TestOnNodeUpdate:
     def registration(self, node):
         return RegistrationFactory(is_public=True)
 
+    @pytest.fixture()
+    def component_registration(self, node):
+        NodeFactory(
+            creator=node.creator,
+            parent=node,
+            title='Title1',
+        )
+        registration = RegistrationFactory(project=node)
+        registration.refresh_from_db()
+        return registration.get_nodes()[0]
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
@@ -3517,6 +3528,21 @@ class TestOnNodeUpdate:
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             payload = (item for item in graph if 'is_deleted' in item.keys()).next()
             assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
+    
+        graph = format_registration(component_registration)
+
+        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
+        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+
+        # Both must exist to be valid
+        assert parent_relation
+        assert parent_work_identifier
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
