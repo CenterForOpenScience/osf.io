@@ -340,7 +340,7 @@
     </div>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']) and node['preprint_state'] != 'withdrawn':
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
