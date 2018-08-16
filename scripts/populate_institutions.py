@@ -1243,7 +1243,7 @@ def main(env):
                 'description': None,
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://ideq.ugent.be/simplesaml/saml2/idp/metadata.php')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
