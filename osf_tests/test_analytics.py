@@ -56,21 +56,21 @@ def project(user):
 
 @pytest.fixture()
 def file_node(project):
-    file_node = OsfStorageFile(name='test', node=project)
+    file_node = OsfStorageFile(name='test', target=project)
     file_node.save()
     return file_node
 
 @pytest.fixture()
 def file_node2(project):
-    file_node2 = OsfStorageFile(name='test2', node=project)
+    file_node2 = OsfStorageFile(name='test2', target=project)
     file_node2.save()
     return file_node2
 
 @pytest.fixture()
 def file_node3(project):
-    file_node2 = OsfStorageFile(name='test3', node=project)
-    file_node2.save()
-    return file_node2
+    file_node3 = OsfStorageFile(name='test3', target=project)
+    file_node3.save()
+    return file_node3
 
 @pytest.fixture()
 def page_counter(project, file_node):
