@@ -50,15 +50,9 @@ class TestAnalytics(OsfTestCase):
 def user():
     return UserFactory()
 
-
 @pytest.fixture()
-def project():
-    return ProjectFactory()
-
-@pytest.fixture()
-def project_with_contrib(user):
+def project(user):
     return ProjectFactory(creator=user)
-
 
 @pytest.fixture()
 def file_node(project):
@@ -81,25 +75,19 @@ def file_node3(project):
 @pytest.fixture()
 def page_counter(project, file_node):
     page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
-    page_counter, created = PageCounter.objects.select_for_update().get_or_create(_id=page_counter_id)
-    page_counter.date = {u'2018/02/04': {u'total': 41, u'unique': 33}}
-    page_counter.save()
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 41, u'unique': 33}})
     return page_counter
 
 @pytest.fixture()
 def page_counter2(project, file_node2):
     page_counter_id = 'download:{}:{}'.format(project._id, file_node2.id)
-    page_counter, created = PageCounter.objects.select_for_update().get_or_create(_id=page_counter_id)
-    page_counter.date = {u'2018/02/04': {u'total': 4, u'unique': 26}}
-    page_counter.save()
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 4, u'unique': 26}})
     return page_counter
 
 @pytest.fixture()
 def page_counter_for_individual_version(project, file_node3):
     page_counter_id = 'download:{}:{}:0'.format(project._id, file_node3.id)
-    page_counter, created = PageCounter.objects.select_for_update().get_or_create(_id=page_counter_id)
-    page_counter.date = {u'2018/02/04': {u'total': 1, u'unique': 1}}
-    page_counter.save()
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 1, u'unique': 1}})
     return page_counter
 
 
@@ -123,23 +111,29 @@ class TestPageCounter:
         assert page_counter.unique == 1
 
     @mock.patch('osf.models.analytics.session')
-    def test_download_update_counter_contributor(self, mock_session, user, project_with_contrib, file_node):
+    def test_download_update_counter_contributor(self, mock_session, user, project, file_node):
         mock_session.data = {'auth_user_id': user._id}
-        page_counter_id = 'download:{}:{}'.format(project_with_contrib._id, file_node.id)
+        page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
 
-        PageCounter.update_counter(page_counter_id, {'contributors': project_with_contrib.contributors})
-
+        PageCounter.update_counter(page_counter_id, {'contributors': project.contributors})
         page_counter = PageCounter.objects.get(_id=page_counter_id)
         assert page_counter.total == 0
         assert page_counter.unique == 0
 
-        PageCounter.update_counter(page_counter_id, {'contributors': project_with_contrib.contributors})
+        PageCounter.update_counter(page_counter_id, {'contributors': project.contributors})
 
         page_counter.refresh_from_db()
         assert page_counter.total == 0
         assert page_counter.unique == 0
 
     def test_get_all_downloads_on_date(self, page_counter, page_counter2):
+        """
+        This method tests that multiple pagecounter objects have their download totals summed properly.
+
+        :param page_counter: represents a page_counter for a file node being downloaded
+        :param page_counter2: represents a page_counter for another file node being downloaded
+        """
+
         date = datetime(2018, 2, 4)
 
         total_downloads = PageCounter.get_all_downloads_on_date(date)
@@ -147,11 +141,21 @@ class TestPageCounter:
         assert total_downloads == 45
 
     def test_get_all_downloads_on_date_exclude_versions(self, page_counter, page_counter2, page_counter_for_individual_version):
+        """
+        This method tests that individual version counts for file node's aren't "double counted" in the totals
+        for a page counter. We don't add the file node's total to the versions total.
+
+        :param page_counter: represents a page_counter for a file node being downloaded
+        :param page_counter2: represents a page_counter for another file node being downloaded
+        """
         date = datetime(2018, 2, 4)
 
         total_downloads = PageCounter.get_all_downloads_on_date(date)
 
         assert total_downloads == 45
+
+
+class TestPageCounterRegex:
 
     def test_download_all_versions_regex(self):
         # Checks regex to ensure we don't double count versions totals for that file node.
