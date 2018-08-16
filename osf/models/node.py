@@ -31,7 +31,7 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, UserStateError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.collection import CollectedGuidMetadata
@@ -1192,7 +1192,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
         if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
-            raise ValidationValueError('This contributor cannot be added. If the problem persists please report it '
+            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
                                        'to ' + language.SUPPORT_LINK)
 
         if not self.is_contributor(contrib_to_add):
@@ -1361,8 +1361,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
 
             if contributor and contributor.is_registered:
-                    self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                        send_email=send_email, permissions=permissions, save=True)
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                    send_email=send_email, permissions=permissions, save=True)
             else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,

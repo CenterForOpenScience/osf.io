@@ -39,7 +39,7 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -867,7 +867,7 @@ class TestContributorMethods:
         assert unregistered_user.is_registered is False
         assert unregistered_user.unclaimed_records == {}
 
-        with pytest.raises(ValidationValueError) as excinfo:
+        with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
         assert excinfo.value.message == 'This contributor cannot be added. ' \
                                         'If the problem persists please report it to please report it to' \
