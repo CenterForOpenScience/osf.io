@@ -140,13 +140,16 @@ class TestPageCounter:
         assert page_counter.unique == 0
 
     def test_get_all_downloads_on_date(self, page_counter, page_counter2):
+        date = datetime(2018, 2, 4)
 
-        total_downloads = PageCounter.get_all_downloads_on_date('2018/02/04')
+        total_downloads = PageCounter.get_all_downloads_on_date(date)
 
         assert total_downloads == 45
 
     def test_get_all_downloads_on_date_exclude_versions(self, page_counter, page_counter2, page_counter_for_individual_version):
-        total_downloads = PageCounter.get_all_downloads_on_date('2018/02/04')
+        date = datetime(2018, 2, 4)
+
+        total_downloads = PageCounter.get_all_downloads_on_date(date)
 
         assert total_downloads == 45
 
