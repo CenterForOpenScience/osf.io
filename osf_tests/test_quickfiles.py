@@ -111,10 +111,11 @@ class TestQuickFilesNode:
         user.merge_user(other_user)
         user.save()
 
-        stored_files = OsfStorageFile.objects.all().prefetch_related('node')
+        stored_files = OsfStorageFile.objects.all()
         assert stored_files.count() == 2
         for stored_file in stored_files:
-            assert stored_file.node == quickfiles
+            assert stored_file.target == quickfiles
+            assert stored_file.parent.target == quickfiles
 
     def test_quickfiles_moves_files_on_triple_merge_with_name_conflict(self, user, quickfiles):
         name = 'Woo.pdf'
@@ -171,7 +172,7 @@ class TestQuickFilesNode:
         user.merge_user(third_user)
         user.save()
 
-        actual_filenames = list(OsfStorageFile.objects.filter(node=quickfiles).values_list('name', flat=True))
+        actual_filenames = list(quickfiles.files.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
 
         assert_items_equal(actual_filenames, expected_filenames)

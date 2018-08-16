@@ -1,34 +1,40 @@
 # -*- coding: utf-8 -*-
 from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
+from osf.models import AbstractNode
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for
 
-def get_file_object(node, path, provider, request):
+def get_file_object(target, path, provider, request):
     # Don't bother going to waterbutler for osfstorage
     if provider == 'osfstorage':
         # Kinda like /me for a user
         # The one odd case where path is not really path
         if path == '/':
-            obj = node.get_addon('osfstorage').get_root()
+            if isinstance(target, AbstractNode):
+                obj = target.get_addon('osfstorage').get_root()
+            else:
+                obj = target
         else:
             if path.endswith('/'):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-            obj = get_object_or_error(model, Q(node=node.pk, _id=path.strip('/')), request)
+            content_type = ContentType.objects.get_for_model(target)
+            obj = get_object_or_error(model, Q(target_object_id=target.pk, target_content_type=content_type, _id=path.strip('/')), request)
         return obj
 
-    if not node.get_addon(provider) or not node.get_addon(provider).configured:
+    if isinstance(target, AbstractNode) and not target.get_addon(provider) or not target.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
     view_only = request.query_params.get('view_only', default=None)
-    url = waterbutler_api_url_for(node._id, provider, path, _internal=True,
+    url = waterbutler_api_url_for(target._id, provider, path, _internal=True,
                                   meta=True, view_only=view_only)
 
     waterbutler_request = requests.get(

@@ -1,3 +1,4 @@
+import logging
 import django
 django.setup()
 
@@ -9,6 +10,9 @@ from scripts.analytics.preprint_summary import PreprintSummary
 from scripts.analytics.institution_summary import InstitutionSummary
 from scripts.analytics.download_count_summary import DownloadCountSummary
 from scripts.analytics.base import DateAnalyticsHarness
+from scripts.utils import add_file_logger
+
+logger = logging.getLogger('scripts.analytics')
 
 
 class SummaryHarness(DateAnalyticsHarness):
@@ -20,8 +24,9 @@ class SummaryHarness(DateAnalyticsHarness):
 
 @celery_app.task(name='scripts.analytics.run_keen_summaries')
 def run_main(date=None, yesterday=False):
+    add_file_logger(logger, __file__)
     SummaryHarness().main(date, yesterday, False)
 
 
 if __name__ == '__main__':
-    SummaryHarness().main()
+    run_main(yesterday=True)

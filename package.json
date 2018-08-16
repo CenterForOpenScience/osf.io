@@ -1,11 +1,12 @@
 {
   "name": "OSF",
-  "version": "0.149.0",
+  "version": "0.151.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
   "license": "Apache-2.0",
   "dependencies": {
+    "@centerforopenscience/markdown-it-atrules": "^0.1.0",
     "@centerforopenscience/list-of-licenses": "1.1.0",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a",

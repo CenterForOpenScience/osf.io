@@ -25,7 +25,7 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode, PrivateLink)
+                        RegistrationSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -420,7 +420,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute("""
                 WITH RECURSIVE parents AS (
                   SELECT parent_id, child_id
                   FROM osf_noderelation
@@ -446,7 +446,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
 
             return int(cursor.fetchone()[0])
 
@@ -911,7 +911,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     id = IDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
-    email = ser.EmailField(required=False, source='user.email')
+    email = ser.EmailField(required=False, source='user.email', write_only=True)
     index = ser.IntegerField(required=False, source='_order')
 
     users = RelationshipField(
@@ -1162,8 +1162,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:registration-metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'}
     )
 
     links = LinksField({
@@ -1179,7 +1179,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
+        schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 

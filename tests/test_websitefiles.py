@@ -42,7 +42,7 @@ class TestStoredFileNode(FilesTestCase):
         self.test_file = TestFile(
             _path='anid',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -100,7 +100,7 @@ class TestFileNodeObj(FilesTestCase):
         created.save()
         file_guids = TestFile.get_file_guids(materialized_path=created.materialized_path,
                                              provider=created.provider,
-                                             node=self.node)
+                                             target=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
     def test_get_file_guids_with_folder_path(self):
@@ -111,7 +111,7 @@ class TestFileNodeObj(FilesTestCase):
         created.save()
         file_guids = TestFile.get_file_guids(materialized_path='folder/',
                                              provider=created.provider,
-                                             node=self.node)
+                                             target=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
     def test_get_file_guids_with_folder_path_does_not_include_deleted_files(self):
@@ -123,7 +123,7 @@ class TestFileNodeObj(FilesTestCase):
         created.delete()
         file_guids = TestFile.get_file_guids(materialized_path='folder/',
                                              provider=created.provider,
-                                             node=self.node)
+                                             target=self.node)
         assert_not_in(guid._id, file_guids)
 
     def test_kind(self):
@@ -142,14 +142,14 @@ class TestFileNodeObj(FilesTestCase):
         TestFile.objects.create(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             materialized_path='/long/path/to/name',
         )
 
         TestFolder.objects.create(
             _path='afolder',
             name='name',
-            node=self.node,
+            target=self.node,
             materialized_path='/long/path/to/name2/',
         )
 
@@ -165,7 +165,7 @@ class TestFileNodeObj(FilesTestCase):
         item = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -179,7 +179,7 @@ class TestFileNodeObj(FilesTestCase):
         item = TestFolder(
             _path='afolder',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name2/',
         )
@@ -193,7 +193,7 @@ class TestFileNodeObj(FilesTestCase):
         parent = TestFolder(
             _path='afolder',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name2/',
         )
@@ -202,7 +202,7 @@ class TestFileNodeObj(FilesTestCase):
         child = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -217,7 +217,7 @@ class TestFileNodeObj(FilesTestCase):
         child = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -230,7 +230,7 @@ class TestFileNodeObj(FilesTestCase):
         tf = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             _materialized_path='/long/path/to/name',
         )
@@ -241,14 +241,14 @@ class TestFileNodeObj(FilesTestCase):
 
         trashed = models.TrashedFile.objects.all()[0]
         assert_equal(trashed.path, 'afile')
-        assert_equal(trashed.node, self.node)
+        assert_equal(trashed.target, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
 
     def test_delete_with_guid(self):
         tf = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -261,7 +261,7 @@ class TestFileNodeObj(FilesTestCase):
 
         assert_equal(guid.referent, trashed)
         assert_equal(trashed.path, 'afile')
-        assert_equal(trashed.node, self.node)
+        assert_equal(trashed.target, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
         assert_less((trashed.deleted_on - timezone.now()).total_seconds(), 5)
 
@@ -269,7 +269,7 @@ class TestFileNodeObj(FilesTestCase):
         fn = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -284,7 +284,7 @@ class TestFileNodeObj(FilesTestCase):
         root = TestFolder(
             _path='root',
             name='rootfolder',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to',
         )
@@ -294,7 +294,7 @@ class TestFileNodeObj(FilesTestCase):
             parent_id=root.id,
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -323,7 +323,7 @@ class TestFileNodeObj(FilesTestCase):
         root = TestFolder.create(
             _path='root',
             name='rootfolder',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/',
         )
@@ -333,7 +333,7 @@ class TestFileNodeObj(FilesTestCase):
             parent_id=root.id,
             _path='afolder',
             name='folder_name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/folder_name',
         )
@@ -367,7 +367,7 @@ class TestFileNodeObj(FilesTestCase):
                     fn = TestFolder(
                         _path='name{}'.format(i),
                         name='name{}'.format(i),
-                        node=self.node,
+                        target=self.node,
                         parent_id=parent.id,
                         materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
                     )
@@ -375,7 +375,7 @@ class TestFileNodeObj(FilesTestCase):
                     fn = TestFile(
                         _path='name{}'.format(i),
                         name='name{}'.format(i),
-                        node=self.node,
+                        target=self.node,
                         parent_id=parent.id,
                         materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
                     )
@@ -391,7 +391,7 @@ class TestFileNodeObj(FilesTestCase):
         root = TestFolder(
             _path='root',
             name='rootfolder',
-            node=self.node,
+            target=self.node,
             materialized_path='/long/path/to/',
         )
         root.save()
@@ -400,7 +400,7 @@ class TestFileNodeObj(FilesTestCase):
             parent_id=root.id,
             _path='afolder',
             name='folder_name',
-            node=self.node,
+            target=self.node,
             materialized_path='/long/path/to/folder_name',
         )
         parent.save()
@@ -408,7 +408,7 @@ class TestFileNodeObj(FilesTestCase):
         branch = TestFolder(
             _path='afolder',
             name='folder_name',
-            node=self.node,
+            target=self.node,
             parent_id=parent.id,
             materialized_path='/long/path/to/folder_name',
         )
@@ -455,7 +455,7 @@ class TestFileNodeObj(FilesTestCase):
         stored = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -471,7 +471,7 @@ class TestFileNodeObj(FilesTestCase):
         child = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -490,7 +490,7 @@ class TestFileObj(FilesTestCase):
         file = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -513,7 +513,7 @@ class TestFileObj(FilesTestCase):
         file = TestFile(
             _path='afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -533,7 +533,7 @@ class TestFileObj(FilesTestCase):
         file = TestFile(
             _path='/afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -562,7 +562,7 @@ class TestFileObj(FilesTestCase):
         file = TestFile(
             _path='/afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -589,7 +589,7 @@ class TestFileObj(FilesTestCase):
         file = TestFile(
             _path='/afile',
             name='name',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -619,7 +619,7 @@ class TestFolderObj(FilesTestCase):
         self.parent = TestFolder(
             _path='aparent',
             name='parent',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
@@ -629,7 +629,7 @@ class TestFolderObj(FilesTestCase):
         TestFile(
             _path='afile',
             name='child',
-            node=self.node,
+            target=self.node,
             parent_id=self.parent.id,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -640,7 +640,7 @@ class TestFolderObj(FilesTestCase):
         TestFile(
             _path='afile2',
             name='child2',
-            node=self.node,
+            target=self.node,
             parent_id=self.parent.id,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -652,7 +652,7 @@ class TestFolderObj(FilesTestCase):
         child = TestFile(
             _path='afile',
             name='child',
-            node=self.node,
+            target=self.node,
             parent_id=self.parent.id,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -699,7 +699,7 @@ class TestSubclasses(FilesTestCase):
         file = S3File.create(
             _path='afile2',
             name='child2',
-            node=self.node,
+            target=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )

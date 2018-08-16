@@ -7,13 +7,14 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink, ShowIfCurrentUser, DevOnly
+    Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from api.users.schemas.utils import validate_user_json
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -57,8 +58,8 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    employment = DevOnly(ser.ListField(child=ser.DictField(), source='jobs', read_only=True))
-    education = DevOnly(ser.ListField(child=ser.DictField(), source='schools', read_only=True))
+    employment = JSONAPIListField(required=False, source='jobs')
+    education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
@@ -127,6 +128,14 @@ class UserSerializer(JSONAPISerializer):
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
+
+    def validate_employment(self, value):
+        validate_user_json(value, 'employment-schema.json')
+        return value
+
+    def validate_education(self, value):
+        validate_user_json(value, 'education-schema.json')
+        return value
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'

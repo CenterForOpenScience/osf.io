@@ -8,7 +8,7 @@ from nose.tools import *  # PEP8 asserts
 
 from framework.forms.utils import process_payload
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
@@ -20,28 +20,28 @@ class TestMetaData(OsfTestCase):
 
     def test_ensure_schemas(self):
 
-        # Should be zero MetaSchema records to begin with
-        MetaSchema.objects.all().delete()
+        # Should be zero RegistrationSchema records to begin with
+        RegistrationSchema.objects.all().delete()
         assert_equal(
-            MetaSchema.objects.all().count(),
+            RegistrationSchema.objects.all().count(),
             0
         )
 
         ensure_schemas()
 
         assert_equal(
-            MetaSchema.objects.all().count(),
+            RegistrationSchema.objects.all().count(),
             len(OSF_META_SCHEMAS)
         )
 
-    def test_metaschema_uniqueness_is_enforced_in_the_database(self):
-        MetaSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
-        assert_raises(ValidationError, MetaSchema(name='foo', schema={'bar': 24}, schema_version=1).save)
+    def test_reigstrationschema_uniqueness_is_enforced_in_the_database(self):
+        RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
+        assert_raises(ValidationError, RegistrationSchema(name='foo', schema={'bar': 24}, schema_version=1).save)
 
-    def test_metaschema_is_fine_with_same_name_but_different_version(self):
-        MetaSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
-        MetaSchema(name='foo', schema={'foo': 42}, schema_version=2).save()
-        assert_equal(MetaSchema.objects.filter(name='foo').count(), 2)
+    def test_registrationschema_is_fine_with_same_name_but_different_version(self):
+        RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
+        RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=2).save()
+        assert_equal(RegistrationSchema.objects.filter(name='foo').count(), 2)
 
     def test_process(self):
         processed = process_payload({'foo': 'bar&baz'})

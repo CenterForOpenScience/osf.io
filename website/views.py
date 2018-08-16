@@ -185,9 +185,6 @@ def find_bookmark_collection(user):
 def dashboard(auth):
     return redirect('/')
 
-@ember_flag_is_active('ember_support_page')
-def support():
-    return {}
 
 @must_be_logged_in
 @ember_flag_is_active('ember_my_projects_page')
@@ -320,7 +317,7 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
-        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.target.is_quickfiles:
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:

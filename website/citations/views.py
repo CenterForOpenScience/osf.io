@@ -64,6 +64,7 @@ class GenericCitationViews(object):
     def account_list(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_be_logged_in
         def _account_list(auth):
             """ List addon accounts associated with the currently logged-in user
@@ -75,6 +76,7 @@ class GenericCitationViews(object):
     def get_config(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_be_logged_in
         @must_have_addon(addon_short_name, 'node')
         @must_be_valid_project
@@ -96,6 +98,7 @@ class GenericCitationViews(object):
     def set_config(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_not_be_registration
         @must_have_addon(addon_short_name, 'user')
         @must_have_addon(addon_short_name, 'node')
@@ -128,6 +131,7 @@ class GenericCitationViews(object):
     def import_auth(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_not_be_registration
         @must_have_addon(addon_short_name, 'user')
         @must_have_addon(addon_short_name, 'node')
@@ -145,6 +149,7 @@ class GenericCitationViews(object):
     def deauthorize_node(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_not_be_registration
         @must_have_addon(addon_short_name, 'node')
         @must_have_permission('write')
@@ -159,6 +164,7 @@ class GenericCitationViews(object):
     def widget(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_be_contributor_or_public
         @must_have_addon(addon_short_name, 'node')
         def _widget(node_addon, **kwargs):
@@ -171,6 +177,7 @@ class GenericCitationViews(object):
     def citation_list(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_be_contributor_or_public
         @must_have_addon(addon_short_name, 'node')
         def _citation_list(auth, node_addon, list_id=None, **kwargs):

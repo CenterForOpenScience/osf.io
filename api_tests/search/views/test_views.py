@@ -4,7 +4,7 @@ import uuid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
 from framework.auth.core import Auth
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -526,7 +526,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
     @pytest.fixture()
     def schema(self):
-        schema = MetaSchema.objects.filter(
+        schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
         return schema

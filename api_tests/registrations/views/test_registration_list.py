@@ -9,7 +9,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
-from osf.models import MetaSchema, DraftRegistration
+from osf.models import RegistrationSchema, DraftRegistration
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -120,23 +120,23 @@ class TestRegistrationFiltering(ApiTestCase):
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.project_one = ProjectFactory(
-            title="Project One",
+            title='Project One',
             description='Two',
             is_public=True,
             creator=self.user_one,
             category='hypothesis')
         self.project_two = ProjectFactory(
-            title="Project Two",
-            description="One Three",
+            title='Project Two',
+            description='One Three',
             is_public=True,
             creator=self.user_one)
         self.project_three = ProjectFactory(
-            title="Three", is_public=True, creator=self.user_two)
+            title='Three', is_public=True, creator=self.user_two)
 
         self.private_project_user_one = ProjectFactory(
-            title="Private Project User One", is_public=False, creator=self.user_one)
+            title='Private Project User One', is_public=False, creator=self.user_one)
         self.private_project_user_two = ProjectFactory(
-            title="Private Project User Two", is_public=False, creator=self.user_two)
+            title='Private Project User Two', is_public=False, creator=self.user_two)
 
         self.project_one.add_tag('tag1', Auth(
             self.project_one.creator), save=False)
@@ -161,7 +161,7 @@ class TestRegistrationFiltering(ApiTestCase):
         self.folder = CollectionFactory()
         self.bookmark_collection = find_bookmark_collection(self.user_one)
 
-        self.url = "/{}registrations/".format(API_BASE)
+        self.url = '/{}registrations/'.format(API_BASE)
 
     def test_filtering_by_category(self):
         url = '/{}registrations/?filter[category]=hypothesis'.format(API_BASE)
@@ -373,7 +373,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_registration_with_exact_filter_logged_in(self):
-        url = "/{}registrations/?filter[title]=Project%20One".format(API_BASE)
+        url = '/{}registrations/?filter[title]=Project%20One'.format(API_BASE)
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -389,7 +389,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_registration_with_exact_filter_not_logged_in(self):
-        url = "/{}registrations/?filter[title]=Private%20Project%20User%20One".format(
+        url = '/{}registrations/?filter[title]=Private%20Project%20User%20One'.format(
             API_BASE)
 
         res = self.app.get(url)
@@ -406,7 +406,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_logged_in(self):
-        url = "/{}registrations/?filter[title]=Two".format(API_BASE)
+        url = '/{}registrations/?filter[title]=Two'.format(API_BASE)
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -422,7 +422,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_not_logged_in(self):
-        url = "/{}registrations/?filter[title]=One".format(API_BASE)
+        url = '/{}registrations/?filter[title]=One'.format(API_BASE)
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -438,7 +438,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_or_my_registrations_with_filter_logged_in(self):
-        url = "/{}registrations/?filter[title]=Project".format(API_BASE)
+        url = '/{}registrations/?filter[title]=Project'.format(API_BASE)
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -454,7 +454,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_registrations_with_filter_not_logged_in(self):
-        url = "/{}registrations/?filter[title]=Project".format(API_BASE)
+        url = '/{}registrations/?filter[title]=Project'.format(API_BASE)
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -470,7 +470,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_logged_in(self):
-        url = "/{}registrations/?filter[description]=Three".format(API_BASE)
+        url = '/{}registrations/?filter[description]=Three'.format(API_BASE)
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -486,7 +486,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_not_logged_in(self):
-        url = "/{}registrations/?filter[description]=Two".format(API_BASE)
+        url = '/{}registrations/?filter[description]=Two'.format(API_BASE)
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -517,7 +517,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -657,7 +657,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -694,7 +694,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -730,7 +730,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -766,7 +766,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_third_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -777,7 +777,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         )
 
         registration_metadata = prereg_metadata(prereg_draft_registration)
-        registration_metadata['q11'] = {'value': {"question": {}}}
+        registration_metadata['q11'] = {'value': {'question': {}}}
 
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
@@ -1186,7 +1186,7 @@ class TestRegistrationBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
-        assert res.json['errors'][0]['detail'] == "This field may not be null."
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
         # test_bulk_update_type_not_supplied
         res = app.put_json_api(
@@ -1202,7 +1202,7 @@ class TestRegistrationBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
-        assert res.json['errors'][0]['detail'] == "This field may not be null."
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
         # test_bulk_update_incorrect_type
         res = app.put_json_api(
