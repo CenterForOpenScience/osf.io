@@ -54,7 +54,7 @@ keenAnalysis.ready(function() {
         Metrics.KeenRenderMetrics("#preprints-added", "line", preprint_created, 200);
     };
     $('#downloads-range')[0].onclick = function() {
-        var download_count = new keenAnalysis.Query('sum', {
+        var downloadCount = new keenAnalysis.Query('sum', {
             eventCollection: 'download_count_summary',
             targetProperty: 'files.total',
             interval: 'daily',
@@ -65,7 +65,7 @@ keenAnalysis.ready(function() {
             timezone: "UTC"
         });
 
-        Metrics.KeenRenderMetrics("#download-counts", "line", download_count, 200);
+        Metrics.KeenRenderMetrics("#download-counts", "line", downloadCount, 200);
     };
 
 });

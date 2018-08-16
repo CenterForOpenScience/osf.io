@@ -1045,7 +1045,7 @@ var DownloadMetrics = function() {
     });
     renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, defaultColor, publicClient);
 
-    var download_count = new keenAnalysis.Query("sum", {
+    var downloadCount = new keenAnalysis.Query("sum", {
         eventCollection: "download_count_summary",
         interval: "daily",
         targetProperty: "files.total",
@@ -1053,7 +1053,7 @@ var DownloadMetrics = function() {
         timezone: "UTC"
     });
 
-    renderKeenMetric("#download-counts", "line", download_count, defaultHeight);
+    renderKeenMetric("#download-counts", "line", downloadCount, defaultHeight);
 };
 
 
