@@ -5,10 +5,8 @@ from osf_tests.factories import (
     ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
-    ProjectFactory,
     PreprintProviderFactory,
 )
-from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
@@ -43,20 +41,17 @@ class ReviewActionCommentSettingsMixin(object):
         return user
 
     @pytest.fixture()
-    def node_admin(self, preprint):
+    def preprint_admin(self, preprint):
         user = AuthUserFactory()
-        preprint.node = ProjectFactory(creator=preprint.creator)
-        preprint.node.add_contributor(
+        preprint.add_contributor(
             user,
-            permissions=[
-                osf_permissions.READ,
-                osf_permissions.WRITE,
-                osf_permissions.ADMIN])
+            'admin'
+        )
         return user
 
     def test_comment_settings(
             self, app, url, provider, actions, provider_admin,
-            provider_moderator, node_admin):
+            provider_moderator, preprint_admin):
         expected_ids = set([l._id for l in actions])
         for anonymous in [True, False]:
             for private in [True, False]:
@@ -72,10 +67,9 @@ class ReviewActionCommentSettingsMixin(object):
                 res = app.get(url, auth=provider_moderator.auth)
                 self.__assert_fields(res, expected_ids, False, False)
 
-                # node admin, if attached node exists cannot see preprint
-                # Preprints and nodes have separate contributors
-                res = app.get(url, auth=node_admin.auth, expect_errors=True)
-                assert res.status_code == 403
+                # node admin sees what the settings allow
+                res = app.get(url, auth=preprint_admin.auth)
+                self.__assert_fields(res, expected_ids, anonymous, private)
 
     def __assert_fields(
             self, res, expected_ids, hidden_creator, hidden_comment):

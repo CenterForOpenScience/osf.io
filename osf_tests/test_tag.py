@@ -10,6 +10,7 @@ from website.exceptions import TagNotFoundError
 
 pytestmark = pytest.mark.django_db
 
+@pytest.mark.enable_implicit_clean
 class TestTag:
 
     def test_has_an_integer_pk(self):

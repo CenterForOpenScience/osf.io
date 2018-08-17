@@ -199,7 +199,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction.save()
 
     if retraction:
-        justification = justification or "Because reasons"
+        justification = justification or 'Because reasons'
         retraction = registration.retract_registration(project.creator, justification=justification)
         if autoapprove_retraction:
             retraction.state = Sanction.APPROVED

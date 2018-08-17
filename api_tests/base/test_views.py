@@ -13,6 +13,7 @@ from osf_tests import factories
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
+from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from api.crossref.views import ParseCrossRefConfirmation
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
@@ -55,7 +56,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_does_not_exist_returns_404(self):
         res = self.app.get(
-            '/{}{}'.format(API_BASE, "notapage"),
+            '/{}{}'.format(API_BASE, 'notapage'),
             expect_errors=True
         )
         assert_equal(res.status_code, 404)
@@ -73,7 +74,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
             TokenHasScope,
-            (IsAuthenticated, IsAuthenticatedOrReadOnly)
+            (IsAuthenticated, IsAuthenticatedOrReadOnly, IsAuthenticatedOrReadOnlyForSearch)
         ]
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:
@@ -83,13 +84,13 @@ class TestApiBaseViews(ApiTestCase):
                     has_cls = any([c in view.permission_classes for c in cls])
                     assert_true(
                         has_cls,
-                        "{0} lacks the appropriate permission classes".format(view)
+                        '{0} lacks the appropriate permission classes'.format(view)
                     )
                 else:
                     assert_in(
                         cls,
                         view.permission_classes,
-                        "{0} lacks the appropriate permission classes".format(view)
+                        '{0} lacks the appropriate permission classes'.format(view)
                     )
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
@@ -105,7 +106,7 @@ class TestApiBaseViews(ApiTestCase):
                 continue
             assert_true(
                 hasattr(view, '_get_embed_partial'),
-                "{0} lacks embed support".format(view)
+                '{0} lacks embed support'.format(view)
             )
 
     def test_view_classes_define_or_override_serializer_class(self):
@@ -114,7 +115,7 @@ class TestApiBaseViews(ApiTestCase):
                                    getattr(view, 'get_serializer_class', None)
             assert_true(
                 has_serializer_class,
-                "{0} should include serializer class or override get_serializer_class()".format(view)
+                '{0} should include serializer class or override get_serializer_class()'.format(view)
             )
 
     @mock.patch(

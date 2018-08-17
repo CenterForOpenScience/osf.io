@@ -20,4 +20,7 @@ urlpatterns = [
         name='confirm-ham'),
     url(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_preprint/$', views.PreprintReindexElastic.as_view(),
         name='reindex-elastic-preprint'),
+    url(r'^flagged_spam$', views.PreprintFlaggedSpamList.as_view(), name='flagged-spam'),
+    url(r'^known_spam$', views.PreprintKnownSpamList.as_view(), name='known-spam'),
+    url(r'^known_ham$', views.PreprintKnownHamList.as_view(), name='known-ham'),
 ]

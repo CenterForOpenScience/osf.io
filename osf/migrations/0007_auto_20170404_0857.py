@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from django.contrib.auth.models import Group
 from django.core.management.sql import emit_post_migrate_signal
 
 

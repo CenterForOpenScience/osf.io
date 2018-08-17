@@ -52,6 +52,9 @@ from api.nodes.permissions import (
     ContributorOrPublic
 )
 from addons.osfstorage.models import OsfStorageFile
+from api.requests.permissions import PreprintRequestPermission
+from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
+from api.requests.views import PreprintRequestMixin
 
 
 class PreprintMixin(NodeMixin):
@@ -455,6 +458,7 @@ class PreprintProvidersList(NodeProvidersList, PreprintMixin):
             self.get_provider_item('osfstorage')
         ]
 
+
 class PreprintFilesList(NodeFilesList, PreprintMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -473,3 +477,33 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         # Restricting queryset so only primary file is returned.
         preprint = self.get_preprint()
         return OsfStorageFile.objects.filter(id=getattr(preprint.primary_file, 'id', None))
+
+
+class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_REQUESTS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    serializer_class = PreprintRequestSerializer
+
+    view_category = 'preprint-requests'
+    view_name = 'preprint-request-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintRequestCreateSerializer
+        else:
+            return PreprintRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_target().requests.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

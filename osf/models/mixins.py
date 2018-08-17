@@ -25,7 +25,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine, RequestMachine
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
@@ -272,7 +272,7 @@ class AddonModelMixin(models.Model):
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
-        ret.save()  # TODO This doesn't feel right
+        ret.save(clean=False)  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
@@ -555,14 +555,26 @@ class MachineableMixin(models.Model):
             return action
 
 
-class RequestableMixin(MachineableMixin):
-    """Something that users may request access or changes to.
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
     """
 
     class Meta:
         abstract = True
 
-    MachineClass = RequestMachine
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
 
 
 class ReviewableMixin(MachineableMixin):

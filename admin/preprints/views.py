@@ -1,17 +1,26 @@
 from __future__ import unicode_literals
 
-from django.views.generic import UpdateView, DeleteView
+from django.views.generic import UpdateView, DeleteView, ListView
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
+from django.core.exceptions import PermissionDenied
 
 from osf.models import SpamStatus
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
-from osf.models.admin_log_entry import update_admin_log, REINDEX_ELASTIC, REINDEX_SHARE, PREPRINT_REMOVED, PREPRINT_RESTORED
+from osf.models.admin_log_entry import (
+    update_admin_log,
+    REINDEX_ELASTIC,
+    REINDEX_SHARE,
+    PREPRINT_REMOVED,
+    PREPRINT_RESTORED,
+    CONFIRM_SPAM,
+)
 
 from website.preprints.tasks import update_preprint_share
+from website.project.views.register import osf_admin_change_status_identifier
 from website import search
 
 from framework.exceptions import PermissionsError
@@ -31,7 +40,6 @@ class PreprintMixin(PermissionRequiredMixin):
 
 class PreprintFormView(PreprintMixin, GuidFormView):
     """ Allow authorized admin user to input specific preprint guid.
-
     Basic form. No admin models.
     """
     template_name = 'preprints/search.html'
@@ -46,7 +54,6 @@ class PreprintFormView(PreprintMixin, GuidFormView):
 
 class PreprintView(PreprintMixin, UpdateView, GuidView):
     """ Allow authorized admin user to view preprints
-
     View of OSF database. No admin models.
     """
     template_name = 'preprints/preprint.html'
@@ -71,6 +78,30 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
         return super(PreprintView, self).get_context_data(**kwargs)
+
+
+class PreprintSpamList(PermissionRequiredMixin, ListView):
+    SPAM_STATE = SpamStatus.UNKNOWN
+
+    paginate_by = 25
+    paginate_orphans = 1
+    ordering = ('created')
+    context_object_name = 'preprint'
+    permission_required = ('osf.view_spam', 'osf.view_preprint')
+    raise_exception = True
+
+    def get_queryset(self):
+        return Preprint.objects.filter(spam_status=self.SPAM_STATE).order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'preprints': map(serialize_preprint, query_set),
+            'page': page,
+        }
 
 
 class PreprintReindexShare(PreprintMixin, DeleteView):
@@ -126,7 +157,6 @@ class PreprintReindexElastic(PreprintMixin, NodeDeleteBase):
 
 class PreprintRemoveContributorView(NodeRemoveContributorView):
     """ Allow authorized admin user to remove preprint contributor
-
     Interface with OSF database. No admin models.
     """
     context_object_name = 'preprint'
@@ -164,7 +194,6 @@ class PreprintRemoveContributorView(NodeRemoveContributorView):
 
 class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
     """ Allow authorized admin user to remove/hide preprints
-
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_node.html'
@@ -225,6 +254,41 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
                 )
             )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
+
+
+class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
+    SPAM_STATE = SpamStatus.FLAGGED
+    template_name = 'preprints/flagged_spam_list.html'
+
+    def delete(self, request, *args, **kwargs):
+        if not request.user.has_perm('auth.mark_spam'):
+            raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
+        preprint_ids = [
+            pid for pid in request.POST.keys()
+            if pid != 'csrfmiddlewaretoken'
+        ]
+        for pid in preprint_ids:
+            preprint = Preprint.load(pid)
+            osf_admin_change_status_identifier(preprint)
+            preprint.confirm_spam(save=True)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=pid,
+                object_repr='Preprint',
+                message='Confirmed SPAM: {}'.format(pid),
+                action_flag=CONFIRM_SPAM
+            )
+        return redirect('preprints:flagged-spam')
+
+
+class PreprintKnownSpamList(PreprintSpamList):
+    SPAM_STATE = SpamStatus.SPAM
+    template_name = 'preprints/known_spam_list.html'
+
+
+class PreprintKnownHamList(PreprintSpamList):
+    SPAM_STATE = SpamStatus.HAM
+    template_name = 'preprints/known_spam_list.html'
 
 
 class PreprintConfirmSpamView(PreprintMixin, NodeConfirmSpamView):

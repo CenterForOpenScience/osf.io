@@ -57,6 +57,16 @@ class IsAdmin(permissions.BasePermission):
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
+class IsContributor(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_contributor(auth.user)
+        else:
+            return obj.has_permission(auth.user, 'write')
+
+
 class IsAdminOrReviewer(permissions.BasePermission):
     """
     Prereg admins can update draft registrations.

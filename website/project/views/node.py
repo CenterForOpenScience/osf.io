@@ -398,28 +398,8 @@ def configure_comments(node, **kwargs):
 @must_not_be_registration
 def configure_requests(node, **kwargs):
     access_requests_enabled = request.get_json().get('accessRequestsEnabled')
-    node.access_requests_enabled = access_requests_enabled
-    if node.access_requests_enabled:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    else:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    node.save()
+    auth = kwargs.get('auth', None)
+    node.set_access_requests_enabled(access_requests_enabled, auth, save=True)
     return {'access_requests_enabled': access_requests_enabled}, 200
 
 
@@ -695,6 +675,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -863,6 +844,7 @@ def serialize_collections(cgms, auth):
         'status': cgm.status,
         'type': cgm.collected_type,
         'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 

@@ -30,6 +30,8 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class NodeCRUDTestCase:
 
     @pytest.fixture()
@@ -104,6 +106,8 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -319,6 +323,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -589,6 +595,16 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
+
+    def test_add_contributor_dont_expose_email(
+            self, app, user, user_two, project_public, data_user_two, url_public):
+
+        res = app.post_json_api(
+            url_public,
+            data_user_two,
+            auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes'].get('email') is None
 
     def test_add_contributor_is_visible_by_default(
             self, app, user, user_two, project_public,
@@ -946,7 +962,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] is None
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -966,7 +982,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is True
             assert res.json['data']['attributes']['permission'] == permissions.WRITE
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
@@ -990,7 +1006,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is False
             assert res.json['data']['attributes']['permission'] == permissions.READ
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
@@ -1013,7 +1029,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] is None
-            assert res.json['data']['attributes']['email'] == user_contrib.username
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -1239,6 +1255,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1300,6 +1318,8 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_enqueue_task
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2846,6 +2866,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorFiltering:
 
     @pytest.fixture()

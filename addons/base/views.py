@@ -36,7 +36,7 @@ from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration, MetaSchema,
+                        NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
@@ -49,7 +49,7 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u'''
+ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -59,8 +59,8 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>''',
-                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+</p>""",
+                  'FILE_GONE_ACTOR_UNKNOWN': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -70,16 +70,16 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>''',
-                  'DONT_KNOW': u'''
+</p>""",
+                  'DONT_KNOW': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>''',
-                  'BLAME_PROVIDER': u'''
+</p>""",
+                  'BLAME_PROVIDER': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -90,13 +90,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>''',
-                  'FILE_SUSPENDED': u'''
+</p>""",
+                  'FILE_SUSPENDED': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.'''}
+This content has been removed."""}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -200,7 +200,7 @@ def check_access(node, auth, action, cas_resp):
         # Users with the prereg admin permission should be allowed to download files
         # from prereg challenge draft registrations.
         try:
-            prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+            prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
             allowed_nodes = [node] + node.parents
             prereg_draft_registration = DraftRegistration.objects.filter(
                 branched_from__in=allowed_nodes,
@@ -211,7 +211,7 @@ def check_access(node, auth, action, cas_resp):
                         prereg_draft_registration.count() > 0 and \
                         auth.user.has_perm('osf.administer_prereg'):
                 return True
-        except MetaSchema.DoesNotExist:
+        except RegistrationSchema.DoesNotExist:
             pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -536,9 +536,8 @@ def addon_view_or_download_file_legacy(**kwargs):
         code=httplib.MOVED_PERMANENTLY
     )
 
-@must_be_valid_project
 @must_be_contributor_or_public
-def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
+def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
     """Shows a nice error message to users when they try to view a deleted file
     """
     # Allow file_node to be passed in so other views can delegate to this one
@@ -579,37 +578,39 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
-    error_msg = ''.join([
-        ERROR_MESSAGES[error_type].format(**format_params),
-        format_last_known_metadata(auth, node, file_node, error_type)
-    ])
-    ret = serialize_node(node, auth, primary=True)
-    ret.update(rubeus.collect_addon_assets(node))
-    ret.update({
-        'error': error_msg,
-        'urls': {
-            'render': None,
-            'sharejs': None,
-            'mfr': settings.MFR_SERVER_URL,
-            'profile_image': get_profile_image_url(auth.user, 25),
-            'files': node.web_url_for('collect_file_trees'),
-        },
-        'extra': {},
-        'size': 9966699,  # Prevent file from being edited, just in case
-        'sharejs_uuid': None,
-        'file_name': file_name,
-        'file_path': file_path,
-        'file_name_title': file_name_title,
-        'file_name_ext': file_name_ext,
-        'version_id': None,
-        'file_guid': file_guid,
-        'file_id': file_node._id,
-        'provider': file_node.provider,
-        'materialized_path': file_node.materialized_path or file_path,
-        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
-    })
+    error_msg = ERROR_MESSAGES[error_type].format(**format_params)
+    if isinstance(target, AbstractNode):
+        error_msg += format_last_known_metadata(auth, target, file_node, error_type)
+        ret = serialize_node(target, auth, primary=True)
+        ret.update(rubeus.collect_addon_assets(target))
+        ret.update({
+            'error': error_msg,
+            'urls': {
+                'render': None,
+                'sharejs': None,
+                'mfr': settings.MFR_SERVER_URL,
+                'profile_image': get_profile_image_url(auth.user, 25),
+                'files': target.web_url_for('collect_file_trees'),
+            },
+            'extra': {},
+            'size': 9966699,  # Prevent file from being edited, just in case
+            'sharejs_uuid': None,
+            'file_name': file_name,
+            'file_path': file_path,
+            'file_name_title': file_name_title,
+            'file_name_ext': file_name_ext,
+            'version_id': None,
+            'file_guid': file_guid,
+            'file_id': file_node._id,
+            'provider': file_node.provider,
+            'materialized_path': file_node.materialized_path or file_path,
+            'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
+            'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
+            'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        })
+    else:
+        # TODO - serialize deleted metadata for future types of deleted file targets
+        ret = {'error': error_msg}
 
     return ret, httplib.GONE
 
@@ -677,7 +678,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 return redirect(
                     file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
-        return addon_deleted_file(file_node=file_node, path=path, **kwargs)
+        return addon_deleted_file(target=target, file_node=file_node, path=path, **kwargs)
     else:
         transaction.savepoint_commit(savepoint_id)
 

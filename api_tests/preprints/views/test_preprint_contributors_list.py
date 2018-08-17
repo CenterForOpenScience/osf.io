@@ -82,6 +82,8 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestPreprintContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -384,6 +386,8 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestPreprintContributorAdd(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1007,7 +1011,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] is None
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in preprint_published.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -1027,7 +1031,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is True
             assert res.json['data']['attributes']['permission'] == permissions.WRITE
             assert res.json['data']['embeds']['users']['data']['id'] in preprint_published.contributors.values_list(
@@ -1051,7 +1055,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is False
             assert res.json['data']['attributes']['permission'] == permissions.READ
             assert res.json['data']['embeds']['users']['data']['id'] in preprint_published.contributors.values_list(
@@ -1074,7 +1078,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] is None
-            assert res.json['data']['attributes']['email'] == user_contrib.username
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in preprint_published.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -1361,6 +1365,8 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_enqueue_task
 class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1570,6 +1576,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1792,6 +1799,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2236,6 +2244,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2594,7 +2603,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
              data[1]['attributes']['permission']],
             ['admin', 'write'])
 
-
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2924,6 +2933,7 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorFiltering:
 
     @pytest.fixture()

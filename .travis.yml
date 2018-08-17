@@ -21,7 +21,6 @@ cache:
 
 env:
   global:
-    - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - LIBXML2_DEB="libxml2-dbg_2.9.1+dfsg1-3ubuntu4.9_amd64.deb"
     - POSTGRES_DEB="postgresql-9.6_9.6.3-1.pgdg12.4+1_amd64.deb"
@@ -34,11 +33,10 @@ env:
     - BOTO_CONFIG=/dev/null
   matrix:
     - TEST_BUILD="addons"
-    - TEST_BUILD="else"
+    - TEST_BUILD="website"
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
     - TEST_BUILD="api3_and_osf"
-    # - TEST_BUILD="varnish"
 
 before_install:
     # cache directories
@@ -95,33 +93,8 @@ before_install:
           fi
       done
 
-    # varnish
-    # - |
-    #   cd $HOME/.cache/downloads
-    #
-    #   if [ ! -f "$LIBJEMALLOC_DEB" ]; then
-    #     curl -SLO http://mirrors.kernel.org/ubuntu/pool/universe/j/jemalloc/$LIBJEMALLOC_DEB
-    #   fi
-    #
-    #   if [ ! -f "$LIBPCRE_DEB" ]; then
-    #     curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/pcre3/$LIBPCRE_DEB
-    #   fi
-    #
-    #   if [ ! -f "$VARNISH_DEB" ]; then
-    #     curl -SLO https://repo.varnish-cache.org/ubuntu/pool/varnish-4.1/v/varnish/$VARNISH_DEB
-    #   fi
-    #
-    #   dpkg -x $LIBJEMALLOC_DEB /tmp/libjemalloc
-    #   dpkg -x $LIBPCRE_DEB /tmp/libpcre
-    #   dpkg -x $VARNISH_DEB /tmp/varnish
-    # - |
-    #   if [ "$TEST_BUILD" = "varnish" ]; then
-    #     export ENABLE_VARNISH=True
-    #     export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
-    #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
-    #   fi
 install:
-    - cd $PROJECT_DIR
+    - cd $TRAVIS_BUILD_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
     - '[ -d $HOME/preprints ] || ( mkdir -p $HOME/preprints && touch $HOME/preprints/index.html )'
@@ -131,24 +104,28 @@ install:
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
 
-    - nvm install 8.6.0
-    - nvm use 8.6.0
-    - curl -o- -L https://yarnpkg.com/install.sh | bash
-    - export PATH=$HOME/.yarn/bin:$PATH
+    - |
+      if [ "$TEST_BUILD" = "api1_and_js" ]; then
+       nvm install 8.6.0
+       nvm use 8.6.0
+       curl -o- -L https://yarnpkg.com/install.sh | bash
+       export PATH=$HOME/.yarn/bin:$PATH
+       travis_retry invoke assets --dev
+      fi
 
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
     - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
-    - travis_retry invoke assets --dev
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD -n 4
+    - export COVERAGE=`if [ "$TRAVIS_BRANCH" == "master-w-coverage" ]; then echo "--coverage"; else echo ""; fi`
+    - invoke test_travis_$TEST_BUILD -n 4 $COVERAGE
 
 after_success:
-    - coveralls || true
+    - if [[ "$TRAVIS_BRANCH" == "master-w-coverage" ]]; then coveralls; fi
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
@@ -162,7 +139,6 @@ before_cache:
   # kill any running processes
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
-  # - kill -9 $VARNISH_PID
 
 branches:
   except:

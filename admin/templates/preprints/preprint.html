@@ -229,27 +229,26 @@
                     </tr>
                     <tr>
                         <td>SPAM Pro Tip</td>
-                            <td>{{ preprint.spam_pro_tip }}</td>
-                        <td>
+                        <td>{{ serialized_preprint.spam_pro_tip }}</td>
                     </tr>
                     <tr>
-                        <td>SPAM Status</td>
-                        <td>
-                            {% if preprint.spam_status == SPAM_STATUS.UNKNOWN %}
-                                <span class="label label-default">Unknown</span>
-                            {% elif preprint.spam_status == SPAM_STATUS.FLAGGED %}
-                                <span class="label label-warning">Flagged</span>
-                            {% elif preprint.spam_status == SPAM_STATUS.SPAM %}
-                                <span class="label label-danger">Spam</span>
-                            {% elif preprint.spam_status == SPAM_STATUS.HAM %}
-                                <span class="label label-success">Ham</span>
-                            {% endif %}
-                        </td>
+                    <td>SPAM Status</td>
+                    <td>
+                        {% if serialized_preprint.spam_status == SPAM_STATUS.UNKNOWN %}
+                            <span class="label label-default">Unknown</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.FLAGGED %}
+                            <span class="label label-warning">Flagged</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.SPAM %}
+                            <span class="label label-danger">Spam</span>
+                        {% elif serialized_preprint.spam_status == SPAM_STATUS.HAM %}
+                            <span class="label label-success">Ham</span>
+                        {% endif %}
+                    </td>
                     </tr>
                     <tr>
                         <td>SPAM Data</td>
                         <td>
-                            <pre>{{ preprint.spam_data }}</pre>
+                            <pre>{{ serialized_preprint.spam_data }}</pre>
                         </td>
                     </tr>
                 </tbody>

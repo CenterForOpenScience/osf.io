@@ -76,17 +76,15 @@ function patchNodesPrivacy(nodes, type) {
             }
         };
     });
-    return $.ajax({
-        url: nodesV2Url,
-        type: 'PATCH',
-        dataType: 'json',
-        contentType: 'application/vnd.api+json; ext=bulk',
-        crossOrigin: true,
-        xhrFields: {withCredentials: true},
-        processData: false,
-        data: JSON.stringify({
-            data: nodesPatch
-        })
+    return $osf.ajaxJSON('PATCH', nodesV2Url, {
+        data: {
+            data: nodesPatch,
+        },
+        isCors: true,
+        fields: {
+            processData: false,
+            contentType: 'application/vnd.api+json; ext=bulk',
+        }
     });
 }
 

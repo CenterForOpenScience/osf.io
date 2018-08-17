@@ -335,6 +335,13 @@ class TestNodeDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['preprint'] is False
 
+    def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'access_requests_enabled' not in res.json['data']['attributes']
+        res = app.get(url_public + '?version=2.8', auth=user.auth)
+        assert 'access_requests_enabled' in res.json['data']['attributes']
+
     def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
         url = url_public
         res = app.get(url)
@@ -1110,6 +1117,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_set_node_with_preprint_private_updates_doi(
             self, mock_update_doi_metadata, app, user,
@@ -1168,6 +1176,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestNodeDelete(NodeCRUDTestCase):
 
     def test_deletes_node_errors(

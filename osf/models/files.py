@@ -66,10 +66,6 @@ class UnableToResolveFileClass(Exception):
     pass
 
 
-class DeprecatedException(Exception):
-    pass
-
-
 class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """Base class for all provider-specific file models and the trashed file model.
     This class should generally not be used or created manually. Use the provider-specific
@@ -117,6 +113,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     class Meta:
         base_manager_name = 'objects'
+        index_together = (
+            ('target_content_type', 'target_object_id', )
+        )
 
     @property
     def history(self):

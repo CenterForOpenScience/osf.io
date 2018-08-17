@@ -314,10 +314,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
-            'publisher': 'Open Science Framework',
             'type': 'webpage',
             'URL': self.display_absolute_url,
-            'publisher': self.provider.name,
+            'publisher': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name
         }
 
         article_doi = self.article_doi

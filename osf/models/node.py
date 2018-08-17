@@ -142,7 +142,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
             qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
-            qs |= self.extra(where=['''
+            qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
                         SELECT "osf_contributor"."node_id"
@@ -156,7 +156,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            '''], params=(user, ))
+            """], params=(user, ))
 
         return qs
 
@@ -255,7 +255,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
-    LICENSE_QUERY = re.sub('\s+', ' ', '''WITH RECURSIVE ascendants AS (
+    LICENSE_QUERY = re.sub('\s+', ' ', """WITH RECURSIVE ascendants AS (
             SELECT
                 N.node_license_id,
                 R.parent_id
@@ -273,7 +273,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             WHERE R.is_node_link IS FALSE
             AND D.node_license_id IS NULL
     ) SELECT {fields} FROM "{nodelicenserecord}"
-    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
+    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
@@ -1747,6 +1747,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     else:
                         yield (contrib, node)
 
+    def set_access_requests_enabled(self, access_requests_enabled, auth, save=False):
+        user = auth.user
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can modify access requests enabled')
+        self.access_requests_enabled = access_requests_enabled
+        if self.access_requests_enabled:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        else:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         if 'old_subjects' in kwargs.keys():
@@ -1975,7 +2003,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :type date: `datetime.datetime` or `None`
+        :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
         if not self.can_edit(auth):

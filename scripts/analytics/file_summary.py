@@ -8,7 +8,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
-from osf.models import Node, QuickFilesNode
+from osf.models import AbstractNode
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -31,21 +31,16 @@ class FileSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
 
         file_qs = OsfStorageFile.objects
-        node_content_type = ContentType.objects.get_for_model(Node)
+        abstract_node_content_type = ContentType.objects.get_for_model(AbstractNode)
 
-        quickfiles_query = Q(
-            target_object_id__in=QuickFilesNode.objects.values('id'),
-            target_content_type=ContentType.objects.get_for_model(QuickFilesNode)
+        public_query = Q(
+            target_object_id__in=AbstractNode.objects.filter(is_public=True).values('id'),
+            target_content_type=abstract_node_content_type
         )
 
-        public_query = (quickfiles_query | Q(
-            target_object_id__in=Node.objects.filter(is_public=True).values('id'),
-            target_content_type=node_content_type
-        ))
-
         private_query = Q(
-            target_object_id__in=Node.objects.filter(is_public=False).values('id'),
-            target_content_type=node_content_type
+            target_object_id__in=AbstractNode.objects.filter(is_public=False).values('id'),
+            target_content_type=abstract_node_content_type
         )
 
         daily_query = Q(created__gte=timestamp_datetime)

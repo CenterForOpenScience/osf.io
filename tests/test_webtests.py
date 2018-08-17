@@ -8,6 +8,7 @@ import unittest
 
 import markupsafe
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
@@ -77,6 +78,8 @@ class TestAnUnregisteredUser(OsfTestCase):
         assert_in('/login/', res.headers['Location'])
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -278,6 +281,7 @@ class TestAUser(OsfTestCase):
         assert_equal(td2.text, user2.display_absolute_url)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestComponents(OsfTestCase):
 
     def setUp(self):
@@ -357,6 +361,7 @@ class TestComponents(OsfTestCase):
         assert_in('Components', res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
@@ -370,7 +375,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in('Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -389,9 +394,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -401,16 +406,18 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=['read'],
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -452,58 +459,7 @@ class TestMergingAccounts(OsfTestCase):
         assert_in('This account has been merged', res)
 
 
-# FIXME: These affect search in development environment. So need to migrate solr after running.
-# # Remove this side effect.
-@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
-class TestSearching(OsfTestCase):
-    '''Test searching using the search bar. NOTE: These may affect the
-    Solr database. May need to migrate after running these.
-    '''
-
-    def setUp(self):
-        super(TestSearching, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_user_from_home_page(self):
-        user = UserFactory()
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Fills search form
-        form = res.forms['searchBar']
-        form['q'] = user.fullname
-        res = form.submit().maybe_follow()
-        # The username shows as a search result
-        assert_in(user.fullname, res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_project_from_home_page(self):
-        project = ProjectFactory(title='Foobar Project', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        project.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the project is shown as a result
-        assert_in('Foobar Project', res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_component_from_home_page(self):
-        component = NodeFactory(title='Foobar Component', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        component.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the component is shown as a result
-        assert_in('Foobar Component', res)
-
-
+@pytest.mark.enable_bookmark_creation
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
@@ -550,6 +506,8 @@ class TestShortUrls(OsfTestCase):
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_implicit_clean
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -629,7 +587,7 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in_html(name2, res2)
 
-    @unittest.skip("as long as E-mails cannot be changed")
+    @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake_email()
@@ -728,6 +686,8 @@ class TestConfirmingEmail(OsfTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
@@ -768,13 +728,14 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_not_in(self.project, self.user.unclaimed_records)
 
 
+@pytest.mark.enable_implicit_clean
 class TestExplorePublicActivity(OsfTestCase):
 
     def setUp(self):
         super(TestExplorePublicActivity, self).setUp()
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
-        self.private_project = ProjectFactory(title="Test private project")
+        self.private_project = ProjectFactory(title='Test private project')
         self.popular_project = ProjectFactory(is_public=True)
         self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 
@@ -1098,6 +1059,7 @@ class TestAUserProfile(OsfTestCase):
         assert_not_in(reg.nodes[0].title, res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
         super(TestPreprintBannerView, self).setUp()

@@ -1,5 +1,6 @@
+import pytest
 import mock
-from nose import tools as nt
+# from nose import tools as nt
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -9,155 +10,267 @@ from tests.base import AdminTestCase
 from osf.models import Preprint, OSFUser, PreprintLog
 from osf_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
 from osf.models.admin_log_entry import AdminLogEntry
+from osf.models.spam import SpamStatus
 
 from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.preprints import views
 from admin.preprints.forms import ChangeProviderForm
 
+pytestmark = pytest.mark.django_db
 
-class TestPreprintView(AdminTestCase):
+@pytest.fixture()
+def preprint():
+    return PreprintFactory()
 
-    def setUp(self):
-        super(TestPreprintView, self).setUp()
-        self.preprint = PreprintFactory()
-        self.view = views.PreprintView
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-    def test_no_guid(self):
-        request = RequestFactory().get('/fake_path')
-        view = setup_view(self.view(), request)
+@pytest.fixture()
+def req(user):
+    req = RequestFactory().get('/fake_path')
+    req.user = user
+    return req
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintView:
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.PreprintView
+
+    @pytest.fixture()
+    def view(self, req, plain_view):
+        view = plain_view()
+        setup_view(view, req)
+        return view
+
+    @pytest.fixture()
+    def ham_preprint(self):
+        ham_preprint = PreprintFactory()
+        ham_preprint.spam_status = SpamStatus.HAM
+        ham_preprint.save()
+        return ham_preprint
+
+    @pytest.fixture()
+    def spam_preprint(self):
+        spam_preprint = PreprintFactory()
+        spam_preprint.spam_status = SpamStatus.SPAM
+        spam_preprint.save()
+        return spam_preprint
+
+    @pytest.fixture()
+    def flagged_preprint(self):
+        flagged_preprint = PreprintFactory()
+        flagged_preprint.spam_status = SpamStatus.FLAGGED
+        flagged_preprint.save()
+        return flagged_preprint
+
+    @pytest.fixture()
+    def superuser(self):
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+        return superuser
+
+    def test_no_guid(self, view):
         preprint = view.get_object()
-        nt.assert_is_none(preprint)
+        assert preprint is None
 
-    def test_get_object(self):
-        request = RequestFactory().get('/fake_path')
-        view = setup_view(self.view(), request, guid=self.preprint._id)
+    def test_get_object(self, req, preprint, plain_view):
+        view = setup_view(plain_view(), req, guid=preprint._id)
         res = view.get_object()
-        nt.assert_is_instance(res, Preprint)
+        assert isinstance(res, Preprint)
 
-    def test_no_user_permissions_raises_error(self):
-        user = AuthUserFactory()
-        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
+    def test_no_user_permissions_raises_error(self, user, preprint, plain_view):
+        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, guid=self.preprint._id)
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(request, guid=preprint._id)
 
-    def test_correct_view_permissions(self):
-        user = AuthUserFactory()
+    def test_get_flagged_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
+        request = RequestFactory().get(reverse('preprints:flagged-spam'))
+        request.user = superuser
+        response = views.PreprintFlaggedSpamList.as_view()(request)
+        assert response.status_code == 200
 
+        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        assert preprint._id not in response.context_data['preprints'][0]['id']
+        assert len(response.context_data['preprints']) == 1
+        assert flagged_preprint._id in response_ids
+        assert ham_preprint._id not in response_ids
+        assert spam_preprint._id not in response_ids
+        assert preprint._id not in response_ids
+
+    def test_get_known_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
+        request = RequestFactory().get(reverse('preprints:known-spam'))
+        request.user = superuser
+        response = views.PreprintKnownSpamList.as_view()(request)
+        assert response.status_code == 200
+
+        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        assert preprint._id not in response.context_data['preprints'][0]['id']
+        assert len(response.context_data['preprints']) == 1
+        assert flagged_preprint._id not in response_ids
+        assert ham_preprint._id not in response_ids
+        assert spam_preprint._id in response_ids
+        assert preprint._id not in response_ids
+
+    def test_get_known_ham(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
+        request = RequestFactory().get(reverse('preprints:known-ham'))
+        request.user = superuser
+        response = views.PreprintKnownHamList.as_view()(request)
+        assert response.status_code == 200
+
+        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        assert preprint._id not in response.context_data['preprints'][0]['id']
+        assert len(response.context_data['preprints']) == 1
+        assert flagged_preprint._id not in response_ids
+        assert ham_preprint._id in response_ids
+        assert spam_preprint._id not in response_ids
+        assert preprint._id not in response_ids
+
+    def test_confirm_spam(self, flagged_preprint, superuser):
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+
+        view = views.PreprintConfirmSpamView()
+        view = setup_view(view, request, guid=flagged_preprint._id)
+        view.delete(request)
+
+        assert flagged_preprint.is_public
+
+        flagged_preprint.refresh_from_db()
+        flagged_preprint.refresh_from_db()
+
+        assert flagged_preprint.is_spam
+        assert flagged_preprint.is_spam
+        assert not flagged_preprint.is_public
+
+    def test_confirm_ham(self, preprint, superuser):
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+
+        view = views.PreprintConfirmHamView()
+        view = setup_view(view, request, guid=preprint._id)
+        view.delete(request)
+
+        preprint.refresh_from_db()
+        preprint.refresh_from_db()
+
+        assert preprint.spam_status == SpamStatus.HAM
+        assert preprint.spam_status == SpamStatus.HAM
+        assert preprint.is_public
+
+    def test_correct_view_permissions(self, user, preprint, plain_view):
         view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
+        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
 
-        response = self.view.as_view()(request, guid=self.preprint._id)
-        nt.assert_equal(response.status_code, 200)
+        response = plain_view.as_view()(request, guid=preprint._id)
+        assert response.status_code == 200
 
-    def test_change_preprint_provider_no_permission(self):
-        user = AuthUserFactory()
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
+    def test_change_preprint_provider_no_permission(self, user, preprint, plain_view):
+        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, guid=self.preprint._id)
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(request, guid=preprint._id)
 
-    def test_change_preprint_provider_correct_permission(self):
-        user = AuthUserFactory()
-
+    def test_change_preprint_provider_correct_permission(self, user, preprint, plain_view):
         change_permission = Permission.objects.get(codename='change_preprint')
         view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
+        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
 
-        response = self.view.as_view()(request, guid=self.preprint._id)
-        nt.assert_equal(response.status_code, 302)
+        response = plain_view.as_view()(request, guid=preprint._id)
+        assert response.status_code == 302
 
-    def test_change_preprint_provider_form(self):
+    def test_change_preprint_provider_form(self, plain_view, preprint):
         new_provider = PreprintProviderFactory()
-        self.view.kwargs = {'guid': self.preprint._id}
+        plain_view.kwargs = {'guid': preprint._id}
         form_data = {
             'provider': new_provider.id
         }
-        form = ChangeProviderForm(data=form_data, instance=self.preprint)
-        self.view().form_valid(form)
+        form = ChangeProviderForm(data=form_data, instance=preprint)
+        plain_view().form_valid(form)
 
-        nt.assert_equal(self.preprint.provider, new_provider)
+        assert preprint.provider == new_provider
 
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintFormView:
 
-class TestPreprintFormView(AdminTestCase):
+    @pytest.fixture()
+    def view(self):
+        return views.PreprintFormView
 
-    def setUp(self):
-        super(TestPreprintFormView, self).setUp()
-        self.preprint = PreprintFactory()
-        self.view = views.PreprintFormView
-        self.user = AuthUserFactory()
-        self.url = reverse('preprints:search')
+    @pytest.fixture()
+    def url(self):
+        return reverse('preprints:search')
 
-    def test_no_user_permissions_raises_error(self):
-        request = RequestFactory().get(self.url)
-        request.user = self.user
-        with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request)
+    def test_no_user_permissions_raises_error(self, url, user, view):
+        request = RequestFactory().get(url)
+        request.user = user
+        with pytest.raises(PermissionDenied):
+            view.as_view()(request)
 
-    def test_correct_view_permissions(self):
+    def test_correct_view_permissions(self, url, user, view):
 
         view_permission = Permission.objects.get(codename='view_preprint')
-        self.user.user_permissions.add(view_permission)
-        self.user.save()
+        user.user_permissions.add(view_permission)
+        user.save()
 
-        request = RequestFactory().get(self.url)
-        request.user = self.user
+        request = RequestFactory().get(url)
+        request.user = user
 
-        response = self.view.as_view()(request)
-        nt.assert_equal(response.status_code, 200)
+        response = view.as_view()(request)
+        assert response.status_code == 200
 
-
-class TestPreprintReindex(AdminTestCase):
-    def setUp(self):
-        super(TestPreprintReindex, self).setUp()
-        self.request = RequestFactory().post('/fake_path')
-
-        self.user = AuthUserFactory()
-        self.preprint = PreprintFactory(creator=self.user)
-
+@pytest.mark.urls('admin.base.urls')
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
+class TestPreprintReindex:
     @mock.patch('website.preprints.tasks.send_share_preprint_data')
     @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
-    def test_reindex_preprint_share(self, mock_reindex_preprint):
-        self.preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
-        self.preprint.provider.save()
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    def test_reindex_preprint_share(self, mock_reindex_preprint, preprint, req):
+        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
+        preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexShare()
-        view = setup_log_view(view, self.request, guid=self.preprint._id)
-        view.delete(self.request)
+        view = setup_log_view(view, req, guid=preprint._id)
+        view.delete(req)
 
-        nt.assert_true(mock_reindex_preprint.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert mock_reindex_preprint.called
+        assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_preprint')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_preprint_elastic(self, mock_update_search, mock_bulk_update_preprints):
+    def test_reindex_preprint_elastic(self, mock_update_search, preprint, req):
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexElastic()
-        view = setup_log_view(view, self.request, guid=self.preprint._id)
-        view.delete(self.request)
+        view = setup_log_view(view, req, guid=preprint._id)
+        view.delete(req)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_preprints.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert mock_update_search.called
+        assert AdminLogEntry.objects.count() == count + 1
 
 
 class TestPreprintDeleteView(AdminTestCase):
     def setUp(self):
         super(TestPreprintDeleteView, self).setUp()
-        self.preprint = PreprintFactory()
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
         self.request = RequestFactory().post('/fake_path')
         self.plain_view = views.PreprintDeleteView
         self.view = setup_log_view(self.plain_view(), self.request,
@@ -167,38 +280,37 @@ class TestPreprintDeleteView(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view.get_object()
-        nt.assert_is_instance(obj, Preprint)
+        assert isinstance(obj, Preprint)
 
     def test_get_context(self):
         res = self.view.get_context_data(object=self.preprint)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.preprint._id)
+        assert 'guid' in res
+        assert res.get('guid') == self.preprint._id
 
     def test_remove_preprint(self):
         count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.preprint.refresh_from_db()
-        nt.assert_true(self.preprint.deleted)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.preprint.deleted is not None
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_restore_preprint(self):
         self.view.delete(self.request)
         self.preprint.refresh_from_db()
-        nt.assert_true(self.preprint.deleted)
+        assert self.preprint.deleted is not None
         count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.preprint.reload()
-        nt.assert_false(self.preprint.deleted)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.preprint.deleted is None
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user_permissions_raises_error(self):
-        user = AuthUserFactory()
         guid = self.preprint._id
         request = RequestFactory().get(self.url)
-        request.user = user
+        request.user = self.user
 
-        with nt.assert_raises(PermissionDenied):
-            self.plain_view.as_view()(request, guid=guid)
+        with pytest.raises(PermissionDenied):
+            self.plain_view.as_view()(request, guid=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
         user = AuthUserFactory()
@@ -213,7 +325,7 @@ class TestPreprintDeleteView(AdminTestCase):
         request.user = user
 
         response = self.plain_view.as_view()(request, guid=guid)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -232,8 +344,8 @@ class TestRemoveContributor(AdminTestCase):
         view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
                               user_id=self.user._id)
         preprint, user = view.get_object()
-        nt.assert_is_instance(preprint, Preprint)
-        nt.assert_is_instance(user, OSFUser)
+        assert isinstance(preprint, Preprint)
+        assert isinstance(user, OSFUser)
 
     @mock.patch('admin.preprints.views.Preprint.remove_contributor')
     def test_remove_contributor(self, mock_remove_contributor):
@@ -245,44 +357,37 @@ class TestRemoveContributor(AdminTestCase):
         mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
 
     def test_integration_remove_contributor(self):
-        nt.assert_in(self.user_2, self.preprint.contributors)
+        assert self.user_2 in self.preprint.contributors
         view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
                               user_id=self.user_2._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
-        nt.assert_not_in(self.user_2, self.preprint.contributors)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.user_2 not in self.preprint.contributors
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_do_not_remove_last_admin(self):
-        nt.assert_equal(
-            len(list(self.preprint.get_admin_contributors(self.preprint.contributors))),
-            1
-        )
+        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
         view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
                               user_id=self.user._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
         self.preprint.reload()  # Reloads instance to show that nothing was removed
-        nt.assert_equal(len(list(self.preprint.contributors)), 2)
-        nt.assert_equal(
-            len(list(self.preprint.get_admin_contributors(self.preprint.contributors))),
-            1
-        )
-        nt.assert_equal(AdminLogEntry.objects.count(), count)
+        assert len(list(self.preprint.contributors)) == 2
+        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
+        assert AdminLogEntry.objects.count() == count
 
     def test_no_log(self):
         view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
                               user_id=self.user_2._id)
         view.delete(self.request)
-        nt.assert_not_equal(self.preprint.logs.latest().action, PreprintLog.CONTRIB_REMOVED)
+        assert self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED
 
     def test_no_user_permissions_raises_error(self):
-        guid = self.preprint._id
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, guid=guid, user_id=self.user)
+        with pytest.raises(PermissionDenied):
+            self.view.as_view()(request, guid=self.preprint._id, user_id=self.user)
 
     def test_correct_view_permissions(self):
         change_permission = Permission.objects.get(codename='change_preprint')
@@ -295,7 +400,7 @@ class TestRemoveContributor(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request, guid=self.preprint._id, user_id=self.user._id)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
 
 class TestPreprintConfirmHamSpamViews(AdminTestCase):
@@ -305,20 +410,20 @@ class TestPreprintConfirmHamSpamViews(AdminTestCase):
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
 
-    def test_confirm_node_as_ham(self):
+    def test_confirm_preprint_as_ham(self):
         view = views.PreprintConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.preprint._id)
         view.delete(self.request)
 
         self.preprint.refresh_from_db()
-        nt.assert_true(self.preprint.spam_status == 4)
+        assert self.preprint.spam_status == 4
 
-    def test_confirm_node_as_spam(self):
-        nt.assert_true(self.preprint.is_public)
+    def test_confirm_preprint_as_spam(self):
+        assert self.preprint.is_public
         view = views.PreprintConfirmSpamView()
         view = setup_log_view(view, self.request, guid=self.preprint._id)
         view.delete(self.request)
 
         self.preprint.refresh_from_db()
-        nt.assert_true(self.preprint.spam_status == 2)
-        nt.assert_false(self.preprint.is_public)
+        assert self.preprint.spam_status == 2
+        assert not self.preprint.is_public

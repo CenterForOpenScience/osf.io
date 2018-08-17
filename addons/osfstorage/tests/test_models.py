@@ -653,6 +653,7 @@ class TestNodeSettingsModel(StorageTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageFileVersion, self).setUp()
@@ -670,7 +671,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.location)
         assert_true(retrieved.size)
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
-        assert_equal(retrieved.identifier, u"0")
+        assert_equal(retrieved.identifier, u'0')
         assert_true(retrieved.content_type)
         assert_true(retrieved.modified)
 
@@ -788,6 +789,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageCheckout, self).setUp()

@@ -47,5 +47,5 @@ def main():
     setup_django()
     migrate(json.loads(pargs.targets))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

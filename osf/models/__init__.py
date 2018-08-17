@@ -1,4 +1,4 @@
-from osf.models.metaschema import MetaSchema  # noqa
+from osf.models.metaschema import RegistrationSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor  # noqa
@@ -23,9 +23,9 @@ from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
 from osf.models.spam import SpamStatus, SpamMixin  # noqa
 from osf.models.subject import Subject  # noqa
-from osf.models.provider import AbstractProvider, CollectionProvider, PreprintProvider, WhitelistedSHAREPreprintProvider  # noqa
+from osf.models.provider import AbstractProvider, CollectionProvider, PreprintProvider, WhitelistedSHAREPreprintProvider, RegistrationProvider  # noqa
 from osf.models.preprint import Preprint  # noqa
-from osf.models.request import NodeRequest  # noqa
+from osf.models.request import NodeRequest, PreprintRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,
@@ -41,5 +41,5 @@ from osf.models.banner import ScheduledBanner  # noqa
 from osf.models.quickfiles import QuickFilesNode  # noqa
 from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
-from osf.models.action import NodeRequestAction, ReviewAction  # noqa
+from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa

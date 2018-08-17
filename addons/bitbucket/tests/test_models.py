@@ -111,12 +111,9 @@ class TestCallbacks(OsfTestCase):
 
         super(TestCallbacks, self).setUp()
 
-        self.project = ProjectFactory.build()
+        self.project = ProjectFactory()
         self.consolidated_auth = Auth(self.project.creator)
-        self.project.creator.save()
         self.non_authenticator = UserFactory()
-        self.non_authenticator.save()
-        self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
@@ -126,7 +123,6 @@ class TestCallbacks(OsfTestCase):
         self.project.creator.add_addon('bitbucket')
         self.external_account = BitbucketAccountFactory()
         self.project.creator.external_accounts.add(self.external_account)
-        self.project.creator.save()
         self.node_settings = self.project.get_addon('bitbucket')
         self.user_settings = self.project.creator.get_addon('bitbucket')
         self.node_settings.user_settings = self.user_settings
@@ -233,7 +229,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
@@ -245,7 +241,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(

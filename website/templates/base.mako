@@ -140,6 +140,16 @@
     ${self.content_wrap()}
 
 % if not user_id:
+<div id="cookieBanner" class="alert">
+    <div id="cookieText">
+        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+        see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
+        and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
+    </div>
+    <div id="cookieAccept">
+        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    </div>
+</div>
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
@@ -205,7 +215,9 @@
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
+                osfURL: ${ osf_url if osf_url.endswith('/') else osf_url + '/' | sjson, n },
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
+                mfrURL: ${ mfr_url if mfr_url.endswith('/') else mfr_url + '/' | sjson, n },
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
@@ -226,6 +238,7 @@
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
+                csrfCookieName: ${ csrf_cookie_name | sjson, n },
             });
         </script>
 

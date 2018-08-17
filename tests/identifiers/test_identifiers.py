@@ -39,7 +39,7 @@ class TestMetadataGeneration(OsfTestCase):
     # This test is not used as datacite is currently used for nodes, leaving here for future reference
     def test_datacite_metadata_for_preprint_has_correct_structure(self):
         provider = PreprintProviderFactory()
-        license =  NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
+        license =  NodeLicense.objects.get(name='CC-By Attribution 4.0 International')
         license_details = {
             'id': license.license_id,
             'year': '2017',

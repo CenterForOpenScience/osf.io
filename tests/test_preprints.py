@@ -838,6 +838,7 @@ class TestPermissionMethods:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, preprint, user, auth):
@@ -1247,15 +1248,19 @@ class TestContributorOrdering:
         assert list(preprint.get_preprintcontributor_order()) == new_order
 
 
+@pytest.mark.enable_implicit_clean
 class TestDOIValidation:
 
-    def test_validate_bad_doi(self):
+    def test_validate_bad_doi(self, preprint):
         with pytest.raises(ValidationError):
-            Preprint(article_doi='nope').save()
+            preprint.article_doi = 'nope'
+            preprint.save()
         with pytest.raises(ValidationError):
-            Preprint(article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+            preprint.article_doi = 'https://dx.doi.org/10.123.456'
+            preprint.save()  # should save the bare DOI, not a URL
         with pytest.raises(ValidationError):
-            Preprint(article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+            preprint.article_doi = 'doi:10.10.1038/nwooo1170'
+            preprint.save() # should save without doi: prefix
 
     def test_validate_good_doi(self, preprint):
         doi = '10.11038/nwooo1170'
@@ -1800,7 +1805,7 @@ class TestPreprintIdentifiers(OsfTestCase):
         ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
         assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
-
+@pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()

@@ -40,6 +40,7 @@ pytestmark = pytest.mark.django_db
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
@@ -570,6 +571,7 @@ class TestWikiDelete(OsfTestCase):
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
 
+@pytest.mark.enable_implicit_clean
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
@@ -759,6 +761,7 @@ class TestWikiLinks(OsfTestCase):
         )
 
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
@@ -1305,6 +1308,7 @@ class TestPublicWiki(OsfTestCase):
 
         assert_equal(data, expected)
 
+@pytest.mark.enable_bookmark_creation
 class TestWikiMenu(OsfTestCase):
 
     def setUp(self):

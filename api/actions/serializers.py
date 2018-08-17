@@ -13,7 +13,7 @@ from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from osf.exceptions import InvalidTriggerError
-from osf.models import Preprint, NodeRequest
+from osf.models import Preprint, NodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
@@ -206,9 +206,22 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         target_class=NodeRequest,
         read_only=False,
         required=True,
-        related_view='requests:node-request-detail',
+        related_view='requests:request-detail',
         related_view_kwargs={'request_id': '<target._id>'},
     )
 
     permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
+
+
+class PreprintRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'preprint-request-actions'
+
+    target = TargetRelationshipField(
+        target_class=PreprintRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )

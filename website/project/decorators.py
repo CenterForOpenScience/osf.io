@@ -185,6 +185,15 @@ def must_be_registration(func):
     return wrapped
 
 
+def check_can_download_preprint_file(user, node):
+    """View helper that returns whether a given user can download unpublished preprint files.
+     :rtype: boolean
+    """
+    if not isinstance(node, Preprint):
+        return False
+    return user.has_perm('view_submissions', node.provider)
+
+
 def check_can_access(node, user, key=None, api_node=None):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
@@ -194,6 +203,10 @@ def check_can_access(node, user, key=None, api_node=None):
     """
     if user is None:
         return False
+    if request.args.get('action', '') == 'download':
+        if check_can_download_preprint_file(user, node):
+            return True
+
     if not node.can_view(Auth(user=user)) and api_node != node:
         if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)

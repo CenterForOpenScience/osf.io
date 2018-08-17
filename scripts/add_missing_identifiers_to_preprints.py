@@ -34,7 +34,7 @@ def add_identifiers_to_preprints(dry_run=True):
             identifiers = utils.request_identifiers(preprint)
             identifiers_added += 1
 
-            logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
+            logger.info('Requested DOI for Preprint with guid {} from service {}'.format(preprint._id, preprint.provider.name))
             time.sleep(1)
         else:
             logger.info('Dry run - would have created identifier for preprint {} from service {}'.format(preprint._id, preprint.provider.name))
@@ -59,6 +59,6 @@ def run_main(dry_run=True):
     with transaction.atomic():
         main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     run_main(dry_run=dry_run)

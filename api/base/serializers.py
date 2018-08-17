@@ -118,7 +118,7 @@ class ShowIfVersion(ConditionalField):
     or not before the feature's latest supported version.
     """
 
-    def __init__(self, field, min_version, max_version, **kwargs):
+    def __init__(self, field, min_version=None, max_version=None, **kwargs):
         super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
@@ -186,9 +186,21 @@ class HideIfPreprint(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class NoneIfWithdrawal(ConditionalField):
+    """
+    If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
+    """
+
+    def should_hide(self, instance):
+        return instance.is_retracted
+
+    def should_be_none(self, instance):
+        return True
+
+
 class HideIfWithdrawal(ConditionalField):
     """
-    If registration or preprint is withdrawn, this field will return None.
+    If registration is withdrawn, this field will return None.
     """
 
     def should_hide(self, instance):
@@ -197,19 +209,21 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+
 class HideIfNotWithdrawal(ConditionalField):
 
     def should_hide(self, instance):
         return not instance.is_retracted
 
+
 class HideIfWikiDisabled(ConditionalField):
     """
-    If wiki is disabled, don't show relationship field, only available in version 2.8
+    If wiki is disabled, don't show relationship field, only available after 2.7
     """
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, '2.8', '2.8') and not instance.has_addon('wiki')
+        return not utils.is_deprecated(request.version, min_version='2.8') and not instance.has_addon('wiki')
 
 
 class HideIfNotNodePointerLog(ConditionalField):
@@ -1343,7 +1357,12 @@ class JSONAPISerializer(BaseAPISerializer):
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                data['attributes'][field.field_name] = None
+                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                    # if this is a RelationshipField, serialize as a null relationship
+                    data['relationships'][field.field_name] = {'data': None}
+                else:
+                    # otherwise, serialize as an null attribute
+                    data['attributes'][field.field_name] = None
             else:
                 try:
                     if hasattr(field, 'child_relation'):

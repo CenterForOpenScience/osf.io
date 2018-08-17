@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 import requests
-import urlparse
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -13,7 +12,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect, render
 
-from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
@@ -130,7 +128,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
+        kwargs['logo'] = preprint_provider.get_asset_url('square_color_no_transparent')
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
@@ -352,6 +350,8 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
             raise ValueError('Cannot update share_source or access_token because one or the other already exists')
         if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
             raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
+        if not preprint_provider.get_asset_url('square_color_no_transparent'):
+            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
 
         debug_prepend = ''
         if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
@@ -366,7 +366,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
                     'attributes': {
                         'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
                         'longTitle': debug_prepend + preprint_provider.name,
-                        'iconUrl': '{}{}{}/square_color_no_transparent.png'.format(settings.OSF_URL, osf_settings.PREPRINTS_ASSETS, preprint_provider._id)
+                        'iconUrl': preprint_provider.get_asset_url('square_color_no_transparent')
                     }
                 }
             },

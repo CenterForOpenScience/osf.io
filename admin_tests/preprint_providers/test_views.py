@@ -2,6 +2,7 @@ import json
 from io import StringIO
 
 import mock
+import pytest
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -203,6 +204,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         nt.assert_equal(new_provider.advisory_board, stripped_advisory_board)
 
 
+@pytest.mark.enable_implicit_clean
 class TestPreprintProviderExportImport(AdminTestCase):
     def setUp(self):
         super(TestPreprintProviderExportImport, self).setUp()

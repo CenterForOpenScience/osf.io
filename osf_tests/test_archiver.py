@@ -38,7 +38,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
-from osf.models import MetaSchema, Registration
+from osf.models import RegistrationSchema, Registration
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -312,7 +312,7 @@ def generate_schema_from_data(data):
             ]
         }]
     }
-    schema = MetaSchema(
+    schema = RegistrationSchema(
         name=_schema['name'],
         schema_version=_schema['version'],
         schema=_schema
@@ -325,7 +325,7 @@ def generate_schema_from_data(data):
         # reason. Update the doc currently in the db rather than saving a new
         # one.
 
-        schema = MetaSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
+        schema = RegistrationSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
 
@@ -410,7 +410,7 @@ class TestStorageAddonBase(ArchiverTestCase):
         if '/1234567' in url:
             return dict(data=self.tree_child)
         return dict(data=self.tree_root)
- 
+
     @responses.activate
     def _test__get_file_tree(self, addon_short_name):
         for path in self.URLS:
@@ -1240,6 +1240,7 @@ class TestArchiverBehavior(OsfTestCase):
             listeners.archive_callback(reg)
         assert_equal(mock_update_search.call_count, 1)
 
+    @pytest.mark.enable_search
     @mock.patch('website.search.elastic_search.delete_doc')
     @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):
