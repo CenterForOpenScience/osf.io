@@ -182,7 +182,7 @@ class TestPreprintDetail:
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
+        assert res.json['data']['links']['preprint_doi'] == 'https://doi.org/{}'.format(
             expected_doi)
         assert res.json['data']['attributes']['preprint_doi_created']
 
@@ -519,7 +519,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi == new_doi
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == 'https://dx.doi.org/{}'.format(
+        assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
             new_doi)
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):

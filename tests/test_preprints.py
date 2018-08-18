@@ -2060,7 +2060,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 
