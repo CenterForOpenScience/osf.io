@@ -117,11 +117,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
+    provider = PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    ))
+    )
 
     files = NoneIfWithdrawal(RelationshipField(
         related_view='nodes:node-storage-providers',
