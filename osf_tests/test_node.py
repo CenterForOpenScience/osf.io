@@ -3534,7 +3534,7 @@ class TestOnNodeUpdate:
     @mock.patch('website.project.tasks.requests')
     @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
-    
+
         graph = format_registration(component_registration)
 
         parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
