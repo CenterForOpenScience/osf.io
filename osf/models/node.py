@@ -33,7 +33,7 @@ from osf.models.contributor import (Contributor, get_contributor_permissions)
 from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin,
+from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
                                NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -176,7 +176,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
         return self.get_queryset().can_view(user=user, private_link=private_link)
 
 
-class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
+class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
                    ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
     """
@@ -321,10 +321,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
+    groups = {
+        'read': ('read_node',),
+        'write': ('read_node', 'write_node',),
+        'admin': ('read_node', 'write_node', 'admin_node',)
+    }
+    group_format = 'node_{self.id}_{group}'
 
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
+        permissions = (
+            ('read_node', 'Can read the node'),
+            ('write_node', 'Can edit the node'),
+            ('admin_node', 'Can manage the node'),
+        )
 
     objects = AbstractNodeManager()
 
@@ -1835,6 +1846,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.bulk_update_search(batch)
                 children = children[99:]
 
+        if first_save:
+            self.update_group_permissions()
+            self.add_contributor(self.creator, permissions='admin', visible=True, log=False, save=True)
+
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
@@ -2244,19 +2259,13 @@ def remove_addons(auth, resource_object_list):
 
 
 ##### Signal listeners #####
-@receiver(post_save, sender=Node)
-@receiver(post_save, sender='osf.QuickFilesNode')
-def add_creator_as_contributor(sender, instance, created, **kwargs):
-    if created:
-        Contributor.objects.get_or_create(
-            user=instance.creator,
-            node=instance,
-            visible=True,
-            read=True,
-            write=True,
-            admin=True
-        )
-
+# @receiver(post_save, sender=Node)
+# @receiver(post_save, sender='osf.QuickFilesNode')
+# def add_creator_as_contributor(sender, instance, created, **kwargs):
+#     if created:
+#         # TODO after data migration to move node contributors into django groups,
+#         # remove read, write, and admin columns from the Contributor table
+#         instance.add_contributor(instance.creator, permissions='admin', visible=True, log=False, save=True)
 
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
@@ -2292,7 +2301,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
 
-
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 @receiver(post_save, sender='osf.QuickFilesNode')
@@ -2311,3 +2319,11 @@ def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if not instance.root:
         instance.root = instance.get_root()
         instance.save()
+
+#
+# @receiver(post_save, sender=Node)
+# @receiver(post_save, sender='osf.Registration')
+# @receiver(post_save, sender='osf.QuickFilesNode')
+# def create_permission_groups(sender, instance, created, **kwargs):
+#     if created:
+#         instance.update_group_permissions()
