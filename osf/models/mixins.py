@@ -921,13 +921,7 @@ class ContributorMixin(models.Model):
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-            if not isinstance(permissions, basestring):
-                # Currently node permissions are passed in as a list
-                for perm in permissions:
-                    setattr(contributor_obj, perm, True)
-            else:
-                # Preprint permissions passed in as a string
-                self.add_permission(contrib_to_add, permissions, save=True)
+            self.add_permission(contrib_to_add, permissions, save=True)
             contributor_obj.save()
 
             if log:
@@ -1436,14 +1430,11 @@ class ContributorMixin(models.Model):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        contributor = user.contributor_set.get(node=self)
-        if not getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, True)
-            contributor.save()
+        if not self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
+            permission_group.user_set.add(user)
         else:
-            if getattr(contributor, permission, False):
-                raise ValueError('User already has permission {0}'.format(permission))
+            raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
 

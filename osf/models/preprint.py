@@ -899,24 +899,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
     # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def add_permission(self, user, permission, save=False):
-        """Grant permission to a user.
-
-        :param User user: User to grant permission to
-        :param str permission: Permission to grant
-        :param bool save: Save changes
-        :raises: ValueError if user already has permission
-        """
-        if not self.belongs_to_permission_group(user, permission):
-            permission_group = self.get_group(permission)
-            permission_group.user_set.add(user)
-        else:
-            raise ValueError('User already has permission {0}'.format(permission))
-        if save:
-            self.save()
-
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
