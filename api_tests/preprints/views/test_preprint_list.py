@@ -38,31 +38,31 @@ def build_preprint_create_payload(
         attrs = {}
 
     payload = {
-        "data": {
-            "attributes": attrs,
-            "relationships": {},
-            "type": "preprints"
+        'data': {
+            'attributes': attrs,
+            'relationships': {},
+            'type': 'preprints'
         }
     }
     if node_id:
-        payload['data']['relationships']["node"] = {
-            "data": {
-                "type": "node",
-                "id": node_id
+        payload['data']['relationships']['node'] = {
+            'data': {
+                'type': 'node',
+                'id': node_id
             }
         }
     if provider_id:
-        payload['data']['relationships']["provider"] = {
-            "data": {
-                "type": "provider",
-                "id": provider_id
+        payload['data']['relationships']['provider'] = {
+            'data': {
+                'type': 'provider',
+                'id': provider_id
             }
         }
     if file_id:
-        payload['data']['relationships']["primary_file"] = {
-            "data": {
-                "type": "primary_file",
-                "id": file_id
+        payload['data']['relationships']['primary_file'] = {
+            'data': {
+                'type': 'primary_file',
+                'id': file_id
             }
         }
     return payload
@@ -108,11 +108,11 @@ class TestPreprintCreateWithoutNode:
                     'category': 'data',
                     'public': False,
                 },
-                "relationships": {
-                    "provider": {
-                        "data": {
-                            "id": provider._id,
-                            "type": "providers"}}}}}
+                'relationships': {
+                    'provider': {
+                        'data': {
+                            'id': provider._id,
+                            'type': 'providers'}}}}}
 
     def test_create_preprint_logged_in(
             self, app, user_one, url, preprint_payload):

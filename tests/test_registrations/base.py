@@ -5,7 +5,7 @@ from django.utils import timezone
 from framework.auth import Auth
 
 from osf.utils import permissions
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
@@ -26,7 +26,7 @@ class RegistrationsTestBase(OsfTestCase):
         )
         self.non_contrib = AuthUserFactory()
 
-        self.meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+        self.meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
@@ -37,8 +37,8 @@ class RegistrationsTestBase(OsfTestCase):
             }
         )
 
-        current_month = timezone.now().strftime("%B")
-        current_year = timezone.now().strftime("%Y")
+        current_month = timezone.now().strftime('%B')
+        current_year = timezone.now().strftime('%Y')
 
         valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
@@ -46,7 +46,7 @@ class RegistrationsTestBase(OsfTestCase):
             u'registrationChoice': 'embargo'
         }
         self.invalid_embargo_date_payload = {
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            u'embargoEndDate': u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),

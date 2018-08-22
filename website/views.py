@@ -186,9 +186,6 @@ def find_bookmark_collection(user):
 def dashboard(auth):
     return redirect('/')
 
-@ember_flag_is_active('ember_support_page')
-def support():
-    return {}
 
 @must_be_logged_in
 @ember_flag_is_active('ember_my_projects_page')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Migration script for Search-enabled Models.'''
+"""Migration script for Search-enabled Models."""
 from __future__ import absolute_import
 from math import ceil
 

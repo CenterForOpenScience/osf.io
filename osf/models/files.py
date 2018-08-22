@@ -66,10 +66,6 @@ class UnableToResolveFileClass(Exception):
     pass
 
 
-class DeprecatedException(Exception):
-    pass
-
-
 class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """Base class for all provider-specific file models and the trashed file model.
     This class should generally not be used or created manually. Use the provider-specific
@@ -637,7 +633,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save(update_modified=False)
+            self.save()
 
         return self
 
