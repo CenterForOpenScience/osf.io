@@ -196,7 +196,7 @@
                 web: ${ node['url'] | sjson, n },
                 update: ${ node['update_url'] | sjson, n },
                 waterbutler: ${node['waterbutler_url']| sjson, n },
-                mfr: ${ node['mfr_url'] if node['mfr_url'].endswith('/') else node['mfr_url'] + '/' | sjson, n }
+                mfr: ${ node['mfr_url'].rstrip('/') + '/'| sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
