@@ -2,6 +2,7 @@
 import urllib
 import furl
 import urlparse
+from distutils.version import StrictVersion
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
@@ -189,7 +190,9 @@ def has_admin_scope(request):
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
-    if min_version and request_version < min_version or max_version and request_version > max_version:
+    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(min_version)
+    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(max_version)
+    if min_version_deprecated or max_version_deprecated:
         return True
     return False
 

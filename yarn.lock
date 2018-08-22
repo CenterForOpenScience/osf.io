@@ -6,6 +6,10 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.1.0.tgz#2a4379633409205047e723e21cd818560a29ab45"
 
+"@centerforopenscience/markdown-it-atrules@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-atrules/-/markdown-it-atrules-0.1.0.tgz#73c6c9a3a818330201c3c15cd3a5796d3619ca9b"
+
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"

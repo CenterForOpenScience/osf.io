@@ -339,7 +339,6 @@ class OsfStorageFileSerializer(FileSerializer):
     filterable_fields = frozenset([
         'id',
         'name',
-        'target',
         'kind',
         'path',
         'size',

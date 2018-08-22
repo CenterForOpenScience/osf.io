@@ -348,7 +348,7 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 ####################
 #   Identifiers   #
 ###################
-DOI_URL_PREFIX = 'https://dx.doi.org/'
+DOI_URL_PREFIX = 'https://doi.org/'
 
 # General Format for DOIs
 DOI_FORMAT = '{prefix}/osf.io/{guid}'

@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.152.0 (2018-08-21)
+====================
+
+- Use markdown-it-atrules for Wiki embeds.
+- Remove unused submissions.js.
+- Use preferred https://doi.org/ domain for DOI urls.
+
 0.151.0 (2018-08-13)
 ====================
 
