@@ -2,6 +2,19 @@
 Changelog
 *********
 
+0.151.0 (2018-08-13)
+====================
+
+- APIv2: Add Node Settings endpoint.
+- APIv2: Add employers and eductional_institutions to user serializer.
+- APIv2: Add endpoints for account export and deactivation requests.
+- APIv2: Retrieve/delete user external identities.
+- Move addon max file size limits to settings files.
+- APIv2: Generalize metaschema models and endpoints. /metaschemas/ is now deprecated. Use /schemas/registrations/ instead.
+- Upgrade flake8 and associated packages.
+- Add pre-commit.
+- Add logging to daily keen scripts.
+
 0.150.0 (2018-08-01)
 ====================
 
@@ -1522,7 +1535,7 @@ secondary email.
 ===================
 
 - All projects, regardless of their category (Hypothesis, Methods and
-		Measures, etc.), can have subprojects within them.
+  Measures, etc.), can have subprojects within them.
 - Add buttons on Account Settings page to request exporting account data and
 deactivating account.
 
@@ -1641,7 +1654,7 @@ removed.
 - Significant UI changes sitewide, esp. with navbar, project navigation, project overview widgets, project
 organizer.
 - New filebrowser. Replace HGrid with treebeard. Affects project organizer,
-	files viewer, and conference poster view.
+  files viewer, and conference poster view.
 - Use the waterbutler service for handling all storage addon CRUD.
 
 0.23.0 (2015-01-16)

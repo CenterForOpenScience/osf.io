@@ -1,18 +1,20 @@
 from api.base.views import DeprecatedView
 from api.schemas import views
-from api.schemas.serializers import DeprecatedMetaSchemaSerializer
+from api.schemas.serializers import DeprecatedMetaSchemaSerializer, DeprecatedRegistrationMetaSchemaSerializer
 
 
 class DeprecatedRegistrationMetaSchemaList(DeprecatedView, views.RegistrationSchemaList):
     max_version = '2.8'
     view_category = 'registration-metaschemas'
     view_name = 'registration-schema-detail'
+    serializer_class = DeprecatedRegistrationMetaSchemaSerializer
 
 
 class DeprecatedRegistrationMetaSchemaDetail(DeprecatedView, views.RegistrationSchemaDetail):
     max_version = '2.8'
     view_category = 'registration-metaschemas'
     view_name = 'registration-schema-detail'
+    serializer_class = DeprecatedRegistrationMetaSchemaSerializer
 
 
 class DeprecatedMetaSchemasList(DeprecatedView, views.RegistrationSchemaList):
