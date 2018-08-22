@@ -115,6 +115,7 @@ class TestQuickFilesNode:
         assert stored_files.count() == 2
         for stored_file in stored_files:
             assert stored_file.target == quickfiles
+            assert stored_file.parent.target == quickfiles
 
     def test_quickfiles_moves_files_on_triple_merge_with_name_conflict(self, user, quickfiles):
         name = 'Woo.pdf'
