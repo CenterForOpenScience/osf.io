@@ -12,7 +12,6 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_doi_metadata_on_change
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
     try:
-        update_doi_metadata_on_change(preprint._id, status=status)
+        preprint.request_identifier_update(category='doi', status=status)
     except HTTPError as err:
         sentry.log_exception()
         sentry.log_message(err.args[0])
