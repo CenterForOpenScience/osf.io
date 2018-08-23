@@ -14,7 +14,7 @@ from framework.auth import get_or_create_user
 
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
-from website.settings import OSF_SUPPORT_EMAIL
+from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -108,6 +108,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 mail=WELCOME_OSF4I,
                 mimetype='html',
                 user=user,
+                domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL
             )
 
