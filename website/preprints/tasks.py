@@ -44,14 +44,11 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
 
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
-    if preprint.is_published and not preprint.get_identifier('doi'):
-        request_identifiers(preprint)
-    else:
-        try:
-            update_doi_metadata_on_change(preprint._id, status=status)
-        except HTTPError as err:
-            sentry.log_exception()
-            sentry.log_message(err.args[0])
+    try:
+        update_doi_metadata_on_change(preprint._id, status=status)
+    except HTTPError as err:
+        sentry.log_exception()
+        sentry.log_message(err.args[0])
 
 def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     task = get_task_from_postcommit_queue(

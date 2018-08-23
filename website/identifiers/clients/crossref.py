@@ -13,6 +13,7 @@ from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
 CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
@@ -220,6 +221,7 @@ class CrossRefClient(AbstractIdentifierClient):
             doi = self.build_doi(preprint)
             filename = doi.split('/')[-1]
             username, password = self.get_credentials()
+            logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
             requests.request(
