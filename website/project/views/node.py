@@ -775,8 +775,8 @@ def _view_project(node, auth, primary=False,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
             'storage_location': node.osfstorage_region.name,
-            'waterbutler_url': node.osfstorage_region.waterbutler_url
-
+            'waterbutler_url': node.osfstorage_region.waterbutler_url,
+            'mfr_url': node.osfstorage_region.mfr_url
         },
         'parent_node': {
             'exists': parent is not None,
