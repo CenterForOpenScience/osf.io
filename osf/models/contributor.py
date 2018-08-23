@@ -22,8 +22,8 @@ class AbstractBaseContributor(models.Model):
 
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '
-                'read={self.read}, write={self.write}, admin={self.admin}, '
-                'visible={self.visible}'
+                'visible={self.visible}, '
+                'permission={self.permission}, '
                 ')>').format(self=self)
 
     class Meta:
@@ -35,11 +35,22 @@ class AbstractBaseContributor(models.Model):
 
     @property
     def permission(self):
-        if self.admin:
+        # Checking group membership instead of permissions since unregistered
+        # contributors technically have no permissions
+        node_id = self.node.id
+        user = self.user
+        read = 'node_{}_read'.format(node_id)
+        write = 'node_{}_write'.format(node_id)
+        admin = 'node_{}_admin'.format(node_id)
+        user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+        if admin in user_groups:
             return 'admin'
-        if self.write:
+        elif write in user_groups:
             return 'write'
-        return 'read'
+        elif read in user_groups:
+            return 'read'
+        else:
+            return None
 
 
 class Contributor(AbstractBaseContributor):

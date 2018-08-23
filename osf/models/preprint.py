@@ -114,9 +114,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
-    # Setting for ContributorMixin
-    DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
-
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -412,33 +409,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return self.verified_publishable
         else:
             return self.can_view(auth=auth)
-
-    # Overrides ContributorMixin entirely
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def has_permission(self, user, permission):
-        """Check whether user has permission.
-        :param User user: User to test
-        :param str permission: Required permission
-        :returns: User has required permission
-        """
-        if not user:
-            return False
-        return user.has_perm('{}_preprint'.format(permission), self)
-
-    # Overrides ContributorMixin entirely
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
-        if isinstance(user, PreprintContributor):
-            user = user.user
-
-        if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
-            if self.get_group('admin').user_set.count() <= 1:
-                raise PreprintStateError('Must have at least one registered admin contributor')
-        self.clear_permissions(user)
-        self.add_permission(user, permissions)
-        if save:
-            self.save()
 
     def get_addons(self):
         # Override for ContributorMixin, Preprints don't have addons
@@ -893,40 +863,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             user and ((self.has_permission(user, 'write') and self.has_submitted_preprint) or self.has_permission(user, 'admin'))
         )
 
-    def belongs_to_permission_group(self, user, permission):
-        # Override for contributormixin
-        return self.get_group(permission).user_set.filter(id=user.id).exists()
-
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def remove_permission(self, user, permission, save=False):
-        """Revoke permission from a user.
-
-        :param User user: User to revoke permission from
-        :param str permission: Permission to revoke
-        :param bool save: Save changes
-        :raises: ValueError if user does not have permission
-        """
-        if self.belongs_to_permission_group(user, permission):
-            permission_group = self.get_group(permission)
-            permission_group.user_set.remove(user)
-        else:
-            raise ValueError('User does not have permission {0}'.format(permission))
-        if save:
-            self.save()
-
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def clear_permissions(self, user):
-        for name in self.groups.keys():
-            if user.groups.filter(name=self.get_group(name)).exists():
-                self.remove_permission(user, name)
-
-    def expand_permissions(self, permission=None):
-        # Property needed for ContributorMixin
-        # Preprint contributor methods don't require a list ['read', 'write'], they
-        # just use highest permission, 'write'
-        return permission
-
     def get_contributor_order(self):
         # Method needed for ContributorMixin
         return self.get_preprintcontributor_order()
@@ -934,24 +870,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def set_contributor_order(self, contributor_ids):
         # Method needed for ContributorMixin
         return self.set_preprintcontributor_order(contributor_ids)
-
-    # Overrides replace_contributor since users needed to be added to groups
-    def replace_contributor(self, old, new):
-        res = super(Preprint, self).replace_contributor(old, new)
-
-        for group_name in self.groups.keys():
-            if self.belongs_to_permission_group(old, group_name):
-                self.get_group(group_name).user_set.remove(old)
-                self.get_group(group_name).user_set.add(new)
-        return res
-
-    # Overrides ContributorMixin since this query is constructed differently
-    def _get_admin_contributors_query(self, users):
-        return PreprintContributor.objects.select_related('user').filter(
-            preprint=self,
-            user__in=users,
-            user__is_active=True,
-            user__groups=(self.get_group('admin').id))
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):

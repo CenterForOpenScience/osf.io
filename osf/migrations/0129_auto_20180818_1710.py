@@ -20,4 +20,8 @@ class Migration(migrations.Migration):
             name='preprint',
             options={'permissions': (('view_preprint', 'Can view preprint details in the admin app'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
         ),
+        migrations.AlterModelOptions(
+            name='node',
+            options={'permissions': (('view_node', 'Can view node details'), ('read_node', 'Can read the node'), ('write_node', 'Can edit the node'), ('admin_node', 'Can manage the node'))},
+        ),
     ]
