@@ -6,8 +6,8 @@ WRITE = 'write'
 ADMIN = 'admin'
 # NOTE: Ordered from most-restrictive to most permissive
 PERMISSIONS = [READ, WRITE, ADMIN]
-CREATOR_PERMISSIONS = [READ, WRITE, ADMIN]
-DEFAULT_CONTRIBUTOR_PERMISSIONS = [READ, WRITE]
+CREATOR_PERMISSIONS = ADMIN
+DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
 # Permissions for ReviewableProviderMixin(GuardianMixin)
 REVIEW_PERMISSIONS = (

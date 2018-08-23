@@ -26,7 +26,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.exceptions import NodeStateError
@@ -797,6 +797,8 @@ class ContributorMixin(models.Model):
     class Meta:
         abstract = True
 
+    DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
+
     @property
     def log_class(self):
         # PreprintLog or NodeLog, for example
@@ -827,14 +829,6 @@ class ContributorMixin(models.Model):
         # default contributor email template as a string
         raise NotImplementedError()
 
-    def expand_permissions(self):
-        # Transforms the permissions into the form the contributor methods expect
-        raise NotImplementedError()
-
-    def belongs_to_permission_group(self, user, permission):
-        # Boolean, whether the user belongs to this permission get_group
-        raise NotImplementedError()
-
     def get_addons(self):
         raise NotImplementedError()
 
@@ -849,9 +843,6 @@ class ContributorMixin(models.Model):
     @property
     def admin_contributor_ids(self):
         return self._get_admin_contributor_ids(include_self=True)
-
-    def clear_permissions(self, user):
-        return
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on the object."""
@@ -871,12 +862,19 @@ class ContributorMixin(models.Model):
         return (each.user for each in self._get_admin_contributors_query(users))
 
     def _get_admin_contributors_query(self, users):
-        return self.contributor_class.objects.select_related('user').filter(
-            node=self,
-            user__in=users,
-            user__is_active=True,
-            admin=True
-        )
+        Preprint = apps.get_model('osf.Preprint')
+
+        query_dict = {
+            'user__in': users,
+            'user__is_active': True,
+            'user__groups': self.get_group('admin').id
+        }
+        if isinstance(self, Preprint):
+            query_dict['preprint'] = self
+        else:
+            query_dict['node'] = self
+
+        return self.contributor_class.objects.select_related('user').filter(**query_dict)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -1075,6 +1073,9 @@ class ContributorMixin(models.Model):
         return contributor_obj
 
     def replace_contributor(self, old, new):
+        """
+        Replacing unregistered ontributor with a verified user
+        """
         try:
             contrib_obj = self.contributor_set.get(user=old)
         except self.contributor_class.DoesNotExist:
@@ -1086,6 +1087,11 @@ class ContributorMixin(models.Model):
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
+
+        for group_name in self.groups.keys():
+            if self.belongs_to_permission_group(old, group_name):
+                self.get_group(group_name).user_set.remove(old)
+                self.get_group(group_name).user_set.add(new)
         return True
 
     # TODO: optimize me
@@ -1102,23 +1108,21 @@ class ContributorMixin(models.Model):
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
-            permissions = self.expand_permissions(permission=permission)
             admins = OSFUser.objects.filter(id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
             if not admins.count() > 1:
                 # has only one admin
                 admin = admins.first()
-                if (admin == user or getattr(admin, 'user', None) == user) and ADMIN not in permissions:
+                if (admin == user or getattr(admin, 'user', None) == user) and ADMIN != permission:
                     error_msg = '{} is the only admin.'.format(user.fullname)
                     raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
                     'User {0} not in contributors'.format(user.fullname)
                 )
-            if (isinstance(permissions, list) and set(permissions) != set(self.get_permissions(user))) or (
-                    isinstance(permissions, basestring) and not self.get_group(permissions).user_set.filter(id=user.id).exists()):
-                self.set_permissions(user, permissions, save=False)
+            if not self.get_group(permission).user_set.filter(id=user.id).exists():
+                self.set_permissions(user, permission, save=False)
                 permissions_changed = {
-                    user._id: permissions
+                    user._id: permission
                 }
                 params = self.log_params
                 params['contributors'] = permissions_changed
@@ -1278,12 +1282,11 @@ class ContributorMixin(models.Model):
                         'User {0} not in contributors'.format(user.fullname)
                     )
 
-                permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
+                permission = user_dict.get('permission', None)
                 if not self.belongs_to_permission_group(user, permission):
                     # Validate later
-                    permissions = self.expand_permissions(permission)
-                    self.set_permissions(user, permissions, validate=False, save=False)
-                    permissions_changed[user._id] = permissions
+                    self.set_permissions(user, permission, validate=False, save=False)
+                    permissions_changed[user._id] = permission
 
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
@@ -1408,17 +1411,19 @@ class ContributorMixin(models.Model):
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.
-
         :param User user: User to test
         :param str permission: Required permission
         :returns: User has required permission
         """
+        Preprint = apps.get_model('osf.Preprint')
+        object_type = 'preprint' if isinstance(self, Preprint) else 'node'
+
         if not user:
             return False
-        query = {'node': self, permission: True}
-        has_permission = user.contributor_set.filter(**query).exists()
-        if not has_permission and permission == 'read' and check_parent:
-            return self.is_admin_parent(user)
+        has_permission = user.has_perm('{}_{}'.format(permission, object_type), self)
+        if object_type == 'node':
+            if not has_permission and permission == 'read' and check_parent:
+                return self.is_admin_parent(user)
         return has_permission
 
     # TODO: Remove save parameter
@@ -1443,24 +1448,22 @@ class ContributorMixin(models.Model):
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
-                                 reduce_permissions(permissions) != ADMIN):
-            admin_contribs = self.contributor_class.objects.filter(node=self, admin=True)
-            if admin_contribs.count() <= 1:
+        if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
+            if self.get_group('admin').user_set.count() <= 1:
                 raise NodeStateError('Must have at least one registered admin contributor')
-
-        contrib_obj = self.contributor_class.objects.get(node=self, user=user)
-
-        for permission_level in [READ, WRITE, ADMIN]:
-            if permission_level in permissions:
-                setattr(contrib_obj, permission_level, True)
-            else:
-                setattr(contrib_obj, permission_level, False)
-        contrib_obj.save()
+        self.clear_permissions(user)
+        self.add_permission(user, permissions)
         if save:
             self.save()
 
-    # TODO: Remove save parameter
+    def clear_permissions(self, user):
+        for name in self.groups.keys():
+            if user.groups.filter(name=self.get_group(name)).exists():
+                self.remove_permission(user, name)
+
+    def belongs_to_permission_group(self, user, permission):
+        return self.get_group(permission).user_set.filter(id=user.id).exists()
+
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
@@ -1469,11 +1472,9 @@ class ContributorMixin(models.Model):
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        contributor = user.contributor_set.get(node=self)
-        if getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, False)
-            contributor.save()
+        if self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
+            permission_group.user_set.remove(user)
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
