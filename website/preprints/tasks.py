@@ -13,7 +13,6 @@ from framework import sentry
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
 from website.identifiers.tasks import update_doi_metadata_on_change
-from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 

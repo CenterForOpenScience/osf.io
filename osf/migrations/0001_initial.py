@@ -5,9 +5,8 @@ from __future__ import unicode_literals
 import dirtyfields.dirtyfields
 from django.conf import settings
 from django.contrib.admin.models import LogEntry
-from django.contrib.auth.models import Group, Permission
 import django.contrib.postgres.fields
-from django.db import migrations, models, connection
+from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 import osf.models.admin_log_entry
