@@ -341,10 +341,10 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.preprints.tasks.update_doi_metadata_on_change')
-    def test_update_or_create_preprint_identifiers_called(self, mock_update_doi):
+    def test_update_or_create_preprint_identifiers_called(self):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
-        update_or_create_preprint_identifiers(published_preprint)
+        with mock.patch.object(published_preprint, 'request_identifier_update') as mock_update_doi:
+            update_or_create_preprint_identifiers(published_preprint)
         assert mock_update_doi.called
         assert mock_update_doi.call_count == 1
 
