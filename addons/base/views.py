@@ -42,7 +42,7 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.util import rubeus, api_url_for
+from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -280,7 +280,12 @@ def get_auth(auth, **kwargs):
         waterbutler_settings = None
         if provider_name == 'osfstorage':
             if path and version:
-                fileversion = FileVersion.objects.get(basefilenode___id=path.strip('/'), identifier=version)
+                try:
+                    fileversion = FileVersion.objects.get(
+                        basefilenode___id=path.strip('/'), identifier=version
+                    ).select_related('region')
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
             # path and no version, use most recent version
             elif path:
                 osf_file = OsfStorageFile.objects.get(_id=path.strip('/'))
@@ -288,16 +293,10 @@ def get_auth(auth, **kwargs):
             if fileversion:
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
-                waterbutler_settings = dict(region.waterbutler_settings, **{
-                    'nid': node_id,
-                    'rootId': provider_settings.root_node._id,
-                    'baseUrl': api_url_for(
-                        'osfstorage_get_metadata',
-                        guid=provider_settings.owner._id,
-                        _absolute=True,
-                        _internal=True
-                    ),
-                })
+                waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                    node_id=provider_settings.owner._id,
+                    root_id=provider_settings.root_node._id,
+                )
         # If they haven't been set by version region, use the NodeSettings region
         if not (credentials and waterbutler_settings):
             credentials = provider_settings.serialize_waterbutler_credentials()
