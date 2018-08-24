@@ -40,13 +40,10 @@ def private_node_one(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private One')
     private_node_one.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_one
 
@@ -79,12 +76,10 @@ def private_node_two(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private Two')
     private_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_two
 
@@ -99,12 +94,10 @@ def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = ProjectFactory(
         is_public=True, creator=admin, title='Public One')
     public_node_one.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_one
 
@@ -135,12 +128,10 @@ def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = ProjectFactory(
         is_public=True, creator=admin, title='Public Two')
     public_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_two
 

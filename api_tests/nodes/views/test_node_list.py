@@ -1141,7 +1141,7 @@ class TestNodeFiltering:
             self, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
-        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        project_one.add_contributor(user_two, 'write', save=True)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
@@ -1153,7 +1153,7 @@ class TestNodeFiltering:
         preprint_one.save()
 
         project_two = ProjectFactory(creator=user_one, is_public=True)
-        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        project_two.add_contributor(user_two, 'write', save=True)
         preprint_two = PreprintFactory(creator=user_one, project=project_two)
         preprint_two.date_withdrawn = timezone.now()
         preprint_two.ever_public = True
@@ -1192,7 +1192,7 @@ class TestNodeFiltering:
             self, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
-        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        project_one.add_contributor(user_two, 'write', save=True)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
@@ -1204,7 +1204,7 @@ class TestNodeFiltering:
         preprint_one.save()
 
         project_two = ProjectFactory(creator=user_one, is_public=True)
-        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        project_two.add_contributor(user_two, 'write', save=True)
         preprint_two = PreprintFactory(creator=user_one, project=project_two)
         preprint_two.date_withdrawn = timezone.now()
         preprint_two.ever_public = True
@@ -1486,7 +1486,7 @@ class TestNodeCreate:
             self, app, user_one, user_two, title, category):
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_contributor(
-            user_two, permissions=[permissions.READ], save=True)
+            user_two, permissions=permissions.READ, save=True)
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
             API_BASE, parent_project._id)
         component_data = {
@@ -1539,7 +1539,7 @@ class TestNodeCreate:
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
             fullname='far', email='foo@bar.baz',
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user=user_one), save=True)
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
             API_BASE, parent_project._id)
@@ -2372,9 +2372,9 @@ class TestNodeBulkUpdate:
             title, private_payload, url):
         read_contrib = AuthUserFactory()
         private_project_one.add_contributor(
-            read_contrib, permissions=[permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         private_project_two.add_contributor(
-            read_contrib, permissions=[permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         res = app.put_json_api(
             url, private_payload,
             auth=read_contrib.auth,
@@ -2736,9 +2736,9 @@ class TestNodeBulkPartialUpdate:
             title, private_payload, url):
         read_contrib = AuthUserFactory()
         private_project_one.add_contributor(
-            read_contrib, permissions=[permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         private_project_two.add_contributor(
-            read_contrib, permissions=[permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         res = app.patch_json_api(
             url, private_payload, auth=read_contrib.auth,
             expect_errors=True, bulk=True)
@@ -3347,7 +3347,7 @@ class TestNodeBulkDelete:
             private_payload, url,
             user_one_private_project_url):
         user_one_private_project.add_contributor(
-            user_two, permissions=[permissions.READ], save=True)
+            user_two, permissions=permissions.READ, save=True)
         res = app.delete_json_api(
             url, private_payload,
             auth=user_two.auth,

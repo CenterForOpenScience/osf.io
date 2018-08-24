@@ -364,7 +364,7 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
         read_user = AuthUserFactory()
         self.node.add_contributor(
-            read_user, permissions=[READ], auth=self.auth)
+            read_user, permissions=READ, auth=self.auth)
         res = self.app.patch_json_api(
             self.setting_detail_url,
             {'data': {
@@ -565,7 +565,7 @@ class NodeAddonFolderMixin(object):
         wrong_type = self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
@@ -1165,7 +1165,7 @@ class TestNodeForwardAddon(
         wrong_type = self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,

@@ -341,11 +341,11 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
-        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions='admin')
         self.private_project = ProjectFactory(is_public=False)
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
-        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions='admin')
         self.public_project.save()
         self.private_project.save()
 
@@ -530,7 +530,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
         contrib = UserFactory()
-        self.public_project.add_contributor(contrib, auth=Auth(self.public_project.creator), permissions=['read', 'write'])
+        self.public_project.add_contributor(contrib, auth=Auth(self.public_project.creator), permissions='write')
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
@@ -544,7 +544,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
         contrib = UserFactory()
-        self.private_project.add_contributor(contrib, auth=Auth(self.private_project.creator), permissions=['read', 'write'])
+        self.private_project.add_contributor(contrib, auth=Auth(self.private_project.creator), permissions='write')
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
@@ -567,9 +567,9 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
-        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions='admin')
         self.private_project = ProjectFactory(is_public=False)
-        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions='admin')
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
         self.public_project.save()

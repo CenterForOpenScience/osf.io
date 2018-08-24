@@ -488,10 +488,14 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             user = self.context['request'].user
             if user.is_anonymous:
                 return ['read']
-            permissions = obj.get_permissions(user=user)
-            if not permissions:
-                permissions = ['read']
-            return permissions
+            all_perms = ['read', 'write', 'admin']
+            user_perms = []
+            for p in all_perms:
+                if obj.has_permission(user, p):
+                    user_perms.append(p)
+            if not user_perms:
+                user_perms = ['read']
+            return user_perms
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
@@ -673,8 +677,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             for contributor in parent.contributor_set.exclude(user=user):
                 contributors.append({
                     'user': contributor.user,
-                    'permissions': parent.get_permissions(contributor.user),
-                    'visible': contributor.visible,
+                    'permissions': contributor.permission,
+                    'visible': contributor.visible
                 })
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
@@ -1075,7 +1079,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     email_preferences = ['default', 'false']
 
     def get_proposed_permissions(self, validated_data):
-        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if not user_id and not full_name:

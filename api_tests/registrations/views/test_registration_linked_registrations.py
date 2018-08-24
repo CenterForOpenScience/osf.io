@@ -37,7 +37,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             self.rw_contributor, auth=Auth(self.admin_contributor))
         public_node.add_contributor(
             self.read_contributor,
-            permissions=['read'],
+            permissions='read',
             auth=Auth(self.admin_contributor))
         public_node.add_pointer(
             self.public_linked_registration,
@@ -57,7 +57,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             auth=Auth(self.admin_contributor))
         private_node.add_contributor(
             self.read_contributor,
-            permissions=['read'],
+            permissions='read',
             auth=Auth(self.admin_contributor))
         private_node.add_pointer(
             self.public_linked_registration,

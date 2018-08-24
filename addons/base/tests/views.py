@@ -123,7 +123,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         user.save()
 
         node = ProjectFactory(creator=self.user)
-        node.add_contributor(user, permissions=[permissions.READ], auth=self.auth, save=True)
+        node.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
@@ -162,7 +162,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
     def test_get_config_unauthorized(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         user = AuthUserFactory()
-        self.project.add_contributor(user, permissions=[permissions.READ], auth=self.auth, save=True)
+        self.project.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
         res = self.app.get(url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 

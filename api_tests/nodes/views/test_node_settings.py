@@ -24,8 +24,8 @@ def read_contrib():
 @pytest.fixture()
 def project(admin_contrib, write_contrib, read_contrib):
     project = ProjectFactory(creator=admin_contrib)
-    project.add_contributor(write_contrib, ['write', 'read'])
-    project.add_contributor(read_contrib, ['read'])
+    project.add_contributor(write_contrib, 'write')
+    project.add_contributor(read_contrib, 'read')
     project.save()
     return project
 

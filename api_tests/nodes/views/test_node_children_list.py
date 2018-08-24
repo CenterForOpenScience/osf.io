@@ -27,10 +27,7 @@ class TestNodeChildrenList:
         private_project = ProjectFactory()
         private_project.add_contributor(
             user,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE
-            ]
+            permissions=permissions.WRITE
         )
         private_project.save()
         return private_project
@@ -211,7 +208,7 @@ class TestNodeChildCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user), save=True
         )
         res = app.post_json_api(
@@ -284,9 +281,7 @@ class TestNodeChildCreate:
         write_contrib = AuthUserFactory()
         project.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
 
@@ -429,7 +424,7 @@ class TestNodeChildrenBulkCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user),
             save=True)
         res = app.post_json_api(
@@ -481,9 +476,7 @@ class TestNodeChildrenBulkCreate:
         write_contrib = AuthUserFactory()
         project.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
 
