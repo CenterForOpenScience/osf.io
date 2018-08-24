@@ -99,9 +99,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_read)
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_read)
 
     #   test_return_public_project_details_contributor_logged_in
         res = app.get(url_public, auth=user.auth)
@@ -111,9 +109,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_admin)
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_admin)
 
     #   test_return_public_project_details_non_contributor_logged_in
         res = app.get(url_public, auth=user_two.auth)
@@ -123,9 +119,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_read)
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_read)
 
     #   test_return_private_project_details_logged_in_admin_contributor
         res = app.get(url_private, auth=user.auth)
@@ -135,9 +129,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_admin)
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_admin)
 
     #   test_return_private_project_details_logged_out
         res = app.get(url_private, expect_errors=True)
@@ -402,7 +394,7 @@ class TestNodeDetail:
     def test_node_shows_correct_forks_count_including_private_forks(self, app, user, project_private, url_private, user_two):
         project_private.add_contributor(
             user_two,
-            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            permissions=permissions.ADMIN,
             auth=Auth(user)
         )
         url = url_private + '?related_counts=true'
@@ -572,7 +564,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                                      institution_one, institution_two):
         project_private.add_contributor(
             user_two,
-            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            permissions=permissions.ADMIN,
             auth=Auth(project_private.creator)
         )
         affiliated_institutions = {
@@ -625,7 +617,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         non_admin = AuthUserFactory()
         project_private.add_contributor(
             non_admin,
-            permissions=(permissions.READ, permissions.WRITE),
+            permissions=permissions.WRITE,
             auth=Auth(project_private.creator)
         )
         project_private.save()
@@ -645,9 +637,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             admin_user = AuthUserFactory()
             project_private.add_contributor(
                 admin_user,
-                permissions=(permissions.READ,
-                             permissions.WRITE,
-                             permissions.ADMIN),
+                permissions=permissions.ADMIN,
                 auth=Auth(project_private.creator))
             project_private.save()
             res = app.patch_json_api(
@@ -1176,7 +1166,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects
         write_contrib = AuthUserFactory()
-        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
+        project_public.add_contributor(write_contrib, permissions=permissions.WRITE, auth=Auth(user), save=True)
 
         assert not project_public.subjects.filter(_id=subject._id).exists()
         update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
@@ -1200,7 +1190,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
         # test_admin_can_set_subjects
         admin_contrib = AuthUserFactory()
-        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
+        project_public.add_contributor(admin_contrib, permissions=permissions.ADMIN, auth=Auth(user), save=True)
 
         assert not project_public.subjects.filter(_id=subject._id).exists()
         update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
@@ -1255,7 +1245,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_private_node_logged_in_read_only_contributor(
             self, app, user_two, project_private, url_private):
         project_private.add_contributor(
-            user_two, permissions=[permissions.READ])
+            user_two, permissions=permissions.READ)
         project_private.save()
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
@@ -1829,7 +1819,7 @@ class TestNodeUpdateLicense:
         node.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=['read'])
+            permissions=permissions.READ)
         node.save()
         return node
 

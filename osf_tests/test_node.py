@@ -1640,7 +1640,7 @@ class TestPermissions:
 
     def test_default_contributor_permissions(self, project):
         user = UserFactory()
-        project.add_contributor(user, permissions=['read'], auth=Auth(user=project.creator))
+        project.add_contributor(user, permissions='read', auth=Auth(user=project.creator))
         project.save()
         assert set(['read']) == set(self.project.get_permissions(user))
 

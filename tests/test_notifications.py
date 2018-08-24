@@ -40,7 +40,7 @@ class TestNotificationsModels(OsfTestCase):
     def test_has_permission_on_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
-        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.add_contributor(contributor=non_admin_user, permissions='read')
         parent.save()
 
         node = factories.NodeFactory(parent=parent, category='project')
@@ -56,7 +56,7 @@ class TestNotificationsModels(OsfTestCase):
     def test_check_user_has_permission_excludes_deleted_components(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
-        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.add_contributor(contributor=non_admin_user, permissions='read')
         parent.save()
 
         node = factories.NodeFactory(parent=parent, category='project')
@@ -73,7 +73,7 @@ class TestNotificationsModels(OsfTestCase):
     def test_check_user_does_not_have_permission_on_private_node_child(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
-        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.add_contributor(contributor=non_admin_user, permissions='read')
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
         sub_component = factories.NodeFactory(parent=node)
@@ -85,7 +85,7 @@ class TestNotificationsModels(OsfTestCase):
     def test_check_user_child_node_permissions_false_if_no_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
-        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.add_contributor(contributor=non_admin_user, permissions='read')
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
 
@@ -501,7 +501,7 @@ class TestRemoveContributor(OsfTestCase):
         super(OsfTestCase, self).setUp()
         self.project = factories.ProjectFactory()
         self.contributor = factories.UserFactory()
-        self.project.add_contributor(contributor=self.contributor, permissions=['read'])
+        self.project.add_contributor(contributor=self.contributor, permissions='read')
         self.project.save()
 
         self.subscription = NotificationSubscription.objects.get(
@@ -510,7 +510,7 @@ class TestRemoveContributor(OsfTestCase):
         )
 
         self.node = factories.NodeFactory(parent=self.project)
-        self.node.add_contributor(contributor=self.project.creator, permissions=['read', 'write', 'admin'])
+        self.node.add_contributor(contributor=self.project.creator, permissions='admin')
         self.node.save()
 
         self.node_subscription = NotificationSubscription.objects.get(
@@ -1072,9 +1072,9 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_serialize_node_level_event_that_adopts_parent_settings(self):
         user = factories.UserFactory()
-        self.project.add_contributor(contributor=user, permissions=['read'])
+        self.project.add_contributor(contributor=user, permissions='read')
         self.project.save()
-        self.node.add_contributor(contributor=user, permissions=['read'])
+        self.node.add_contributor(contributor=user, permissions='read')
         self.node.save()
 
         # set up how it was in original test - remove existing subscriptions
@@ -1275,8 +1275,8 @@ class TestMoveSubscription(NotificationTestCase):
         self.file_sub.save()
 
     def test_separate_users(self):
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         subbed, removed = utils.separate_users(
             self.private_node, [self.user_2._id, self.user_3._id, self.user_4._id]
@@ -1287,8 +1287,8 @@ class TestMoveSubscription(NotificationTestCase):
     def test_event_subs_same(self):
         self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
@@ -1296,8 +1296,8 @@ class TestMoveSubscription(NotificationTestCase):
     def test_event_nodes_same(self):
         self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.project)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
@@ -1312,7 +1312,7 @@ class TestMoveSubscription(NotificationTestCase):
 
     def test_move_sub_with_none(self):
         # Attempt to reproduce an error that is seen when moving files
-        self.project.add_contributor(self.user_2, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_2, permissions='write', auth=self.auth)
         self.project.save()
         self.file_sub.none.add(self.user_2)
         self.file_sub.save()
@@ -1323,17 +1323,17 @@ class TestMoveSubscription(NotificationTestCase):
         # One user doesn't have permissions on the node the sub is moved to. Should be listed.
         self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
     def test_remove_one_user_warn_another(self):
         # Two users do not have permissions on new node, but one has a project sub. Both should be listed.
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
         self.private_node.save()
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.project.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
@@ -1346,9 +1346,9 @@ class TestMoveSubscription(NotificationTestCase):
 
     def test_warn_user(self):
         # One user with a project sub does not have permission on new node. User should be listed.
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
         self.private_node.save()
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.project.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
@@ -1359,9 +1359,9 @@ class TestMoveSubscription(NotificationTestCase):
         assert_in(self.user_3, self.sub.email_digest.all())  # Is not removed from the project subscription.
 
     def test_user_node_subbed_and_not_removed(self):
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
@@ -1372,8 +1372,8 @@ class TestMoveSubscription(NotificationTestCase):
     def test_garrulous_event_name(self):
         self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
-        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_2, permissions='admin', auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions='write', auth=self.auth)
         self.private_node.save()
         results = utils.users_to_remove('complicated/path_to/some/file/ASDFASDF.txt_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)

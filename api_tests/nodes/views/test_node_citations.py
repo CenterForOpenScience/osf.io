@@ -48,15 +48,15 @@ def private_project(
     private_project = ProjectFactory(creator=admin_contributor)
     private_project.add_contributor(
         write_contrib,
-        permissions=['read', 'write'],
+        permissions='write',
         auth=Auth(admin_contributor))
     private_project.add_contributor(
         read_contrib,
-        permissions=['read'],
+        permissions='read',
         auth=Auth(admin_contributor))
     private_project.add_contributor(
         disabled_contrib,
-        permissions=['read'],
+        permissions='read',
         auth=Auth(admin_contributor))
     private_project.custom_citation = 'Test Citation Text'
     private_project.save()

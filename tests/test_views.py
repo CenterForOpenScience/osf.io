@@ -826,7 +826,7 @@ class TestProjectViews(OsfTestCase):
         non_admin = AuthUserFactory()
         node.add_contributor(
             non_admin,
-            permissions=['read', 'write'],
+            permissions='write',
             save=True,
         )
 
@@ -2814,7 +2814,7 @@ class TestPointerViews(OsfTestCase):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
                                      auth=Auth(self.project.creator),
-                                     permissions=[permissions.READ])
+                                     permissions=permissions.READ)
 
         self._make_pointer_only_user_can_see(user2, self.project)
         self.project.save()
@@ -2837,7 +2837,7 @@ class TestPointerViews(OsfTestCase):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
                                      auth=Auth(self.project.creator),
-                                     permissions=[permissions.READ])
+                                     permissions=permissions.READ)
         self.project.save()
 
         res = self.app.get(url, auth=user2.auth).maybe_follow()
@@ -4499,7 +4499,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_with_contributors_read_write(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.add_contributor(non_admin, permissions='write')
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
@@ -4516,7 +4516,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_with_contributors_read(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read'])
+        self.project.add_contributor(non_admin, permissions='read')
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth, expect_errors=True)

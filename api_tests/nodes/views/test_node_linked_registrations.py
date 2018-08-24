@@ -50,7 +50,7 @@ class LinkedRegistrationsTestCase:
             auth=Auth(user_admin_contrib))
         node_private.add_contributor(
             user_read_contrib,
-            permissions=['read'],
+            permissions='read',
             auth=Auth(user_admin_contrib))
         node_private.add_pointer(registration, auth=Auth(user_admin_contrib))
         return node_private
@@ -327,7 +327,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         registration.add_contributor(
             user_admin_contrib,
             auth=Auth(registration.creator),
-            permissions=['read'])
+            permissions='read')
         registration.save()
         res = make_request(
             node_id=node_private._id,

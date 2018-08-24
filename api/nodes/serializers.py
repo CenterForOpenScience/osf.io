@@ -1,5 +1,4 @@
 from django.db import connection
-from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -480,25 +479,17 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
-        request_version = self.context['request'].version
-        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
-        if hasattr(obj, 'contrib_admin'):
-            if obj.contrib_admin:
-                return ['admin', 'write', 'read']
-            elif obj.contrib_write:
-                return ['write', 'read']
-            elif obj.contrib_read:
-                return ['read']
-            else:
-                return default_perm
-        else:
-            user = self.context['request'].user
-            if user.is_anonymous:
-                return default_perm
-            permissions = obj.get_permissions(user=user) or default_perm
-            if not permissions and user in obj.parent_admin_contributors:
-                permissions += ['read']
-            return permissions
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return ['read']
+        all_perms = ['read', 'write', 'admin']
+        user_perms = []
+        for p in all_perms:
+            if obj.has_permission(user, p):
+                user_perms.append(p)
+        if not user_perms:
+            user_perms = ['read']
+        return user_perms
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
@@ -677,7 +668,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             for contributor in parent.contributor_set.exclude(user=user):
                 contributors.append({
                     'user': contributor.user,
-                    'permissions': parent.get_permissions(contributor.user),
+                    'permissions': contributor.permission,
                     'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
@@ -1079,7 +1070,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     email_preferences = ['default', 'false']
 
     def get_proposed_permissions(self, validated_data):
-        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if not user_id and not full_name:

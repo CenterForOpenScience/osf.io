@@ -338,34 +338,34 @@ class TestGetReadableDescendants(OsfTestCase):
         userB = UserFactory(fullname='User B')
 
         project1 = ProjectFactory(creator=self.user, title='One')
-        project1.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
-        project1.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        project1.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        project1.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         component2 = ProjectFactory(creator=self.user, title='Two')
-        component2.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component2.add_contributor(userA, auth=Auth(self.user), permissions='read')
 
         component3 = ProjectFactory(creator=self.user, title='Three')
-        component3.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
-        component3.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        component3.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        component3.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         component4 = ProjectFactory(creator=self.user, title='Four')
-        component4.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        component4.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         component5 = ProjectFactory(creator=self.user, title='Five')
-        component5.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        component5.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         component6 = ProjectFactory(creator=self.user, title='Six')
-        component6.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component6.add_contributor(userA, auth=Auth(self.user), permissions='read')
 
         component7 = ProjectFactory(creator=self.user, title='Seven')
-        component7.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component7.add_contributor(userA, auth=Auth(self.user), permissions='read')
 
         component8 = ProjectFactory(creator=self.user, title='Eight')
-        component8.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
-        component8.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        component8.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        component8.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         component9 = ProjectFactory(creator=self.user, title='Nine')
-        component9.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+        component9.add_contributor(userB, auth=Auth(self.user), permissions='read')
 
         project1.add_pointer(component2, Auth(self.user))
         NodeRelation.objects.create(parent=project1, child=component4)

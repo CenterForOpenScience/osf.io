@@ -41,10 +41,10 @@ class DraftRegistrationTestCase:
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
-            permissions=[permissions.WRITE])
+            permissions=permissions.WRITE)
         project_public.add_contributor(
             user_read_contrib,
-            permissions=[permissions.READ])
+            permissions=permissions.READ)
         project_public.save()
         return project_public
 

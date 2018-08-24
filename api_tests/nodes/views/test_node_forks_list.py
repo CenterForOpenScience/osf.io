@@ -34,7 +34,7 @@ class TestNodeForksList:
     def private_project(self, user, pointer):
         private_project = ProjectFactory()
         private_project.add_contributor(
-            user, permissions=[permissions.READ, permissions.WRITE])
+            user, permissions=permissions.WRITE)
         private_project.add_pointer(pointer, auth=Auth(user), save=True)
         private_project.save()
         return private_project
@@ -411,7 +411,7 @@ class TestNodeForkCreate:
 
         private_project.add_contributor(
             read_contrib,
-            permissions=[permissions.READ], save=True)
+            permissions=permissions.READ, save=True)
         res = app.post_json_api(
             private_project_url, fork_data,
             auth=read_contrib.auth)

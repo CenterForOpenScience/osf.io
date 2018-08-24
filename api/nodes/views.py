@@ -8,6 +8,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
+from guardian.shortcuts import get_objects_for_user
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -225,8 +226,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                has_permission = nodes.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
-                return Node.objects.filter(guids___id__in=has_permission)
+                write_user_query = Q(id__in=get_objects_for_user(auth.user, 'write_node', Node.objects.filter(Q(contributor__user_id=auth.user.id))))
+                return Node.objects.filter(write_user_query)
 
             for node in nodes:
                 if not node.can_edit(auth):
@@ -404,14 +405,16 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         if field_name == 'bibliographic':
             operation['source_field_name'] = 'visible'
 
+    # Overrides NodeContributorsList
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permission':
             if operation['op'] != 'eq':
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
+            query_val = operation['value'].lower().strip()
+            if query_val not in PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(**{operation['value'].lower().strip(): True})
+            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
         return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
