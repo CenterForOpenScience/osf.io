@@ -73,10 +73,10 @@ class NodeOptimizationMixin(object):
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
         contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
-            contrib_read=Subquery(contribs.values('read')[:1])).annotate(
-            contrib_write=Subquery(contribs.values('write')[:1])).annotate(
-            contrib_admin=Subquery(contribs.values('admin')[:1])).annotate(
-            has_wiki_addon=Exists(wiki_addon)).annotate(
-            annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField())).annotate(
-            annotated_tags=ArrayAgg('tags__name')).annotate(
+            contrib_read=Subquery(contribs.values('read')[:1]),
+            contrib_write=Subquery(contribs.values('write')[:1]),
+            contrib_admin=Subquery(contribs.values('admin')[:1]),
+            has_wiki_addon=Exists(wiki_addon),
+            annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
+            annotated_tags=ArrayAgg('tags__name'),
             has_admin_scope=Value(admin_scope, output_field=BooleanField()))

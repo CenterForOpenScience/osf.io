@@ -356,7 +356,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def quick_parent_id(self):
+    def get_parent_id(self):
         """
         Optimization property. If node has been annotated with "annotated_parent_id"
         in a queryset, use that value.  Otherwise, fetch the parent_node guid.
@@ -369,7 +369,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return None
 
     @property
-    def quick_tags(self):
+    def get_tags(self):
         """
         Optimization property. If node has been annotated with "annotated_tags"
         in a queryset, use that value.  Otherwise, fetch the parent_node guid.
