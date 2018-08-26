@@ -20,7 +20,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
-from osf.utils.permissions import expand_permissions, ADMIN
+from osf.utils.permissions import ADMIN
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -193,7 +193,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
         contribs.append({
             'user': contributor,
             'visible': visible,
-            'permissions': expand_permissions(contrib_dict.get('permission'))
+            'permissions': contrib_dict.get('permission')
         })
     return contribs
 

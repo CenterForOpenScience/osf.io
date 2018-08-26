@@ -119,8 +119,7 @@ class TestViewOnlyLinksUpdate:
     @pytest.fixture()
     def public_project(self, public_project_admin, public_project):
         public_project.add_contributor(
-            public_project_admin, permissions=[
-                permissions.ADMIN])
+            public_project_admin, permissions=permissions.ADMIN)
         return public_project
 
     @pytest.fixture()

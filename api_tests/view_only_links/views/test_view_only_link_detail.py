@@ -34,7 +34,7 @@ class TestViewOnlyLinksDetail:
         public_project.add_contributor(
             read_only_user, permissions=permissions.READ)
         public_project.add_contributor(
-            read_write_user, permissions=[permissions.WRITE])
+            read_write_user, permissions=permissions.WRITE)
         public_project.save()
         return public_project
 

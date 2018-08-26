@@ -905,11 +905,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         models.Contributor.objects.create(
             node=self.node,
             user=user,
-            admin=True,
-            write=True,
-            read=True,
             visible=True
         )
+        self.node.add_permission(user, 'admin')
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)

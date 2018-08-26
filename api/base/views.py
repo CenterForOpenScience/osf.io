@@ -536,7 +536,6 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-
         return (
             self.get_node().linked_nodes
             .filter(is_deleted=False)
@@ -544,6 +543,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             .exclude(region=None)
             .exclude(type='osf.collection', region=None)
             .can_view(user=auth.user, private_link=auth.private_link)
+            .distinct('id', 'modified')
             .order_by('-modified')
         )
 

@@ -1014,11 +1014,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         help_text='Whether the user will be included in citations for this node or not.',
         default=True,
     )
-    permission = ser.ChoiceField(
-        choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-        default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
-        help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".',
-    )
+    permission = ser.ChoiceField(choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
+                                 default=osf_permissions.WRITE,
+                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
     unregistered_contributor = ser.SerializerMethodField()
 
     links = LinksField({

@@ -7,7 +7,7 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import ADMIN
 
 from website import settings
 
@@ -224,9 +224,9 @@ class TestRegisterNode:
 
         # Share the project and some nodes
         user2 = factories.UserFactory()
-        project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
-        shared_component.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
-        shared_subproject.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        project.add_contributor(user2, permissions=ADMIN)
+        shared_component.add_contributor(user2, permissions=ADMIN)
+        shared_subproject.add_contributor(user2, permissions=ADMIN)
 
         # Partial contributor registers the node
         registration = factories.RegistrationFactory(project=project, user=user2)
@@ -254,7 +254,7 @@ class TestRegisterNode:
     def test_registered_user(self, project):
         # Add a second contributor
         user2 = factories.UserFactory()
-        project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        project.add_contributor(user2, permissions=ADMIN)
         # Second contributor registers project
         registration = factories.RegistrationFactory(parent=project, user=user2)
         assert registration.registered_user == user2

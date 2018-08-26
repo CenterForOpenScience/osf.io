@@ -175,15 +175,12 @@ class NodeFileCollector(object):
         in each descendant branch.
         """
         new_branches = []
-        Contributor = apps.get_model('osf.Contributor')
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
-        has_write_perm_sqs = Contributor.objects.filter(node=OuterRef('pk'), write=True, user=self.auth.user)
         descendants_qs = (
             node._nodes
             .filter(is_deleted=False)
             .annotate(is_linked_node=Exists(linked_node_sqs))
-            .annotate(has_write_perm=Exists(has_write_perm_sqs))
             .order_by('_parents')
         )
 

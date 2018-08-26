@@ -47,6 +47,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -691,11 +692,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # Skip quickfiles
             if node.is_quickfiles:
                 continue
+            user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
-                user_permissions = node.get_permissions(user)
-                self_permissions = node.get_permissions(self)
-                permissions = max([user_permissions, self_permissions])
+                self_perms = Contributor(node=node, user=self).permission
+                permissions = API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(user_perms), API_CONTRIBUTOR_PERMISSIONS.index(self_perms))]
                 node.set_permissions(user=self, permissions=permissions)
 
                 visible1 = self._id in node.visible_contributor_ids
@@ -706,6 +707,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 node.contributor_set.filter(user=user).delete()
             else:
                 node.contributor_set.filter(user=user).update(user=self)
+                node.add_permission(self, user_perms)
+                node.remove_permission(user, user_perms)
 
             node.save()
 
@@ -1556,11 +1559,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
-            alternate_admins = Contributor.objects.select_related('user').filter(
-                node=node,
-                user__is_active=True,
-                admin=True,
-            ).exclude(user=self)
+            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group('admin')).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(

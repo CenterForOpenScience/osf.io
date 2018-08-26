@@ -63,9 +63,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
     def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
-        Contributor.objects.create(user=unconfirmed_user, node=self.registration)
+        contrib = Contributor.objects.create(user=unconfirmed_user, node=self.registration)
         self.registration.add_permission(unconfirmed_user, 'admin', save=True)
-        assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, 'admin')
 
         embargo = self.registration._initiate_embargo(
             self.user,
@@ -1005,7 +1005,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Initiate and approve embargo
         for i in range(3):
             c = AuthUserFactory()
-            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+            self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
         self.registration.save()
         self.registration.embargo_registration(
             self.user,
@@ -1039,7 +1039,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Initiate and approve embargo
         for i in range(3):
             c = AuthUserFactory()
-            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+            self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
         self.registration.save()
         self.registration.embargo_registration(
             self.user,

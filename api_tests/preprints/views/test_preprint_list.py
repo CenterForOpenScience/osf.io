@@ -477,7 +477,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
 
     def test_read_user_on_supplemental_node(self):
-        self.public_project.set_permissions(self.other_user, ['read'], save=True)
+        self.public_project.set_permissions(self.other_user, 'read', save=True)
         assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)

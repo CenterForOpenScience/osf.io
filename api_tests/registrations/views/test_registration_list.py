@@ -1343,11 +1343,9 @@ class TestRegistrationBulkUpdate:
             self, app, user, registration_one, registration_two, public_payload, url):
         read_contrib = AuthUserFactory()
         registration_one.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         registration_two.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
 
         res = app.put_json_api(
             url,

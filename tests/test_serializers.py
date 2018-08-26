@@ -125,21 +125,21 @@ class TestNodeSerializers(OsfTestCase):
         user = UserFactory()
         admin_project = ProjectFactory()
         admin_project.add_contributor(user, auth=Auth(admin_project.creator),
-                                      permissions=permissions.expand_permissions(permissions.ADMIN))
+                                      permissions='admin')
         admin_project.save()
 
         admin_component = NodeFactory(parent=admin_project)
         admin_component.add_contributor(user, auth=Auth(admin_component.creator),
-                                        permissions=permissions.expand_permissions(permissions.ADMIN))
+                                        permissions='admin')
         admin_component.save()
 
         read_and_write = NodeFactory(parent=admin_project)
         read_and_write.add_contributor(user, auth=Auth(read_and_write.creator),
-                                       permissions=permissions.expand_permissions(permissions.WRITE))
+                                       permissions='write')
         read_and_write.save()
         read_only = NodeFactory(parent=admin_project)
         read_only.add_contributor(user, auth=Auth(read_only.creator),
-                                  permissions=permissions.expand_permissions(permissions.READ))
+                                  permissions='read')
         read_only.save()
 
         non_contributor = NodeFactory(parent=admin_project)

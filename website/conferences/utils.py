@@ -55,7 +55,7 @@ def prepare_contributors(admins):
     return [
         {
             'user': admin,
-            'permissions': ['read', 'write', 'admin'],
+            'permissions': 'admin',
             'visible': False,
         }
         for admin in admins

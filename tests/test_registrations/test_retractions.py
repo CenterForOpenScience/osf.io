@@ -52,7 +52,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         unconfirmed_user = UnconfirmedUserFactory()
         Contributor.objects.create(node=self.registration, user=unconfirmed_user)
         self.registration.add_permission(unconfirmed_user, 'admin', save=True)
-        assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, 'admin')
 
         retraction = self.registration._initiate_retraction(self.user)
         assert_true(self.user._id in retraction.approval_state)

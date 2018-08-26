@@ -23,6 +23,7 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
+from guardian.shortcuts import get_perms, get_objects_for_user
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -131,13 +132,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            if isinstance(user, OSFUser):
-                user = user.pk
-            if not isinstance(user, int):
-                raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
-
-            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
-            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
+            read_user_query = get_objects_for_user(user, 'read_node', self.filter(Q(contributor__user_id=user.id)))
+            qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -154,9 +150,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            """], params=(user, ))
-
-        return qs
+            """], params=(user.id, ))
+        return qs.distinct('id', 'modified')
 
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
@@ -803,6 +798,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    def get_permissions(self, user):
+        # Overrides guardian mixin
+        return list(set(get_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -1830,8 +1829,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if first_save:
             self.update_group_permissions()
             if not isinstance(self, Registration):
-                self.add_contributor(self.creator, permissions='admin', visible=True, log=False, save=True)
-
+                Contributor.objects.get_or_create(
+                    user=self.creator,
+                    node=self,
+                    visible=True,
+                )
+                self.add_permission(self.creator, 'admin')
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
