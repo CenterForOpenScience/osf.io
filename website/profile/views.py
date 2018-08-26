@@ -11,6 +11,9 @@ import mailchimp
 
 from framework import sentry
 from framework.auth import utils as auth_utils
+from framework.auth import cas
+from framework.auth import logout as osf_logout
+from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.decorators import must_be_confirmed
@@ -280,6 +283,8 @@ def user_profile(auth, **kwargs):
 def user_account(auth, **kwargs):
     user = auth.user
     user_addons = addon_utils.get_addons_by_config_type('user', user)
+    if 'password_reset' in request.query_string:
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return {
         'user_id': user._id,
@@ -315,13 +320,20 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         if user.verification_key_v2:
             user.verification_key_v2['expires'] = timezone.now()
-        user.save()
     except ChangePasswordError as error:
         for m in error.messages:
             push_status_message(m, kind='warning', trust=False)
     else:
-        push_status_message('Password updated successfully.', kind='success', trust=False)
-
+        # new verification key (v1) for CAS
+        user.verification_key = generate_verification_key(verification_type=None)
+        user.save()
+        # We have to logout the user so all CAS sessions are invalid
+        osf_logout()
+        return redirect(cas.get_login_url(
+            web_url_for('user_account', _absolute=True) + '?password_reset=True',
+            username=user.username,
+            verification_key=user.verification_key,
+        ))
     user.save()
 
     return redirect(web_url_for('user_account'))
