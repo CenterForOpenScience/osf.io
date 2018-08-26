@@ -12,25 +12,21 @@ def get_campaign_schema(campaign):
     return RegistrationSchema.objects.get(name=schema_name, schema_version=2)
 
 def drafts_for_user(user, campaign=None):
-    from osf.models import DraftRegistration, Node
+    from osf.models import DraftRegistration
+
     if campaign:
-        return DraftRegistration.objects.filter(
+        drafts = DraftRegistration.objects.filter(
             registration_schema=get_campaign_schema(campaign),
             approval=None,
             registered_node=None,
             deleted__isnull=True,
-            branched_from__in=Node.objects.filter(
-                is_deleted=False,
-                contributor__admin=True,
-                contributor__user=user).values_list('id', flat=True)
+            initiator=user
         )
     else:
-        return DraftRegistration.objects.filter(
+        drafts = DraftRegistration.objects.filter(
             approval=None,
             registered_node=None,
             deleted__isnull=True,
-            branched_from__in=Node.objects.filter(
-                is_deleted=False,
-                contributor__admin=True,
-                contributor__user=user).values_list('id', flat=True)
+            initiator=user
         )
+    return drafts

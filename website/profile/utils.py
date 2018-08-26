@@ -6,7 +6,6 @@ from osf.models import Contributor
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
-from osf.utils.permissions import reduce_permissions
 
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
@@ -46,10 +45,15 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 'permission': 'read',
             }
         else:
+            if not contrib:
+                try:
+                    contrib = node.contributor_set.get(user=user)
+                except Contributor.NotFoundError:
+                    contrib = None
             is_contributor_obj = isinstance(contrib, Contributor)
             flags = {
                 'visible': contrib.visible if is_contributor_obj else node.contributor_set.filter(user=user, visible=True).exists(),
-                'permission': get_contributor_permissions(contrib, as_list=False) if is_contributor_obj else reduce_permissions(node.get_permissions(user)),
+                'permission': contrib.permission if is_contributor_obj else None
             }
         ret.update(flags)
     if user.is_registered:

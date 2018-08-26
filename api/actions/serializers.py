@@ -218,7 +218,7 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         related_view_kwargs={'request_id': '<target._id>'},
     )
 
-    permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
 
 

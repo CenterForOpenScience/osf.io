@@ -925,8 +925,8 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            for permission in permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS:
-                assert preprint_unpublished.has_permission(user_two, permission)
+            assert preprint_unpublished.has_permission(user_two, 'write')
+            assert preprint_unpublished.has_permission(user_two, 'read')
 
     def test_adds_already_existing_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, data_user_two, url_unpublished):
@@ -2940,6 +2940,7 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestPreprintContributorFiltering:
 
     @pytest.fixture()

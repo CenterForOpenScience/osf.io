@@ -1341,7 +1341,7 @@ class TestPermissionMethods:
             node=node, user=user,
         )
         node.add_permission(user, READ)
-        assert node.get_permissions(user) == ['read_node']
+        assert set(node.get_permissions(user)) == set(['read_node'])
 
         node.add_permission(user, WRITE)
         assert set(node.get_permissions(user)) == set(['read_node', 'write_node'])
@@ -2884,7 +2884,7 @@ class TestForkNode:
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
-        assert fork.get_permissions(user2) == ['read_node', 'write_node', 'admin_node']
+        assert set(fork.get_permissions(user2)) == set(['read_node', 'write_node', 'admin_node'])
 
     def test_fork_preserves_license(self, node, auth):
         license = NodeLicenseRecordFactory()
@@ -3343,7 +3343,9 @@ class TestNodeUpdate:
 
     def test_set_access_requests_non_admin(self, node, auth):
         contrib = AuthUserFactory()
-        Contributor.objects.create(user=contrib, node=node, write=True, read=True, visible=True)
+        Contributor.objects.create(user=contrib, node=node, visible=True)
+        node.add_permission(contrib, 'write')
+        node.save()
         with pytest.raises(PermissionsError):
             node.set_access_requests_enabled(True, auth=Auth(contrib))
 
@@ -3931,7 +3933,7 @@ class TestTemplateNode:
 
         templated = project.use_as_template(auth)
 
-        assert templated.get_permissions(user) == ['read_node', 'write_node', 'admin_node']
+        assert set(templated.get_permissions(user)) == set(['read_node', 'write_node', 'admin_node'])
 
     def test_template_security(self, user, auth, project, pointee, component, subproject):
         """Create a templated node from a node with public and private children
@@ -3981,8 +3983,8 @@ class TestTemplateNode:
         # ensure that the creator is admin for each node copied
         for node in new.nodes:
             assert (
-                node.get_permissions(other_user) ==
-                ['read_node', 'write_node', 'admin_node']
+                set(node.get_permissions(other_user)) ==
+                set(['read_node', 'write_node', 'admin_node'])
             )
 
 # copied from tests/test_models.py

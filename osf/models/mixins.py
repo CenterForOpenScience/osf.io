@@ -29,6 +29,7 @@ from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintReque
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
+from osf.exceptions import PreprintStateError
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from website import settings, mails, language
@@ -951,7 +952,7 @@ class ContributorMixin(models.Model):
         :param list contributors: A list of dictionaries of the form:
             {
                 'user': <User object>,
-                'permissions': <Permissions list, e.g. ['read', 'write']>, or string (for preprints), e.g. 'read'
+                'permissions': <String highest permission, 'admin', for example>
                 'visible': <Boolean indicating whether or not user is a bibliographic contributor>
             }
         :param auth: All the auth information including user, API key.
@@ -1282,7 +1283,7 @@ class ContributorMixin(models.Model):
                         'User {0} not in contributors'.format(user.fullname)
                     )
 
-                permission = user_dict.get('permission', None)
+                permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
                 if not self.belongs_to_permission_group(user, permission):
                     # Validate later
                     self.set_permissions(user, permission, validate=False, save=False)
@@ -1450,6 +1451,9 @@ class ContributorMixin(models.Model):
 
         if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
             if self.get_group('admin').user_set.count() <= 1:
+                Preprint = apps.get_model('osf.Preprint')
+                if isinstance(self, Preprint):
+                    raise PreprintStateError('Must have at least one registered admin contributor')
                 raise NodeStateError('Must have at least one registered admin contributor')
         self.clear_permissions(user)
         self.add_permission(user, permissions)

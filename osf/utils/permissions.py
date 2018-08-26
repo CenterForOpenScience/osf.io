@@ -5,7 +5,9 @@ READ = 'read'
 WRITE = 'write'
 ADMIN = 'admin'
 # NOTE: Ordered from most-restrictive to most permissive
-PERMISSIONS = [READ, WRITE, ADMIN]
+PERMISSIONS = ['read_node', 'write_node', 'admin_node']
+CONTRIB_PERMISSIONS = {'admin_node': 'admin', 'write_node': 'write', 'read_node': 'read'}
+API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
 DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
@@ -50,7 +52,7 @@ def expand_permissions(permission):
 def reduce_permissions(permissions):
     for permission in PERMISSIONS[::-1]:
         if permission in permissions:
-            return permission
+            return CONTRIB_PERMISSIONS[permission]
     raise ValueError('Permissions not in permissions list')
 
 

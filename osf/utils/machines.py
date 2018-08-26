@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.utils import timezone
 from transitions import Machine
 
@@ -200,7 +201,7 @@ class NodeRequestMachine(BaseMachine):
                 self.machineable.target.add_contributor(
                     self.machineable.creator,
                     auth=Auth(ev.kwargs['user']),
-                    permissions=permissions.expand_permissions(contributor_permissions),
+                    permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
                     send_email='{}_request'.format(self.machineable.request_type))
 
@@ -211,10 +212,13 @@ class NodeRequestMachine(BaseMachine):
     def notify_submit(self, ev):
         """ Notify admins that someone is requesting access
         """
+        OSFUser = apps.get_model('osf.OSFUser')
+
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
+
+        for admin in OSFUser.objects.filter(groups__name=self.machineable.target.format_group('admin')):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,

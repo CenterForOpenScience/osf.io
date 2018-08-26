@@ -1006,8 +1006,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         default=True,
     )
     permission = ser.ChoiceField(
-        choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-        default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+        choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
+        default=osf_permissions.WRITE,
         help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".',
     )
     unregistered_contributor = ser.SerializerMethodField()

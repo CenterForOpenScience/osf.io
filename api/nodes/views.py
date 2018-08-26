@@ -119,7 +119,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
-from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
@@ -412,7 +412,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             # operation['value'] should be 'admin', 'write', or 'read'
             query_val = operation['value'].lower().strip()
-            if query_val not in PERMISSIONS:
+            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
         return super(NodeContributorsList, self).build_query_from_field(field_name, operation)

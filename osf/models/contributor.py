@@ -2,11 +2,6 @@ from django.db import models
 from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.permissions import (
-    READ,
-    WRITE,
-    ADMIN,
-)
 
 
 class AbstractBaseContributor(models.Model):
@@ -14,9 +9,6 @@ class AbstractBaseContributor(models.Model):
 
     primary_identifier_name = 'user__guids___id'
 
-    read = models.BooleanField(default=False)
-    write = models.BooleanField(default=False)
-    admin = models.BooleanField(default=False)
     visible = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
@@ -131,13 +123,15 @@ class RecentlyAddedContributor(models.Model):
         unique_together = ('user', 'contributor')
 
 def get_contributor_permissions(contributor, as_list=True):
+    node = contributor.node
+    user = contributor.user
     perm = []
-    if contributor.read:
-        perm.append(READ)
-    if contributor.write:
-        perm.append(WRITE)
-    if contributor.admin:
-        perm.append(ADMIN)
+    if node.has_permission(user, 'read'):
+        perm.append('read')
+    if node.has_permission(user, 'write'):
+        perm.append('write')
+    if node.has_permission(user, 'admin'):
+        perm.append('admin')
     if as_list:
         return perm
     else:

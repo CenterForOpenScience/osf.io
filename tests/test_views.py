@@ -456,8 +456,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(project.logs.latest().action, 'contributor_added')
         assert_equal(len(project.contributors), 3)
 
-        assert_equal(project.get_permissions(user2), ['read', 'write', 'admin'])
-        assert_equal(project.get_permissions(user3), ['read', 'write'])
+        assert project.has_permission(user2, 'admin') is True
+        assert project.has_permission(user2, 'write') is True
+        assert project.has_permission(user2, 'read') is True
+
+        assert project.has_permission(user3, 'admin') is False
+        assert project.has_permission(user3, 'write') is True
+        assert project.has_permission(user3, 'read') is True
 
     def test_manage_permissions(self):
         url = self.project.api_url + 'contributors/manage/'
@@ -478,8 +483,13 @@ class TestProjectViews(OsfTestCase):
 
         self.project.reload()
 
-        assert_equal(self.project.get_permissions(self.user1), ['read'])
-        assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
+        assert self.project.has_permission(self.user1, 'admin') is False
+        assert self.project.has_permission(self.user1, 'write') is False
+        assert self.project.has_permission(self.user1, 'read') is True
+
+        assert self.project.has_permission(self.user2, 'admin') is True
+        assert self.project.has_permission(self.user2, 'write') is True
+        assert self.project.has_permission(self.user2, 'read') is True
 
     def test_manage_permissions_again(self):
         url = self.project.api_url + 'contributors/manage/'
@@ -512,8 +522,13 @@ class TestProjectViews(OsfTestCase):
 
         self.project.reload()
 
-        assert_equal(self.project.get_permissions(self.user2), ['read'])
-        assert_equal(self.project.get_permissions(self.user1), ['read', 'write', 'admin'])
+        assert self.project.has_permission(self.user2, 'admin') is False
+        assert self.project.has_permission(self.user2, 'write') is False
+        assert self.project.has_permission(self.user2, 'read') is True
+
+        assert self.project.has_permission(self.user1, 'admin') is True
+        assert self.project.has_permission(self.user1, 'write') is True
+        assert self.project.has_permission(self.user1, 'read') is True
 
     def test_contributor_manage_reorder(self):
 
@@ -522,10 +537,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': False},
+                {'user': reg_user1, 'permissions': 'admin', 'visible': True},
+                {'user': reg_user2, 'permissions': 'admin', 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -679,10 +692,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user1, 'permissions': 'admin', 'visible': True},
+                {'user': reg_user2, 'permissions': 'admin', 'visible': True},
             ]
         )
 
@@ -2045,7 +2056,7 @@ class TestAddingContributorViews(OsfTestCase):
         contributors = [{
             'user': contributor,
             'visible': True,
-            'permissions': ['read', 'write']
+            'permissions': 'write'
         }]
         project = ProjectFactory(creator=self.auth.user)
         project.add_contributors(contributors, auth=self.auth)
@@ -4509,7 +4520,9 @@ class TestProjectCreation(OsfTestCase):
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
-        assert_equal(child.get_permissions(non_admin), ['read', 'write', 'admin'])
+        assert child.has_permission(non_admin, 'admin') is True
+        assert child.has_permission(non_admin, 'write') is True
+        assert child.has_permission(non_admin, 'read') is True
         # check redirect url
         assert_in('/contributors/', res.location)
 
