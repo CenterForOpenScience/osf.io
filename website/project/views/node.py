@@ -284,7 +284,7 @@ def node_setting(auth, node, **kwargs):
         config['template_lookup'] = addon_config.template_lookup
         config['addon_icon_url'] = addon_config.icon_url
         config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
-        addon_settings['forward'] = config
+        addon_settings[addon] = config
 
     ret['addon_settings'] = addon_settings
 
