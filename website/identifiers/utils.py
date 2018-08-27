@@ -66,6 +66,10 @@ def request_identifiers(target_object):
                             when processing this response in get_or_create_identifiers
     """
     from website.identifiers.clients import exceptions
+
+    if not target_object.should_request_identifiers:
+        return False
+
     client = target_object.get_doi_client()
     if not client:
         return

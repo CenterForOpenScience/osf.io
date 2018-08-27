@@ -34,6 +34,12 @@ class IdentifierMixin(models.Model):
     for model objects.
     """
 
+    @property
+    def should_request_identifiers(self):
+        """Determines if a identifier should be requested, Bool.
+        """
+        raise NotImplementedError()
+
     def get_doi_client(self):
         """Return a BaseIdentifierClient if proper
         settings are configured, else return None

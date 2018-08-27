@@ -715,6 +715,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return csl
 
+    @property
+    def should_request_identifiers(self):
+        return not self.all_tags.filter(name='qatest').exists()
+
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
         from website import search

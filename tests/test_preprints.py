@@ -30,6 +30,7 @@ from website import settings, mails
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
+from website.identifiers.utils import request_identifiers
 from website.util.share import format_user
 
 
@@ -351,11 +352,10 @@ class TestPreprintIdentifiers(OsfTestCase):
         ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
         assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
 
-    @mock.patch('website.settings.CROSSREF_URL', 'http://test.osf.crossref.test')
     def test_qatest_doesnt_make_dois(self):
         preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
         preprint.node.add_tag('qatest', self.auth)
-        assert preprint.get_doi_client() is None
+        assert not request_identifiers(preprint)
 
 
 @pytest.mark.enable_implicit_clean
