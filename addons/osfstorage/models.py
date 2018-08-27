@@ -291,8 +291,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return latest_version
 
         if metadata:
-            version.update_metadata(metadata)
+            version.update_metadata(metadata, save=False)
 
+        version.region = self.target.osfstorage_region
         version._find_matching_archive(save=False)
 
         version.save()
@@ -448,6 +449,9 @@ class Region(models.Model):
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
     mfr_url = models.URLField(default=website_settings.MFR_SERVER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    def __unicode__(self):
+        return '{}'.format(self.name)
 
     def get_absolute_url(self):
         return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
