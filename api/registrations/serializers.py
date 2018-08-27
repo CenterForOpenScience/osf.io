@@ -253,7 +253,7 @@ class BaseRegistrationSerializer(NodeSerializer):
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = validated_data.pop('children', None)
         if children:
-            parent_node = draft.branched_from
+            draft_root = draft.branched_from
 
             # Validate to make sure we aren't registering nodes without registering their parents
             # and all nodes have the same root.
@@ -265,11 +265,13 @@ class BaseRegistrationSerializer(NodeSerializer):
 
             # Second check that all children have a parent being registered. The exception being
             #  the root node of the registration.
+            nodes_being_registered = list(child_nodes) + [draft_root]
             for node in child_nodes:
-                if node.parent_node and node.parent_node not in list(child_nodes) + [parent_node] and node != parent_node:
+                parent_node = node.parent_node
+                if parent_node and parent_node not in nodes_being_registered and node != draft_root:
                     raise exceptions.ValidationError('The parent of node {} must be registered.'.format(node._id))
 
-            excluded_node_ids = [node._id for node in parent_node.get_descendants_recursive() if node not in child_nodes]
+            excluded_node_ids = [node._id for node in draft_root.get_descendants_recursive() if node not in child_nodes]
         else:
             excluded_node_ids = []
 
