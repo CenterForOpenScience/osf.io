@@ -356,23 +356,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def get_parent_id(self):
-        """
-        Optimization property. If node has been annotated with "annotated_parent_id"
-        in a queryset, use that value.  Otherwise, fetch the parent_node guid.
-        """
-        if hasattr(self, 'annotated_parent_id'):
-            return self.annotated_parent_id
-        else:
-            if self.parent_node:
-                return self.parent_node._id
-            return None
-
-    @property
-    def get_tags(self):
+    def tag_names(self):
         """
         Optimization property. If node has been annotated with "annotated_tags"
-        in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+        in a queryset, use that value.  Otherwise, fetch the tags.
         """
         if hasattr(self, 'annotated_tags'):
             return [] if self.annotated_tags == [None] else self.annotated_tags
@@ -1047,9 +1034,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def parent_id(self):
-        if self.parent_node:
-            return self.parent_node._id
-        return None
+        if hasattr(self, 'annotated_parent_id'):
+            # If node has been annotated with "annotated_parent_id"
+            # in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
 
     @property
     def license(self):

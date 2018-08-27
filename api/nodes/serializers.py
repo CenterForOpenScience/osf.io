@@ -244,7 +244,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ser.ListField(source='get_tags', child=ser.CharField(), required=False)
+    tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
@@ -353,7 +353,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<get_parent_id>'},
+        related_view_kwargs={'node_id': '<parent_id>'},
         filter_key='parent_node'
     )
 
@@ -555,8 +555,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         affiliated_institutions = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'get_tags' in validated_data:
-            tags = validated_data.pop('get_tags')
+        if 'tag_names' in validated_data:
+            tags = validated_data.pop('tag_names')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -614,8 +614,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
-            if 'get_tags' in validated_data:
-                new_tags = set(validated_data.pop('get_tags', []))
+            if 'tag_names' in validated_data:
+                new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
