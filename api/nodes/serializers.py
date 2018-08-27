@@ -5,11 +5,11 @@ from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  RelationshipPostMakesNoChanges)
 from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField, ValuesListField,
+                                  JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer,
-                                  HideIfWikiDisabled)
+                                  HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -25,7 +25,7 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode, PrivateLink)
+                        RegistrationSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -34,6 +34,28 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+
+
+def get_or_add_license_to_serializer_context(serializer, node):
+    """
+    Returns license, and adds license to serializer context with format
+    serializer.context['licenses'] = {<node_id>: <NodeLicenseRecord object>}
+
+    Used for both node_license field and license relationship in the NodeSerializer.
+    Prevents license from having to be fetched 2x per node.
+    """
+    license_context = serializer.context.get('licenses', {})
+    if license_context and node._id in license_context:
+        return license_context.get(node._id)
+    else:
+        license = node.license
+        if license_context:
+            license_context[node._id] = {}
+            license_context[node._id] = license
+        else:
+            serializer.context['licenses'] = {}
+            serializer.context['licenses'][node._id] = license
+        return license
 
 
 def get_institutions_to_add_remove(institutions, new_institutions):
@@ -93,7 +115,21 @@ class NodeLicenseSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'node_licenses'
 
+    def get_attribute(self, instance):
+        """
+        Returns node license and caches license in serializer context for optimization purposes.
+        """
+        return get_or_add_license_to_serializer_context(self, instance)
+
+
 class NodeLicenseRelationshipField(RelationshipField):
+
+    def lookup_attribute(self, obj, lookup_field):
+        """
+        Returns node license id and caches license in serializer context for optimization purposes.
+        """
+        license = get_or_add_license_to_serializer_context(self, obj)
+        return license.node_license._id if getattr(license, 'node_license', None) else None
 
     def to_internal_value(self, license_id):
         node_license = NodeLicense.load(license_id)
@@ -208,9 +244,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    access_requests_enabled = ser.BooleanField(read_only=False, required=False)
+    tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
+    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
+    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -218,7 +255,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
-
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
@@ -270,6 +306,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'}
     )
 
+    settings = RelationshipField(
+        related_view='nodes:node-settings',
+        related_view_kwargs={'node_id': '<_id>'}
+    )
+
     wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'}
@@ -287,7 +328,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'}
     )
 
     node_links = ShowIfVersion(RelationshipField(
@@ -297,9 +339,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     ), min_version='2.0', max_version='2.0')
 
+    linked_by_nodes = RelationshipField(
+        related_view='nodes:node-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    )
+
+    linked_by_registrations = RelationshipField(
+        related_view='nodes:node-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    )
+
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_node._id>'},
+        related_view_kwargs={'node_id': '<parent_id>'},
         filter_key='parent_node'
     )
 
@@ -374,18 +428,35 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
-        user = self.context['request'].user
-        if user.is_anonymous:
-            return ['read']
-        permissions = obj.get_permissions(user=user)
-        if not permissions:
-            permissions = ['read']
-        return permissions
+        if hasattr(obj, 'contrib_admin'):
+            if obj.contrib_admin:
+                return ['admin', 'write', 'read']
+            elif obj.contrib_write:
+                return ['write', 'read']
+            else:
+                return ['read']
+        else:
+            user = self.context['request'].user
+            if user.is_anonymous:
+                return ['read']
+            permissions = obj.get_permissions(user=user)
+            if not permissions:
+                permissions = ['read']
+            return permissions
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.can_comment(auth)
+
+        if hasattr(obj, 'contrib_read'):
+            if obj.comment_level == 'public':
+                return auth.logged_in and (
+                    obj.is_public or
+                    (auth.user and obj.contrib_read)
+                )
+            return obj.contrib_read or False
+        else:
+            return obj.can_comment(auth)
 
     class Meta:
         type_ = 'nodes'
@@ -402,7 +473,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute("""
                 WITH RECURSIVE parents AS (
                   SELECT parent_id, child_id
                   FROM osf_noderelation
@@ -428,7 +499,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
 
             return int(cursor.fetchone()[0])
 
@@ -459,6 +530,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 count += 1
         return count
 
+    def get_linked_by_nodes_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
+
+    def get_linked_by_registrations_count(self, obj):
+        return obj._parents.filter(is_node_link=True, parent__type='osf.registration', parent__retraction__isnull=True).count()
+
+    def get_forks_count(self, obj):
+        return obj.forks.exclude(type='osf.registration').exclude(is_deleted=True).count()
+
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
@@ -475,8 +555,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         affiliated_institutions = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'tags' in validated_data:
-            tags = validated_data.pop('tags')
+        if 'tag_names' in validated_data:
+            tags = validated_data.pop('tag_names')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -534,8 +614,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
-            if 'tags' in validated_data:
-                new_tags = set(validated_data.pop('tags', []))
+            if 'tag_names' in validated_data:
+                new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
@@ -884,7 +964,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     id = IDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
-    email = ser.EmailField(required=False, source='user.email')
+    email = ser.EmailField(required=False, source='user.email', write_only=True)
     index = ser.IntegerField(required=False, source='_order')
 
     users = RelationshipField(
@@ -1135,8 +1215,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     )
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'}
     )
 
     links = LinksField({
@@ -1152,7 +1232,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
+        schema = get_object_or_error(RegistrationSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
@@ -1292,3 +1372,173 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
 
         link.save()
         return link
+
+
+class NodeSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    access_requests_enabled = ser.BooleanField()
+    anyone_can_comment = ser.SerializerMethodField()
+    anyone_can_edit_wiki = ser.SerializerMethodField()
+    wiki_enabled = ser.SerializerMethodField()
+    redirect_link_enabled = ser.SerializerMethodField()
+    redirect_link_url = ser.SerializerMethodField()
+    redirect_link_label = ser.SerializerMethodField()
+
+    view_only_links = RelationshipField(
+        related_view='nodes:node-view-only-links',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    def get_anyone_can_comment(self, obj):
+        return obj.comment_level == 'public'
+
+    def get_wiki_enabled(self, obj):
+        return self.context['wiki_addon'] is not None
+
+    def get_anyone_can_edit_wiki(self, obj):
+        wiki_addon = self.context['wiki_addon']
+        return wiki_addon.is_publicly_editable if wiki_addon else None
+
+    def get_redirect_link_enabled(self, obj):
+        return self.context['forward_addon'] is not None
+
+    def get_redirect_link_url(self, obj):
+        forward_addon = self.context['forward_addon']
+        return forward_addon.url if forward_addon else None
+
+    def get_redirect_link_label(self, obj):
+        forward_addon = self.context['forward_addon']
+        return forward_addon.label if forward_addon else None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-settings',
+            kwargs={
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
+    class Meta:
+        type_ = 'node-settings'
+
+
+class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
+    anyone_can_comment = ser.BooleanField(write_only=True, required=False)
+    wiki_enabled = ser.BooleanField(write_only=True, required=False)
+    anyone_can_edit_wiki = ser.BooleanField(write_only=True, required=False)
+    redirect_link_enabled = ser.BooleanField(write_only=True, required=False)
+    redirect_link_url = ser.URLField(write_only=True, required=False)
+    redirect_link_label = ser.CharField(max_length=50, write_only=True, required=False)
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        context['wiki_addon'] = instance.get_addon('wiki')
+        context['forward_addon'] = instance.get_addon('forward')
+        return NodeSettingsSerializer(instance=instance, context=context).data
+
+    def update(self, obj, validated_data):
+        user = self.context['request'].user
+        auth = get_user_auth(self.context['request'])
+        admin_only_field_names = [
+            'access_requests_enabled',
+            'anyone_can_comment',
+            'anyone_can_edit_wiki',
+            'wiki_enabled',
+        ]
+
+        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, 'admin'):
+            raise exceptions.PermissionDenied
+
+        self.update_node_fields(obj, validated_data, auth)
+        self.update_wiki_fields(obj, validated_data, auth)
+        self.update_forward_fields(obj, validated_data, auth)
+        return obj
+
+    def update_node_fields(self, obj, validated_data, auth):
+        access_requests_enabled = validated_data.get('access_requests_enabled')
+        anyone_can_comment = validated_data.get('anyone_can_comment')
+        save_node = False
+
+        if access_requests_enabled is not None:
+            obj.set_access_requests_enabled(access_requests_enabled, auth=auth)
+            save_node = True
+        if anyone_can_comment is not None:
+            obj.comment_level = 'public' if anyone_can_comment else 'private'
+            save_node = True
+        if save_node:
+            obj.save()
+
+    def update_wiki_fields(self, obj, validated_data, auth):
+        wiki_enabled = validated_data.get('wiki_enabled')
+        anyone_can_edit_wiki = validated_data.get('anyone_can_edit_wiki')
+        wiki_addon = self.context['wiki_addon']
+
+        if wiki_enabled is not None:
+            wiki_addon = self.enable_or_disable_addon(obj, wiki_enabled, 'wiki', auth)
+
+        if anyone_can_edit_wiki is not None:
+            if not obj.is_public and anyone_can_edit_wiki:
+                raise exceptions.ValidationError(detail='To allow all OSF users to edit the wiki, the project must be public.')
+            if wiki_addon:
+                try:
+                    wiki_addon.set_editing(permissions=anyone_can_edit_wiki, auth=auth, log=True)
+                except NodeStateError:
+                    return
+                wiki_addon.save()
+            else:
+                raise exceptions.ValidationError(detail='You must have the wiki enabled before changing wiki settings.')
+
+    def update_forward_fields(self, obj, validated_data, auth):
+        redirect_link_enabled = validated_data.get('redirect_link_enabled')
+        redirect_link_url = validated_data.get('redirect_link_url')
+        redirect_link_label = validated_data.get('redirect_link_label')
+
+        save_forward = False
+        forward_addon = self.context['forward_addon']
+
+        if redirect_link_enabled is not None:
+            if not redirect_link_url and redirect_link_enabled:
+                raise exceptions.ValidationError(detail='You must include a redirect URL to enable a redirect.')
+            forward_addon = self.enable_or_disable_addon(obj, redirect_link_enabled, 'forward', auth)
+
+        if redirect_link_url is not None:
+            if not forward_addon:
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link URL.')
+            forward_addon.url = redirect_link_url
+            obj.add_log(
+                action='forward_url_changed',
+                params=dict(
+                    node=obj._id,
+                    project=obj.parent_id,
+                    forward_url=redirect_link_url,
+                ),
+                auth=auth
+            )
+            save_forward = True
+
+        if redirect_link_label is not None:
+            if not forward_addon:
+                raise exceptions.ValidationError(detail='You must first set redirect_link_enabled to True before specifying a redirect link label.')
+            forward_addon.label = redirect_link_label
+            save_forward = True
+
+        if save_forward:
+            forward_addon.save()
+
+    def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
+        """
+        Returns addon, if exists, otherwise returns None
+        """
+        addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
+        if type(addon) == bool:
+            addon = None
+        return addon

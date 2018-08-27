@@ -1,11 +1,12 @@
 {
   "name": "OSF",
-  "version": "0.140.0",
+  "version": "0.152.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
   "license": "Apache-2.0",
   "dependencies": {
+    "@centerforopenscience/markdown-it-atrules": "^0.1.0",
     "@centerforopenscience/list-of-licenses": "1.1.0",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a",
@@ -50,7 +51,7 @@
     "markdown-it-imsize": "git://github.com/cos-forks/markdown-it-imsize.git#v2.0.1.cos1",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
-    "markdown-it-video": "~0.6.2",
+    "markdown-it-video": "~0.6.3",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",
     "moment": "^2.14.1",
@@ -85,6 +86,7 @@
   },
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless",
+    "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
   }

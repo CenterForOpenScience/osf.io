@@ -325,6 +325,10 @@ bootstrap-colorpicker@^2.5.2:
   dependencies:
     jquery ">=1.10"
 
+bootstrap-tagsinput@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/bootstrap-tagsinput/-/bootstrap-tagsinput-0.7.1.tgz#ffe3b06bbe2a106945ef2814568005a94f211937"
+
 bower@^1.3.12:
   version "1.8.2"
   resolved "https://registry.yarnpkg.com/bower/-/bower-1.8.2.tgz#adf53529c8d4af02ef24fb8d5341c1419d33e2f7"
@@ -1703,9 +1707,9 @@ kind-of@^4.0.0:
   dependencies:
     is-buffer "^1.1.5"
 
-knockout@~3.2.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/knockout/-/knockout-3.2.0.tgz#3f394eb67d721bea115e2d0d7be082256ca46a11"
+knockout@3.4.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/knockout/-/knockout-3.4.0.tgz#59d7261815a11eb7c1a3f3c7077ca898a44caadb"
 
 lazy-cache@^1.0.3:
   version "1.0.4"

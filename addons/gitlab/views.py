@@ -92,29 +92,23 @@ def gitlab_add_user_account(auth, **kwargs):
     access_token = request.json.get('access_token')
 
     client = GitLabClient(access_token=access_token, host=host)
-    try:
-        user_info = client.user()
-    except:
-        # TODO: does gitlab even throw errors?
-        raise
 
-    if user_info.get('message') == '401 Unauthorized':
-        raise HTTPError(http.UNAUTHORIZED)
+    user = client.user()
 
     try:
         account = ExternalAccount(
             provider='gitlab',
             provider_name='GitLab',
-            display_name=user_info['username'],
+            display_name=user.username,
             oauth_key=access_token,
             oauth_secret=host,  # Hijacked to allow multiple hosts
-            provider_id=user_info['web_url'],   # unique for host/username
+            provider_id=user.web_url,   # unique for host/username
         )
         account.save()
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
-            provider='gitlab', provider_id=user_info['web_url']
+            provider='gitlab', provider_id=user.web_url
         )
         if account.oauth_key != access_token:
             account.oauth_key = access_token

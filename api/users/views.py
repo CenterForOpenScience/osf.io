@@ -12,23 +12,31 @@ from api.base.utils import (default_node_list_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
+from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
+                                   UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
                                    UserQuickFilesSerializer,
+                                   UserAccountExportSerializer,
+                                   UserAccountDeactivateSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound
 from osf.models import (Contributor,
                         ExternalAccount,
@@ -38,6 +46,7 @@ from osf.models import (Contributor,
                         Node,
                         Registration,
                         OSFUser)
+from website import mails, settings
 
 
 class UserMixin(object):
@@ -240,7 +249,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin, NodeOptimizationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
@@ -264,7 +273,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         user = self.get_user()
         if user != self.request.user:
             return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
-        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
+        return self.optimize_node_queryset(default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id))
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -299,7 +308,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         files_list = self.fetch_from_waterbutler()
 
-        return files_list.children.prefetch_related('node__guids', 'versions', 'tags').include('guids')
+        return files_list.children.prefetch_related('versions', 'tags').include('guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -436,3 +445,133 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
+
+
+class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+    )
+
+    serializer_class = UserIdentitiesSerializer
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'users'
+    view_name = 'user-identities-list'
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        user = self.get_user()
+        identities = []
+        for key, value in user.external_identity.iteritems():
+            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
+
+        return identities
+
+
+class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    serializer_class = UserIdentitiesSerializer
+
+    view_category = 'users'
+    view_name = 'user-identities-detail'
+
+    def get_object(self):
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            identity = user.external_identity[identity_id]
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
+        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+
+    def perform_destroy(self, instance):
+        user = self.get_user()
+        identity_id = self.kwargs['identity_id']
+        try:
+            user.external_identity.pop(identity_id)
+        except KeyError:
+            raise NotFound('Requested external identity could not be found.')
+
+        user.save()
+
+
+class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-account-export'
+
+    serializer_class = UserAccountExportSerializer
+    throttle_classes = (SendEmailThrottle, )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        mails.send_mail(
+            to_addr=settings.OSF_SUPPORT_EMAIL,
+            mail=mails.REQUEST_EXPORT,
+            user=user,
+            can_change_preferences=False,
+        )
+        user.email_last_sent = timezone.now()
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-account-deactivate'
+
+    serializer_class = UserAccountDeactivateSerializer
+    throttle_classes = (SendEmailThrottle, )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        mails.send_mail(
+            to_addr=settings.OSF_SUPPORT_EMAIL,
+            mail=mails.REQUEST_DEACTIVATION,
+            user=user,
+            can_change_preferences=False,
+        )
+        user.email_last_sent = timezone.now()
+        user.requested_deactivation = True
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)

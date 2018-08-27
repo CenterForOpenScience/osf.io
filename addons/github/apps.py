@@ -4,6 +4,7 @@ import os
 from addons.base.apps import BaseAddonAppConfig
 from addons.github.api import GitHubClient, ref_to_params
 from addons.github.exceptions import NotFoundError, GitHubError
+from addons.github.settings import MAX_UPLOAD_SIZE
 from addons.github.utils import get_refs, check_permissions
 from website.util import rubeus
 
@@ -106,7 +107,7 @@ class GitHubAddonConfig(BaseAddonAppConfig):
     categories = ['storage']
     owners = ['user', 'node']
     has_hgrid_files = True
-    max_file_size = 100  # MB
+    max_file_size = MAX_UPLOAD_SIZE
     node_settings_template = NODE_SETTINGS_TEMPLATE
 
     @property

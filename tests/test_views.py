@@ -52,10 +52,10 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
-from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
+from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -124,6 +124,7 @@ class TestViewsAreAtomic(OsfTestCase):
         assert_equal(OSFUser.objects.count(), original_user_count + 1)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
@@ -265,6 +266,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
             check_can_access(self.project, noncontrib)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestProjectViews(OsfTestCase):
 
     def setUp(self):
@@ -291,6 +293,25 @@ class TestProjectViews(OsfTestCase):
         )
         self.project2.add_contributor(self.user2, auth=Auth(self.user1))
         self.project2.save()
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_tos_status_message(self, mock_push_status_message):
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_true(mock_push_status_message.called)
+        assert_equal('terms_of_service', mock_push_status_message.mock_calls[0][2]['id'])
+
+    @mock.patch('framework.status.push_status_message')
+    def test_view_project_no_tos_status_message(self, mock_push_status_message):
+        self.user1.accepted_terms_of_service = timezone.now()
+        self.user1.save()
+        self.app.get(
+            self.project.web_url_for('view_project'),
+            auth=self.auth
+        )
+        assert_false(mock_push_status_message.called)
 
     def test_node_setting_with_multiple_matched_institution_email_domains(self):
         # User has alternate emails matching more than one institution's email domains
@@ -584,10 +605,10 @@ class TestProjectViews(OsfTestCase):
     def test_private_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
-        payload = {"contributorID": self.user2._id,
-                   "nodeIDs": [self.project._id]}
+        payload = {'contributorID': self.user2._id,
+                   'nodeIDs': [self.project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             auth=self.auth2).maybe_follow()
         self.project.reload()
         assert_equal(res.status_code, 200)
@@ -600,10 +621,10 @@ class TestProjectViews(OsfTestCase):
         self.public_project = ProjectFactory(creator=self.user1, is_public=True)
         self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
         self.public_project.save()
-        payload = {"contributorID": self.user2._id,
-                   "nodeIDs": [self.public_project._id]}
+        payload = {'contributorID': self.user2._id,
+                   'nodeIDs': [self.public_project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             auth=self.auth2).maybe_follow()
         self.public_project.reload()
         assert_equal(res.status_code, 200)
@@ -613,10 +634,10 @@ class TestProjectViews(OsfTestCase):
     def test_project_remove_other_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {"contributorID": self.user1._id,
-                   "nodeIDs": [self.project._id]}
+        payload = {'contributorID': self.user1._id,
+                   'nodeIDs': [self.project._id]}
         res = self.app.post(url, json.dumps(payload),
-                            content_type="application/json",
+                            content_type='application/json',
                             expect_errors=True,
                             auth=self.auth2).maybe_follow()
         self.project.reload()
@@ -1048,6 +1069,9 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(children, [])
 
 
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1402,6 +1426,8 @@ class TestUserProfile(OsfTestCase):
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put_json(url, payload, auth=self.user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
 
         assert mock_client.lists.unsubscribe.called
         mock_client.lists.unsubscribe.assert_called_with(
@@ -1513,9 +1539,7 @@ class TestUserAccount(OsfTestCase):
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 
-    @mock.patch('website.profile.views.push_status_message')
     def test_password_change_valid(self,
-                                   mock_push_status_message,
                                    old_password='password',
                                    new_password='Pa$$w0rd',
                                    confirm_password='Pa$$w0rd'):
@@ -1531,6 +1555,11 @@ class TestUserAccount(OsfTestCase):
         assert_true(200, res.status_code)
         self.user.reload()
         assert_true(self.user.check_password(new_password))
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_user_account_password_reset_query_params(self, mock_push_status_message):
+        url = web_url_for('user_account') + '?password_reset=True'
+        res = self.app.get(url, auth=(self.user.auth))
         assert_true(mock_push_status_message.called)
         assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
 
@@ -1738,14 +1767,15 @@ class TestUserAccount(OsfTestCase):
                 'AFI': 'LINK'
             }
         }
-        self.user.add_unconfirmed_email("james@steward.com")
-        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.add_unconfirmed_email('james@steward.com')
+        self.user.add_unconfirmed_email('steward@james.com', external_identity=external_identity)
         self.user.save()
         unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
-        assert_in("james@steward.com", unconfirmed_emails)
-        assert_not_in("steward@james.com", unconfirmed_emails)
+        assert_in('james@steward.com', unconfirmed_emails)
+        assert_not_in('steward@james.com', unconfirmed_emails)
 
 
+@pytest.mark.enable_implicit_clean
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
@@ -1797,7 +1827,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_true(res[2]['user']._id)
 
     def test_deserialize_contributors_validates_fullname(self):
-        name = "<img src=1 onerror=console.log(1)>"
+        name = '<img src=1 onerror=console.log(1)>'
         email = fake_email()
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [unreg_no_record]
@@ -1813,7 +1843,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_validates_email(self):
         name = fake.name()
-        email = "!@#$%%^&*"
+        email = '!@#$%%^&*'
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [unreg_no_record]
         contrib_data[0]['permission'] = 'admin'
@@ -2184,13 +2214,17 @@ class TestUserInviteViews(OsfTestCase):
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
 
-    def test_invite_contributor_post_if_emaiL_already_registered(self):
+    def test_invite_contributor_post_if_email_already_registered(self):
         reg_user = UserFactory()
-        # Tries to invite user that is already regiestered
+        name, email = fake.name(), reg_user.username
+        # Tries to invite user that is already registered - this is now permitted.
         res = self.app.post_json(self.invite_url,
-                                 {'fullname': fake.name(), 'email': reg_user.username},
-                                 auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+                                 {'fullname': name, 'email': email},
+                                 auth=self.user.auth)
+        contrib = res.json['contributor']
+        assert_equal(contrib['id'], reg_user._id)
+        assert_equal(contrib['fullname'], name)
+        assert_equal(contrib['email'], email)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
         unreg_user = self.project.add_unregistered_contributor(
@@ -2287,6 +2321,8 @@ class TestUserInviteViews(OsfTestCase):
         assert_false(send_mail.called)
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -2567,7 +2603,7 @@ class TestClaimViews(OsfTestCase):
     def test_posting_to_claim_form_removes_all_unclaimed_data(self, mock_update_search_nodes):
         # user has multiple unclaimed records
         p2 = ProjectFactory(creator=self.referrer)
-        self.user.add_unclaimed_record(node=p2, referrer=self.referrer,
+        self.user.add_unclaimed_record(p2, referrer=self.referrer,
                                        given_name=fake.name())
         self.user.save()
         assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
@@ -2665,6 +2701,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPointerViews(OsfTestCase):
 
     def setUp(self):
@@ -3030,10 +3067,11 @@ class TestPointerViews(OsfTestCase):
 class TestPublicViews(OsfTestCase):
 
     def test_explore(self):
-        res = self.app.get("/explore/").maybe_follow()
+        res = self.app.get('/explore/').maybe_follow()
         assert_equal(res.status_code, 200)
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -3056,6 +3094,7 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+        assert_equal(user.accepted_terms_of_service, None)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -3073,6 +3112,40 @@ class TestAuthViews(OsfTestCase):
         )
         user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_with_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': True
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_true(user.accepted_terms_of_service)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_without_accepted_tos(self, _):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+                'acceptedTermsOfService': False
+            }
+        )
+        user = OSFUser.objects.get(username=email)
+        assert_equal(user.accepted_terms_of_service, None)
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_register_scrubs_username(self, _):
@@ -3386,7 +3459,7 @@ class TestAuthViews(OsfTestCase):
             self.user.add_unconfirmed_email(email)
 
     def test_add_email_merge(self):
-        email = "copy@cat.com"
+        email = 'copy@cat.com'
         dupe = UserFactory(
             username=email,
         )
@@ -3960,6 +4033,7 @@ class TestAddonUserViews(OsfTestCase):
         assert_false(self.user.get_addon('github'))
 
 
+@pytest.mark.enable_enqueue_task
 class TestConfigureMailingListViews(OsfTestCase):
 
     @classmethod
@@ -4017,6 +4091,8 @@ class TestConfigureMailingListViews(OsfTestCase):
         payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
+        # the test app doesn't have celery handlers attached, so we need to call this manually.
+        handlers.celery_teardown_request()
         user.reload()
 
         # check user.mailing_lists is updated
@@ -4066,7 +4142,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field is updated on the OSF
@@ -4099,7 +4175,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field does not change
@@ -4128,7 +4204,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
-                            content_type="application/x-www-form-urlencoded",
+                            content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
         # user field is updated on the OSF
@@ -4245,6 +4321,8 @@ class TestWikiWidgetViews(OsfTestCase):
         assert_false(_should_show_wiki_widget(self.project, None))
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestProjectCreation(OsfTestCase):
 
     def setUp(self):
@@ -4694,60 +4772,9 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-class TestIndexView(OsfTestCase):
 
-    def setUp(self):
-        super(TestIndexView, self).setUp()
-
-        self.inst_one = InstitutionFactory()
-        self.inst_two = InstitutionFactory()
-        self.inst_three = InstitutionFactory()
-        self.inst_four = InstitutionFactory()
-        self.inst_five = InstitutionFactory()
-
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.inst_one)
-        self.user.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_one)
-
-        # tests 4 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            registration = RegistrationFactory(creator=self.user, is_public=True)
-            registration.affiliated_institutions.add(self.inst_three)
-
-        # tests 5 affiliated, non-registered public components
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = NodeFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_four)
-
-        # tests 5 affiliated, non-registered, private projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user)
-            node.affiliated_institutions.add(self.inst_five)
-
-    def test_dashboard_institutions(self):
-        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
-            institution_ids = [
-                institution['id']
-                for institution in index()['dashboard_institutions']
-            ]
-            assert_equal(len(institution_ids), 2)
-            assert_in(self.inst_one._id, institution_ids)
-            assert_not_in(self.inst_two._id, institution_ids)
-            assert_not_in(self.inst_three._id, institution_ids)
-            assert_in(self.inst_four._id, institution_ids)
-            assert_not_in(self.inst_five._id, institution_ids)
-
-
+@pytest.mark.enable_quickfiles_creation
+@mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super(TestResolveGuid, self).setUp()

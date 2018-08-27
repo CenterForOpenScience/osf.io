@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -108,7 +107,15 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                            <span data-bind="stopBinding: true">
+                                <span id="deleteNode">
+                                    <button
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
                     % endif
                     </div>
                 </div>

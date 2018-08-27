@@ -8,7 +8,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from api.actions.permissions import ReviewActionPermission
-from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer
+from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer, PreprintRequestActionSerializer
 from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -18,10 +18,10 @@ from api.base.parsers import (
 )
 from api.base import permissions as base_permissions
 from api.base.utils import absolute_reverse
-from api.requests.views import NodeRequestMixin
-from api.requests.permissions import NodeRequestPermission
+from api.requests.views import NodeRequestMixin, PreprintRequestMixin
+from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, ReviewAction, NodeRequestAction
+from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, PreprintRequestAction
 
 
 def get_review_actions_queryset():
@@ -29,12 +29,6 @@ def get_review_actions_queryset():
         'creator__guids',
         'target__guids',
         'target__provider',
-    ).filter(is_deleted=False)
-
-def get_request_actions_queryset():
-    return NodeRequestAction.objects.include(
-        'creator__guids',
-        'target__guids',
     ).filter(is_deleted=False)
 
 
@@ -90,8 +84,8 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         action = None
         if ReviewAction.objects.filter(_id=self.kwargs['action_id']).exists():
             action = get_object_or_404(get_review_actions_queryset(), _id=self.kwargs['action_id'])
-        elif NodeRequestAction.objects.filter(_id=self.kwargs['action_id']).exists():
-            # No permissions allow for viewing NodeRequestActions yet
+        elif NodeRequestAction.objects.filter(_id=self.kwargs['action_id']).exists() or PreprintRequestAction.objects.filter(_id=self.kwargs['action_id']).exists():
+            # No permissions allow for viewing RequestActions yet
             raise PermissionDenied('You do not have permission to view this Action')
         if not action:
             raise NotFound('Unable to find specified Action')
@@ -163,7 +157,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('preprint_providers:preprint_provider-detail', kwargs={
+                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
                     'provider_id': target.provider._id,
                     'version': self.request.parser_context['kwargs']['version']
                 })
@@ -195,6 +189,29 @@ class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeReque
 
     view_category = 'request-actions'
     view_name = 'create-node-request-action'
+
+    # overrides CreateAPIView
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
+
+        serializer.save(user=self.request.user)
+
+class PreprintRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, PreprintRequestMixin):
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    serializer_class = PreprintRequestActionSerializer
+
+    view_category = 'request-actions'
+    view_name = 'create-preprint-request-action'
 
     # overrides CreateAPIView
     def perform_create(self, serializer):

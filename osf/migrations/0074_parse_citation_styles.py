@@ -16,7 +16,6 @@ import os
 from django.db import migrations
 from lxml import etree
 
-from osf.models.citation import CitationStyle
 from website import settings
 
 logger = logging.getLogger(__file__)
@@ -25,8 +24,9 @@ def get_style_files(path):
     files = (os.path.join(path, x) for x in os.listdir(path))
     return (f for f in files if os.path.isfile(f))
 
-def parse_citation_styles(*args):
+def parse_citation_styles(state, schema):
     # drop all styles
+    CitationStyle = state.get_model('osf', 'citationstyle')
     CitationStyle.objects.all().delete()
 
     for style_file in get_style_files(settings.CITATION_STYLES_PATH):
@@ -51,7 +51,7 @@ def parse_citation_styles(*args):
 
             # Optional
             try:
-                fields['short_title'] = root.find(selector + "title-short").text
+                fields['short_title'] = root.find(selector + 'title-short').text
             except AttributeError:
                 pass
 
@@ -63,8 +63,9 @@ def parse_citation_styles(*args):
             style = CitationStyle(**fields)
             style.save()
 
-def revert(*args):
+def revert(state, schema):
     # The revert of this migration simply removes all CitationStyle instances.
+    CitationStyle = state.get_model('osf', 'citationstyle')
     CitationStyle.objects.all().delete()
 
 class Migration(migrations.Migration):

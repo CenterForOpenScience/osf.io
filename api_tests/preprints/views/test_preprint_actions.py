@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
+from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -11,6 +11,7 @@ from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
@@ -51,6 +52,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         assert res.status_code == 403
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):

@@ -365,7 +365,7 @@ def auth_register(auth):
         context['preprint_campaigns'] = {k._id + '-preprints': {
             'id': k._id,
             'name': k.name,
-            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+            'logo_path': k.get_asset_url('square_color_no_transparent')
         } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
@@ -813,11 +813,13 @@ def register_user(**kwargs):
         if campaign and campaign not in campaigns.get_campaigns():
             campaign = None
 
+        accepted_terms_of_service = timezone.now() if json_data.get('acceptedTermsOfService') else None
         user = framework_auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
             campaign=campaign,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
@@ -919,10 +921,12 @@ def external_login_email_get():
         raise HTTPError(http.UNAUTHORIZED)
 
     external_id_provider = session.data['auth_user_external_id_provider']
+    auth_user_fullname = session.data.get('auth_user_fullname')
 
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': auth_user_fullname,
     }
 
 
@@ -939,7 +943,7 @@ def external_login_email_post():
 
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
-    fullname = session.data['auth_user_fullname']
+    fullname = session.data.get('auth_user_fullname') or form.name.data
     service_url = session.data['service_url']
 
     # TODO: @cslzchen use user tags instead of destination
@@ -983,6 +987,8 @@ def external_login_email_post():
                 user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
+            if not user.accepted_terms_of_service and form.accepted_terms_of_service.data:
+                user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
@@ -1004,12 +1010,14 @@ def external_login_email_post():
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
+            accepted_terms_of_service = timezone.now() if form.accepted_terms_of_service.data else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
                 password=None,
                 fullname=fullname,
                 external_identity=external_identity,
-                campaign=None
+                campaign=None,
+                accepted_terms_of_service=accepted_terms_of_service
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
@@ -1036,7 +1044,8 @@ def external_login_email_post():
     # Don't go anywhere
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': fullname
     }
 
 

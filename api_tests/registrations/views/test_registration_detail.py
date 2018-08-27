@@ -128,6 +128,14 @@ class TestRegistrationDetail:
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
+    #   test_registration_shows_related_counts
+        url = '/{}registrations/{}/?related_counts=True'.format(
+            API_BASE, private_registration._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
+
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children'.format(
             API_BASE, private_registration._id)

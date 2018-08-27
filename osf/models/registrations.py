@@ -12,13 +12,15 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
+from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, MetaSchema, RegistrationApproval,
+    OSFUser, RegistrationSchema, RegistrationApproval,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
 
+from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
@@ -35,7 +37,7 @@ class Registration(AbstractNode):
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
-    registered_schema = models.ManyToManyField(MetaSchema)
+    registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
@@ -65,6 +67,14 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
 
+    @staticmethod
+    def find_failed_registrations():
+        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+        node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
+        root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
+        stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+        return stuck_regs
+
     @property
     def registered_schema_id(self):
         if self.registered_schema.exists():
@@ -75,6 +85,10 @@ class Registration(AbstractNode):
     def is_registration(self):
         """For v1 compat."""
         return True
+
+    @property
+    def is_stuck_registration(self):
+        return self in self.find_failed_registrations()
 
     @property
     def is_collection(self):
@@ -443,13 +457,13 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
+    registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
-    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # Dictionary field mapping extra fields defined in the RegistrationSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     # TODO: Use "FIELD_ALIASES"?

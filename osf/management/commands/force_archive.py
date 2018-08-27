@@ -94,7 +94,10 @@ LOG_WHITELIST = {
     'tag_added',
     'tag_removed',
     'wiki_deleted',
-    'wiki_updated'
+    'wiki_updated',
+    'node_access_requests_disabled',
+    'view_only_link_added',
+    'view_only_link_removed',
 }
 
 # Require action, but recoverable from
@@ -181,7 +184,7 @@ def manually_archive(tree, reg, node_settings, parent=None):
         else:
             cloned.name = filenode['name']
         cloned.parent = parent
-        cloned.node = reg
+        cloned.target = reg
         cloned.copied_from = file_obj
         try:
             cloned.save()
@@ -208,7 +211,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
     if not isinstance(tree, list):
         tree = [tree]
     for filenode in tree:
-        if (file_obj.is_deleted or file_obj.node._id != reg_id) and not cached and filenode['object'].id == target_parent.id:
+        if (file_obj.is_deleted or file_obj.target._id != reg_id) and not cached and filenode['object'].id == target_parent.id:
             filenode['children'].append({
                 'deleted': None,
                 'object': file_obj,

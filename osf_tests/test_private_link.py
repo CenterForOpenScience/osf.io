@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from website.project import new_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory, AuthUserFactory
-from osf.models import MetaSchema, DraftRegistration, NodeLog, QuickFilesNode
+from osf.models import RegistrationSchema, DraftRegistration, NodeLog, QuickFilesNode
 
 @pytest.mark.django_db
 def test_factory():
@@ -16,6 +16,7 @@ def test_factory():
 
 # Copied from tests/test_models.py
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestPrivateLink:
 
     def test_node_scale(self):
@@ -50,7 +51,7 @@ class TestPrivateLink:
     def test_create_from_node(self):
         proj = NodeFactory()
         user = proj.creator
-        schema = MetaSchema.objects.first()
+        schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,

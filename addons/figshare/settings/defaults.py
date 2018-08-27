@@ -5,6 +5,9 @@ API_BASE_URL = 'https://api.figshare.com/v2/'
 
 MAX_RENDER_SIZE = 1000
 
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 50
+
 FIGSHARE_OAUTH_TOKEN_ENDPOINT = '{}{}'.format(API_BASE_URL, 'token')
 FIGSHARE_OAUTH_AUTH_ENDPOINT = 'https://figshare.com/account/applications/authorize'
 

@@ -6,6 +6,10 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.1.0.tgz#2a4379633409205047e723e21cd818560a29ab45"
 
+"@centerforopenscience/markdown-it-atrules@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-atrules/-/markdown-it-atrules-0.1.0.tgz#73c6c9a3a818330201c3c15cd3a5796d3619ca9b"
+
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
@@ -2881,9 +2885,9 @@ markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/markdown-it-sanitizer/-/markdown-it-sanitizer-0.3.2.tgz#052cb45504d39737829c83e84e2f18cc1905d9dc"
 
-markdown-it-video@~0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.2.tgz#35ba1345655321f47b94dbff328d111f58c75d6d"
+markdown-it-video@~0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.3.tgz#ee96a8fce4a262872f8aaf9706c31540d40104c2"
 
 markdown-it@~4.1.0:
   version "4.1.2"

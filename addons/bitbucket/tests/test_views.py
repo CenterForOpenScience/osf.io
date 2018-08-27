@@ -45,7 +45,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
 
     def setUp(self):
         super(TestBitbucketConfigViews, self).setUp()
-        self.mock_access_token = mock.patch("addons.bitbucket.models.BitbucketProvider.fetch_access_token")
+        self.mock_access_token = mock.patch('addons.bitbucket.models.BitbucketProvider.fetch_access_token')
         self.mock_access_token.return_value = mock.Mock()
         self.mock_access_token.start()
 

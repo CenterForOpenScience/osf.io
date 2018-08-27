@@ -4,8 +4,8 @@ from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 
 
-def create_test_file(node, user, filename='test_file', create_guid=True):
-    osfstorage = node.get_addon('osfstorage')
+def create_test_file(target, user, filename='test_file', create_guid=True):
+    osfstorage = target.get_addon('osfstorage')
     root_node = osfstorage.get_root()
     test_file = root_node.append_file(filename)
 

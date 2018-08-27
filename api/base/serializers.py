@@ -136,6 +136,14 @@ class ShowIfCurrentUser(ConditionalField):
         return request and request.user == instance
 
 
+class ShowIfAdminScopeOrAnonymous(ConditionalField):
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        has_admin_scope = instance.has_admin_scope if hasattr(instance, 'has_admin_scope') else utils.has_admin_scope(request)
+        return request and (request.user.is_anonymous or has_admin_scope)
+
+
 class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
@@ -161,6 +169,18 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class NoneIfWithdrawal(ConditionalField):
+    """
+    If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
+    """
+
+    def should_hide(self, instance):
+        return instance.is_retracted
+
+    def should_be_none(self, instance):
+        return True
+
+
 class HideIfWithdrawal(ConditionalField):
     """
     If registration is withdrawn, this field will return None.
@@ -172,15 +192,20 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+class HideIfNotWithdrawal(ConditionalField):
+
+    def should_hide(self, instance):
+        return not instance.is_retracted
 
 class HideIfWikiDisabled(ConditionalField):
     """
-    If wiki is disabled, don't show relationship field, only available in version 2.8
+    If wiki is disabled, don't show relationship field, only available after 2.7
     """
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, '2.8', '2.8') and 'wiki' not in instance.get_addon_names()
+        has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
+        return not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon
 
 
 class HideIfNotNodePointerLog(ConditionalField):
@@ -797,6 +822,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return relationship
 
 
+class TypedRelationshipField(RelationshipField):
+    """ Overrides get_url to inject a typed namespace.
+
+        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+    """
+
+    def get_url(self, obj, view_name, request, format):
+        if len(view_name.split(':')) == 2:
+            untyped_view = view_name
+            view_parts = view_name.split(':')
+            try:
+                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
+            except AttributeError:
+                # List Serializer, use the child's type
+                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            self.view_name = view_name = ':'.join(view_parts)
+            for k, v in self.views.items():
+                if v == untyped_view:
+                    self.views[k] = view_name
+        return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
+
+
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':
@@ -819,6 +866,10 @@ class TargetField(ser.Field):
         'node': {
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id'
+        },
+        'preprint': {
+            'view': 'preprints:preprint-detail',
+            'lookup_kwarg': 'preprint_id'
         },
         'comment': {
             'view': 'comments:comment-detail',
@@ -874,7 +925,8 @@ class TargetField(ser.Field):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
+        obj = getattr(value, 'referent', value)
+        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -1043,7 +1095,7 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        url = utils.waterbutler_api_url_for(obj.target._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
         else:
@@ -1287,7 +1339,12 @@ class JSONAPISerializer(BaseAPISerializer):
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                data['attributes'][field.field_name] = None
+                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                    # if this is a RelationshipField, serialize as a null relationship
+                    data['relationships'][field.field_name] = {'data': None}
+                else:
+                    # otherwise, serialize as an null attribute
+                    data['attributes'][field.field_name] = None
             else:
                 try:
                     if hasattr(field, 'child_relation'):

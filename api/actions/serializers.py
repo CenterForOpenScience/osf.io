@@ -13,8 +13,8 @@ from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from osf.exceptions import InvalidTriggerError
-from osf.models import PreprintService, NodeRequest
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.models import PreprintService, NodeRequest, PreprintRequest
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
 
@@ -154,10 +154,13 @@ class ReviewActionSerializer(BaseActionSerializer):
     ])
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
+    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
-        related_view='preprint_providers:preprint_provider-detail',
+        related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<target.provider._id>'},
         filter_key='target__provider___id',
     )
@@ -179,6 +182,22 @@ class ReviewActionSerializer(BaseActionSerializer):
         filter_key='target__guids___id',
     )
 
+    def create(self, validated_data):
+        trigger = validated_data.get('trigger')
+        if trigger != ReviewTriggers.WITHDRAW.value:
+            return super(ReviewActionSerializer, self).create(validated_data)
+        user = validated_data.pop('user')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        try:
+            return target.run_withdraw(user=user, comment=comment)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(e.message)
+        else:
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+
+
 class NodeRequestActionSerializer(BaseActionSerializer):
     class Meta:
         type_ = 'node-request-actions'
@@ -187,9 +206,22 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         target_class=NodeRequest,
         read_only=False,
         required=True,
-        related_view='requests:node-request-detail',
+        related_view='requests:request-detail',
         related_view_kwargs={'request_id': '<target._id>'},
     )
 
     permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
+
+
+class PreprintRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'preprint-request-actions'
+
+    target = TargetRelationshipField(
+        target_class=PreprintRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )

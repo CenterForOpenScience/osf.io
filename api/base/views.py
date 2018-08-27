@@ -1,9 +1,11 @@
 from collections import defaultdict
+from distutils.version import StrictVersion
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import status
@@ -33,7 +35,8 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
-
+from waffle.models import Flag
+from waffle import flag_is_active
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -393,18 +396,21 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
+    The contents of this endpoint are variable and subject to change without notification.
     """
     if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
             'current_user': current_user,
+            'active_flags': flags,
         },
         'links': {
             'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
@@ -413,7 +419,7 @@ def root(request, format=None, **kwargs):
             'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
             'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
             'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
-            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list', kwargs=kwargs),
+            'schemas': utils.absolute_reverse('schemas:registration-schema-list', kwargs=kwargs),
             'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
         }
     }
@@ -539,6 +545,7 @@ class WaterButlerMixin(object):
         done here where needed
         """
         node = self.get_node(check_object_permissions=False)
+        content_type = ContentType.objects.get_for_model(node)
 
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
@@ -553,10 +560,10 @@ class WaterButlerMixin(object):
 
             # mirrors BaseFileNode get_or_create
             try:
-                file_obj = base_class.objects.get(node=node, _path='/' + attrs['path'].lstrip('/'))
+                file_obj = base_class.objects.get(target_object_id=node.id, target_content_type=content_type, _path='/' + attrs['path'].lstrip('/'))
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
-                file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                file_obj = base_class(target=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
             else:
                 file_objs.append(file_obj)
@@ -589,9 +596,48 @@ class WaterButlerMixin(object):
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         return self.get_file_object(node, path, provider)
 
-    def get_file_object(self, node, path, provider, check_object_permissions=True):
-        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+    def get_file_object(self, target, path, provider, check_object_permissions=True):
+        obj = get_file_object(target=target, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
         return obj
+
+
+class DeprecatedView(JSONAPIBaseView):
+    """ Mixin for deprecating old views
+    Subclasses must define `max_version`
+    """
+
+    @property
+    def max_version(self):
+        raise NotImplementedError()
+
+    def __init__(self, *args, **kwargs):
+        super(DeprecatedView, self).__init__(*args, **kwargs)
+        self.is_deprecated = False
+
+    def determine_version(self, request, *args, **kwargs):
+        version, scheme = super(DeprecatedView, self).determine_version(request, *args, **kwargs)
+        if StrictVersion(version) > StrictVersion(self.max_version):
+            self.is_deprecated = True
+            raise NotFound(detail='This route has been deprecated. It was last available in version {}'.format(self.max_version))
+        return version, scheme
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super(DeprecatedView, self).finalize_response(request, response, *args, **kwargs)
+        if self.is_deprecated:
+            # Already has the error message
+            return response
+        if response.status_code == 204:
+            response.status_code = 200
+            response.data = {}
+        deprecation_warning = 'This route is deprecated and will be unavailable after version {}'.format(self.max_version)
+        if response.data.get('meta', False):
+            if response.data['meta'].get('warnings', False):
+                response.data['meta']['warnings'].append(deprecation_warning)
+            else:
+                response.data['meta']['warnings'] = [deprecation_warning]
+        else:
+            response.data['meta'] = {'warnings': [deprecation_warning]}
+        return response

@@ -13,7 +13,7 @@ class PreprintProviderForm(forms.ModelForm):
     class Meta:
         model = PreprintProvider
 
-        exclude = ['primary_identifier_name']
+        exclude = ['primary_identifier_name', 'primary_collection']
 
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),

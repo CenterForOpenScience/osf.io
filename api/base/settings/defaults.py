@@ -28,6 +28,9 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
+        'TEST': {
+            'SERIALIZE': False,
+        },
     }
 }
 
@@ -84,6 +87,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
     'waffle',
 
     # OSF
@@ -153,6 +157,7 @@ REST_FRAMEWORK = {
         '2.6',
         '2.7',
         '2.8',
+        '2.9',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -175,6 +180,7 @@ REST_FRAMEWORK = {
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',
+        'send-email': '2/minute',
     }
 }
 
@@ -190,7 +196,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
@@ -224,9 +230,7 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 
-# Disabled to make a test work (TestNodeLog.test_formatted_date)
-# TODO Try to understand what's happening to cause the test to break when that line is active.
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -234,6 +238,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+    DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 

@@ -38,11 +38,16 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestFileView:
 
     @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user, comment_level='public')
+
+    @pytest.fixture()
+    def quickfiles_node(self, user):
+        return QuickFilesNode.objects.get(creator=user)
 
     @pytest.fixture()
     def file(self, user, node):
@@ -81,6 +86,32 @@ class TestFileView:
         assert res.status_code == 410
 
         res = app.get(url_with_id, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, quickfiles_node, user):
+        file_node = api_utils.create_test_file(quickfiles_node, user, create_guid=True)
+        url_with_guid = '/{}files/{}/'.format(
+            API_BASE, file_node.get_guid()._id
+        )
+        url_with_id = '/{}files/{}/'.format(API_BASE, file_node._id)
+
+        res = app.get(url_with_id)
+        assert res.status_code == 200
+
+        res = app.get(url_with_guid, auth=user.auth)
+        assert res.status_code == 200
+
+        user.is_disabled = True
+        user.save()
+
+        res = app.get(url_with_id, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
+        assert res.status_code == 410
+
+        res = app.get(url_with_guid, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
@@ -158,9 +189,9 @@ class TestFileView:
             self, app, user, file_url, node):
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
-        assert 'node' in res.json['data']['relationships'].keys()
+        assert 'target' in res.json['data']['relationships'].keys()
         expected_url = node.api_v2_url
-        actual_url = res.json['data']['relationships']['node']['links']['related']['href']
+        actual_url = res.json['data']['relationships']['target']['links']['related']['href']
         assert expected_url in actual_url
 
     def test_file_has_comments_link(self, app, user, file, file_url):

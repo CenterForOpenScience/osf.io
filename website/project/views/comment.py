@@ -19,7 +19,7 @@ from website.project.signals import comment_added, mention_added
 
 
 @file_updated.connect
-def update_file_guid_referent(self, node, event_type, payload, user=None):
+def update_file_guid_referent(self, target, event_type, payload, user=None):
     if event_type not in ('addon_file_moved', 'addon_file_renamed'):
         return  # Nothing to do
 
@@ -37,7 +37,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
     file_guids = BaseFileNode.resolve_class(source['provider'], BaseFileNode.ANY).get_file_guids(
         materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
         provider=source['provider'],
-        node=source_node
+        target=source_node
     )
 
     for guid in file_guids:
@@ -183,7 +183,9 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         if root_id is not None:
             guid_obj = Guid.load(root_id)
             if guid_obj is not None:
-                enqueue_postcommit_task(ban_url, (guid_obj.referent, ), {}, celery=False, once_per_request=True)
+                # FIXME: Doesn't work because we're not using Vanish anymore
+                # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
+                pass
 
         # update node timestamp
         if page == Comment.OVERVIEW:

@@ -138,7 +138,8 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_forks_count'},
     ))
 
     node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
@@ -147,6 +148,18 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     )), min_version='2.0', max_version='2.0')
+
+    linked_by_nodes = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-nodes',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_nodes_count'},
+    ))
+
+    linked_by_registrations = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-linked-by-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_linked_by_registrations_count'},
+    ))
 
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
@@ -165,9 +178,14 @@ class BaseRegistrationSerializer(NodeSerializer):
     ))
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registered_schema_id>'}
     )
+
+    settings = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-settings',
+        related_view_kwargs={'node_id': '<_id>'}
+    ))
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
@@ -308,6 +326,9 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_current_user_permissions(self, obj):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
+    def get_view_only_links_count(self, obj):
+        return obj.private_links.filter(is_deleted=False).count()
+
     def update(self, registration, validated_data):
         auth = Auth(self.context['request'].user)
         # Update tags
@@ -381,18 +402,18 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
 
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
 
     comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
-                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_view_kwargs={'node_id': '<target._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
 
     node = RelationshipField(related_view='registrations:registration-detail',
-                                     related_view_kwargs={'node_id': '<node._id>'},
+                                     related_view_kwargs={'node_id': '<target._id>'},
                                      help_text='The registration that this file belongs to'
                              )
 
@@ -402,7 +423,7 @@ class RegistrationProviderSerializer(NodeProviderSerializer):
     """
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )

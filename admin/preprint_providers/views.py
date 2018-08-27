@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 import requests
-import urlparse
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -11,14 +10,13 @@ from django.views.generic import ListView, DetailView, View, CreateView, DeleteV
 from django.core.management import call_command
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
-from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
-from osf.models.provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
@@ -130,7 +128,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
+        kwargs['logo'] = preprint_provider.get_asset_url('square_color_no_transparent')
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
@@ -352,6 +350,8 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
             raise ValueError('Cannot update share_source or access_token because one or the other already exists')
         if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
             raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
+        if not preprint_provider.get_asset_url('square_color_no_transparent'):
+            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
 
         debug_prepend = ''
         if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
@@ -366,7 +366,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
                     'attributes': {
                         'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
                         'longTitle': debug_prepend + preprint_provider.name,
-                        'iconUrl': '{}{}{}/square_color_no_transparent.png'.format(settings.OSF_URL, osf_settings.PREPRINTS_ASSETS, preprint_provider._id)
+                        'iconUrl': preprint_provider.get_asset_url('square_color_no_transparent')
                     }
                 }
             },
@@ -415,3 +415,28 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
         kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
+
+
+class SharePreprintProviderWhitelist(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+    template_name = 'preprint_providers/whitelist.html'
+
+    def post(self, request):
+        providers_added = json.loads(request.body).get('added')
+        if len(providers_added) != 0:
+            for item in providers_added:
+                WhitelistedSHAREPreprintProvider.objects.get_or_create(provider_name=item)
+        return HttpResponse(200)
+
+    def delete(self, request):
+        providers_removed = json.loads(request.body).get('removed')
+        if len(providers_removed) != 0:
+            for item in providers_removed:
+                WhitelistedSHAREPreprintProvider.objects.get(provider_name=item).delete()
+        return HttpResponse(200)
+
+    def get(self, request):
+        share_api_url = settings.SHARE_URL
+        api_v2_url = settings.API_DOMAIN + settings.API_BASE
+        return render(request, self.template_name, {'share_api_url': share_api_url, 'api_v2_url': api_v2_url})

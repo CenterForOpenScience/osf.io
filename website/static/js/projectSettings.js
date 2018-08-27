@@ -68,17 +68,13 @@ var ProjectSettings = oop.extend(
                 self.changeMessage(language.updateSuccessMessage, 'text-success');
                 return;
             }
-            var requestPayload = JSON.stringify(self.serialize());
-            var request = $.ajax({
-                    url: self.updateUrl,
-                    type: 'PATCH',
-                    dataType: 'json',
-                    contentType: 'application/vnd.api+json',
-                    crossOrigin: true,
-                    xhrFields: {withCredentials: true},
-                    processData: false,
-                    data: requestPayload
-                });
+            var request = $osf.ajaxJSON('PATCH', self.updateUrl, {
+                data: self.serialize(),
+                isCors: true,
+                fields: {
+                    processData: false
+                }
+            });
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;
