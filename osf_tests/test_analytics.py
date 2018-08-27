@@ -21,7 +21,6 @@ from osf.models import PageCounter, Session
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
 
-pytestmark = pytest.mark.django_db
 
 class TestAnalytics(OsfTestCase):
 
@@ -91,6 +90,7 @@ def page_counter_for_individual_version(project, file_node3):
     return page_counter
 
 
+@pytest.mark.django_db
 class TestPageCounter:
 
     @mock.patch('osf.models.analytics.session')
@@ -171,5 +171,3 @@ class TestPageCounterRegex:
 
         match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'download:guid1:fileid')
         assert match
-
-

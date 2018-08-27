@@ -124,7 +124,7 @@ class PageCounter(BaseModel):
                     # increment the number of unique visitors for today
                     model_instance.date[date_string]['unique'] += 1
                 else:
-                    model_instance.date[date_string] = dict(unique=0)
+                    model_instance.date[date_string] = dict(unique=1)
 
             # update their sessions
             visited_by_date['pages'].append(cleaned_page)
