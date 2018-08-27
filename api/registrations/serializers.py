@@ -261,15 +261,13 @@ class BaseRegistrationSerializer(NodeSerializer):
             # First check that all children are valid
             child_nodes = Node.objects.filter(guids___id__in=children)
             if child_nodes.count() != len(children):
-                    raise exceptions.ValidationError('Some child nodes could not be found.')
+                raise exceptions.ValidationError('Some child nodes could not be found.')
 
             # Second check that all children have a parent being registered. The exception being
             #  the root node of the registration.
             for node in child_nodes:
                 if node.parent_node and node.parent_node not in list(child_nodes) + [parent_node] and node != parent_node:
-                    raise exceptions.ValidationError('Some child nodes could not be found. All nodes'
-                                                     ' must be have parents that are being registered'
-                                                     ' or be the root.')
+                    raise exceptions.ValidationError('The parent of node {} must be registered.'.format(node._id))
 
             excluded_node_ids = [node._id for node in parent_node.get_descendants_recursive() if node not in child_nodes]
         else:

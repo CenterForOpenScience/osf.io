@@ -641,14 +641,11 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_cant_register_grandchildren_without_children(
-            self, mock_enqueue, app, user, payload_with_grandchildren_but_no_children, url_registrations):
+            self, mock_enqueue, app, user, payload_with_grandchildren_but_no_children, url_registrations, project_public_grandchild):
         res = app.post_json_api(url_registrations, payload_with_grandchildren_but_no_children, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Some child nodes could not be found. All nodes ' \
-                                                  'must be have parents that are being registered ' \
-                                                  'or be the root.'
-
+        assert res.json['errors'][0]['detail'] == 'The parent of node {} must be registered.'.format(project_public_grandchild._id)
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
