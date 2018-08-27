@@ -26,7 +26,7 @@ class DownloadCountSummary(SummaryAnalytics):
                     'timestamp': timestamp_datetime.isoformat()
                 },
                 'files': {
-                    'total': int(PageCounter.get_all_downloads_on_date(timestamp_datetime.strftime('%Y/%m/%d')) or 0)
+                    'total': int(PageCounter.get_all_downloads_on_date(timestamp_datetime) or 0)
                 },
         }]
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     args = download_count_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (datetime.today() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = download_count_summary.get_events(date)
