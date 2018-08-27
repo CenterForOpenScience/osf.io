@@ -95,6 +95,7 @@ from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
+from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.requests.permissions import NodeRequestPermission
@@ -179,7 +180,7 @@ class DraftMixin(object):
         return draft
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin, NodeOptimizationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (
@@ -200,7 +201,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
+        return self.optimize_node_queryset(default_node_list_permission_queryset(user=self.request.user, model_cls=Node))
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
