@@ -276,7 +276,7 @@ def node_setting(auth, node, **kwargs):
     ret['comments'] = {
         'level': node.comment_level,
     }
-    
+
     addon_settings = {}
     for addon in ['forward']:
         addon_config = apps.get_app_config('addons_{}'.format(addon))
@@ -285,7 +285,7 @@ def node_setting(auth, node, **kwargs):
         config['addon_icon_url'] = addon_config.icon_url
         config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
         addon_settings['forward'] = config
-    
+
     ret['addon_settings'] = addon_settings
 
     ret['categories'] = settings.NODE_CATEGORY_MAP
