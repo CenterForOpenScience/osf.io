@@ -289,8 +289,11 @@ def get_auth(auth, **kwargs):
                     raise HTTPError(httplib.BAD_REQUEST)
             # path and no version, use most recent version
             elif path:
-                osf_file = OsfStorageFile.objects.get(_id=path.strip('/'))
-                fileversion = FileVersion.objects.filter(basefilenode=osf_file).order_by('-created').first()
+                # check to see if this is a file or a folder
+                content_type = ContentType.objects.get_for_model(node)
+                basefilenode = BaseFileNode.objects.get(target_object_id=node.id, target_content_type=content_type, _path=path.strip('/'))
+                if isinstance(basefilenode, OsfStorageFile):
+                    fileversion = FileVersion.objects.filter(basefilenode=basefilenode).order_by('-created').first()
             if fileversion:
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
