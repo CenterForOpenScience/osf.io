@@ -281,19 +281,22 @@ def get_auth(auth, **kwargs):
         fileversion = None
         if provider_name == 'osfstorage':
             if path and version:
-                try:
-                    fileversion = FileVersion.objects.get(
-                        basefilenode___id=path.strip('/'), identifier=version
-                    ).select_related('region')
-                except FileVersion.DoesNotExist:
-                    raise HTTPError(httplib.BAD_REQUEST)
+                # check to see if this is a file or a folder
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    try:
+                        fileversion = FileVersion.objects.get(
+                            basefilenode___id=path.strip('/'), identifier=version
+                        ).select_related('region')
+                    except FileVersion.DoesNotExist:
+                        raise HTTPError(httplib.BAD_REQUEST)
             # path and no version, use most recent version
             elif path:
-                # check to see if this is a file or a folder
-                content_type = ContentType.objects.get_for_model(node)
-                basefilenode = BaseFileNode.objects.get(target_object_id=node.id, target_content_type=content_type, _path=path.strip('/'))
-                if isinstance(basefilenode, OsfStorageFile):
-                    fileversion = FileVersion.objects.filter(basefilenode=basefilenode).order_by('-created').first()
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode=filenode
+                    ).select_related('region').order_by('-created').first()
             if fileversion:
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
