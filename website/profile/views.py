@@ -327,15 +327,14 @@ def user_account_password(auth, **kwargs):
         # new verification key (v1) for CAS
         user.verification_key = generate_verification_key(verification_type=None)
         user.save()
-        # We have to logout the user so all CAS sessions are invalid
+        # We have to logout the user first so all CAS sessions are invalid
         osf_logout()
-        return redirect(cas.get_login_url(
+        return redirect(cas.get_logout_url(cas.get_login_url(
             web_url_for('user_account', _absolute=True) + '?password_reset=True',
             username=user.username,
             verification_key=user.verification_key,
-        ))
+        )))
     user.save()
-
     return redirect(web_url_for('user_account'))
 
 
