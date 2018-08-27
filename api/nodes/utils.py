@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
-from osf.models import AbstractNode
+from addons.wiki.models import NodeSettings as WikiNodeSettings
+from osf.models import AbstractNode, Guid, NodeRelation, Contributor
 
 from api.base.exceptions import ServiceUnavailableError
-from api.base.utils import get_object_or_error, waterbutler_api_url_for
+from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
 
 def get_file_object(target, path, provider, request):
     # Don't bother going to waterbutler for osfstorage
@@ -59,3 +61,25 @@ def get_file_object(target, path, provider, request):
         return waterbutler_request.json()['data']
     except KeyError:
         raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+
+class NodeOptimizationMixin(object):
+    """Mixin with convenience method for optimizing serialization of nodes.
+    Annotates the node queryset with several properties to reduce number of queries.
+    """
+    def optimize_node_queryset(self, queryset):
+        auth = get_user_auth(self.request)
+        admin_scope = has_admin_scope(self.request)
+        abstract_node_contenttype_id = ContentType.objects.get_for_model(AbstractNode).id
+        guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
+        parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
+        wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
+        contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
+        return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
+            contrib_read=Subquery(contribs.values('read')[:1]),
+            contrib_write=Subquery(contribs.values('write')[:1]),
+            contrib_admin=Subquery(contribs.values('admin')[:1]),
+            has_wiki_addon=Exists(wiki_addon),
+            annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
+            annotated_tags=ArrayAgg('tags__name'),
+            has_admin_scope=Value(admin_scope, output_field=BooleanField()))

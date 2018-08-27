@@ -356,6 +356,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
+    def tag_names(self):
+        """
+        Optimization property. If node has been annotated with "annotated_tags"
+        in a queryset, use that value.  Otherwise, fetch the tags.
+        """
+        if hasattr(self, 'annotated_tags'):
+            return [] if self.annotated_tags == [None] else self.annotated_tags
+        else:
+            return self.tags.values_list('name', flat=True)
+
+    @property
     def nodes(self):
         """Return queryset of nodes."""
         return self.get_nodes()
@@ -701,7 +712,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
-            'publisher': 'Open Science Framework',
+            'publisher': 'OSF',
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
@@ -1030,9 +1041,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def parent_id(self):
-        if self.parent_node:
-            return self.parent_node._id
-        return None
+        if hasattr(self, 'annotated_parent_id'):
+            # If node has been annotated with "annotated_parent_id"
+            # in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
 
     @property
     def license(self):
