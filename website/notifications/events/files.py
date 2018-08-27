@@ -21,10 +21,10 @@ from addons.base.signals import file_updated as signal
 
 
 @signal.connect
-def file_updated(self, node=None, user=None, event_type=None, payload=None):
+def file_updated(self, target=None, user=None, event_type=None, payload=None):
     if event_type not in event_registry:
         raise RegistryError
-    event = event_registry[event_type](user, node, event_type, payload=payload)
+    event = event_registry[event_type](user, target, event_type, payload=payload)
     event.perform()
 
 

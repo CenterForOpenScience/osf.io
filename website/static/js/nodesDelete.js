@@ -323,18 +323,16 @@ function batchNodesDelete(nodes) {
     }
 
     var requests = $.map(batches, function (batch) {
-        return $.ajax({
-            url: nodesV2Url,
-            type: 'DELETE',
-            dataType: 'json',
-            contentType: 'application/vnd.api+json; ext=bulk',
-            crossOrigin: true,
-            xhrFields: {withCredentials: true},
-            processData: false,
-            data: JSON.stringify({
+        return $osf.ajaxJSON('DELETE', nodesV2Url, {
+            data: {
                 data: batch
-            })
-          });
+            },
+            isCors: true,
+            fields: {
+                contentType: 'application/vnd.api+json; ext=bulk',
+                processData: false
+            }
+        });
     });
 
     return $.when.apply($, requests).then(function (_) {

@@ -16,9 +16,11 @@ var connectExistingAccount = function(accountId) {
                     window.location.hash = '#configureAddonsAnchor';
                 }
                 window.location.reload();
-        }).fail(
-            $osf.handleJSONError
-        );
+        }).fail(function(){
+            $.osf.growl('Error', 'Your account could not be connected, if the problem persists you may need to' +
+             ' reconnect to Gitlab or contact us at ' + $.osf.osfSupportLink() + '.');
+            Raven.captureMessage('Unexpected error occurred in JSON request');
+        });
 };
 
 var updateHidden = function(element) {
@@ -171,7 +173,7 @@ var ViewModel = oop.extend(UserViewModel,{
             return Boolean(self.selectedHost());
         });
         self.tokenUrl = ko.pureComputed(function() {
-            return self.host() ? 'https://' + self.host() + '/profile/personal_access_tokens' : null;
+            return self.host() ? self.host() + '/profile/personal_access_tokens' : null;
         });
     },
     authSuccessCallback: function() {

@@ -82,14 +82,14 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
@@ -193,7 +193,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -224,7 +224,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -611,7 +611,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 

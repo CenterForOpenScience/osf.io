@@ -13,10 +13,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/',
-                '/project/<pid>/node/<nid>/osfstorage/',
-                '/project/<pid>/osfstorage/<fid>/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/',
+                '/<guid>/osfstorage/',
+                '/<guid>/osfstorage/<fid>/',
             ],
             'get',
             views.osfstorage_get_metadata,
@@ -25,8 +23,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/',
+                '/<guid>/osfstorage/<fid>/',
             ],
             'delete',
             views.osfstorage_delete,
@@ -35,8 +32,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/download/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/download/',
+                '/<guid>/osfstorage/<fid>/download/',
             ],
             'get',
             views.osfstorage_download,
@@ -45,8 +41,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/revisions/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/revisions/',
+                '/<guid>/osfstorage/<fid>/revisions/',
             ],
             'get',
             views.osfstorage_get_revisions,
@@ -55,8 +50,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/lineage/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/lineage/',
+                '/<guid>/osfstorage/<fid>/lineage/',
             ],
             'get',
             views.osfstorage_get_lineage,
@@ -65,8 +59,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/children/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
+                '/<guid>/osfstorage/<fid>/children/',
             ],
             'post',
             views.osfstorage_create_child,
@@ -75,8 +68,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/children/',
-                '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
+                '/<guid>/osfstorage/<fid>/children/',
             ],
             'get',
             views.osfstorage_get_children,
@@ -85,8 +77,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/hooks/metadata/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/metadata/',
+                '/<guid>/osfstorage/hooks/metadata/',
             ],
             'put',
             views.osfstorage_update_metadata,
@@ -95,8 +86,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/hooks/move/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/move',
+                '/<guid>/osfstorage/hooks/move/',
             ],
             'post',
             views.osfstorage_move_hook,
@@ -105,8 +95,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/hooks/copy/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/copy/',
+                '/<guid>/osfstorage/hooks/copy/',
             ],
             'post',
             views.osfstorage_copy_hook,
@@ -115,7 +104,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/tags/',
+                '/<guid>/osfstorage/<fid>/tags/',
             ],
             'post',
             views.osfstorage_add_tag,
@@ -124,7 +113,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/tags/',
+                '/<guid>/osfstorage/<fid>/tags/',
             ],
             'delete',
             views.osfstorage_remove_tag,

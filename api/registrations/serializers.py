@@ -176,8 +176,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     ))
 
     registration_schema = RelationshipField(
-        related_view='metaschemas:registration-metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registered_schema_id>'}
     )
 
     settings = HideIfRegistration(RelationshipField(
@@ -376,18 +376,18 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
 
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
 
     comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
-                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_view_kwargs={'node_id': '<target._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
 
     node = RelationshipField(related_view='registrations:registration-detail',
-                                     related_view_kwargs={'node_id': '<node._id>'},
+                                     related_view_kwargs={'node_id': '<target._id>'},
                                      help_text='The registration that this file belongs to'
                              )
 
@@ -397,7 +397,7 @@ class RegistrationProviderSerializer(NodeProviderSerializer):
     """
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )

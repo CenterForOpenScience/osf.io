@@ -1,4 +1,4 @@
-DEFAULT_HOSTS = ['http://gitlab.com']
+DEFAULT_HOSTS = ['https://gitlab.com']
 
 # GitLab hook domain
 HOOK_DOMAIN = None

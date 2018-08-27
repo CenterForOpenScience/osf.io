@@ -30,7 +30,7 @@ from osf.models import (
     Tag,
     NodeLog,
     Contributor,
-    MetaSchema,
+    RegistrationSchema,
     Sanction,
     NodeRelation,
     Registration,
@@ -1727,7 +1727,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -2098,7 +2098,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.objects.first()
+        schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -3034,7 +3034,7 @@ class TestDOIValidation:
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='nope').save()
         with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
@@ -3173,7 +3173,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3195,7 +3195,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': node.creator.given_name,

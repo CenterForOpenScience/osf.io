@@ -71,7 +71,7 @@ class CoreScopes(object):
     REGISTRATION_VIEW_ONLY_LINKS_READ = 'registration.view_only_links_read'
     REGISTRATION_VIEW_ONLY_LINKS_WRITE = 'registration.view_only_links_write'
 
-    METASCHEMA_READ = 'metaschemas.read'
+    SCHEMA_READ = 'schemas.read'
 
     NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
     NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
@@ -175,7 +175,7 @@ class ComposedScopes(object):
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
 
     # Metaschemas collection
-    METASCHEMAS_READ = (CoreScopes.METASCHEMA_READ, )
+    METASCHEMAS_READ = (CoreScopes.SCHEMA_READ, )
 
     # Draft registrations
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )

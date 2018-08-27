@@ -91,7 +91,7 @@ class ProviderExistsMixin(ProviderMixinBase):
 
 @pytest.mark.django_db
 class ProviderSubjectsMixin(ProviderMixinBase):
-    '''
+    """
     Subject Hierarchy
     +-----------------------------+
     |                             |
@@ -115,7 +115,7 @@ class ProviderSubjectsMixin(ProviderMixinBase):
     |                             |
     |  Other Sub                  |
     +-----------------------------+
-    '''
+    """
     @pytest.fixture(autouse=True)
     def subA(self):
         return SubjectFactory(text='A')
