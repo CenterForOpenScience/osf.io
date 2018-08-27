@@ -21,8 +21,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
-from website.identifiers.utils import build_ezid_metadata
-from osf.models import Identifier, MetaSchema
+from osf.models import Identifier, RegistrationSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
@@ -33,8 +32,6 @@ from website import util
 from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
-
-from website.identifiers.client import EzidClient
 
 from .node import _view_project
 
@@ -125,10 +122,10 @@ def node_registration_retraction_post(auth, node, **kwargs):
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
-            meta_schema = MetaSchema.objects.get(_id=metaschema_id)
-        except MetaSchema.DoesNotExist:
+            meta_schema = RegistrationSchema.objects.get(_id=metaschema_id)
+        except RegistrationSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
-            meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
+            meta_schema = RegistrationSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
@@ -214,11 +211,9 @@ def project_before_register(auth, node, **kwargs):
     }
 
 
-def osf_admin_change_status_identifier(node, status):
-    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = build_ezid_metadata(node)
-        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-        client.change_status_identifier(status, doi, metadata)
+def osf_admin_change_status_identifier(node):
+    if node.get_identifier_value('doi'):
+        node.request_identifier_update(category='doi')
 
 
 def get_referent_by_identifier(category, value):

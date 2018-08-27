@@ -7,14 +7,15 @@ from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
-from osf.models import AbstractNode
+from api.collections.serializers import CollectedMetaSerializer
 
-from osf.models import OSFUser
-
-from osf.models import BaseFileNode
-
-from osf.models import Institution
-
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    BaseFileNode,
+    Institution,
+    CollectedGuidMetadata,
+)
 
 class SearchSerializer(JSONAPISerializer):
 
@@ -38,6 +39,10 @@ class SearchSerializer(JSONAPISerializer):
         if isinstance(data, Institution):
             serializer = InstitutionSerializer(data, context=self.context)
             return InstitutionSerializer.to_representation(serializer, data)
+
+        if isinstance(data, CollectedGuidMetadata):
+            serializer = CollectedMetaSerializer(data, context=self.context)
+            return CollectedMetaSerializer.to_representation(serializer, data)
 
         return None
 

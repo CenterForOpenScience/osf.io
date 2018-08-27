@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, TypeField,
+    JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -16,7 +16,6 @@ from api.nodes.serializers import (
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
@@ -78,37 +77,39 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
-    is_published = ser.BooleanField(required=False)
-    is_preprint_orphan = ser.BooleanField(read_only=True)
-    license_record = NodeLicenseSerializer(required=False, source='license')
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
+    date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
+    withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
+    is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
+    license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
-    preprint_doi_created = VersionedDateTimeField(read_only=True)
+    node_is_public = NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public'))
+    preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
-    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
-    date_last_transitioned = VersionedDateTimeField(read_only=True)
+    reviews_state = NoneIfWithdrawal(ser.CharField(source='machine_state', read_only=True, max_length=15))
+    date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
-    citation = RelationshipField(
+    citation = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-citation',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    identifiers = RelationshipField(
+    identifiers = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:identifier-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
-    node = NodeRelationshipField(
+    node = NoneIfWithdrawal(NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False
-    )
+    ))
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
@@ -116,28 +117,27 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    provider = PreprintProviderRelationshipField(
+    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    )
+    ))
 
-    files = RelationshipField(
+    files = NoneIfWithdrawal(RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<_id>'}
-    )
+    ))
 
-    primary_file = PrimaryFileRelationshipField(
+    primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        lookup_url_kwarg='file_id',
         read_only=False
-    )
+    ))
 
-    review_actions = RelationshipField(
+    review_actions = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
-    )
+    ))
 
     links = LinksField(
         {
@@ -158,15 +158,18 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return self.get_preprint_url(obj)
 
     def get_article_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+        return 'https://doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def get_preprint_doi_url(self, obj):
+        doi = None
         doi_identifier = obj.get_identifier('doi')
         if doi_identifier:
-            return 'https://dx.doi.org/{}'.format(doi_identifier.value)
-        else:
-            built_identifier = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=obj._id).replace('doi:', '').upper()
-            return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
+            doi = doi_identifier.value
+        # if a preprint hasn't been published yet, don't show the DOI prematurely
+        elif obj.is_published:
+            client = obj.get_doi_client()
+            doi = client.build_doi(preprint=obj) if client else None
+        return 'https://doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

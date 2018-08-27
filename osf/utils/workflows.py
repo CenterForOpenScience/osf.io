@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from enum import Enum
 from enum import unique
 
+@unique
 class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
@@ -14,20 +15,29 @@ class ChoiceEnum(Enum):
     def values(cls):
         return tuple(c.value for c in cls)
 
-@unique
-class DefaultStates(ChoiceEnum):
-    INITIAL = 'initial'
-    PENDING = 'pending'
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
+DEFAULT_STATES = [
+    ('INITIAL', 'initial'),
+    ('PENDING', 'pending'),
+    ('ACCEPTED', 'accepted'),
+    ('REJECTED', 'rejected'),
+]
+DEFAULT_TRIGGERS = [
+    ('SUBMIT', 'submit'),
+    ('ACCEPT', 'accept'),
+    ('REJECT', 'reject'),
+    ('EDIT_COMMENT', 'edit_comment'),
+]
+REVIEW_STATES = DEFAULT_STATES + [
+    ('WITHDRAWN', 'withdrawn'),
+]
+REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
+    ('WITHDRAW', 'withdraw')
+]
 
-
-@unique
-class DefaultTriggers(ChoiceEnum):
-    SUBMIT = 'submit'
-    ACCEPT = 'accept'
-    REJECT = 'reject'
-    EDIT_COMMENT = 'edit_comment'
+DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
+ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
+DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
+ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
 
 DEFAULT_TRANSITIONS = [
     {
@@ -63,6 +73,16 @@ DEFAULT_TRANSITIONS = [
     },
 ]
 
+REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
+    {
+        'trigger': ReviewTriggers.WITHDRAW.value,
+        'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
+        'dest': ReviewStates.WITHDRAWN.value,
+        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+    }
+]
+
 @unique
 class RequestTypes(ChoiceEnum):
     ACCESS = 'access'
+    WITHDRAWAL = 'withdrawal'

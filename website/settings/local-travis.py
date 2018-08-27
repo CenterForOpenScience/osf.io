@@ -50,7 +50,7 @@ MAIL_PASSWORD = 'CHANGEME'
 
 # Session
 COOKIE_NAME = 'osf'
-SECRET_KEY = "CHANGEME"
+SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
@@ -95,7 +95,6 @@ NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
 POPULAR_LINKS_NODE = 'hiyah'
 POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
-EZID_USERNAME = 'testfortravisnotreal'
-EZID_PASSWORD = 'testfortravisnotreal'
-
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
+
+DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'

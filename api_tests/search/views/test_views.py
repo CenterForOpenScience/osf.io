@@ -4,12 +4,14 @@ import uuid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
 from framework.auth.core import Auth
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
     InstitutionFactory,
+    CollectionFactory,
+    CollectionProviderFactory,
 )
 from osf_tests.utils import mock_archive
 from website import settings
@@ -19,6 +21,9 @@ from website.search import search
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_quickfiles_creation
 class ApiSearchTestCase:
 
     @pytest.fixture(autouse=True)
@@ -37,6 +42,10 @@ class ApiSearchTestCase:
     @pytest.fixture()
     def institution(self):
         return InstitutionFactory(name='Social Experiment')
+
+    @pytest.fixture()
+    def collection_public(self, user):
+        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True, is_bookmark_collection=False)
 
     @pytest.fixture()
     def user_one(self):
@@ -517,7 +526,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
     @pytest.fixture()
     def schema(self):
-        schema = MetaSchema.objects.filter(
+        schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
         return schema
@@ -655,6 +664,7 @@ class TestSearchUsers(ApiSearchTestCase):
     def url_user_search(self):
         return '/{}search/users/'.format(API_BASE)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_search_user(self, app, url_user_search, user, user_one, user_two):
 
         # test_search_users_no_auth
@@ -762,3 +772,154 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert num_results == 1
         assert total == 1
         assert institution.name == res.json['data'][0]['attributes']['name']
+
+class TestSearchCollections(ApiSearchTestCase):
+
+    def post_payload(self, *args, **kwargs):
+        return {
+            'data': {
+                'attributes': kwargs
+            },
+            'type': 'search'
+        }
+
+    @pytest.fixture()
+    def url_collection_search(self):
+        return '/{}search/collections/'.format(API_BASE)
+
+    @pytest.fixture()
+    def node_one(self, user):
+        return NodeFactory(title='Ismael Lo: Tajabone', creator=user, is_public=True)
+
+    @pytest.fixture()
+    def node_two(self, user):
+        return NodeFactory(title='Sambolera', creator=user, is_public=True)
+
+    @pytest.fixture()
+    def node_private(self, user):
+        return NodeFactory(title='Classified', creator=user)
+
+    @pytest.fixture()
+    def node_with_abstract(self, user):
+        node_with_abstract = NodeFactory(title='Sambolera', creator=user, is_public=True)
+        node_with_abstract.set_description(
+            'Sambolera by Khadja Nin',
+            auth=Auth(user),
+            save=True)
+        return node_with_abstract
+
+    def test_search_collections(
+            self, app, url_collection_search, user, node_one, node_two, collection_public,
+            node_with_abstract, node_private):
+
+        collection_public.collect_object(node_one, user)
+        collection_public.collect_object(node_two, user)
+        collection_public.collect_object(node_private, user)
+
+        # test_search_collections_no_auth
+        res = app.get(url_collection_search)
+        assert res.status_code == 200
+        total = res.json['links']['meta']['total']
+        num_results = len(res.json['data'])
+        assert total == 2
+        assert num_results == 2
+
+        # test_search_collections_auth
+        res = app.get(url_collection_search, auth=user)
+        assert res.status_code == 200
+        total = res.json['links']['meta']['total']
+        num_results = len(res.json['data'])
+        assert total == 2
+        assert num_results == 2
+
+        # test_search_collections_by_submission_title
+        url = '{}?q={}'.format(url_collection_search, 'Ismael')
+        res = app.get(url)
+        assert res.status_code == 200
+        total = res.json['links']['meta']['total']
+        num_results = len(res.json['data'])
+        assert node_one.title == res.json['data'][0]['embeds']['guid']['data']['attributes']['title']
+        assert total == 1
+        assert num_results == 1
+
+        # test_search_collections_by_submission_abstract
+        collection_public.collect_object(node_with_abstract, user)
+        url = '{}?q={}'.format(url_collection_search, 'KHADJA')
+        res = app.get(url)
+        assert res.status_code == 200
+        total = res.json['links']['meta']['total']
+        assert node_with_abstract.description == res.json['data'][0]['embeds']['guid']['data']['attributes']['description']
+        assert total == 1
+
+        # test_search_collections_no_results:
+        url = '{}?q={}'.format(url_collection_search, 'Wale Watu')
+        res = app.get(url)
+        assert res.status_code == 200
+        total = res.json['links']['meta']['total']
+        assert total == 0
+
+    def test_POST_search_collections(
+            self, app, url_collection_search, user, node_one, node_two, collection_public,
+            node_with_abstract, node_private):
+        collection_public.collect_object(node_one, user, status='asdf')
+        collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
+        collection_public.collect_object(node_with_abstract, user, status='asdf')
+        collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
+
+        # test_search_empty
+        payload = self.post_payload()
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+        assert len(res.json['data']) == 3
+
+        # test_search_title_keyword
+        payload = self.post_payload(q='Ismael')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+
+        # test_search_abstract_keyword
+        payload = self.post_payload(q='Khadja')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_with_abstract._id
+
+        # test_search_filter
+        payload = self.post_payload(status='asdf')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
+
+        payload = self.post_payload(status=['asdf', 'lkjh'])
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+        assert len(res.json['data']) == 3
+
+        payload = self.post_payload(collectedType='asdf')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_two._id
+
+        # test_search_abstract_keyword_and_filter
+        payload = self.post_payload(q='Khadja', status='asdf')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_with_abstract._id
+
+        # test_search_abstract_keyword_and_filter_provider
+        payload = self.post_payload(q='Khadja', status='asdf', provider=collection_public.provider._id)
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_with_abstract._id

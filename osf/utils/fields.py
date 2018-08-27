@@ -65,10 +65,10 @@ class LowercaseEmailField(models.EmailField):
         return value
 
 class EncryptedTextField(models.TextField):
-    '''
+    """
     This field transparently encrypts data in the database. It should probably only be used with PG unless
     the user takes into account the db specific trade-offs with TextFields.
-    '''
+    """
     prefix = 'jwe:::'
 
     def get_db_prep_value(self, value, **kwargs):
@@ -90,9 +90,9 @@ class NonNaiveDateTimeField(models.DateTimeField):
 
 
 class EncryptedJSONField(JSONField):
-    '''
+    """
     Very similar to EncryptedTextField, but for postgresql's JSONField
-    '''
+    """
     prefix = 'jwe:::'
 
     def get_prep_value(self, value, **kwargs):

@@ -4,10 +4,10 @@ from transitions import Machine
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
-from osf.models.action import ReviewAction, NodeRequestAction
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.models.nodelog import NodeLog
 from osf.utils import permissions
-from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITIONS
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
@@ -73,13 +73,20 @@ class BaseMachine(Machine):
 class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
 
+    def __init__(self, *args, **kwargs):
+        kwargs['transitions'] = kwargs.get('transitions', REVIEWABLE_TRANSITIONS)
+        kwargs['states'] = kwargs.get('states', [s.value for s in ReviewStates])
+        super(ReviewsMachine, self).__init__(*args, **kwargs)
+
     def save_changes(self, ev):
         node = self.machineable.node
         node._has_abandoned_preprint = False
         now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.machineable.in_public_reviews_state
-        if should_publish and not self.machineable.is_published:
-            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.node == self.machineable.node):
+        if self.machineable.is_retracted:
+            pass  # Do not alter published state
+        elif should_publish and not self.machineable.is_published:
+            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.target == self.machineable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
@@ -87,6 +94,7 @@ class ReviewsMachine(BaseMachine):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.machineable.date_published = now
             self.machineable.is_published = True
+            self.machineable.ever_public = True
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
@@ -94,6 +102,10 @@ class ReviewsMachine(BaseMachine):
 
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
+    def perform_withdraw(self, ev):
+        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
+        self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
         context = self.get_context()
@@ -121,6 +133,7 @@ class ReviewsMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         context = self.get_context()
         context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
+        context['comment'] = self.action.comment
         context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
         context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
@@ -128,10 +141,15 @@ class ReviewsMachine(BaseMachine):
                                            action=self.action)
     def notify_edit_comment(self, ev):
         context = self.get_context()
+        context['comment'] = self.action.comment
         if not self.machineable.provider.reviews_comments_private and self.action.comment:
             reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                                template='reviews_update_comment',
                                                action=self.action)
+
+    def notify_withdraw(self, ev):
+        # TODO [IN-284]: language
+        pass
 
     def get_context(self):
         return {
@@ -143,7 +161,7 @@ class ReviewsMachine(BaseMachine):
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
         }
 
-class RequestMachine(BaseMachine):
+class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
 
     def save_changes(self, ev):
@@ -213,5 +231,54 @@ class RequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node': self.machineable.target,
+            'requester': self.machineable.creator
+        }
+
+
+class PreprintRequestMachine(BaseMachine):
+    ActionClass = PreprintRequestAction
+
+    def save_changes(self, ev):
+        """ Handles preprint status changes and state transitions
+        """
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+            self.machineable.comment = self.action.comment
+        elif ev.event.name == DefaultTriggers.SUBMIT.value:
+            # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
+            if self.auto_approval_allowed():
+                self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+        elif ev.event.name == DefaultTriggers.ACCEPT.value:
+            # If moderator accepts the withdrawal request
+            self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+        self.machineable.save()
+
+    def auto_approval_allowed(self):
+        # Returns True if the provider is pre-moderated and the preprint is never public.
+        return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value \
+            and not self.machineable.target.ever_public
+
+    def notify_submit(self, ev):
+        # TODO: [IN-284]
+        pass
+
+    def notify_accept_reject(self, ev):
+        # TODO: [IN-331]
+        pass
+
+    def notify_edit_comment(self, ev):
+        """ Not presently required to notify for this event
+        """
+        pass
+
+    def notify_resubmit(self, ev):
+        """ Notify moderators that someone is requesting withdrawal again
+            Not presently required to notify for this event
+        """
+        # TODO
+        pass
+
+    def get_context(self):
+        return {
+            'preprint': self.machineable.target,
             'requester': self.machineable.creator
         }

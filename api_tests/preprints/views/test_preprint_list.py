@@ -36,31 +36,31 @@ def build_preprint_create_payload(
         attrs = {}
 
     payload = {
-        "data": {
-            "attributes": attrs,
-            "relationships": {},
-            "type": "preprints"
+        'data': {
+            'attributes': attrs,
+            'relationships': {},
+            'type': 'preprints'
         }
     }
     if node_id:
-        payload['data']['relationships']["node"] = {
-            "data": {
-                "type": "node",
-                "id": node_id
+        payload['data']['relationships']['node'] = {
+            'data': {
+                'type': 'node',
+                'id': node_id
             }
         }
     if provider_id:
-        payload['data']['relationships']["provider"] = {
-            "data": {
-                "type": "provider",
-                "id": provider_id
+        payload['data']['relationships']['provider'] = {
+            'data': {
+                'type': 'provider',
+                'id': provider_id
             }
         }
     if file_id:
-        payload['data']['relationships']["primary_file"] = {
-            "data": {
-                "type": "primary_file",
-                "id": file_id
+        payload['data']['relationships']['primary_file'] = {
+            'data': {
+                'type': 'primary_file',
+                'id': file_id
             }
         }
     return payload
@@ -106,11 +106,11 @@ class TestPreprintCreateWithoutNode:
                     'category': 'data',
                     'public': False,
                 },
-                "relationships": {
-                    "provider": {
-                        "data": {
-                            "id": provider._id,
-                            "type": "providers"}}}}}
+                'relationships': {
+                    'provider': {
+                        'data': {
+                            'id': provider._id,
+                            'type': 'providers'}}}}}
 
     def test_create_preprint_logged_in(
             self, app, user_one, url, preprint_payload):
@@ -197,7 +197,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
     def url(self):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
 
-    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    @mock.patch('website.identifiers.clients.crossref.CrossRefClient.update_identifier')
     def test_provider_filter_equals_returns_one(
             self,
             mock_change_identifier,
@@ -223,7 +223,7 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
 
     @pytest.fixture()
     def expected_reviewables(self, user):
-        with mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers'):
+        with mock.patch('website.identifiers.utils.request_identifiers'):
             preprints = [
                 PreprintFactory(
                     is_published=False, project=ProjectFactory(
