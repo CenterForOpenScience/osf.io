@@ -278,6 +278,7 @@ def get_auth(auth, **kwargs):
         version = data.get('version')
         credentials = None
         waterbutler_settings = None
+        fileversion = None
         if provider_name == 'osfstorage':
             if path and version:
                 try:
