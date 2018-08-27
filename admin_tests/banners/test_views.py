@@ -65,7 +65,7 @@ class TestBannerList:
         view.object_list = view.get_queryset()
         data = view.get_context_data()
         assert type(data) is dict
-        assert (len(data['banners']), 2)
+        assert len(data['banners']), 2
         assert type(data['banners'][0]) is ScheduledBanner
 
     def test_no_user_permissions_raises_error(self, req, plain_view):

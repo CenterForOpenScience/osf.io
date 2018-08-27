@@ -5,12 +5,15 @@ import httplib as http
 import requests
 import urlparse
 import waffle
+import json
 
 from flask import request
 from flask import send_from_directory
 from flask import Response
 from flask import stream_with_context
+from flask import g
 from django.core.urlresolvers import reverse
+from django.conf import settings as api_settings
 
 from geolite2 import geolite2
 
@@ -61,7 +64,9 @@ from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
-            message=language.TERMS_OF_SERVICE.format(settings.API_DOMAIN, user._id),
+            message=language.TERMS_OF_SERVICE.format(api_domain=settings.API_DOMAIN,
+                                                     user_id=user._id,
+                                                     csrf_token=json.dumps(g.get('csrf_token'))),
             kind='default',
             dismissible=True,
             trust=True,
@@ -125,6 +130,7 @@ def get_globals():
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
+        'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
@@ -150,6 +156,7 @@ def get_globals():
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
         'footer_links': settings.FOOTER_LINKS,
         'waffle': waffle,
+        'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
     }
 
 
@@ -396,7 +403,6 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',

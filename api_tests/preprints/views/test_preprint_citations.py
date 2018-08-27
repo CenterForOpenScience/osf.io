@@ -105,7 +105,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.published_preprint = PreprintFactory(
             creator=self.admin_contributor)
         self.node = self.published_preprint.node
-        self.node.title = "My Preprint"
+        self.node.title = 'My Preprint'
         self.node.save()
 
         self.admin_contributor.given_name = 'Grapes'

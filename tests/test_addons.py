@@ -30,7 +30,7 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import Session, MetaSchema, QuickFilesNode
+from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
@@ -463,7 +463,7 @@ class TestCheckPreregAuth(OsfTestCase):
         administer_permission = Permission.objects.get(codename='administer_prereg')
         self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
@@ -1251,7 +1251,8 @@ class TestViewUtils(OsfTestCase):
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
 
-    def test_serialize_addons(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_serialize_addons(self, mock_folders):
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
@@ -1263,7 +1264,8 @@ class TestViewUtils(OsfTestCase):
         assert len(default_addons) == 1
         assert default_addons[0]['short_name'] == 'osfstorage'
 
-    def test_include_template_json(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_include_template_json(self, mock_folders):
         """ Some addons (github, gitlab) need more specialized template infomation so we want to
         ensure we get those extra variables that when the addon is enabled.
         """
@@ -1276,7 +1278,8 @@ class TestViewUtils(OsfTestCase):
         assert 'node_has_auth' in enabled_addons[0]
         assert 'valid_credentials' in enabled_addons[0]
 
-    def test_collect_node_config_js(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_collect_node_config_js(self, mock_folders):
 
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 

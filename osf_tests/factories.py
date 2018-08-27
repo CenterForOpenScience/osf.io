@@ -42,7 +42,7 @@ PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.MetaSchema.objects.first()
+    return models.RegistrationSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -134,7 +134,7 @@ class UnregUserFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         ret = target_class.create_unregistered(email=kwargs.pop('email'), fullname=kwargs.pop('fullname'))
         for key, val in kwargs.items():
             setattr(ret, key, val)
@@ -161,7 +161,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, username, password, fullname):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
@@ -206,7 +206,7 @@ class ProjectWithAddonFactory(ProjectFactory):
     # TODO: Should use mock addon objects
     @classmethod
     def _build(cls, target_class, addon='s3', *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = ProjectFactory._build(target_class, *args, **kwargs)
         auth = Auth(user=instance.creator)
         instance.add_addon(addon, auth)
@@ -484,7 +484,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        registration_schema = registration_schema or models.MetaSchema.objects.first()
+        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,

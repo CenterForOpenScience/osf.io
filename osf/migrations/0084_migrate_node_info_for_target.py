@@ -43,7 +43,7 @@ def set_basefilenode_target(apps, schema_editor):
 
 
 def reset_basefilenode_target_to_node(*args, **kwargs):
-    sql = "UPDATE osf_basefilenode SET node_id = target_object_id;"
+    sql = 'UPDATE osf_basefilenode SET node_id = target_object_id;'
     with connection.cursor() as cursor:
         cursor.execute(sql)
 

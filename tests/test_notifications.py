@@ -609,9 +609,9 @@ def subscription_schema(project, structure, level=0):
 
     node_schema = {
         'node': {
-            'id': Use(type(project._id), error="node_id{}".format(level)),
-            'title': Use(type(project.title), error="node_title{}".format(level)),
-            'url': Use(type(project.url), error="node_{}".format(level))
+            'id': Use(type(project._id), error='node_id{}'.format(level)),
+            'title': Use(type(project.title), error='node_title{}'.format(level)),
+            'url': Use(type(project.url), error='node_{}'.format(level))
         },
         'kind': And(str, Use(lambda s: s in ('node', 'folder'),
                              error="kind didn't match node or folder {}".format(level))),
@@ -630,12 +630,12 @@ def subscription_schema(project, structure, level=0):
 def event_schema(level=None):
     return {
         'event': {
-            'title': And(Use(str, error="event_title{} not a string".format(level)),
+            'title': And(Use(str, error='event_title{} not a string'.format(level)),
                          Use(lambda s: s in constants.NOTIFICATION_TYPES,
-                             error="event_title{} not in list".format(level))),
-            'description': And(Use(str, error="event_desc{} not a string".format(level)),
+                             error='event_title{} not in list'.format(level))),
+            'description': And(Use(str, error='event_desc{} not a string'.format(level)),
                                Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
-                                   error="event_desc{} not in list".format(level))),
+                                   error='event_desc{} not in list'.format(level))),
             'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
             'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)
         },
