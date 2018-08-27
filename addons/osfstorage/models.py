@@ -4,6 +4,7 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
+from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
@@ -563,11 +564,17 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def storage_usage(self):
+        storage_usage = cache.get('storage_usage')
+
+        if storage_usage:
+            return storage_usage
+
         file_versions = OsfStorageFile.objects.filter(provider='osfstorage',
-                                                   node_id=self.owner_id,
+                                                   target_object_id=self.owner_id,
                                                    versions__isnull=False).values_list('versions',
                                                                                        flat=True)
+        # An empty queryset will produce a None instead of 0
+        sum = FileVersion.objects.filter(id__in=file_versions).aggregate(sum=models.Sum('size'))['sum'] or 0
 
-        sum = FileVersion.objects.filter(id__in=file_versions).aggregate(sum=models.Sum('size'))['sum']
-
-        return sum or 0  # An empty queryset will produce a None instead of 0
+        cache.set('storage_usage', sum, 60)
+        return sum

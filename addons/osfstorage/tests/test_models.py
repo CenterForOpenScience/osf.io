@@ -5,6 +5,7 @@ import unittest
 
 import pytest
 import pytz
+from django.core.cache import cache
 from django.utils import timezone
 from nose.tools import *  # noqa
 
@@ -605,7 +606,7 @@ class TestNodeSettingsModel(StorageTestCase):
         assert region.waterbutler_credentials == new_test_creds
 
     def test_storage_usage(self):
-        file_node = OsfStorageFile(name='test', node=self.node_settings.owner)
+        file_node = OsfStorageFile(name='test', target=self.node_settings.owner)
         file_node.save()
 
         first_version = factories.FileVersionFactory(
@@ -628,6 +629,11 @@ class TestNodeSettingsModel(StorageTestCase):
         file_node.versions.add(second_version)
         file_node.save()
 
+        # check if still cached
+        assert self.project.get_addon('osfstorage').storage_usage == 1024
+
+        # now bust that cache
+        cache.delete('storage_usage')
         assert self.project.get_addon('osfstorage').storage_usage == 2024
 
 @pytest.mark.django_db
