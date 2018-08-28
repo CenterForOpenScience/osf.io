@@ -24,10 +24,10 @@ var MAKE_EMBARGO = {
     message: 'Enter registration into embargo'
 };
 var MESSAGES = {
-    selectTitle: 'Select components',
+    selectTitle: 'Register Project',
     confirmTitle: 'Confirm',
     embargoTitle: 'Embargo',
-    selectNodes: 'Select the components you would like to register.',
+    selectNodes: 'Select components to be included in the registration.',
 };
 
 function _flattenNodeTree(nodeTree) {
