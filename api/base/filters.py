@@ -30,6 +30,7 @@ def lowercase(lower):
 
 def sort_multiple(fields):
     fields = list(fields)
+
     def sort_fn(a, b):
         sort_direction = 1
         for field in fields:
@@ -410,6 +411,7 @@ class ListFilterMixin(FilterMixin):
             elif operation['value'] == []:
                 operation['source_field_name'] = 'tags__isnull'
                 operation['value'] = True
+                operation['op'] = 'eq'
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):

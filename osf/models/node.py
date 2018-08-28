@@ -149,7 +149,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
             qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
-            qs |= self.extra(where=['''
+            qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
                         SELECT "osf_contributor"."node_id"
@@ -163,7 +163,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            '''], params=(user, ))
+            """], params=(user, ))
 
         return qs
 
@@ -263,7 +263,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
-    LICENSE_QUERY = re.sub('\s+', ' ', '''WITH RECURSIVE ascendants AS (
+    LICENSE_QUERY = re.sub('\s+', ' ', """WITH RECURSIVE ascendants AS (
             SELECT
                 N.node_license_id,
                 R.parent_id
@@ -281,7 +281,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             WHERE R.is_node_link IS FALSE
             AND D.node_license_id IS NULL
     ) SELECT {fields} FROM "{nodelicenserecord}"
-    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
+    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
@@ -356,6 +356,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def tag_names(self):
+        """
+        Optimization property. If node has been annotated with "annotated_tags"
+        in a queryset, use that value.  Otherwise, fetch the tags.
+        """
+        if hasattr(self, 'annotated_tags'):
+            return [] if self.annotated_tags == [None] else self.annotated_tags
+        else:
+            return self.tags.values_list('name', flat=True)
 
     @property
     def nodes(self):
@@ -703,7 +714,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
-            'publisher': 'Open Science Framework',
+            'publisher': 'OSF',
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
@@ -716,6 +727,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
+
+    @property
+    def should_request_identifiers(self):
+        return not self.all_tags.filter(name='qatest').exists()
 
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
@@ -1025,9 +1040,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def parent_id(self):
-        if self.parent_node:
-            return self.parent_node._id
-        return None
+        if hasattr(self, 'annotated_parent_id'):
+            # If node has been annotated with "annotated_parent_id"
+            # in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
 
     @property
     def license(self):

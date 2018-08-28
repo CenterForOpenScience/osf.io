@@ -3,7 +3,6 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
-
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
@@ -11,6 +10,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
 from api.base.views import LinkedRegistrationsRelationship
+from api.nodes.utils import NodeOptimizationMixin
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.permissions import (
@@ -33,7 +33,13 @@ from api.collections.serializers import (
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 
-from osf.models import AbstractNode, CollectedGuidMetadata, Collection, Node, Registration
+from osf.models import (
+    AbstractNode,
+    CollectedGuidMetadata,
+    Collection,
+    Node,
+    Registration
+)
 
 
 class CollectionMixin(object):
@@ -347,7 +353,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         serializer.save()
 
 
-class LinkedNodesList(BaseLinkedList, CollectionMixin):
+class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -408,7 +414,8 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        nodes = Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return self.optimize_node_queryset(nodes)
 
     # overrides APIView
     def get_parser_context(self, http_request):

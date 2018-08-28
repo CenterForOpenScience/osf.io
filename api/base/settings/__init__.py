@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-'''Consolidates settings from defaults.py and local.py.
+"""Consolidates settings from defaults.py and local.py.
 
 ::
     >>> from api.base import settings
     >>> settings.API_BASE
     'v2/'
-'''
+"""
 import os
 from urlparse import urlparse
 import warnings

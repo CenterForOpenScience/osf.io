@@ -75,8 +75,8 @@ class DateTimeAwareJSONFieldTests(TestCase):
         assert json_data == self.json_list_data, 'Nope'
 
     def test_list_field(self):
-        l = TestFileNode.objects.create(history=self.json_list_data, target=self.project)
-        iden = l.id
+        field = TestFileNode.objects.create(history=self.json_list_data, target=self.project)
+        iden = field.id
         assert BaseFileNode.objects.get(id=iden).history == self.json_list_data
 
     def test_dict_field(self):
