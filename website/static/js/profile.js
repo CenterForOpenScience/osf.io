@@ -742,17 +742,17 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
+const arrayInDBKeys = ['twitter', 'linkedIn', 'github'];
+
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
     // Do some extra work to store these as arrays in the DB
-    var arrayInDBKeys = ['twitter', 'linkedIn', 'github'];
-    $.each(serializedData || {}, function(key, value) {
-        if ($.inArray(key, arrayInDBKeys) !== -1) {
-            if (value === '') {
-                serializedData[key] = [];
-            } else {
-                serializedData[key] = [value];
-            }
+    arrayInDBKeys.forEach(function(key) {
+        var value = serializedData[key];
+        if (value === '') {
+            serializedData[key] = [];
+        } else {
+            serializedData[key] = [value];
         }
     });
     var profileWebsites = serializedData.profileWebsites;
@@ -767,8 +767,6 @@ SocialViewModel.prototype.serialize = function() {
 SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
-    // Do some extra work to display these as strings for now
-    var arrayInDBKeys = ['twitter', 'linkedIn', 'github'];
     $.each(data || {}, function(key, value) {
         if (key === 'profileWebsites') {
             value = value.map(function(website) {
