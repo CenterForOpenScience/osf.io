@@ -499,7 +499,7 @@
                          </div>
                          <div class=" pull-right" role="group">
                              <button type="button" data-bind="click: cancelCitation" class="btn btn-default">Cancel</button>
-                             <button type="button" data-bind="click: clearCitation" class="btn btn-danger">Clear</button>
+                             <button type="button" data-bind="click: clearCitation" class="btn btn-danger">Remove</button>
                              <button type="button" data-bind="click: saveCitation" class="btn btn-success">Save</button>
                          </div>
                      </div>
