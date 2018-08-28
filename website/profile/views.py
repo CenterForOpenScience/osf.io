@@ -279,6 +279,7 @@ def user_profile(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_account_page')
 def user_account(auth, **kwargs):
     user = auth.user
     user_addons = addon_utils.get_addons_by_config_type('user', user)
@@ -297,6 +298,7 @@ def user_account(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_account_page')
 def user_account_password(auth, **kwargs):
     user = auth.user
     old_password = request.form.get('old_password', None)
@@ -335,6 +337,7 @@ def user_account_password(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_addons_page')
 def user_addons(auth, **kwargs):
 
     user = auth.user
@@ -352,6 +355,7 @@ def user_addons(auth, **kwargs):
     return ret
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_notifications_page')
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
@@ -359,6 +363,7 @@ def user_notifications(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_apps_page')
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
     app_list_url = api_v2_url('applications/')
@@ -367,6 +372,7 @@ def oauth_application_list(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_apps_page')
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
     app_list_url = api_v2_url('applications/')  # POST request to this url
@@ -374,6 +380,7 @@ def oauth_application_register(auth, **kwargs):
             'app_detail_url': ''}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_apps_page')
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
     client_id = kwargs.get('client_id')
@@ -395,6 +402,7 @@ def oauth_application_detail(auth, **kwargs):
             'app_detail_url': app_detail_url}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_tokens_page')
 def personal_access_token_list(auth, **kwargs):
     """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
     token_list_url = api_v2_url('tokens/')
@@ -403,6 +411,7 @@ def personal_access_token_list(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_tokens_page')
 def personal_access_token_register(auth, **kwargs):
     """Register a personal access token: blank form view"""
     token_list_url = api_v2_url('tokens/')  # POST request to this url
@@ -411,6 +420,7 @@ def personal_access_token_register(auth, **kwargs):
             'scope_options': get_available_scopes()}
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_tokens_page')
 def personal_access_token_detail(auth, **kwargs):
     """Show detail for a single personal access token"""
     _id = kwargs.get('_id')
