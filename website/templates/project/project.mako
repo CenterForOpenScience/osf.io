@@ -484,7 +484,7 @@
                      <div data-bind="visible: page() == 'edit'" style="display: none;">
                          <div class="row">
                              <div class="col-md-12">
-                                 <h4>Create Custom Citation</h4>
+                                 <h4>Create custom citation</h4>
                              </div>
                          </div>
                          <div class="row">
