@@ -7,6 +7,7 @@ var $osf = require('./osfHelpers');
 var citations = require('./citations');
 var bootbox = require('bootbox');
 var oop = require('js/oop');
+var makeClient = require('js/clipboard');
 
 var BASE_URL = '/static/vendor/bower_components/styles/';
 var STYLES = {
@@ -37,34 +38,35 @@ var ViewModel = oop.defclass({
                 return 'loading';
             } else if(self.showEdit()) {
                 return 'edit';
-            } else if(self.customCitationText() == '') {
+            } else if(self.customCitationText() === '') {
                 return 'standard';
             } else {
                 return 'custom';
             }
         });
+        makeClient($('#custom-citation-copy-button')[0]);
     },
     showEditBox: function() {
         var self = this;
         self.showEdit(true);
-        self.initialCustomCitationText(self.customCitationText())
+        self.initialCustomCitationText(self.customCitationText());
     },
     cancelCitation: function() {
         var self = this;
         self.showEdit(false);
-        self.customCitationText(self.initialCustomCitationText())
+        self.customCitationText(self.initialCustomCitationText());
     },
     saveCitation: function() {
         var self = this;
         self.loading(true);
-        self.updateCustomCitation()
+        self.updateCustomCitation();
     },
     clearCitation: function() {
         var self = this;
-        if(self.customCitationText() != '') {
+        if(self.customCitationText() !== '') {
             self.customCitationText('');
             self.loading(true);
-            self.updateCustomCitation()
+            self.updateCustomCitation();
         } else {
             self.showEdit(false);
         }

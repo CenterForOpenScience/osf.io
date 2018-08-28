@@ -476,8 +476,15 @@
 
                          <div class="m-b-md">
                              <div class="citation-list">
-                                 <div class="f-w-xl">Cite as:</div>
-                                 <span data-bind="text: customCitationText"></span>
+                                 <div class="row">
+                                     <div class="col-md-1">
+                                         <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitationText}" class="btn btn-default"><i class="fa fa-copy"></i></span>
+                                     </div>
+                                     <div class="col-md-10">
+                                         <div class="f-w-xl">Cite as:</div>
+                                         <span data-bind="text: customCitationText"></span>
+                                     </div>
+                                 </div>
                              </div>
                          </div>
                      </div>
