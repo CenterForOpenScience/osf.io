@@ -27,7 +27,7 @@ class TestUserDetail:
     @pytest.fixture()
     def user_one(self):
         user_one = AuthUserFactory()
-        user_one.social['twitter'] = 'rheisendennis'
+        user_one.social['twitter'] = ['rheisendennis']
         user_one.save()
         return user_one
 
@@ -44,11 +44,11 @@ class TestUserDetail:
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_correct_pk_user
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = '/{}users/{}/?version=latest'.format(API_BASE, user_one._id)
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] == user_one.fullname
-        assert user_one.social['twitter'] in user_json['attributes']['social']['twitter']
+        assert user_one.social['twitter'] == user_json['attributes']['social']['twitter']
 
     #   test_get_incorrect_pk_user_logged_in
         url = '/{}users/{}/'.format(API_BASE, user_two._id)
@@ -133,6 +133,25 @@ class TestUserDetail:
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
+    def test_social_values_old_version(self, app, user_one):
+        socialname = 'ohhey'
+        user_one.social = {'twitter': [socialname], 'github': []}
+        user_one.save()
+        url = '/{}users/{}/?version=2.9'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == socialname
+        assert user_social_json['github'] == ''
+        assert 'linkedIn' not in user_social_json.keys()
+
+        url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == [socialname]
+        assert user_social_json['github'] == []
+        assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation

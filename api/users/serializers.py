@@ -11,7 +11,7 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
@@ -33,6 +33,27 @@ class QuickFilesRelationshipField(RelationshipField):
             'meta': {}
         }
         return relationship_links
+
+
+class SocialField(ser.DictField):
+    def __init__(self, min_version, **kwargs):
+        super(SocialField, self).__init__(**kwargs)
+        self.min_version = min_version
+        self.help_text = 'This field will change data formats after version {}'.format(self.min_version)
+
+    def to_representation(self, value):
+        old_social_string_fields = ['twitter', 'github', 'linkedIn']
+        request = self.context.get('request')
+        show_old_format = request and is_deprecated(request.version, self.min_version) and request.method == 'GET'
+        if show_old_format:
+            social = value.copy()
+            for key in old_social_string_fields:
+                if social.get(key):
+                    social[key] = value[key][0]
+                elif social.get(key) == []:
+                    social[key] = ''
+            value = social
+        return super(SocialField, self).to_representation(value)
 
 
 class UserSerializer(JSONAPISerializer):
@@ -58,7 +79,7 @@ class UserSerializer(JSONAPISerializer):
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
-    social = ser.DictField(required=False)
+    social = SocialField(required=False, min_version='2.10')
     employment = JSONAPIListField(required=False, source='jobs')
     education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
