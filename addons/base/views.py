@@ -296,7 +296,7 @@ def get_auth(auth, **kwargs):
                 if filenode and filenode.is_file:
                     fileversion = FileVersion.objects.filter(
                         basefilenode=filenode
-                    ).select_related('region').order_by('-created').first()
+                    ).order_by('-created').first()
             if fileversion:
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
