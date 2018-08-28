@@ -531,6 +531,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.logs.count()
 
     def get_node_count(self, obj):
+        # TODO RECENT CHANGES VERY INCORRECT, RESULT IS INACCURATE AND INEFFICIENT
+        # FIGURE OUT THE APPROPRIATE WAY TO QUERY THIS WITH DJANGO-GUARDIAN PERMS
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
@@ -544,13 +546,17 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
                   FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
                   WHERE osf_noderelation.is_node_link IS FALSE
-                ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
+                ), has_admin AS (SELECT * FROM osf_contributor, auth_group, osf_osfuser_groups WHERE (auth_group.name IN (SELECT 'node_' || parent_id || '_admin' FROM parents) OR auth_group.name = 'node_' || %s || '_admin') AND osf_osfuser_groups.group_id = auth_group.id AND osf_osfuser_groups.osfuser_id = %s LIMIT 1)
                 SELECT DISTINCT
                   COUNT(child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
                 JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
+                JOIN auth_group AS NODE_READ ON NODE_READ.name = 'node_' || osf_abstractnode.id || '_read'
+                JOIN auth_group AS NODE_WRITE ON NODE_WRITE.name = 'node_' || osf_abstractnode.id || '_write'
+                JOIN auth_group AS NODE_ADMIN ON NODE_ADMIN.name = 'node_' || osf_abstractnode.id || '_admin'
+                JOIN osf_osfuser_groups AS OSFUSER_GROUPS ON OSFUSER_GROUPS.osfuser_id = %s
                 LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
                 LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
                 WHERE parent_id = %s AND is_node_link IS FALSE
@@ -558,10 +564,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 AND (
                   osf_abstractnode.is_public
                   OR (TRUE IN (SELECT TRUE FROM has_admin))
-                  OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
+                  OR (osf_contributor.user_id = %s AND (OSFUSER_GROUPS.group_id = NODE_ADMIN.id OR OSFUSER_GROUPS.group_id=NODE_WRITE.id OR OSFUSER_GROUPS.group_id=NODE_READ.id))
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key],
+            """, [obj.id, obj.id, user_id, user_id, obj.id, user_id, auth.private_key],
             )
 
             return int(cursor.fetchone()[0])
