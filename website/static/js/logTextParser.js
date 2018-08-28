@@ -757,12 +757,6 @@ var LogPieces = {
             return m('span', '');
         }
     },
-
-    custom_citation: {
-        view: function(ctrl, logObject){
-            return m('em', logObject.attributes.params.custom_citation);
-        }
-    },
 };
 
 module.exports = {
