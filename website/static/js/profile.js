@@ -59,6 +59,9 @@ var socialRules = {
 
 var cleanByRule = function(rule) {
     return function(value) {
+        if (typeof(value) === 'object') {
+            value = value[0];
+        }
         var match = value.match(rule);
         if (match) {
             return match[1];
@@ -741,6 +744,17 @@ $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.proto
 
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
+    // Do some extra work to store these as arrays in the DB
+    var arrayInDBKeys = ['twitter', 'linkedIn', 'github'];
+    $.each(serializedData || {}, function(key, value) {
+        if ($.inArray(key, arrayInDBKeys) !== -1) {
+            if (value === '') {
+                serializedData[key] = [];
+            } else {
+                serializedData[key] = [value];
+            }
+        }
+    });
     var profileWebsites = serializedData.profileWebsites;
     serializedData.profileWebsites = profileWebsites.filter(
         function (value) {
@@ -753,11 +767,15 @@ SocialViewModel.prototype.serialize = function() {
 SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
+    // Do some extra work to display these as strings for now
+    var arrayInDBKeys = ['twitter', 'linkedIn', 'github'];
     $.each(data || {}, function(key, value) {
         if (key === 'profileWebsites') {
             value = value.map(function(website) {
                 return $osf.decodeText(website);
             });
+        } else if ($.inArray(key, arrayInDBKeys) !== -1) {
+            value = $osf.decodeText(value[0]);
         } else {
             value = $osf.decodeText(value);
         }
