@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
         logger.info('Updated social field for {} users'.format(users_updated))
 
     dependencies = [
-        ('osf', '0124_merge_20180816_1229'),
+        ('osf', '0125_merge_20180824_1856'),
     ]
 
     operations = [
