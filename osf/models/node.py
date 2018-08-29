@@ -23,7 +23,7 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
-from guardian.shortcuts import get_perms, get_objects_for_user
+from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -782,6 +782,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return (
             (user and self.has_permission(user, 'write')) or is_api_node
         )
+
+    def add_osf_group(self, group, permission='write', auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to add an OSF Group.')
+        group.add_group_to_node(self, permission, auth)
+        # TODO Log that osf_group was added to project
+
+    def remove_osf_group(self, group, auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to remove an OSF Group.')
+        group.remove_group_from_node(self)
+
+    @property
+    def osf_groups(self):
+        """Returns a queryset of django member groups that are associated with OSFGroups
+        These django member groups have permissions to the current node.
+        """
+        return get_groups_with_perms(self).filter(name__icontains='osfgroup')
 
     def get_aggregate_logs_query(self, auth):
         return (
