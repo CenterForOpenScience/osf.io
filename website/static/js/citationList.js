@@ -73,16 +73,30 @@ var ViewModel = oop.defclass({
     },
     updateCustomCitation: function() {
         var self = this;
+        var payload = {
+            'data': {
+                'id' : ctx.node.id,
+                'type' : 'nodes',
+                'attributes' : {
+                    'title': ctx.node.title,
+                    'category': ctx.node.category,
+                    'custom_citation_text': self.customCitationText()
+                 }
+            }
+        };
         self.showEdit(false);
         $.ajax({
-            url: ctx.apiV2Prefix  + 'nodes/' + ctx.node.id + '/citation/',
+            url: ctx.apiV2Prefix  + 'nodes/' + ctx.node.id + '/',
             type: 'PUT',
             dataType: 'json',
             contentType: 'application/json',
             beforeSend: $osf.setXHRAuthorization,
-            data: JSON.stringify({'data': {'attributes' : {'custom_citation_text': self.customCitationText()}}})
+            data: JSON.stringify(payload)
         }).done(function(data) {
             self.fetch();
+        }).fail(function() {
+            $osf.growl('Error', 'Your custom citation not updated. Please refresh the page and try ' +
+            'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
         });
     },
     fetch: function() {

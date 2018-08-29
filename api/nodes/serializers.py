@@ -139,58 +139,19 @@ class NodeLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class CitationSerializer(JSONAPISerializer):
+class NodeCitationSerializer(JSONAPISerializer):
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
     author = ser.ListField(read_only=True)
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
+    custom_citation_text = ser.CharField(allow_blank=True)
 
     links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
         return obj['URL']
-
-    class Meta:
-        type_ = 'citation'
-
-class NodeCitationSerializer(CitationSerializer):
-    custom_citation_text = ser.CharField(allow_blank=True)
-
-    def get_absolute_url(self, obj):
-        if self.context['request'].method == 'GET':
-            return obj.csl['URL']
-        return obj['URL']
-
-    def update(self, node, validated_data):
-        user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous else None)
-
-        if validated_data['custom_citation_text'] == '':
-            log_action = NodeLog.CUSTOM_CITATION_REMOVED
-            old_citation_text = node.custom_citation_text
-        elif validated_data['custom_citation_text'] != '' and node.custom_citation_text != '':
-            log_action = NodeLog.CUSTOM_CITATION_EDITED
-        else:
-            log_action = NodeLog.CUSTOM_CITATION_ADDED
-
-        node.custom_citation_text = validated_data['custom_citation_text']
-        node.save()
-
-        logged_citation = node.custom_citation_text if log_action != NodeLog.CUSTOM_CITATION_REMOVED else old_citation_text
-        node.add_log(
-            log_action,
-            params={
-                'custom_citation': logged_citation,
-                'node': node._primary_key,
-            },
-            auth=auth,
-            log_date=timezone.now(),
-        )
-        csl = node.csl
-        csl['custom_citation_text'] = node.custom_citation_text
-        return csl
 
     class Meta:
         type_ = 'node-citation'
@@ -278,6 +239,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
+    custom_citation_text = ser.CharField(allow_blank=True)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
@@ -654,6 +616,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
+            if 'custom_citation_text' in validated_data:
+                self._update_custom_citation_text(node, auth, validated_data)
             if 'tag_names' in validated_data:
                 new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
@@ -689,6 +653,32 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 raise InvalidModelValueError(detail=e.message)
 
         return node
+
+    def _update_custom_citation_text(self, node, auth, validated_data):
+        if validated_data['custom_citation_text'] == '':
+            log_action = NodeLog.CUSTOM_CITATION_REMOVED
+            old_citation_text = node.custom_citation_text
+        elif validated_data['custom_citation_text'] != '' and node.custom_citation_text != '':
+            log_action = NodeLog.CUSTOM_CITATION_EDITED
+        else:
+            log_action = NodeLog.CUSTOM_CITATION_ADDED
+
+        node.custom_citation_text = validated_data['custom_citation_text']
+        node.save()
+
+        logged_citation = node.custom_citation_text if log_action != NodeLog.CUSTOM_CITATION_REMOVED else old_citation_text
+        node.add_log(
+            log_action,
+            params={
+                'custom_citation': logged_citation,
+                'node': node._primary_key,
+            },
+            auth=auth,
+            log_date=timezone.now(),
+        )
+        csl = node.csl
+        csl['custom_citation_text'] = node.custom_citation_text
+        return csl
 
 
 class NodeAddonSettingsSerializerBase(JSONAPISerializer):

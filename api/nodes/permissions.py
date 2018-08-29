@@ -51,16 +51,6 @@ class IsAdmin(permissions.BasePermission):
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
-class IsAdminToUpdate(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
-        auth = get_user_auth(request)
-        if request.method == 'PUT':
-            return obj.has_permission(auth.user, osf_permissions.ADMIN)
-        if request.method == 'GET':
-            return obj.is_public or obj.has_permission(auth.user, osf_permissions.READ)
-
-
 class IsContributor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)

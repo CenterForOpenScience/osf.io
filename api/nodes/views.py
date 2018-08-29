@@ -62,7 +62,6 @@ from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
-    IsAdminToUpdate,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
@@ -636,13 +635,12 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         serializer.save(creator=user, parent=self.get_node())
 
 
-class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsAdminToUpdate
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -657,7 +655,9 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMi
         auth = get_user_auth(self.request)
         if not node.is_public and not node.can_view(auth):
             raise PermissionDenied if auth.user else NotAuthenticated
-        return node
+        csl = node.csl
+        csl['custom_citation_text'] = node.custom_citation_text
+        return csl
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
