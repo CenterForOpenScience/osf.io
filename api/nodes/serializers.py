@@ -342,7 +342,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     files = RelationshipField(
-        related_view='nodes:node-providers',
+        related_view='nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'}
     )
 
@@ -1145,7 +1145,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeProviderSerializer(JSONAPISerializer):
+class NodeStorageProviderSerializer(JSONAPISerializer):
     id = ser.SerializerMethodField(read_only=True)
     kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)

@@ -220,6 +220,7 @@ class CrossRefClient(AbstractIdentifierClient):
             doi = self.build_doi(preprint)
             filename = doi.split('/')[-1]
             username, password = self.get_credentials()
+            logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
             requests.request(
@@ -238,8 +239,9 @@ class CrossRefClient(AbstractIdentifierClient):
         else:
             raise NotImplementedError()
 
-    def update_identifier(self, preprint, category):
-        status = self.get_status(preprint)
+    def update_identifier(self, preprint, category, status=None):
+        if status is None:
+            status = self.get_status(preprint)
         return self.create_identifier(preprint, category, status)
 
     def get_status(self, preprint):

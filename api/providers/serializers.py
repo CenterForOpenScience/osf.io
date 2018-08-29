@@ -5,10 +5,10 @@ from rest_framework.exceptions import ValidationError
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, TypedRelationshipField
-from api.providers.permissions import GROUPS
 from api.providers.workflows import Workflows
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
+from osf.utils.permissions import REVIEW_GROUPS
 from website import mails
 from website.settings import DOMAIN
 
@@ -69,6 +69,25 @@ class ProviderSerializer(JSONAPISerializer):
 class CollectionProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'collection-providers'
+
+    primary_collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<primary_collection._id>'}
+    )
+
+    filterable_fields = frozenset([
+        'allow_submissions',
+        'allow_commenting',
+        'description',
+        'domain',
+        'domain_redirect_enabled',
+        'id',
+        'name',
+    ])
+
+class RegistrationProviderSerializer(ProviderSerializer):
+    class Meta:
+        type_ = 'registration-providers'
 
     primary_collection = RelationshipField(
         related_view='collections:collection-detail',
@@ -219,7 +238,7 @@ class ModeratorSerializer(JSONAPISerializer):
             template = mails.MODERATOR_ADDED(provider)
 
         perm_group = validated_data.pop('permission_group', '')
-        if perm_group not in GROUPS:
+        if perm_group not in REVIEW_GROUPS:
             raise ValidationError('Unrecognized permission_group')
         context['notification_settings_url'] = '{}reviews/preprints/{}/notifications'.format(DOMAIN, provider._id)
         context['provider_name'] = provider.name
