@@ -239,7 +239,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    custom_citation_text = ser.CharField(allow_blank=True)
+    custom_citation_text = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
