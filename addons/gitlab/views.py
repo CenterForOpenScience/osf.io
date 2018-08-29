@@ -3,6 +3,7 @@
 from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
+import gitlab
 
 from django.core.exceptions import ValidationError
 from flask import request, make_response
@@ -155,7 +156,14 @@ def gitlab_set_config(auth, **kwargs):
 
     # Verify that repo exists and that user can access
     connection = GitLabClient(external_account=node_settings.external_account)
-    repo = connection.repo(gitlab_repo_id)
+
+    try:
+        repo = connection.repo(gitlab_repo_id)
+    except gitlab.GitlabGetError as exc:
+        if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
+            return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+                     'current Terms of Service by disabling and re-enabling your account.'}, http.BAD_REQUEST
+
     if repo is None:
         if user_settings:
             message = (
