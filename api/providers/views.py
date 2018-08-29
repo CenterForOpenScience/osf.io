@@ -13,7 +13,7 @@ from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCreateSerializer
+from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
 from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
@@ -22,7 +22,7 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
 
@@ -325,22 +325,22 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collected-metadata-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectedMetaCreateSerializer
+            return CollectionSubmissionCreateSerializer
         else:
-            return CollectedMetaSerializer
+            return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = get_object_or_error(CollectionProvider, self.kwargs['provider_id'], self.request, display_name='CollectionProvider')
         if provider and provider.primary_collection:
-            return provider.primary_collection.collectedguidmetadata_set.all()
-        return CollectedGuidMetadata.objects.none()
+            return provider.primary_collection.collectionsubmission_set.all()
+        return CollectionSubmission.objects.none()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -362,22 +362,22 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collected-registration-metadata-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectedMetaCreateSerializer
+            return CollectionSubmissionCreateSerializer
         else:
-            return CollectedMetaSerializer
+            return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
         if provider and provider.primary_collection:
-            return provider.primary_collection.collectedguidmetadata_set.all()
-        return CollectedGuidMetadata.objects.none()
+            return provider.primary_collection.collectionsubmission_set.all()
+        return CollectionSubmission.objects.none()
 
     def get_queryset(self):
         return self.get_queryset_from_request()

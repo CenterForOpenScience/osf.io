@@ -3,7 +3,7 @@ import json
 
 from django import forms
 
-from osf.models import CollectionProvider, CollectedGuidMetadata
+from osf.models import CollectionProvider, CollectionSubmission
 from admin.base.utils import get_nodelicense_choices
 
 
@@ -49,7 +49,7 @@ class CollectionProviderForm(forms.ModelForm):
             type_choices_added = type_choices_new - type_choices_old
             type_choices_removed = type_choices_old - type_choices_new
             for item in type_choices_removed:
-                if CollectedGuidMetadata.objects.filter(collection=collection_provider.primary_collection,
+                if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         collected_type=item).exists():
                     raise forms.ValidationError(
                         'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
@@ -73,7 +73,7 @@ class CollectionProviderForm(forms.ModelForm):
             status_choices_added = status_choices_new - status_choices_old
             status_choices_removed = status_choices_old - status_choices_new
             for item in status_choices_removed:
-                if CollectedGuidMetadata.objects.filter(collection=collection_provider.primary_collection,
+                if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         status=item).exists():
                     raise forms.ValidationError(
                         'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
