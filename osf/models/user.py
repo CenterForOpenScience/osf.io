@@ -16,6 +16,7 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
@@ -25,6 +26,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.utils import timezone
+from guardian.shortcuts import get_objects_for_user
 
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
@@ -552,6 +554,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def is_anonymous(self):
         return False
+
+    @property
+    def osf_groups(self):
+        OSFGroup = apps.get_model('osf.OSFGroup')
+        return get_objects_for_user(self, 'member_group', OSFGroup)
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url

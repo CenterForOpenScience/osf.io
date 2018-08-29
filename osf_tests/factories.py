@@ -326,6 +326,15 @@ class RegistrationProviderFactory(DjangoModelFactory):
         return obj
 
 
+class OSFGroupFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    class Meta:
+        model = models.OSFGroup
+
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
