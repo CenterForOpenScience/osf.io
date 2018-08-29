@@ -92,7 +92,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
-    reviews_state = NoneIfWithdrawal(ser.CharField(source='machine_state', read_only=True, max_length=15))
+    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     citation = NoneIfWithdrawal(RelationshipField(
