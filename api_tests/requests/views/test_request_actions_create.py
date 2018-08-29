@@ -386,7 +386,6 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
                 assert initial_state == request.machine_state
                 assert initial_comment == request.comment
 
-    @pytest.mark.skip('TODO: IN-331 -- add emails')
     @mock.patch('website.reviews.listeners.mails.send_mail')
     def test_email_sent_on_approve(self, mock_mail, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
@@ -396,9 +395,11 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             res = app.post_json_api(url, payload, auth=moderator.auth)
             assert res.status_code == 201
             request.reload()
+            request.target.reload()
             assert initial_state != request.machine_state
             assert request.target.is_retracted
-        assert mock_mail.call_count == 2
+        # There are two preprints withdrawn and each preprint have 2 contributors. So 4 emails are sent in total.
+        assert mock_mail.call_count == 4
 
     @pytest.mark.skip('TODO: IN-331 -- add emails')
     @mock.patch('website.reviews.listeners.mails.send_mail')

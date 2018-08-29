@@ -116,6 +116,12 @@ class PreprintRequestSerializer(RequestSerializer):
         filter_key='target__guids___id',
     )
 
+    actions = RelationshipField(
+        read_only=True,
+        related_view='requests:request-action-list',
+        related_view_kwargs={'request_id': '<_id>'},
+    )
+
     def get_target_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj.target._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
