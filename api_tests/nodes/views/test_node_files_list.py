@@ -647,10 +647,10 @@ class TestNodeFilesListPagination(ApiTestCase):
         self.check_file_order(res)
 
 
-class TestNodeProviderDetail(ApiTestCase):
+class TestNodeStorageProviderDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeProviderDetail, self).setUp()
+        super(TestNodeStorageProviderDetail, self).setUp()
         self.user = AuthUserFactory()
         self.public_project = ProjectFactory(is_public=True)
         self.private_project = ProjectFactory(creator=self.user)

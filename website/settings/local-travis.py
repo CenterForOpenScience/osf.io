@@ -35,6 +35,10 @@ EXTERNAL_EMBER_APPS = {
     'preprints': {
         'server': 'http://localhost:4201',
         'path': os.environ.get('HOME') + '/preprints/'
+    },
+    'registries': {
+        'server': 'http://localhost:4202/',
+        'path': os.environ.get('HOME') + '/registries/'
     }
 }
 
