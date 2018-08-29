@@ -464,6 +464,9 @@ class UserSettings(BaseUserSettings):
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
+
+    STORAGE_USAGE_CACHE_TIMEOUT = 60
+
     # Required overrides
     complete = True
     has_auth = True
@@ -564,7 +567,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def storage_usage(self):
-        storage_usage = cache.get('storage_usage')
+        storage_usage = cache.get('storage_usage' + self._id)
 
         if storage_usage:
             return storage_usage
@@ -574,7 +577,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                                                    versions__isnull=False).values_list('versions',
                                                                                        flat=True)
         # An empty queryset will produce a None instead of 0
-        sum = FileVersion.objects.filter(id__in=file_versions).aggregate(sum=models.Sum('size'))['sum'] or 0
+        storage_usage_total = FileVersion.objects.filter(id__in=file_versions).aggregate(sum=models.Sum('size'))['sum'] or 0
 
-        cache.set('storage_usage', sum, 60)
-        return sum
+        cache.set('storage_usage' + self._id, storage_usage_total, self.STORAGE_USAGE_CACHE_TIMEOUT)
+        return storage_usage_total
