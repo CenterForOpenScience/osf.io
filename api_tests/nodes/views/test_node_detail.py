@@ -24,6 +24,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     SubjectFactory,
     ForkFactory,
+    OSFGroupFactory,
     WithdrawnRegistrationFactory,
 )
 from rest_framework import exceptions
@@ -140,6 +141,13 @@ class TestNodeDetail:
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
+
+    #   test_return_project_where_you_have_osf_group_membership
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, 'write')
+        res = app.get(url_private, auth=user_two.auth)
+        assert res.status_code == 200
+        assert project_private.has_permission(user_two, 'write') is True
 
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):

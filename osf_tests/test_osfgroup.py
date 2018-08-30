@@ -290,3 +290,39 @@ class TestOSFGroup:
                                                                         project_two.id,
                                                                         child_two.id,
                                                                         grandchild_two.id))
+
+    def test_parent_admin_users_osf_groups(self, manager, member, project, osf_group):
+        child = NodeFactory(parent=project, creator=manager)
+        project.add_osf_group(osf_group, 'admin')
+        # Manager has explict admin to child, member has implicit admin.
+        # Manager should be in admin_contributors, member should be in parent_admin_contributors
+
+        assert manager in child.admin_users
+        assert member not in child.admin_users
+
+        assert manager not in child.parent_admin_users
+        assert member in child.parent_admin_users
+
+    def test_get_users_with_perm_osf_groups(self, project, manager, member, osf_group):
+        # Explicitly added as a contributor
+        read_users = project.get_users_with_perm('read')
+        write_users = project.get_users_with_perm('write')
+        admin_users = project.get_users_with_perm('admin')
+        assert len(project.get_users_with_perm('read')) == 1
+        assert len(project.get_users_with_perm('write')) == 1
+        assert len(project.get_users_with_perm('admin')) == 1
+        assert manager in read_users
+        assert manager in write_users
+        assert manager in admin_users
+
+        # Added through osf groups
+        project.add_osf_group(osf_group, 'write')
+        read_users = project.get_users_with_perm('read')
+        write_users = project.get_users_with_perm('write')
+        admin_users = project.get_users_with_perm('admin')
+        assert len(project.get_users_with_perm('read')) == 2
+        assert len(project.get_users_with_perm('write')) == 2
+        assert len(project.get_users_with_perm('admin')) == 1
+        assert member in read_users
+        assert member in write_users
+        assert member not in admin_users

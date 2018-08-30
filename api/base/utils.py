@@ -152,7 +152,7 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     if user.is_anonymous:
         return model_cls.objects.filter(is_public=True)
-    read_user_query = Q(id__in=get_objects_for_user(user, 'read_node', model_cls.objects.filter(Q(contributor__user_id=user.id))))
+    read_user_query = Q(id__in=get_objects_for_user(user, 'read_node', model_cls))
     return model_cls.objects.filter(read_user_query | Q(is_public=True))
 
 def default_node_list_permission_queryset(user, model_cls):

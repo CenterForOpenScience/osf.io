@@ -17,6 +17,7 @@ from osf_tests.factories import (
     PreprintFactory,
     InstitutionFactory,
     RegionFactory
+    OSFGroupFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
@@ -102,6 +103,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+
+    #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
+        group = OSFGroupFactory(creator=user)
+        another_project = ProjectFactory()
+        another_project.add_osf_group(group, 'read')
+        res = app.get(url, auth=user.auth)
+        ids = [each['id'] for each in res.json['data']]
+        assert another_project._id in ids
 
     def test_node_list_does_not_returns_registrations(
             self, app, user, public_project, url):

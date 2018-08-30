@@ -226,8 +226,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                write_user_query = Q(id__in=get_objects_for_user(auth.user, 'write_node', Node.objects.filter(Q(contributor__user_id=auth.user.id))))
-                return Node.objects.filter(write_user_query)
+                return get_objects_for_user(auth.user, 'write_node', Node)
 
             for node in nodes:
                 if not node.can_edit(auth):
@@ -405,7 +404,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         if field_name == 'bibliographic':
             operation['source_field_name'] = 'visible'
 
-    # Overrides NodeContributorsList
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permission':
             if operation['op'] != 'eq':
