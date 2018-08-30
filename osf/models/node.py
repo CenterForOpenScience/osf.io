@@ -132,17 +132,20 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            read_user_query = get_objects_for_user(user, 'read_node', self.filter(Q(contributor__user_id=user.id)))
+            read_user_query = get_objects_for_user(user, 'read_node', self)
             qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
-                        SELECT osf_contributor.node_id
-                        FROM osf_contributor, auth_group, osf_osfuser_groups
-                        WHERE osf_contributor.user_id = %s
-                        AND auth_group.name = 'node_' || node_id || '_admin'
-                        AND osf_osfuser_groups.group_id = auth_group.id
-                        AND osf_osfuser_groups.osfuser_id = osf_contributor.user_id
+                        SELECT DISTINCT N.id as node_id
+                        FROM osf_abstractnode as N, auth_permission as P, guardian_groupobjectpermission as G, django_content_type as CT, osf_osfuser_groups as UG
+                        WHERE P.codename = 'admin_node'
+                        AND G.permission_id = P.id
+                        AND CT.model = 'abstractnode'
+                        AND UG.osfuser_id = %s
+                        AND G.group_id = UG.group_id
+                        AND G.object_pk::integer = N.id
+                        AND N.type = 'osf.node'
                     UNION ALL
                         SELECT "osf_noderelation"."child_id"
                         FROM "implicit_read"
@@ -151,7 +154,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     ) SELECT * FROM implicit_read
                 )
             """], params=(user.id, ))
-        return qs.distinct('id', 'modified')
+        return qs
 
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
