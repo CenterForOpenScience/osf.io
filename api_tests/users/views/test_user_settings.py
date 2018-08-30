@@ -158,7 +158,7 @@ class TestUserChangePassword:
     def payload(self, user_one):
         return {
             'data': {
-                'type': 'user-password',
+                'type': 'user_password',
                 'id': '{}'.format(user_one._id),
                 'attributes': {
                     'existing_password': 'password1',

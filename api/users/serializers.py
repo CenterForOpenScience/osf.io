@@ -307,4 +307,4 @@ class UserChangePasswordSerializer(BaseAPISerializer):
     new_password = ser.CharField(write_only=True, required=True)
 
     class Meta:
-        type_ = 'user-password'
+        type_ = 'user_password'
