@@ -4,19 +4,29 @@ import json
 from django import forms
 
 from osf.models import CollectionProvider, CollectionSubmission
-from admin.base.utils import get_nodelicense_choices
+from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices
 
 
 class CollectionProviderForm(forms.ModelForm):
-    licenses_acceptable = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False, choices=get_nodelicense_choices())
-    collected_type_choices = forms.CharField(widget=forms.HiddenInput, required=False)
-    status_choices = forms.CharField(widget=forms.HiddenInput, required=False)
+    collected_type_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    status_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = CollectionProvider
         exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
                    'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
                    'reviews_comments_private', 'reviews_workflow']
+
+        widgets = {
+            'licenses_acceptable': forms.CheckboxSelectMultiple(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        nodelicense_choices = get_nodelicense_choices()
+        defaultlicense_choices = get_defaultlicense_choices()
+        super(CollectionProviderForm, self).__init__(*args, **kwargs)
+        self.fields['licenses_acceptable'].choices = nodelicense_choices
+        self.fields['default_license'].choices = defaultlicense_choices
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
