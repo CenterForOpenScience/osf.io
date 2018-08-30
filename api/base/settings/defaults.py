@@ -90,6 +90,7 @@ INSTALLED_APPS = (
     'guardian',
     'storages',
     'waffle',
+    'elasticsearch_metrics',
 
     # OSF
     'osf',
@@ -290,3 +291,8 @@ NPLUSONE_RAISE = False
 
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
+
+# django-elasticsearch-metrics
+ELASTICSEARCH_DSL = {
+    'default': {'hosts': os.environ.get('ELASTICSEARCH_HOST', 'localhost:9201')}
+}
