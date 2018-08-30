@@ -44,6 +44,10 @@ var ViewModel = oop.defclass({
                 return 'custom';
             }
         });
+        self.nodeType = ko.computed(function () {
+            return ctx.node.isRegistration ? 'registrations' : 'nodes';
+        });
+
         makeClient($('#custom-citation-copy-button')[0]);
     },
     showEditBox: function() {
@@ -76,7 +80,7 @@ var ViewModel = oop.defclass({
         var payload = {
             'data': {
                 'id' : ctx.node.id,
-                'type' : 'nodes',
+                'type' :  self.nodeType(),
                 'attributes' : {
                     'title': ctx.node.title,
                     'category': ctx.node.category,
@@ -86,7 +90,7 @@ var ViewModel = oop.defclass({
         };
         self.showEdit(false);
         $.ajax({
-            url: ctx.apiV2Prefix  + 'nodes/' + ctx.node.id + '/',
+            url: ctx.apiV2Prefix  + self.nodeType() + '/' + ctx.node.id + '/',
             type: 'PUT',
             dataType: 'json',
             contentType: 'application/json',
@@ -102,7 +106,7 @@ var ViewModel = oop.defclass({
     fetch: function() {
         var self = this;
         $.ajax({
-            url: ctx.apiV2Prefix  + 'nodes/' + ctx.node.id + '/citation/',
+            url: ctx.apiV2Prefix  +  self.nodeType() + '/' + ctx.node.id + '/',
             type: 'GET',
             dataType: 'json',
             beforeSend: $osf.setXHRAuthorization,

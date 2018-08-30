@@ -313,7 +313,8 @@ class BaseRegistrationSerializer(NodeSerializer):
                 registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
                 raise Conflict(err.message)
-
+        if 'custom_citation_text' in validated_data:
+            self._update_custom_citation_text(registration, auth, validated_data)
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:

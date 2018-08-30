@@ -1765,6 +1765,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered = original.clone()
         registered.recast('osf.registration')
 
+        registered.custom_citation_text = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_from = original
@@ -1960,6 +1961,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.custom_citation_text = ''
         forked.is_fork = True
         forked.forked_date = when
         forked.forked_from = original

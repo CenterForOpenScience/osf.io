@@ -464,7 +464,7 @@
                         </div>
                      </div>
                      <div data-bind="visible: page() == 'standard'" style="display: none;">
-                         % if not node['is_registration'] and not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
                              <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
                          % endif
                          <div class="m-b-md">
@@ -484,7 +484,7 @@
                          <pre id="citationText" class="formatted-citation"></pre>
                      </div>
                      <div data-bind="visible: page() == 'custom'" style="display: none;">
-                         % if not node['is_registration'] and not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
                          % endif
 
