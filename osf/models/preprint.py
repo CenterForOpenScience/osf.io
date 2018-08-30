@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
+from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
@@ -958,3 +959,10 @@ def create_file_node(sender, instance, **kwargs):
     # Note: The "root" node will always be "named" empty string
     root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
     root_folder.save()
+
+
+class PreprintUserObjectPermission(UserObjectPermissionBase):
+    content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)
+
+class PreprintGroupObjectPermission(GroupObjectPermissionBase):
+    content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)
