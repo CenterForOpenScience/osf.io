@@ -277,7 +277,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     self.validationWarning = ko.computed(function() {
         if(self.invalidSelection()){
-            return '<span class="text-danger">All components being registered must have a parent that is also being registered.</span>';
+            return '<span class="text-danger">To register a subcomponent, you must also register the component above it.</span>';
         }
     });
 
