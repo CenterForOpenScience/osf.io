@@ -4,8 +4,9 @@ from django.contrib.auth.models import Group
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.models import OSFGroup
+from osf.models import OSFGroup, Node
 from .factories import (
+    NodeFactory,
     ProjectFactory,
     UserFactory,
     OSFGroupFactory
@@ -271,3 +272,21 @@ class TestOSFGroup:
         assert osf_group.belongs_to_osfgroup(manager) is True
         assert osf_group.belongs_to_osfgroup(member) is True
         assert osf_group.belongs_to_osfgroup(user_two) is False
+
+    def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
+        project.add_contributor(member, 'admin', save=True)  # Member is explicit admin contributor on project
+        child = NodeFactory(parent=project, creator=manager)  # Member is implicit admin on child
+        grandchild = NodeFactory(parent=child, creator=manager)  # Member is implicit admin on grandchild
+
+        project_two = ProjectFactory(creator=manager)
+        project_two.add_osf_group(osf_group, 'admin')  # Member has admin permissions to project_two through osf_group
+        child_two = NodeFactory(parent=project_two, creator=manager)  # Member has implicit admin on child_two through osf_group
+        grandchild_two = NodeFactory(parent=child_two, creator=manager)  # Member has implicit admin perms on grandchild_two through osf_group
+        can_view = Node.objects.can_view(member)
+        assert len(can_view) == 6
+        assert set(list(can_view.values_list('id', flat=True))) == set((project.id,
+                                                                        child.id,
+                                                                        grandchild.id,
+                                                                        project_two.id,
+                                                                        child_two.id,
+                                                                        grandchild_two.id))
