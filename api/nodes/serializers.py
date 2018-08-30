@@ -146,7 +146,7 @@ class NodeCitationSerializer(JSONAPISerializer):
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
-    custom_citation_text = ser.CharField(allow_blank=True)
+    custom_citation_text = ser.CharField(allow_blank=True, required=False)
 
     links = LinksField({'self': 'get_absolute_url'})
 
