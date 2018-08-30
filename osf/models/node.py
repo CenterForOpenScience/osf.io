@@ -10,8 +10,9 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db import models, connection
@@ -23,6 +24,7 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
+from guardian.models import GroupObjectPermission
 from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
 
 from framework import status
@@ -865,6 +867,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return [self.parent_node] + self.parent_node.parents
         return []
 
+    def get_users_with_perm(self, permission):
+        # Returns queryset of all User objects a specific permission for the given node
+        if permission not in self.groups:
+            return False
+
+        perm = Permission.objects.get(codename='{}_node'.format(permission))
+        ct = ContentType.objects.get(model='abstractnode')
+        admin_groups = GroupObjectPermission.objects.filter(permission_id=perm.id,
+                                                            content_type_id=ct.id,
+                                                            object_pk=self.id).values_list('group_id', flat=True)
+        return OSFUser.objects.filter(groups__id__in=admin_groups).distinct('id', 'family_name')
+
     @property
     def parent_admin_contributor_ids(self):
         return self._get_admin_contributor_ids()
@@ -882,14 +896,55 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def admin_contributors(self):
+        """
+        Returns node contributors who are admins on the current node
+        """
         return OSFUser.objects.filter(
             guids___id__in=self.admin_contributor_ids
         ).order_by('family_name')
 
     @property
     def parent_admin_contributors(self):
+        """
+        Returns node contributors who are admins on the parent node
+        """
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
+        ).order_by('family_name')
+
+    @property
+    def parent_admin_user_ids(self):
+        return self._get_admin_user_ids()
+
+    def _get_admin_user_ids(self, include_self=False):
+        def get_admin_user_ids(node):
+            return node.get_users_with_perm('admin').values_list('guids___id', flat=True)
+
+        contributor_ids = set(self.get_users_with_perm('read').values_list('guids___id', flat=True))
+        admin_ids = set(get_admin_user_ids(self)) if include_self else set()
+        for parent in self.parents:
+            admins = get_admin_user_ids(parent)
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
+    @property
+    def admin_users(self):
+        """
+        Returns users who are admins on the current node
+
+        Includes contributors and members of OSF Groups
+        """
+        return self.get_users_with_perm('admin')
+
+    @property
+    def parent_admin_users(self):
+        """
+        Returns users who are admins on the parent node
+
+        Includes contributors and members of OSF Groups
+        """
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_user_ids
         ).order_by('family_name')
 
     @property
@@ -2254,15 +2309,6 @@ def remove_addons(auth, resource_object_list):
                 addon.after_delete(auth.user)
 
 
-##### Signal listeners #####
-# @receiver(post_save, sender=Node)
-# @receiver(post_save, sender='osf.QuickFilesNode')
-# def add_creator_as_contributor(sender, instance, created, **kwargs):
-#     if created:
-#         # TODO after data migration to move node contributors into django groups,
-#         # remove read, write, and admin columns from the Contributor table
-#         instance.add_contributor(instance.creator, permissions='admin', visible=True, log=False, save=True)
-
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
@@ -2315,11 +2361,3 @@ def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if not instance.root:
         instance.root = instance.get_root()
         instance.save()
-
-#
-# @receiver(post_save, sender=Node)
-# @receiver(post_save, sender='osf.Registration')
-# @receiver(post_save, sender='osf.QuickFilesNode')
-# def create_permission_groups(sender, instance, created, **kwargs):
-#     if created:
-#         instance.update_group_permissions()
