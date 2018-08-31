@@ -124,6 +124,7 @@ class PageCounter(BaseModel):
                     # increment the number of unique visitors for today
                     model_instance.date[date_string]['unique'] += 1
                 else:
+                    # set the number of unique visitors to 1
                     model_instance.date[date_string] = dict(unique=1)
 
             # update their sessions
@@ -135,7 +136,7 @@ class PageCounter(BaseModel):
                     model_instance.date[date_string].update(total=0)
                 model_instance.date[date_string]['total'] += 1
             else:
-                model_instance.date[date_string] = dict(total=0)
+                model_instance.date[date_string] = dict(total=1)
 
             # if a download counter is being updated, only perform the update
             # if the user who is downloading isn't a contributor to the project
