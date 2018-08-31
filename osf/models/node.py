@@ -3066,6 +3066,29 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             return None
 
+    def update_custom_citation(self, custom_citation, auth):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor order')
+
+        if custom_citation == '':
+            log_action = NodeLog.CUSTOM_CITATION_REMOVED
+        elif custom_citation != '' and self.custom_citation != '':
+            log_action = NodeLog.CUSTOM_CITATION_EDITED
+        else:
+            log_action = NodeLog.CUSTOM_CITATION_ADDED
+
+        self.custom_citation = custom_citation
+        self.add_log(
+            log_action,
+            params={
+                'node': self._primary_key,
+            },
+            auth=auth,
+            log_date=timezone.now(),
+        )
+        self.save()
+
+
 class Node(AbstractNode):
     """
     Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit

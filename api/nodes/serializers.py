@@ -1,5 +1,4 @@
 from django.db import connection
-from django.utils import timezone
 
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
@@ -25,7 +24,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from osf.models import (Comment, DraftRegistration, Institution, NodeLog,
+from osf.models import (Comment, DraftRegistration, Institution,
                         RegistrationSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -652,32 +651,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 raise InvalidModelValueError(detail=e.message)
 
         return node
-
-    def _update_custom_citation_text(self, node, auth, validated_data):
-        if validated_data['custom_citation_text'] == '':
-            log_action = NodeLog.CUSTOM_CITATION_REMOVED
-            old_citation_text = node.custom_citation_text
-        elif validated_data['custom_citation_text'] != '' and node.custom_citation_text != '':
-            log_action = NodeLog.CUSTOM_CITATION_EDITED
-        else:
-            log_action = NodeLog.CUSTOM_CITATION_ADDED
-
-        node.custom_citation_text = validated_data['custom_citation_text']
-        node.save()
-
-        logged_citation = node.custom_citation_text if log_action != NodeLog.CUSTOM_CITATION_REMOVED else old_citation_text
-        node.add_log(
-            log_action,
-            params={
-                'custom_citation': logged_citation,
-                'node': node._primary_key,
-            },
-            auth=auth,
-            log_date=timezone.now(),
-        )
-        csl = node.csl
-        csl['custom_citation_text'] = node.custom_citation_text
-        return csl
 
 
 class NodeAddonSettingsSerializerBase(JSONAPISerializer):
