@@ -148,16 +148,6 @@ class TestNodeCitations(NodeCitationsMixin):
     def private_url(self, private_project):
         return '/{}nodes/{}/citation/'.format(API_BASE, private_project._id)
 
-    def test_node_custom_citations(
-            self, app, admin_contributor,
-            write_contrib, read_contrib,
-            non_contrib, private_url, public_url
-    ):
-
-        res = app.get(private_url, auth=admin_contributor.auth)
-        assert res.json['data']['attributes']['custom_citation_text'] == 'Test Citation Text'
-        assert res.status_code == 200
-
 class TestNodeCitationsStyle(NodeCitationsMixin):
     @pytest.fixture()
     def public_url(self, public_project):
@@ -182,4 +172,4 @@ class TestCustomCitations:
         res = app.put_json_api(private_url, custom_citation_payload, auth=admin_contributor.auth)
         assert res.status_code == 200
         private_project.reload()
-        assert private_project.custom_citation_text == 'My Custom Citation'
+        assert private_project.custom_citation == 'My Custom Citation'

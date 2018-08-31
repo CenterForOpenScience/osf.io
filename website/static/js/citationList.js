@@ -105,12 +105,11 @@ var ViewModel = oop.defclass({
     },
     fetch: function() {
         var self = this;
-        $.ajax({
-            url: ctx.apiV2Prefix  +  self.nodeType() + '/' + ctx.node.id + '/',
-            type: 'GET',
-            dataType: 'json',
-            beforeSend: $osf.setXHRAuthorization,
-        }).done(function(data) {
+        $osf.ajaxJSON(
+            'GET',
+            ctx.apiV2Prefix  +  self.nodeType() + '/' + ctx.node.id + '/',
+            {isCors: true}
+        ).done(function(data) {
             self.customCitation(data.data.attributes.custom_citation);
             if(!self.customCitation()) {
                 var citationRequest = $.ajax(ctx.node.urls.api + 'citation/');
