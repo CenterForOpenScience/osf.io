@@ -1283,6 +1283,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
         self.reset_old_password_invalid_attempts()
+        if self.verification_key_v2:
+            self.verification_key_v2['expires'] = timezone.now()
+        # new verification key (v1) for CAS
+        self.verification_key = generate_verification_key(verification_type=None)
 
     def reset_old_password_invalid_attempts(self):
         self.old_password_invalid_attempts = 0
@@ -1529,7 +1533,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if user_nodes.filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
+        if PreprintService.objects.filter(node___contributors=self, ever_public=True, node__is_deleted=False).exists():
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.

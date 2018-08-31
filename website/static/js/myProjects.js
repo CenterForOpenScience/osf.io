@@ -1023,7 +1023,9 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
-            self.updateFilter(self.collections()[self.getFilterIndex()]);
+            var filterIndex = self.getFilterIndex();
+            self.updateBreadcrumbs(self.collections()[filterIndex]);
+            self.updateFilter(self.collections()[filterIndex]);
         };
 
         self.init();

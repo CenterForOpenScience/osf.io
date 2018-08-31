@@ -2,6 +2,19 @@
 Changelog
 *********
 
+0.153.0 (2018-08-28)
+====================
+
+- Add Admin view for non-moderated withdrawal requests
+- Add anchors to sections on My Projects page
+- Add collection subjects to project overview page
+- Add Moderator Preprint Withdrawal Notification Emails
+- Add special case to resolve_guid for Registries
+- Add V2 routes for RegistrationProvider
+- Allow duplicate _id's across different AbstractProvider types
+- Update CrossRef upon preprint withdrawal
+- Update django-guardian usage with AbstractProvider
+
 0.152.0 (2018-08-21)
 ====================
 
