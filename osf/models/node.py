@@ -321,7 +321,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
-    custom_citation_text = models.TextField(blank=True, default='')
+    custom_citation = models.TextField(blank=True, default='')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -1765,7 +1765,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered = original.clone()
         registered.recast('osf.registration')
 
-        registered.custom_citation_text = ''
+        registered.custom_citation = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_from = original
@@ -1961,7 +1961,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
-        forked.custom_citation_text = ''
+        forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
         forked.forked_from = original

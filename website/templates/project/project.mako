@@ -492,11 +492,11 @@
                              <div class="citation-list">
                                  <div class="row">
                                      <div class="col-md-1">
-                                         <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitationText}" class="btn btn-default"><i class="fa fa-copy"></i></span>
+                                         <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
                                      <div class="col-md-10">
                                          <div class="f-w-xl">Cite as:</div>
-                                         <span data-bind="text: customCitationText"></span>
+                                         <span data-bind="text: customCitation"></span>
                                      </div>
                                  </div>
                              </div>
@@ -512,7 +512,7 @@
                              <div class="col-md-12 form-group">
                                  <textarea class="form-control"
                                            placeholder="Enter custom citation"
-                                           data-bind="value: customCitationText"
+                                           data-bind="value: customCitation"
                                            type="text">
 
                                  </textarea>

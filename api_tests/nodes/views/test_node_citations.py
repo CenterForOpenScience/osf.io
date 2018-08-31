@@ -58,7 +58,7 @@ def private_project(
         disabled_contrib,
         permissions=['read'],
         auth=Auth(admin_contributor))
-    private_project.custom_citation_text = 'Test Citation Text'
+    private_project.custom_citation = 'Test Citation Text'
     private_project.save()
     return private_project
 
@@ -81,7 +81,7 @@ def custom_citation_payload(private_project):
             'attributes': {
                 'title': private_project.title,
                 'category': private_project.category,
-                'custom_citation_text': 'My Custom Citation'
+                'custom_citation': 'My Custom Citation'
             }
         }
     }

@@ -27,8 +27,8 @@ var ViewModel = oop.defclass({
      constructor: function() {
         var self = this;
         self.loading = ko.observable(true);
-        self.customCitationText = ko.observable('');
-        self.initialCustomCitationText = ko.observable();
+        self.customCitation = ko.observable('');
+        self.initialCustomCitation = ko.observable();
         self.apa = ko.observable();
         self.mla = ko.observable();
         self.chicago = ko.observable();
@@ -38,7 +38,7 @@ var ViewModel = oop.defclass({
                 return 'loading';
             } else if(self.showEdit()) {
                 return 'edit';
-            } else if(self.customCitationText() === '') {
+            } else if(self.customCitation() === '') {
                 return 'standard';
             } else {
                 return 'custom';
@@ -53,12 +53,12 @@ var ViewModel = oop.defclass({
     showEditBox: function() {
         var self = this;
         self.showEdit(true);
-        self.initialCustomCitationText(self.customCitationText());
+        self.initialCustomCitation(self.customCitation());
     },
     cancelCitation: function() {
         var self = this;
         self.showEdit(false);
-        self.customCitationText(self.initialCustomCitationText());
+        self.customCitation(self.initialCustomCitation());
     },
     saveCitation: function() {
         var self = this;
@@ -67,8 +67,8 @@ var ViewModel = oop.defclass({
     },
     clearCitation: function() {
         var self = this;
-        if(self.customCitationText() !== '') {
-            self.customCitationText('');
+        if(self.customCitation() !== '') {
+            self.customCitation('');
             self.loading(true);
             self.updateCustomCitation();
         } else {
@@ -84,7 +84,7 @@ var ViewModel = oop.defclass({
                 'attributes' : {
                     'title': ctx.node.title,
                     'category': ctx.node.category,
-                    'custom_citation_text': self.customCitationText()
+                    'custom_citation': self.customCitation()
                  }
             }
         };
@@ -111,8 +111,8 @@ var ViewModel = oop.defclass({
             dataType: 'json',
             beforeSend: $osf.setXHRAuthorization,
         }).done(function(data) {
-            self.customCitationText(data.data.attributes.custom_citation_text);
-            if(!self.customCitationText()) {
+            self.customCitation(data.data.attributes.custom_citation);
+            if(!self.customCitation()) {
                 var citationRequest = $.ajax(ctx.node.urls.api + 'citation/');
                 var styleRequests = [
                     $.ajax(BASE_URL + STYLES.apa),

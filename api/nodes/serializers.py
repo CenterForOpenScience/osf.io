@@ -146,7 +146,6 @@ class NodeCitationSerializer(JSONAPISerializer):
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
-    custom_citation_text = ser.CharField(allow_blank=True, required=False)
 
     links = LinksField({'self': 'get_absolute_url'})
 
@@ -239,7 +238,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    custom_citation_text = ser.CharField(allow_blank=True, required=False)
+    custom_citation = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
@@ -616,8 +615,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
-            if 'custom_citation_text' in validated_data:
-                self._update_custom_citation_text(node, auth, validated_data)
+            if 'custom_citation' in validated_data:
+                node.update_custom_citation(validated_data['custom_citation'], auth)
             if 'tag_names' in validated_data:
                 new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
