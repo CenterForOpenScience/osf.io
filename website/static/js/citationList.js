@@ -89,14 +89,14 @@ var ViewModel = oop.defclass({
             }
         };
         self.showEdit(false);
-        $.ajax({
-            url: ctx.apiV2Prefix  + self.nodeType() + '/' + ctx.node.id + '/',
-            type: 'PUT',
-            dataType: 'json',
-            contentType: 'application/json',
-            beforeSend: $osf.setXHRAuthorization,
-            data: JSON.stringify(payload)
-        }).done(function(data) {
+        $osf.ajaxJSON(
+            'PUT',
+            ctx.apiV2Prefix  + self.nodeType() + '/' + ctx.node.id + '/',
+            {
+                isCors: true,
+                data: payload
+            }
+        ).done(function(data) {
             self.fetch();
         }).fail(function() {
             $osf.growl('Error', 'Your custom citation not updated. Please refresh the page and try ' +
