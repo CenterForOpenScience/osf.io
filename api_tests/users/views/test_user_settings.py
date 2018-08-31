@@ -266,3 +266,15 @@ class TestUserChangePassword:
         payload['data']['attributes']['confirm_new_password'] = 'Doesn\'t matter should be throttled'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
+
+    def test_exceed_throttle_failed_attempts(self, app, user_one, url, payload):
+        payload['data']['attributes']['existing_password'] = 'wrong password'
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 429
