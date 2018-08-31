@@ -16,6 +16,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     CollectionFactory,
+    OSFGroupFactory,
     DraftRegistrationFactory,
 )
 from rest_framework import exceptions

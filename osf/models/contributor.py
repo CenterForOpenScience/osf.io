@@ -122,9 +122,15 @@ class RecentlyAddedContributor(models.Model):
     class Meta:
         unique_together = ('user', 'contributor')
 
-def get_contributor_permissions(contributor, as_list=True):
-    node = contributor.node
-    user = contributor.user
+def get_contributor_permissions(contributor, as_list=True, node=None):
+    # Can pull permissions off of contributor object, or user/node can be passed in
+    if isinstance(contributor, Contributor):
+        node = contributor.node
+        user = contributor.user
+    else:
+        user = contributor
+        if node is None:
+            raise ValueError('Must pass in node object to get user permissions to node')
     perm = []
     if node.has_permission(user, 'read'):
         perm.append('read')

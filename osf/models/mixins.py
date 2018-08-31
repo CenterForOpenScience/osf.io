@@ -26,7 +26,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, REVIEW_GROUPS
+from osf.utils.permissions import ADMIN, READ, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from osf.exceptions import PreprintStateError
@@ -849,7 +849,9 @@ class ContributorMixin(models.Model):
         """Return whether ``user`` is a contributor on the object."""
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
-        return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
+        # Checking if contributor object or if user has read permissions, since unregistered
+        # contributors do not have any actual permissions.
+        return user is not None and (self.has_permission(user, READ) or self.contributor_class.objects.filter(**kwargs).exists())
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):

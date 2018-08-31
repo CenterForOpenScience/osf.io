@@ -2,7 +2,7 @@ import pytz
 
 from django.apps import apps
 from django.db.models import Exists, F, OuterRef, Q
-
+from guardian.shortcuts import get_objects_for_user
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
@@ -12,6 +12,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParserForRegularJSON,
 )
 from api.base.serializers import AddonAccountSerializer
+<<<<<<< HEAD
 from api.base.utils import (
     default_node_list_queryset,
     default_node_list_permission_queryset,
@@ -19,6 +20,11 @@ from api.base.utils import (
     get_user_auth,
     hashids,
 )
+=======
+from api.base.utils import (default_node_list_permission_queryset,
+                            get_object_or_error,
+                            get_user_auth)
+>>>>>>> Transform more queries to check permissions rather than node contributor existence.
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
@@ -311,6 +317,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
+        # TODO: update/check me to with guardian
         user = self.get_user()
         if user != self.request.user:
             return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)

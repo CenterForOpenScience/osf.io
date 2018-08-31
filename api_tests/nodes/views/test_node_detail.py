@@ -354,6 +354,39 @@ class TestNodeDetail:
         res = app.get(url)
         assert res.json['meta']['templated_by_count'] == 1
 
+    def test_node_show_correct_children_count(self, app, user, user_two, project_public, url_public):
+        url = url_public + '?related_counts=true'
+        child = NodeFactory(parent=project_public, creator=user)
+        res = app.get(url, auth=user.auth)
+        # Child admin can view child
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        # Implicit admin on parent can view child count
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        project_public.add_contributor(user_two, 'admin')
+        project_public.save()
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        # Explicit Member of OSFGroup can view child count
+        user_three = AuthUserFactory()
+        group = OSFGroupFactory(creator=user_three)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        child.add_osf_group(group, 'read')
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        # Implicit admin group member can view child count
+        child.remove_osf_group(group)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        project_public.add_osf_group(group, 'admin')
+
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
     def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
         url = url_public + '?related_counts=true'
         res = app.get(url)
@@ -782,6 +815,25 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
+    # test_update_private_project_group_has_read_perms
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, 'read')
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
+                }
+            }
+        }, auth=user_two.auth, expect_errors=True)
+        assert project_private.has_permission(user_two, 'read') is True
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
@@ -798,6 +850,29 @@ class TestNodeUpdate(NodeCRUDTestCase):
                     }
                 }
             }, auth=user.auth)
+            assert res.status_code == 200
+            assert res.content_type == 'application/vnd.api+json'
+            assert res.json['data']['attributes']['title'] == title_new
+            assert res.json['data']['attributes']['description'] == description_new
+            assert res.json['data']['attributes']['category'] == category_new
+
+    def test_update_public_project_osf_group_member(
+        self, app, user_two, title_new, description_new,
+            category_new, project_public, url_public):
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_public.add_osf_group(osf_group, 'write')
+        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
+            res = app.put_json_api(url_public, {
+                'data': {
+                    'id': project_public._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': title_new,
+                        'description': description_new,
+                        'category': category_new,
+                    }
+                }
+            }, auth=user_two.auth)
             assert res.status_code == 200
             assert res.content_type == 'application/vnd.api+json'
             assert res.json['data']['attributes']['title'] == title_new
@@ -1214,6 +1289,15 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert res.status_code == 404
         assert 'detail' in res.json['errors'][0]
 
+    #   test_delete_osf_group_improper_permissions
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, 'read')
+        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
+        project_private.reload()
+        assert res.status_code == 403
+        assert project_private.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
     def test_deletes_private_node_logged_in_read_only_contributor(
             self, app, user_two, project_private, url_private):
         project_private.add_contributor(
@@ -1277,6 +1361,17 @@ class TestNodeDelete(NodeCRUDTestCase):
         with assert_latest_log(NodeLog.PROJECT_DELETED, project_public):
             res = app.delete_json_api(
                 url_public, auth=user.auth, expect_errors=True)
+            project_public.reload()
+            assert res.status_code == 204
+            assert project_public.is_deleted is True
+
+    def test_deletes_public_node_succeeds_with_osf_group_write_perms(
+            self, app, user_two, project_public, url_public):
+        with assert_latest_log(NodeLog.PROJECT_DELETED, project_public):
+            group = OSFGroupFactory(creator=user_two)
+            project_public.add_osf_group(group, 'write')
+            res = app.delete_json_api(
+                url_public, auth=user_two.auth, expect_errors=True)
             project_public.reload()
             assert res.status_code == 204
             assert project_public.is_deleted is True

@@ -326,3 +326,13 @@ class TestOSFGroup:
         assert member in read_users
         assert member in write_users
         assert member not in admin_users
+
+    def test_osf_group_node_can_view(self, project, manager, member, osf_group):
+        assert project.can_view(Auth(member)) is False
+        project.add_osf_group(osf_group, 'read')
+        assert project.can_view(Auth(member)) is True
+        assert project.can_edit(Auth(member)) is False
+
+        project.remove_osf_group(osf_group)
+        project.add_osf_group(osf_group, 'write')
+        assert project.can_edit(Auth(member)) is False

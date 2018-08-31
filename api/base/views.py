@@ -543,7 +543,6 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             .exclude(region=None)
             .exclude(type='osf.collection', region=None)
             .can_view(user=auth.user, private_link=auth.private_link)
-            .distinct('id', 'modified')
             .order_by('-modified')
         )
 

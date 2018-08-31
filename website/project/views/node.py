@@ -39,7 +39,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Node, NodeRelation, Preprint
 from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
@@ -658,11 +658,11 @@ def _render_addons(addons):
     return widgets, configs, js, css
 
 
-def _should_show_wiki_widget(node, contributor):
+def _should_show_wiki_widget(node, user):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
-    if contributor and node.has_permission(contributor.user, 'write') and not node.is_registration:
+    if node.has_permission(user, 'write') and not node.is_registration:
         return has_wiki
     else:
         return has_wiki and wiki_page and wiki_page.html(node)
@@ -676,11 +676,6 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
-
-    try:
-        contributor = node.contributor_set.get(user=user)
-    except Contributor.DoesNotExist:
-        contributor = None
 
     parent = node.find_readable_antecedent(auth)
     if user:
@@ -796,18 +791,18 @@ def _view_project(node, auth, primary=False,
             'can_view': parent.can_view(auth) if parent else False,
         },
         'user': {
-            'is_contributor': bool(contributor),
-            'is_admin': bool(contributor) and node.has_permission(user, 'admin'),
+            'is_contributor': node.is_contributor(user),
+            'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
-            'can_edit': bool(contributor) and node.has_permission(user, 'write') and not node.is_registration,
-            'can_edit_tags': bool(contributor) and node.has_permission(user, 'write'),
+            'can_edit': node.has_permission(user, WRITE) and not node.is_registration,
+            'can_edit_tags': node.has_permission(user, WRITE),
             'has_read_permissions': node.has_permission(user, READ),
-            'permissions': get_contributor_permissions(contributor, as_list=True) if contributor else [],
+            'permissions': get_contributor_permissions(user, as_list=True, node=node),
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',
-            'can_comment': bool(contributor) or node.can_comment(auth),
-            'show_wiki_widget': _should_show_wiki_widget(node, contributor),
+            'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
