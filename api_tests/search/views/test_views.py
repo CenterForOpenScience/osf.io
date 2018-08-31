@@ -103,6 +103,7 @@ class ApiSearchTestCase:
         return NodeFactory(
             parent=project_public,
             title='Highlights',
+            description='',
             creator=user_one,
             is_public=True)
 
@@ -124,6 +125,7 @@ class ApiSearchTestCase:
     def component_private(self, user_one, project_public):
         return NodeFactory(
             parent=project_public,
+            description='',
             title='Wavves',
             creator=user_one)
 
