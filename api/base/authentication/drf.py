@@ -69,7 +69,7 @@ def check_user(user):
         raise MergedAccountError
 
     # user not confirmed or contributor not claimed
-    if not user.is_confirmed and not user.is_registered and not user.is_claimed:
+    if not user.is_confirmed and not user.is_registered:
         if user.has_usable_password():
             raise UnconfirmedAccountError
         raise UnclaimedAccountError

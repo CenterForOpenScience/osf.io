@@ -129,7 +129,6 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is True
-        assert user.is_claimed is True
         assert user.date_registered == user.date_confirmed
 
     def test_update_guessed_names(self):
@@ -153,7 +152,6 @@ class TestOSFUser:
         u.save()
         assert u.username == email
         assert u.is_registered is False
-        assert u.is_claimed is False
         assert u.is_invited is True
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
@@ -346,7 +344,6 @@ class TestOSFUser:
         assert len(u.email_verifications.keys()) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
-        assert bool(u.is_claimed) is True
 
     def test_confirm_email(self, user):
         token = user.add_unconfirmed_email('foo@bar.com')
@@ -976,11 +973,9 @@ class TestUnregisteredUser:
     def test_register(self, mock_search, mock_search_nodes):
         user = UnregUserFactory()
         assert user.is_registered is False  # sanity check
-        assert user.is_claimed is False
         email = fake_email()
         user.register(username=email, password='killerqueen')
         user.save()
-        assert user.is_claimed is True
         assert user.is_registered is True
         assert user.check_password('killerqueen') is True
         assert user.username == email
@@ -1626,7 +1621,6 @@ class TestUserMerging(OsfTestCase):
             'family_name',
             'fullname',
             'given_name',
-            'is_claimed',
             'is_invited',
             'is_registered',
             'jobs',
@@ -1733,7 +1727,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
 
-        assert self.user.is_claimed is True
+        assert self.user.is_registered is True
         assert self.user.is_invited is False
 
         # TODO: test profile fields - jobs, schools, social

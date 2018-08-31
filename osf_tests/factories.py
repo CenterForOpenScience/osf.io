@@ -57,7 +57,6 @@ class UserFactory(DjangoModelFactory):
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
     is_registered = True
-    is_claimed = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
     verification_key = None
