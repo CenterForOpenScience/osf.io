@@ -82,6 +82,7 @@ from osf_tests.factories import (
     CommentFactory,
     InstitutionFactory,
     NodeFactory,
+    OSFGroupFactory,
     PreprintFactory,
     PreprintProviderFactory,
     PrivateLinkFactory,
@@ -237,6 +238,13 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
         self.project.save()
         assert_true(check_can_access(self.project, contributor))
+
+    def test_check_can_access_osf_group_member_valid(self):
+        user = AuthUserFactory()
+        group = OSFGroupFactory(creator=user)
+        self.project.add_osf_group(group, 'read')
+        self.project.save()
+        assert_true(check_can_access(self.project, user))
 
     def test_check_user_access_invalid(self):
         noncontrib = AuthUserFactory()
@@ -4400,17 +4408,26 @@ class TestWikiWidgetViews(OsfTestCase):
         WikiPage.objects.create_for_node(self.project2, 'home', '', Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
-        contrib = self.project.contributor_set.get(user=self.project.creator)
-        assert_true(_should_show_wiki_widget(self.project, contrib))
-        assert_true(_should_show_wiki_widget(self.project2, contrib))
+        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
+        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
 
     def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
-        contrib = self.project.contributor_set.get(user=self.read_only_contrib)
-        assert_false(_should_show_wiki_widget(self.project, contrib))
-        assert_false(_should_show_wiki_widget(self.project2, contrib))
+        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert_false(_should_show_wiki_widget(self.project, None))
+
+    def test_show_wiki_for_osf_group_members(self):
+        group = OSFGroupFactory(creator=self.noncontributor)
+        self.project.add_osf_group(group, 'read')
+        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.noncontributor))
+
+        self.project.remove_osf_group(group)
+        self.project.add_osf_group(group, 'write')
+        assert_true(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.noncontributor))
 
 
 @pytest.mark.enable_implicit_clean

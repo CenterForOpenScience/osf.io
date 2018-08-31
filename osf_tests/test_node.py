@@ -63,6 +63,7 @@ from osf_tests.factories import (
     SessionFactory,
     SubjectFactory,
     TagFactory,
+    OSFGroupFactory,
     CollectionFactory,
     CollectionProviderFactory,
 )
@@ -910,10 +911,15 @@ class TestContributorMethods:
     def test_is_contributor(self, node):
         contrib, noncontrib = UserFactory(), UserFactory()
         Contributor.objects.create(user=contrib, node=node)
+        node.add_permission(contrib, READ)
 
         assert node.is_contributor(contrib) is True
         assert node.is_contributor(noncontrib) is False
         assert node.is_contributor(None) is False
+
+        group = OSFGroupFactory(creator=noncontrib)
+        node.add_osf_group(group, 'read')
+        assert node.is_contributor(noncontrib) is True
 
     def test_visible_contributor_ids(self, node, user):
         visible_contrib = UserFactory()
@@ -1858,6 +1864,10 @@ def test_can_comment():
     noncontrib = UserFactory()
     assert private_node.can_comment(Auth(noncontrib)) is False
 
+    group_mem = UserFactory()
+    group = OSFGroupFactory(creator=group_mem)
+    private_node.add_osf_group(group, 'read')
+    assert private_node.can_comment(Auth(group_mem)) is True
 
 def test_parent_kwarg():
     parent = NodeFactory()

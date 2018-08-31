@@ -7,6 +7,7 @@ from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesL
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
+    OSFGroupFactory,
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -172,6 +173,24 @@ class TestUserNodes:
 
         assert public_project_user_one._id == ids[1]
         assert private_project_user_one._id == ids[0]
+
+    # test_osf_group_member_node_shows_up_in_user_nodes
+        group_mem = AuthUserFactory()
+        url = '/{}users/{}/nodes/'.format(API_BASE, group_mem._id)
+        res = app.get(url, auth=group_mem.auth)
+        assert len(res.json['data']) == 0
+
+        group = OSFGroupFactory(creator=group_mem)
+        private_project_user_one.add_osf_group(group, 'read')
+        res = app.get(url, auth=group_mem.auth)
+        assert len(res.json['data']) == 1
+
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 1
+
+        private_project_user_one.delete()
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
 
 @pytest.mark.django_db

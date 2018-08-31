@@ -2,6 +2,7 @@ import pytz
 
 from django.apps import apps
 from django.db.models import Exists, F, OuterRef, Q
+from guardian.shortcuts import get_objects_for_user
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -13,7 +14,6 @@ from api.base.parsers import (
 )
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (
-    default_node_list_queryset,
     default_node_list_permission_queryset,
     get_object_or_error,
     get_user_auth,
@@ -310,11 +310,19 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     ordering = ('-last_logged',)
 
     # overrides NodesFilterMixin
+
     def get_default_queryset(self):
         user = self.get_user()
+        # Nodes the requested user has read_permissions on
+        default_queryset = get_objects_for_user(user, 'read_node', Node, with_superuser=False).filter(is_deleted=False)
         if user != self.request.user:
-            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
-        return self.optimize_node_queryset(default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id))
+            if self.request.user.is_anonymous:
+                return self.optimize_node_queryset(default_queryset.filter(Q(is_public=True)))
+            else:
+                # Requested user nodes that the logged in user can view
+                read_user_query = Q(id__in=get_objects_for_user(self.request.user, 'read_node', default_queryset))
+                return self.optimize_node_queryset(default_queryset.filter(read_user_query | Q(is_public=True)))
+        return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
     def get_queryset(self):
