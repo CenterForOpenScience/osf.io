@@ -846,12 +846,12 @@ class ContributorMixin(models.Model):
         return self._get_admin_contributor_ids(include_self=True)
 
     def is_contributor(self, user):
-        """Return whether ``user`` is a contributor on the object."""
+        """Return whether ``user`` has been given read permissions to the object"""
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         # Checking if contributor object or if user has read permissions, since unregistered
         # contributors do not have any actual permissions.
-        return user is not None and (self.has_permission(user, READ) or self.contributor_class.objects.filter(**kwargs).exists())
+        return user is not None and (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):

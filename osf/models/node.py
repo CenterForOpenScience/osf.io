@@ -1174,7 +1174,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return auth.user and self.has_permission(auth.user, 'read')
+        return self.is_contributor(auth.user)
 
     def set_node_license(self, license_detail, auth, save=False):
 
