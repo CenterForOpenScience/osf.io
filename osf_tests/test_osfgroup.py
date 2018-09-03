@@ -3,6 +3,7 @@ import pytest
 from django.contrib.auth.models import Group
 
 from framework.auth import Auth
+from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node
 from .factories import (
@@ -291,6 +292,12 @@ class TestOSFGroup:
                                                                         child_two.id,
                                                                         grandchild_two.id))
 
+        grandchild_two.is_deleted = True
+        grandchild_two.save()
+        can_view = Node.objects.can_view(member)
+        assert len(can_view) == 5
+        assert grandchild_two not in can_view
+
     def test_parent_admin_users_osf_groups(self, manager, member, project, osf_group):
         child = NodeFactory(parent=project, creator=manager)
         project.add_osf_group(osf_group, 'admin')
@@ -371,3 +378,22 @@ class TestOSFGroup:
         grandchild = ProjectFactory(parent=child)
         assert grandchild.has_permission(member, 'write') is False
         assert grandchild.has_permission(member, 'read') is True
+
+    def test_node_get_permissions_override(self, project, manager, member, osf_group):
+        project.add_osf_group(osf_group, 'write')
+        assert set(project.get_permissions(member)) == set(['write_node', 'read_node'])
+
+        project.remove_osf_group(osf_group)
+        project.add_osf_group(osf_group, 'read')
+        assert set(project.get_permissions(member)) == set(['read_node'])
+
+        anon = AnonymousUser()
+        assert project.get_permissions(anon) == []
+
+    def test_is_contributor(self, project, manager, member, osf_group):
+        assert project.is_contributor(manager) is True
+        assert project.is_contributor(member) is False
+
+        project.add_osf_group(osf_group, 'read')
+        assert project.is_contributor(member) is True
+        assert project.is_contributor(member, explicit=True) is False

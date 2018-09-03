@@ -130,7 +130,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, 'write_node', Registration)
+                return get_objects_for_user(auth.user, 'write_node', registrations)
 
             for registration in registrations:
                 if not registration.can_edit(auth):

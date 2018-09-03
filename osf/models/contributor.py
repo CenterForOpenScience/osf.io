@@ -27,22 +27,7 @@ class AbstractBaseContributor(models.Model):
 
     @property
     def permission(self):
-        # Checking group membership instead of permissions since unregistered
-        # contributors technically have no permissions
-        node_id = self.node.id
-        user = self.user
-        read = 'node_{}_read'.format(node_id)
-        write = 'node_{}_write'.format(node_id)
-        admin = 'node_{}_admin'.format(node_id)
-        user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
+        return get_contributor_permission(self, self.node.id, 'node')
 
 
 class Contributor(AbstractBaseContributor):
@@ -59,30 +44,16 @@ class Contributor(AbstractBaseContributor):
         order_with_respect_to = 'node'
 
 
-class PreprintContributor(models.Model):
-    objects = IncludeManager()
-
-    primary_identifier_name = 'user__guids___id'
-    visible = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+class PreprintContributor(AbstractBaseContributor):
     preprint = models.ForeignKey('Preprint', on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return ('<{self.__class__.__name__}(user={self.user}, '
-                'visible={self.visible}, '
-                'permission={self.permission}, '
-                ')>').format(self=self)
 
     @property
     def _id(self):
         return '{}-{}'.format(self.preprint._id, self.user._id)
 
     @property
-    def bibliographic(self):
-        return self.visible
-
-    @property
     def permission(self):
+        return get_contributor_permission(self, self.preprint.id, 'preprint')
         # Checking group membership instead of permissions since unregistered
         # contributors technically have no permissions
         preprint_id = self.preprint.id
@@ -121,6 +92,20 @@ class RecentlyAddedContributor(models.Model):
 
     class Meta:
         unique_together = ('user', 'contributor')
+
+def get_contributor_permission(contributor, object_id, model_type):
+        read = '{}_{}_read'.format(model_type, object_id)
+        write = '{}_{}_write'.format(model_type, object_id)
+        admin = '{}_{}_admin'.format(model_type, object_id)
+        user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+        if admin in user_groups:
+            return 'admin'
+        elif write in user_groups:
+            return 'write'
+        elif read in user_groups:
+            return 'read'
+        else:
+            return None
 
 def get_contributor_permissions(contributor, as_list=True, node=None):
     # Can pull permissions off of contributor object, or user/node can be passed in

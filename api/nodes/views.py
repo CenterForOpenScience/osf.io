@@ -226,7 +226,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, 'write_node', Node)
+                return get_objects_for_user(auth.user, 'write_node', nodes)
 
             for node in nodes:
                 if not node.can_edit(auth):
