@@ -19,7 +19,7 @@ from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNode
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory, OSFGroupFactory
 from tests.base import ApiAddonTestCase
 
 from addons.mendeley.tests.factories import (

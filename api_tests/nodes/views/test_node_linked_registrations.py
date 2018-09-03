@@ -5,6 +5,7 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
+    OSFGroupFactory,
     RegistrationFactory,
 )
 from rest_framework import exceptions
@@ -113,6 +114,16 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
+    #   test_osf_group_member_read_can_view_linked_reg
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, 'read')
+        res = make_request(
+            node_id=node_private._id,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
 
 @pytest.mark.django_db
 class TestNodeLinkedRegistrationsRelationshipRetrieve(
@@ -171,6 +182,16 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
         res = make_request(node_id=node_private._id, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    #   test_osf_group_member_can_view_linked_registration_relationship
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, 'read')
+        res = make_request(
+            node_id=node_private._id,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
@@ -253,6 +274,19 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
+    #   test_read_osf_group_mem_cannot_create_linked_registrations_relationship
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, 'read')
+        registration = RegistrationFactory(is_public=True)
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=registration._id,
+            auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
     #   test_unauthenticated_user_cannot_create_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
         res = make_request(
@@ -316,6 +350,25 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             node_id=node_private._id,
             reg_id=registration._id,
             auth=user_admin_contrib.auth
+        )
+        assert res.status_code == 201
+        linked_registrations = [r['id'] for r in res.json['data']]
+        assert registration._id in linked_registrations
+
+    def test_can_create_linked_registration_relationship_to_private_registration_if_rw_group_mem(
+            self, make_request, user_admin_contrib, node_private):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        registration = RegistrationFactory()
+        registration.add_osf_group(
+            group,
+            'write')
+        registration.save()
+        node_private.add_osf_group(group, 'write')
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=registration._id,
+            auth=group_mem.auth
         )
         assert res.status_code == 201
         linked_registrations = [r['id'] for r in res.json['data']]

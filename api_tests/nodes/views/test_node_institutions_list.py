@@ -1,6 +1,6 @@
 import pytest
 
-from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
+from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory, OSFGroupFactory
 from api.base.settings.defaults import API_BASE
 
 
@@ -47,3 +47,11 @@ class TestNodeInstitutionDetail:
         )
 
         assert res.status_code == 404
+
+    #   test_osf_group_member_can_view_node_institutions
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_one.add_osf_group(group, 'read')
+        url = '/{0}nodes/{1}/institutions/'.format(API_BASE, node_one._id)
+        res = app.get(url)
+        assert res.status_code == 200

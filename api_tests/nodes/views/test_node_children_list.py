@@ -7,6 +7,7 @@ from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
+    OSFGroupFactory,
     RegistrationFactory,
     AuthUserFactory,
 )
@@ -76,7 +77,7 @@ class TestNodeChildrenList:
         assert res.json['data'][0]['id'] == public_component._id
 
     def test_return_private_node_children_list(
-            self, app, user, component, private_project_url):
+            self, app, user, component, private_project, private_project_url):
 
         #   test_return_private_node_children_list_logged_out
         res = app.get(private_project_url, expect_errors=True)
@@ -96,6 +97,16 @@ class TestNodeChildrenList:
         res = app.get(private_project_url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == component._id
+
+    #   test_return_private_node_children_osf_group_member_admin
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, 'admin')
+        res = app.get(private_project_url, auth=group_mem.auth)
+        assert res.status_code == 200
+        # Can view node children that you have implict admin permissions
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == component._id
 
@@ -230,6 +241,23 @@ class TestNodeChildCreate:
 
         project.reload()
         assert len(project.nodes) == 0
+
+    #   test_creates_child_group_member_read
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project.add_osf_group(group, 'read')
+        res = app.post_json_api(
+            url, child, auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        project.add_osf_group(group, 'write')
+        res = app.post_json_api(
+            url, child, auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 201
 
     #   test_creates_child_no_type
         child = {

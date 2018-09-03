@@ -180,7 +180,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == make_contrib_id(
-            project_public._id, user._id)
+            project_private._id, user._id)
 
     def test_return_public_contributor_list_logged_out(
             self, app, user, user_two, project_public, url_public, make_contrib_id):

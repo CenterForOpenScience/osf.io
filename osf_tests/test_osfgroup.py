@@ -335,4 +335,39 @@ class TestOSFGroup:
 
         project.remove_osf_group(osf_group)
         project.add_osf_group(osf_group, 'write')
-        assert project.can_edit(Auth(member)) is False
+        assert project.can_view(Auth(member)) is True
+        assert project.can_edit(Auth(member)) is True
+
+        child = ProjectFactory(parent=project)
+        project.remove_osf_group(osf_group)
+        project.add_osf_group(osf_group, 'admin')
+        # implicit OSF Group admin
+        assert child.can_view(Auth(member)) is True
+        assert child.can_edit(Auth(member)) is False
+
+        grandchild = ProjectFactory(parent=child)
+        assert grandchild.can_view(Auth(member)) is True
+        assert grandchild.can_edit(Auth(member)) is False
+
+    def test_node_has_permission(self, project, manager, member, osf_group):
+        assert project.can_view(Auth(member)) is False
+        project.add_osf_group(osf_group, 'read')
+        assert project.has_permission(member, 'read') is True
+        assert project.has_permission(member, 'write') is False
+
+        project.remove_osf_group(osf_group)
+        project.add_osf_group(osf_group, 'write')
+        assert project.has_permission(member, 'read') is True
+        assert project.has_permission(member, 'write') is True
+        assert project.has_permission(member, 'admin') is False
+
+        child = ProjectFactory(parent=project)
+        project.remove_osf_group(osf_group)
+        project.add_osf_group(osf_group, 'admin')
+        # implicit OSF Group admin
+        assert child.has_permission(member, 'admin') is False
+        assert child.has_permission(member, 'read') is True
+
+        grandchild = ProjectFactory(parent=child)
+        assert grandchild.has_permission(member, 'write') is False
+        assert grandchild.has_permission(member, 'read') is True
