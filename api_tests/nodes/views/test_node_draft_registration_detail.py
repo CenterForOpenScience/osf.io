@@ -10,6 +10,7 @@ from osf_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
     AuthUserFactory,
+    OSFGroupFactory,
     RegistrationFactory,
 )
 from rest_framework import exceptions
@@ -44,7 +45,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration._id)
 
     def test_admin_can_view_draft(
-            self, app, user, draft_registration,
+            self, app, user, draft_registration, project_public,
             schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -53,8 +54,15 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
+    #   test_group_mem_admin_can_view
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'admin')
+        res = app.get(url_draft_registrations, auth=group_mem.auth)
+        assert res.status_code == 200
+
     def test_cannot_view_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             url_draft_registrations):
 
@@ -82,6 +90,13 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_group_mem_read_cannot_view
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'read')
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_cannot_view_deleted_draft(
             self, app, user, url_draft_registrations):
@@ -208,7 +223,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert errors['detail'] == 'This field may not be null.'
 
     def test_admin_can_update_draft(
-            self, app, user, schema,
+            self, app, user, schema, project_public,
             payload, url_draft_registrations):
         res = app.put_json_api(
             url_draft_registrations,
@@ -217,6 +232,18 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         data = res.json['data']
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+
+    #   test_osf_group_mem_admin_can_update
+        # TODO may remove
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'admin')
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth
+        )
+        assert res.status_code == 200
 
     def test_draft_must_be_branched_from_node(
             self, app, user, project_other, draft_registration, payload):
@@ -230,7 +257,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
     def test_cannot_update_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             payload, url_draft_registrations):
 
@@ -263,6 +290,17 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_osf_group_member_write_cannot_update_draft
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'write')
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True,
+            auth=group_mem.auth
+        )
+        assert res.status_code == 403
 
     def test_registration_metadata_must_be_supplied(
             self, app, user, payload, url_draft_registrations):
@@ -666,12 +704,19 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         return '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_public._id, draft_registration._id)
 
-    def test_admin_can_delete_draft(self, app, user, url_draft_registrations):
+    def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
         assert res.status_code == 204
 
+    def test_group_member_admin_can_delete_draft(self, app, url_draft_registrations, project_public):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'admin')
+        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 204
+
     def test_cannot_delete_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             url_draft_registrations):
 
@@ -699,6 +744,13 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_delete_draft
         res = app.delete_json_api(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_group_member_write_cannot_delete_draft
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'write')
+        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 403
 
     def test_draft_that_has_been_registered_cannot_be_deleted(
             self, app, user, project_public, draft_registration, url_draft_registrations):

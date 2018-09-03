@@ -10,6 +10,7 @@ from osf.models import Guid
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    OSFGroupFactory,
     AuthUserFactory,
     CommentFactory,
 )
@@ -352,6 +353,18 @@ class NodeCommentsCreateMixin(object):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    #   test_private_node_private_comment_level_osf_group_member_can_comment
+        project_dict = project_private_comment_private
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_dict['project'].add_osf_group(group, 'read')
+        res = app.post_json_api(
+            project_dict['url'],
+            project_dict['payload'],
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 201
 
     #   test_private_node_private_comment_level_logged_out_user_cannot_comment
         project_dict = project_private_comment_private

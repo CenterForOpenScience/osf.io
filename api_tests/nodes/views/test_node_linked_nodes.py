@@ -4,6 +4,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     NodeFactory,
+    OSFGroupFactory,
     AuthUserFactory,
 )
 from website.project.signals import contributor_removed
@@ -102,14 +103,19 @@ class TestNodeRelationshipNodeLinks:
 
     #   test_get_public_relationship_linked_nodes_logged_in
         res = app.get(url_public, auth=user.auth)
-
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
     #   test_get_private_relationship_linked_nodes_logged_out
         res = app.get(url_private, expect_errors=True)
-
         assert res.status_code == 401
+
+    #   test_get_private_relationship_linked_nodes_read_group_mem
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_linking_private.add_osf_group(group, 'read')
+        res = app.get(url_private, auth=group_mem.auth)
+        assert res.status_code == 200
 
     def test_post_contributing_node(
             self, app, user, node_contrib, node_private,
@@ -143,7 +149,7 @@ class TestNodeRelationshipNodeLinks:
 
     def test_post_private_node(
             self, app, user, node_private, node_other,
-            make_payload, url_private):
+            node_linking_private, make_payload, url_private):
         res = app.post_json_api(
             url_private,
             make_payload([node_other._id]),
@@ -157,6 +163,26 @@ class TestNodeRelationshipNodeLinks:
         ids = [data['id'] for data in res.json['data']]
         assert node_other._id not in ids
         assert node_private._id in ids
+
+    #   test_group_member_can_post_with_write
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_linking_private.add_osf_group(group, 'read')
+        res = app.post_json_api(
+            url_private,
+            make_payload([node_other._id]),
+            auth=group_mem.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        node_linking_private.add_osf_group(group, 'write')
+        node_other.add_osf_group(group, 'write')
+        res = app.post_json_api(
+            url_private,
+            make_payload([node_other._id]),
+            auth=group_mem.auth, expect_errors=True
+        )
+        assert res.status_code == 201
 
     def test_post_mixed_nodes(
             self, app, user, node_private, node_other,
