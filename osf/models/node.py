@@ -156,7 +156,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     ) SELECT * FROM implicit_read
                 )
             """], params=(user.id, ))
-        return qs
+        return qs.filter(is_deleted=False)
 
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
@@ -798,6 +798,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to remove an OSF Group.')
         group.remove_group_from_node(self)
+        # TODO Log that osf_group was removed from project
 
     @property
     def osf_groups(self):
@@ -823,7 +824,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        # Overrides guardian mixin
+        # Overrides guardian mixin - displays user's explicit permissions to the node
+        if isinstance(user, AnonymousUser):
+            return []
         return list(set(get_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
 
     def has_permission_on_children(self, user, permission):
@@ -868,6 +871,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_users_with_perm(self, permission):
         # Returns queryset of all User objects a specific permission for the given node
+        # Explicit permissions only
         if permission not in self.groups:
             return False
 
@@ -880,6 +884,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def parent_admin_contributor_ids(self):
+        """
+        Contributors who have admin permissions on a parent (excludes group members)
+        """
         return self._get_admin_contributor_ids()
 
     def _get_admin_contributor_ids(self, include_self=False):
@@ -905,7 +912,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def parent_admin_contributors(self):
         """
-        Returns node contributors who are admins on the parent node
+        Returns node contributors who are admins on the parent node (excludes group members)
         """
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
@@ -931,7 +938,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         Returns users who are admins on the current node
 
-        Includes contributors and members of OSF Groups
+        Includes .contributors and members of OSF Groups
         """
         return self.get_users_with_perm('admin')
 
@@ -1070,7 +1077,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
-        if not self.is_contributor(user):
+        if not self.is_contributor(user, explicit=True):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
             Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)

@@ -29,8 +29,6 @@ from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintReque
 from osf.utils.permissions import ADMIN, READ, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
-from osf.exceptions import PreprintStateError
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from website import settings, mails, language
 
@@ -337,7 +335,7 @@ class NodeLinkMixin(models.Model):
             )
 
         if self.is_registration:
-            raise NodeStateError('Cannot add a node link to a registration')
+            raise self.state_error('Cannot add a node link to a registration')
 
         # Append node link
         node_relation, created = NodeRelation.objects.get_or_create(
@@ -845,12 +843,14 @@ class ContributorMixin(models.Model):
     def admin_contributor_ids(self):
         return self._get_admin_contributor_ids(include_self=True)
 
-    def is_contributor(self, user):
+    def is_contributor(self, user, explicit=False):
         """Return whether ``user`` has been given read permissions to the object"""
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         # Checking if contributor object or if user has read permissions, since unregistered
         # contributors do not have any actual permissions.
+        if explicit:
+            return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
         return user is not None and (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
 
     def active_contributors(self, include=lambda n: True):
@@ -1453,10 +1453,7 @@ class ContributorMixin(models.Model):
 
         if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
             if self.get_group('admin').user_set.count() <= 1:
-                Preprint = apps.get_model('osf.Preprint')
-                if isinstance(self, Preprint):
-                    raise PreprintStateError('Must have at least one registered admin contributor')
-                raise NodeStateError('Must have at least one registered admin contributor')
+                raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)
         self.add_permission(user, permissions)
         if save:
