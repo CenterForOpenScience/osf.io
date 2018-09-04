@@ -19,8 +19,8 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         filtered_provider_id = self.request.GET.get('provider_id', None)
         qs = ProviderAssetFile.objects.all().order_by(self.ordering)
-        if filtered_provider_id and AbstractProvider.objects.filter(_id=filtered_provider_id).exists():
-            qs = qs.filter(providers___id=filtered_provider_id)
+        if filtered_provider_id and AbstractProvider.objects.filter(id=filtered_provider_id).exists():
+            qs = qs.filter(providers__id=filtered_provider_id)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -31,14 +31,14 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         rv = {
             'asset_files': query_set,
             'page': page,
-            'filterable_provider_ids': dict({'': '---'}, **{_id: ' '.join([type_, name]) for _id, name, type_ in AbstractProvider.objects.annotate(
+            'filterable_provider_ids': dict({'': '---'}, **{id: ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
                 type_=Case(
                     When(type='osf.preprintprovider', then=Value('[preprint]')),
                     When(type='osf.collectionprovider', then=Value('[collection]')),
                     default=Value('[unknown]'),
                     output_field=CharField()
                 )
-            ).values_list('_id', 'name', 'type_')}),
+            ).values_list('id', 'name', 'type_')}),
         }
         return rv
 
