@@ -1,6 +1,9 @@
+from django.apps import apps
 from django.db import models
+from django.core.exceptions import ValidationError
 from guardian.shortcuts import assign_perm, remove_perm, get_perms
 from framework.exceptions import PermissionsError
+from framework.auth.core import get_user
 
 from osf.models import base
 from osf.models.mixins import GuardianMixin
@@ -12,12 +15,11 @@ MEMBER = 'member'
 MANAGER = 'manager'
 
 # TODO Add logging for OSFGroup actions
-# TODO Add unregistered member/manager
-# TODO Send email to member when added to group
-# TODO OSFGroups should either have a guid or a longer _id
+# TODO Send email to member/unregistered member when added to group
+# TODO OSFGroups should either have a guid or a longer _id, assuming guid for now, can remove
 
 
-class OSFGroup(GuardianMixin, base.BaseModel):
+class OSFGroup(GuardianMixin, base.GuidMixin, base.BaseModel):
     """
     OSFGroup model.  When an OSFGroup is created, a manager and member Django group are created.
     Managers belong to both manager and member groups.  Members belong to member group only.
@@ -63,6 +65,9 @@ class OSFGroup(GuardianMixin, base.BaseModel):
     def members(self):
         return self.member_group.user_set.all()
 
+    def is_member(self, user):
+        return user in self.members
+
     def _require_manager_permission(self, auth=None):
         if auth and not self.has_permission(auth.user, 'manage'):
             raise PermissionsError('Must be a group manager to modify group membership.')
@@ -106,6 +111,33 @@ class OSFGroup(GuardianMixin, base.BaseModel):
 
         if adding_member:
             self.send_member_email(user, MANAGER, auth)
+
+    def add_unregistered_member(self, fullname, email, auth, role='member'):
+        """Add unregistered member or manager to OSFGroup
+
+        :param fullname: string, user fullname
+        :param email: email, user email
+        :param auth: Auth object
+        :param role: string, "member" or "manager", default is member
+        """
+        OSFUser = apps.get_model('osf.OSFUser')
+
+        user = get_user(email=email)
+        if user:
+            if user.is_registered or self.is_member(user):
+                raise ValidationError('User already exists.')
+        else:
+            user = OSFUser.create_unregistered(fullname=fullname, email=email)
+
+        user.add_unclaimed_record(self, referrer=auth.user, given_name=fullname, email=email)
+        user.save()
+
+        if role == MANAGER:
+            self.make_manager(user, auth=auth)
+        else:
+            self.make_member(user, auth=auth)
+
+        return user
 
     def remove_member(self, user, auth=None):
         """Remove member
