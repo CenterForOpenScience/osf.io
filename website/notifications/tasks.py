@@ -11,7 +11,6 @@ from osf.models import OSFUser, AbstractNode, AbstractProvider
 from osf.models import NotificationDigest
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
-from api.providers.permissions import GroupHelper
 
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
@@ -77,7 +76,7 @@ def _send_reviews_moderator_emails(send_type):
                 reviews_submissions_url='{}reviews/preprints/{}'.format(settings.DOMAIN, provider._id),
                 notification_settings_url='{}reviews/preprints/{}/notifications'.format(settings.DOMAIN, provider._id),
                 is_reviews_moderator_notification=True,
-                is_admin=GroupHelper(provider).get_group('admin').user_set.filter(id=user.id).exists()
+                is_admin=provider.get_group('admin').user_set.filter(id=user.id).exists()
             )
         remove_notifications(email_notification_ids=notification_ids)
 

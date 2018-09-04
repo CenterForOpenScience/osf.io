@@ -31,5 +31,5 @@ def main(dry_run=True):
                 add_missing_unclaimed_record(user, node, dry_run)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(dry_run='--dry' in sys.argv)
