@@ -158,6 +158,10 @@ class PreprintProviderSerializer(ProviderSerializer):
             return []
         return get_perms(auth.user, obj)
 
+    def get_meta(self, obj):
+        if hasattr(obj, 'downloads'):
+            return {'metrics': {'downloads': obj.downloads}}
+
     def validate(self, data):
         required_fields = ('reviews_workflow', 'reviews_comments_private', 'reviews_comments_anonymous')
         for field in required_fields:

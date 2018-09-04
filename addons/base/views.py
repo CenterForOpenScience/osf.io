@@ -38,6 +38,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
+from osf.metrics import PreprintView, PreprintDownload
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -313,6 +314,23 @@ def get_auth(auth, **kwargs):
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
+
+    user = auth.user
+    linked_preprint = node.linked_preprint
+    if linked_preprint:
+        if not node.is_contributor(user):
+            if data['action_meta']['is_mfr_render']:
+                metric_class = PreprintView
+            else:
+                metric_class = PreprintDownload
+            try:
+                metric_class.record(
+                    provider_id=linked_preprint.provider._id,
+                    user_id=user._id,
+                    preprint_id=linked_preprint._id,
+                )
+            except Exception:  # TODO: Catch a specific exception
+                log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),

@@ -63,8 +63,10 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
     provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
     user_id = metrics.Keyword(index=True, doc_values=True, required=True)
     preprint_id = metrics.Keyword(index=True, doc_values=True, required=True)
-    version = metrics.Keyword(index=True, doc_values=True, required=True)
-    path = metrics.Text(index=True, required=True)
+    # TODO: Make these required when we can get these fields in the
+    # waterbutler auth callback
+    version = metrics.Keyword(index=True, doc_values=True)
+    path = metrics.Text(index=True)
     # TODO: locale
 
     class Index:

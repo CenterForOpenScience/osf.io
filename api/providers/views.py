@@ -6,7 +6,7 @@ from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
 
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
+from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict, InvalidQueryStringError
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
@@ -25,6 +25,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
+from osf.metrics import PreprintDownload
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -69,6 +70,26 @@ class PreprintProviderList(GenericProviderList):
     serializer_class = PreprintProviderSerializer
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
+
+    def get_default_queryset(self):
+        METRIC_MAP = {
+            'downloads': PreprintDownload
+        }
+        queryset = super(PreprintProviderList, self).get_default_queryset()
+        metric_param = self.request.query_params.get('metrics', None)
+        if metric_param:
+            metrics = [each.lower().strip() for each in metric_param.split(',')]
+            for metric in metrics:
+                if metric not in METRIC_MAP:
+                    raise InvalidQueryStringError('Invalid metric in query string: {}'.format(metric))
+                metric_class = METRIC_MAP[metric]
+                queryset = metric_class.get_top_by_count(
+                    qs=queryset,
+                    model_field='_id',
+                    metric_field='provider_id',
+                    annotation='downloads',
+                )
+        return queryset
 
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()
