@@ -13,7 +13,6 @@ def reverse_func(apps, schema_editor):
     pass
 
 def migrate_nodes_to_django_guardian(state, schema):
-    return
     logger.info('Starting to add django guardian to existing nodes [SQL]:')
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
@@ -21,7 +20,6 @@ def migrate_nodes_to_django_guardian(state, schema):
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            -- Creates Read, Write, and Admin groups for each existing node
             INSERT INTO auth_group (name)
             (SELECT 'node_' || N.id || '_read' FROM osf_abstractnode AS N
             UNION
@@ -34,22 +32,22 @@ def migrate_nodes_to_django_guardian(state, schema):
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
             WHERE G.name = 'node_' || N.id || '_read'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'read_node';
 
             -- Adds "read_node" and "write_node" permissions to all Node write groups
             INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
-            WHERE G.name = 'node' || N.id || '_write'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            WHERE G.name = 'node_' || N.id || '_write'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'read_node';
 
             INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
-            WHERE G.name = 'node' || N.id || '_write'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            WHERE G.name = 'node_' || N.id || '_write'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'write_node';
 
             -- Adds "read_node", "write_node", and "admin_node" permissions to all Node admin groups
@@ -57,21 +55,21 @@ def migrate_nodes_to_django_guardian(state, schema):
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
             WHERE G.name = 'node_' || N.id || '_admin'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'read_node';
 
             INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
             WHERE G.name = 'node_' || N.id || '_admin'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'write_node';
 
             INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)
             SELECT N.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id
             FROM osf_abstractnode AS N, auth_group G, django_content_type AS CT, auth_permission AS PERM
             WHERE G.name = 'node_' || N.id || '_admin'
-            AND CT.model = 'node' AND CT.app_label = 'osf'
+            AND CT.model = 'abstractnode' AND CT.app_label = 'osf'
             AND PERM.codename = 'admin_node';
 
             -- Add users with read permissions only on the node to the node's read group
