@@ -214,7 +214,9 @@ class CrossRefClient(AbstractIdentifierClient):
         url.args.update(query)
         return url.url
 
-    def create_identifier(self, preprint, category, status='public', include_relation=True):
+    def create_identifier(self, preprint, category, status=None, include_relation=True):
+        if status is None:
+            status = self.get_status(preprint)
         if category == 'doi':
             metadata = self.build_metadata(preprint, status, include_relation)
             doi = self.build_doi(preprint)
@@ -240,8 +242,6 @@ class CrossRefClient(AbstractIdentifierClient):
             raise NotImplementedError()
 
     def update_identifier(self, preprint, category, status=None):
-        if status is None:
-            status = self.get_status(preprint)
         return self.create_identifier(preprint, category, status)
 
     def get_status(self, preprint):
