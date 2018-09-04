@@ -701,7 +701,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 continue
             user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
-            if node.is_contributor(self) and node.is_contributor(user):
+            if node.is_contributor(self, explicit=True) and node.is_contributor(user, explicit=True):
                 self_perms = Contributor(node=node, user=self).permission
                 permissions = API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(user_perms), API_CONTRIBUTOR_PERMISSIONS.index(self_perms))]
                 node.set_permissions(user=self, permissions=permissions)

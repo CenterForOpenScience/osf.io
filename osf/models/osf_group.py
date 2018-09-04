@@ -1,5 +1,5 @@
 from django.db import models
-from guardian.shortcuts import assign_perm, remove_perm
+from guardian.shortcuts import assign_perm, remove_perm, get_perms
 from framework.exceptions import PermissionsError
 
 from osf.models import base
@@ -14,6 +14,7 @@ MANAGER = 'manager'
 # TODO Add logging for OSFGroup actions
 # TODO Add unregistered member/manager
 # TODO Send email to member when added to group
+# TODO OSFGroups should either have a guid or a longer _id
 
 
 class OSFGroup(GuardianMixin, base.BaseModel):
@@ -151,6 +152,19 @@ class OSFGroup(GuardianMixin, base.BaseModel):
         :param auth: Auth object
         """
         self._require_manager_permission(auth)
+        for perm in node.groups[permission]:
+            assign_perm(perm, self.member_group, node)
+
+    def update_group_permissions_to_node(self, node, permission='write', auth=None):
+        """Updates the OSF Group permissions to the node.  Called from node model.
+
+        :param obj AbstractNode
+        :param str Highest permission to grant, 'read', 'write', or 'admin'
+        :param auth: Auth object
+        """
+        to_remove = set(get_perms(self.member_group, node)).difference(node.groups[permission])
+        for perm in to_remove:
+            remove_perm(perm, self.member_group, node)
         for perm in node.groups[permission]:
             assign_perm(perm, self.member_group, node)
 
