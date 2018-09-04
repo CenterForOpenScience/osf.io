@@ -195,7 +195,7 @@ class NodeRequestMachine(BaseMachine):
         self.machineable.save()
 
         if ev.event.name == DefaultTriggers.ACCEPT.value:
-            if not self.machineable.target.is_contributor(self.machineable.creator):
+            if not self.machineable.target.is_contributor(self.machineable.creator, explicit=True):
                 contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
                 self.machineable.target.add_contributor(
                     self.machineable.creator,

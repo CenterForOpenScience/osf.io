@@ -235,6 +235,28 @@ class TestOSFGroup:
         assert project.has_permission(member, 'write') is True
         assert project.has_permission(member, 'read') is True
 
+    def test_update_osf_group_node(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, 'admin')
+
+        assert project.has_permission(member, 'admin') is True
+        assert project.has_permission(member, 'write') is True
+        assert project.has_permission(member, 'read') is True
+
+        project.update_osf_group(osf_group, 'read')
+        assert project.has_permission(member, 'admin') is False
+        assert project.has_permission(member, 'write') is False
+        assert project.has_permission(member, 'read') is True
+
+        project.update_osf_group(osf_group, 'write')
+        assert project.has_permission(member, 'admin') is False
+        assert project.has_permission(member, 'write') is True
+        assert project.has_permission(member, 'read') is True
+
+        project.update_osf_group(osf_group, 'admin')
+        assert project.has_permission(member, 'admin') is True
+        assert project.has_permission(member, 'write') is True
+        assert project.has_permission(member, 'read') is True
+
     def test_remove_osf_group_from_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
