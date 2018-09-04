@@ -2,17 +2,13 @@
 
 <%def name="resource()"><%
     if context.get('file_id'):
-        prefix = 'file for a '
-    else:
-        prefix = ''
+        return 'files'
     if node.get('is_registration', False):
-        return prefix + 'registration'
+        return 'registrations'
     elif node.get('is_preprint', False):
-        return prefix + 'preprint'
-    elif parent_node['exists']:
-        return prefix + 'component'
+        return 'preprints'
     else:
-        return prefix + 'project'
+        return 'nodes'
     %>
 </%def>
 

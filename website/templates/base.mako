@@ -199,7 +199,7 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'Logged in': 'Logged out');
             ga('set', 'dimension2', '${self.resource()}');
             ga('set', 'dimension3', '${self.public()}');
             ga('set', 'anonymizeIp', true);
@@ -275,12 +275,12 @@
 </%def>
 
 <%def name="resource()"><%
-    return None
+    return 'n/a'
 %> ### What resource is displayed on page ###
 </%def>
 
 <%def name="public()"><%
-    return None
+    return 'n/a'
 %> ### What the public/private status of the resource displayed on page ###
 </%def>
 
