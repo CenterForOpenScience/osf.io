@@ -1,11 +1,11 @@
 import pytest
-
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 
 from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
-from osf.models import OSFGroup, Node
+from osf.models import OSFGroup, Node, OSFUser
 from .factories import (
     NodeFactory,
     ProjectFactory,
@@ -103,6 +103,41 @@ class TestOSFGroup:
         osf_group.make_member(user_two, Auth(manager))
         assert user_two not in osf_group.managers
         assert user_two in osf_group.members
+
+    def test_add_unregistered_member(self, manager, member, osf_group, user_two):
+        test_fullname = 'Test User'
+        test_email = 'test_member@cos.io'
+        test_manager_email = 'test_manager@cos.io'
+
+        # Email already exists
+        with pytest.raises(ValidationError):
+            osf_group.add_unregistered_member(test_fullname, user_two.username, auth=Auth(manager))
+
+        # Test need manager perms to add
+        with pytest.raises(PermissionsError):
+            osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(member))
+
+        # Add member
+        osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
+        unreg_user = OSFUser.objects.get(username=test_email)
+        assert unreg_user in osf_group.members
+        assert unreg_user not in osf_group.managers
+        # Unreg user hasn't claimed account, so they have no permissions, even though they belong to member group
+        assert osf_group.has_permission(unreg_user, 'member') is False
+        assert osf_group._id in unreg_user.unclaimed_records
+
+        # Attempt to add unreg user as a member
+        with pytest.raises(ValidationError):
+            osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
+
+        # Add unregistered manager
+        osf_group.add_unregistered_member(test_fullname, test_manager_email, auth=Auth(manager), role='manager')
+        unreg_manager = OSFUser.objects.get(username=test_manager_email)
+        assert unreg_manager in osf_group.members
+        assert unreg_manager in osf_group.managers
+        # Unreg manager hasn't claimed account, so they have no permissions, even though they belong to member group
+        assert osf_group.has_permission(unreg_manager, 'member') is False
+        assert osf_group._id in unreg_manager.unclaimed_records
 
     def test_remove_member(self, manager, member, user_three, osf_group):
         new_member = UserFactory()

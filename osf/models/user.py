@@ -1392,12 +1392,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from osf.models.provider import AbstractProvider
+        from osf.models.osf_group import OSFGroup
+
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
                     'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
                 )
 
+        elif isinstance(claim_origin, OSFGroup):
+            if not claim_origin.has_permission(referrer, 'manage'):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
+                )
         else:
             if not claim_origin.has_permission(referrer, 'admin'):
                 raise PermissionsError(
