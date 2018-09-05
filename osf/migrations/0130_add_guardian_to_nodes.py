@@ -5,12 +5,49 @@ import logging
 
 from django.db import migrations, connection
 from django.core.management.sql import emit_post_migrate_signal
+from bulk_update.helper import bulk_update
+from django.contrib.auth.models import Group
 
 logger = logging.getLogger(__name__)
 
 def reverse_func(apps, schema_editor):
-    # TODO reverse migration to take contributors from groups and add them back to the contributor model
-    pass
+    # Reverse data migration - written in Django for now, can rewrite in SQL if necessary
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    Contributor = apps.get_model('osf.Contributor')
+
+    contributors = []
+
+    for node in AbstractNode.objects.all():
+        read_group = Group.objects.get(name='node_{}_read'.format(node.id))
+        write_group = Group.objects.get(name='node_{}_write'.format(node.id))
+        admin_group = Group.objects.get(name='node_{}_admin'.format(node.id))
+
+        for user in read_group.user_set.all():
+            contributor = Contributor.objects.get(user_id=user.id, node=node)
+            contributor.read = True
+            contributor.write = False
+            contributor.admin = False
+            contributors.append(contributor)
+
+        for user in write_group.user_set.all():
+            contributor = Contributor.objects.get(user_id=user.id, node=node)
+            contributor.read = True
+            contributor.write = True
+            contributor.admin = False
+            contributors.append(contributor)
+
+        for user in admin_group.user_set.all():
+            contributor = Contributor.objects.get(user_id=user.id, node=node)
+            contributor.read = True
+            contributor.write = True
+            contributor.admin = True
+            contributors.append(contributor)
+
+        read_group.delete()
+        write_group.delete()
+        admin_group.delete()
+
+    bulk_update(contributors, update_fields=['read', 'write', 'admin'])
 
 def migrate_nodes_to_django_guardian(state, schema):
     logger.info('Starting to add django guardian to existing nodes [SQL]:')
