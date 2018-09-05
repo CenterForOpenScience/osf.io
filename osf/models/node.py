@@ -12,7 +12,6 @@ from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db import models, connection
@@ -24,7 +23,10 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
-from guardian.models import GroupObjectPermission, GroupObjectPermissionBase, UserObjectPermissionBase
+from guardian.models import (
+    GroupObjectPermissionBase,
+    UserObjectPermissionBase,
+)
 from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
 
 from framework import status
@@ -140,13 +142,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
                         SELECT DISTINCT N.id as node_id
-                        FROM osf_abstractnode as N, auth_permission as P, guardian_groupobjectpermission as G, django_content_type as CT, osf_osfuser_groups as UG
+                        FROM osf_abstractnode as N, auth_permission as P, osf_nodegroupobjectpermission as G, osf_osfuser_groups as UG
                         WHERE P.codename = 'admin_node'
                         AND G.permission_id = P.id
-                        AND CT.model = 'abstractnode'
                         AND UG.osfuser_id = %s
                         AND G.group_id = UG.group_id
-                        AND G.object_pk::integer = N.id
+                        AND G.content_object_id = N.id
                         AND N.type = 'osf.node'
                     UNION ALL
                         SELECT "osf_noderelation"."child_id"
@@ -882,10 +883,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         perm = Permission.objects.get(codename='{}_node'.format(permission))
-        ct = ContentType.objects.get(model='abstractnode')
-        admin_groups = GroupObjectPermission.objects.filter(permission_id=perm.id,
-                                                            content_type_id=ct.id,
-                                                            object_pk=self.id).values_list('group_id', flat=True)
+        admin_groups = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
+                                                            content_object_id=self.id).values_list('group_id', flat=True)
         return OSFUser.objects.filter(groups__id__in=admin_groups).distinct('id', 'family_name')
 
     @property
