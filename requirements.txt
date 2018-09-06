@@ -68,6 +68,7 @@ pyjwt==1.5.3
 # django-celery-beat==1.0.1  # BSD 3 Clause
 # Contains a fix for handling disabled tasks that still has not been release
 git+git://github.com/celery/django-celery-beat@f014edcb954c707cb7628f4416257b6a58689523# BSD 3 Clause
+django-celery-results==1.0.1
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.18
 pyjwe==1.0.0
