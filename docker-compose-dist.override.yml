@@ -23,10 +23,6 @@ version: "3.4"
 #    volumes:
 #      - ../modular-file-renderer:/code
 
-#  ember_osf_web:
-#    volumes:
-#      - ../ember-osf-web:/code
-
 #  preprints:
 #    volumes:
 #      - ../ember-osf-preprints:/code
