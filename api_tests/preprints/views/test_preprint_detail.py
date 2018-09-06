@@ -47,10 +47,7 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def preprint_pre_mod(self, user):
-        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
-        pp.node.is_public = True
-        pp.node.save()
-        return pp
+        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
 
     @pytest.fixture()
     def moderator(self, preprint_pre_mod):

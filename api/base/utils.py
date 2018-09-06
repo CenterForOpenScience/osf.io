@@ -174,8 +174,8 @@ def has_admin_scope(request):
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
-    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(min_version)
-    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(max_version)
+    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(str(min_version))
+    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(str(max_version))
     if min_version_deprecated or max_version_deprecated:
         return True
     return False

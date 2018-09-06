@@ -254,7 +254,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.has_submitted_preprint and not \
             self.deleted and not \
             self.is_preprint_orphan and not \
-            self.is_retracted
+            (self.is_retracted and not self.ever_public)
 
     @property
     def should_request_identifiers(self):
@@ -388,14 +388,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return log
 
     def can_view_files(self, auth=None):
-        if auth and auth.user:
-            return ((self.verified_publishable and not self.is_retracted) or
-                (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-                self.has_permission(auth.user, 'admin') or
-                (self.is_contributor(auth.user) and self.has_submitted_preprint)
-            )
+        if self.is_retracted:
+            return False
+
+        if not auth or not auth.user:
+            return self.verified_publishable
         else:
-            return self.verified_publishable and not self.is_retracted
+            return self.can_view(auth=auth)
 
     # Overrides ContributorMixin entirely
     # TODO: When nodes user guardian as well, move this to ContributorMixin

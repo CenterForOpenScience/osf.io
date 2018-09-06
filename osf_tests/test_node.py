@@ -39,7 +39,7 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
@@ -866,6 +866,18 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+
+        assert unregistered_user.is_registered is False
+        assert unregistered_user.unclaimed_records == {}
+
+        with pytest.raises(UserStateError) as excinfo:
+            node.add_contributor(unregistered_user, auth=Auth(user))
+        assert excinfo.value.message == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
@@ -1136,6 +1148,16 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
+    def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+
+        contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records != {}
+
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
@@ -1174,6 +1196,16 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor == registered_user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_unregistered(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor = contributor_obj.user
+        assert contributor == unregistered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
 class TestContributorProperties:
 
@@ -2293,10 +2325,12 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, node, auth):
         unregistered = UnregUserFactory()
-        node.add_contributor(
-            unregistered,
+        node.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
-            save=True
+            existing_user=unregistered
         )
         users = [
             {'id': node.creator._id, 'permission': READ, 'visible': True},

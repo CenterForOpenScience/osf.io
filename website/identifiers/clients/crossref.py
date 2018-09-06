@@ -245,7 +245,7 @@ class CrossRefClient(AbstractIdentifierClient):
         return self.create_identifier(preprint, category, status)
 
     def get_status(self, preprint):
-        return 'public' if preprint.verified_publishable else 'unavailable'
+        return 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
 
     def bulk_create(self, metadata, filename):
         # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm

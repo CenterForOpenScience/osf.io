@@ -157,7 +157,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
-        # Noncontribs cannot see withdrawn preprints - need to be an admin contributor
+        # Noncontribs cannot see withdrawn preprints
         user2 = AuthUserFactory()
         url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
         expected = []
@@ -176,8 +176,8 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        expected = [preprint_one._id, preprint_two._id]
-        # Admin contribs can see all withdrawn preprints
+        expected = [preprint_two._id]
+        # Admin contribs can only see withdrawn preprints that were once public
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)

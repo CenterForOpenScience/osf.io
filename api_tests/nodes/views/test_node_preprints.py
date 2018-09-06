@@ -89,17 +89,17 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        # Read contribs can see all withdrawn preprints
+        # contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
         preprint_one.add_contributor(user2, 'read')
         preprint_two.add_contributor(user2, 'read')
-        expected = [preprint_one._id, preprint_two._id]
+        expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        expected = [preprint_one._id, preprint_two._id]
-        # Admin contribs can see all withdrawn preprints
+        expected = [preprint_two._id]
+        # Admins can only see withdrawn preprints that have been public
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)

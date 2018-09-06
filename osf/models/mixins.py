@@ -17,7 +17,7 @@ from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError
+from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
@@ -31,8 +31,7 @@ from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, Re
 from osf.utils.requests import get_request_and_user_id
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website import settings
-from website import mails
+from website import settings, mails, language
 
 
 logger = logging.getLogger(__name__)
@@ -685,7 +684,7 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in ReviewStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
@@ -887,6 +886,10 @@ class ContributorMixin(models.Model):
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
+        if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
+            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
+                                       'to ' + language.SUPPORT_LINK)
+
         if self.is_contributor(contrib_to_add):
             if permissions is None:
                 return False
@@ -1033,9 +1036,10 @@ class ContributorMixin(models.Model):
                                  permissions=permissions, send_email=send_email, save=True)
         else:
             contributor = get_user(email=email)
-            if contributor:
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            if contributor and self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+
+            if contributor and contributor.is_registered:
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                     send_email=send_email, permissions=permissions, save=True)
             else:

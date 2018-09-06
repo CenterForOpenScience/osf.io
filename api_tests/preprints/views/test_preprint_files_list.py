@@ -169,11 +169,12 @@ class TestPreprintProvidersList(ApiTestCase):
         # Write contributor
         self.preprint.add_contributor(self.user_two, 'write', save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 200
+        assert res.status_code == 403
 
         # Admin contrib
-        res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 200
+        res = self.app.get(self.url,
+        auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_return_published_files_logged_out(self):
         res = self.app.get(self.url)
@@ -375,11 +376,11 @@ class TestPreprintFilesList(ApiTestCase):
         # Write contributor
         self.preprint.add_contributor(self.user_two, 'write', save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 200
+        assert res.status_code == 403
 
         # Admin contrib
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 200
+        assert res.status_code == 403
 
     def test_only_primary_file_is_returned(self):
         filename = 'my second file'

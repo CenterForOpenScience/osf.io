@@ -274,7 +274,6 @@ class PreprintRequestDeleteBase(DeleteView):
             target__guids___id=self.kwargs.get('guid'),
             target__provider__reviews_workflow=None).first()
 
-
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
 
     paginate_by = 10
@@ -342,7 +341,6 @@ class PreprintApproveWithdrawalRequest(PermissionRequiredMixin, PreprintRequestD
         )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
 
-
 class PreprintRejectWithdrawalRequest(PermissionRequiredMixin, PreprintRequestDeleteBase):
     template_name = 'preprints/reject_withdrawal.html'
     permission_required = 'osf.change_preprintrequest'
@@ -359,7 +357,6 @@ class PreprintRejectWithdrawalRequest(PermissionRequiredMixin, PreprintRequestDe
             action_flag=REJECT_WITHDRAWAL,
         )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
-
 
 class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
     SPAM_STATE = SpamStatus.FLAGGED

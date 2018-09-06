@@ -1166,17 +1166,17 @@ class TestNodeFiltering:
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        # Read contribs can see all withdrawn preprints
+        # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
         preprint_one.add_contributor(user2, 'read')
         preprint_two.add_contributor(user2, 'read')
-        expected = [project_one._id, project_two._id]
+        expected = [project_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        expected = [project_one._id, project_two._id]
-        # Admin contribs can see all withdrawn preprints
+        expected = [project_two._id]
+        # Admin contribs can only see withdrawn preprints that have been public
         res = app.get(url, auth=user_one.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
@@ -1217,17 +1217,17 @@ class TestNodeFiltering:
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        # Read contribs can see all withdrawn preprints
+        # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
         preprint_one.add_contributor(user2, 'read')
         preprint_two.add_contributor(user2, 'read')
-        expected = []
+        expected = [project_one._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        expected = []
-        # Admin contribs can see all withdrawn preprints
+        expected = [project_one._id]
+        # Admin contribs can only see withdrawn preprints that have been public
         res = app.get(url, auth=user_one.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)

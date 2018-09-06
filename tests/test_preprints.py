@@ -1175,10 +1175,12 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, preprint, auth):
         unregistered = UnregUserFactory()
-        preprint.add_contributor(
-            unregistered,
-            permissions=ADMIN,
-            save=True
+        preprint.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(preprint.creator),
+            permissions='admin',
+            existing_user=unregistered
         )
         users = [
             {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
@@ -1799,7 +1801,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         super(TestPreprintIdentifiers, self).setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
-        self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
     def test_update_or_create_preprint_identifiers_called(self):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
@@ -2383,12 +2384,15 @@ class TestCheckPreprintAuth(OsfTestCase):
 
         # Read contributor
         self.preprint.add_contributor(user2, 'read', save=True)
-        res = views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_true(res)
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.preprint, Auth(user2), 'download', None)
+        assert_equal(exc_info.exception.code, 403)
 
         # Admin contributor
-        res = views.check_access(self.preprint, Auth(self.user), 'download', None)
-        assert_true(res)
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.preprint, Auth(self.user), 'download', None)
+        assert_equal(exc_info.exception.code, 403)
+
 
 
 class TestPreprintOsfStorageLogs(OsfTestCase):
@@ -2669,7 +2673,7 @@ class TestWithdrawnPreprint:
         withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.is_retracted
-        assert not preprint.verified_publishable
+        assert preprint.verified_publishable
         assert crossref_client.get_status(preprint) == 'unavailable'
 
         # test_post_moderated_preprint
@@ -2680,7 +2684,7 @@ class TestWithdrawnPreprint:
         withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_post_mod.is_retracted
-        assert not preprint_post_mod.verified_publishable
+        assert preprint_post_mod.verified_publishable
         assert crossref_client.get_status(preprint_post_mod) == 'unavailable'
 
         # test_pre_moderated_preprint
@@ -2691,5 +2695,5 @@ class TestWithdrawnPreprint:
         withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_pre_mod.is_retracted
-        assert not preprint_pre_mod.verified_publishable
+        assert preprint_pre_mod.verified_publishable
         assert crossref_client.get_status(preprint_pre_mod) == 'unavailable'

@@ -39,14 +39,14 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
     # Only update identifier metadata iff...
     return (
         # DOI didn't just get created
-        preprint and
+        preprint and preprint.date_published and
         not (saved_fields and 'preprint_doi_created' in saved_fields) and
         # subjects aren't being set
         not old_subjects
     )
 
 def update_or_create_preprint_identifiers(preprint):
-    status = 'public' if preprint.verified_publishable else 'unavailable'
+    status = 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
     try:
         preprint.request_identifier_update(category='doi', status=status)
     except HTTPError as err:
@@ -140,7 +140,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'title': preprint.title,
         'description': preprint.description or '',
         'is_deleted': (
-            not preprint.verified_publishable or
+            (not preprint.verified_publishable and not preprint.is_retracted) or
             preprint.tags.filter(name='qatest').exists()
         ),
         'date_updated': preprint.modified.isoformat(),

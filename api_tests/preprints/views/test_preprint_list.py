@@ -5,6 +5,8 @@ import factory
 
 from django.utils import timezone
 
+from django.utils import timezone
+
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -234,8 +236,6 @@ class TestPreprintList(ApiTestCase):
 
     def test_withdrawn_preprints_list(self):
         pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
-        pp.node.is_public = True
-        pp.node.save()
         mod = AuthUserFactory()
         pp.provider.get_group('moderator').user_set.add(mod)
         pp.date_withdrawn = timezone.now()
@@ -336,17 +336,16 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        # Read contribs can see all withdrawn preprints
+        # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
         preprint_one.add_contributor(user2, 'read')
         preprint_two.add_contributor(user2, 'read')
-        expected = [preprint_one._id, preprint_two._id]
+        expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
 
-        expected = [preprint_one._id, preprint_two._id]
-        # Admin contribs can see all withdrawn preprints
+        # Admin contribs can only see withdrawn preprints that have been public
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
