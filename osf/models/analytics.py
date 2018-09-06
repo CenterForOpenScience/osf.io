@@ -136,9 +136,27 @@ class PageCounter(BaseModel):
             model_instance.save()
 
     @classmethod
-    def get_basic_counters(cls, page):
+    def _get_file_counter(cls, counter_type, file_id, version=None):
+        """
+        Pulls the total file count for views or downloads across different nodes.
+        :param info_type: String
+        :param file_id: String
+        :param version: Int the version number
+        :return: Int the total count
+        """
+        if version is not None:
+            file_id += ':' + str(version)
+
         try:
-            counter = cls.objects.get(_id=cls.clean_page(page))
-            return (counter.unique, counter.total)
+            return PageCounter.objects.filter(_id__startswith=counter_type,
+                                              _id__endswith=':' + file_id).aggregate(total=models.Sum('total'))['total'] or 0
         except cls.DoesNotExist:
-            return (None, None)
+            return 0
+
+    @classmethod
+    def get_file_downloads(cls, file_id, version=None):
+        return cls._get_file_counter('download', file_id, version)
+
+    @classmethod
+    def get_file_views(cls, file_id, version=None):
+        return cls._get_file_counter('view', file_id, version)

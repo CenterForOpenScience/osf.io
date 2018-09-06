@@ -16,7 +16,6 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework import sentry
-from osf.models import PageCounter
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
@@ -331,25 +330,15 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_page_counter_count(self, count_type, version=None):
-        """Assembles a string to retrieve the correct file data from the pagecounter collection,
-        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
-        """
-        parts = [count_type, self.target._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = PageCounter.get_basic_counters(page)
-
-        return count or 0
-
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection"""
-        return self.get_page_counter_count('download', version=version)
+        from osf.models import PageCounter
+        return PageCounter.get_file_downloads(self._id, version)
 
     def get_view_count(self, version=None):
         """Pull the mfr view count from the pagecounter collection"""
-        return self.get_page_counter_count('view', version=version)
+        from osf.models import PageCounter
+        return PageCounter.get_file_views(self._id)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
