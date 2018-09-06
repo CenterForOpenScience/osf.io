@@ -2,18 +2,20 @@
 
 <%def name="resource()"><%
     if context.get('file_id'):
-        return 'files'
-    if node.get('is_registration', False):
-        return 'registrations'
-    elif node.get('is_preprint', False):
-        return 'preprints'
+        prefix = 'file for a '
     else:
-        return 'nodes'
+        prefix = ''
+    if node.get('is_registration', False):
+        return prefix + 'registrations'
+    elif node.get('is_preprint', False):
+        return prefix + 'preprints'
+    else:
+        return prefix + 'nodes'
     %>
 </%def>
 
 <%def name="public()"><%
-    return node.get('is_public', False)
+    return 'public' if node.get('is_public', False) else 'private'
     %>
 </%def>
 
