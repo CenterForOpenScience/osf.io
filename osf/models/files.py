@@ -15,8 +15,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
-from framework.analytics import get_basic_counters
 from framework import sentry
+from osf.models import PageCounter
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
@@ -339,7 +339,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
+        _, count = PageCounter.get_basic_counters(page)
 
         return count or 0
 
