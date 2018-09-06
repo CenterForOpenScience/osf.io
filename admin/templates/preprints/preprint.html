@@ -251,6 +251,70 @@
                             <pre>{{ serialized_preprint.spam_data }}</pre>
                         </td>
                     </tr>
+                    {% if perms.osf.change_preprintrequest %}
+                    <tr>
+                        <td>Withdrawal Request</td>
+                        <td>
+                            <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <td>Withdrawal Justification</td>
+                                    <td>Creator</td>
+                                    <td>Status</td>
+                                    <td>Created</td>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width: 500px;"> {{ serialized_preprint.withdrawal_request.comment }} </td>
+                                    <td> {{ serialized_preprint.withdrawal_request.creator.fullname }} </td>
+                                    <td>
+                                        {% if serialized_preprint.withdrawal_request.machine_state == 'accepted' %}
+                                            <span class="label label-success">Approved</span>
+                                        {% elif serialized_preprint.withdrawal_request.machine_state == 'rejected' %}
+                                            <span class="label label-danger">Rejected</span>
+                                        {% elif serialized_preprint.withdrawal_request.machine_state == 'pending' %}
+                                            <span class="label label-default">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td> {{ serialized_preprint.withdrawal_request.created }} </td>
+                                    {% if serialized_preprint.pending_withdrawal %}
+                                    <td>
+                                        <span>
+                                            <a href="{% url 'preprints:approve-withdrawal' guid=serialized_preprint.id %}"
+                                               data-toggle="modal" data-target="#confirmApproveWithdrawal"
+                                               class="btn btn-warning btn-sm">
+                                                Approve
+                                            </a>
+                                            <div class="modal" id="confirmApproveWithdrawal">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content"></div>
+                                                    {# Data from above link #}
+                                                </div>
+                                            </div>
+                                        </span>&nbsp;&nbsp;
+                                        <span>
+                                            <a href="{% url 'preprints:reject-withdrawal' guid=serialized_preprint.id %}"
+                                               data-toggle="modal" data-target="#confirmRejectWithdrawal"
+                                               class="btn btn-default btn-sm">
+                                                Reject
+                                            </a>
+                                            <div class="modal" id="confirmRejectWithdrawal">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content"></div>
+                                                    {# Data from above link #}
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
                 </tbody>
                 </table>
             </div>

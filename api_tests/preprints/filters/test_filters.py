@@ -1,6 +1,5 @@
 import pytest
 
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -401,9 +400,7 @@ class PreprintsListFilteringMixin(object):
         assert expected == actual()
 
         for preprint in preprints:
-            another_user.groups.add(
-                GroupHelper(
-                    preprint.provider).get_group(group_name))
+            another_user.groups.add(preprint.provider.get_group(group_name))
             expected.update(
                 [p._id for p in preprints if p.provider_id == preprint.provider_id])
             assert expected == actual()

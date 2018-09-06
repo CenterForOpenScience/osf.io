@@ -1,6 +1,5 @@
 import pytest
 
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     ReviewActionFactory,
     AuthUserFactory,
@@ -31,13 +30,13 @@ class ReviewActionCommentSettingsMixin(object):
     @pytest.fixture()
     def provider_admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('admin'))
+        user.groups.add(provider.get_group('admin'))
         return user
 
     @pytest.fixture()
     def provider_moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('moderator'))
+        user.groups.add(provider.get_group('moderator'))
         return user
 
     @pytest.fixture()

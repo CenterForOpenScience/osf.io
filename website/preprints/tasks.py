@@ -13,8 +13,6 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_doi_metadata_on_change
-from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +24,6 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     preprint = Preprint.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
-
     need_update = bool(preprint.SEARCH_UPDATE_FIELDS.intersection(saved_fields or {}))
 
     if need_update:
@@ -50,14 +47,11 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
 
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
-    if preprint.is_published and not preprint.get_identifier('doi'):
-        request_identifiers(preprint)
-    else:
-        try:
-            update_doi_metadata_on_change(preprint._id, status=status)
-        except HTTPError as err:
-            sentry.log_exception()
-            sentry.log_message(err.args[0])
+    try:
+        preprint.request_identifier_update(category='doi', status=status)
+    except HTTPError as err:
+        sentry.log_exception()
+        sentry.log_message(err.args[0])
 
 def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     task = get_task_from_postcommit_queue(

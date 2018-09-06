@@ -24,8 +24,11 @@ USER_EMAILED = 43
 REINDEX_SHARE = 50
 REINDEX_ELASTIC = 51
 
-PREPRINT_REMOVED = 60
-PREPRINT_RESTORED = 61
+APPROVE_WITHDRAWAL = 60
+REJECT_WITHDRAWAL = 61
+
+PREPRINT_REMOVED = 70
+PREPRINT_RESTORED = 71
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(

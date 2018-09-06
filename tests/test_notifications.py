@@ -1899,7 +1899,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
         self.moderator_transacitonal = factories.UserFactory()
         self.moderator_digest= factories.UserFactory()
 
-        self.context_info = {
+        self.context_info_submission = {
             'referrer': self.submitter,
             'domain': 'osf.io',
             'reviewable': self.preprint,
@@ -1907,6 +1907,16 @@ class TestNotificationsReviewsModerator(OsfTestCase):
             'provider_contact_email': settings.OSF_CONTACT_EMAIL,
             'provider_support_email': settings.OSF_SUPPORT_EMAIL,
         }
+
+        self.context_info_request = {
+            'requester': self.submitter,
+            'domain': 'osf.io',
+            'reviewable': self.preprint,
+            'workflow': 'pre-moderation',
+            'provider_contact_email': settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
+
         self.action = factories.ReviewActionFactory()
         self.subscription = NotificationSubscription.load(self.provider._id+'_new_pending_submissions')
         self.subscription.add_user_to_subscription(self.moderator_transacitonal, 'email_transactional')
@@ -1915,31 +1925,64 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_submit_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info['message'] = u'submitted {}.'.format(self.context_info['reviewable'].title)
-        self.context_info['profile_image_url'] = get_profile_image_url(self.context_info['referrer'])
-        self.context_info['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
-                                                                                         self.context_info[
+        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].title)
+        self.context_info_submission['profile_image_url'] = get_profile_image_url(self.context_info_submission['referrer'])
+        self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                                         self.context_info_submission[
                                                                                              'reviewable'].provider._id,
-                                                                                         self.context_info[
+                                                                                         self.context_info_submission[
                                                                                              'reviewable']._id)
-        listeners.reviews_submit_notification_moderators(self, time_now, self.context_info)
+        listeners.reviews_submit_notification_moderators(self, time_now, self.context_info_submission)
         subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
         digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
         instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
         mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
                                       'email_digest',
                                       'new_pending_submissions',
-                                      self.context_info['referrer'],
-                                      self.context_info['reviewable'],
+                                      self.context_info_submission['referrer'],
+                                      self.context_info_submission['reviewable'],
                                       time_now,
-                                      abstract_provider=self.context_info['reviewable'].provider,
-                                      **self.context_info)
+                                      abstract_provider=self.context_info_submission['reviewable'].provider,
+                                      **self.context_info_submission)
 
         mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
                                    'email_transactional',
                                    'new_pending_submissions',
-                                   self.context_info['referrer'],
-                                   self.context_info['reviewable'],
+                                   self.context_info_submission['referrer'],
+                                   self.context_info_submission['reviewable'],
                                    time_now,
-                                   abstract_provider=self.context_info['reviewable'].provider,
-                                   **self.context_info)
+                                   abstract_provider=self.context_info_request['reviewable'].provider,
+                                   **self.context_info_submission)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_reviews_request_notification(self, mock_store):
+        time_now = timezone.now()
+        self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
+                                                                                                 self.context_info_request['reviewable'].title)
+        self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
+        self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                                         self.context_info_request[
+                                                                                             'reviewable'].provider._id,
+                                                                                         self.context_info_request[
+                                                                                             'reviewable']._id)
+        listeners.reviews_withdrawal_requests_notification(self, time_now, self.context_info_request)
+        subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
+        digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
+        instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
+        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
+                                      'email_digest',
+                                      'new_pending_submissions',
+                                      self.context_info_request['requester'],
+                                      self.context_info_request['reviewable'],
+                                      time_now,
+                                      abstract_provider=self.context_info_request['reviewable'].provider,
+                                      **self.context_info_request)
+
+        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
+                                   'email_transactional',
+                                   'new_pending_submissions',
+                                   self.context_info_request['requester'],
+                                   self.context_info_request['reviewable'],
+                                   time_now,
+                                   abstract_provider=self.context_info_request['reviewable'].provider,
+                                   **self.context_info_request)

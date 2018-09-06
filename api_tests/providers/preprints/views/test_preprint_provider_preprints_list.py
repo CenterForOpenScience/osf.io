@@ -80,6 +80,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
             'pending': 2,
             'accepted': 1,
             'rejected': 0,
+            'withdrawn': 0,
         }
 
         # non-moderators can't see counts

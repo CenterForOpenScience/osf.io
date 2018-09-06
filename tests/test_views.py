@@ -52,7 +52,6 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
-from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
@@ -1540,9 +1539,7 @@ class TestUserAccount(OsfTestCase):
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 
-    @mock.patch('website.profile.views.push_status_message')
     def test_password_change_valid(self,
-                                   mock_push_status_message,
                                    old_password='password',
                                    new_password='Pa$$w0rd',
                                    confirm_password='Pa$$w0rd'):
@@ -1558,6 +1555,11 @@ class TestUserAccount(OsfTestCase):
         assert_true(200, res.status_code)
         self.user.reload()
         assert_true(self.user.check_password(new_password))
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_user_account_password_reset_query_params(self, mock_push_status_message):
+        url = web_url_for('user_account') + '?password_reset=True'
+        res = self.app.get(url, auth=(self.user.auth))
         assert_true(mock_push_status_message.called)
         assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
 
@@ -4772,58 +4774,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-class TestIndexView(OsfTestCase):
-
-    def setUp(self):
-        super(TestIndexView, self).setUp()
-
-        self.inst_one = InstitutionFactory()
-        self.inst_two = InstitutionFactory()
-        self.inst_three = InstitutionFactory()
-        self.inst_four = InstitutionFactory()
-        self.inst_five = InstitutionFactory()
-
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.inst_one)
-        self.user.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_one)
-
-        # tests 4 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            registration = RegistrationFactory(creator=self.user, is_public=True)
-            registration.affiliated_institutions.add(self.inst_three)
-
-        # tests 5 affiliated, non-registered public components
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = NodeFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_four)
-
-        # tests 5 affiliated, non-registered, private projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user)
-            node.affiliated_institutions.add(self.inst_five)
-
-    def test_dashboard_institutions(self):
-        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
-            institution_ids = [
-                institution['id']
-                for institution in index()['dashboard_institutions']
-            ]
-            assert_equal(len(institution_ids), 2)
-            assert_in(self.inst_one._id, institution_ids)
-            assert_not_in(self.inst_two._id, institution_ids)
-            assert_not_in(self.inst_three._id, institution_ids)
-            assert_in(self.inst_four._id, institution_ids)
-            assert_not_in(self.inst_five._id, institution_ids)
 
 @pytest.mark.enable_quickfiles_creation
 @mock.patch('website.views.PROXY_EMBER_APPS', False)

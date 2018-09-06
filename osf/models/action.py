@@ -25,6 +25,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
     comment = models.TextField(blank=True)
 
     is_deleted = models.BooleanField(default=False)
+    auto = models.BooleanField(default=False)
 
     @property
     def target(self):

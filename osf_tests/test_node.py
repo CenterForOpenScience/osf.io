@@ -3160,7 +3160,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3182,7 +3182,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': node.creator.given_name,
@@ -4291,6 +4291,10 @@ class TestCollectionProperties:
     def bookmark_collection(self, user):
         return find_bookmark_collection(user)
 
+    @pytest.fixture()
+    def subjects(self):
+        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+
     def test_collection_project_views(
             self, user, node, collection_one, collection_two, collection_public,
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
@@ -4316,7 +4320,7 @@ class TestCollectionProperties:
         assert ids_actual == ids_expected
 
     def test_permissions_collection_project_views(
-            self, user, node, contrib, collection_one, collection_two,
+            self, user, node, contrib, subjects, collection_one, collection_two,
             collection_public, public_non_provided_collection, private_non_provided_collection,
             bookmark_collection, collector):
 
@@ -4325,10 +4329,16 @@ class TestCollectionProperties:
         public_non_provided_collection.collect_object(node, collector)
         private_non_provided_collection.collect_object(node, collector)
         bookmark_collection.collect_object(node, collector)
-        collection_public.collect_object(node, collector)
+        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        cgm.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+
+        # test_subjects_are_serialized
+        assert len(collection_summary[0]['subjects'])
+        assert len(collection_summary[0]['subjects']) == len(subjects)
+
         assert len(collection_summary) == 1
         assert collection_public._id == collection_summary[0]['url'].strip('/')
 

@@ -13,7 +13,7 @@ from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
-    NodeProviderSerializer,
+    NodeStorageProviderSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
@@ -127,14 +127,14 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
+    provider = PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    ))
+    )
 
     files = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-providers',
+        related_view='preprints:preprint-storage-providers',
         related_view_kwargs={'preprint_id': '<_id>'}
     ))
 
@@ -144,8 +144,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     ))
 
-    review_actions = NoneIfWithdrawal(RelationshipField(
+    review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
+    requests = NoneIfWithdrawal(RelationshipField(
+        related_view='preprints:preprint-request-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     ))
 
@@ -367,7 +372,7 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
 
-class PreprintProviderSerializer(NodeProviderSerializer):
+class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
     node = HideIfPreprint(ser.CharField(source='node_id', read_only=True))
     preprint = ser.CharField(source='node_id', read_only=True)
 

@@ -109,3 +109,28 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
             return preprint.can_view_files(get_user_auth(request))
 
         return super(PreprintFilesPermissions, self).has_object_permission(request, view, preprint)
+
+
+class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
+    # Handles case where moderators should be able to see
+    # a withdrawn preprint, regardless of "ever_public"
+    acceptable_models = (Preprint,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        if not obj.is_retracted:
+            return True
+        if (obj.is_retracted and obj.ever_public):
+            # Tombstone page should be public
+            return True
+
+        auth = get_user_auth(request)
+        if auth.user is None:
+            raise exceptions.NotFound
+
+        if auth.user.has_perm('view_submissions', obj.provider):
+            if request.method not in permissions.SAFE_METHODS:
+                # Withdrawn preprints should not be editable
+                raise exceptions.PermissionDenied(detail='Withdrawn preprints may not be edited')
+            return True
+        raise exceptions.NotFound

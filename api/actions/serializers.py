@@ -91,6 +91,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     date_created = ser.DateTimeField(source='created', read_only=True)
     date_modified = ser.DateTimeField(source='modified', read_only=True)
+    auto = ser.BooleanField(read_only=True)
 
     creator = RelationshipField(
         read_only=True,

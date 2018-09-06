@@ -1,16 +1,23 @@
 import pytest
 import mock
-# from nose import tools as nt
+
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, Group, AnonymousUser
 
 from tests.base import AdminTestCase
 from osf.models import Preprint, OSFUser, PreprintLog
-from osf_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    PreprintRequestFactory,
+    NodeFactory,
+)
 from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
+from osf.utils.workflows import DefaultStates, RequestTypes
 
 from admin_tests.utilities import setup_view, setup_log_view
 
@@ -427,3 +434,113 @@ class TestPreprintConfirmHamSpamViews(AdminTestCase):
         self.preprint.refresh_from_db()
         assert self.preprint.spam_status == 2
         assert not self.preprint.is_public
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintWithdrawalRequests:
+
+    @pytest.fixture()
+    def submitter(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def admin(self):
+        admin = AuthUserFactory()
+        osf_admin = Group.objects.get(name='osf_admin')
+        admin.groups.add(osf_admin)
+        return admin
+
+    @pytest.fixture()
+    def project(self, submitter):
+        return NodeFactory(creator=submitter)
+
+    @pytest.fixture()
+    def preprint(self, project):
+        return PreprintFactory(project=project)
+
+    @pytest.fixture()
+    def withdrawal_request(self, preprint, submitter):
+        withdrawal_request = PreprintRequestFactory(
+            creator=submitter,
+            target=preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value,
+        )
+        withdrawal_request.run_submit(submitter)
+        return withdrawal_request
+
+    def test_can_approve_withdrawal_request(self, withdrawal_request, submitter, preprint, admin):
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        original_comment = withdrawal_request.comment
+
+        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        request.user = admin
+
+        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        assert response.status_code == 302
+
+        withdrawal_request.refresh_from_db()
+        withdrawal_request.target.refresh_from_db()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        assert original_comment == withdrawal_request.target.withdrawal_justification
+
+    def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+
+        request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
+        request.user = admin
+
+        response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
+        assert response.status_code == 302
+
+        withdrawal_request.refresh_from_db()
+        withdrawal_request.target.refresh_from_db()
+        assert withdrawal_request.machine_state == DefaultStates.REJECTED.value
+        assert not withdrawal_request.target.withdrawal_justification
+
+    def test_permissions_errors(self, user, submitter):
+        # with auth, no permissions
+        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request.user = user
+        with pytest.raises(PermissionDenied):
+            views.PreprintWithdrawalRequestList.as_view()(request)
+
+        # request submitter
+        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request.user = submitter
+        with pytest.raises(PermissionDenied):
+            views.PreprintWithdrawalRequestList.as_view()(request)
+
+        # no auth
+        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request.user = AnonymousUser()
+        with pytest.raises(PermissionDenied):
+            views.PreprintWithdrawalRequestList.as_view()(request)
+
+    def test_osf_admin_has_correct_view_permissions(self, withdrawal_request, admin):
+        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+
+        request.user = admin
+        response = views.PreprintWithdrawalRequestList.as_view()(request)
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize('intent, final_state', [
+        ('approveRequest', DefaultStates.ACCEPTED.value),
+        ('rejectRequest', DefaultStates.REJECTED.value)])
+    def test_approve_reject_on_list_view(self, withdrawal_request, admin, intent, final_state):
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        original_comment = withdrawal_request.comment
+        request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {intent: 'foo', '{}'.format(withdrawal_request._id): 'bar'})
+        request.user = admin
+
+        response = views.PreprintWithdrawalRequestList.as_view()(request)
+        assert response.status_code == 302
+
+        withdrawal_request.refresh_from_db()
+        withdrawal_request.target.refresh_from_db()
+
+        withdrawal_request.machine_state == final_state
+
+        if intent == 'approveRequest':
+            assert original_comment == withdrawal_request.target.withdrawal_justification
+        else:
+            assert not withdrawal_request.target.withdrawal_justification

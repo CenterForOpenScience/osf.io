@@ -4,6 +4,7 @@ import pytest
 import factory
 
 from django.utils import timezone
+
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -230,6 +231,27 @@ class TestPreprintList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
+
+    def test_withdrawn_preprints_list(self):
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
+        pp.node.is_public = True
+        pp.node.save()
+        mod = AuthUserFactory()
+        pp.provider.get_group('moderator').user_set.add(mod)
+        pp.date_withdrawn = timezone.now()
+        pp.save()
+
+        assert not pp.ever_public # Sanity check
+
+        unauth_res = self.app.get(self.url)
+        user_res = self.app.get(self.url, auth=self.user.auth)
+        mod_res = self.app.get(self.url, auth=mod.auth)
+        unauth_res_ids = [each['id'] for each in unauth_res.json['data']]
+        user_res_ids = [each['id'] for each in user_res.json['data']]
+        mod_res_ids = [each['id'] for each in mod_res.json['data']]
+        assert pp._id not in unauth_res_ids
+        assert pp._id not in user_res_ids
+        assert pp._id in mod_res_ids
 
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):

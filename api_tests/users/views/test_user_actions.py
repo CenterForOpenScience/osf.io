@@ -2,7 +2,6 @@ import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -82,7 +81,7 @@ class TestReviewActionCreateRelated(object):
     @pytest.fixture()
     def moderator(self, provider):
         moderator = AuthUserFactory()
-        moderator.groups.add(GroupHelper(provider).get_group('moderator'))
+        moderator.groups.add(provider.get_group('moderator'))
         return moderator
 
     def test_create_permissions(
@@ -126,8 +125,7 @@ class TestReviewActionCreateRelated(object):
 
         # Moderator from another provider can't accept
         another_moderator = AuthUserFactory()
-        another_moderator.groups.add(GroupHelper(
-            PreprintProviderFactory()).get_group('moderator'))
+        another_moderator.groups.add(PreprintProviderFactory().get_group('moderator'))
         res = app.post_json_api(
             url, accept_payload,
             auth=another_moderator.auth,

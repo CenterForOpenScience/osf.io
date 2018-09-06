@@ -633,7 +633,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save(update_modified=False)
+            self.save()
 
         return self
 

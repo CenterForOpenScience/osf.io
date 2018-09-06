@@ -25,10 +25,10 @@ class ContributorOrPublic(permissions.BasePermission):
     acceptable_models = (AbstractNode, NodeRelation, Preprint)
 
     def has_object_permission(self, request, view, obj):
-        from api.nodes.views import NodeProvider
+        from api.nodes.views import NodeStorageProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, (NodeProvider)):
+        if isinstance(obj, (NodeStorageProvider)):
             obj = obj.node
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)

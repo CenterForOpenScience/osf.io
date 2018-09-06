@@ -413,6 +413,7 @@ class ListFilterMixin(FilterMixin):
             elif operation['value'] == []:
                 operation['source_field_name'] = 'tags__isnull'
                 operation['value'] = True
+                operation['op'] = 'eq'
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):

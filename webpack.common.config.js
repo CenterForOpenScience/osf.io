@@ -24,8 +24,6 @@ var addonsPath = function(dir) {
 var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
-    'home-page': staticPath('js/pages/home-page.js'),
-    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),

@@ -277,6 +277,17 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
+    addon_settings = {}
+    for addon in ['forward']:
+        addon_config = apps.get_app_config('addons_{}'.format(addon))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        addon_settings[addon] = config
+
+    ret['addon_settings'] = addon_settings
+
     ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
         'project': 'Project'
@@ -843,6 +854,7 @@ def serialize_collections(cgms, auth):
         'url': '/{}/'.format(cgm.collection._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
@@ -859,7 +871,7 @@ def serialize_preprints(node, user):
             'provider': {'name': preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
             'absolute_url': preprint.absolute_url
-        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user)
+        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
     ]
 
 
