@@ -82,6 +82,7 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_beat',
+    'django_celery_results',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
