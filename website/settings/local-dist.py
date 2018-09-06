@@ -75,9 +75,6 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-# Comment out to use celery in development
-USE_CELERY = False
-
 class CeleryConfig(defaults.CeleryConfig):
     """
     Celery configuration
