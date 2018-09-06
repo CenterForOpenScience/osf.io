@@ -348,7 +348,7 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 ####################
 #   Identifiers   #
 ###################
-DOI_URL_PREFIX = 'https://dx.doi.org/'
+DOI_URL_PREFIX = 'https://doi.org/'
 
 # General Format for DOIs
 DOI_FORMAT = '{prefix}/osf.io/{guid}'
@@ -485,7 +485,7 @@ class CeleryConfig:
     broker_use_ssl = False
 
     # Default RabbitMQ backend
-    result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+    result_backend = 'django-db'  # django-celery-results
 
     beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
 

@@ -9,9 +9,11 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
+    RegistrationFactory,
     InstitutionFactory,
     CollectionFactory,
     CollectionProviderFactory,
+    RegistrationProviderFactory,
 )
 from osf_tests.utils import mock_archive
 from website import settings
@@ -45,7 +47,11 @@ class ApiSearchTestCase:
 
     @pytest.fixture()
     def collection_public(self, user):
-        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True, is_bookmark_collection=False)
+        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True)
+
+    @pytest.fixture()
+    def registration_collection(self, user):
+        return CollectionFactory(creator=user, provider=RegistrationProviderFactory(), is_public=True)
 
     @pytest.fixture()
     def user_one(self):
@@ -97,6 +103,7 @@ class ApiSearchTestCase:
         return NodeFactory(
             parent=project_public,
             title='Highlights',
+            description='',
             creator=user_one,
             is_public=True)
 
@@ -118,6 +125,7 @@ class ApiSearchTestCase:
     def component_private(self, user_one, project_public):
         return NodeFactory(
             parent=project_public,
+            description='',
             title='Wavves',
             creator=user_one)
 
@@ -775,6 +783,9 @@ class TestSearchInstitutions(ApiSearchTestCase):
 
 class TestSearchCollections(ApiSearchTestCase):
 
+    def get_ids(self, data):
+        return map(lambda s: s['id'], data)
+
     def post_payload(self, *args, **kwargs):
         return {
             'data': {
@@ -792,12 +803,24 @@ class TestSearchCollections(ApiSearchTestCase):
         return NodeFactory(title='Ismael Lo: Tajabone', creator=user, is_public=True)
 
     @pytest.fixture()
+    def registration_one(self, node_one):
+        return RegistrationFactory(project=node_one, is_public=True)
+
+    @pytest.fixture()
     def node_two(self, user):
         return NodeFactory(title='Sambolera', creator=user, is_public=True)
 
     @pytest.fixture()
+    def registration_two(self, node_two):
+        return RegistrationFactory(project=node_two, is_public=True)
+
+    @pytest.fixture()
     def node_private(self, user):
         return NodeFactory(title='Classified', creator=user)
+
+    @pytest.fixture()
+    def registration_private(self, node_private):
+        return RegistrationFactory(project=node_private, is_public=False)
 
     @pytest.fixture()
     def node_with_abstract(self, user):
@@ -808,29 +831,44 @@ class TestSearchCollections(ApiSearchTestCase):
             save=True)
         return node_with_abstract
 
+    @pytest.fixture()
+    def reg_with_abstract(self, node_with_abstract):
+        return RegistrationFactory(project=node_with_abstract, is_public=True)
+
     def test_search_collections(
             self, app, url_collection_search, user, node_one, node_two, collection_public,
-            node_with_abstract, node_private):
+            node_with_abstract, node_private, registration_collection, registration_one, registration_two,
+            registration_private, reg_with_abstract):
 
         collection_public.collect_object(node_one, user)
         collection_public.collect_object(node_two, user)
         collection_public.collect_object(node_private, user)
+
+        registration_collection.collect_object(registration_one, user)
+        registration_collection.collect_object(registration_two, user)
+        registration_collection.collect_object(registration_private, user)
 
         # test_search_collections_no_auth
         res = app.get(url_collection_search)
         assert res.status_code == 200
         total = res.json['links']['meta']['total']
         num_results = len(res.json['data'])
-        assert total == 2
-        assert num_results == 2
+        assert total == 4
+        assert num_results == 4
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         # test_search_collections_auth
         res = app.get(url_collection_search, auth=user)
         assert res.status_code == 200
         total = res.json['links']['meta']['total']
         num_results = len(res.json['data'])
-        assert total == 2
-        assert num_results == 2
+        assert total == 4
+        assert num_results == 4
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         # test_search_collections_by_submission_title
         url = '{}?q={}'.format(url_collection_search, 'Ismael')
@@ -838,18 +876,18 @@ class TestSearchCollections(ApiSearchTestCase):
         assert res.status_code == 200
         total = res.json['links']['meta']['total']
         num_results = len(res.json['data'])
-        assert node_one.title == res.json['data'][0]['embeds']['guid']['data']['attributes']['title']
-        assert total == 1
-        assert num_results == 1
+        assert node_one.title == registration_one.title == res.json['data'][0]['embeds']['guid']['data']['attributes']['title']
+        assert total == num_results == 2
 
         # test_search_collections_by_submission_abstract
         collection_public.collect_object(node_with_abstract, user)
+        registration_collection.collect_object(reg_with_abstract, user)
         url = '{}?q={}'.format(url_collection_search, 'KHADJA')
         res = app.get(url)
         assert res.status_code == 200
         total = res.json['links']['meta']['total']
-        assert node_with_abstract.description == res.json['data'][0]['embeds']['guid']['data']['attributes']['description']
-        assert total == 1
+        assert node_with_abstract.description == reg_with_abstract.description == res.json['data'][0]['embeds']['guid']['data']['attributes']['description']
+        assert total == 2
 
         # test_search_collections_no_results:
         url = '{}?q={}'.format(url_collection_search, 'Wale Watu')
@@ -860,61 +898,86 @@ class TestSearchCollections(ApiSearchTestCase):
 
     def test_POST_search_collections(
             self, app, url_collection_search, user, node_one, node_two, collection_public,
-            node_with_abstract, node_private):
+            node_with_abstract, node_private, registration_collection, registration_one,
+            registration_two, registration_private, reg_with_abstract):
         collection_public.collect_object(node_one, user, status='asdf')
         collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
         collection_public.collect_object(node_with_abstract, user, status='asdf')
         collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
 
+        registration_collection.collect_object(registration_one, user, status='asdf')
+        registration_collection.collect_object(registration_two, user, collected_type='asdf', status='lkjh')
+        registration_collection.collect_object(reg_with_abstract, user, status='asdf')
+        registration_collection.collect_object(registration_private, user, status='asdf', collected_type='asdf')
+
         # test_search_empty
         payload = self.post_payload()
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 3
-        assert len(res.json['data']) == 3
+        assert res.json['links']['meta']['total'] == 6
+        assert len(res.json['data']) == 6
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         # test_search_title_keyword
         payload = self.post_payload(q='Ismael')
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 1
-        assert len(res.json['data']) == 1
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         # test_search_abstract_keyword
         payload = self.post_payload(q='Khadja')
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 1
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == node_with_abstract._id
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
+        actual_ids = self.get_ids(res.json['data'])
+        assert node_with_abstract._id in actual_ids
+        assert reg_with_abstract._id in actual_ids
 
         # test_search_filter
         payload = self.post_payload(status='asdf')
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 2
-        assert len(res.json['data']) == 2
+        assert res.json['links']['meta']['total'] == 4
+        assert len(res.json['data']) == 4
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         payload = self.post_payload(status=['asdf', 'lkjh'])
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 3
-        assert len(res.json['data']) == 3
+        assert res.json['links']['meta']['total'] == 6
+        assert len(res.json['data']) == 6
+        actual_ids = self.get_ids(res.json['data'])
+        assert registration_private._id not in actual_ids
+        assert node_private._id not in actual_ids
 
         payload = self.post_payload(collectedType='asdf')
         res = app.post_json_api(url_collection_search, payload)
+
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 1
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == node_two._id
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
+        actual_ids = self.get_ids(res.json['data'])
+        assert node_two._id in actual_ids
+        assert registration_two._id in actual_ids
 
         # test_search_abstract_keyword_and_filter
         payload = self.post_payload(q='Khadja', status='asdf')
         res = app.post_json_api(url_collection_search, payload)
         assert res.status_code == 200
-        assert res.json['links']['meta']['total'] == 1
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == node_with_abstract._id
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
+        actual_ids = self.get_ids(res.json['data'])
+        assert node_with_abstract._id in actual_ids
+        assert reg_with_abstract._id in actual_ids
 
         # test_search_abstract_keyword_and_filter_provider
         payload = self.post_payload(q='Khadja', status='asdf', provider=collection_public.provider._id)

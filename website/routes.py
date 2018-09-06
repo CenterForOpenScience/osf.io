@@ -58,7 +58,6 @@ from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
-from website.ember_osf_web.decorators import ember_flag_is_active
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 def set_status_message(user):
@@ -130,6 +129,7 @@ def get_globals():
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
+        'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
@@ -257,14 +257,13 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
-@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
+    redirect_url = util.web_url_for('index')
     if _get_current_user():
-        return redirect(util.web_url_for('index'))
-    status.push_status_message(language.LOGOUT, kind='success', trust=False)
-    return {}
-
+        return redirect(redirect_url)
+    else:
+        return redirect(redirect_url + '?goodbye=true')
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
@@ -382,7 +381,7 @@ def make_url_map(app):
             '/dashboard/',
             'get',
             website_views.dashboard,
-            OsfWebRenderer('home.mako', trust=False)
+            notemplate
         ),
 
         Rule(
@@ -402,7 +401,6 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -1070,10 +1068,9 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        # '/' route loads home.mako if logged in, otherwise loads landing.mako
-        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+        Rule('/', 'get', website_views.index, notemplate),
 
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako', trust=False)),
+        Rule('/goodbye/', 'get', goodbye, notemplate),
 
         Rule(
             [

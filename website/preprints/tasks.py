@@ -12,8 +12,6 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-from website.identifiers.tasks import update_doi_metadata_on_change
-from website.identifiers.utils import request_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +42,11 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
 
 def update_or_create_preprint_identifiers(preprint):
     status = 'public' if preprint.verified_publishable else 'unavailable'
-    if preprint.is_published and not preprint.get_identifier('doi'):
-        request_identifiers(preprint)
-    else:
-        try:
-            update_doi_metadata_on_change(preprint._id, status=status)
-        except HTTPError as err:
-            sentry.log_exception()
-            sentry.log_message(err.args[0])
+    try:
+        preprint.request_identifier_update(category='doi', status=status)
+    except HTTPError as err:
+        sentry.log_exception()
+        sentry.log_message(err.args[0])
 
 def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     task = get_task_from_postcommit_queue(
@@ -162,7 +157,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     ]
 
     if preprint.get_identifier('doi'):
-        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.get_identifier('doi').value)))
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='https://doi.org/{}'.format(preprint.get_identifier('doi').value)))
 
     if preprint.provider.domain_redirect_enabled:
         to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
@@ -171,7 +166,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
         related_work = GraphNode('creativework')
         to_visit.append(GraphNode('workrelation', subject=preprint_graph, related=related_work))
-        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri='http://dx.doi.org/{}'.format(preprint.article_doi)))
+        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri='https://doi.org/{}'.format(preprint.article_doi)))
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))

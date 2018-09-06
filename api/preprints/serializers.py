@@ -117,14 +117,14 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     )
 
-    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
+    provider = PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
-    ))
+    )
 
     files = NoneIfWithdrawal(RelationshipField(
-        related_view='nodes:node-providers',
+        related_view='nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'}
     ))
 
@@ -134,8 +134,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False
     ))
 
-    review_actions = NoneIfWithdrawal(RelationshipField(
+    review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
+    requests = NoneIfWithdrawal(RelationshipField(
+        related_view='preprints:preprint-request-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     ))
 
@@ -158,7 +163,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return self.get_preprint_url(obj)
 
     def get_article_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+        return 'https://doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def get_preprint_doi_url(self, obj):
         doi = None
@@ -169,7 +174,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         elif obj.is_published:
             client = obj.get_doi_client()
             doi = client.build_doi(preprint=obj) if client else None
-        return 'https://dx.doi.org/{}'.format(doi) if doi else None
+        return 'https://doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

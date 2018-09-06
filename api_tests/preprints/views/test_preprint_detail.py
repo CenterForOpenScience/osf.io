@@ -46,7 +46,16 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def preprint_pre_mod(self, user):
-        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        pp.node.is_public = True
+        pp.node.save()
+        return pp
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod):
+        mod = AuthUserFactory()
+        preprint_pre_mod.provider.get_group('moderator').user_set.add(mod)
+        return mod
 
     @pytest.fixture()
     def unpublished_preprint(self, user):
@@ -102,7 +111,7 @@ class TestPreprintDetail:
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_withdrawn_preprint(self, app, user, preprint_pre_mod):
+    def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
         # test_retracted_fields
         url = '/{}preprints/{}/'.format(API_BASE, preprint_pre_mod._id)
         res = app.get(url, auth=user.auth)
@@ -120,6 +129,10 @@ class TestPreprintDetail:
         assert preprint_pre_mod.is_retracted
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        res = app.get(url, auth=moderator.auth)
+        assert res.status_code == 200
 
         ## retracted and ever_public (True)
         preprint_pre_mod.ever_public = True
@@ -171,7 +184,7 @@ class TestPreprintDetail:
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
+        assert res.json['data']['links']['preprint_doi'] == 'https://doi.org/{}'.format(
             expected_doi)
         assert res.json['data']['attributes']['preprint_doi_created']
 
@@ -397,7 +410,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi == new_doi
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == 'https://dx.doi.org/{}'.format(
+        assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
             new_doi)
 
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
