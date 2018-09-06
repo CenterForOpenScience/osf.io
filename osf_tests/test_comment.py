@@ -23,6 +23,7 @@ from .factories import (
     ProjectFactory,
     NodeFactory,
     UserFactory,
+    UnregUserFactory,
     AuthUserFactory
 )
 
@@ -173,11 +174,9 @@ class TestCommentModel:
     def test_create_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self, node, user, auth):
         with pytest.raises(ValidationError) as error:
             with capture_signals() as mock_signals:
-                user = UserFactory()
-                user.is_registered = False
-                user.is_claimed = False
+                user = UnregUserFactory()
                 user.save()
-                node.add_contributor(user, visible=False, permissions=[permissions.READ], save=True)
+                node.add_unregistered_contributor(user.fullname, user.email, Auth(node.creator), permissions=[permissions.READ], save=True)
 
                 Comment.create(
                     auth=auth,
@@ -272,11 +271,9 @@ class TestCommentModel:
         auth = Auth(comment.user)
         with pytest.raises(ValidationError) as error:
             with capture_signals() as mock_signals:
-                user = UserFactory()
-                user.is_registered = False
-                user.is_claimed = False
+                user = UnregUserFactory()
                 user.save()
-                comment.node.add_contributor(user, visible=False, permissions=[permissions.READ])
+                comment.node.add_unregistered_contributor(user.fullname, user.email, auth=Auth(comment.node.creator), visible=False, permissions=[permissions.READ])
                 comment.node.save()
 
                 comment.edit(
