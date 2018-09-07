@@ -53,6 +53,13 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
+    def test_admin_can_view_draft_browsable_api(
+            self, app, user, draft_registration,
+            schema, url_draft_registrations):
+        url = url_draft_registrations + '?format=api'
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
     def test_cannot_view_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
