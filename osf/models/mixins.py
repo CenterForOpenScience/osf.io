@@ -843,6 +843,7 @@ class ContributorMixin(models.Model):
     def admin_contributor_ids(self):
         return self._get_admin_contributor_ids(include_self=True)
 
+    # TODO Remove explicit parameter, method should use explicit by default.
     def is_contributor(self, user, explicit=False):
         """
         Return whether ``user`` has been given read permissions to the object

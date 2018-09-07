@@ -486,8 +486,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 return ['read']
         else:
             user = self.context['request'].user
-            if user.is_anonymous:
-                return ['read']
             all_perms = ['read', 'write', 'admin']
             user_perms = []
             for p in all_perms:
