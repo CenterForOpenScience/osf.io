@@ -411,6 +411,20 @@ class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView,
     def get_default_queryset(self):
         return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
 
+    def get_renderer_context(self):
+        context = super(PreprintProviderWithdrawRequestList, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('meta[requests_state_counts]', False))
+        if show_counts:
+            # TODO don't duplicate the above
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            provider = self.get_provider()
+            if auth_user and auth_user.has_perm('view_submissions', provider):
+                context['meta'] = {
+                    'requests_state_counts': provider.get_request_state_counts(),
+                }
+        return context
+
     def get_queryset(self):
         return self.get_queryset_from_request()
 
