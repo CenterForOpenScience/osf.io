@@ -38,6 +38,9 @@ class MetricMixin(object):
         size = size or qs.count()
         search.aggs.bucket('by_id', 'terms', field=metric_field, size=size)
         response = search.execute()
+        # No indexed data
+        if not hasattr(response.aggregations, 'by_id'):
+            return qs.annotate(**{annotation: models.Value(0, models.IntegerField())})
         buckets = response.aggregations.by_id.buckets
         # Map _id => count
         id_to_count = {
@@ -56,7 +59,7 @@ class MetricMixin(object):
         order_by = order_by or '-{}'.format(annotation)
         return qs.annotate(**{
             annotation: models.Case(*whens, default=0, output_field=models.IntegerField())
-        }).order_by(order_by)[:size]
+        }).order_by(order_by)
 
 
 class BasePreprintMetric(MetricMixin, metrics.Metric):
