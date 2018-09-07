@@ -167,7 +167,7 @@ class OsfStorageFileNode(BaseFileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
-        if most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
             most_recent_fileversion.region = destination_parent.target.osfstorage_region
             most_recent_fileversion.save()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
