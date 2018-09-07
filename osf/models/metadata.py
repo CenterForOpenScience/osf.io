@@ -19,13 +19,11 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
         unique_together = ('file', 'schema')
 
     def serialize(self):
-        return serializer_registry[self.schema_id].serialize(self)
+        return serializer_registry[self.schema.name].serialize(self)
 
     def validate(self, proposed_metadata):
-        # {
-        #     'funderName': 'LJAF',
-        #     'geolocation': 'Earth'
-        # }
-        if serializer_registry[self.schema_id].validate(self, proposed_metadata):
-            self.metadata = proposed_metadata
-            self.save()
+        return serializer_registry[self.schema.name].validate(self, proposed_metadata)
+
+    def update(self, proposed_metadata):
+        if self.validate(proposed_metadata):
+            return serializer_registry[self.schema.name].validate(self, proposed_metadata)
