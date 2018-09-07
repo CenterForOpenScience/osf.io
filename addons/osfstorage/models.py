@@ -7,6 +7,9 @@ from django.db import models, connection
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
 from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -15,6 +18,7 @@ from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
+from osf.models.metaschema import FileMetadataSchema
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -591,3 +595,12 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             auth=auth,
             params=params
         )
+
+
+@receiver(post_save, sender=OsfStorageFile)
+def create_metadata_record_datacite(sender, instance, created, **kwargs):
+    if created:
+        from osf.models.metadata import FileMetadataRecord
+        record = FileMetadataRecord(file=instance, schema=FileMetadataSchema.objects.get(_id='datacite'))
+
+        record.save()
