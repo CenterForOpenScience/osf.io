@@ -33,14 +33,14 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
-    RegistrationProviderSerializer
+    RegistrationStorageProviderSerializer
 )
 
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
     NodeMixin, NodeRegistrationsList, NodeLogList,
-    NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
+    NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
     NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList
@@ -321,13 +321,13 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
     view_name = 'registration-logs'
 
 
-class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_providers_list).
     """
-    serializer_class = RegistrationProviderSerializer
+    serializer_class = RegistrationStorageProviderSerializer
 
     view_category = 'registrations'
-    view_name = 'registration-providers'
+    view_name = 'registration-storage-providers'
 
 
 class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):

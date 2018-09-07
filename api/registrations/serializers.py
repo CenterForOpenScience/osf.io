@@ -13,7 +13,7 @@ from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
+from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
@@ -48,8 +48,10 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_pending_embargo',
                                                                  help_text='The associated Embargo is awaiting approval by project admins.'))
+    embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
     pending_registration_approval = HideIfWithdrawal(ser.BooleanField(source='is_pending_registration', read_only=True,
                                                                       help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
+    archiving = HideIfWithdrawal(ser.BooleanField(read_only=True))
     pending_withdrawal = HideIfWithdrawal(ser.BooleanField(source='is_pending_retraction', read_only=True,
                                                            help_text='The registration is awaiting withdrawal approval by project admins.'))
     withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
@@ -107,7 +109,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     )
 
     files = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-providers',
+        related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'}
     ))
 
@@ -417,9 +419,9 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
                                      help_text='The registration that this file belongs to'
                              )
 
-class RegistrationProviderSerializer(NodeProviderSerializer):
+class RegistrationStorageProviderSerializer(NodeStorageProviderSerializer):
     """
-    Overrides NodeProviderSerializer to lead to correct registration file links
+    Overrides NodeStorageProviderSerializer to lead to correct registration file links
     """
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',

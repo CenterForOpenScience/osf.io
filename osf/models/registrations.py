@@ -15,7 +15,7 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema, RegistrationApproval,
+    OSFUser, RegistrationSchema,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
@@ -40,11 +40,6 @@ class Registration(AbstractNode):
     registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
-    # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
-
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
