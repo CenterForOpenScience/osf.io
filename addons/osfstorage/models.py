@@ -166,6 +166,10 @@ class OsfStorageFileNode(BaseFileNode):
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
+        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
+        if most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            most_recent_fileversion.region = destination_parent.target.osfstorage_region
+            most_recent_fileversion.save()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
