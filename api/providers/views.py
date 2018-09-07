@@ -75,6 +75,7 @@ class PreprintProviderList(MetricMixin, GenericProviderList):
         'downloads': PreprintDownload
     }
 
+    # overrides MetricMixin
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name):
         return metric_class.get_top_by_count(
             qs=queryset,

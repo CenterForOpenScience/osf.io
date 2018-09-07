@@ -1,7 +1,6 @@
 import pytest
-import random
+from django.conf import settings
 
-from api.base import settings
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
@@ -9,7 +8,6 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 from osf_tests.metrics_factories import PreprintDownloadFactory
-from osf.metrics import PreprintDownload
 
 @pytest.fixture(params=['/{}preprint_providers/?version=2.2&', '/{}providers/preprints/?version=2.2&'])
 def url(request):
@@ -35,20 +33,6 @@ def provider_two():
     provider.share_publish_type = 'Thesis'
     provider.save()
     return provider
-
-
-@pytest.fixture()
-def make_download(fake):
-    def func(provider):
-        PreprintDownload.record(
-            provider_id=provider._id,
-            user_id=fake.lexify('?????'),
-            preprint_id=fake.lexify('?????'),
-            version=random.choice(['1', '2', '3']),
-            path='/' + fake.lexify('????????????????')
-        )
-    return func
-
 
 @pytest.mark.django_db
 class TestPreprintProviderList:
@@ -83,12 +67,13 @@ class TestPreprintProviderList:
         assert len(res.json['data']) == 1
 
 
+# TODO: Use test indices and clean up after test
 @pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
 @pytest.mark.django_db
 class TestPreprintProviderListWithMetrics:
 
     def test_preprint_provider_list_with_metrics(
-            self, make_download, app, url, user, provider_one, provider_two):
+            self, app, url, user, provider_one, provider_two):
 
         preprint_one = PreprintFactory(provider=provider_one)
         preprint_two = PreprintFactory(provider=provider_two)

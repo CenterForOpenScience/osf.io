@@ -80,6 +80,10 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
     class Meta:
         abstract = True
 
+    @classmethod
+    def get_count_for_preprint(cls, preprint):
+        return cls.search().filter('match', preprint_id=preprint._id).count()
+
 
 class PreprintView(BasePreprintMetric):
     pass

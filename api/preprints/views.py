@@ -38,7 +38,8 @@ from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNever
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
-
+from api.base.metrics import MetricMixin
+from osf.metrics import PreprintDownload
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -61,7 +62,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
@@ -82,6 +83,9 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
     ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
+    metric_map = {
+        'downloads': PreprintDownload
+    }
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -94,14 +98,27 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(PreprintService.objects.all(), auth_user)
+        public_only = self.metrics_requested
+        queryset = self.preprints_queryset(PreprintService.objects.all(), auth_user, public_only=public_only)
+        # Use get_metrics_queryset to return an queryset with annotated metrics
+        # iff ?metrics query param is present
+        return self.get_metrics_queryset(queryset)
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    # overrides MetricMixin
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name):
+        return metric_class.get_top_by_count(
+            qs=queryset,
+            model_field='guids___id',
+            metric_field='preprint_id',
+            annotation=metric_name,
+        )
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+
+class PreprintDetail(MetricMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -123,9 +140,19 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
     view_category = 'preprints'
     view_name = 'preprint-detail'
+    metric_map = {
+        'downloads': PreprintDownload
+    }
+
+    def add_metric_to_object(self, obj, metric_class, metric_name):
+        count = metric_class.get_count_for_preprint(obj)
+        setattr(obj, metric_name, count)
 
     def get_object(self):
-        return self.get_preprint()
+        preprint = self.get_preprint()
+        # If requested, add metrics to object
+        self.add_metrics_to_object(preprint)
+        return preprint
 
     def perform_destroy(self, instance):
         if instance.is_published:

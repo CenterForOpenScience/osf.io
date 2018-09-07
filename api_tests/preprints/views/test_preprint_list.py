@@ -1,8 +1,8 @@
 import mock
 from nose.tools import *  # flake8: noqa
 import pytest
-
 from django.utils import timezone
+from django.conf import settings
 
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
@@ -24,6 +24,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
+from osf_tests.metrics_factories import PreprintDownloadFactory
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
 
@@ -1119,3 +1120,33 @@ class TestPreprintIsValidList(PreprintIsValidListMixin):
     @pytest.fixture()
     def url(self, project):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+
+# TODO: Use test indices and clean up after test
+@pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
+@pytest.mark.django_db
+class TestPreprintListWithMetrics:
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/'.format(API_BASE)
+
+    def test_preprint_list_with_metrics(self, app, url):
+        preprint1 = PreprintFactory()
+        preprint2 = PreprintFactory()
+
+        # Set up fake metric data
+        # preprint1 was downloaded 1 times
+        PreprintDownloadFactory(preprint=preprint1)
+        # provider2 was downloaded 2 times
+        PreprintDownloadFactory(preprint=preprint2)
+        PreprintDownloadFactory(preprint=preprint2)
+
+        res = app.get(url + '?metrics=downloads')
+        assert res.status_code == 200
+
+        preprint_2_data = res.json['data'][0]
+        preprint_2_data['meta']['metrics']['downloads'] == 2
+
+        preprint_1_data = res.json['data'][1]
+        preprint_1_data['meta']['metrics']['downloads'] == 1

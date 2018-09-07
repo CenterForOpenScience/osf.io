@@ -3,6 +3,7 @@ import pytest
 
 from rest_framework import exceptions
 from django.utils import timezone
+from django.conf import settings
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -17,6 +18,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from website.settings import DOI_FORMAT
+from osf_tests.metrics_factories import PreprintDownloadFactory
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -1477,3 +1479,20 @@ class TestReviewsPreprintDetailPermissions:
     #   test_private_invisible_to_public
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
+
+
+# TODO: Use test indices and clean up after test
+@pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
+@pytest.mark.django_db
+class TestPreprintListWithMetrics:
+
+    def test_preprint_list_with_metrics(self, app):
+        preprint = PreprintFactory()
+        url = '/{}preprints/{}/?metrics=downloads'.format(API_BASE, preprint._id)
+        PreprintDownloadFactory(preprint=preprint)
+
+        res = app.get(url)
+        assert res.status_code == 200
+        data = res.json
+        assert 'metrics' in data['meta']
+        assert 'downloads' in data['meta']['metrics']
