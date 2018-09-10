@@ -21,7 +21,6 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
                                   ShowIfVersion, VersionedDateTimeField, ValuesListField)
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
-from osf.models import Node
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -254,35 +253,16 @@ class BaseRegistrationSerializer(NodeSerializer):
         embargo_lifted = validated_data.pop('lift_embargo', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = validated_data.pop('children', None)
-        if children:
-            draft_root = draft.branched_from
-
-            # Validate to make sure we aren't registering nodes without registering their parents
-            # and all nodes have the same root.
-
-            # First check that all children are valid
-            child_nodes = Node.objects.filter(guids___id__in=children)
-            if child_nodes.count() != len(children):
-                raise exceptions.ValidationError('Some child nodes could not be found.')
-
-            # Second check that all children have a parent being registered. The exception being
-            #  the root node of the registration.
-            nodes_being_registered = list(child_nodes) + [draft_root]
-            for node in child_nodes:
-                parent_node = node.parent_node
-                if parent_node and parent_node not in nodes_being_registered and node != draft_root:
-                    raise exceptions.ValidationError('The parent of node {} must be registered.'.format(node._id))
-
-            excluded_node_ids = [node._id for node in draft_root.get_descendants_recursive() if node not in child_nodes]
-        else:
-            excluded_node_ids = []
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
         except ValidationValueError as e:
             raise exceptions.ValidationError(e.message)
 
-        registration = draft.register(auth, save=True, excluded_node_ids=excluded_node_ids)
+        try:
+            registration = draft.register(auth, save=True, child_ids=children)
+        except NodeStateError as err:
+            raise exceptions.ValidationError(err)
 
         if registration_choice == 'embargo':
             if not embargo_lifted:
