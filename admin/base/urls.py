@@ -1,11 +1,9 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-
-from settings import ADMIN_BASE
-
+import settings
 from . import views
 
-base_pattern = '^{}'.format(ADMIN_BASE)
+base_pattern = '^{}'.format(settings.ADMIN_BASE)
 
 urlpatterns = [
     ### ADMIN ###
@@ -38,5 +36,12 @@ urlpatterns = [
         ]),
     ),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
 
 admin.site.site_header = 'OSF-Admin administration'

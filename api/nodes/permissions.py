@@ -46,7 +46,9 @@ class IsPublic(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, PrivateLink)), 'obj must be an Node or PrivateLink, got {}'.format(obj)
+        if isinstance(obj, PrivateLink):
+            obj = view.get_node()
         auth = get_user_auth(request)
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
@@ -66,17 +68,19 @@ class IsAdminOrReviewer(permissions.BasePermission):
     Prereg admins can update draft registrations.
     """
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an Node, Draft Registration, or PrivateLink, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, DraftRegistration)), 'obj must be a Node or Draft Registration, got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
             return True
+        if isinstance(obj, DraftRegistration):
+            obj = obj.branched_from
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, OSFUser, Institution, BaseAddonSettings)), 'obj must be an Node, User, Institution, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)

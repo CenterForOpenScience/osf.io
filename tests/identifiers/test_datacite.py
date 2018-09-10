@@ -8,11 +8,14 @@ from nose.tools import *  # noqa
 
 from datacite import schema40
 
+from framework.auth import Auth
+
 from website import settings
 from website.app import init_addons
 from website.identifiers.clients import DataCiteClient
 from website.identifiers.clients.datacite import DataCiteMDSClient
 from website.identifiers import metadata
+from website.identifiers.utils import request_identifiers
 
 from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
@@ -203,3 +206,9 @@ class TestDataCiteViews(OsfTestCase):
                 expect_errors=True,
             )
         assert res.status_code == 404
+
+    def test_qatest_doesnt_make_dois(self):
+        self.node.add_tag('qatest', auth=Auth(self.user))
+        assert not request_identifiers(self.node)
+
+
