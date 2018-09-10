@@ -81,12 +81,6 @@ class TestViewOnlyLinksDetail:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_admin_can_view_vol_detail_browsable_api(
-            self, app, user, url):
-        url = url + '?format=api'
-        res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-
     def test_deleted_vol_not_returned(
             self, app, user, public_project, view_only_link, url):
         res = app.get(url, auth=user.auth)
