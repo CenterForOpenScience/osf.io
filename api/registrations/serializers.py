@@ -21,7 +21,7 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
                                   ShowIfVersion, VersionedDateTimeField, ValuesListField)
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
-
+from osf.models import Node
 
 class BaseRegistrationSerializer(NodeSerializer):
 
@@ -253,6 +253,11 @@ class BaseRegistrationSerializer(NodeSerializer):
         embargo_lifted = validated_data.pop('lift_embargo', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = validated_data.pop('children', None)
+        if children:
+            # First check that all children are valid
+            child_nodes = Node.objects.filter(guids___id__in=children)
+            if child_nodes.count() != len(children):
+                raise exceptions.ValidationError('Some child nodes could not be found.')
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)

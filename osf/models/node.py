@@ -1742,7 +1742,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None):
+    def register_node(self, schema, auth, data, parent=None, child_ids=None, draft_root=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1808,43 +1808,40 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 status.push_status_message(message, kind='info', trust=False)
 
         if child_ids:
-            # Validate to make sure we aren't registering nodes without registering their parents
-            # and all nodes have the same root.
-
-            # First check that all children are valid
             child_nodes = Node.objects.filter(guids___id__in=child_ids)
-            if child_nodes.count() != len(child_ids):
-                raise NodeStateError('Some child nodes could not be found.')
-
-            # Second check that all children have a parent being registered. The exception being
-            #  the root node of the registration.
-            nodes_being_registered = set(child_nodes).union(set([self]))
+            nodes_being_registered = set(child_nodes).union(set([draft_root]))
             for node in child_nodes:
                 parent_node = node.parent_node
-                if parent_node and parent_node not in nodes_being_registered and node != self:
+                if parent_node and parent_node not in nodes_being_registered:
                     raise NodeStateError('The parent of node {} must be registered.'.format(node._id))
 
-        for node_relation in original.node_relations.filter(child__is_deleted=False):
-            node_contained = node_relation.child
-            # Register child nodes
-            if child_ids and node_contained._id not in child_ids:
-                continue
-
-            if not node_relation.is_node_link:
-                node_contained.register_node(
+            for child_node in original.node_relations.filter(child__guids___id__in=child_ids, child__is_deleted=False):
+                child_node.child.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
                     parent=registered,
-                    child_ids=child_ids
+                    child_ids=child_ids,
+                    draft_root=draft_root
                 )
-            else:
-                # Copy linked nodes
-                NodeRelation.objects.get_or_create(
-                    is_node_link=True,
-                    parent=registered,
-                    child=node_contained
-                )
+        else:
+            for node_relation in original.node_relations.filter(child__is_deleted=False):
+                node_contained = node_relation.child
+                # Register child nodes
+                if not node_relation.is_node_link:
+                    node_contained.register_node(
+                        schema=schema,
+                        auth=auth,
+                        data=data,
+                        parent=registered,
+                    )
+                else:
+                    # Copy linked nodes
+                    NodeRelation.objects.get_or_create(
+                        is_node_link=True,
+                        parent=registered,
+                        child=node_contained
+                    )
 
         registered.root = None  # Recompute root on save
 

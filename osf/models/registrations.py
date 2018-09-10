@@ -601,7 +601,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema=self.registration_schema,
             auth=auth,
             data=self.registration_metadata,
-            child_ids=child_ids
+            child_ids=child_ids,
+            draft_root=node
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
