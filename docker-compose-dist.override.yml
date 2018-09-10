@@ -23,26 +23,6 @@ version: "3.4"
 #    volumes:
 #      - ../modular-file-renderer:/code
 
-#  ember_osf_web:
-#    volumes:
-#      - ../ember-osf-web:/code
-#
-##      # Use this for ember-osf linked development:
-##      - ember_osf_web_dist_vol:/code/dist
-##      - ../ember-osf:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##        (rm -r node_modules || true) &&
-##        yarn --frozen-lockfile &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
-
 #  preprints:
 #    volumes:
 #      - ../ember-osf-preprints:/code

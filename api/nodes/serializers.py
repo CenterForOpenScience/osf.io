@@ -5,7 +5,7 @@ from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  RelationshipPostMakesNoChanges)
 from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, IDField,
                                   JSONAPIRelationshipSerializer,
-                                  JSONAPISerializer, LinksField, ValuesListField,
+                                  JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
                                   WaterbutlerLink, relationship_diff, BaseAPISerializer,
@@ -34,6 +34,28 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+
+
+def get_or_add_license_to_serializer_context(serializer, node):
+    """
+    Returns license, and adds license to serializer context with format
+    serializer.context['licenses'] = {<node_id>: <NodeLicenseRecord object>}
+
+    Used for both node_license field and license relationship in the NodeSerializer.
+    Prevents license from having to be fetched 2x per node.
+    """
+    license_context = serializer.context.get('licenses', {})
+    if license_context and node._id in license_context:
+        return license_context.get(node._id)
+    else:
+        license = node.license
+        if license_context:
+            license_context[node._id] = {}
+            license_context[node._id] = license
+        else:
+            serializer.context['licenses'] = {}
+            serializer.context['licenses'][node._id] = license
+        return license
 
 
 def get_institutions_to_add_remove(institutions, new_institutions):
@@ -93,7 +115,21 @@ class NodeLicenseSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'node_licenses'
 
+    def get_attribute(self, instance):
+        """
+        Returns node license and caches license in serializer context for optimization purposes.
+        """
+        return get_or_add_license_to_serializer_context(self, instance)
+
+
 class NodeLicenseRelationshipField(RelationshipField):
+
+    def lookup_attribute(self, obj, lookup_field):
+        """
+        Returns node license id and caches license in serializer context for optimization purposes.
+        """
+        license = get_or_add_license_to_serializer_context(self, obj)
+        return license.node_license._id if getattr(license, 'node_license', None) else None
 
     def to_internal_value(self, license_id):
         node_license = NodeLicense.load(license_id)
@@ -208,7 +244,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
+    tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
@@ -317,7 +353,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_node._id>'},
+        related_view_kwargs={'node_id': '<parent_id>'},
         filter_key='parent_node'
     )
 
@@ -328,7 +364,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_draft_registration_count'}
     ))
 
     registrations = HideIfRegistration(RelationshipField(
@@ -392,18 +429,35 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
-        user = self.context['request'].user
-        if user.is_anonymous:
-            return ['read']
-        permissions = obj.get_permissions(user=user)
-        if not permissions:
-            permissions = ['read']
-        return permissions
+        if hasattr(obj, 'contrib_admin'):
+            if obj.contrib_admin:
+                return ['admin', 'write', 'read']
+            elif obj.contrib_write:
+                return ['write', 'read']
+            else:
+                return ['read']
+        else:
+            user = self.context['request'].user
+            if user.is_anonymous:
+                return ['read']
+            permissions = obj.get_permissions(user=user)
+            if not permissions:
+                permissions = ['read']
+            return permissions
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.can_comment(auth)
+
+        if hasattr(obj, 'contrib_read'):
+            if obj.comment_level == 'public':
+                return auth.logged_in and (
+                    obj.is_public or
+                    (auth.user and obj.contrib_read)
+                )
+            return obj.contrib_read or False
+        else:
+            return obj.can_comment(auth)
 
     class Meta:
         type_ = 'nodes'
@@ -458,6 +512,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         registrations = [node for node in obj.registrations_all if node.can_view(auth)]
         return len(registrations)
 
+    def get_draft_registration_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if obj.has_permission(auth.user, osf_permissions.ADMIN):
+            return obj.draft_registrations_active.count()
+
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
 
@@ -502,8 +561,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         affiliated_institutions = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'tags' in validated_data:
-            tags = validated_data.pop('tags')
+        if 'tag_names' in validated_data:
+            tags = validated_data.pop('tag_names')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -561,8 +620,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
-            if 'tags' in validated_data:
-                new_tags = set(validated_data.pop('tags', []))
+            if 'tag_names' in validated_data:
+                new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
