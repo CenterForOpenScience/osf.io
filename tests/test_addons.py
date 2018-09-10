@@ -159,6 +159,75 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_action_downloads_marks_version_as_seen(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path)
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        # Add a new version, make sure that does not have a record
+        version = FileVersionFactory()
+        test_file.versions.add(version)
+        test_file.save()
+
+        versions = test_file.versions.order_by('created')
+        assert versions.first().seen_by.filter(guids___id=noncontrib._id).exists()
+        assert not versions.last().seen_by.filter(guids___id=noncontrib._id).exists()
+
+    @mock.patch('addons.base.views.mark_file_version_as_seen')
+    def test_action_download_contrib(self, mock_mark_version):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 0) # contribs don't count as downloads
+        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
+
+    @mock.patch('addons.base.views.mark_file_version_as_seen')
+    def test_action_download_non_contrib(self, mock_mark_version):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
+    @mock.patch('addons.base.views.mark_file_version_as_seen')
+    def test_action_download_mfr_views_contrib(self, mock_mark_version):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 0) # contribs don't count as views
+        assert_equal(self.node.logs.count(), nlogs) # don't log views
+
+    @mock.patch('addons.base.views.mark_file_version_as_seen')
+    def test_action_download_mfr_views_non_contrib(self, mock_mark_version):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
 
 class TestAddonLogs(OsfTestCase):
 
@@ -362,105 +431,7 @@ class TestAddonLogs(OsfTestCase):
             assert_equal(res.status_code, 200)
 
         self.node.reload()
-        assert_equal(self.file.get_download_count(), 0) # contrib don't count as download
         assert_equal(self.node.logs.count(), nlogs)
-
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_downloads_non_contrib(self, mock_mark_version):
-        url = self.node.api_url_for('create_waterbutler_log')
-        download_actions=('download_file', 'download_zip')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.node._id},
-                                         action_meta={'is_mfr_render': False},
-                                         request_meta={'url': request_url},
-                                         action=action,
-                                         auth={'id': self.user_non_contrib._id})
-            nlogs = self.node.logs.count()
-            res = self.app.put_json(
-                url,
-                payload,
-                headers={'Content-Type': 'application/json'},
-                expect_errors=False,
-            )
-            assert_equal(res.status_code, 200)
-
-        self.node.reload()
-        assert_equal(self.file.get_download_count(), 2)
-        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
-
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_mfr_views_contrib(self, mock_mark_version):
-        url = self.node.api_url_for('create_waterbutler_log')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     action_meta={'is_mfr_render': True},
-                                     request_meta={'url': request_url})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 0) # contribs don't count as views
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
-
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_mfr_views_non_contrib(self, mock_mark_version):
-        url = self.node.api_url_for('create_waterbutler_log')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        payload = self.build_payload(metadata={'path': '/testfile',
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     request_meta={'url': request_url},
-                                     action_meta={'is_mfr_render': True},
-                                     auth={'id': self.user_non_contrib._id})
-        nlogs = self.node.logs.count()
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        self.file.reload()
-        assert_equal(self.file.get_view_count(), 1)
-        assert_equal(self.node.logs.count(), nlogs) # don't log views
-
-    def test_action_downloads_marks_version_as_seen(self):
-        test_file = create_test_file(self.node, self.user)
-        url = self.node.api_url_for('create_waterbutler_log')
-        request_url = settings.WATERBUTLER_URL + '/v1/resources/test1/providers/osfstorage/testfile?version=1'
-        payload = self.build_payload(metadata={'path': test_file._id,
-                                               'nid': self.node._id},
-                                     action='download_file',
-                                     request_meta={'url': request_url},
-                                     action_meta={'is_mfr_render': True},
-                                     auth={'id': self.user_non_contrib._id})
-        res = self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'},
-            expect_errors=False,
-        )
-        assert_equal(res.status_code, 200)
-
-        # Add a new version, make sure that does not have a record
-        version = FileVersionFactory()
-        test_file.versions.add(version)
-        test_file.save()
-
-        versions = test_file.versions.order_by('created')
-        assert versions.first().seen_by.filter(guids___id=self.user_non_contrib._id).exists()
-        assert not versions.last().seen_by.filter(guids___id=self.user_non_contrib._id).exists()
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()

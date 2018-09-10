@@ -275,6 +275,19 @@ def get_auth(auth, **kwargs):
     if not provider_settings:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    path = data.get('path')
+    version = data.get('version')
+
+    if path:
+        mark_file_version_as_seen(auth.user, path, version)
+    if path and version:
+        if not node.is_contributor(auth.user):
+            file_id = path.strip('/')
+            if action == 'render':
+                update_analytics(node, file_id, version, 'view')
+            elif action == 'download':
+                update_analytics(node, file_id, version, 'download')
+
     try:
         credentials = provider_settings.serialize_waterbutler_credentials()
         waterbutler_settings = provider_settings.serialize_waterbutler_settings()
@@ -318,12 +331,13 @@ def mark_file_version_as_seen(user, path, version):
     Mark a file version as seen by the given user.
     If no version is included, default to the most recent version.
     """
-    file_to_update = OsfStorageFile.objects.get(_id=path)
-    if version:
-        file_version = file_to_update.versions.get(identifier=version)
-    else:
-        file_version = file_to_update.versions.order_by('-created').first()
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+    file_to_update = OsfStorageFileNode.load(path.strip('/'))
+    if file_to_update and file_to_update.is_file:
+        if version:
+            file_version = file_to_update.versions.get(identifier=version)
+        else:
+            file_version = file_to_update.versions.order_by('-created').first()
+        FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
 
 
 @must_be_signed
@@ -333,23 +347,12 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            user = OSFUser.load(auth['id'])
-            # Don't log download actions, but do update analytics
+            # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
                 node = AbstractNode.load(payload['metadata']['nid'])
-                url = furl.furl(payload['request_meta']['url'])
-                version = url.args.get('version') or url.args.get('revision')
-                path = payload['metadata']['path'].lstrip('/')
-                if user:
-                    mark_file_version_as_seen(user, path, version)
-                if not node.is_contributor(user):
-                    if payload['action_meta']['is_mfr_render']:
-                        update_analytics(node, path, version, 'view')
-                    else:
-                        update_analytics(node, path, version, 'download')
-
                 return {'status': 'success'}
 
+            user = OSFUser.load(auth['id'])
             if user is None:
                 raise HTTPError(httplib.BAD_REQUEST)
 
