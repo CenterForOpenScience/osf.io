@@ -5,7 +5,7 @@ import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from addons.gitlab.exceptions import NotFoundError
+from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
 # Initialize caches
@@ -19,7 +19,7 @@ class GitLabClient(object):
         self.host = getattr(external_account, 'oauth_secret', None) or host or DEFAULT_HOSTS[0]
 
         if self.access_token:
-            self.gitlab = gitlab.Gitlab(self.host, token=self.access_token)
+            self.gitlab = gitlab.Gitlab(self.host, private_token=self.access_token)
         else:
             self.gitlab = gitlab.Gitlab(self.host)
 
@@ -30,7 +30,12 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        return self.gitlab.currentuser()
+        try:
+            self.gitlab.auth()
+        except gitlab.GitlabGetError as exc:
+            raise AuthError(exc.error_message)
+
+        return self.gitlab.users.get(self.gitlab.user.id)
 
     def repo(self, repo_id):
         """Get a single GitLab repo's info.
@@ -38,22 +43,19 @@ class GitLabClient(object):
         https://docs.gitlab.com/ce/api/projects.html#get-single-project
 
         :param str repo_id: GitLab repository id
-        :return: Dict of repo information
+        :return: gitlab.Project a object representing the repo
         """
-        rv = self.gitlab.getproject(repo_id)
 
-        if rv:
-            return rv
-        raise NotFoundError
+        try:
+            return gitlab.Project(self.gitlab, repo_id)
+        except gitlab.GitlabGetError as exc:
+            if exc.response_code == 404:
+                raise NotFoundError
+            else:
+                raise exc
 
     def repos(self):
-        return list(self.gitlab.getall(self.gitlab.getprojects, per_page=100))
-
-    def user_repos(self, user):
-        return list(self.gitlab.getall(self.gitlab.getprojectsowned, per_page=100))
-
-    def create_repo(self, repo, **kwargs):
-        return self.gitlab.createproject(repo)
+        return self.user().projects.list()
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -66,9 +68,9 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return self.gitlab.getbranch(repo_id, branch)
+            return gitlab.Project(self.gitlab, repo_id).branches.get(branch)
 
-        return self.gitlab.getbranches(repo_id) or []
+        return gitlab.Project(self.gitlab, repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.

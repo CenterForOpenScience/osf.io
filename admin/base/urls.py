@@ -1,11 +1,9 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-
-from settings import ADMIN_BASE
-
+import settings
 from . import views
 
-base_pattern = '^{}'.format(ADMIN_BASE)
+base_pattern = '^{}'.format(settings.ADMIN_BASE)
 
 urlpatterns = [
     ### ADMIN ###
@@ -19,6 +17,7 @@ urlpatterns = [
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
             url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
+            url(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),
             url(r'^account/', include('admin.common_auth.urls', namespace='auth')),
             url(r'^password/', include('password_reset.urls')),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
@@ -36,5 +35,12 @@ urlpatterns = [
         ]),
     ),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
 
 admin.site.site_header = 'OSF-Admin administration'

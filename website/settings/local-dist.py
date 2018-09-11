@@ -35,7 +35,11 @@ LIVE_RELOAD_DOMAIN = 'http://{}:4200'.format(EMBER_DOMAIN)  # Change port for th
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
         'server': 'http://{}:4200/'.format(EMBER_DOMAIN),
-        'path': '/ember_osf_web/'
+        'path': '/ember_osf_web/',
+        'routes': [
+            'collections',
+            'handbook',
+        ],
     },
     'preprints': {
         'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
@@ -70,9 +74,6 @@ SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
-
-# Comment out to use celery in development
-USE_CELERY = False
 
 class CeleryConfig(defaults.CeleryConfig):
     """
@@ -117,3 +118,17 @@ OSF_PREPRINTS_LOGO = 'osf_preprints'
 OSF_MEETINGS_LOGO = 'osf_meetings'
 OSF_PREREG_LOGO = 'osf_prereg'
 OSF_REGISTRIES_LOGO = 'osf_registries'
+
+DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
+
+# Uncomment for local DOI creation testing
+# datacite
+# DATACITE_USERNAME = 'changeme'
+# DATACITE_PASSWORD = 'changeme'
+# DATACITE_URL = 'https://mds.test.datacite.org'
+
+# crossref
+# CROSSREF_USERNAME = 'changeme'
+# CROSSREF_PASSWORD = 'changeme'
+# CROSSREF_URL = https://test.crossref.org/servlet/deposit
+# CROSSREF_DEPOSITOR_EMAIL = 'changeme'  # This email will receive confirmation/error messages from CrossRef on submission

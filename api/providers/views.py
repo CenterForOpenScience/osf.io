@@ -14,14 +14,17 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCreateSerializer
+from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
-from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, GROUP_FORMAT, GroupHelper, MustBeModerator, PERMISSIONS
-from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer
+from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
+from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, Subject, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.utils.permissions import REVIEW_PERMISSIONS
+from osf.utils.workflows import RequestTypes
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -51,6 +54,13 @@ class CollectionProviderList(GenericProviderList):
     view_name = 'collection-providers-list'
 
 
+class RegistrationProviderList(GenericProviderList):
+    model_class = RegistrationProvider
+    serializer_class = RegistrationProviderSerializer
+    view_category = 'registration-providers'
+    view_name = 'registration-providers-list'
+
+
 class PreprintProviderList(GenericProviderList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
@@ -77,8 +87,9 @@ class PreprintProviderList(GenericProviderList):
                 raise NotAuthenticated()
             value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
-            if any(p not in PERMISSIONS for p in permissions):
-                valid_permissions = ', '.join(PERMISSIONS.keys())
+            perm_options = [perm[0] for perm in REVIEW_PERMISSIONS]
+            if not set(permissions).issubset(set(perm_options)):
+                valid_permissions = ', '.join(perm_options)
                 raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
@@ -104,6 +115,13 @@ class CollectionProviderDetail(GenericProviderDetail):
     serializer_class = CollectionProviderSerializer
     view_category = 'collection-providers'
     view_name = 'collection-provider-detail'
+
+
+class RegistrationProviderDetail(GenericProviderDetail):
+    model_class = RegistrationProvider
+    serializer_class = RegistrationProviderSerializer
+    view_category = 'registration-providers'
+    view_name = 'registration-provider-detail'
 
 
 class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
@@ -173,6 +191,9 @@ class CollectionProviderTaxonomies(GenericProviderTaxonomies):
     view_category = 'collection-providers'
     _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
+class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
@@ -204,6 +225,11 @@ class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubject
     _model_class = CollectionProvider
 
 
+class RegistrationProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider
+
+
 class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
     view_category = 'preprint-providers'
     _model_class = PreprintProvider
@@ -231,6 +257,11 @@ class GenericProviderLicenseList(LicenseList):
 class CollectionProviderLicenseList(GenericProviderLicenseList):
     view_category = 'collection-providers'
     _model_class = CollectionProvider
+
+
+class RegistrationProviderLicenseList(GenericProviderLicenseList):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider
 
 
 class PreprintProviderLicenseList(GenericProviderLicenseList):
@@ -322,6 +353,67 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
         raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
 
 
+class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectedGuidMetadata
+    serializer_class = CollectedMetaSerializer
+    view_category = 'collected-metadata'
+    view_name = 'provider-collected-registration-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectedMetaCreateSerializer
+        else:
+            return CollectedMetaSerializer
+
+    def get_default_queryset(self):
+        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
+        if provider and provider.primary_collection:
+            return provider.primary_collection.collectedguidmetadata_set.all()
+        return CollectedGuidMetadata.objects.none()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
+        if provider and provider.primary_collection:
+            return serializer.save(creator=user, collection=provider.primary_collection)
+        raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
+
+
+class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+    view_category = 'requests'
+    view_name = 'provider-withdrawal-request-list'
+
+    required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = PreprintRequestSerializer
+
+    def get_provider(self):
+        # used in perms class
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
+    def get_default_queryset(self):
+        return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
 class ModeratorMixin(object):
     model_class = OSFUser
 
@@ -351,9 +443,8 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
 
     def get_default_queryset(self):
         provider = self.get_provider()
-        group_helper = GroupHelper(provider)
-        admin_group = group_helper.get_group('admin')
-        mod_group = group_helper.get_group('moderator')
+        admin_group = provider.get_group('admin')
+        mod_group = provider.get_group('moderator')
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
             When(groups=admin_group, then=Value('admin')),
             default=Value('moderator'),
@@ -383,7 +474,7 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         provider = self.get_provider()
         user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
         try:
-            perm_group = user.groups.filter(name__contains=GROUP_FORMAT.format(provider_id=provider._id, group='')).order_by('name').first().name.split('_')[-1]
+            perm_group = user.groups.filter(name__contains=PreprintProvider.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound

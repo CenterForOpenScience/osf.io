@@ -1,0 +1,91 @@
+<head>
+    <script>
+        var TINYMCE_BASE_CONFIG = {
+            branding: false,
+            entity_encoding: 'raw',
+            link_context_toolbar: true,
+        };
+
+        var DESCRIPTION_CONFIG = $.extend({
+            selector:'textarea[name=description]',
+            valid_elements: '*[*]',
+            plugins: 'link preview code',
+            end_container_on_empty_block: true,
+            toolbar: 'bold italic underline | undo redo | link | code | preview',
+            forced_root_block: ''
+        }, TINYMCE_BASE_CONFIG);
+
+        var ADVISORY_BOARD_CONFIG = $.extend({
+            selector:'textarea[name=advisory_board]',
+            content_css: 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
+            valid_elements: '*[*]',
+            style_formats: [
+                {title: 'two column', block: 'div', classes: 'col-xs-6', wrapper: true, exact: false},
+            ],
+            style_formats_merge: true,
+            end_container_on_empty_block: true,
+            plugins: 'link lists advlist preview code',
+            toolbar: 'bold italic underline | undo redo | link | bullist | code | preview'
+        }, TINYMCE_BASE_CONFIG);
+
+        var FOOTER_LINKS_CONFIG = $.extend({
+            selector:'textarea[name=footer_links]',
+            content_css: [
+                'https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css',
+            ],
+            valid_elements : "@[id|class|style|title],a[name|href|target|title|class],#p[class],#span[class|style],u,strong/b,em/i,br,-div",
+            style_formats: [
+                {title: 'vertical-align', selector: 'span', styles: {'vertical-align': 'middle'}},
+                {title: 'fontawesome 2x', selector: 'span.fa', classes: 'fa-2x'},
+            ],
+            style_formats_merge: true,
+            end_container_on_empty_block: true,
+            plugins: 'link image preview code fontawesome',
+            toolbar: 'bold italic underline | undo redo | link | image | fontawesome | code | preview ',
+            external_plugins: {
+                'fontawesome': 'https://cdn.rawgit.com/josh18/TinyMCE-FontAwesome-Plugin/3f94be18/fontawesome/plugin.min.js'
+            }
+        }, TINYMCE_BASE_CONFIG);
+
+        tinymce.init(DESCRIPTION_CONFIG);
+        tinymce.init(ADVISORY_BOARD_CONFIG);
+        tinymce.init(FOOTER_LINKS_CONFIG);
+    </script>
+</head>
+<div class="row">
+    <div class="col-md-9">
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div>
+                <label>Collected type choices:</label>
+                <div class="bootstrap-tagsinput">
+                    <input id="tags-input-collected-types" type="text" data-role="tagsinput"/>
+                </div>
+            </div>
+            <div>
+                <label>Status choices:</label>
+                <div class="bootstrap-tagsinput">
+                    <input id="tags-input-status" type="text" data-role="tagsinput"/>
+                </div>
+            </div>
+            <input class="form-button" type="submit" value="Save" />
+        </form>
+    </div>
+    <div class="col-md-3">
+        <div>
+            <h4>Import from JSON</h4>
+            <p>Choose a JSON file that has been previously exported from another Collection Provider detail page. This will
+                pre-populate the Collection Provider change form with those details.</p>
+            {% if collection_provider %}
+                <form action = {% url 'collection_providers:import' collection_provider_id=collection_provider.id %} method="post" enctype="multipart/form-data" >
+            {% else %}
+                <form action = {% url 'collection_providers:import' %} method="post" enctype="multipart/form-data" >
+            {% endif %}
+                {% csrf_token %}
+                {{ import_form.as_p }}
+                <input class="form-button" type="submit" value="Import" />
+            </form>
+        </div>
+    </div>
+</div>

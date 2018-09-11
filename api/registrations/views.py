@@ -33,17 +33,17 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
-    RegistrationProviderSerializer
+    RegistrationStorageProviderSerializer
 )
 
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
     NodeMixin, NodeRegistrationsList, NodeLogList,
-    NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
+    NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
-    NodeLinkedRegistrationsList,
+    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -166,6 +166,16 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+    def get_renderer_context(self):
+        context = super(RegistrationDetail, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('related_counts', False))
+        if show_counts:
+            registration = self.get_object()
+            context['meta'] = {
+                'templated_by_count': registration.templated_list.count(),
+            }
+        return context
 
 
 class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserMixin):
@@ -311,13 +321,13 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
     view_name = 'registration-logs'
 
 
-class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_providers_list).
     """
-    serializer_class = RegistrationProviderSerializer
+    serializer_class = RegistrationStorageProviderSerializer
 
     view_category = 'registrations'
-    view_name = 'registration-providers'
+    view_name = 'registration-storage-providers'
 
 
 class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
@@ -454,6 +464,16 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+
+class RegistrationLinkedByNodesList(NodeLinkedByNodesList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-nodes'
+
+
+class RegistrationLinkedByRegistrationsList(NodeLinkedByRegistrationsList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-linked-by-registrations'
 
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):

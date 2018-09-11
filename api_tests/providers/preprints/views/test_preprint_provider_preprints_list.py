@@ -80,6 +80,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
             'pending': 2,
             'accepted': 1,
             'rejected': 0,
+            'withdrawn': 0,
         }
 
         # non-moderators can't see counts
@@ -124,7 +125,7 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
 
     @pytest.fixture()
     def expected_reviewables(self, provider, user):
-        with mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers'):
+        with mock.patch('website.identifiers.utils.request_identifiers'):
             preprints = [
                 PreprintFactory(
                     is_published=False,

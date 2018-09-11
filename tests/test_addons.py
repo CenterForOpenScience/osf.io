@@ -11,6 +11,7 @@ import itsdangerous
 import jwe
 import jwt
 import mock
+import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
@@ -29,7 +30,7 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import Session, MetaSchema, QuickFilesNode
+from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
@@ -168,7 +169,7 @@ class TestAddonLogs(OsfTestCase):
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
         self.file = OsfStorageFileNode.create(
-            node=self.node,
+            target=self.node,
             path='/testfile',
             _id='testfile',
             name='testfile',
@@ -235,6 +236,7 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @pytest.mark.enable_quickfiles_creation
     def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
@@ -415,7 +417,7 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
-    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+    def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
         ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
@@ -423,7 +425,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = registration._nodes.first()
 
         assert_false(component_registration.has_permission(self.user, 'write'))
-        res = views.check_access(component_registration, Auth(user=self.user), 'copyto', None)
+        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -436,13 +438,13 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
-    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+    def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto', None)
+            views.check_access(component, Auth(user=self.user), 'upload', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
@@ -461,7 +463,7 @@ class TestCheckPreregAuth(OsfTestCase):
         administer_permission = Permission.objects.get(codename='administer_prereg')
         self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
@@ -663,7 +665,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test',
-            node=self.project,
+            target=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
         )
@@ -676,7 +678,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -689,7 +691,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -702,7 +704,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2.pdf',
-            node=self.project,
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -796,6 +798,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -815,6 +818,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -848,6 +852,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    @pytest.mark.enable_bookmark_creation
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
         with mock.patch('addons.github.models.NodeSettings.is_private',
                         new_callable=mock.PropertyMock) as mock_is_private:
@@ -965,7 +970,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -973,7 +978,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
             name='folder',
-            node=self.project,
+            target=self.project,
             path='/test/folder/',
             materialized_path='/test/folder/',
         )
@@ -985,7 +990,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -1246,7 +1251,8 @@ class TestViewUtils(OsfTestCase):
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
 
-    def test_serialize_addons(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_serialize_addons(self, mock_folders):
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
@@ -1258,7 +1264,8 @@ class TestViewUtils(OsfTestCase):
         assert len(default_addons) == 1
         assert default_addons[0]['short_name'] == 'osfstorage'
 
-    def test_include_template_json(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_include_template_json(self, mock_folders):
         """ Some addons (github, gitlab) need more specialized template infomation so we want to
         ensure we get those extra variables that when the addon is enabled.
         """
@@ -1271,7 +1278,8 @@ class TestViewUtils(OsfTestCase):
         assert 'node_has_auth' in enabled_addons[0]
         assert 'valid_credentials' in enabled_addons[0]
 
-    def test_collect_node_config_js(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_collect_node_config_js(self, mock_folders):
 
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 

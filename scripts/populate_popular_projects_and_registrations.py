@@ -70,6 +70,6 @@ def run_main(dry_run=True):
     with transaction.atomic():
         main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     run_main(dry_run=dry_run)

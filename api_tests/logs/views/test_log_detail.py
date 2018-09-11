@@ -164,7 +164,7 @@ class TestNodeFileLogDetail:
 
     @pytest.fixture()
     def file_component(self, user_one, component):
-        return api_utils.create_test_file(node=component, user=user_one)
+        return api_utils.create_test_file(target=component, user=user_one)
 
     @pytest.fixture()
     def url_node_logs(self, node):

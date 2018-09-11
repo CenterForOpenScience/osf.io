@@ -21,8 +21,8 @@ from osf.models.subject import Subject
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine, RequestMachine
-from osf.utils.permissions import ADMIN
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from website.exceptions import NodeStateError
 from website import settings
@@ -263,7 +263,7 @@ class AddonModelMixin(models.Model):
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
-        ret.save()  # TODO This doesn't feel right
+        ret.save(clean=False)  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
@@ -545,14 +545,27 @@ class MachineableMixin(models.Model):
                 raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
             return action
 
-class RequestableMixin(MachineableMixin):
-    """Something that users may request access or changes to.
+
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
     """
 
     class Meta:
         abstract = True
 
-    MachineClass = RequestMachine
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
 
 
 class ReviewableMixin(MachineableMixin):
@@ -582,59 +595,6 @@ class ReviewableMixin(MachineableMixin):
             comment: Text describing why.
         """
         return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
-
-
-class ReviewProviderMixin(models.Model):
-    """A reviewed/moderated collection of objects.
-    """
-
-    REVIEWABLE_RELATION_NAME = None
-
-    class Meta:
-        abstract = True
-
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
-    reviews_comments_private = models.NullBooleanField()
-    reviews_comments_anonymous = models.NullBooleanField()
-
-    @property
-    def is_reviewed(self):
-        return self.reviews_workflow is not None
-
-    def get_reviewable_state_counts(self):
-        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
-        qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
-        if isinstance(qs, IncludeQuerySet):
-            qs = qs.include(None)
-        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in DefaultStates}
-        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
-        return counts
-
-    def add_to_group(self, user, group):
-        from api.providers.permissions import GroupHelper
-        # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
-        return GroupHelper(self).get_group(group).user_set.add(user)
-
-    def remove_from_group(self, user, group, unsubscribe=True):
-        from api.providers.permissions import GroupHelper
-        _group = GroupHelper(self).get_group(group)
-        if group == 'admin':
-            if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
-                raise ValueError('Cannot remove last admin.')
-        if unsubscribe:
-            # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-            notification.remove_user_from_subscription(user, save=True)
-
-        return _group.user_set.remove(user)
 
 
 class GuardianMixin(models.Model):
@@ -690,6 +650,59 @@ class GuardianMixin(models.Model):
 
     def get_permissions(self, user):
         return list(set(get_perms(user, self)) & set(self.perms_list))
+
+
+class ReviewProviderMixin(GuardianMixin):
+    """A reviewed/moderated collection of objects.
+    """
+
+    REVIEWABLE_RELATION_NAME = None
+    groups = REVIEW_GROUPS
+    group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
+
+    class Meta:
+        abstract = True
+
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
+    reviews_comments_private = models.NullBooleanField()
+    reviews_comments_anonymous = models.NullBooleanField()
+
+    @property
+    def is_reviewed(self):
+        return self.reviews_workflow is not None
+
+    def get_reviewable_state_counts(self):
+        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
+        qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
+        if isinstance(qs, IncludeQuerySet):
+            qs = qs.include(None)
+        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in ReviewStates}
+        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        return counts
+
+    def add_to_group(self, user, group):
+        # Add default notification subscription
+        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        return self.get_group(group).user_set.add(user)
+
+    def remove_from_group(self, user, group, unsubscribe=True):
+        _group = self.get_group(group)
+        if group == 'admin':
+            if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
+                raise ValueError('Cannot remove last admin.')
+        if unsubscribe:
+            # remove notification subscription
+            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+            notification.remove_user_from_subscription(user, save=True)
+
+        return _group.user_set.remove(user)
 
 
 class TaxonomizableMixin(models.Model):

@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3'
+version: '3.4'
 
 volumes:
   postgres_data_vol:
@@ -41,7 +41,6 @@ volumes:
     external: false
   osf_admin_bower_components_vol:
     external: false
-
 
 services:
 
@@ -112,7 +111,6 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
 
   #########################
   # Modular File Renderer #
@@ -300,7 +298,6 @@ services:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
@@ -354,7 +351,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --quick &&
+      - invoke requirements --all &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /
@@ -362,6 +359,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code
       - osf_requirements_vol:/python2.7
 
   assets:
@@ -371,6 +369,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -383,6 +382,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -414,6 +414,7 @@ services:
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
+#      - ./:/code
 #      - osf_requirements_vol:/usr/local/lib/python2.7
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
@@ -433,6 +434,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -457,6 +459,7 @@ services:
       - .docker-compose.env
     stdin_open: true
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -478,6 +481,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -499,6 +503,7 @@ services:
       - .docker-compose.env
       - .docker-compose.sharejs.env
     volumes:
+      - ./:/code
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules

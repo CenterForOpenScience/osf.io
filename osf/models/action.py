@@ -25,6 +25,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
     comment = models.TextField(blank=True)
 
     is_deleted = models.BooleanField(default=False)
+    auto = models.BooleanField(default=False)
 
     @property
     def target(self):
@@ -47,3 +48,7 @@ class NodeRequestAction(BaseAction):
         default=permissions.READ
     )
     visible = models.BooleanField(default=True)
+
+
+class PreprintRequestAction(BaseAction):
+    target = models.ForeignKey('PreprintRequest', related_name='actions', on_delete=models.CASCADE)

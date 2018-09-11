@@ -5,6 +5,7 @@ import pstats
 import threading
 
 from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
 
@@ -21,7 +22,7 @@ from .api_globals import api_globals
 from api.base import settings as api_settings
 
 
-class CeleryTaskMiddleware(object):
+class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
 
     def process_request(self, request):
@@ -40,7 +41,7 @@ class CeleryTaskMiddleware(object):
         return response
 
 
-class DjangoGlobalMiddleware(object):
+class DjangoGlobalMiddleware(MiddlewareMixin):
     """
     Store request object on a thread-local variable for use in database caching mechanism.
     """
@@ -66,15 +67,15 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
 
     _context = threading.local()
 
-    def origin_not_found_in_white_lists(self, origin, url):
+    def origin_found_in_white_lists(self, origin, url):
         settings.CORS_ORIGIN_WHITELIST += api_settings.ORIGINS_WHITELIST
         # Check if origin is in the dynamic custom domain whitelist
-        not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
+        found = super(CorsMiddleware, self).origin_found_in_white_lists(origin, url)
         # Check if a cross-origin request using the Authorization header
-        if not_found:
+        if not found:
             if not self._context.request.COOKIES:
                 if self._context.request.META.get('HTTP_AUTHORIZATION'):
-                    return
+                    return True
                 elif (
                     self._context.request.method == 'OPTIONS' and
                     'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
@@ -83,9 +84,9 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                         self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
                     )
                 ):
-                    return None
+                    return True
 
-        return not_found
+        return found
 
     def process_response(self, request, response):
         self._context.request = request
@@ -95,7 +96,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
             self._context.request = None
 
 
-class PostcommitTaskMiddleware(object):
+class PostcommitTaskMiddleware(MiddlewareMixin):
     """
     Handle postcommit tasks for django.
     """
@@ -111,7 +112,7 @@ class PostcommitTaskMiddleware(object):
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
 # Modified by: COS
-class ProfileMiddleware(object):
+class ProfileMiddleware(MiddlewareMixin):
     """
     Displays hotshot profiling for any view.
     http://yoursite.com/yourview/?prof

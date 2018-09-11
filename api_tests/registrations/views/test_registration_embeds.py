@@ -1,3 +1,4 @@
+import pytest
 from nose.tools import *  # flake8: noqa
 import functools
 
@@ -12,6 +13,7 @@ from osf_tests.factories import (
 )
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestRegistrationEmbeds(ApiTestCase):
 
     def setUp(self):
@@ -79,5 +81,5 @@ class TestRegistrationEmbeds(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "The following fields are not embeddable: title"
+            'The following fields are not embeddable: title'
         )

@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import pytest
 import urlparse
 import pytest
 
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
 from addons.osfstorage.models import OsfStorageFile
 from api_tests import utils as api_test_utils
 from framework.auth import Auth
 from framework.celery_tasks import handlers
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf_tests.factories import (
@@ -19,15 +22,19 @@ from osf_tests.factories import (
     ProjectFactory,
     SubjectFactory,
     UserFactory,
+    PreprintRequestFactory,
 )
 from osf_tests.utils import MockShareResponse
 from osf.utils import permissions
+from osf.utils.workflows import DefaultStates, RequestTypes
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
-from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
+from website.identifiers.clients import crossref
+from website.identifiers.utils import request_identifiers
 from website.util.share import format_user
 
 
@@ -80,14 +87,14 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
@@ -191,7 +198,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -222,7 +229,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            node=self.project,
+            target=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
@@ -335,31 +342,27 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    def test_get_doi_for_preprint(self):
-        new_provider = PreprintProviderFactory()
-        preprint = PreprintFactory(provider=new_provider)
-        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
-
-        doi, metadata = get_doi_and_metadata_for_object(preprint)
-
-        assert doi == ideal_doi
-
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_update_or_create_preprint_identifiers(self, mock_get_identifiers):
-        self.preprint.is_published = True
-        update_or_create_preprint_identifiers(self.preprint)
-        assert mock_get_identifiers.called
-        assert mock_get_identifiers.call_count == 1
-
-
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_or_create_preprint_identifiers_ezid(self, mock_update_ezid):
+    def test_update_or_create_preprint_identifiers_called(self):
         published_preprint = PreprintFactory(is_published=True, creator=self.user)
-        update_or_create_preprint_identifiers(published_preprint)
-        assert mock_update_ezid.called
-        assert mock_update_ezid.call_count == 1
+        with mock.patch.object(published_preprint, 'request_identifier_update') as mock_update_doi:
+            update_or_create_preprint_identifiers(published_preprint)
+        assert mock_update_doi.called
+        assert mock_update_doi.call_count == 1
+
+    @mock.patch('website.settings.CROSSREF_URL', 'http://test.osf.crossref.test')
+    def test_correct_doi_client_called(self):
+        osf_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
+        assert isinstance(osf_preprint.get_doi_client(), CrossRefClient)
+        ecsarxiv_preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory(_id='ecsarxiv'))
+        assert isinstance(ecsarxiv_preprint.get_doi_client(), ECSArXivCrossRefClient)
+
+    def test_qatest_doesnt_make_dois(self):
+        preprint = PreprintFactory(is_published=True, creator=self.user, provider=PreprintProviderFactory())
+        preprint.node.add_tag('qatest', self.auth)
+        assert not request_identifiers(preprint)
 
 
+@pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()
@@ -398,6 +401,27 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def tearDown(self):
         handlers.celery_before_request()
         super(TestOnPreprintUpdatedTask, self).tearDown()
+
+    def test_update_or_enqueue_on_preprint_updated(self):
+        first_subjects = [15]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=first_subjects,
+            saved_fields={'contributors': True}
+        )
+        second_subjects = [16, 17]
+        update_or_enqueue_on_preprint_updated(
+            self.preprint._id,
+            old_subjects=second_subjects,
+            saved_fields={'title': 'Hello'}
+        )
+        updated_task = get_task_from_postcommit_queue(
+            'website.preprints.tasks.on_preprint_updated',
+            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
+        )
+        assert 'title' in updated_task.kwargs['saved_fields']
+        assert 'contributors' in  updated_task.kwargs['saved_fields']
+        assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
     def test_format_preprint(self):
         res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
@@ -591,7 +615,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 
@@ -697,7 +721,8 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
-        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args
+        call_args, call_kwargs = mock_on_preprint_updated.call_args
+        assert call_kwargs.get('old_subjects') == [self.subject.id]
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
@@ -713,7 +738,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    @mock.patch('osf.models.preprint_service.update_or_enqueue_on_preprint_updated')
     def test_node_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
         # A user is added as a contributor
         self.preprint.is_published = True
@@ -806,46 +831,122 @@ class TestWithdrawnPreprint:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def preprint_pre_mod(self):
+    def unpublished_preprint_pre_mod(self):
         return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
 
     @pytest.fixture()
-    def preprint_post_mod(self):
+    def preprint_pre_mod(self):
+        return PreprintFactory(provider__reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def unpublished_preprint_post_mod(self):
         return PreprintFactory(provider__reviews_workflow='post-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_post_mod(self):
+        return PreprintFactory(provider__reviews_workflow='post-moderation')
 
     @pytest.fixture()
     def preprint(self):
         return PreprintFactory()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers')
-    def test_withdrawn_preprint(self, _, user, preprint, preprint_pre_mod, preprint_post_mod):
+    @pytest.fixture()
+    def admin(self):
+        admin = AuthUserFactory()
+        osf_admin = Group.objects.get(name='osf_admin')
+        admin.groups.add(osf_admin)
+        return admin
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod, preprint_post_mod):
+        moderator = AuthUserFactory()
+        preprint_pre_mod.provider.add_to_group(moderator, 'moderator')
+        preprint_pre_mod.provider.save()
+
+        preprint_post_mod.provider.add_to_group(moderator, 'moderator')
+        preprint_post_mod.provider.save()
+
+        return moderator
+
+    @pytest.fixture()
+    def make_withdrawal_request(self, user):
+        def withdrawal_request(target):
+            request = PreprintRequestFactory(
+                        creator=user,
+                        target=target,
+                        request_type=RequestTypes.WITHDRAWAL.value,
+                        machine_state=DefaultStates.INITIAL.value)
+            request.run_submit(user)
+            return request
+        return withdrawal_request
+
+    @pytest.fixture()
+    def crossref_client(self):
+        return crossref.CrossRefClient(base_url='http://test.osf.crossref.test')
+
+
+    def test_withdrawn_preprint(self, user, preprint, unpublished_preprint_pre_mod, unpublished_preprint_post_mod):
         # test_ever_public
 
         # non-moderated
         assert preprint.ever_public
 
         # pre-mod
-        preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.run_submit(user)
 
-        assert not preprint_pre_mod.ever_public
-        preprint_pre_mod.run_reject(user, 'it')
-        preprint_pre_mod.reload()
-        assert not preprint_pre_mod.ever_public
-        preprint_pre_mod.run_accept(user, 'it')
-        preprint_pre_mod.reload()
-        assert preprint_pre_mod.ever_public
+        assert not unpublished_preprint_pre_mod.ever_public
+        unpublished_preprint_pre_mod.run_reject(user, 'it')
+        unpublished_preprint_pre_mod.reload()
+        assert not unpublished_preprint_pre_mod.ever_public
+        unpublished_preprint_pre_mod.run_accept(user, 'it')
+        unpublished_preprint_pre_mod.reload()
+        assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        preprint_post_mod.run_submit(user)
-        assert preprint_post_mod.ever_public
+        unpublished_preprint_post_mod.run_submit(user)
+        assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False
-        preprint_pre_mod.ever_public = False
-        preprint_post_mod.ever_public = False
+        unpublished_preprint_pre_mod.ever_public = False
+        unpublished_preprint_post_mod.ever_public = False
         preprint.ever_public = False
         with pytest.raises(ValidationError):
             preprint.save()
         with pytest.raises(ValidationError):
-            preprint_pre_mod.save()
+            unpublished_preprint_pre_mod.save()
         with pytest.raises(ValidationError):
-            preprint_post_mod.save()
+            unpublished_preprint_post_mod.save()
+
+    def test_crossref_status_is_updated(self, make_withdrawal_request, preprint, preprint_post_mod, preprint_pre_mod, moderator, admin, crossref_client):
+        # test_non_moderated_preprint
+        assert preprint.verified_publishable
+        assert crossref_client.get_status(preprint) == 'public'
+
+        withdrawal_request = make_withdrawal_request(preprint)
+        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+
+        assert preprint.is_retracted
+        assert not preprint.verified_publishable
+        assert crossref_client.get_status(preprint) == 'unavailable'
+
+        # test_post_moderated_preprint
+        assert preprint_post_mod.verified_publishable
+        assert crossref_client.get_status(preprint_post_mod) == 'public'
+
+        withdrawal_request = make_withdrawal_request(preprint_post_mod)
+        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+
+        assert preprint_post_mod.is_retracted
+        assert not preprint_post_mod.verified_publishable
+        assert crossref_client.get_status(preprint_post_mod) == 'unavailable'
+
+        # test_pre_moderated_preprint
+        assert preprint_pre_mod.verified_publishable
+        assert crossref_client.get_status(preprint_pre_mod) == 'public'
+
+        withdrawal_request = make_withdrawal_request(preprint_pre_mod)
+        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+
+        assert preprint_pre_mod.is_retracted
+        assert not preprint_pre_mod.verified_publishable
+        assert crossref_client.get_status(preprint_pre_mod) == 'unavailable'

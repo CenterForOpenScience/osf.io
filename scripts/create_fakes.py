@@ -169,7 +169,7 @@ class Sciencer(BaseProvider):
         words = cls.science_words(nb_words)
         words[0] = words[0].title()
 
-        return " ".join(words) + '.'
+        return ' '.join(words) + '.'
 
     def science_sentences(cls, nb=3):
         """
@@ -195,7 +195,7 @@ class Sciencer(BaseProvider):
         if variable_nb_sentences:
             nb_sentences = cls.randomize_nb_elements(nb_sentences)
 
-        return " ".join(cls.science_sentences(nb_sentences))
+        return ' '.join(cls.science_sentences(nb_sentences))
 
     def science_paragraphs(cls, nb=3):
         """
@@ -252,7 +252,7 @@ class Sciencer(BaseProvider):
                     size += len(paragraph)
                 text.pop()
 
-        return "".join(text)
+        return ''.join(text)
 
 
 logger = logging.getLogger('create_fakes')
@@ -286,7 +286,7 @@ def parse_args():
     parser.add_argument('--nusers', dest='n_users', type=int, default=3)
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
     parser.add_argument('-c', '--components', dest='n_components', type=evaluate_argument, default='0')
-    parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
+    parser.add_argument('-p', '--privacy', dest='privacy', type=str, default='private', choices=['public', 'private'])
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
@@ -312,8 +312,10 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         if not provider:
             provider = PreprintProviderFactory(name=fake.science_word())
         privacy = 'public'
-        mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.update_identifier')
         mock_change_identifier.start()
+        mock_change_identifier_preprints = mock.patch('website.identifiers.client.CrossRefClient.update_identifier')
+        mock_change_identifier_preprints.start()
         project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
         node = project.node
     elif is_registration:

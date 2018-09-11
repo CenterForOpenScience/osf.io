@@ -28,7 +28,6 @@ STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
-# Logging level to use when DEBUG is False
 LOG_LEVEL = logging.INFO
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
@@ -345,15 +344,37 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
-# Test identifier namespaces
-DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:99999/fk4'
+####################
+#   Identifiers   #
+###################
+DOI_URL_PREFIX = 'https://doi.org/'
 
-# For creating DOIs and ARKs through the EZID service
+# General Format for DOIs
+DOI_FORMAT = '{prefix}/osf.io/{guid}'
+
+# ezid
+EZID_DOI_NAMESPACE = 'doi:10.5072'
+EZID_ARK_NAMESPACE = 'ark:99999'
 EZID_USERNAME = None
 EZID_PASSWORD = None
-# Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+# datacite
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_URL = None
+DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+# Minting DOIs only works on Datacite's production server, so 
+# disable minting on staging and development environments by default
+DATACITE_MINT_DOIS = not DEV_MODE
+
+# crossref
+CROSSREF_USERNAME = None
+CROSSREF_PASSWORD = None
+CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
+
+ECSARXIV_CROSSREF_USERNAME = None
+ECSARXIV_CROSSREF_PASSWORD = None
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
@@ -463,7 +484,7 @@ class CeleryConfig:
     broker_use_ssl = False
 
     # Default RabbitMQ backend
-    result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+    result_backend = 'django-db'  # django-celery-results
 
     beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
 
@@ -1886,8 +1907,6 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
-
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
 
 #Email templates logo
 OSF_LOGO = 'osf_logo'

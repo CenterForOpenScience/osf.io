@@ -116,9 +116,24 @@
                 </div>
             </li>
             {% endif %}
-            {% if perms.osf.view_preprintservice %}
-            <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
-            {% endif %}
+          {% if perms.osf.view_preprintservice %}
+              <li>
+                  <a role="button" data-toggle="collapse" href="#collapsePreprints">
+                      <i class='fa fa-caret-down'></i> Preprints
+                  </a>
+              </li>
+              <li>
+                  <div class="collapse" id="collapsePreprints">
+                      <ul class="sidebar-menu sidebar-menu-inner">
+                          <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
+                          <li><a href="{% url 'preprints:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
+                          <li><a href="{% url 'preprints:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
+                          <li><a href="{% url 'preprints:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
+                          <li><a href="{% url 'preprints:withdrawal-requests' %}"><i class="fa fa-check-square-o"></i><span> Withdrawal Requests</span> </a></li>
+                      </ul>
+                  </div>
+              </li>
+          {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
                   <i class='fa fa-caret-down'></i> OSF Users
@@ -173,15 +188,28 @@
                   </ul>
               </div>
           {% endif %}
-          {% if perms.osf.view_asset_files %}
+          {% if perms.osf.view_providerassetfile %}
               <li><a role="button" data-toggle="collapse" href="#collapseAssetFiles">
                   <i class='fa fa-caret-down'></i> Provider Assets
               </a></li>
               <div class="collapse" id="collapseAssetFiles">
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
-                      {% if perms.osf.change_asset_files %}
+                      {% if perms.osf.change_providerassetfile %}
                       <li><a href="{% url 'asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_collectionprovider %}
+              <li><a role="button" data-toggle="collapse" href="#collapseCollectionProviders">
+                  <i class='fa fa-caret-down'></i> Collection Providers
+              </a></li>
+              <div class="collapse" id="collapseCollectionProviders">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'collection_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_collectionprovider %}
+                      <li><a href="{% url 'collection_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
               </div>

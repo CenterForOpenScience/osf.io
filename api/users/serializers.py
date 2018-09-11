@@ -1,5 +1,3 @@
-from guardian.models import GroupObjectPermission
-
 from django.utils import timezone
 from rest_framework import serializers as ser
 
@@ -7,13 +5,15 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink, ShowIfCurrentUser, DevOnly
+    Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from osf.models.provider import AbstractProviderGroupObjectPermission
+from api.users.schemas.utils import validate_user_json
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -57,8 +57,8 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    employment = DevOnly(ser.ListField(child=ser.DictField(), source='jobs', read_only=True))
-    education = DevOnly(ser.ListField(child=ser.DictField(), source='schools', read_only=True))
+    employment = JSONAPIListField(required=False, source='jobs')
+    education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
@@ -118,8 +118,8 @@ class UserSerializer(JSONAPISerializer):
         })
 
     def get_can_view_reviews(self, obj):
-        group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
-        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
+        group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
+        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)
@@ -127,6 +127,14 @@ class UserSerializer(JSONAPISerializer):
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
+
+    def validate_employment(self, value):
+        validate_user_json(value, 'employment-schema.json')
+        return value
+
+    def validate_education(self, value):
+        validate_user_json(value, 'education-schema.json')
+        return value
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
@@ -252,3 +260,40 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserIdentitiesSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    external_id = ser.CharField(read_only=True)
+    status = ser.CharField(read_only=True)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-identities-detail',
+            kwargs={
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+                'identity_id': obj['_id']
+            }
+        )
+
+    class Meta:
+        type_ = 'external-identities'
+
+class UserAccountExportSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-export-form'
+
+
+class UserAccountDeactivateSerializer(BaseAPISerializer):
+    type = TypeField()
+
+    class Meta:
+        type_ = 'user-account-deactivate-form'
