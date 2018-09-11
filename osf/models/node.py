@@ -3068,7 +3068,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def update_custom_citation(self, custom_citation, auth):
         if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can modify contributor order')
+            raise PermissionsError('Only admins can update a custom citation')
 
         if custom_citation == '':
             log_action = NodeLog.CUSTOM_CITATION_REMOVED
