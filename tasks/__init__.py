@@ -435,7 +435,6 @@ def travis_setup(ctx):
         bower_json = json.load(fobj)
         ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
-    ctx.run('python manage.py createcachetable', echo=True)
 
 @task
 def test_travis_addons(ctx, numprocesses=None, coverage=False):
