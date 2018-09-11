@@ -24,7 +24,7 @@ from api.base.exceptions import (
     EndpointNotImplementedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.exceptions import ServiceUnavailableError
+from api.base.exceptions import UnknownError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -1168,8 +1168,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
             v2_exception = HTTP_CODE_MAP.get(exc.code)
             if v2_exception:
                 raise v2_exception
-            else:
-                raise ServiceUnavailableError(detail='This add-on is unavailable.')
+            raise UnknownError()
 
 
 class NodeProvider(object):
