@@ -288,6 +288,6 @@ NPLUSONE_RAISE = False
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache_table',
+        'LOCATION': 'osf_cache_table',
     }
 }
