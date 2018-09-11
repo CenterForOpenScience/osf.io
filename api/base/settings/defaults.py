@@ -82,6 +82,7 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_beat',
+    'django_celery_results',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
@@ -196,7 +197,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',

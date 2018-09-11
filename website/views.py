@@ -23,7 +23,7 @@ from framework.routing import proxy_url
 from framework.auth.core import _get_current_user
 from website import settings
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
 from website.ember_osf_web.views import use_ember_app
@@ -32,6 +32,7 @@ from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 
@@ -283,6 +284,15 @@ def resolve_guid(guid, suffix=None):
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
+
+        if isinstance(referent, Registration) and not suffix:
+            if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+                # Route only the base detail view to ember
+                if PROXY_EMBER_APPS:
+                    resp = requests.get(EXTERNAL_EMBER_APPS['registries']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                    return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+                return send_from_directory(registries_dir, 'index.html')
 
         if isinstance(referent, Node) and not referent.is_registration and suffix:
             page = suffix.strip('/').split('/')[0]

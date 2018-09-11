@@ -31,7 +31,7 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, UserStateError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.collection import CollectedGuidMetadata
@@ -354,6 +354,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def tag_names(self):
+        """
+        Optimization property. If node has been annotated with "annotated_tags"
+        in a queryset, use that value.  Otherwise, fetch the tags.
+        """
+        if hasattr(self, 'annotated_tags'):
+            return [] if self.annotated_tags == [None] else self.annotated_tags
+        else:
+            return self.tags.values_list('name', flat=True)
 
     @property
     def nodes(self):
@@ -715,6 +726,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return csl
 
+    @property
+    def should_request_identifiers(self):
+        return not self.all_tags.filter(name='qatest').exists()
+
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
         from website import search
@@ -1023,9 +1038,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def parent_id(self):
-        if self.parent_node:
-            return self.parent_node._id
-        return None
+        if hasattr(self, 'annotated_parent_id'):
+            # If node has been annotated with "annotated_parent_id"
+            # in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
 
     @property
     def license(self):
@@ -1191,6 +1211,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
+        if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
+            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
+                                       'to ' + language.SUPPORT_LINK)
+
         if not self.is_contributor(contrib_to_add):
 
             contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
@@ -1353,9 +1377,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                  permissions=permissions, send_email=send_email, save=True)
         else:
             contributor = get_user(email=email)
-            if contributor:
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            if contributor and self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+
+            if contributor and contributor.is_registered:
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                     send_email=send_email, permissions=permissions, save=True)
             else:

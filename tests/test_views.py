@@ -1539,9 +1539,7 @@ class TestUserAccount(OsfTestCase):
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 
-    @mock.patch('website.profile.views.push_status_message')
     def test_password_change_valid(self,
-                                   mock_push_status_message,
                                    old_password='password',
                                    new_password='Pa$$w0rd',
                                    confirm_password='Pa$$w0rd'):
@@ -1557,6 +1555,11 @@ class TestUserAccount(OsfTestCase):
         assert_true(200, res.status_code)
         self.user.reload()
         assert_true(self.user.check_password(new_password))
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_user_account_password_reset_query_params(self, mock_push_status_message):
+        url = web_url_for('user_account') + '?password_reset=True'
+        res = self.app.get(url, auth=(self.user.auth))
         assert_true(mock_push_status_message.called)
         assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
 
