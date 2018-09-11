@@ -46,8 +46,10 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_pending_embargo',
                                                                  help_text='The associated Embargo is awaiting approval by project admins.'))
+    embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
     pending_registration_approval = HideIfWithdrawal(ser.BooleanField(source='is_pending_registration', read_only=True,
                                                                       help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
+    archiving = HideIfWithdrawal(ser.BooleanField(read_only=True))
     pending_withdrawal = HideIfWithdrawal(ser.BooleanField(source='is_pending_retraction', read_only=True,
                                                            help_text='The registration is awaiting withdrawal approval by project admins.'))
     withdrawn = ser.BooleanField(source='is_retracted', read_only=True,

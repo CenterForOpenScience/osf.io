@@ -68,7 +68,7 @@
 
 ## Application Configuration
 
-* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
+* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` you will need to recreate the container(s)._
 
   - `$ docker-compose up --force-recreate --no-deps preprints`
 
@@ -91,27 +91,6 @@
     ```
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
-
-## Docker Sync
-
-Ubuntu: Skip install of docker-sync. instead...
-        `cp docker-compose.linux.yml docker-compose.override.yml`
-        Ignore future steps that start, stop, or wait for docker-sync
-
-1. Install Docker Sync
-  - Mac: `$ gem install docker-sync`
-  - [Instructions](http://docker-sync.io)
-
-1. Running Docker Sync
-
-    _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
-
-    **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
-
-  - `$ docker-sync start`
-
-1. OPTIONAL: If you have problems trying installing macfsevents
-  - `$ sudo pip install macfsevents`
 
 ## Application Runtime
 
@@ -141,7 +120,7 @@ Ubuntu: Skip install of docker-sync. instead...
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, Preprints, and Registries (Detached)
-  - `$ docker-compose up -d worker web api admin preprints registries`
+  - `$ docker-compose up -d worker web api admin preprints registries ember_osf_web`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -150,8 +129,6 @@ Ubuntu: Skip install of docker-sync. instead...
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  $ docker-sync start
-  # Wait until you see "Nothing to do: replicas have not changed since last sync."
   $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries ember_osf_web
   ```
 
@@ -192,54 +169,6 @@ Ubuntu: Skip install of docker-sync. instead...
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
 ## Application Debugging
-
-### Debugging Services
-
-The OSF is supported by several services which function independently from the main site and need some configuration to be modified using docker-sync. If you don't need to make changes to Waterbutler, MFR etc. you can ignore this.
-
-  Uncomment the appropriate code in docker-compose.override.yml and docker-sync.yml for your desired container and be sure to specify the relative path to your service code directories.
-  This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
-  For example if you wanted to the modify Waterbutler you would uncomment the following.
-  
-  - In `docker-compose.override.yml`:
-
-    ```yml
-    services:
-      wb:
-        volumes_from:
-          - container:wb-sync
-
-    ...
-    ```
-
-  - In `docker-sync.yml`:
-
-    ```yml
-    syncs:
-      wb-sync:
-        src: '../waterbutler'
-        dest: '/code'
-        sync_strategy: 'native_osx'
-        sync_excludes_type: 'Name'
-        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-
-    ...
-    ```
-  
-  Modifying these files will show up as changes in git. To avoid committing these files, run:
-  
-  ```bash
-  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-  
-  To be able to commit changes to these files again, run:
-  
-  ```bash
-  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-
-  The first time that sync settings are changed, you will need to run docker-compose up --force-recreate <container name>. To see the effect of code changes as you work (without needing to restart the container), you will need to separately turn on debug mode for the service by setting `DEBUG=1` and `SERVER_CONFIG_DEBUG=1` in `docker-compose.wb.env` or `docker-compose.mfr.env` this will enable live reload for those services, so your changes will take effect automatically in a few seconds.
 
 ### Catching Print Statements
 

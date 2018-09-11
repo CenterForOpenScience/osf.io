@@ -8,6 +8,7 @@ from scripts.analytics.node_summary import NodeSummary
 from scripts.analytics.file_summary import FileSummary
 from scripts.analytics.preprint_summary import PreprintSummary
 from scripts.analytics.institution_summary import InstitutionSummary
+from scripts.analytics.download_count_summary import DownloadCountSummary
 from scripts.analytics.base import DateAnalyticsHarness
 from scripts.utils import add_file_logger
 
@@ -18,7 +19,7 @@ class SummaryHarness(DateAnalyticsHarness):
 
     @property
     def analytics_classes(self):
-        return [NodeSummary, FileSummary, UserSummary, InstitutionSummary, PreprintSummary]
+        return [NodeSummary, FileSummary, UserSummary, InstitutionSummary, PreprintSummary, DownloadCountSummary]
 
 
 @celery_app.task(name='scripts.analytics.run_keen_summaries')
