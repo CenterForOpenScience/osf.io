@@ -317,20 +317,27 @@ def get_auth(auth, **kwargs):
 
     user = auth.user
     linked_preprint = node.linked_preprint
-    if linked_preprint:
+    path = data.get('path')
+    version = data.get('version')
+    if linked_preprint and path and version:
         if not node.is_contributor(user):
-            if data['action_meta']['is_mfr_render']:
-                metric_class = PreprintView
-            else:
-                metric_class = PreprintDownload
-            try:
-                metric_class.record(
-                    provider_id=linked_preprint.provider._id,
-                    user_id=user._id,
-                    preprint_id=linked_preprint._id,
-                )
-            except Exception:  # TODO: Catch a specific exception
-                log_exception()
+            # action => metric class
+            metric_map = {
+                'render': PreprintView,
+                'download': PreprintDownload,
+            }
+            metric_class = metric_map.get(action, None)
+            if metric_class:
+                try:
+                    metric_class.record(
+                        provider_id=linked_preprint.provider._id,
+                        # user may be None (if not logged in)
+                        user_id=getattr(user, '_id', None),
+                        preprint_id=linked_preprint._id,
+                        version=version,
+                    )
+                except Exception:  # TODO: Catch a specific exception
+                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),

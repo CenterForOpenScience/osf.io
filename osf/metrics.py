@@ -64,7 +64,7 @@ class MetricMixin(object):
 
 class BasePreprintMetric(MetricMixin, metrics.Metric):
     provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
-    user_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    user_id = metrics.Keyword(index=True, doc_values=True, required=False)
     preprint_id = metrics.Keyword(index=True, doc_values=True, required=True)
     # TODO: Make these required when we can get these fields in the
     # waterbutler auth callback
