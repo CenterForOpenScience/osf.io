@@ -329,12 +329,11 @@ def get_auth(auth, **kwargs):
             metric_class = metric_map.get(action, None)
             if metric_class:
                 try:
-                    metric_class.record(
-                        provider_id=linked_preprint.provider._id,
-                        # user may be None (if not logged in)
-                        user_id=getattr(user, '_id', None),
-                        preprint_id=linked_preprint._id,
+                    metric_class.record_for_preprint(
+                        preprint=linked_preprint,
+                        user=user,
                         version=version,
+                        path=path
                     )
                 except Exception:  # TODO: Catch a specific exception
                     log_exception()
