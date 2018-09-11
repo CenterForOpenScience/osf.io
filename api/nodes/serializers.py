@@ -615,7 +615,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
         if validated_data:
             if 'custom_citation' in validated_data:
-                node.update_custom_citation(validated_data['custom_citation'], auth)
+                node.update_custom_citation(validated_data.pop('custom_citation'), auth)
             if 'tag_names' in validated_data:
                 new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)

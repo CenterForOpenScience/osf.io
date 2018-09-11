@@ -315,7 +315,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise Conflict(err.message)
         if 'custom_citation' in validated_data:
-            registration.update_custom_citation(validated_data['custom_citation'], auth)
+            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:
