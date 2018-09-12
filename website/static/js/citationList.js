@@ -103,7 +103,11 @@ var ViewModel = oop.defclass({
                 data: payload
             }
         ).done(function(data) {
-            self.fetch();
+            if (!self.customCitation()) {
+		        self.fetch();
+		    }
+		    self.loading(false);
+
         }).fail(function() {
             $osf.growl('Error', 'Your custom citation not updated. Please refresh the page and try ' +
             'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
