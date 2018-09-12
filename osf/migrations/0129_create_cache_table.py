@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from api.base.settings import CACHES
 
 
 class Migration(migrations.Migration):
@@ -14,13 +15,13 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL([
             """
-            CREATE TABLE "osf_cache_table" (
+            CREATE TABLE "{}" (
                 "cache_key" varchar(255) NOT NULL PRIMARY KEY,
                 "value" text NOT NULL,
                 "expires" timestamp with time zone NOT NULL
             );
-            """
+            """.format(CACHES['default']['LOCATION'])
         ], [
-            """DROP TABLE "cache_table"; """
+            """DROP TABLE "{}"; """.format(CACHES['default']['LOCATION'])
         ])
     ]

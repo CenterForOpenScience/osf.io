@@ -633,7 +633,7 @@ class TestNodeSettingsModel(StorageTestCase):
         assert self.project.get_addon('osfstorage').storage_usage == 1024
 
         # now bust that cache
-        cache.delete('storage_usage' + self.node_settings._id)
+        cache.delete('storage_usage:' + self.node_settings._id)
         assert self.project.get_addon('osfstorage').storage_usage == 2024
 
 @pytest.mark.django_db
