@@ -278,7 +278,7 @@ def get_auth(auth, **kwargs):
     path = data.get('path')
     version = data.get('version')
 
-    if path:
+    if path and auth.user:
         mark_file_version_as_seen(auth.user, path, version)
     if path and version:
         if not node.is_contributor(auth.user):
