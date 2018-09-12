@@ -90,15 +90,13 @@ var ViewModel = oop.defclass({
                 'id' : ctx.node.id,
                 'type' :  self.nodeType(),
                 'attributes' : {
-                    'title': ctx.node.title,
-                    'category': ctx.node.category,
                     'custom_citation': self.customCitation()
                  }
             }
         };
         self.showEdit(false);
         $osf.ajaxJSON(
-            'PUT',
+            'PATCH',
             ctx.apiV2Prefix  + self.nodeType() + '/' + ctx.node.id + '/',
             {
                 isCors: true,
