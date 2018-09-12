@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -179,13 +180,14 @@ class TestUserSettingsUpdateMailingList:
             }
         }
 
-    def test_authorized_patch_200(self, app, user_one, payload, url):
+    @mock.patch('api.users.serializers.update_mailchimp_subscription')
+    def test_authorized_patch_200(self, mailchimp_mock, app, user_one, payload, url):
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200
 
         user_one.refresh_from_db()
         assert user_one.osf_mailing_lists[OSF_HELP_LIST] is False
-        assert user_one.osf_mailing_lists[MAILCHIMP_GENERAL_LIST] is True
+        mailchimp_mock.assert_called_with(user_one, MAILCHIMP_GENERAL_LIST, True)
 
     def test_bad_payload_patch_400(self, app, user_one, bad_payload, url):
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)

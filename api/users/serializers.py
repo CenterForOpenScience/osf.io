@@ -17,6 +17,7 @@ from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from api.users.schemas.utils import validate_user_json
+from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -353,9 +354,10 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
     }
 
     def update_email_preferences(self, instance, attr, value):
-        # switch field names back to human readable names stored in DB
-        user_mailing_list = {self.MAP_MAIL[attr]: value}
-        instance.osf_mailing_lists.update(user_mailing_list)
+        if self.MAP_MAIL[attr] == OSF_HELP_LIST:
+            update_osf_help_mails_subscription(user=instance, subscribe=value)
+        else:
+            update_mailchimp_subscription(instance, self.MAP_MAIL[attr], value)
         instance.save()
 
     def update_two_factor(self, instance, value, two_factor_addon):
