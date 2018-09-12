@@ -195,6 +195,7 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
         data = serializers.serialize('json', [registration_provider])
         cleaned_data = json.loads(data)[0]
         cleaned_fields = cleaned_data['fields']
+        cleaned_fields.pop('primary_collection', None)
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in registration_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = registration_provider.default_license.license_id if registration_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(registration_provider)
