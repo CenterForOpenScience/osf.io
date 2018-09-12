@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from osf.models import RegistrationProvider, Collection, NodeLicense
+from osf.models import RegistrationProvider, NodeLicense
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -198,18 +198,11 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in registration_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = registration_provider.default_license.license_id if registration_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(registration_provider)
-        cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(registration_provider.name)
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
-
-    def serialize_primary_collection(self, primary_collection):
-        primary_collection = Collection.objects.get(id=primary_collection)
-        data = serializers.serialize('json', [primary_collection])
-        cleaned_data = json.loads(data)[0]
-        return cleaned_data
 
     def serialize_subjects(self, provider):
         if provider._id != 'osf' and provider.subjects.count():
