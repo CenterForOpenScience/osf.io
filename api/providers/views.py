@@ -158,32 +158,13 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
     ordering = ('-id',)
 
-    def is_valid_subject(self, allows_children, allowed_parents, sub):
-        # TODO: Delet this when all PreprintProviders have a mapping
-        if sub._id in allowed_parents:
-            return True
-        if sub.parent:
-            if sub.parent._id in allows_children:
-                return True
-            if sub.parent.parent:
-                if sub.parent.parent._id in allows_children:
-                    return True
-        return False
-
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
-            if provider.subjects.exists():
-                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
-            else:
-                # TODO: Delet this when all PreprintProviders have a mapping
-                #  Calculate this here to only have to do it once.
-                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
-                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
 
