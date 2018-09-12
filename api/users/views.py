@@ -600,7 +600,6 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
         existing_password = request.data['existing_password']
-        confirm_new_password = request.data['confirm_new_password']
         new_password = request.data['new_password']
 
         # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
@@ -613,7 +612,8 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
 
         try:
-            user.change_password(existing_password, new_password, confirm_new_password)
+            # double new password for confirmation because validation is done on the front-end.
+            user.change_password(existing_password, new_password, new_password)
             if user.verification_key_v2:
                 user.verification_key_v2['expires'] = timezone.now()
             user.save()
