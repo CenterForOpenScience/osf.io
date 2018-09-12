@@ -491,10 +491,10 @@
                          <div class="m-b-md">
                              <div class="citation-list">
                                  <div class="row">
-                                     <div class="col-md-1">
+                                     <div class="col-xs-1">
                                          <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
-                                     <div class="col-md-9 m-l-sm">
+                                     <div class="col-xs-9 m-l-sm">
                                          <div class="f-w-xl">Cite as:</div>
                                          <span data-bind="text: customCitation"></span>
                                      </div>
