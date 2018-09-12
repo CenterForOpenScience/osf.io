@@ -166,6 +166,7 @@ class Command(shell_plus.Command):
         }
         """
         auto_transact = options.get('transaction', True)
+
         def start_transaction():
             self.atomic.__enter__()
             print('New transaction opened.')

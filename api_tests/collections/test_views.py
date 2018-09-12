@@ -30,6 +30,7 @@ def user_one():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestCollectionList:
 
     @pytest.fixture()
@@ -69,6 +70,8 @@ class TestCollectionList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestCollectionCreate:
 
     @pytest.fixture()
@@ -514,6 +517,8 @@ class CollectionCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestCollectionUpdate(CollectionCRUDTestCase):
 
     def test_update_collection_logged_in(
@@ -1370,7 +1375,7 @@ class TestCollectionNodeLinkDetail:
             pointed_project, user_one)
         assert collection.guid_links.filter(_id=pointed_project._id).exists()
         url = '/{}collections/{}/node_links/{}/'.format(
-            API_BASE, collection._id, pointer._id)
+            API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
@@ -1587,6 +1592,7 @@ class TestReturnDeletedCollection:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestCollectionBulkCreate:
 
     @pytest.fixture()
@@ -3746,7 +3752,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def url(self, collection, cgm):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm._id)
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
     @pytest.fixture()
     def payload(self):
@@ -3789,11 +3795,11 @@ class TestCollectedMetaDetail:
         collection.save()
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,
@@ -3819,7 +3825,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, save=True)  # has referent perms
+        project_one.add_contributor(user_two, save=True)  # has referent (read, write) perms
 
         res = app.patch_json_api(
             url,
@@ -3835,6 +3841,13 @@ class TestCollectedMetaDetail:
             expect_errors=True
         )
         assert res.status_code == 403
+
+        project_one.add_contributor(user_two, permissions='admin', save=True)  # has referent admin perms
+        res = app.delete_json_api(
+            url,
+            auth=user_two.auth,
+        )
+        assert res.status_code == 204
 
     def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
@@ -3854,7 +3867,7 @@ class TestCollectedMetaDetail:
 
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm._id
+        assert res.json['data']['id'] == cgm.guid._id
 
         res = app.patch_json_api(
             url,

@@ -3,6 +3,7 @@
 from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
+import gitlab
 
 from django.core.exceptions import ValidationError
 from flask import request, make_response
@@ -92,29 +93,23 @@ def gitlab_add_user_account(auth, **kwargs):
     access_token = request.json.get('access_token')
 
     client = GitLabClient(access_token=access_token, host=host)
-    try:
-        user_info = client.user()
-    except:
-        # TODO: does gitlab even throw errors?
-        raise
 
-    if user_info.get('message') == '401 Unauthorized':
-        raise HTTPError(http.UNAUTHORIZED)
+    user = client.user()
 
     try:
         account = ExternalAccount(
             provider='gitlab',
             provider_name='GitLab',
-            display_name=user_info['username'],
+            display_name=user.username,
             oauth_key=access_token,
             oauth_secret=host,  # Hijacked to allow multiple hosts
-            provider_id=user_info['web_url'],   # unique for host/username
+            provider_id=user.web_url,   # unique for host/username
         )
         account.save()
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
-            provider='gitlab', provider_id=user_info['web_url']
+            provider='gitlab', provider_id=user.web_url
         )
         if account.oauth_key != access_token:
             account.oauth_key = access_token
@@ -161,7 +156,14 @@ def gitlab_set_config(auth, **kwargs):
 
     # Verify that repo exists and that user can access
     connection = GitLabClient(external_account=node_settings.external_account)
-    repo = connection.repo(gitlab_repo_id)
+
+    try:
+        repo = connection.repo(gitlab_repo_id)
+    except gitlab.exceptions.GitlabError as exc:
+        if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
+            return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+                     'current Terms of Service by disabling and re-enabling your account.'}, http.BAD_REQUEST
+
     if repo is None:
         if user_settings:
             message = (

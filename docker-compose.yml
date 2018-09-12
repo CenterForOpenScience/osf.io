@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3'
+version: '3.4'
 
 volumes:
   postgres_data_vol:
@@ -42,7 +42,6 @@ volumes:
   osf_admin_bower_components_vol:
     external: false
 
-
 services:
 
   ###################
@@ -78,10 +77,10 @@ services:
 
   mongo:
     image: mongo:3.4
-    command: 
+    command:
       - /bin/bash
-      - -c 
-      - openssl req -newkey rsa:2048 -new -x509 -days 9999 -nodes 
+      - -c
+      - openssl req -newkey rsa:2048 -new -x509 -days 9999 -nodes
           -subj "/C=US/ST=Virginia/L=Charlottesville/O=COS/OU=Test/CN=192.168.168.167"
           -out /etc/ssl/mongodb.crt -keyout /etc/ssl/mongodb.key &&
         cat /etc/ssl/mongodb.key /etc/ssl/mongodb.crt > /etc/ssl/mongodb.pem &&
@@ -112,7 +111,6 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
 
   #########################
   # Modular File Renderer #
@@ -148,7 +146,7 @@ services:
 
   unoconv:
     image: centerforopenscience/unoconv
-    command: 
+    command:
       - /bin/bash
       - -c
       - /opt/libreoffice6.0/program/python -u /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
@@ -241,7 +239,7 @@ services:
 
   ember_osf_web:
     image: quay.io/centerforopenscience/osf-web:develop-local
-    command: 
+    command:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
@@ -270,7 +268,7 @@ services:
     image: quay.io/centerforopenscience/osf-preprints:develop-local
     command:
       - /bin/bash
-      - -c 
+      - -c
       - yarn --frozen-lockfile &&
        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
@@ -296,11 +294,10 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/osf-registries:develop-local
-    command: 
+    command:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
     restart: unless-stopped
     depends_on:
@@ -326,7 +323,7 @@ services:
     image: quay.io/centerforopenscience/osf-reviews:develop-local
     command:
       - /bin/bash
-      - -c 
+      - -c
       - yarn --frozen-lockfile &&
         yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
     restart: unless-stopped
@@ -354,7 +351,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --quick &&
+      - invoke requirements --all &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /
@@ -362,6 +359,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/python2.7
 
   assets:
@@ -371,6 +369,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -383,6 +382,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -414,6 +414,7 @@ services:
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
+#      - ./:/code
 #      - osf_requirements_vol:/usr/local/lib/python2.7
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
@@ -433,6 +434,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -457,6 +459,7 @@ services:
       - .docker-compose.env
     stdin_open: true
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -478,6 +481,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -499,6 +503,7 @@ services:
       - .docker-compose.env
       - .docker-compose.sharejs.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules

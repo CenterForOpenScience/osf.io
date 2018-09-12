@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration, AbstractProvider
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
@@ -15,9 +15,9 @@ from osf.utils.permissions import WRITE
 from website.exceptions import NodeStateError
 
 
-class ProviderRelationshipField(RelationshipField):
+class CollectionProviderRelationshipField(RelationshipField):
     def get_object(self, provider_id):
-        return AbstractProvider.load(provider_id)
+        return CollectionProvider.load(provider_id)
 
     def to_internal_value(self, data):
         provider = self.get_object(data)
@@ -59,7 +59,7 @@ class CollectionSerializer(JSONAPISerializer):
 
     links = LinksField({})
 
-    provider = ProviderRelationshipField(
+    provider = CollectionProviderRelationshipField(
         related_view='providers:collection-providers:collection-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=True
@@ -152,7 +152,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
         'status',
     ])
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='guid._id', read_only=True)
     type = TypeField()
 
     creator = RelationshipField(
@@ -176,7 +176,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'collected-metadata:collected-metadata-detail',
             kwargs={
                 'collection_id': obj.collection._id,
-                'cgm_id': obj._id,
+                'cgm_id': obj.guid._id,
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
@@ -246,7 +246,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
             'collections:node-pointer-detail',
             kwargs={
                 'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
-                'node_link_id': obj._id,
+                'node_link_id': obj.guid._id,
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )

@@ -1,30 +1,39 @@
 # -*- coding: utf-8 -*-
 import urlparse
+import logging
 
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
+from osf.models.nodelog import NodeLog
 from osf.models.mixins import ReviewableMixin
-from osf.models import NodeLog
+from osf.models import OSFUser
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import ReviewStates
 from osf.utils.permissions import ADMIN
+from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
-from website.preprints.tasks import on_preprint_updated
+from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 from website.project.licenses import set_license
 from website.util import api_v2_url
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website import settings, mails
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
+from osf.models.spam import SpamMixin
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
+logger = logging.getLogger(__name__)
+
+class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, ReviewableMixin, TaxonomizableMixin, BaseModel):
+    SPAM_CHECK_FIELDS = set()
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -40,6 +49,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    withdrawal_justification = models.TextField(default='', blank=True)
+    ever_public = models.BooleanField(default=False, blank=True)
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -52,13 +64,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.node.is_preprint and not self.node.is_deleted
+        return self.is_published and self.node.is_preprint and not (self.is_retracted or self.node.is_deleted)
 
     @property
     def primary_file(self):
         if not self.node:
             return
         return self.node.preprint_file
+
+    @property
+    def is_retracted(self):
+        return self.date_withdrawn is not None
 
     @property
     def article_doi(self):
@@ -100,6 +116,18 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
+    @property
+    def should_request_identifiers(self):
+        return not self.node.all_tags.filter(name='qatest').exists()
+
+    @property
+    def has_pending_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal', machine_state='pending').exists()
+
+    @property
+    def has_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal').exists()
+
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)
 
@@ -107,7 +135,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
+        if preprint_file.target != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
         existing_file = self.node.preprint_file
@@ -138,7 +166,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         self.is_published = published
 
         if published:
-            if not (self.node.preprint_file and self.node.preprint_file.node == self.node):
+            if not (self.node.preprint_file and self.node.preprint_file.target == self.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
@@ -148,8 +176,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = DefaultStates.ACCEPTED.value
+            self.machine_state = ReviewStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
+
+            # This preprint will have a tombstone page when it's withdrawn.
+            self.ever_public = True
 
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
@@ -197,15 +228,91 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if save:
             self.save()
 
+    def get_doi_client(self):
+        if settings.CROSSREF_URL:
+            if self.provider._id == 'ecsarxiv':
+                return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
+            return CrossRefClient(base_url=settings.CROSSREF_URL)
+        else:
+            return None
+
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
+        if saved_fields:
+            request, user_id = get_request_and_user_id()
+            request_headers = {}
+            if not isinstance(request, DummyRequest):
+                request_headers = {
+                    k: v
+                    for k, v in get_headers_from_request(request).items()
+                    if isinstance(v, basestring)
+                }
+            user = OSFUser.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers)
+        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
+            raise ValidationError('Cannot set "ever_public" to False')
+
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
         return ret
+
+    def _get_spam_content(self, saved_fields):
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
+        content = []
+        for field in spam_fields:
+            content.append((getattr(self.node, field, None) or '').encode('utf-8'))
+        if self.node.all_tags.exists():
+            content.extend(map(lambda name: name.encode('utf-8'), self.node.all_tags.values_list('name', flat=True)))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.node.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers,
+        )
+        logger.info("Preprint ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self.node._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        self.node._check_spam_user(user)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(PreprintService, self).flag_spam()
+        self.node.flag_spam()
+
+    def confirm_spam(self, save=False):
+        super(PreprintService, self).confirm_spam(save=save)
+        self.node.confirm_spam(save=save)
+
+    def confirm_ham(self, save=False):
+        super(PreprintService, self).confirm_ham(save=save)
+        self.node.confirm_ham(save=save)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email

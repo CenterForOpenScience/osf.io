@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -108,7 +107,15 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                            <span data-bind="stopBinding: true">
+                                <span id="deleteNode">
+                                    <button
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
                     % endif
                     </div>
                 </div>
@@ -325,46 +332,8 @@
 
                         <div data-bind="visible: enabled" style="display: none">
 
-                            <div class="forward-settings">
+                            ${ render_node_settings(addon_settings['forward']) }
 
-                                <form class="form" data-bind="submit: submitSettings">
-
-                                    <div class="form-group">
-                                        <label for="forwardUrl">URL</label>
-                                        <input
-                                            id="forwardUrl"
-                                            class="form-control"
-                                            data-bind="value: url"
-                                            placeholder="Send people who visit your OSF project page to this link instead"
-                                        />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="forwardLabel">Label</label>
-                                        <input
-                                            id="forwardLabel"
-                                            class="form-control"
-                                            data-bind="value: label"
-                                            placeholder="Optional"
-                                        />
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-10 overflow">
-                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input
-                                                type="submit"
-                                               class="btn btn-success pull-right"
-                                               value="Save"
-                                            />
-                                        </div>
-                                    </div>
-
-                                </form>
-
-                            </div><!-- end .forward-settings -->
                         </div><!-- end #configureForward -->
 
                     </div>
@@ -492,6 +461,14 @@
     <!-- End right column -->
 
 </div>
+
+<%def name="render_node_settings(data)">
+    <%
+       template_name = data['node_settings_template']
+       tpl = data['template_lookup'].get_template(template_name).render(**data)
+    %>
+    ${ tpl | n }
+</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}

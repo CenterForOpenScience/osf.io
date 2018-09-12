@@ -33,6 +33,7 @@ def user(mock_update_user):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUserSerializer:
 
     def test_user_serializer(self, user):
@@ -47,8 +48,8 @@ class TestUserSerializer:
         assert attributes['family_name'] == user.family_name
         assert attributes['given_name'] == user.given_name
         assert attributes['active'] == user.is_active
-        assert attributes['jobs'] == user.jobs
-        assert attributes['schools'] == user.schools
+        assert attributes['employment'] == user.jobs
+        assert attributes['education'] == user.schools
 
         # Relationships
         relationships = data['relationships']

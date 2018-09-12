@@ -365,7 +365,7 @@ def auth_register(auth):
         context['preprint_campaigns'] = {k._id + '-preprints': {
             'id': k._id,
             'name': k.name,
-            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+            'logo_path': k.get_asset_url('square_color_no_transparent')
         } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
@@ -921,10 +921,12 @@ def external_login_email_get():
         raise HTTPError(http.UNAUTHORIZED)
 
     external_id_provider = session.data['auth_user_external_id_provider']
+    auth_user_fullname = session.data.get('auth_user_fullname')
 
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': auth_user_fullname,
     }
 
 
@@ -941,7 +943,7 @@ def external_login_email_post():
 
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
-    fullname = session.data['auth_user_fullname']
+    fullname = session.data.get('auth_user_fullname') or form.name.data
     service_url = session.data['service_url']
 
     # TODO: @cslzchen use user tags instead of destination
@@ -1042,7 +1044,8 @@ def external_login_email_post():
     # Don't go anywhere
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': fullname
     }
 
 

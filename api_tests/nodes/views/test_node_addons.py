@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import abc
+from json import dumps
 
 import mock
 import pytest
@@ -716,12 +717,12 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @mock.patch('addons.github.models.GitHubClient')
     def test_folder_list_GET_expected_behavior(self, mock_client):
-        mock_repo = Repository.from_json({
+        mock_repo = Repository.from_json(dumps({
             'name': 'test',
             'id': '12345',
             'owner':
                 {'login': 'test name'}
-        })
+        }))
 
         mock_connection = mock.MagicMock()
         mock_client.return_value = mock_connection
@@ -760,10 +761,10 @@ class TestNodeMendeleyAddon(
     def test_folder_list_GET_expected_behavior(self, mock_folders):
         mock_folder = mendeley.models.folders.Folder(
            json = {
-              "created":"2017-10-14T21:17:14.000Z",
-              "id":"fasdkljla-2341-4592-10po-fds0920dks0ds",
-              "modified":"2017-10-14T21:18:00.000Z",
-              "name":"Test Mendeley Folder"
+              'created':'2017-10-14T21:17:14.000Z',
+              'id':'fasdkljla-2341-4592-10po-fds0920dks0ds',
+              'modified':'2017-10-14T21:18:00.000Z',
+              'name':'Test Mendeley Folder'
            },
            session = 'session'
         )
@@ -780,7 +781,7 @@ class TestNodeMendeleyAddon(
         assert_equal(addon_data['path'], '/')
         assert_equal(
             addon_data['folder_id'],
-            "fasdkljla-2341-4592-10po-fds0920dks0ds")
+            'fasdkljla-2341-4592-10po-fds0920dks0ds')
 
 class TestNodeZoteroAddon(
         NodeOAuthCitationAddonTestSuiteMixin,
@@ -793,25 +794,25 @@ class TestNodeZoteroAddon(
     def test_folder_list_GET_expected_behavior(self, mock_libraries):
         ## Testing top level - GET library behavior
         mock_library = {
-          "data": {
-            "description": "",
-            "url": "",
-            "libraryReading": "members",
-            "version": 1,
-            "owner": 2533095,
-            "fileEditing": "members",
-            "libraryEditing": "members",
-            "type": "Private",
-            "id": 18497322,
-            "name": "Group Library I"
+          'data': {
+            'description': '',
+            'url': '',
+            'libraryReading': 'members',
+            'version': 1,
+            'owner': 2533095,
+            'fileEditing': 'members',
+            'libraryEditing': 'members',
+            'type': 'Private',
+            'id': 18497322,
+            'name': 'Group Library I'
           },
-          "version": 1,
-          "meta": {
-            "lastModified": "2017-10-19T22:20:41Z",
-            "numItems": 20,
-            "created": "2017-10-19T22:20:41Z"
+          'version': 1,
+          'meta': {
+            'lastModified': '2017-10-19T22:20:41Z',
+            'numItems': 20,
+            'created': '2017-10-19T22:20:41Z'
           },
-          "id": 18497322
+          'id': 18497322
         }
 
         mock_libraries.return_value = [mock_library, 1]
@@ -848,22 +849,22 @@ class TestNodeZoteroAddon(
     def test_sub_folder_list_GET_expected_behavior(self, mock_folders):
         ## Testing second level - GET folder behavior
         mock_folder = {
-           "library":{
-              "type":"group",
-              "id":18497322,
-              "name":"Group Library I"
+           'library':{
+              'type':'group',
+              'id':18497322,
+              'name':'Group Library I'
            },
-           "version":14,
-           "meta":{
-              "numCollections":0,
-              "numItems":1
+           'version':14,
+           'meta':{
+              'numCollections':0,
+              'numItems':1
            },
-           "key":"V63S7EUJ",
-           "data":{
-              "version":14,
-              "name":"Test Folder",
-              "key":"FSCFSLREF",
-              "parentCollection": "False"
+           'key':'V63S7EUJ',
+           'data':{
+              'version':14,
+              'name':'Test Folder',
+              'key':'FSCFSLREF',
+              'parentCollection': 'False'
            }
         }
 

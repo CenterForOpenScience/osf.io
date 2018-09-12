@@ -4,6 +4,7 @@ import datetime
 import httplib as http
 
 import mock
+import pytest
 from django.utils import timezone
 from django.db import DataError
 from nose.tools import *  # noqa
@@ -24,6 +25,7 @@ from website.exceptions import (
 from osf.models import Contributor, Retraction
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionModelsTestCase, self).setUp()
@@ -388,6 +390,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.is_retracted)
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
@@ -551,6 +554,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         assert mock_update_share.called
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationRetractionShareHook(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionShareHook, self).setUp()
@@ -595,6 +599,7 @@ class RegistrationRetractionShareHook(OsfTestCase):
         assert not mock_update_share.called
 
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
@@ -705,6 +710,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.retraction.is_rejected)
         assert_equal(res.status_code, http.OK)
 
+@pytest.mark.enable_bookmark_creation
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(ComponentRegistrationRetractionViewsTestCase, self).setUp()
@@ -758,6 +764,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
+@pytest.mark.enable_bookmark_creation
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionViewsTestCase, self).setUp()
@@ -798,10 +805,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
         unreg = UnregUserFactory()
-        self.registration.add_contributor(
-            unreg,
+        self.registration.add_unregistered_contributor(
+            unreg.fullname,
+            unreg.email,
             auth=Auth(self.user),
-            permissions=['read', 'write', 'admin']
+            permissions=['read', 'write', 'admin'],
+            existing_user=unreg
         )
         self.registration.save()
         self.app.post_json(

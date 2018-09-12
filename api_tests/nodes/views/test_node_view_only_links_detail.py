@@ -93,6 +93,16 @@ class TestViewOnlyLinksDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_vol_detail_delete(
+            self, app, user, url, view_only_link):
+
+        #   test_admin_can_view_vol_detail
+        res = app.delete_json_api(url, auth=user.auth)
+        view_only_link.reload()
+
+        assert res.status_code == 204
+        assert view_only_link.is_deleted
+
 
 @pytest.mark.django_db
 class TestViewOnlyLinksUpdate:
@@ -126,7 +136,7 @@ class TestViewOnlyLinksUpdate:
                 'name': 'updated vol name'
             }
         }
-        res = app.put_json_api(url, {'data': payload}, auth=user.auth)
+        res = app.patch_json_api(url, {'data': payload}, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'updated vol name'

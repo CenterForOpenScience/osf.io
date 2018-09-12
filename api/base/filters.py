@@ -30,6 +30,7 @@ def lowercase(lower):
 
 def sort_multiple(fields):
     fields = list(fields)
+
     def sort_fn(a, b):
         sort_direction = 1
         for field in fields:
@@ -220,7 +221,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and source_field_name == '_id':
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -410,6 +411,7 @@ class ListFilterMixin(FilterMixin):
             elif operation['value'] == []:
                 operation['source_field_name'] = 'tags__isnull'
                 operation['value'] = True
+                operation['op'] = 'eq'
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
@@ -516,14 +518,19 @@ class PreprintFilterMixin(ListFilterMixin):
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
+            moderator_for = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            reviews_user_query = Q(node__is_public=True, provider__in=moderator_for)
             if allow_contribs:
                 contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
                 query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (no_user_query | admin_user_query | reviews_user_query)
         else:
+            moderator_for = PreprintProvider.objects.none()
             query = no_user_query
+
+        if not moderator_for.exists():
+            base_queryset = base_queryset.exclude(date_withdrawn__isnull=False, ever_public=False)
 
         return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')

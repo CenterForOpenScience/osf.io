@@ -31,6 +31,9 @@ class CoreScopes(object):
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
 
+    USER_SETTINGS_READ = 'user.settings_read'
+    USER_SETTINGS_WRITE = 'user.settings_write'
+
     USER_EMAIL_READ = 'users.email_read'
 
     USER_ADDON_READ = 'users.addon_read'
@@ -68,7 +71,7 @@ class CoreScopes(object):
     REGISTRATION_VIEW_ONLY_LINKS_READ = 'registration.view_only_links_read'
     REGISTRATION_VIEW_ONLY_LINKS_WRITE = 'registration.view_only_links_write'
 
-    METASCHEMA_READ = 'metaschemas.read'
+    SCHEMA_READ = 'schemas.read'
 
     NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
     NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
@@ -94,7 +97,12 @@ class CoreScopes(object):
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
 
+    ALERTS_READ = 'alerts_read'
+    ALERTS_WRITE = 'alerts_write'
+
     INSTITUTION_READ = 'institutions_read'
+
+    SCOPES_READ = 'scopes_read'
 
     SEARCH = 'search_read'
 
@@ -106,6 +114,12 @@ class CoreScopes(object):
 
     NODE_REQUESTS_READ = 'node_requests_read'
     NODE_REQUESTS_WRITE = 'node_requests_write'
+
+    NODE_SETTINGS_READ = 'node_settings_read'
+    NODE_SETTINGS_WRITE = 'node_settings_write'
+
+    PREPRINT_REQUESTS_READ = 'preprint_requests_read'
+    PREPRINT_REQUESTS_WRITE = 'preprint_requests_write'
 
     PROVIDERS_WRITE = 'providers_write'
 
@@ -142,8 +156,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ, CoreScopes.USER_SETTINGS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE, CoreScopes.USER_SETTINGS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
@@ -161,7 +175,7 @@ class ComposedScopes(object):
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
 
     # Metaschemas collection
-    METASCHEMAS_READ = (CoreScopes.METASCHEMA_READ, )
+    METASCHEMAS_READ = (CoreScopes.SCHEMA_READ, )
 
     # Draft registrations
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
@@ -179,11 +193,11 @@ class ComposedScopes(object):
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
-                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ)
+                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
-                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
@@ -198,11 +212,11 @@ class ComposedScopes(object):
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
                              CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE)
+                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
@@ -213,7 +227,7 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use

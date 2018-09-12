@@ -22,7 +22,7 @@ from website.exceptions import (
 )
 from website.project import tasks as project_tasks
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -350,7 +350,7 @@ class PreregCallbackMixin(object):
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
         registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
+        prereg_schema = RegistrationSchema.get_prereg_schema()
         draft = DraftRegistration.objects.get(registered_node=registration)
 
         if registration.registered_schema.filter(id=prereg_schema.id).exists():
@@ -366,7 +366,7 @@ class PreregCallbackMixin(object):
                                 is_authorizer=False,
                                 urls=None):
         registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
+        prereg_schema = RegistrationSchema.get_prereg_schema()
         if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
             return {
                 'custom_message':

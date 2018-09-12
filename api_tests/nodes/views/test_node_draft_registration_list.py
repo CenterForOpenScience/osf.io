@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -72,7 +72,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.get(
+        return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -168,11 +168,12 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metaschema_open_ended(self):
-        return MetaSchema.objects.get(
+        return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -279,7 +280,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='Election Research Preacceptance Competition', active=False)
         draft_data = {
             'data': {
@@ -297,7 +298,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
     #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='Open-Ended Registration', schema_version=1)
         draft_data = {
             'data': {
@@ -350,7 +351,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_required_metaschema_questions_not_required_on_post(
             self, app, user, project_public, prereg_metadata):
-        prereg_schema = MetaSchema.objects.get(
+        prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -420,7 +421,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_registration_metadata_question_values_must_be_dictionaries(
             self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
         payload['data']['attributes']['registration_supplement'] = schema._id
@@ -437,7 +438,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -456,7 +457,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
@@ -476,7 +477,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.get(
+        schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 

@@ -277,6 +277,17 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
+    addon_settings = {}
+    for addon in ['forward']:
+        addon_config = apps.get_app_config('addons_{}'.format(addon))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        addon_settings[addon] = config
+
+    ret['addon_settings'] = addon_settings
+
     ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
         'project': 'Project'
@@ -398,28 +409,8 @@ def configure_comments(node, **kwargs):
 @must_not_be_registration
 def configure_requests(node, **kwargs):
     access_requests_enabled = request.get_json().get('accessRequestsEnabled')
-    node.access_requests_enabled = access_requests_enabled
-    if node.access_requests_enabled:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    else:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    node.save()
+    auth = kwargs.get('auth', None)
+    node.set_access_requests_enabled(access_requests_enabled, auth, save=True)
     return {'access_requests_enabled': access_requests_enabled}, 200
 
 
@@ -695,6 +686,7 @@ def _view_project(node, auth, primary=False,
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''
+
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
@@ -874,7 +866,9 @@ def serialize_collections(cgms, auth):
         'url': '/{}/'.format(cgm.collection._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
+        'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
 
@@ -997,6 +991,7 @@ def serialize_child_tree(child_list, user, nested):
                 'is_public': child.is_public,
                 'contributors': contributors,
                 'is_admin': child.has_admin_perm,
+                'is_preprint': child.is_preprint,
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
@@ -1060,7 +1055,8 @@ def node_child_tree(user, node):
             'title': node.title,
             'is_public': node.is_public,
             'contributors': contributors,
-            'is_admin': is_admin
+            'is_admin': is_admin,
+            'is_preprint': node.is_preprint,
         },
         'user_id': user._id,
         'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

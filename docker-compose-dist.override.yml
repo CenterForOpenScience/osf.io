@@ -1,85 +1,35 @@
-version: "3"
-
-services:
-  requirements:
-    volumes:
-      - osf-sync:/code:nocopy
-  assets:
-    volumes:
-      - osf-sync:/code:nocopy
-  admin_assets:
-    volumes:
-      - osf-sync:/code:nocopy
-  worker:
-    volumes:
-      - osf-sync:/code:nocopy
-  admin:
-    volumes:
-      - osf-sync:/code:nocopy
-  web:
-    volumes:
-      - osf-sync:/code:nocopy
-  api:
-    volumes:
-      - osf-sync:/code:nocopy
+version: "3.4"
 
 # Additional configuration for development on services linked with osf.io
-
-#  beat:
-#    volumes:
-#      - osf-sync:/code:nocopy
-
-#  fakecas:
-#    image: quay.io/centerforopenscience/fakecas:master
-#    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
+# services:
 
 #  wb:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  wb_worker:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  wb_requirements:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  mfr:
 #    volumes:
-#      - mfr-sync:/code:nocopy
+#      - ../modular-file-renderer:/code
 
 #  mfr_requirements:
 #    volumes:
-#      - mfr-sync:/code:nocopy
-
-#  ember_osf_web:
-#    volumes:
-#      - ember_osf_web-sync:/code:nocopy
-#
-##      # Use this for ember-osf linked development (with docker-sync):
-##      - ember_osf_web_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c 
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##        (rm -r node_modules || true) &&
-##        yarn --frozen-lockfile &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+#      - ../modular-file-renderer:/code
 
 #  preprints:
 #    volumes:
-#      - preprints-sync:/code:nocopy
+#      - ../ember-osf-preprints:/code
 #
-##      # Use this for ember-osf linked development (with docker-sync):
+##      # Use this for ember-osf linked development:
 ##      - preprints_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
+##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
 ##    command:
@@ -97,11 +47,11 @@ services:
 
 #  registries:
 #    volumes:
-#      - registries-sync:/code:nocopy
+#      - ../ember-osf-registries:/code
 #
-##      # Use this for ember-osf linked development (with docker-sync):
+##      # Use this for ember-osf linked development:
 ##      - registries_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
+##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
 ##    command:
@@ -117,11 +67,11 @@ services:
 
 #  reviews:
 #    volumes:
-#      - reviews-sync:/code:nocopy
+#      - ../ember-osf-reviews:/code
 #
-##      # Use this for ember-osf linked development (with docker-sync):
+##      # Use this for ember-osf linked development:
 ##      - reviews_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
+##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
 ##    command:
@@ -134,7 +84,7 @@ services:
 ##        yarn --frozen-lockfile &&
 ##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
 
-#  # Use this for ember-osf linked development (with docker-sync):
+#  # Use this for ember-osf linked development:
 #  emberosf:
 #    build: ../ember-osf
 #    command:
@@ -145,7 +95,7 @@ services:
 #        (rm -r bower_components || true) &&
 #        ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
-#      - emberosf-sync:/code:nocopy
+#      - ../ember-osf/:/code:nocopy
 
 #  ####################
 #  # RabbitMQ SSL
@@ -163,42 +113,3 @@ services:
 #      - ./ssl/celery-server.cert.pem:/etc/ssl/server_certificate.pem:ro
 #      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
-
-#  sharejs:
-#    volumes:
-#      - sharejs-sync:/code:nocopy
-#
-#    command:
-#      - /bin/sh
-#      - -c
-#      - |-
-#        npm install
-#        gosu node npm start
-
-volumes:
-  osf-sync:
-    external: true
-
-#  wb-sync:
-#    external: true
-
-#  mfr-sync:
-#    external: true
-
-#  emberosf-sync:
-#    external: true
-
-#  ember_osf_web-sync:
-#    external: true
-
-#  preprints-sync:
-#    external: true
-
-#  registries-sync:
-#    external: true
-
-#  reviews-sync:
-#    external: true
-
-#  sharejs-sync:
-#    external: true

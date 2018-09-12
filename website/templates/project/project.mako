@@ -213,6 +213,7 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
+                % if waffle.switch_is_active('ezid'):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -227,6 +228,7 @@
                   </p>
                   <!-- /ko -->
                 </span>
+                % endif
                 <p>
                     Category: <span data-bind="css: icon"></span>
                     <span id="nodeCategoryEditable">${node['category']}</span>
@@ -297,8 +299,10 @@
     <div class="collections-container">
     % for i, collection in enumerate(node['collections'][:5]):
     <div class="row">
-        <div class="col-xs-12 col-md-6">
-            <div style="margin-top: 5px;">Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+        <div class="col-xs-12">
+            <div style="margin-top: 5px;">
+                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
             % if any([collection['type'], collection['status']]):
               &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
             % endif
@@ -314,6 +318,20 @@
                       <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
                     % endif
 
+                    % if collection['subjects']:
+                      <li>
+                        <dl class="dl-horizontal dl-subjects">
+                          <dt>Subjects:&nbsp;&nbsp;</dt>
+                          <dd>
+                          % for subject in collection['subjects']:
+                            <span class='subject-preview'>
+                              <small> ${subject} </small>
+                            </span>
+                          % endfor
+                          </dd>
+                        </dl>
+                      </li>
+                    % endif
                 </ul>
             </div>
         </div>
@@ -322,7 +340,7 @@
     </div>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']) and node['preprint_state'] != 'withdrawn':
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">

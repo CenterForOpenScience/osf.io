@@ -25,11 +25,12 @@ from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAUL
 
 from osf.models import (
     AbstractNode,
+    Email,
     Node,
     Tag,
     NodeLog,
     Contributor,
-    MetaSchema,
+    RegistrationSchema,
     Sanction,
     NodeRelation,
     Registration,
@@ -38,7 +39,7 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -522,6 +523,7 @@ class TestRoot:
                 assert p.parent_node._id in parent_list
 
 
+@pytest.mark.enable_implicit_clean
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
@@ -859,6 +861,18 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+
+        assert unregistered_user.is_registered is False
+        assert unregistered_user.unclaimed_records == {}
+
+        with pytest.raises(UserStateError) as excinfo:
+            node.add_contributor(unregistered_user, auth=Auth(user))
+        assert excinfo.value.message == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
@@ -1119,6 +1133,7 @@ class TestContributorMethods:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
@@ -1127,6 +1142,16 @@ class TestNodeAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+
+        contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records != {}
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
@@ -1156,6 +1181,26 @@ class TestNodeAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_fullname_email_exists_as_secondary(self, user, node):
+        registered_user = UserFactory()
+        secondary_email = 'secondary@test.test'
+        Email.objects.create(address=secondary_email, user=registered_user)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor = contributor_obj.user
+        assert contributor == registered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_unregistered(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor = contributor_obj.user
+        assert contributor == unregistered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
 class TestContributorProperties:
 
@@ -1256,6 +1301,7 @@ class TestContributorVisibility:
             project.set_visible(UserFactory(), True)
 
 
+@pytest.mark.enable_implicit_clean
 class TestPermissionMethods:
 
     @pytest.fixture()
@@ -1713,7 +1759,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -1729,6 +1775,7 @@ class TestRegisterNode:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, node, user, auth):
@@ -2083,7 +2130,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.objects.first()
+        schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -2273,10 +2320,12 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, node, auth):
         unregistered = UnregUserFactory()
-        node.add_contributor(
-            unregistered,
+        node.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
-            save=True
+            existing_user=unregistered
         )
         users = [
             {'id': node.creator._id, 'permission': READ, 'visible': True},
@@ -3012,13 +3061,14 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
+@pytest.mark.enable_implicit_clean
 class TestDOIValidation:
 
     def test_validate_bad_doi(self):
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='nope').save()
         with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
@@ -3157,7 +3207,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3179,7 +3229,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': node.creator.given_name,
@@ -3214,6 +3264,7 @@ class TestCitationsProperties:
 
 
 # copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeUpdate:
 
     def test_update_title(self, fake, auth, node):
@@ -3292,6 +3343,22 @@ class TestNodeUpdate:
         assert latest_log.params['description_original'], old_desc
         assert latest_log.params['description_new'], 'new description'
 
+    def test_set_access_requests(self, node, auth):
+        assert node.access_requests_enabled is True
+        node.set_access_requests_enabled(False, auth=auth, save=True)
+        assert node.access_requests_enabled is False
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
+
+        node.set_access_requests_enabled(True, auth=auth, save=True)
+        assert node.access_requests_enabled is True
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
+
+    def test_set_access_requests_non_admin(self, node, auth):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node, write=True, read=True, visible=True)
+        with pytest.raises(PermissionsError):
+            node.set_access_requests_enabled(True, auth=Auth(contrib))
+
     def test_validate_categories(self):
         with pytest.raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
@@ -3364,6 +3431,7 @@ class TestNodeUpdate:
     # TODO: test permissions, non-writable fields
 
 
+@pytest.mark.enable_enqueue_task
 class TestOnNodeUpdate:
 
     @pytest.fixture(autouse=True)
@@ -3383,18 +3451,48 @@ class TestOnNodeUpdate:
     def teardown_method(self, method):
         handlers.celery_before_request()
 
-    @mock.patch('osf.models.node.enqueue_task')
-    def test_enqueue_called(self, enqueue_task, node, user, request_context):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
         node.save()
 
-        (task, ) = enqueue_task.call_args[0]
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
-        assert task.args[0] == node._id
-        assert task.args[1] == user._id
-        assert task.args[2] is False
-        assert 'title' in task.args[3]
+        assert task.kwargs['node_id'] == node._id
+        assert task.kwargs['user_id'] == user._id
+        assert task.kwargs['first_save'] is False
+        assert 'title' in task.kwargs['saved_fields']
+
+    @mock.patch('osf.models.identifiers.IdentifierMixin.request_identifier_update')
+    def test_queueing_on_node_updated(self, mock_request_update, node, user):
+        node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
+        node.title = 'Something New'
+        node.save()
+
+        # make sure on_node_updated is in the queue
+        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+
+        # adding a contributor to the node will also trigger on_node_updated
+        new_person = UserFactory()
+        node.add_contributor(new_person)
+
+        # so will updating a license
+        new_license = NodeLicenseRecordFactory()
+        node.set_node_license(
+            {
+                'id': new_license.license_id,
+                'year': '2018',
+                'copyrightHolders': ['LeBron', 'Ladron']
+            },
+            Auth(node.creator),
+        )
+        node.save()
+
+        # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        assert 'contributors' in task.kwargs['saved_fields']
+        assert 'node_license' in task.kwargs['saved_fields']
+        mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -4183,6 +4281,7 @@ class TestPreprintProperties:
         PreprintFactory(project=node, is_published=False, filename='file2.txt')
         assert node.preprint_url == published.url
 
+@pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:
 
     @pytest.fixture()
@@ -4225,6 +4324,10 @@ class TestCollectionProperties:
     def bookmark_collection(self, user):
         return find_bookmark_collection(user)
 
+    @pytest.fixture()
+    def subjects(self):
+        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+
     def test_collection_project_views(
             self, user, node, collection_one, collection_two, collection_public,
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
@@ -4250,7 +4353,7 @@ class TestCollectionProperties:
         assert ids_actual == ids_expected
 
     def test_permissions_collection_project_views(
-            self, user, node, contrib, collection_one, collection_two,
+            self, user, node, contrib, subjects, collection_one, collection_two,
             collection_public, public_non_provided_collection, private_non_provided_collection,
             bookmark_collection, collector):
 
@@ -4259,10 +4362,16 @@ class TestCollectionProperties:
         public_non_provided_collection.collect_object(node, collector)
         private_non_provided_collection.collect_object(node, collector)
         bookmark_collection.collect_object(node, collector)
-        collection_public.collect_object(node, collector)
+        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        cgm.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+
+        # test_subjects_are_serialized
+        assert len(collection_summary[0]['subjects'])
+        assert len(collection_summary[0]['subjects']) == len(subjects)
+
         assert len(collection_summary) == 1
         assert collection_public._id == collection_summary[0]['url'].strip('/')
 

@@ -36,6 +36,8 @@ urlpatterns = [
         name='reindex-elastic-node'),
     url(r'^(?P<guid>[a-z0-9]+)/restart_stuck_registrations/$', views.RestartStuckRegistrationsView.as_view(),
         name='restart-stuck-registrations'),
+    url(r'^(?P<guid>[a-z0-9]+)/remove_stuck_registrations/$', views.RemoveStuckRegistrationsView.as_view(),
+        name='remove-stuck-registrations'),
     url(r'^(?P<node_id>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$',
         views.NodeRemoveContributorView.as_view(), name='remove_user'),
 ]

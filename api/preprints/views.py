@@ -34,8 +34,10 @@ from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
-
-from api.preprints.permissions import PreprintPublishedOrAdmin
+from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNeverPublicWithdrawn
+from api.requests.permissions import PreprintRequestPermission
+from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
+from api.requests.views import PreprintRequestMixin
 
 
 class PreprintMixin(NodeMixin):
@@ -51,6 +53,7 @@ class PreprintMixin(NodeMixin):
 
         if preprint.node.is_deleted:
             raise NotFound
+
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
@@ -104,6 +107,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
         ContributorOrPublic,
         PreprintPublishedOrAdmin,
     )
@@ -330,5 +334,34 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         return get_review_actions_queryset().filter(target_id=self.get_preprint().id)
 
     # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintRequestPermission
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_REQUESTS_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    serializer_class = PreprintRequestSerializer
+
+    view_category = 'preprint-requests'
+    view_name = 'preprint-request-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintRequestCreateSerializer
+        else:
+            return PreprintRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_target().requests.all()
+
     def get_queryset(self):
         return self.get_queryset_from_request()

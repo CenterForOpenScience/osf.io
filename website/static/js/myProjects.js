@@ -536,11 +536,52 @@ var MyProjects = {
             self.getCurrentLogs();
         };
 
+        self.filterHistoryData = {
+            undefined: {title: 'My Projects', name: ''},
+            1: {title: 'My Registrations', name: '#registrations'},
+            2: {title: 'My Preprints', name: '#preprints'}
+        };
+
+        /**
+         * Sets the url history with filter param when filter is updated
+         * @param index {Number} the filter id - 1 or index of the filter in the collections array
+         */
+        self.setFilterHistory = function(index) {
+            var filter;
+            if (index in self.filterHistoryData) {
+                filter = self.filterHistoryData[index];
+            }   else {
+                filter = self.filterHistoryData[undefined];
+            }
+            // Uses replaceState instead of pushState because back buttons will not reset the filter on back without forcing a page refresh
+            // A bug in history causes titles not to change despite setting them here.
+            window.history.replaceState({setFilter: index}, 'OSF | ' + filter.title, '/myprojects/' + filter.name);
+        };
+
+        /**
+         * Sets the initial filter based on href
+         */
+        self.getFilterIndex = function() {
+            // Cast to string undefined => "undefined" to handle upper/lower case anchors
+            var name = String(window.location.href.split('#')[1]).toLowerCase();
+            switch(name) {
+                case 'registrations':
+                    return 1;
+                case 'preprints':
+                    return 2;
+                default:
+                    return 0;
+            }
+        };
+
         /**
          * Update the currentView
          * @param filter
          */
         self.updateFilter = function _updateFilter(filter) {
+            // index for the filter is id - 1
+            self.setFilterHistory(filter.id - 1);
+
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
             if (['node', 'collection'].indexOf(filter.type) === -1 ) {
                 var filterIndex = self.currentView()[filter.type].indexOf(filter);
@@ -982,7 +1023,9 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
-            self.updateFilter(self.collections()[0]);
+            var filterIndex = self.getFilterIndex();
+            self.updateBreadcrumbs(self.collections()[filterIndex]);
+            self.updateFilter(self.collections()[filterIndex]);
         };
 
         self.init();

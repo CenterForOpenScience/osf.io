@@ -6,8 +6,9 @@ import furl
 import pytz
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment
+from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode
 from rest_framework import serializers as ser
+from rest_framework.fields import SkipField
 from website import settings
 from website.util import api_v2_url
 
@@ -24,6 +25,8 @@ from api.base.serializers import (
     TypeField,
     WaterbutlerLink,
     VersionedDateTimeField,
+    TargetField,
+    ShowIfVersion,
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
@@ -130,11 +133,17 @@ class FileTagField(ser.Field):
         return data
 
 
+class FileNodeRelationshipField(RelationshipField):
+    def to_representation(self, value):
+        if not isinstance(value.target, AbstractNode):
+            raise SkipField
+        return super(FileNodeRelationshipField, self).to_representation(value)
+
+
 class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'name',
-        'node',
         'kind',
         'path',
         'materialized_path',
@@ -167,7 +176,7 @@ class BaseFileSerializer(JSONAPISerializer):
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
     versions = NodeFileHyperLinkField(
@@ -176,7 +185,7 @@ class BaseFileSerializer(JSONAPISerializer):
         kind='file'
     )
     comments = FileCommentRelationshipField(related_view='nodes:node-comments',
-                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_view_kwargs={'node_id': '<target._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
@@ -252,13 +261,13 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.node.can_comment(auth)
+        return obj.target.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
         if user.is_anonymous:
             return 0
-        return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
+        return Comment.find_n_unread(user=user, node=obj.target, page='files', root_id=obj.get_guid()._id)
 
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for
@@ -307,10 +316,21 @@ class BaseFileSerializer(JSONAPISerializer):
 
 
 class FileSerializer(BaseFileSerializer):
-    node = RelationshipField(related_view='nodes:node-detail',
-                             related_view_kwargs={'node_id': '<node._id>'},
-                             help_text='The project that this file belongs to'
-                             )
+    node = ShowIfVersion(
+        FileNodeRelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<target._id>'},
+            help_text='The project that this file belongs to'
+        ),
+        min_version='2.0', max_version='2.7'
+    )
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+
+    def get_target_type(self, obj):
+        target_type = 'node'
+        if isinstance(obj, PreprintService):
+            target_type = 'preprint'
+        return target_type
 
 
 class OsfStorageFileSerializer(FileSerializer):
@@ -319,7 +339,6 @@ class OsfStorageFileSerializer(FileSerializer):
     filterable_fields = frozenset([
         'id',
         'name',
-        'node',
         'kind',
         'path',
         'size',
@@ -340,7 +359,7 @@ class FileDetailSerializer(FileSerializer):
 
 class QuickFilesSerializer(BaseFileSerializer):
     user = RelationshipField(related_view='users:user-detail',
-                             related_view_kwargs={'user_id': '<node.creator._id>'},
+                             related_view_kwargs={'user_id': '<target.creator._id>'},
                              help_text='The user who uploaded this file'
                              )
 
@@ -379,7 +398,7 @@ class FileVersionSerializer(JSONAPISerializer):
     def absolute_url(self, obj):
         fobj = self.context['file']
         return furl.furl(settings.DOMAIN).set(
-            path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
+            path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
         ).url
 

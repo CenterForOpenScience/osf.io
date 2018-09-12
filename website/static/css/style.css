@@ -59,6 +59,44 @@ a {
     list-style-type: none;
 }
 
+/* Cookie Banner */
+#cookieBanner {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    margin-bottom: 0px;
+    left:0;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border: 0px;
+    display: none;
+    align-items: center;
+}
+
+#cookieText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+#cookieAccept {
+   margin-right: 10%
+}
+
+#cookieBanner a {
+    color: white;
+    text-decoration: underline;
+}
+
+#cookieBanner a:hover {
+    color: #ADCCE6;
+}
+
+#cookieBanner a:visited {
+    color: #ADCCE6;
+}
+
 /* Footer slide-in */
 #footerSlideIn {
     position:fixed;
@@ -832,9 +870,54 @@ table.add-links {
     color: #000000;
 }
 
+.subject-preview {
+    display: inline-block;
+    background-color: #F8F8F8;
+    border-radius: 3px;
+    border: 1px solid #EEE;
+    padding: 1px 7px;
+    margin-bottom: 4px;
+    margin-right: 5px;
+}
+
+.dl-subjects dt {
+    width: 10px;
+    overflow: visible;
+    font-weight: normal;
+}
+
+.dl-subjects dd {
+    margin-left: 65px;
+}
+
+@media (max-width: 767px) {
+    .dl-subjects dd {
+        margin-left: 0px;
+    }
+
+    .dl-subjects dt {
+        padding-bottom: 5px;
+    }
+}
+
 /* Override jumbotron to be a bit smaller.
    Used for the updated terms of service banner on all pages. */
 .jumbotron {
     padding: 10px 40px 10px 40px;
     margin-bottom: 0;
+}
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
 }

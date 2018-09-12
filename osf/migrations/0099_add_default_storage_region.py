@@ -54,7 +54,6 @@ def add_osfstorage_addon(apps, *args):
 
 
 def remove_osfstorage_addon(apps, *args):
-    OSFUser = apps.get_model('osf', 'OSFUser')
     Region = apps.get_model('addons_osfstorage', 'Region')
     OsfStorageUserSettings = osfstorage_config.user_settings
 
