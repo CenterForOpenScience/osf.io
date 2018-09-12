@@ -34,7 +34,7 @@ from framework.sentry import log_exception
 from osf.exceptions import ValidationValueError, UserStateError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
-from osf.models.collection import CollectedGuidMetadata
+from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
@@ -470,7 +470,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def collecting_metadata_qs(self):
-        return CollectedGuidMetadata.objects.filter(
+        return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
