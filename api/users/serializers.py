@@ -318,7 +318,7 @@ class UserSettingsSerializer(JSONAPISerializer):
             return False
 
     def get_subscribe_osf_general_email(self, obj):
-        return obj.osf_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
+        return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
 
     def get_subscribe_osf_help_email(self, obj):
         return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
