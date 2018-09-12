@@ -15,6 +15,7 @@ class ZoteroViews(GenericCitationViews):
     def set_config(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
+
         @must_not_be_registration
         @must_have_addon(addon_short_name, 'user')
         @must_have_addon(addon_short_name, 'node')
@@ -50,6 +51,7 @@ class ZoteroViews(GenericCitationViews):
 
     def library_list(self):
         addon_short_name = self.addon_short_name
+
         @must_be_contributor_or_public
         @must_have_addon(addon_short_name, 'node')
         def _library_list(auth, node_addon, **kwargs):

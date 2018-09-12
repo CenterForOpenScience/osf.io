@@ -3,6 +3,7 @@ import re
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -80,7 +81,7 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeForksSerializer,
     NodeDetailSerializer,
-    NodeProviderSerializer,
+    NodeStorageProviderSerializer,
     DraftRegistrationSerializer,
     DraftRegistrationDetailSerializer,
     NodeContributorsSerializer,
@@ -94,6 +95,7 @@ from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
+from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.requests.permissions import NodeRequestPermission
@@ -178,7 +180,7 @@ class DraftMixin(object):
         return draft
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin, NodeOptimizationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (
@@ -199,7 +201,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
+        return self.optimize_node_queryset(default_node_list_permission_queryset(user=self.request.user, model_cls=Node))
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -972,8 +974,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
@@ -1038,7 +1040,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             raise NotFound
 
         sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
-        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('node__guids', 'versions', 'tags', 'guids')
+        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -1050,7 +1052,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             if isinstance(fobj, list):
                 node = self.get_node(check_object_permissions=False)
                 base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
-                return base_class.objects.filter(node=node, _path=path)
+                return base_class.objects.filter(
+                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path
+                )
             elif isinstance(fobj, OsfStorageFolder):
                 return BaseFileNode.objects.filter(id=fobj.id)
             else:
@@ -1065,8 +1069,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
@@ -1211,7 +1215,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         return node_addon.get_folders(path=path, folder_id=folder_id)
 
 
-class NodeProvider(object):
+class NodeStorageProvider(object):
 
     def __init__(self, provider, node):
         self.path = '/'
@@ -1223,8 +1227,11 @@ class NodeProvider(object):
         self.pk = node._id
         self.id = node.id
 
+    @property
+    def target(self):
+        return self.node
 
-class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
     """
     permission_classes = (
@@ -1237,14 +1244,14 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderSerializer
+    serializer_class = NodeStorageProviderSerializer
     view_category = 'nodes'
-    view_name = 'node-providers'
+    view_name = 'node-storage-providers'
 
     ordering = ('-id',)
 
     def get_provider_item(self, provider):
-        return NodeProvider(provider, self.get_node())
+        return NodeStorageProvider(provider, self.get_node())
 
     def get_queryset(self):
         return [
@@ -1255,7 +1262,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             and addon.configured
         ]
 
-class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read).
     """
     permission_classes = (
@@ -1268,12 +1275,12 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderSerializer
+    serializer_class = NodeStorageProviderSerializer
     view_category = 'nodes'
-    view_name = 'node-provider-detail'
+    view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeProvider(self.kwargs['provider'], self.get_node())
+        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):

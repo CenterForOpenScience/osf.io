@@ -9,8 +9,9 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 
 from framework.exceptions import PermissionsError
+from osf.models.nodelog import NodeLog
 from osf.models.mixins import ReviewableMixin
-from osf.models import NodeLog, OSFUser
+from osf.models import OSFUser
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import ReviewStates
 from osf.utils.permissions import ADMIN
@@ -63,7 +64,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
 
     @property
     def verified_publishable(self):
-        return self.is_published and self.node.is_preprint and not self.node.is_deleted
+        return self.is_published and self.node.is_preprint and not (self.is_retracted or self.node.is_deleted)
 
     @property
     def primary_file(self):
@@ -115,6 +116,18 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
+    @property
+    def should_request_identifiers(self):
+        return not self.node.all_tags.filter(name='qatest').exists()
+
+    @property
+    def has_pending_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal', machine_state='pending').exists()
+
+    @property
+    def has_withdrawal_request(self):
+        return self.requests.filter(request_type='withdrawal').exists()
+
     def has_permission(self, *args, **kwargs):
         return self.node.has_permission(*args, **kwargs)
 
@@ -122,7 +135,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
+        if preprint_file.target != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
         existing_file = self.node.preprint_file
@@ -153,7 +166,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         self.is_published = published
 
         if published:
-            if not (self.node.preprint_file and self.node.preprint_file.node == self.node):
+            if not (self.node.preprint_file and self.node.preprint_file.target == self.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

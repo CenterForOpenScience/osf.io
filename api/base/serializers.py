@@ -140,7 +140,8 @@ class ShowIfAdminScopeOrAnonymous(ConditionalField):
 
     def should_show(self, instance):
         request = self.context.get('request')
-        return request and (request.user.is_anonymous or utils.has_admin_scope(request))
+        has_admin_scope = instance.has_admin_scope if hasattr(instance, 'has_admin_scope') else utils.has_admin_scope(request)
+        return request and (request.user.is_anonymous or has_admin_scope)
 
 
 class HideIfRegistration(ConditionalField):
@@ -203,7 +204,8 @@ class HideIfWikiDisabled(ConditionalField):
 
     def should_hide(self, instance):
         request = self.context.get('request')
-        return not utils.is_deprecated(request.version, min_version='2.8') and not instance.has_addon('wiki')
+        has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
+        return not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon
 
 
 class HideIfNotNodePointerLog(ConditionalField):
@@ -865,6 +867,10 @@ class TargetField(ser.Field):
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id'
         },
+        'preprint': {
+            'view': 'preprints:preprint-detail',
+            'lookup_kwarg': 'preprint_id'
+        },
         'comment': {
             'view': 'comments:comment-detail',
             'lookup_kwarg': 'comment_id'
@@ -919,7 +925,8 @@ class TargetField(ser.Field):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
+        obj = getattr(value, 'referent', value)
+        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -1088,7 +1095,7 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        url = utils.waterbutler_api_url_for(obj.target._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
         else:

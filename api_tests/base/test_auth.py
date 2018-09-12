@@ -33,18 +33,18 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         # Test projects for which a given user DOES and DOES NOT  have
         # appropriate permissions
         self.reachable_project = ProjectFactory(
-            title="Private Project User 1",
+            title='Private Project User 1',
             is_public=False,
             creator=self.user1
         )
         self.unreachable_project = ProjectFactory(
-            title="Private Project User 2", is_public=False, creator=self.user2
+            title='Private Project User 2', is_public=False, creator=self.user2
         )
-        self.reachable_url = "/{}nodes/{}/".format(
+        self.reachable_url = '/{}nodes/{}/'.format(
             API_BASE, self.reachable_project._id
         )
         # User1 can't access this
-        self.unreachable_url = "/{}nodes/{}/".format(
+        self.unreachable_url = '/{}nodes/{}/'.format(
             API_BASE, self.unreachable_project._id
         )
 
@@ -52,7 +52,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(
-            res.json.get("errors")[0]['detail'],
+            res.json.get('errors')[0]['detail'],
             'Authentication credentials were not provided.'
         )
 
@@ -64,7 +64,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         )
         assert_equal(res.status_code, 401)
         assert_equal(
-            res.json.get("errors")[0]['detail'],
+            res.json.get('errors')[0]['detail'],
             'Invalid username/password.'
         )
 
@@ -96,7 +96,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.headers['X-OSF-OTP'], 'required; app')
         assert_equal(
-            res.json.get("errors")[0]['detail'],
+            res.json.get('errors')[0]['detail'],
             'Must specify two-factor authentication OTP code.'
         )
 
@@ -116,7 +116,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_true('X-OSF-OTP' not in res.headers)
         assert_equal(
-            res.json.get("errors")[0]['detail'],
+            res.json.get('errors')[0]['detail'],
             'Invalid two-factor authentication OTP code.'
         )
 
@@ -145,18 +145,18 @@ class TestOAuthValidation(ApiTestCase):
         # Test projects for which a given user DOES and DOES NOT  have
         # appropriate permissions
         self.reachable_project = ProjectFactory(
-            title="Private Project User 1",
+            title='Private Project User 1',
             is_public=False, creator=self.user1
         )
         self.unreachable_project = ProjectFactory(
-            title="Private Project User 2", is_public=False, creator=self.user2
+            title='Private Project User 2', is_public=False, creator=self.user2
         )
 
-        self.reachable_url = "/{}nodes/{}/".format(
+        self.reachable_url = '/{}nodes/{}/'.format(
             API_BASE, self.reachable_project._id
         )
         # User1 can't access this
-        self.unreachable_url = "/{}nodes/{}/".format(
+        self.unreachable_url = '/{}nodes/{}/'.format(
             API_BASE, self.unreachable_project._id
         )
 
@@ -168,7 +168,7 @@ class TestOAuthValidation(ApiTestCase):
         )
         assert_equal(res.status_code, 401)
         assert_equal(
-            res.json.get("errors")[0]['detail'],
+            res.json.get('errors')[0]['detail'],
             'Authentication credentials were not provided.'
         )
 

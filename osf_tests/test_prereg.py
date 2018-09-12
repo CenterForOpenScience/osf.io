@@ -1,6 +1,6 @@
 from nose.tools import *  # noqa
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import get_prereg_schema
 from website.registries.utils import drafts_for_user
@@ -53,7 +53,7 @@ class TestPreregLandingPage(OsfTestCase):
         )
 
     def test_has_project_and_draft_registration(self):
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge')
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
         factories.DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema
@@ -71,7 +71,7 @@ class TestPreregLandingPage(OsfTestCase):
         )
 
     def test_drafts_for_user_omits_registered(self):
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         d1 = factories.DraftRegistrationFactory(
             initiator=self.user,
@@ -100,7 +100,7 @@ class TestPreregUtils(OsfTestCase):
 
     def test_get_prereg_schema_returns_prereg_metaschema(self):
         schema = get_prereg_schema()
-        assert_is_instance(schema, MetaSchema)
+        assert_is_instance(schema, RegistrationSchema)
         assert_equal(schema.name, 'Prereg Challenge')
 
     def test_get_prereg_schema_raises_error_for_invalid_campaign(self):

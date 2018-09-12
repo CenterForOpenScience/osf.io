@@ -18,7 +18,7 @@ from framework.status import push_status_message
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
-from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
+from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
 
 from website.exceptions import NodeStateError
 from website.project.decorators import (
@@ -34,7 +34,7 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_O
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
-get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
+get_schema_or_fail = lambda query: get_or_http_error(RegistrationSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
 
 def must_be_branched_from_node(func):
@@ -361,7 +361,7 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True)
+    meta_schemas = RegistrationSchema.objects.filter(active=True)
     if include == 'latest':
         meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
 

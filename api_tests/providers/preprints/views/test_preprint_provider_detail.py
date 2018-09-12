@@ -2,7 +2,6 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import REST_FRAMEWORK
-from api.providers.permissions import GroupHelper
 from api_tests.providers.mixins import ProviderExistsMixin
 from osf_tests.factories import (
     PreprintProviderFactory,
@@ -89,13 +88,13 @@ class TestPreprintProviderUpdate:
     @pytest.fixture()
     def admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('admin'))
+        user.groups.add(provider.get_group('admin'))
         return user
 
     @pytest.fixture()
     def moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('moderator'))
+        user.groups.add(provider.get_group('moderator'))
         return user
 
     @pytest.fixture(params=['/{}preprint_providers/{}/', '/{}providers/preprints/{}/'])

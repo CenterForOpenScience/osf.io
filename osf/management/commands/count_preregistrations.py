@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
-from osf.models import Registration, MetaSchema
+from osf.models import Registration, RegistrationSchema
 
 PREREG_SCHEMA_NAMES = [
     'Prereg Challenge',
@@ -17,10 +17,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         total = 0
         for schema_name in PREREG_SCHEMA_NAMES:
-            metaschemas = MetaSchema.objects.filter(name=schema_name).only('id', 'schema_version')
-            for metaschema in metaschemas:
-                registrations = Registration.objects.filter(registered_schema=metaschema).get_roots()
+            schemas = RegistrationSchema.objects.filter(name=schema_name).only('id', 'schema_version')
+            for schema in schemas:
+                registrations = Registration.objects.filter(registered_schema=schema).get_roots()
                 count = registrations.count()
-                print('{} (Version {}): {}'.format(schema_name, metaschema.schema_version, count))
+                print('{} (Version {}): {}'.format(schema_name, schema.schema_version, count))
                 total += count
         print('Total: {}'.format(total))

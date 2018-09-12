@@ -22,7 +22,7 @@ class TestEventNotImplemented(OsfTestCase):
     """
     Test non-implemented errors
     """
-    @register("not_implemented")
+    @register('not_implemented')
     class NotImplementedEvent(Event):
         pass
 
@@ -149,7 +149,7 @@ class TestSignalEvent(OsfTestCase):
     @mock.patch('website.notifications.events.files.FileAdded.perform')
     def test_event_signal(self, mock_perform):
         signals.file_updated.send(
-            user=self.user, node=self.node, event_type='file_added', payload=file_payload
+            user=self.user, target=self.node, event_type='file_added', payload=file_payload
         )
         assert_true(mock_perform.called)
 
@@ -297,23 +297,23 @@ class TestFolderFileRenamed(OsfTestCase):
         self.sub.save()
 
     def test_rename_file_html(self):
-        self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
+        self.event.payload['destination']['materialized'] = '/One/Paper14.txt'
         assert_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/One/Paper14.txt</b>".')
 
     def test_rename_folder_html(self):
         self.event.payload['destination']['kind'] = 'folder'
-        self.event.payload['destination']['materialized'] = "/One/Two/Four"
-        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        self.event.payload['destination']['materialized'] = '/One/Two/Four'
+        self.event.payload['source']['materialized'] = '/One/Two/Three'
         assert_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/One/Two/Four</b>".')
 
     def test_rename_file_text(self):
-        self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
+        self.event.payload['destination']['materialized'] = '/One/Paper14.txt'
         assert_equal(self.event.text_message, 'renamed file "/One/Paper13.txt" to "/One/Paper14.txt".')
 
     def test_rename_folder_text(self):
         self.event.payload['destination']['kind'] = 'folder'
-        self.event.payload['destination']['materialized'] = "/One/Two/Four"
-        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        self.event.payload['destination']['materialized'] = '/One/Two/Four'
+        self.event.payload['source']['materialized'] = '/One/Two/Three'
         assert_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/One/Two/Four".')
 
 

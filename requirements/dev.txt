@@ -3,7 +3,8 @@
 # Requirements that are used in the development environment only
 
 # Testing
-pytest==3.0.3
+pytest==3.6.3
+pytest-socket==0.3.1
 pytest-xdist==1.15.0
 pytest-django==3.2.1
 pytest-cov==2.5.1
@@ -17,9 +18,9 @@ schema==0.3.1
 responses==0.8.1
 
 # Syntax checking
-flake8==2.4.0
-flake8-quotes==0.3.0
+flake8==3.5.0
 flake8-mutable==1.2.0
+pre-commit==1.10.5
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
@@ -28,7 +29,7 @@ watchdog==0.8.3
 django-sslserver==0.19
 
 # Django Debug Toolbar for local development
-django-debug-toolbar==1.5
+django-debug-toolbar==1.6
 
 # Ipdb
 ipdb==0.10.1
