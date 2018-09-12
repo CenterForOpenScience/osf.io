@@ -598,9 +598,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
 
 @receiver(post_save, sender=OsfStorageFile)
-def create_metadata_record_datacite(sender, instance, created, **kwargs):
+def create_metadata_records(sender, instance, created, **kwargs):
     if created:
         from osf.models.metadata import FileMetadataRecord
-        record = FileMetadataRecord(file=instance, schema=FileMetadataSchema.objects.get(_id='datacite'))
-
-        record.save()
+        for schema in FileMetadataSchema.objects.all():
+            FileMetadataRecord.objects.create(file=instance, schema=schema)
