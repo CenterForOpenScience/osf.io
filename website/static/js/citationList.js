@@ -48,6 +48,14 @@ var ViewModel = oop.defclass({
             return ctx.node.isRegistration ? 'registrations' : 'nodes';
         });
 
+        self.disableRemove = ko.computed(function () {
+            return self.initialCustomCitation() === '';
+        });
+
+        self.disableSave = ko.computed(function () {
+            return self.customCitation() === '' || self.initialCustomCitation() === self.customCitation();
+        });
+
         makeClient($('#custom-citation-copy-button')[0]);
     },
     showEditBox: function() {

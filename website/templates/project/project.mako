@@ -494,7 +494,7 @@
                                      <div class="col-md-1">
                                          <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
-                                     <div class="col-md-10">
+                                     <div class="col-md-9 m-l-sm">
                                          <div class="f-w-xl">Cite as:</div>
                                          <span data-bind="text: customCitation"></span>
                                      </div>
@@ -504,24 +504,19 @@
                      </div>
                      <div data-bind="visible: page() == 'edit'" style="display: none;">
                          <div class="row">
-                             <div class="col-md-12">
-                                 <h4>Create custom citation</h4>
-                             </div>
-                         </div>
-                         <div class="row">
                              <div class="col-md-12 form-group">
                                  <textarea class="form-control"
                                            placeholder="Enter custom citation"
-                                           data-bind="value: customCitation"
+                                           data-bind="value: customCitation, valueUpdate: 'afterkeydown'"
                                            type="text">
 
                                  </textarea>
                              </div>
                          </div>
                          <div class=" pull-right" role="group">
-                             <button type="button" data-bind="click: cancelCitation" class="btn btn-default">Cancel</button>
-                             <button type="button" data-bind="click: clearCitation" class="btn btn-danger">Remove</button>
-                             <button type="button" data-bind="click: saveCitation" class="btn btn-success">Save</button>
+                             <button type="button" data-bind="click: cancelCitation" class="btn btn-sm btn-default">Cancel</button>
+                             <button type="button" data-bind="click: clearCitation, disable: disableRemove" class="btn btn-sm btn-danger">Remove</button>
+                             <button type="button" data-bind="click: saveCitation, disable: disableSave" class="btn btn-sm btn-success">Save</button>
                          </div>
                      </div>
                  </div>
