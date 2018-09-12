@@ -18,12 +18,16 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
     class Meta:
         unique_together = ('file', 'schema')
 
+    @property
+    def serializer(self):
+        return serializer_registry[self.schema._id]
+
     def serialize(self):
-        return serializer_registry[self.schema.name].serialize(self)
+        return self.serializer.serialize(self)
 
     def validate(self, proposed_metadata):
-        return serializer_registry[self.schema.name].validate(self, proposed_metadata)
+        return self.serializer.validate(self, proposed_metadata)
 
     def update(self, proposed_metadata):
         if self.validate(proposed_metadata):
-            return serializer_registry[self.schema.name].validate(self, proposed_metadata)
+            return self.serializer.update(self, proposed_metadata)
