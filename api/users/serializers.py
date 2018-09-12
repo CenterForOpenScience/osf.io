@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -388,14 +387,13 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def update(self, instance, validated_data):
 
-        with transaction.atomic():
-            two_factor_addon = instance.get_addon('twofactor')
-            for attr, value in validated_data.items():
-                if 'two_factor_enabled' == attr:
-                    two_factor_addon = self.update_two_factor(instance, value, two_factor_addon)
-                elif 'two_factor_verification' == attr:
-                    self.verify_two_factor(instance, value, two_factor_addon)
-                elif attr in self.MAP_MAIL.keys():
-                    self.update_email_preferences(instance, attr, value)
+        two_factor_addon = instance.get_addon('twofactor')
+        for attr, value in validated_data.items():
+            if 'two_factor_enabled' == attr:
+                two_factor_addon = self.update_two_factor(instance, value, two_factor_addon)
+            elif 'two_factor_verification' == attr:
+                self.verify_two_factor(instance, value, two_factor_addon)
+            elif attr in self.MAP_MAIL.keys():
+                self.update_email_preferences(instance, attr, value)
 
         return instance
