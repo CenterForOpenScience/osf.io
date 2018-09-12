@@ -389,9 +389,9 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def update(self, instance, validated_data):
 
-        two_factor_addon = instance.get_addon('twofactor')
         for attr, value in validated_data.items():
             if 'two_factor_enabled' == attr:
+                two_factor_addon = instance.get_addon('twofactor')
                 two_factor_addon = self.update_two_factor(instance, value, two_factor_addon)
             elif 'two_factor_verification' == attr:
                 self.verify_two_factor(instance, value, two_factor_addon)
