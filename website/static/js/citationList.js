@@ -106,11 +106,11 @@ var ViewModel = oop.defclass({
             if (!self.customCitation()) {
 		        self.fetch();
 		    }
-		    self.loading(false);
-
         }).fail(function() {
             $osf.growl('Error', 'Your custom citation not updated. Please refresh the page and try ' +
             'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
+        }).always(function() {
+            self.loading(false);
         });
     },
     fetch: function() {
