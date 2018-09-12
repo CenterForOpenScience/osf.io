@@ -216,7 +216,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {} or relation == {'data': None}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
@@ -249,7 +249,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {} or relation == {'data': None}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
