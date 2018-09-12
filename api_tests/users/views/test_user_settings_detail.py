@@ -45,7 +45,7 @@ class TestUserSettingsGet:
         assert res.json['data']['attributes']['subscribe_osf_help_email'] is True
         assert res.json['data']['attributes']['subscribe_osf_general_email'] is False
         assert res.json['data']['attributes']['two_factor_enabled'] is False
-        assert res.json['data']['type'] == 'user-settings'
+        assert res.json['data']['type'] == 'user_settings'
 
 
 @pytest.mark.django_db
@@ -55,7 +55,7 @@ class TestUserSettingsUpdateTwoFactor:
     def payload(self, user_one):
         return {
             'data': {
-                'type': 'user-settings',
+                'type': 'user_settings',
                 'id': user_one._id,
                 'attributes': {}
             }
@@ -157,7 +157,7 @@ class TestUserSettingsUpdateMailingList:
         return {
             'data': {
                 'id': user_one._id,
-                'type': 'user-settings',
+                'type': 'user_settings',
                 'attributes': {
                     'subscribe_osf_help_email': False,
                     'subscribe_osf_general_email': True
@@ -170,7 +170,7 @@ class TestUserSettingsUpdateMailingList:
         return {
             'data': {
                 'id': user_one._id,
-                'type': 'user-settings',
+                'type': 'user_settings',
                 'attributes': {
                     'subscribe_osf_help_email': False,
                     'subscribe_osf_general_email': '22',

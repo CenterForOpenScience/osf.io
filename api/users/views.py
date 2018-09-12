@@ -589,7 +589,7 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     view_category = 'users'
-    view_name = 'user-settings'
+    view_name = 'user_settings'
 
     serializer_class = UserSettingsSerializer
 

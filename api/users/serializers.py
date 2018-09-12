@@ -329,7 +329,7 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'users:user-settings',
+            'users:user_settings',
             kwargs={
                 'user_id': obj._id,
                 'version': self.context['request'].parser_context['kwargs']['version']
@@ -337,7 +337,7 @@ class UserSettingsSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'user-settings'
+        type_ = 'user_settings'
 
 
 class UserSettingsUpdateSerializer(UserSettingsSerializer):
