@@ -4,15 +4,15 @@ import jsonschema
 
 serializer_registry = {}
 
-def register(schema_name):
+def register(schema_id):
     """Register classes into serializer_registry"""
     def decorator(cls):
-        serializer_registry[schema_name] = cls
+        serializer_registry[schema_id] = cls
         return cls
     return decorator
 
 
-class SchemaSerializer(object):
+class MetadataRecordSerializer(object):
 
     def serialize_json(self, metadata_record):
         raise NotImplementedError
@@ -37,8 +37,8 @@ class SchemaSerializer(object):
             record.metadata.update(json_data)
 
 
-@register(schema_name='datacite')
-class DataciteMetadataSerializer(SchemaSerializer):
+@register(schema_id='datacite')
+class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
 
     @classmethod
     def serialize_json(cls, record):
