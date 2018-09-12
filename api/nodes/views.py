@@ -25,7 +25,6 @@ from api.base.exceptions import (
     EndpointNotImplementedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.exceptions import UnknownError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -1228,10 +1227,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         except InvalidAuthError:
             raise NotAuthenticated('This add-on could not be authenticated.')
         except HTTPError as exc:
-            v2_exception = HTTP_CODE_MAP.get(exc.code)
-            if v2_exception:
-                raise v2_exception
-            raise UnknownError()
+            raise HTTP_CODE_MAP.get(exc.code, exc)
 
 
 class NodeStorageProvider(object):

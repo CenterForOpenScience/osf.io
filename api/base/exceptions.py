@@ -93,11 +93,6 @@ class ServiceUnavailableError(APIException):
     default_detail = _('Service is unavailable at this time.')
 
 
-class UnknownError(APIException):
-    status_code = 500
-    default_detail = _('An unknown error occurred.')
-
-
 class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
