@@ -1481,14 +1481,14 @@ class TestReviewsPreprintDetailPermissions:
         assert res.status_code == 401
 
 
-# TODO: Use test indices and clean up after test
+# FIXME: Throwaway test
 @pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
 @pytest.mark.django_db
-class TestPreprintListWithMetrics:
+class TestPreprintDetailWithMetrics:
 
     def test_preprint_list_with_metrics(self, app):
         preprint = PreprintFactory()
-        url = '/{}preprints/{}/?metrics=downloads'.format(API_BASE, preprint._id)
+        url = '/{}preprints/{}/?metrics[downloads]=total'.format(API_BASE, preprint._id)
         PreprintDownloadFactory(preprint=preprint)
 
         res = app.get(url)

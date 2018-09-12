@@ -1122,16 +1122,13 @@ class TestPreprintIsValidList(PreprintIsValidListMixin):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
 
 
-# TODO: Use test indices and clean up after test
+# TODO: Mock out calls to ES6
 @pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
 @pytest.mark.django_db
 class TestPreprintListWithMetrics:
 
-    @pytest.fixture()
-    def url(self):
-        return '/{}preprints/'.format(API_BASE)
-
-    def test_preprint_list_with_metrics(self, app, url):
+    def test_preprint_list_with_metrics(self, app):
+        url = '/{}preprints/?metrics[downloads]=total'.format(API_BASE)
         preprint1 = PreprintFactory()
         preprint2 = PreprintFactory()
 
@@ -1142,7 +1139,7 @@ class TestPreprintListWithMetrics:
         PreprintDownloadFactory(preprint=preprint2)
         PreprintDownloadFactory(preprint=preprint2)
 
-        res = app.get(url + '?metrics=downloads')
+        res = app.get(url)
         assert res.status_code == 200
 
         preprint_2_data = res.json['data'][0]
@@ -1150,3 +1147,6 @@ class TestPreprintListWithMetrics:
 
         preprint_1_data = res.json['data'][1]
         preprint_1_data['meta']['metrics']['downloads'] == 1
+
+    def test_preprint_list_filter_by_time_period(self, app):
+        assert 0, 'todo'

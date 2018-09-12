@@ -72,16 +72,17 @@ class PreprintProviderList(MetricMixin, GenericProviderList):
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
     metric_map = {
-        'downloads': PreprintDownload
+        'downloads': PreprintDownload,
     }
 
     # overrides MetricMixin
-    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name):
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         return metric_class.get_top_by_count(
             qs=queryset,
             model_field='_id',
             metric_field='provider_id',
             annotation=metric_name,
+            after=after,
         )
 
     def get_renderer_context(self):

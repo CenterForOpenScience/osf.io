@@ -315,6 +315,7 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
+    # TODO: Add a signal here?
     user = auth.user
     linked_preprint = node.linked_preprint
     path = data.get('path')

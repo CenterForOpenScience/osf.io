@@ -4,7 +4,9 @@ from django.db import models
 class MetricMixin(object):
 
     @classmethod
-    def get_top_by_count(cls, qs, model_field, metric_field, size=None, order_by=None, annotation='metric_count'):
+    def get_top_by_count(cls, qs, model_field, metric_field,
+                         size=None, order_by=None,
+                         annotation='metric_count', after=None):
         """Return a queryset annotated with the metric counts for each item.
 
         Example: ::
@@ -30,12 +32,15 @@ class MetricMixin(object):
         :param str metric_field: Metric field that corresponds to ``model_field``.
         :param int size: Size of the aggregation. Also determines the size of the final
             queryset.
-        :parm str order_by: Field to order queryset by. If `None`, orders by
+        :param str order_by: Field to order queryset by. If `None`, orders by
             the metric, descending.
+        :param datetime after: Minimum datetime to narrow the search (inclusive).
         :param str annotation: Name of the annotation.
         """
         search = cls.search()
         size = size or qs.count()
+        if after:
+            search = search.filter('range', timestamp={'gte': after})
         search.aggs.bucket('by_id', 'terms', field=metric_field, size=size)
         response = search.execute()
         # No indexed data
@@ -88,8 +93,11 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_count_for_preprint(cls, preprint):
-        return cls.search().filter('match', preprint_id=preprint._id).count()
+    def get_count_for_preprint(cls, preprint, after=None):
+        search = cls.search().filter('match', preprint_id=preprint._id)
+        if after:
+            search = search.filter('range', timestamp={'gte': after})
+        return search.count()
 
 
 class PreprintView(BasePreprintMetric):

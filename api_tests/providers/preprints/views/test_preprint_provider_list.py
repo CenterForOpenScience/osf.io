@@ -67,7 +67,7 @@ class TestPreprintProviderList:
         assert len(res.json['data']) == 1
 
 
-# TODO: Use test indices and clean up after test
+# FIXME: Throwaway test
 @pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
 @pytest.mark.django_db
 class TestPreprintProviderListWithMetrics:
@@ -85,7 +85,7 @@ class TestPreprintProviderListWithMetrics:
         PreprintDownloadFactory(preprint=preprint_two)
         PreprintDownloadFactory(preprint=preprint_two)
 
-        res = app.get(url + 'metrics=downloads')
+        res = app.get(url + 'metrics[downloads]=total')
         assert res.status_code == 200
 
         provider_2_data = res.json['data'][0]

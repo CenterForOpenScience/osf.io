@@ -84,7 +84,7 @@ class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, Pre
     view_category = 'preprints'
     view_name = 'preprint-list'
     metric_map = {
-        'downloads': PreprintDownload
+        'downloads': PreprintDownload,
     }
 
     def get_serializer_class(self):
@@ -102,19 +102,23 @@ class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, Pre
         queryset = self.preprints_queryset(PreprintService.objects.all(), auth_user, public_only=public_only)
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
-        return self.get_metrics_queryset(queryset)
+        if self.metrics_requested:
+            return self.get_metrics_queryset(queryset)
+        else:
+            return queryset
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
     # overrides MetricMixin
-    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name):
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         return metric_class.get_top_by_count(
             qs=queryset,
             model_field='guids___id',
             metric_field='preprint_id',
             annotation=metric_name,
+            after=after,
         )
 
 
@@ -141,17 +145,18 @@ class PreprintDetail(MetricMixin, JSONAPIBaseView, generics.RetrieveUpdateDestro
     view_category = 'preprints'
     view_name = 'preprint-detail'
     metric_map = {
-        'downloads': PreprintDownload
+        'downloads': PreprintDownload,
     }
 
-    def add_metric_to_object(self, obj, metric_class, metric_name):
-        count = metric_class.get_count_for_preprint(obj)
+    def add_metric_to_object(self, obj, metric_class, metric_name, after):
+        count = metric_class.get_count_for_preprint(obj, after=after)
         setattr(obj, metric_name, count)
 
     def get_object(self):
         preprint = self.get_preprint()
         # If requested, add metrics to object
-        self.add_metrics_to_object(preprint)
+        if self.metrics_requested:
+            self.add_metrics_to_object(preprint)
         return preprint
 
     def perform_destroy(self, instance):
