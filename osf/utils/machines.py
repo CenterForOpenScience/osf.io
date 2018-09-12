@@ -272,10 +272,10 @@ class PreprintRequestMachine(BaseMachine):
         elif ev.event.name == DefaultTriggers.SUBMIT.value:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
-                self.machineable.run_accept(user=self.machineable.creator, comment=self.action.comment, auto=True)
+                self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
         elif ev.event.name == DefaultTriggers.ACCEPT.value:
             # If moderator accepts the withdrawal request
-            self.machineable.target.run_withdraw(user=self.machineable.creator, comment=self.action.comment)
+            self.machineable.target.run_withdraw(user=self.action.creator, comment=self.action.comment)
         self.machineable.save()
 
     def auto_approval_allowed(self):
