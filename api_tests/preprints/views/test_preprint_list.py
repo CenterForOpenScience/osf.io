@@ -2,6 +2,8 @@ import mock
 from nose.tools import *  # flake8: noqa
 import pytest
 
+from django.utils import timezone
+
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -36,31 +38,31 @@ def build_preprint_create_payload(
         attrs = {}
 
     payload = {
-        "data": {
-            "attributes": attrs,
-            "relationships": {},
-            "type": "preprints"
+        'data': {
+            'attributes': attrs,
+            'relationships': {},
+            'type': 'preprints'
         }
     }
     if node_id:
-        payload['data']['relationships']["node"] = {
-            "data": {
-                "type": "node",
-                "id": node_id
+        payload['data']['relationships']['node'] = {
+            'data': {
+                'type': 'node',
+                'id': node_id
             }
         }
     if provider_id:
-        payload['data']['relationships']["provider"] = {
-            "data": {
-                "type": "provider",
-                "id": provider_id
+        payload['data']['relationships']['provider'] = {
+            'data': {
+                'type': 'provider',
+                'id': provider_id
             }
         }
     if file_id:
-        payload['data']['relationships']["primary_file"] = {
-            "data": {
-                "type": "primary_file",
-                "id": file_id
+        payload['data']['relationships']['primary_file'] = {
+            'data': {
+                'type': 'primary_file',
+                'id': file_id
             }
         }
     return payload
@@ -106,11 +108,11 @@ class TestPreprintCreateWithoutNode:
                     'category': 'data',
                     'public': False,
                 },
-                "relationships": {
-                    "provider": {
-                        "data": {
-                            "id": provider._id,
-                            "type": "providers"}}}}}
+                'relationships': {
+                    'provider': {
+                        'data': {
+                            'id': provider._id,
+                            'type': 'providers'}}}}}
 
     def test_create_preprint_logged_in(
             self, app, user_one, url, preprint_payload):
@@ -161,6 +163,27 @@ class TestPreprintList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
+
+    def test_withdrawn_preprints_list(self):
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
+        pp.node.is_public = True
+        pp.node.save()
+        mod = AuthUserFactory()
+        pp.provider.get_group('moderator').user_set.add(mod)
+        pp.date_withdrawn = timezone.now()
+        pp.save()
+
+        assert not pp.ever_public # Sanity check
+
+        unauth_res = self.app.get(self.url)
+        user_res = self.app.get(self.url, auth=self.user.auth)
+        mod_res = self.app.get(self.url, auth=mod.auth)
+        unauth_res_ids = [each['id'] for each in unauth_res.json['data']]
+        user_res_ids = [each['id'] for each in user_res.json['data']]
+        mod_res_ids = [each['id'] for each in mod_res.json['data']]
+        assert pp._id not in unauth_res_ids
+        assert pp._id not in user_res_ids
+        assert pp._id in mod_res_ids
 
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):

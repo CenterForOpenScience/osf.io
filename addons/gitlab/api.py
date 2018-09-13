@@ -49,7 +49,7 @@ class GitLabClient(object):
         try:
             return gitlab.Project(self.gitlab, repo_id)
         except gitlab.GitlabGetError as exc:
-            if exc.code == 404:
+            if exc.response_code == 404:
                 raise NotFoundError
             else:
                 raise exc

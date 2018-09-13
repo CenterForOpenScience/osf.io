@@ -109,7 +109,7 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
     """
     try:
         connection = connect_s3(access_key, secret_key)
-    except:
+    except Exception:
         raise InvalidAuthError()
 
     if bucket_name != bucket_name.lower() or '.' in bucket_name:

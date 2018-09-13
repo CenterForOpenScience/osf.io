@@ -22,7 +22,6 @@ from osf.models import (
     NodeLicense,
     Tag,
     QuickFilesNode,
-    CollectedGuidMetadata,
 )
 from addons.osfstorage.models import OsfStorageFile
 
@@ -421,7 +420,7 @@ class TestNodeSearch(OsfTestCase):
         assert_in('license', node)
         assert_equal(node['license']['id'], self.node.node_license.license_id)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
     def test_node_license_propogates_to_children(self):
         docs = query(self.query)['results']
@@ -432,7 +431,7 @@ class TestNodeSearch(OsfTestCase):
         assert_in('license', child)
         assert_equal(child['license'].get('id'), self.node.node_license.license_id)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
         other_license = NodeLicense.objects.get(name='MIT License')
@@ -1018,7 +1017,7 @@ class TestSearchExceptions(OsfTestCase):
         # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = factories.UserFactory(fullname='Doug Bogie')
         self.project = factories.ProjectFactory(
-            title="Tom Sawyer",
+            title='Tom Sawyer',
             creator=self.user,
             is_public=True,
         )

@@ -17,7 +17,7 @@ from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, format_registration
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
@@ -39,7 +39,7 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -861,6 +861,18 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+
+        assert unregistered_user.is_registered is False
+        assert unregistered_user.unclaimed_records == {}
+
+        with pytest.raises(UserStateError) as excinfo:
+            node.add_contributor(unregistered_user, auth=Auth(user))
+        assert excinfo.value.message == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
@@ -1131,6 +1143,16 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
+    def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+
+        contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records != {}
+
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
@@ -1169,6 +1191,16 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor == registered_user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_unregistered(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor = contributor_obj.user
+        assert contributor == unregistered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
 class TestContributorProperties:
 
@@ -2288,10 +2320,12 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, node, auth):
         unregistered = UnregUserFactory()
-        node.add_contributor(
-            unregistered,
+        node.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
-            save=True
+            existing_user=unregistered
         )
         users = [
             {'id': node.creator._id, 'permission': READ, 'visible': True},
@@ -3034,7 +3068,7 @@ class TestDOIValidation:
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='nope').save()
         with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
         with pytest.raises(ValidationError):
             Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
@@ -3173,7 +3207,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3195,7 +3229,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': node.creator.given_name,
@@ -3414,6 +3448,17 @@ class TestOnNodeUpdate:
     def registration(self, node):
         return RegistrationFactory(is_public=True)
 
+    @pytest.fixture()
+    def component_registration(self, node):
+        NodeFactory(
+            creator=node.creator,
+            parent=node,
+            title='Title1',
+        )
+        registration = RegistrationFactory(project=node)
+        registration.refresh_from_db()
+        return registration.get_nodes()[0]
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
@@ -3533,6 +3578,21 @@ class TestOnNodeUpdate:
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             payload = (item for item in graph if 'is_deleted' in item.keys()).next()
             assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
+
+        graph = format_registration(component_registration)
+
+        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
+        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+
+        # Both must exist to be valid
+        assert parent_relation
+        assert parent_work_identifier
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -4290,6 +4350,17 @@ class TestCollectionProperties:
     def bookmark_collection(self, user):
         return find_bookmark_collection(user)
 
+    @pytest.fixture()
+    def subjects(self):
+        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+
+    def _collection_url(self, collection):
+        try:
+            return '/collections/{}/'.format(collection.provider._id)
+        except AttributeError:
+            # Non-provided collection
+            pass
+
     def test_collection_project_views(
             self, user, node, collection_one, collection_two, collection_public,
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
@@ -4315,7 +4386,7 @@ class TestCollectionProperties:
         assert ids_actual == ids_expected
 
     def test_permissions_collection_project_views(
-            self, user, node, contrib, collection_one, collection_two,
+            self, user, node, contrib, subjects, collection_one, collection_two,
             collection_public, public_non_provided_collection, private_non_provided_collection,
             bookmark_collection, collector):
 
@@ -4324,12 +4395,18 @@ class TestCollectionProperties:
         public_non_provided_collection.collect_object(node, collector)
         private_non_provided_collection.collect_object(node, collector)
         bookmark_collection.collect_object(node, collector)
-        collection_public.collect_object(node, collector)
+        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        cgm.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+
+        # test_subjects_are_serialized
+        assert len(collection_summary[0]['subjects'])
+        assert len(collection_summary[0]['subjects']) == len(subjects)
+
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
         node.add_contributor(contributor=contrib, auth=Auth(user))
@@ -4337,11 +4414,11 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
         node.add_contributor(contributor=collector, auth=Auth(user))
@@ -4349,9 +4426,13 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
-        assert ids_actual == ids_expected
+        urls_actual = {summary['url'] for summary in collection_summary}
+        urls_expected = {
+            self._collection_url(collection_public),
+            self._collection_url(collection_one),
+            self._collection_url(collection_two),
+        }
+        assert urls_actual == urls_expected
 
         ## test_node_contrib_cannot_see_public_bookmark_collections
         bookmark_collection_public = bookmark_collection
@@ -4360,5 +4441,5 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        assert bookmark_collection_public._id not in ids_actual
+        urls_actual = {summary['url'] for summary in collection_summary}
+        assert self._collection_url(bookmark_collection_public) not in urls_actual

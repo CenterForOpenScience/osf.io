@@ -1,5 +1,3 @@
-from guardian.models import GroupObjectPermission
-
 from django.utils import timezone
 from rest_framework import serializers as ser
 
@@ -14,6 +12,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from osf.models.provider import AbstractProviderGroupObjectPermission
 from api.users.schemas.utils import validate_user_json
 
 
@@ -119,8 +118,8 @@ class UserSerializer(JSONAPISerializer):
         })
 
     def get_can_view_reviews(self, obj):
-        group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
-        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
+        group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
+        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)

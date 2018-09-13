@@ -3,7 +3,6 @@ from datetime import timedelta
 import pytest
 from furl import furl
 
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     ReviewActionFactory,
     AuthUserFactory,
@@ -80,7 +79,7 @@ class ReviewActionFilterMixin(object):
     def user(self, allowed_providers):
         user = AuthUserFactory()
         for provider in allowed_providers:
-            user.groups.add(GroupHelper(provider).get_group('moderator'))
+            user.groups.add(provider.get_group('moderator'))
         return user
 
     def test_filter_actions(self, app, url, user, expected_actions):
@@ -219,14 +218,14 @@ class ReviewProviderFilterMixin(object):
     def moderator_pair(self, expected_providers):
         user = AuthUserFactory()
         provider = expected_providers[0]
-        user.groups.add(GroupHelper(provider).get_group('moderator'))
+        user.groups.add(provider.get_group('moderator'))
         return (user, provider)
 
     @pytest.fixture()
     def admin_pair(self, expected_providers):
         user = AuthUserFactory()
         provider = expected_providers[1]
-        user.groups.add(GroupHelper(provider).get_group('admin'))
+        user.groups.add(provider.get_group('admin'))
         return (user, provider)
 
     def test_review_provider_filters(

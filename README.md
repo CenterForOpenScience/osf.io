@@ -13,6 +13,15 @@ The code for [https://osf.io](https://osf.io).
 
 To run the OSF for local development, see [README-docker-compose.md](https://github.com/CenterForOpenScience/osf.io/blob/develop/README-docker-compose.md).
 
+Optional, but recommended: To set up pre-commit hooks (will run
+formatters and linters on staged files):
+
+```
+pip install pre-commit
+
+pre-commit install --allow-missing-config
+```
+
 ## More Resources
 
 The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development.

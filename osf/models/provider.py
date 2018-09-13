@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
 from django.contrib.postgres import fields
-from django.contrib.auth.models import Group
 from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from dirtyfields import DirtyFieldsMixin
+from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
-from api.providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from framework import sentry
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.base import BaseModel, TypedObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
@@ -19,11 +18,16 @@ from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
+from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
 
 
-class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+    class Meta:
+        unique_together = ('_id', 'type')
+        permissions = REVIEW_PERMISSIONS
+
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
@@ -55,7 +59,12 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
     @property
     def all_subjects(self):
-        return self.subjects.all()
+        if self.subjects.exists():
+            return self.subjects.all()
+        return Subject.objects.filter(
+            provider___id='osf',
+            provider__type='osf.preprintprovider',
+        )
 
     @property
     def has_highlighted_subjects(self):
@@ -72,7 +81,11 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
-        return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
+        return optimize_subject_query(Subject.objects.filter(
+            parent__isnull=True,
+            provider___id='osf',
+            provider__type='osf.preprintprovider',
+        ))
 
     @property
     def readable_type(self):
@@ -91,6 +104,7 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
 
 class CollectionProvider(AbstractProvider):
+
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
@@ -130,7 +144,6 @@ class RegistrationProvider(AbstractProvider):
         return api_v2_url(path)
 
 class PreprintProvider(AbstractProvider):
-
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
@@ -158,7 +171,7 @@ class PreprintProvider(AbstractProvider):
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
 
     class Meta:
-        permissions = tuple(PERMISSIONS.items()) + (
+        permissions = (
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
@@ -209,22 +222,9 @@ class PreprintProvider(AbstractProvider):
         path = '/providers/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
-    def save(self, *args, **kwargs):
-        dirty_fields = self.get_dirty_fields()
-        old_id = dirty_fields.get('_id', None)
-        if old_id:
-            for permission_type in GROUPS.keys():
-                Group.objects.filter(
-                    name=GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
-                ).update(
-                    name=GROUP_FORMAT.format(provider_id=self._id, group=permission_type)
-                )
-
-        return super(PreprintProvider, self).save(*args, **kwargs)
-
 def rules_to_subjects(rules):
     if not rules:
-        return Subject.objects.filter(provider___id='osf')
+        return Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider')
     q = []
     for rule in rules:
         parent_from_rule = Subject.load(rule[0][-1])
@@ -236,13 +236,13 @@ def rules_to_subjects(rules):
                     q.append(models.Q(parent=parent))
         for sub in rule[0]:
             q.append(models.Q(_id=sub))
-    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())
+    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider'))
 
 
 @receiver(post_save, sender=PreprintProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
-        GroupHelper(instance).update_provider_auth_groups()
+        instance.update_group_permissions()
 
 @receiver(post_save, sender=PreprintProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
@@ -280,3 +280,11 @@ class WhitelistedSHAREPreprintProvider(BaseModel):
 
     def __unicode__(self):
         return self.provider_name
+
+
+class AbstractProviderUserObjectPermission(UserObjectPermissionBase):
+    content_object = models.ForeignKey(AbstractProvider, on_delete=models.CASCADE)
+
+
+class AbstractProviderGroupObjectPermission(GroupObjectPermissionBase):
+    content_object = models.ForeignKey(AbstractProvider, on_delete=models.CASCADE)

@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration, AbstractProvider
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
@@ -15,9 +15,9 @@ from osf.utils.permissions import WRITE
 from website.exceptions import NodeStateError
 
 
-class ProviderRelationshipField(RelationshipField):
+class CollectionProviderRelationshipField(RelationshipField):
     def get_object(self, provider_id):
-        return AbstractProvider.load(provider_id)
+        return CollectionProvider.load(provider_id)
 
     def to_internal_value(self, data):
         provider = self.get_object(data)
@@ -59,7 +59,7 @@ class CollectionSerializer(JSONAPISerializer):
 
     links = LinksField({})
 
-    provider = ProviderRelationshipField(
+    provider = CollectionProviderRelationshipField(
         related_view='providers:collection-providers:collection-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=True
@@ -139,7 +139,7 @@ class CollectionDetailSerializer(CollectionSerializer):
     id = IDField(source='_id', required=True)
 
 
-class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
         type_ = 'collected-metadata'
@@ -198,7 +198,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         obj.save()
         return obj
 
-class CollectedMetaCreateSerializer(CollectedMetaSerializer):
+class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
         related_view='guids:guid-detail',

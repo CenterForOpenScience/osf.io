@@ -35,7 +35,7 @@ PREPRINT_DOI_NAMESPACE = {
 
 def add_doi_prefix(*args, **kwargs):
     for key, value in PREPRINT_DOI_NAMESPACE.iteritems():
-        provider =  PreprintProvider.objects.filter(_id=key)
+        provider = PreprintProvider.objects.filter(_id=key)
         if not provider.exists():
             logger.info('Could not find provider with _id {}, skipping for now...'.format(key))
             continue
