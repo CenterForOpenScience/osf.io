@@ -14,6 +14,7 @@ from django.core import serializers
 from django.core.management.base import BaseCommand
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
+from addons.wiki.models import WikiPage
 from framework.auth.core import Auth
 from osf.models import (
     FileVersion,
@@ -105,7 +106,7 @@ def export_wikis(node, current_dir):
     """
     wikis_dir = os.path.join(current_dir, 'wikis')
     os.mkdir(wikis_dir)
-    for wiki in node.get_wiki_pages_latest():
+    for wiki in WikiPage.objects.get_wiki_pages_latest(node):
         if wiki.content:
             with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki.wiki_page.page_name)), 'w', encoding='utf-8') as f:
                 f.write(wiki.content)
@@ -121,7 +122,7 @@ def export_node(node, user, current_dir):
 
     """
     export_metadata(node, current_dir)
-    if node.get_wiki_pages_latest():
+    if WikiPage.objects.get_wiki_pages_latest(node):
         export_wikis(node, current_dir)
     if OsfStorageFileNode.objects.filter(node=node):
         export_files(node, user, current_dir)

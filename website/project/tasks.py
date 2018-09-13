@@ -148,6 +148,14 @@ def format_registration(node):
     to_visit.extend(format_contributor(registration_graph, user, bool(user._id in node.visible_contributor_ids), i) for i, user in enumerate(node.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions.all())
 
+    if node.parent_node:
+        parent = GraphNode('registration')
+        to_visit.extend([
+            parent,
+            GraphNode('workidentifier', creative_work=parent, uri=urlparse.urljoin(settings.DOMAIN, node.parent_node.url)),
+            GraphNode('ispartof', subject=registration_graph, related=parent),
+        ])
+
     visited = set()
     to_visit.extend(registration_graph.get_related())
 
