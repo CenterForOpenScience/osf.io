@@ -392,8 +392,9 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         for attr, value in validated_data.items():
             if 'two_factor_enabled' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
-                two_factor_addon = self.update_two_factor(instance, value, two_factor_addon)
+                self.update_two_factor(instance, value, two_factor_addon)
             elif 'two_factor_verification' == attr:
+                two_factor_addon = instance.get_addon('twofactor')
                 self.verify_two_factor(instance, value, two_factor_addon)
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
