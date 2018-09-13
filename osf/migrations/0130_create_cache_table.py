@@ -9,7 +9,7 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0128_merge_20180829_0012'),
+        ('osf', '0129_merge_20180910_1926'),
     ]
 
     operations = [
