@@ -101,9 +101,9 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
         return Preprint.load(context[view.preprint_lookup_url_kwarg])
 
     def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
         context = request.parser_context['kwargs']
         preprint = self.load_resource(context, view)
+        assert_resource_type(preprint, self.acceptable_models)
 
         if preprint.is_retracted and request.method in permissions.SAFE_METHODS:
             return preprint.can_view_files(get_user_auth(request))

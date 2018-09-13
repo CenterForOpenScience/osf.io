@@ -97,7 +97,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this preprint.')
-
+    public = ser.BooleanField(source='is_public', required=False, read_only=True)
     contributors = RelationshipField(
         related_view='preprints:preprint-contributors',
         related_view_kwargs={'preprint_id': '<_id>'},

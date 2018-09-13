@@ -52,7 +52,6 @@ from api.preprints.permissions import (
 from api.nodes.permissions import (
     ContributorOrPublic
 )
-from addons.osfstorage.models import OsfStorageFile
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
@@ -476,9 +475,12 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
     serializer_class = OsfStorageFileSerializer
 
     def get_queryset(self):
-        # Restricting queryset so only primary file is returned.
-        preprint = self.get_preprint()
-        return OsfStorageFile.objects.filter(id=getattr(preprint.primary_file, 'id', None))
+        self.kwargs[self.path_lookup_url_kwarg] = '/'
+        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
+        return super(PreprintFilesList, self).get_queryset()
+
+    def get_resource(self, check_object_permissions):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
 
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):

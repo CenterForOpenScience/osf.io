@@ -382,7 +382,7 @@ class TestPreprintFilesList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_only_primary_file_is_returned(self):
+    def test_not_just_primary_file_returned(self):
         filename = 'my second file'
         second_file = OsfStorageFile.create(
             target_object_id=self.preprint.id,
@@ -410,7 +410,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 200
 
         data = res.json['data']
-        assert len(data) == 1
+        assert len(data) == 2
         assert data[0]['id'] == self.preprint.primary_file._id
 
     def test_nested_file_as_primary_file_is_returned(self):
@@ -427,11 +427,13 @@ class TestPreprintFilesList(ApiTestCase):
         assert_equal(primary_file.parent, subfolder)
 
         res = self.app.get(self.url, auth=self.user.auth)
+        assert len(res.json['data']) == 1
+
         data = res.json['data'][0]
-        assert data['id'] == primary_file._id
-        assert data['attributes']['kind'] == 'file'
-        assert data['attributes']['path'] == '/{}'.format(primary_file._id)
-        assert data['attributes']['materialized_path'] == '/{}/{}'.format(subfolder.name, primary_file.name)
+        assert data['id'] == subfolder._id
+        assert data['attributes']['kind'] == 'folder'
+        assert data['attributes']['path'] == '/{}/'.format(subfolder._id)
+        assert data['attributes']['materialized_path'] == '/{}/'.format(subfolder.name)
 
     def test_cannot_access_other_addons(self):
         url = '/{}preprints/{}/files/github/'.format(API_BASE, self.preprint._id)
