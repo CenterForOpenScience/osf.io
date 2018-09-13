@@ -2,6 +2,28 @@
 Changelog
 *********
 
+0.155.0 (2018-09-12)
+====================
+
+- Admin: Add view for creating and managing RegistrationProviders.
+- APIv2: Add view for claiming unregistered users.
+- Show "reviews_state" on withdrawn preprints.
+- Show "review_actions" on withdrawn preprints to moderators.
+- Send registration parent information to SHARE.
+- Rename CollectedGuidMetaData to CollectionSubmission.
+
+0.154.0 (2018-09-09)
+====================
+
+- Admin: Add download counts to metrics.
+- APIv2: Refactor Dataverse addon settings for APIv2.
+- APIv2: Optimizations to nodes list endpoints.
+- Upgrade to new-style Django middleware
+- Wiki code cleanup.
+- Update project citations to use "OSF."
+- Remove legacy dashboard and landing page code.
+- Remove duplicate fields on Registration model.
+
 0.153.0 (2018-08-28)
 ====================
 

@@ -17,7 +17,7 @@ from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, format_registration
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
@@ -3448,6 +3448,17 @@ class TestOnNodeUpdate:
     def registration(self, node):
         return RegistrationFactory(is_public=True)
 
+    @pytest.fixture()
+    def component_registration(self, node):
+        NodeFactory(
+            creator=node.creator,
+            parent=node,
+            title='Title1',
+        )
+        registration = RegistrationFactory(project=node)
+        registration.refresh_from_db()
+        return registration.get_nodes()[0]
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
@@ -3567,6 +3578,21 @@ class TestOnNodeUpdate:
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             payload = (item for item in graph if 'is_deleted' in item.keys()).next()
             assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
+
+        graph = format_registration(component_registration)
+
+        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
+        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+
+        # Both must exist to be valid
+        assert parent_relation
+        assert parent_work_identifier
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -4328,6 +4354,13 @@ class TestCollectionProperties:
     def subjects(self):
         return [[SubjectFactory()._id] for i in xrange(0, 5)]
 
+    def _collection_url(self, collection):
+        try:
+            return '/collections/{}/'.format(collection.provider._id)
+        except AttributeError:
+            # Non-provided collection
+            pass
+
     def test_collection_project_views(
             self, user, node, collection_one, collection_two, collection_public,
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
@@ -4373,7 +4406,7 @@ class TestCollectionProperties:
         assert len(collection_summary[0]['subjects']) == len(subjects)
 
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
         node.add_contributor(contributor=contrib, auth=Auth(user))
@@ -4381,11 +4414,11 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
         node.add_contributor(contributor=collector, auth=Auth(user))
@@ -4393,9 +4426,13 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
-        assert ids_actual == ids_expected
+        urls_actual = {summary['url'] for summary in collection_summary}
+        urls_expected = {
+            self._collection_url(collection_public),
+            self._collection_url(collection_one),
+            self._collection_url(collection_two),
+        }
+        assert urls_actual == urls_expected
 
         ## test_node_contrib_cannot_see_public_bookmark_collections
         bookmark_collection_public = bookmark_collection
@@ -4404,5 +4441,5 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        assert bookmark_collection_public._id not in ids_actual
+        urls_actual = {summary['url'] for summary in collection_summary}
+        assert self._collection_url(bookmark_collection_public) not in urls_actual

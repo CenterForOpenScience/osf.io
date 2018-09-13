@@ -59,7 +59,12 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
     @property
     def all_subjects(self):
-        return self.subjects.all()
+        if self.subjects.exists():
+            return self.subjects.all()
+        return Subject.objects.filter(
+            provider___id='osf',
+            provider__type='osf.preprintprovider',
+        )
 
     @property
     def has_highlighted_subjects(self):
@@ -76,7 +81,11 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
-        return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
+        return optimize_subject_query(Subject.objects.filter(
+            parent__isnull=True,
+            provider___id='osf',
+            provider__type='osf.preprintprovider',
+        ))
 
     @property
     def readable_type(self):
@@ -215,7 +224,7 @@ class PreprintProvider(AbstractProvider):
 
 def rules_to_subjects(rules):
     if not rules:
-        return Subject.objects.filter(provider___id='osf')
+        return Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider')
     q = []
     for rule in rules:
         parent_from_rule = Subject.load(rule[0][-1])
@@ -227,7 +236,7 @@ def rules_to_subjects(rules):
                     q.append(models.Q(parent=parent))
         for sub in rule[0]:
             q.append(models.Q(_id=sub))
-    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())
+    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider'))
 
 
 @receiver(post_save, sender=PreprintProvider)

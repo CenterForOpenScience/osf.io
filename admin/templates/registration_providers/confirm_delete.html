@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    <title>Delete Registration Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <form action="" method="post">{% csrf_token %}
+                    {% if has_collected_submissions %}
+                        <p>
+                            <div class="text-danger h4">
+                                Cannot delete "{{ provider_name }}" registration provider as it has {{ collected_submissions_count }} collected item{{ collected_submissions_count|pluralize }},
+                                please remove the collected item{{ collected_submissions_count|pluralize }} first.
+                            </div>
+                            <a class="btn btn-primary" href="{% url 'registration_providers:detail' registration_provider_id=provider_id %}">Back to detail</a>
+                        </p>
+                    {% else %}
+                        <p class="h4"> Are you sure you want to delete "{{ object.name }}" ?</p>
+                        <input class="btn btn-primary" type="submit" value="Confirm" />
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
