@@ -863,14 +863,14 @@ def serialize_collections(cgms, auth):
     return [{
         'title': cgm.collection.title,
         'name': cgm.collection.provider.name,
-        'url': '/{}/'.format(cgm.collection._id),
+        'url': '/collections/{}/'.format(cgm.collection.provider._id),
         'status': cgm.status,
         'type': cgm.collected_type,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
+    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
 def serialize_children(child_list, nested, indent=0):
     """

@@ -139,7 +139,7 @@ class CollectionDetailSerializer(CollectionSerializer):
     id = IDField(source='_id', required=True)
 
 
-class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
         type_ = 'collected-metadata'
@@ -198,7 +198,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         obj.save()
         return obj
 
-class CollectedMetaCreateSerializer(CollectedMetaSerializer):
+class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
         related_view='guids:guid-detail',
