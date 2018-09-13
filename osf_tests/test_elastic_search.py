@@ -22,7 +22,6 @@ from osf.models import (
     NodeLicense,
     Tag,
     QuickFilesNode,
-    CollectedGuidMetadata,
 )
 from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile

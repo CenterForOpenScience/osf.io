@@ -27,7 +27,7 @@ from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
 from addons.wiki.models import WikiPage
-from osf.models import CollectedGuidMetadata
+from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -59,7 +59,7 @@ DOC_TYPE_TO_MODEL = {
     'file': BaseFileNode,
     'institution': Institution,
     'preprint': AbstractNode,
-    'collectionSubmission': CollectedGuidMetadata,
+    'collectionSubmission': CollectionSubmission,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -630,17 +630,17 @@ def update_institution(institution, index=None):
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
-    CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+    CollectionSubmission = apps.get_model('osf.CollectionSubmission')
     if collection_id:
         try:
-            cgm = CollectedGuidMetadata.objects.get(
+            cgm = CollectionSubmission.objects.get(
                 guid___id=cgm_id,
                 collection_id=collection_id,
                 collection__provider__isnull=False,
                 collection__deleted__isnull=True,
                 collection__is_bookmark_collection=False)
 
-        except CollectedGuidMetadata.DoesNotExist:
+        except CollectionSubmission.DoesNotExist:
             logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
         else:
             if cgm and hasattr(cgm.guid.referent, 'is_public') and cgm.guid.referent.is_public:
@@ -649,7 +649,7 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
                 except Exception as exc:
                     self.retry(exc=exc)
     else:
-        cgms = CollectedGuidMetadata.objects.filter(
+        cgms = CollectionSubmission.objects.filter(
             guid___id=cgm_id,
             collection__provider__isnull=False,
             collection__deleted__isnull=True,

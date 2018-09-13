@@ -16,10 +16,10 @@ from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
-from api.collections.serializers import CollectedMetaSerializer
+from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectedGuidMetadata
+from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectionSubmission
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
@@ -650,8 +650,8 @@ class SearchCollections(BaseSearchView):
     """
     """
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
 
     doc_type = 'collectionSubmission'
     view_category = 'search'

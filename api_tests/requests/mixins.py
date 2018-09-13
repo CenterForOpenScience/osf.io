@@ -1,6 +1,5 @@
 import pytest
 
-from api.providers.permissions import GroupHelper
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import (
     AuthUserFactory,
@@ -86,13 +85,13 @@ class PreprintRequestTestMixin(object):
     @pytest.fixture()
     def pre_mod_provider(self, moderator):
         ppp = PreprintProviderFactory(reviews_workflow='pre-moderation')
-        GroupHelper(ppp).get_group('moderator').user_set.add(moderator)
+        ppp.get_group('moderator').user_set.add(moderator)
         return ppp
 
     @pytest.fixture()
     def post_mod_provider(self, moderator):
         ppp = PreprintProviderFactory(reviews_workflow='post-moderation')
-        GroupHelper(ppp).get_group('moderator').user_set.add(moderator)
+        ppp.get_group('moderator').user_set.add(moderator)
         return ppp
 
     @pytest.fixture()

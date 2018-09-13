@@ -279,6 +279,17 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
+    addon_settings = {}
+    for addon in ['forward']:
+        addon_config = apps.get_app_config('addons_{}'.format(addon))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        addon_settings[addon] = config
+
+    ret['addon_settings'] = addon_settings
+
     ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
         'project': 'Project'
@@ -854,13 +865,14 @@ def serialize_collections(cgms, auth):
     return [{
         'title': cgm.collection.title,
         'name': cgm.collection.provider.name,
-        'url': '/{}/'.format(cgm.collection._id),
+        'url': '/collections/{}/'.format(cgm.collection.provider._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
+    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
 def serialize_children(child_list, nested, indent=0):
     """

@@ -5,13 +5,13 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 
 from api.base.utils import get_user_auth
-from osf.models import AbstractNode, Collection, CollectedGuidMetadata, CollectionProvider
+from osf.models import AbstractNode, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, CollectedGuidMetadata):
+        if isinstance(obj, CollectionSubmission):
             obj = obj.collection
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
@@ -30,8 +30,8 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
 
 class CanSubmitToCollectionOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (CollectedGuidMetadata, Collection, CollectionProvider)), 'obj must be a Collection or CollectedGuidMetadata, got {}'.format(obj)
-        if isinstance(obj, CollectedGuidMetadata):
+        assert isinstance(obj, (CollectionSubmission, Collection, CollectionProvider)), 'obj must be a Collection or CollectionSubmission, got {}'.format(obj)
+        if isinstance(obj, CollectionSubmission):
             obj = obj.collection
         elif isinstance(obj, CollectionProvider):
             obj = obj.primary_collection
@@ -46,7 +46,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
 
 class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, CollectedGuidMetadata), 'obj must be a CollectedGuidMetadata, got {}'.format(obj)
+        assert isinstance(obj, CollectionSubmission), 'obj must be a CollectionSubmission, got {}'.format(obj)
         collection = obj.collection
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
@@ -62,10 +62,10 @@ class CollectionWriteOrPublicForPointers(permissions.BasePermission):
     # Adapted from ContributorOrPublicForPointers
     # Will only work for refs that point to AbstractNodes/Collections
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (CollectedGuidMetadata, Collection)), 'obj must be an Collection or CollectedGuidMetadata, got {}'.format(obj)
+        assert isinstance(obj, (CollectionSubmission, Collection)), 'obj must be an Collection or CollectionSubmission, got {}'.format(obj)
         auth = get_user_auth(request)
         collection = Collection.load(request.parser_context['kwargs']['node_id'])
-        pointer_node = collection.collectedguidmetadata_set.get(guid___id=request.parser_context['kwargs']['node_link_id']).guid.referent
+        pointer_node = collection.collectionsubmission_set.get(guid___id=request.parser_context['kwargs']['node_link_id']).guid.referent
         if request.method in permissions.SAFE_METHODS:
             has_collection_auth = auth.user and auth.user.has_perm('read_collection', collection)
             if isinstance(pointer_node, AbstractNode):
