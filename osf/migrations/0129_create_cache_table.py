@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from api.base.settings import CACHES
+from django.conf import settings
 
 
 class Migration(migrations.Migration):
@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
                 "value" text NOT NULL,
                 "expires" timestamp with time zone NOT NULL
             );
-            """.format(CACHES['default']['LOCATION'])
+            """.format(settings.CACHES['default']['LOCATION'])
         ], [
-            """DROP TABLE "{}"; """.format(CACHES['default']['LOCATION'])
+            """DROP TABLE "{}"; """.format(settings.CACHES['default']['LOCATION'])
         ])
     ]
