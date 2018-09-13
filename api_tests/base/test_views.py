@@ -14,8 +14,9 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
-from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from api.crossref.views import ParseCrossRefConfirmation
+from api.users.views import ClaimUser
+from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
@@ -48,7 +49,7 @@ for mod in URLS_MODULES:
 class TestApiBaseViews(ApiTestCase):
     def setUp(self):
         super(TestApiBaseViews, self).setUp()
-        self.EXCLUDED_VIEWS = [MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
+        self.EXCLUDED_VIEWS = [ClaimUser, MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
