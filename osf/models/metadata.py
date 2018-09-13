@@ -5,7 +5,7 @@ from addons.osfstorage.models import OsfStorageFile
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import FileMetadataSchema
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.metadata.serializers import serializer_registry
+from osf.metadata.serializers import serializer_registry
 
 
 class FileMetadataRecord(ObjectIDMixin, BaseModel):
