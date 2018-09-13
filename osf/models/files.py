@@ -338,7 +338,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_view_count(self, version=None):
         """Pull the mfr view count from the pagecounter collection"""
         from osf.models import PageCounter
-        return PageCounter.get_file_views(self._id)
+        return PageCounter.get_file_views(self._id, version)
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
