@@ -355,14 +355,11 @@ class UserEmailsSerializer(JSONAPISerializer):
         return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
 
     def update(self, instance, validated_data):
-        save = False
         user = self.context['request'].user
         primary = validated_data.get('primary', None)
         if primary and instance.confirmed:
             user.username = instance.address
-            save = True
+            user.save()
         elif primary and not instance.confirmed:
             raise rest_framework_exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
-        if save:
-            user.save()
         return instance
