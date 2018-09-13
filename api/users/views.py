@@ -32,10 +32,10 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserChangePasswordSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
-from framework.auth import logout
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
+from framework.sessions.utils import remove_sessions_for_user
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -618,7 +618,7 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             if user.verification_key_v2:
                 user.verification_key_v2['expires'] = timezone.now()
             user.save()
-            logout()
+            remove_sessions_for_user(user)
         except ChangePasswordError as error:
             raise ValidationError(error.messages)
 
