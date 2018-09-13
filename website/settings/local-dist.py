@@ -135,4 +135,4 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 # CROSSREF_DEPOSITOR_EMAIL = 'changeme'  # This email will receive confirmation/error messages from CrossRef on submission
 
 # Show sent emails in console
-logging.getLogger('website.mail.mails').setLevel(logging.DEBUG)
+logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
