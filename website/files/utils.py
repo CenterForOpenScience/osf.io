@@ -1,3 +1,5 @@
+from osf.models.base import generate_object_id
+
 
 def copy_files(src, target_node, parent=None, name=None):
     """Copy the files from src to the target node
@@ -16,12 +18,19 @@ def copy_files(src, target_node, parent=None, name=None):
     cloned.save()
 
     if src.is_file and src.versions.exists():
-        cloned.versions.add(*src.versions.all())
-        most_recent_fileversion = cloned.versions.select_related('region').order_by('-created').first()
+        fileversions = src.versions.select_related('region').order_by('-created')
+        most_recent_fileversion = fileversions.first()
         if most_recent_fileversion.region != target_node.osfstorage_region:
+            # add all original version except the most recent
+            cloned.versions.add(*fileversions[1:])
+            # setting the id to None and calling save generates a new object
+            most_recent_fileversion.id = None
+            most_recent_fileversion._id = generate_object_id()
             most_recent_fileversion.region = target_node.osfstorage_region
             most_recent_fileversion.save()
-
+            cloned.versions.add(most_recent_fileversion)
+        else:
+            cloned.versions.add(*src.versions.all())
     if not src.is_file:
         for child in src.children:
             copy_files(child, target_node, parent=cloned)
