@@ -1,5 +1,6 @@
 DISABLE_ENGAGEMENT_EMAILS = 'disable_engagement_emails'
 
+EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'
 EMBER_EDIT_DRAFT_REGISTRATION = 'ember_edit_draft_registration_page'
 EMBER_FILE_DETAIL = 'ember_file_detail_page'
