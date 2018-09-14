@@ -130,7 +130,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
 def index():
     # Check if we're on an institution landing page
-    institution = Institution.objects.filter(domains__icontains=[request.host], is_deleted=False)
+    institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
     if institution.exists():
         return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
     else:
