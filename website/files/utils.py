@@ -18,7 +18,7 @@ def copy_files(src, target_node, parent=None, name=None):
     if src.is_file and src.versions.exists():
         fileversions = src.versions.select_related('region').order_by('-created')
         most_recent_fileversion = fileversions.first()
-        if most_recent_fileversion.region != target_node.osfstorage_region:
+        if most_recent_fileversion.region and most_recent_fileversion.region != target_node.osfstorage_region:
             # add all original version except the most recent
             cloned.versions.add(*fileversions[1:])
             # create a new most recent version and update the region before adding
