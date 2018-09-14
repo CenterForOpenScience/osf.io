@@ -681,6 +681,18 @@ class ReviewProviderMixin(GuardianMixin):
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
+    def get_request_state_counts(self):
+        # import stuff here to get around circular imports
+        from osf.models import PreprintRequest
+        qs = PreprintRequest.objects.filter(target__provider__id=self.id,
+                                            target__node__isnull=False,
+                                            target__node__is_deleted=False,
+                                            target__node__is_public=True)
+        qs = qs.values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in DefaultStates}
+        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        return counts
+
     def add_to_group(self, user, group):
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
@@ -732,13 +744,13 @@ class TaxonomizableMixin(models.Model):
         """
         AbstractNode = apps.get_model('osf.AbstractNode')
         PreprintService = apps.get_model('osf.PreprintService')
-        CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
         if isinstance(self, (AbstractNode, PreprintService)):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, CollectedGuidMetadata):
+        elif isinstance(self, CollectionSubmission):
             if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')
 

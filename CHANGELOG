@@ -2,6 +2,16 @@
 Changelog
 *********
 
+0.155.0 (2018-09-12)
+====================
+
+- Admin: Add view for creating and managing RegistrationProviders.
+- APIv2: Add view for claiming unregistered users.
+- Show "reviews_state" on withdrawn preprints.
+- Show "review_actions" on withdrawn preprints to moderators.
+- Send registration parent information to SHARE.
+- Rename CollectedGuidMetaData to CollectionSubmission.
+
 0.154.0 (2018-09-09)
 ====================
 

@@ -21,7 +21,7 @@ from website.search.exceptions import SearchUnavailableError
 
 logger = logging.getLogger(__name__)
 
-class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
+class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
     class Meta:
@@ -43,7 +43,7 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
         try:
             cgm_id, collection_id = data.split('-')
         except ValueError:
-            raise ValueError('Invalid CollectedGuidMetadata object <_id {}>'.format(data))
+            raise ValueError('Invalid CollectionSubmission object <_id {}>'.format(data))
         else:
             if cgm_id and collection_id:
                 try:
@@ -71,7 +71,7 @@ class CollectedGuidMetadata(TaxonomizableMixin, BaseModel):
 
     def save(self, *args, **kwargs):
         kwargs.pop('old_subjects', None)  # Not indexing this, trash it
-        ret = super(CollectedGuidMetadata, self).save(*args, **kwargs)
+        ret = super(CollectionSubmission, self).save(*args, **kwargs)
         self.update_index()
         return ret
 
@@ -94,7 +94,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
     provider = models.ForeignKey('AbstractProvider', blank=True, null=True, on_delete=models.CASCADE)
     creator = models.ForeignKey('OSFUser')
-    guid_links = models.ManyToManyField('Guid', through=CollectedGuidMetadata, related_name='collections')
+    guid_links = models.ManyToManyField('Guid', through=CollectionSubmission, related_name='collections')
     collected_types = models.ManyToManyField(
         'contenttypes.ContentType',
         related_name='+',
@@ -175,14 +175,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return user.has_perms(self.groups[perm], self)
 
     def collect_object(self, obj, collector, collected_type=None, status=None):
-        """ Adds object to collection, creates CollectedGuidMetadata reference
+        """ Adds object to collection, creates CollectionSubmission reference
             Performs type / metadata validation. User permissions checked in view.
 
         :param GuidMixin obj: Object to collect. Must be of a ContentType specified in collected_types
         :param OSFUser collector: User doing the collecting
         :param str collected_type: Metadata "type" of submission, validated against collected_type_choices
         :param str status: Metadata "status" of submission, validated against status_choices
-        :return: CollectedGuidMetadata object or raise exception
+        :return: CollectionSubmission object or raise exception
         """
         collected_type = collected_type or ''
         status = status or ''
@@ -200,10 +200,10 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             raise ValidationError('"{}" is not an acceptable "ContentType" for this collection'.format(ContentType.objects.get_for_model(obj).model))
 
         # Unique together -- self and guid
-        if self.collectedguidmetadata_set.filter(guid=obj.guids.first()).exists():
+        if self.collectionsubmission_set.filter(guid=obj.guids.first()).exists():
             raise ValidationError('Object already exists in collection.')
 
-        cgm = self.collectedguidmetadata_set.create(guid=obj.guids.first(), creator=collector)
+        cgm = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
         cgm.collected_type = collected_type
         cgm.status = status
         cgm.save()
@@ -213,15 +213,15 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def remove_object(self, obj):
         """ Removes object from collection
 
-        :param obj: object to remove from collection, if it exists. Acceptable types- CollectedGuidMetadata, GuidMixin
+        :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
         """
-        if isinstance(obj, CollectedGuidMetadata):
+        if isinstance(obj, CollectionSubmission):
             if obj.collection == self:
                 obj.remove_from_index()
-                self.collectedguidmetadata_set.filter(id=obj.id).delete()
+                self.collectionsubmission_set.filter(id=obj.id).delete()
                 return
         else:
-            cgm = self.collectedguidmetadata_set.get(guid=obj.guids.first())
+            cgm = self.collectionsubmission_set.get(guid=obj.guids.first())
             if cgm:
                 cgm.remove_from_index()
                 cgm.delete()
@@ -239,7 +239,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         self.deleted = timezone.now()
 
         if self.is_public:
-            self.bulk_update_search(list(self.collectedguidmetadata_set.all()), op='delete')
+            self.bulk_update_search(list(self.collectionsubmission_set.all()), op='delete')
 
         self.save()
 
