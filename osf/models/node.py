@@ -1032,6 +1032,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.registrations.all()
 
     @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        osfs_settings = self._settings_model('osfstorage')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        return Region.objects.get(id=region_subquery)
+
+    @property
     def parent_id(self):
         if hasattr(self, 'annotated_parent_id'):
             # If node has been annotated with "annotated_parent_id"
