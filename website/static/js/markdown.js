@@ -35,7 +35,11 @@ var mfrURL = window.contextVars.mfrURL;
 var osfURL = window.contextVars.osfURL;
 
 var getMfrUrl = function (guid) {
-    return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    var mfrLink = mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    if (window.contextVars.node.viewOnlyLink) {
+        mfrLink += '&view_only=' + window.contextVars.node.viewOnlyLink;
+    }
+    return mfrLink;
 };
 
 var mfrId = 0;
