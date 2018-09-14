@@ -292,6 +292,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if metadata:
             version.update_metadata(metadata)
 
+        version.region = self.target.osfstorage_region
         version._find_matching_archive(save=False)
 
         version.save()

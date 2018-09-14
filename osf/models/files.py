@@ -27,6 +27,7 @@ from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, web_url_for
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
 __all__ = (
     'File',
@@ -731,6 +732,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
+    region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     includable_objects = IncludeManager()
 
@@ -756,6 +758,19 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
         if save:
             self.save()
+
+    def save(self, *args, **kwargs):
+        # ensure that region is set
+        # TODO: Remove me
+        # https://openscience.atlassian.net/browse/PLAT-1107
+        if not self.region:
+            Region = apps.get_model('addons_osfstorage.Region')
+            default_region_id = Region.objects.filter(
+                _id=DEFAULT_REGION_ID,
+                name=DEFAULT_REGION_NAME,
+            ).values_list('id', flat=True).get()
+            self.region_id = default_region_id
+        return super(FileVersion, self).save(*args, **kwargs)
 
     def _find_matching_archive(self, save=True):
         """Find another version with the same sha256 as this file.
