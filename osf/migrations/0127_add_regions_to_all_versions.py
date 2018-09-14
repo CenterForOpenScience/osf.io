@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ('osf', '0126_fileversion_region'),
+        ('osf', '0130_fileversion_region'),
     ]
 
     operations = [
