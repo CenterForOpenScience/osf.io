@@ -345,6 +345,11 @@ $(document).ready(function () {
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
             markdownElement.html(truncatedText);
+            if (window.contextVars.node.viewOnlyLink) {
+                $(markdownElement).children('p').children('img').each(function(idx, elm){
+                    elm.setAttribute('src', elm.src + '&view_only=' + window.contextVars.node.viewOnlyLink);
+                });
+            }
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
         });
