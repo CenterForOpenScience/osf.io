@@ -86,7 +86,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
         assert_equal(len(res.json['datasets']), 3)
         first = res.json['datasets'][0]
-        assert_equal(first['title'], 'Example (DVN/00001)')
+        assert_equal(first['name'], 'Example (DVN/00001)')
         assert_equal(first['doi'], 'doi:12.3456/DVN/00001')
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings')

@@ -132,10 +132,10 @@ function ViewModel(url) {
     };
 
     self.savedDatasetUrl = ko.pureComputed(function() {
-        return (self.urls()) ? self.urls().datasetPrefix + self.savedDatasetDoi() : null;
+        return (self.urls()) ? self.urls().dataversePrefix + 'dataset.xhtml?persistentId=' + self.savedDatasetDoi() : null;
     });
     self.savedDataverseUrl = ko.pureComputed(function() {
-        return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
+        return (self.urls()) ? self.urls().dataversePrefix + 'dataverse/' + self.savedDataverseAlias() : null;
     });
 
     self.selectedDataverseAlias = ko.observable();
@@ -153,7 +153,7 @@ function ViewModel(url) {
         for (var i = 0; i < self.datasets().length; i++) {
             var data = self.datasets()[i];
             if (data.doi === self.selectedDatasetDoi()) {
-                return data.title;
+                return data.name;
             }
         }
         return null;

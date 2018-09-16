@@ -88,12 +88,12 @@
                                     <select class="form-control"
                                             data-bind="options: datasets,
                                                        optionsValue: 'doi',
-                                                       optionsText: 'title',
+                                                       optionsText: 'name',
                                                        value: selectedDatasetDoi">
                                     </select>
                                 </div>
                                 <div data-bind="if: showNoDatasets">
-                                    <div class="text-info" style="padding-top: 8px">
+                                    <div class="text-muted" style="padding-top: 8px">
                                         No datasets available.
                                     </div>
                                 </div>

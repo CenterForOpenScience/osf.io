@@ -9,7 +9,7 @@ from framework.exceptions import HTTPError
 from osf.models.files import File, Folder, BaseFileNode
 from framework.auth.core import _get_current_user
 from addons.base import exceptions
-from addons.dataverse.client import connect_from_settings_or_401
+from addons.dataverse import client
 from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
 
@@ -95,7 +95,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def dataset_id(self):
         if self._dataset_id is None and (self.dataverse_alias and self.dataset_doi):
-            connection = connect_from_settings_or_401(self)
+            connection = client.connect_from_settings_or_401(self)
             dataverse = connection.get_dataverse(self.dataverse_alias)
             dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
             self._dataset_id = dataset.id
@@ -124,6 +124,45 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             node=self.owner,
             auth=auth
         )
+
+    def get_folders(self, path=None, folder_id=None):
+        """Get list of datasets from provided Dataverse alias"""
+
+        connection = client.connect_from_settings(self)
+
+        dataverses = connection.get_dataverses()
+        return [
+            {
+                'name': dataverse.title,
+                'alias': dataverse.alias,
+                'id': dataverse.alias,
+                'addon': 'dataverse',
+                'kind': 'dataverse',
+                'path': '/',
+            }
+            for dataverse in dataverses]
+
+    def get_datasets(self, path=None, folder_id=None):
+        """Get list of datasets from provided Dataverse alias"""
+
+        connection = client.connect_from_settings(self)
+        dataverse = client.get_dataverse(connection, self.dataverse_alias)
+
+        try:
+            datasets = client.get_datasets(dataverse)
+        except Exception as e:
+            raise HTTPError(code=e.code, message=e.message)
+
+        return [
+            {
+                'name': dataset.title,
+                'doi': dataset.doi,
+                'addon': 'dataverse',
+                'kind': 'dataset',
+                'path': '/',
+                'id': dataset.id,
+            }
+            for dataset in datasets]
 
     def set_folder(self, dataverse, dataset, auth=None):
         self.dataverse_alias = dataverse.alias

@@ -689,6 +689,17 @@ class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         }
 
 
+class MockConnection(object):
+
+    def get_dataverses(self):
+
+        class MockDataverse():
+            title = 'dataverse title'
+            alias = '1234'
+
+        return [MockDataverse()]
+
+
 class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'dataverse'
     AccountFactory = DataverseAccountFactory
@@ -700,6 +711,19 @@ class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             '_dataset_id': '1234567890',
             'owner': self.node
         }
+
+    @mock.patch('addons.dataverse.models.client.connect_from_settings', return_value=MockConnection())
+    def test_folder_list_GET_expected_behavior(self, mock_client):
+
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth)
+        print(res.json)
+        addon_data = res.json['data'][0]['attributes']
+        assert_equal(addon_data['kind'], 'dataverse')
+        assert_equal(addon_data['name'], 'dataverse title')
+        assert_equal(addon_data['path'], '/')
+        assert_equal(addon_data['folder_id'], "1234")
 
 
 class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
