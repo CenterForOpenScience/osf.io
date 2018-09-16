@@ -20,10 +20,10 @@ BATCHSIZE = 5000
 def main():
     Region = apps.get_model('addons_osfstorage.region')
     FileVersion = apps.get_model('osf.fileversion')
-    default_region = Region.objects.get(
+    default_region_id = Region.objects.filter(
         _id=DEFAULT_REGION_ID,
         name=DEFAULT_REGION_NAME,
-    )
+    ).values_list('id', flat=True).get()
     max_pk = FileVersion.objects.aggregate(models.Max('pk'))['pk__max']
     logger.info('Max pk: {}'.format(max_pk))
     if max_pk is not None:
@@ -33,7 +33,7 @@ def main():
                 .filter(pk__lt=offset + BATCHSIZE)
                 .filter(basefilenode__provider='osfstorage')
                 .filter(region__isnull=True)
-                .update(region=default_region))
+                .update(region_id=default_region_id))
             logger.info(
                 'Updated osf_fileversions {}-{}/{}'.format(
                     offset,
