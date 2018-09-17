@@ -26,8 +26,10 @@ class JSONAPIParser(JSONParser):
     def get_relationship(data, related_resource):
         target_type = data.get('type')
         if not target_type:
-            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
-                                   detail=NO_TYPE_ERROR)
+            raise JSONAPIException(
+                source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
+                detail=NO_TYPE_ERROR,
+            )
 
         id = data.get('id')
         return {'id': id, 'target_type': target_type}
@@ -280,8 +282,8 @@ class SearchParser(JSONAPIParser):
 
         res = {
             'query': {
-                'bool': {}
-            }
+                'bool': {},
+            },
         }
 
         try:
@@ -293,9 +295,9 @@ class SearchParser(JSONAPIParser):
                 'must': {
                     'multi_match': {
                         'query': q,
-                        'fields': view.search_fields
-                    }
-                }
+                        'fields': view.search_fields,
+                    },
+                },
             })
 
         if any(data.values()):

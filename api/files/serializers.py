@@ -60,9 +60,9 @@ class CheckoutField(ser.HyperlinkedRelatedField):
                 self.view_name,
                 kwargs={
                     self.lookup_url_kwarg: embed_value,
-                    'version': request.parser_context['kwargs']['version']
-                }
-            )
+                    'version': request.parser_context['kwargs']['version'],
+                },
+            ),
         )
 
     def get_choices(self, cutoff=None):
@@ -82,7 +82,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         return OrderedDict([
             (
                 item.pk,
-                self.display_value(item)
+                self.display_value(item),
             )
             for item in queryset
         ])
@@ -94,10 +94,12 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         if obj is None:
             return {}
         lookup_value = getattr(obj, self.lookup_field)
-        return absolute_reverse(self.view_name, kwargs={
-            self.lookup_url_kwarg: lookup_value,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            self.view_name, kwargs={
+                self.lookup_url_kwarg: lookup_value,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def to_internal_value(self, data):
         if data is None:
@@ -154,9 +156,11 @@ class BaseFileSerializer(JSONAPISerializer):
     ])
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    guid = ser.SerializerMethodField(read_only=True,
-                                     method_name='get_file_guid',
-                                     help_text='OSF GUID for this file (if one has been assigned)')
+    guid = ser.SerializerMethodField(
+        read_only=True,
+        method_name='get_file_guid',
+        help_text='OSF GUID for this file (if one has been assigned)',
+    )
     checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
@@ -164,7 +168,8 @@ class BaseFileSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
-        read_only=True, help_text='The Unix-style path of this object relative to the provider root')
+        read_only=True, help_text='The Unix-style path of this object relative to the provider root',
+    )
     last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
@@ -177,18 +182,19 @@ class BaseFileSerializer(JSONAPISerializer):
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
-        kind='folder'
+        kind='folder',
     )
     versions = NodeFileHyperLinkField(
         related_view='files:file-versions',
         related_view_kwargs={'file_id': '<_id>'},
-        kind='file'
+        kind='file',
     )
-    comments = FileCommentRelationshipField(related_view='nodes:node-comments',
-                                            related_view_kwargs={'node_id': '<target._id>'},
-                                            related_meta={'unread': 'get_unread_comments_count'},
-                                            filter={'target': 'get_file_guid'}
-                                            )
+    comments = FileCommentRelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<target._id>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': 'get_file_guid'},
+    )
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
@@ -320,9 +326,9 @@ class FileSerializer(BaseFileSerializer):
         FileNodeRelationshipField(
             related_view='nodes:node-detail',
             related_view_kwargs={'node_id': '<target._id>'},
-            help_text='The project that this file belongs to'
+            help_text='The project that this file belongs to',
         ),
-        min_version='2.0', max_version='2.7'
+        min_version='2.0', max_version='2.7',
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
@@ -358,10 +364,11 @@ class FileDetailSerializer(FileSerializer):
 
 
 class QuickFilesSerializer(BaseFileSerializer):
-    user = RelationshipField(related_view='users:user-detail',
-                             related_view_kwargs={'user_id': '<target.creator._id>'},
-                             help_text='The user who uploaded this file'
-                             )
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<target.creator._id>'},
+        help_text='The user who uploaded this file',
+    )
 
 
 class QuickFilesDetailSerializer(QuickFilesSerializer):
@@ -389,17 +396,19 @@ class FileVersionSerializer(JSONAPISerializer):
         type_ = 'file_versions'
 
     def self_url(self, obj):
-        return absolute_reverse('files:version-detail', kwargs={
-            'version_id': obj.identifier,
-            'file_id': self.context['view'].kwargs['file_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'files:version-detail', kwargs={
+                'version_id': obj.identifier,
+                'file_id': self.context['view'].kwargs['file_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def absolute_url(self, obj):
         fobj = self.context['file']
         return furl.furl(settings.DOMAIN).set(
             path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
-            query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
+            query={fobj.version_identifier: obj.identifier},  # TODO this can probably just be changed to revision or version
         ).url
 
     def get_absolute_url(self, obj):
@@ -408,7 +417,7 @@ class FileVersionSerializer(JSONAPISerializer):
     def get_download_link(self, obj):
         return get_file_download_link(
             self.context['file'], version=obj.identifier,
-            view_only=self.context['request'].query_params.get('view_only')
+            view_only=self.context['request'].query_params.get('view_only'),
         )
 
 

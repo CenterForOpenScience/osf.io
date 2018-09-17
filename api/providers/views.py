@@ -73,7 +73,7 @@ class PreprintProviderList(GenericProviderList):
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()
         context['meta'] = {
-            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True)
+            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True),
         }
         return context
 
@@ -441,7 +441,7 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
             When(groups=admin_group, then=Value('admin')),
             default=Value('moderator'),
-            output_field=CharField()
+            output_field=CharField(),
         )).order_by('fullname')
 
     def get_queryset(self):

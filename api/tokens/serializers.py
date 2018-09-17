@@ -13,15 +13,21 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True, help_text='The object ID for this token (automatically generated)')
     type = TypeField()
 
-    name = ser.CharField(help_text='A short, descriptive name for this token',
-                         required=True)
+    name = ser.CharField(
+        help_text='A short, descriptive name for this token',
+        required=True,
+    )
 
-    owner = ser.CharField(help_text='The user who owns this token',
-                          read_only=True,  # Don't let user register a token in someone else's name
-                          source='owner._id')
+    owner = ser.CharField(
+        help_text='The user who owns this token',
+        read_only=True,  # Don't let user register a token in someone else's name
+        source='owner._id',
+    )
 
-    scopes = ser.CharField(help_text='Governs permissions associated with this token',
-                           required=True)
+    scopes = ser.CharField(
+        help_text='Governs permissions associated with this token',
+        required=True,
+    )
 
     token_id = ser.CharField(read_only=True, allow_blank=True)
 
@@ -29,7 +35,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         type_ = 'tokens'
 
     links = LinksField({
-        'html': 'absolute_url'
+        'html': 'absolute_url',
     })
 
     def absolute_url(self, obj):

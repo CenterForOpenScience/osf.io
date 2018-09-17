@@ -27,7 +27,7 @@ describe('OauthAddonNodeConfig', () => {
             onPickFolder: onPickFolderSpy,
         };
         var vm = new OauthAddonNodeConfigVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker', opts);
-        
+
         describe('#constructor', () => {
             it('applies overrides from the opts param if supplied', () => {
                 vm.treebeardOptions.onPickFolder();

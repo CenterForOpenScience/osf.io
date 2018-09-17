@@ -32,7 +32,7 @@ UPDATE_METHODS = ['PUT', 'PATCH']
 def decompose_field(field):
     from api.base.serializers import (
         HideIfWithdrawal, HideIfRegistration,
-        HideIfDisabled, AllowMissing, NoneIfWithdrawal
+        HideIfDisabled, AllowMissing, NoneIfWithdrawal,
     )
     WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing, NoneIfWithdrawal)
 

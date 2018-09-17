@@ -13,7 +13,7 @@ class SchemaSerializer(JSONAPISerializer):
     active = ser.BooleanField(read_only=True)
 
     links = LinksField({
-        'self': 'get_absolute_url'
+        'self': 'get_absolute_url',
     })
 
     def get_absolute_url(self, obj):

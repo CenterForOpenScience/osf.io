@@ -22,7 +22,7 @@ from api.base.exceptions import (
     InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
-    InvalidQueryStringError
+    InvalidQueryStringError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -49,12 +49,14 @@ from api.base.views import (
     BaseNodeLinksList,
     LinkedNodesRelationship,
     LinkedRegistrationsRelationship,
-    WaterButlerMixin
+    WaterButlerMixin,
 )
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
-from api.comments.serializers import (CommentCreateSerializer,
-                                      NodeCommentSerializer)
+from api.comments.serializers import (
+    CommentCreateSerializer,
+    NodeCommentSerializer,
+)
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
@@ -94,7 +96,7 @@ from api.nodes.serializers import (
     NodeSettingsSerializer,
     NodeSettingsUpdateSerializer,
     NodeCitationSerializer,
-    NodeCitationStyleSerializer
+    NodeCitationStyleSerializer,
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
@@ -140,7 +142,7 @@ class NodeMixin(object):
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
                 request=self.request,
-                display_name='node'
+                display_name='node',
             )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -243,7 +245,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             except Region.DoesNotExist:
                 raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
             context.update({
-                'region_id': region_id
+                'region_id': region_id,
             })
         return context
 
@@ -292,7 +294,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
         if NodeRelation.objects.filter(
             parent__in=resource_object_list,
-            child__is_deleted=False
+            child__is_deleted=False,
         ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
             raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
@@ -542,7 +544,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
             Q(registered_node=None) |
             Q(registered_node__is_deleted=True),
             branched_from=node,
-            deleted__isnull=True
+            deleted__isnull=True,
         )
 
     # overrides ListBulkCreateJSONAPIView
@@ -557,7 +559,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     permission_classes = (
         IsAdminOrReviewer,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
@@ -582,7 +584,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -620,7 +622,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -654,7 +656,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
                 raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
 
         context.update({
-            'region_id': id
+            'region_id': id,
         })
         return context
 
@@ -801,7 +803,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             self.request,
-            display_name='node'
+            display_name='node',
         )
         if node.is_registration:
             raise MethodNotAllowed(method=self.request.method)
@@ -883,7 +885,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
             self.request,
-            'node link'
+            'node link',
         )
         self.check_object_permissions(self.request, node_link.parent)
         return node_link
@@ -907,7 +909,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_FORKS_READ, CoreScopes.NODE_BASE_READ]
@@ -1004,7 +1006,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     ordering = ('_materialized_path',)  # default ordering
@@ -1080,7 +1082,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 node = self.get_node(check_object_permissions=False)
                 base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
                 return base_class.objects.filter(
-                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path
+                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path,
                 )
             elif isinstance(fobj, OsfStorageFolder):
                 return BaseFileNode.objects.filter(id=fobj.id)
@@ -1099,7 +1101,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     serializer_class = FileSerializer
@@ -1185,7 +1187,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         node = self.get_node()
         if node.has_addon(addon):
             raise InvalidModelValueError(
-                detail='Add-on {} already enabled for node {}'.format(addon, node._id)
+                detail='Add-on {} already enabled for node {}'.format(addon, node._id),
             )
 
         return super(NodeAddonDetail, self).perform_create(serializer)
@@ -1230,8 +1232,10 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
         node_addon = self.get_addon_settings()
         if not node_addon.has_auth:
-            raise JSONAPIException(detail='This addon is enabled but an account has not been imported from your user settings',
-                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)})
+            raise JSONAPIException(
+                detail='This addon is enabled but an account has not been imported from your user settings',
+                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)},
+            )
 
         path = self.request.query_params.get('path')
         folder_id = self.request.query_params.get('id')
@@ -1329,7 +1333,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     def get_default_queryset(self):
@@ -1338,7 +1342,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     def get_queryset(self):
         return self.get_queryset_from_request().include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
         )
 
 
@@ -1349,7 +1353,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
@@ -1401,7 +1405,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic
+        AdminOrPublic,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
@@ -1479,7 +1483,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        WriteOrPublicForRelationshipInstitutions
+        WriteOrPublicForRelationshipInstitutions,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -1493,7 +1497,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         node = self.get_node(check_object_permissions=False)
         obj = {
             'data': node.affiliated_institutions.all(),
-            'self': node
+            'self': node,
         }
         self.check_object_permissions(self.request, obj)
         return obj
@@ -1527,7 +1531,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -1778,9 +1782,11 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        ret = [node for node in
+        ret = [
+            node for node in
             super(NodeLinkedRegistrationsList, self).get_queryset()
-            if node.is_registration]
+            if node.is_registration
+        ]
         return ret
 
     # overrides APIView
@@ -1799,7 +1805,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     permission_classes = (
         IsAdmin,
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
@@ -1826,7 +1832,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     permission_classes = (
         IsAdmin,
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
@@ -1874,7 +1880,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             self.request,
-            display_name='node'
+            display_name='node',
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -1922,7 +1928,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        NodeRequestPermission
+        NodeRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]

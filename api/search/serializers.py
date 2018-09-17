@@ -1,5 +1,5 @@
 from api.base.serializers import (
-    JSONAPISerializer
+    JSONAPISerializer,
 )
 from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
@@ -50,8 +50,8 @@ class SearchSerializer(JSONAPISerializer):
         return absolute_reverse(
             view_name='search:search-search',
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     class Meta:
