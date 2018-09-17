@@ -97,6 +97,12 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
+    default_region = ShowIfCurrentUser(RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': 'get_default_region_id'},
+        read_only=True
+    ))
+
     class Meta:
         type_ = 'users'
 
@@ -120,6 +126,15 @@ class UserSerializer(JSONAPISerializer):
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
         return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
+
+    def get_default_region_id(self, obj):
+        try:
+            # use the annotated value if possible
+            region_id = obj.default_region
+        except AttributeError:
+            # use computed property if region annotation does not exist
+            region_id = obj.osfstorage_region._id
+        return region_id
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)

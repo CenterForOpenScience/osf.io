@@ -26,7 +26,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url, web_url_for
+from website.util import api_v2_url, web_url_for, api_url_for
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
 __all__ = (
@@ -281,10 +281,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             return None
 
     def generate_waterbutler_url(self, **kwargs):
+        base_url = None
+        if hasattr(self.target, 'osfstorage_region'):
+            base_url = self.target.osfstorage_region.waterbutler_url
         return waterbutler_api_url_for(
             self.target._id,
             self.provider,
             self.path,
+            base_url=base_url,
             **kwargs
         )
 
@@ -801,6 +805,18 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if save:
             self.save()
         return True
+
+    def serialize_waterbutler_settings(self, node_id, root_id):
+        return dict(self.region.waterbutler_settings, **{
+            'nid': node_id,
+            'rootId': root_id,
+            'baseUrl': api_url_for(
+                'osfstorage_get_metadata',
+                guid=node_id,
+                _absolute=True,
+                _internal=True
+            ),
+        })
 
     class Meta:
         ordering = ('-created',)

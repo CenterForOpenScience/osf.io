@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
@@ -118,6 +119,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
             .select_related('node_license', 'preprint_file')
             .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
         )
 
     # overrides RetrieveAPIView

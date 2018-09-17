@@ -784,7 +784,6 @@ def request_export(auth):
     user.save()
     return {'message': 'Sent account export request'}
 
-
 @must_be_logged_in
 def request_deactivation(auth):
     user = auth.user

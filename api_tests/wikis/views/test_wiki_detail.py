@@ -6,7 +6,7 @@ import datetime
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-from addons.wiki.models import WikiVersion
+from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import (
     WikiFactory,
     WikiVersionFactory,
@@ -166,7 +166,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_public_project_with_wiki_page()
         self.public_registration = RegistrationFactory(
             project=self.public_project, user=self.user, is_public=True)
-        self.public_registration_wiki_id = self.public_registration.get_wiki_page('home')._id
+        self.public_registration_wiki_id = WikiPage.objects.get_for_node(self.public_registration, 'home')._id
         self.public_registration.save()
         self.public_registration_url = '/{}wikis/{}/'.format(
             API_BASE, self.public_registration_wiki_id)
@@ -175,7 +175,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_private_project_with_wiki_page()
         self.private_registration = RegistrationFactory(
             project=self.private_project, user=self.user)
-        self.private_registration_wiki_id = self.private_registration.get_wiki_page('home')._id
+        self.private_registration_wiki_id = WikiPage.objects.get_for_node(self.private_registration, 'home')._id
         self.private_registration.save()
         self.private_registration_url = '/{}wikis/{}/'.format(
             API_BASE, self.private_registration_wiki_id)

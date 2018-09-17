@@ -24,6 +24,8 @@ var UserProfile = oop.defclass({
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
+        this.defaultRegion = ko.observable();
+        this.availableRegions = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
             var emails = this.emails();
@@ -150,6 +152,8 @@ var UserProfileClient = oop.defclass({
         }
 
         profile.id(data.profile.id);
+        profile.defaultRegion(data.profile.default_region);
+        profile.availableRegions(data.profile.available_regions);
         profile.emails(
             ko.utils.arrayMap(data.profile.emails, function (emailData){
                 var email = new UserEmail({
@@ -344,6 +348,55 @@ var ExternalIdentityViewModel = oop.defclass({
     }
 });
 
+var UpdateDefaultStorageLocation = oop.defclass({
+    constructor: function() {
+        this.client = new UserProfileClient();
+        this.profile = ko.observable(new UserProfile());
+        this.locationSelected = ko.observable({'name': ''});
+
+        this.locationSelectedName = ko.computed(function () {
+            return this.locationSelected().name;
+        }, this);
+
+
+        this.client.fetch().done(
+            function(profile) {
+                this.profile(profile);
+                this.locationSelected(this.profile().defaultRegion());
+            }.bind(this)
+        );
+
+
+    },
+    urls: {
+        'update': '/api/v1/profile/region/'
+    },
+    updateDefaultStorageLocation: function() {
+        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
+        request.done(function() {
+            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Your attempt to change your default storage location has failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error updating default storage location ', {
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
+            });
+        }.bind(this));
+        return request;
+    },
+    setLocation: function(location) {
+        this.locationSelected(location);
+
+    }
+});
+
 var DeactivateAccountViewModel = oop.defclass({
     constructor: function () {
         this.requestPending = ko.observable(window.contextVars.requestedDeactivation);
@@ -496,5 +549,6 @@ module.exports = {
     UserProfileViewModel: UserProfileViewModel,
     DeactivateAccountViewModel: DeactivateAccountViewModel,
     ExportAccountViewModel: ExportAccountViewModel,
-    ExternalIdentityViewModel: ExternalIdentityViewModel
+    ExternalIdentityViewModel: ExternalIdentityViewModel,
+    UpdateDefaultStorageLocation: UpdateDefaultStorageLocation
 };

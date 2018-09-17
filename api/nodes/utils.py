@@ -36,8 +36,11 @@ def get_file_object(target, path, provider, request):
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
     view_only = request.query_params.get('view_only', default=None)
+    base_url = None
+    if hasattr(target, 'osfstorage_region'):
+        base_url = target.osfstorage_region.waterbutler_url
     url = waterbutler_api_url_for(target._id, provider, path, _internal=True,
-                                  meta=True, view_only=view_only)
+                                  base_url=base_url, meta=True, view_only=view_only)
 
     waterbutler_request = requests.get(
         url,

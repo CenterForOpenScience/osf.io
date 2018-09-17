@@ -98,8 +98,9 @@ class TestAuthUtils(OsfTestCase):
             'user': user,
             'mimetype': 'html',
             'mail': mails.WELCOME,
+            'domain': settings.DOMAIN,
             'to_addr': user.username,
-            'osf_contact_email': settings.OSF_CONTACT_EMAIL
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL
         })
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
