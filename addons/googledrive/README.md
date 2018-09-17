@@ -5,7 +5,7 @@
 
 
 
-### Setup on Google APIs 
+### Setup on Google APIs
 1. Go to https://console.developers.google.com
 2. If you do not already have a project, create a project
 3. Click on the "Google Drive API" link, and enable it
