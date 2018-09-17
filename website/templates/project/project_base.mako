@@ -6,18 +6,16 @@
     else:
         prefix = ''
     if node.get('is_registration', False):
-        return prefix + 'registration'
+        return prefix + 'registrations'
     elif node.get('is_preprint', False):
-        return prefix + 'preprint'
-    elif parent_node['exists']:
-        return prefix + 'component'
+        return prefix + 'preprints'
     else:
-        return prefix + 'project'
+        return prefix + 'nodes'
     %>
 </%def>
 
 <%def name="public()"><%
-    return node.get('is_public', False)
+    return 'public' if node.get('is_public', False) else 'private'
     %>
 </%def>
 
