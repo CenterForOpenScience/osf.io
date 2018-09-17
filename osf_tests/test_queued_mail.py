@@ -14,6 +14,7 @@ from osf.models.queued_mail import (
     queue_mail, WELCOME_OSF4M,
     NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT, PREREG_REMINDER
 )
+from website.settings import DOMAIN
 
 @pytest.fixture()
 def user():
@@ -86,7 +87,8 @@ class TestQueuedMail:
             mail=WELCOME_OSF4M,
             user=user,
             conference='Buttjamz conference',
-            fid=''
+            fid='',
+            domain=DOMAIN
         )
         assert bool(mail.send_mail()) is True
         assert mail.data['downloads'] == 0

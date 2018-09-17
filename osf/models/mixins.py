@@ -689,6 +689,18 @@ class ReviewProviderMixin(GuardianMixin):
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
+    def get_request_state_counts(self):
+        # import stuff here to get around circular imports
+        from osf.models import PreprintRequest
+        qs = PreprintRequest.objects.filter(target__provider__id=self.id,
+                                            target__node__isnull=False,
+                                            target__node__is_deleted=False,
+                                            target__node__is_public=True)
+        qs = qs.values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in DefaultStates}
+        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        return counts
+
     def add_to_group(self, user, group):
         # Add default notification subscription
         notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
@@ -740,13 +752,13 @@ class TaxonomizableMixin(models.Model):
         """
         AbstractNode = apps.get_model('osf.AbstractNode')
         Preprint = apps.get_model('osf.Preprint')
-        CollectedGuidMetadata = apps.get_model('osf.CollectedGuidMetadata')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
         if isinstance(self, (AbstractNode, Preprint)):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, CollectedGuidMetadata):
+        elif isinstance(self, CollectionSubmission):
             if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')
 
@@ -1504,22 +1516,9 @@ class SpamOverrideMixin(SpamMixin):
 
     def _get_spam_content(self, saved_fields):
         spam_fields = self.get_spam_fields(saved_fields)
-
         content = []
         for field in spam_fields:
-            if field == 'wiki_pages_latest':
-                newest_wiki_page = None
-                for wiki_page in self.get_wiki_pages_latest():
-                    if not newest_wiki_page:
-                        newest_wiki_page = wiki_page
-                    elif wiki_page.created > newest_wiki_page.created:
-                        newest_wiki_page = wiki_page
-                if newest_wiki_page:
-                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
-            else:
-                content.append((getattr(self, field, None) or '').encode('utf-8'))
-        if self.all_tags.exists():
-            content.extend(map(lambda name: name.encode('utf-8'), self.all_tags.values_list('name', flat=True)))
+            content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
         return ' '.join(content)

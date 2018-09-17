@@ -23,6 +23,7 @@ from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.osfstorage.models import Region
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
                         RegistrationSchema, AbstractNode, PrivateLink)
@@ -95,6 +96,16 @@ def update_institutions(node, new_institutions, user, post=False):
             raise exceptions.PermissionDenied(
                 detail='User needs to be affiliated with {}'.format(inst.name))
         node.add_affiliated_institution(inst, user)
+
+
+class RegionRelationshipField(RelationshipField):
+
+    def to_internal_value(self, data):
+        try:
+            region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
+        except Region.DoesNotExist:
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+        return {'region_id': region_id}
 
 
 class NodeTagField(ser.Field):
@@ -374,6 +385,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     ))
 
+    region = RegionRelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': 'get_region_id'},
+        read_only=False
+    )
+
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<_id>'},
@@ -558,14 +575,27 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'node': node_comments
         }
 
+    def get_region_id(self, obj):
+        try:
+            # use the annotated value if possible
+            region_id = obj.region
+        except AttributeError:
+            # use computed property if region annotation does not exist
+            # i.e. after creating a node
+            region_id = obj.osfstorage_region._id
+        return region_id
+
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
         Node = apps.get_model('osf.Node')
         tag_instances = []
         affiliated_institutions = None
+        region_id = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
+        if 'region_id' in validated_data:
+            region_id = validated_data.pop('region_id')
         if 'tag_names' in validated_data:
             tags = validated_data.pop('tag_names')
             for tag in tags:
@@ -614,6 +644,14 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
+
+        if not region_id:
+            region_id = self.context.get('region_id')
+        if region_id:
+            node_settings = node.get_addon('osfstorage')
+            node_settings.region_id = region_id
+            node_settings.save()
+
         return node
 
     def update(self, node, validated_data):
@@ -628,6 +666,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if 'tag_names' in validated_data:
                 new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)
+            if 'region' in validated_data:
+                validated_data.pop('region')
             if 'license_type' in validated_data or 'license' in validated_data:
                 license_details = get_license_details(node, validated_data)
                 validated_data['node_license'] = license_details

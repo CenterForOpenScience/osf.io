@@ -12,6 +12,7 @@ from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
+from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
 from osf.models import Preprint, NodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
@@ -68,6 +69,12 @@ class TargetRelationshipField(RelationshipField):
         target = self.get_object(data)
         return {'target': target}
 
+
+class PreprintRequestTargetRelationshipField(TargetRelationshipField):
+    def to_representation(self, value):
+        ret = super(TargetRelationshipField, self).to_representation(value)
+        ret['data']['type'] = PreprintRequestSerializer.Meta.type_
+        return ret
 
 class BaseActionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -219,7 +226,7 @@ class PreprintRequestActionSerializer(BaseActionSerializer):
     class Meta:
         type_ = 'preprint-request-actions'
 
-    target = TargetRelationshipField(
+    target = PreprintRequestTargetRelationshipField(
         target_class=PreprintRequest,
         read_only=False,
         required=True,

@@ -114,7 +114,7 @@ class PreprintRequestDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintR
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = NodeRequestSerializer
+    serializer_class = PreprintRequestSerializer
 
     view_category = 'requests'
     view_name = 'preprint-request-detail'

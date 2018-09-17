@@ -14,7 +14,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
@@ -38,17 +38,19 @@ from website.project.model import has_anonymous_link, NodeUpdateError, validate_
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
+from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
-from website.views import serialize_node_summary
+from website.views import serialize_node_summary, get_storage_region_list
 from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
+from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 
@@ -270,7 +272,7 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['include_wiki_settings'] = WikiPage.objects.include_wiki_settings(node)
     ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
@@ -656,7 +658,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_version('home', None)
+    wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -773,6 +775,9 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'access_requests_enabled': node.access_requests_enabled,
+            'storage_location': node.osfstorage_region.name,
+            'waterbutler_url': node.osfstorage_region.waterbutler_url,
+            'mfr_url': node.osfstorage_region.mfr_url
         },
         'parent_node': {
             'exists': parent is not None,
@@ -814,6 +819,14 @@ def _view_project(node, auth, primary=False,
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ]
     }
+
+    # Default should be at top of list for UI and for the project overview page the default region
+    # for a component is that of the it's parent node.
+    region_list = get_storage_region_list(user, node=node)
+
+    data.update({'storage_regions': region_list})
+    data.update({'storage_flag_is_active': storage_i18n_flag_active()})
+
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
     else:
@@ -851,14 +864,14 @@ def serialize_collections(cgms, auth):
     return [{
         'title': cgm.collection.title,
         'name': cgm.collection.provider.name,
-        'url': '/{}/'.format(cgm.collection._id),
+        'url': '/collections/{}/'.format(cgm.collection.provider._id),
         'status': cgm.status,
         'type': cgm.collected_type,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
+    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
 def serialize_preprints(node, user):
     return [

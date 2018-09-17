@@ -167,7 +167,7 @@ class TestNodeDetail:
     def test_top_level_project_has_no_parent(self, app, url_public):
         res = app.get(url_public)
         assert res.status_code == 200
-        assert 'parent' not in res.json['data']['relationships']
+        assert res.json['data']['relationships']['parent']['data'] is None
         assert 'id' in res.json['data']
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1048,7 +1048,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': title_new,
             }
         }, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     def test_partial_update_private_project_logged_in_contributor(
             self, app, user, title_new, description, category, project_private, url_private):

@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.db.models import F
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -20,26 +21,31 @@ from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
-                                   ReadOnlyOrCurrentUserRelationship)
+                                   ReadOnlyOrCurrentUserRelationship,
+                                   ClaimUserPermission)
 from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserSettingsSerializer,
+                                   UserSettingsUpdateSerializer,
                                    UserQuickFilesSerializer,
                                    UserAccountExportSerializer,
                                    UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer,)
+                                   ReadEmailUserDetailSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
+from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
 from osf.models import (Contributor,
                         ExternalAccount,
+                        Guid,
                         QuickFilesNode,
                         AbstractNode,
                         Preprint,
@@ -47,7 +53,7 @@ from osf.models import (Contributor,
                         Registration,
                         OSFUser)
 from website import mails, settings
-
+from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -73,7 +79,11 @@ class UserMixin(object):
             if user._id == key:
                 if check_permissions:
                     self.check_object_permissions(self.request, user)
-                return user
+                return get_object_or_error(
+                    OSFUser.objects.filter(id=user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                    request=self.request,
+                    display_name='user'
+                )
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[OSFUser]:
@@ -81,13 +91,19 @@ class UserMixin(object):
 
         current_user = self.request.user
 
-        if key == 'me':
-            if isinstance(current_user, AnonymousUser):
+        if isinstance(current_user, AnonymousUser):
+            if key == 'me':
                 raise NotAuthenticated
-            else:
-                return self.request.user
+
+        elif key == 'me' or key == current_user._id:
+            return get_object_or_error(
+                OSFUser.objects.filter(id=current_user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                request=self.request,
+                display_name='user'
+            )
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -574,4 +590,106 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.email_last_sent = timezone.now()
         user.requested_deactivation = True
         user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_settings'
+
+    serializer_class = UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_user()
+
+
+class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        ClaimUserPermission,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]  # Tokens should not be able to access this
+    required_write_scopes = [CoreScopes.NULL]  # Tokens should not be able to access this
+
+    view_category = 'users'
+    view_name = 'claim-user'
+
+    def _send_claim_email(self, *args, **kwargs):
+        """ This avoids needing to reimplement all of the logic in the sender methods.
+        When v1 is more fully deprecated, those send hooks should be reworked to not
+        rely upon a flask context and placed in utils (or elsewhere).
+
+        :param bool registered: Indicates which sender to call (passed in as keyword)
+        :param \*args: Positional arguments passed to senders
+        :param \*\*kwargs: Keyword arguments passed to senders
+        :return: None
+        """
+        from website.app import app
+        from website.routes import make_url_map
+        try:
+            make_url_map(app)
+        except AssertionError:
+            # Already mapped
+            pass
+        ctx = app.test_request_context()
+        ctx.push()
+        if kwargs.pop('registered', False):
+            send_claim_registered_email(*args, **kwargs)
+        else:
+            send_claim_email(*args, **kwargs)
+        ctx.pop()
+
+    def post(self, request, *args, **kwargs):
+        claimer = request.user
+        email = (request.data.get('email', None) or '').lower().strip()
+        record_id = (request.data.get('id', None) or '').lower().strip()
+        if not record_id:
+            raise ValidationError('Must specify record "id".')
+        claimed_user = self.get_user(check_permissions=True)  # Ensures claimability
+        if claimed_user.is_disabled:
+            raise ValidationError('Cannot claim disabled account.')
+        try:
+            record_referent = Guid.objects.get(_id=record_id).referent
+        except Guid.DoesNotExist:
+            raise NotFound('Unable to find specified record.')
+
+        try:
+            unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
+        except KeyError:
+            if isinstance(record_referent, Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+                record_referent = record_referent.node
+                unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
+            else:
+                raise NotFound('Unable to find specified record.')
+
+        if claimer.is_anonymous and email:
+            claimer = get_user(email=email)
+            if claimer and claimer.is_registered:
+                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            else:
+                self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+        elif isinstance(claimer, OSFUser):
+            if unclaimed_record.get('referrer_id', '') == claimer._id:
+                raise ValidationError('Referrer cannot claim user.')
+            self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+        else:
+            raise ValidationError('Must either be logged in or specify claim email.')
+
         return Response(status=status.HTTP_204_NO_CONTENT)

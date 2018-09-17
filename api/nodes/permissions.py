@@ -49,10 +49,12 @@ class IsPublic(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    acceptable_models = (AbstractNode,)
+    acceptable_models = (AbstractNode, PrivateLink)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
+        if isinstance(obj, PrivateLink):
+            obj = view.get_node()
         auth = get_user_auth(request)
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
@@ -71,18 +73,20 @@ class IsAdminOrReviewer(permissions.BasePermission):
     """
     Prereg admins can update draft registrations.
     """
-    acceptable_models = (AbstractNode, DraftRegistration, PrivateLink,)
+    acceptable_models = (AbstractNode, DraftRegistration,)
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
             return True
+        if isinstance(obj, DraftRegistration):
+            obj = obj.branched_from
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class AdminOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)

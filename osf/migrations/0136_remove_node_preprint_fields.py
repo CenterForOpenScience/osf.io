@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0131_transfer_preprint_service_permissions'),
+        ('osf', '0135_transfer_preprint_service_permissions'),
     ]
 
     operations = [

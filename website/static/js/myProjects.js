@@ -551,6 +551,10 @@ var MyProjects = {
          * @param index {Number} the filter id - 1 or index of the filter in the collections array
          */
         self.setFilterHistory = function(index) {
+            // if not on the myprojects version of this page, don't change state (e.g., institutions)
+            if (window.location.href.indexOf('/myprojects') === -1 ) {
+                return;
+            }
             var filter;
             if (index in self.filterHistoryData) {
                 filter = self.filterHistoryData[index];
@@ -566,6 +570,10 @@ var MyProjects = {
          * Sets the initial filter based on href
          */
         self.getFilterIndex = function() {
+            // if not on the myprojects version of this page, don't change state (e.g., institutions)
+            if (window.location.href.indexOf('/myprojects') === -1 ) {
+                return 0;
+            }
             // Cast to string undefined => "undefined" to handle upper/lower case anchors
             var name = String(window.location.href.split('#')[1]).toLowerCase();
             switch(name) {

@@ -17,7 +17,7 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectedGuidMetadata
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectionSubmission
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
@@ -153,7 +153,7 @@ def migrate_users(index, delete, increment=10000):
         logger.info('{} users marked deleted'.format(total_users))
 
 def migrate_collected_metadata(index, delete):
-    cgms = CollectedGuidMetadata.objects.filter(
+    cgms = CollectionSubmission.objects.filter(
         collection__provider__isnull=False,
         collection__is_public=True,
         collection__deleted__isnull=True,

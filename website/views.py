@@ -24,8 +24,10 @@ from framework.auth.core import _get_current_user
 from website import settings
 
 from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
+from addons.osfstorage.models import Region
+
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
@@ -129,7 +131,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
 def index():
     # Check if we're on an institution landing page
-    institution = Institution.objects.filter(domains__icontains=[request.host], is_deleted=False)
+    institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
     if institution.exists():
         return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
     else:
@@ -148,10 +150,15 @@ def dashboard(auth):
 @ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
+
+    region_list = get_storage_region_list(user)
+
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
+            'storage_regions': region_list,
+            'storage_flag_is_active': storage_i18n_flag_active(),
             }
 
 
@@ -355,3 +362,19 @@ def legacy_share_v1_search(**kwargs):
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )
     )
+
+
+def get_storage_region_list(user, node=False):
+    if not user:  # Preserves legacy frontend test behavior
+        return []
+
+    if node:
+        default_region = node.osfstorage_region
+    else:
+        default_region = user.get_addon('osfstorage').default_region
+
+    available_regions = list(Region.objects.order_by('name').values('_id', 'name'))
+    default_region = {'name': default_region.name, '_id': default_region._id}
+    available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
+
+    return available_regions

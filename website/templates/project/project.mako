@@ -574,6 +574,8 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
+        storageRegions: ${ storage_regions | sjson, n },
+        storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },
         analyticsMeta: {
             pageMeta: {

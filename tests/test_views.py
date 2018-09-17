@@ -23,6 +23,7 @@ from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.wiki.models import WikiPage
 from framework.auth import cas
 from framework.auth.core import generate_verification_key
 from framework import auth
@@ -88,6 +89,7 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
+    RegionFactory
 )
 
 @mock_app.route('/errorexc')
@@ -1488,6 +1490,35 @@ class TestUserProfile(OsfTestCase):
 
         assert_not_in('Quick files', res.body)
 
+    def test_user_update_region(self):
+        user_settings = self.user.get_addon('osfstorage')
+        assert user_settings.default_region_id == 1
+
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        region = RegionFactory(name='Frankfort', _id='eu-central-1')
+        payload = {'region_id': 'eu-central-1'}
+
+        res = self.app.put_json(url, payload, auth=auth)
+        user_settings.reload()
+        assert user_settings.default_region_id == region.id
+
+    def test_user_update_region_missing_region_id_key(self):
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        region = RegionFactory(name='Frankfort', _id='eu-central-1')
+        payload = {'bad_key': 'eu-central-1'}
+
+        res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
+        assert res.status_code == 400
+
+    def test_user_update_region_missing_bad_region(self):
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        payload = {'region_id': 'bad-region-1'}
+
+        res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
+        assert res.status_code == 404
 
 class TestUserProfileApplicationsPage(OsfTestCase):
 
@@ -4307,7 +4338,7 @@ class TestWikiWidgetViews(OsfTestCase):
         # project with no home wiki content
         self.project2 = ProjectFactory(creator=self.project.creator)
         self.project2.add_contributor(self.read_only_contrib, permissions='read')
-        self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
+        WikiPage.objects.create_for_node(self.project2, 'home', '', Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
         contrib = self.project.contributor_set.get(user=self.project.creator)
