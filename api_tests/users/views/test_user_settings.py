@@ -315,7 +315,7 @@ class TestUserEmailDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['primary'] is True
 
-    def test_addding_new_token_for_unconfirmed_email(self, app, user_one):
+    def test_adding_new_token_for_unconfirmed_email(self, app, user_one):
         new_email = 'save@thewhales.test'
         first_token = user_one.add_unconfirmed_email(new_email)
         user_one.save()
@@ -354,7 +354,7 @@ class TestUserEmailDetail:
         res = app.patch_json_api(url, payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test set primary not confimred fails
+        # test set primary not confirmed fails
         unconfirmed_id = user_one.add_unconfirmed_email('unconfirmed@nope.test')
         user_one.save()
         url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, unconfirmed_id)
