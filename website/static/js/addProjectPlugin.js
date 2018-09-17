@@ -36,6 +36,7 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectStorageLocation = m.prop(window.contextVars.storageRegions[0]); // first storage region is default
         self.storageRegions = m.prop(window.contextVars.storageRegions);
+        self.storageFlagIsActive = m.prop(window.contextVars.storageFlagIsActive);
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
@@ -226,7 +227,7 @@ var AddProject = {
                                 }
                             ))),
                         ]): '',
-                        m('.form-group.m-v-sm', [
+                        ctrl.storageFlagIsActive() ? m('.form-group.m-v-sm', [
                             m('row',
                                 m('f-w-lg.text-bigger', 'Storage location'),
                                 m.component(SelectStorageLocation, {
@@ -235,7 +236,7 @@ var AddProject = {
                                 })
                             )
                             ]
-                        ),
+                        ) : '',
                         ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
                             m('label.f-w-md',
 
