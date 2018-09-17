@@ -185,6 +185,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return None
 
     @property
+    def osfstorage_region(self):
+        return self.region
+
+    @property
     def contributor_email_template(self):
         return 'preprint'
 

@@ -269,10 +269,12 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
+    provider_settings = None
     if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
+
     try:
         path = data.get('path')
         version = data.get('version')
@@ -302,13 +304,13 @@ def get_auth(auth, **kwargs):
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
                 waterbutler_settings = fileversion.serialize_waterbutler_settings(
-                    node_id=provider_settings.owner._id,
-                    root_id=provider_settings.root_node._id,
+                    node_id=provider_settings.owner._id if provider_settings else node._id,
+                    root_id=provider_settings.root_node._id if provider_settings else node.root_folder._id,
                 )
         # If they haven't been set by version region, use the NodeSettings region
         if not (credentials and waterbutler_settings):
-            credentials = provider_settings.serialize_waterbutler_credentials()
-            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+            credentials = node.serialize_waterbutler_credentials(provider_name)
+            waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
