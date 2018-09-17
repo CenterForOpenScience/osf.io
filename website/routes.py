@@ -44,6 +44,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from addons.osfstorage import views as osfstorage_views
 from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -90,6 +91,7 @@ def get_globals():
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
+
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
@@ -131,7 +133,6 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
@@ -925,6 +926,13 @@ def make_url_map(app):
             '/profile/export/',
             'post',
             profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/region/',
+            'put',
+            osfstorage_views.update_region,
             json_renderer,
         ),
 

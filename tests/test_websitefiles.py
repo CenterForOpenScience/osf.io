@@ -280,7 +280,6 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(TestFile.load(fn._id), None)
 
     def test_restore_file(self):
-        # import ipdb; ipdb.set_trace()
         root = TestFolder(
             _path='root',
             name='rootfolder',

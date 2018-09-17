@@ -10,7 +10,7 @@ from api.base.settings.defaults import API_BASE
 
 from osf.models import Guid
 
-from addons.wiki.models import WikiVersion
+from addons.wiki.models import WikiVersion, WikiPage
 
 from tests.base import ApiWikiTestCase
 from osf_tests.factories import (ProjectFactory, RegistrationFactory,
@@ -38,14 +38,14 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
     def _set_up_public_registration_with_wiki_page(self):
         self._set_up_public_project_with_wiki_page()
         self.public_registration = RegistrationFactory(project=self.public_project, user=self.user, is_public=True)
-        self.public_registration_wiki_version = self.public_registration.get_wiki_version('home')
+        self.public_registration_wiki_version = WikiVersion.objects.get_for_node(self.public_registration, 'home')
         self.public_registration.save()
         self.public_registration_url = '/{}wikis/{}/versions/{}/'.format(API_BASE, self.public_registration_wiki_version.wiki_page._id, str(self.public_registration_wiki_version.identifier))
 
     def _set_up_private_registration_with_wiki_page(self):
         self._set_up_private_project_with_wiki_page()
         self.private_registration = RegistrationFactory(project=self.private_project, user=self.user)
-        self.private_registration_wiki_version = self.private_registration.get_wiki_version('home')
+        self.private_registration_wiki_version = WikiVersion.objects.get_for_node(self.private_registration, 'home')
         self.private_registration.save()
         self.private_registration_url = '/{}wikis/{}/versions/{}/'.format(API_BASE, self.private_registration_wiki_version.wiki_page._id, str(self.private_registration_wiki_version.identifier))
 
@@ -213,7 +213,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
     def test_public_registration_wiki_version_relationship_links(self):
         self._set_up_public_registration_with_wiki_page()
         res = self.app.get(self.public_registration_url)
-        expected_wiki_page_url = '{}wikis/{}/'.format(API_BASE, self.public_registration.get_wiki_page('home')._id)
+        expected_wiki_page_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(self.public_registration, 'home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, self.user._id)
         assert_in(expected_wiki_page_url, res.json['data']['relationships']['wiki_page']['links']['related']['href'])
         assert_in(expected_user_relationship_url, res.json['data']['relationships']['user']['links']['related']['href'])
@@ -221,7 +221,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
     def test_private_registration_wiki_version_relationship_links(self):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, auth=self.user.auth)
-        expected_wiki_page_url = '{}wikis/{}/'.format(API_BASE, self.private_registration.get_wiki_page('home')._id)
+        expected_wiki_page_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(self.private_registration, 'home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, self.user._id)
         assert_in(expected_wiki_page_url, res.json['data']['relationships']['wiki_page']['links']['related']['href'])
         assert_in(expected_user_relationship_url, res.json['data']['relationships']['user']['links']['related']['href'])

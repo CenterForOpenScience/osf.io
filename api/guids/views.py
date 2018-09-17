@@ -53,7 +53,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             Guid,
             self.kwargs['guids'],
             self.request,
-            display_name='guid'
+            display_name='guid',
         )
 
     def get(self, request, **kwargs):
