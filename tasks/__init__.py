@@ -346,6 +346,7 @@ API_TESTS3 = [
     'api_tests/files',
     'api_tests/guids',
     'api_tests/reviews',
+    'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
     'api_tests/taxonomies',

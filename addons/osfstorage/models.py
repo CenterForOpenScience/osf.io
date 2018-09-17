@@ -21,6 +21,7 @@ from website.files import utils as files_utils
 from website.util import api_url_for
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
+from website.util import api_v2_url
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -165,6 +166,10 @@ class OsfStorageFileNode(BaseFileNode):
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
+        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
+        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            most_recent_fileversion.region = destination_parent.target.osfstorage_region
+            most_recent_fileversion.save()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
@@ -290,7 +295,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return latest_version
 
         if metadata:
-            version.update_metadata(metadata)
+            version.update_metadata(metadata, save=False)
 
         version.region = self.target.osfstorage_region
         version._find_matching_archive(save=False)
@@ -446,10 +451,23 @@ class Region(models.Model):
     name = models.CharField(max_length=200)
     waterbutler_credentials = EncryptedJSONField(default=dict)
     waterbutler_url = models.URLField(default=website_settings.WATERBUTLER_URL)
+    mfr_url = models.URLField(default=website_settings.MFR_SERVER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
+
+    def __unicode__(self):
+        return '{}'.format(self.name)
+
+    def get_absolute_url(self):
+        return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/regions/{}/'.format(self._id)
+        return api_v2_url(path)
 
     class Meta:
         unique_together = ('_id', 'name')
+
 
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
@@ -461,6 +479,16 @@ class UserSettings(BaseUserSettings):
     def merge(self, user_settings):
         """Merge `user_settings` into this instance"""
         NodeSettings.objects.filter(user_settings=user_settings).update(user_settings=self)
+
+    def set_region(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise ValueError('Region cannot be found.')
+
+        self.default_region = region
+        self.save()
+        return
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
@@ -504,8 +532,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def after_fork(self, node, fork, user, save=True):
         clone = self.clone()
         clone.owner = fork
-        clone.user_settings = self.user_settings
-        clone.region_id = self.region_id
+        user_settings = user.get_addon('osfstorage')
+        clone.user_settings = user_settings
+        clone.region_id = user_settings.default_region_id
 
         clone.save()
         if not self.root_node:
@@ -520,6 +549,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         clone = self.clone()
         clone.owner = registration
         clone.on_add()
+        clone.region_id = self.region_id
         clone.save()
 
         return clone, None

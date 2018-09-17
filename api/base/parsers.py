@@ -232,10 +232,10 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
         for resource in relationships:
             ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
             if isinstance(ret, list):
-                rel = []
+                rel[resource] = []
                 for item in ret:
                     if item.get('target_type') and item.get('id'):
-                        rel.append({resource: item['id']})
+                        rel[resource].append(item['id'])
             else:
                 if ret.get('target_type') and ret.get('id'):
                     rel[resource] = ret['id']

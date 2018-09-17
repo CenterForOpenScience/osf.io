@@ -51,6 +51,7 @@ class TestNodeSerializer:
 
         # Relationships
         relationships = data['relationships']
+        assert 'region' in relationships
         assert 'children' in relationships
         assert 'contributors' in relationships
         assert 'files' in relationships
@@ -106,7 +107,8 @@ class TestNodeRegistrationSerializer:
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'registration_schema'
+            'registration_schema',
+            'region'
         ]
 
         # Attributes

@@ -2,11 +2,13 @@ import pytest
 
 from django.contrib.contenttypes.models import ContentType
 
+from addons.osfstorage.models import NodeSettings
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import BaseFileNode, Folder, File
 from osf_tests.factories import (
     UserFactory,
-    ProjectFactory
+    ProjectFactory,
+    RegionFactory
 )
 
 pytestmark = pytest.mark.django_db
@@ -64,3 +66,29 @@ def test_folder_update_calls_folder_update_method(project, create_test_file):
     assert parent_folder.__class__.update != File.update
     # the file update method should be the File update method
     assert file.__class__.update == File.update
+
+
+def test_file_update_respects_region(project, user, create_test_file):
+    test_file = create_test_file(target=project)
+    version = test_file.versions.first()
+    original_region = project.osfstorage_region
+    assert version.region == original_region
+
+    # update the region on the project, ensure the new version has the new region
+    node_settings = NodeSettings.objects.get(owner=project.id)
+    new_region = RegionFactory()
+    node_settings.region = new_region
+    node_settings.save()
+    test_file.save()
+
+    new_version = test_file.create_version(
+        user, {
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': '07d80a',
+        }, {
+            'sha256': 'existing',
+        }
+    )
+    assert new_region != original_region
+    assert new_version.region == new_region

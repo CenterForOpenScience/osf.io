@@ -391,12 +391,6 @@ class TestRelationshipField:
             related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
-        not_attribute_on_target = RelationshipField(
-            # fake url, for testing purposes
-            related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '12345'}
-        )
-
         # If related_view_kwargs is a callable, this field _must_ match the property name on
         # the target record
         registered_from = RelationshipField(
@@ -479,19 +473,6 @@ class TestRelationshipField:
         )
         assert_in(
             urllib.quote('filter[woop]=yea', safe='?='),
-            field['related']['href']
-        )
-
-    def test_field_with_non_attribute(self):
-        req = make_drf_request_with_version(version='2.0')
-        project = factories.ProjectFactory()
-        node = factories.NodeFactory(parent=project)
-        data = self.BasicNodeSerializer(
-            node, context={'request': req}
-        ).data['data']
-        field = data['relationships']['not_attribute_on_target']['links']
-        assert_in(
-            '/v2/nodes/{}/children/'.format('12345'),
             field['related']['href']
         )
 
