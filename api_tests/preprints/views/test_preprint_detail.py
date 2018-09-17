@@ -92,7 +92,7 @@ class TestPreprintDetail:
         assert data['relationships']['contributors'].get('data', None) is None
 
         #   test no node attached to preprint
-        assert data['relationships'].get('node') is None
+        assert data['relationships']['node'].get('data', None) is None
 
         #   test_preprint_node_deleted doesn't affect preprint
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
