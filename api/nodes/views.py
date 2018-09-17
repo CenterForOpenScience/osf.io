@@ -1,7 +1,7 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists, Subquery
+from django.db.models import Q, OuterRef, Exists, Subquery, F
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -22,6 +22,7 @@ from api.base.exceptions import (
     InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
+    InvalidQueryStringError
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -111,6 +112,7 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
+from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
 from website import mails
@@ -133,14 +135,13 @@ class NodeMixin(object):
             # If this is an embedded request, the node might be cached somewhere
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
+        node_id = self.kwargs[self.node_lookup_url_kwarg]
         if node is None:
             node = get_object_or_error(
-                Node,
-                self.kwargs[self.node_lookup_url_kwarg],
-                self.request,
+                Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
+                request=self.request,
                 display_name='node'
             )
-
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -232,6 +233,19 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return NodeDetailSerializer
         else:
             return NodeSerializer
+
+    def get_serializer_context(self):
+        context = super(NodeList, self).get_serializer_context()
+        region_id = self.request.query_params.get('region', None)
+        if region_id:
+            try:
+                region_id = Region.objects.filter(_id=region_id).values_list('id', flat=True).get()
+            except Region.DoesNotExist:
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
+            context.update({
+                'region_id': region_id
+            })
+        return context
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
@@ -629,6 +643,21 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
                 .values_list('child__pk', flat=True)
         return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
 
+    def get_serializer_context(self):
+        context = super(NodeChildrenList, self).get_serializer_context()
+        region__id = self.request.query_params.get('region', None)
+        id = None
+        if region__id:
+            try:
+                id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
+            except Region.DoesNotExist:
+                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
+
+        context.update({
+            'region_id': id
+        })
+        return context
+
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
@@ -892,7 +921,14 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
+        all_forks = (
+            self.get_node().forks
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
+            .exclude(region=None)
+            .exclude(type='osf.registration')
+            .exclude(is_deleted=True)
+            .order_by('-forked_date')
+        )
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -909,15 +945,6 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
             raise exc
         else:
             mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
-
-    # overrides ListCreateAPIView
-    def get_parser_context(self, http_request):
-        """
-        Tells parser that attributes are not required in request
-        """
-        res = super(NodeForksList, self).get_parser_context(http_request)
-        res['attributes_required'] = False
-        return res
 
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):

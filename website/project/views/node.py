@@ -14,7 +14,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
@@ -45,7 +45,7 @@ from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
-from website.views import serialize_node_summary
+from website.views import serialize_node_summary, get_storage_region_list
 from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
@@ -787,6 +787,9 @@ def _view_project(node, auth, primary=False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
+            'storage_location': node.osfstorage_region.name,
+            'waterbutler_url': node.osfstorage_region.waterbutler_url,
+            'mfr_url': node.osfstorage_region.mfr_url
         },
         'parent_node': {
             'exists': parent is not None,
@@ -828,6 +831,14 @@ def _view_project(node, auth, primary=False,
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ]
     }
+
+    # Default should be at top of list for UI and for the project overview page the default region
+    # for a component is that of the it's parent node.
+    region_list = get_storage_region_list(user, node=node)
+
+    data.update({'storage_regions': region_list})
+    data.update({'storage_flag_is_active': storage_i18n_flag_active()})
+
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
     else:

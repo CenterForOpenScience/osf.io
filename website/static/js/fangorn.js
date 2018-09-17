@@ -388,6 +388,8 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
+    item.data.waterbutlerURL = parent.data.waterbutlerURL;
+
     if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
@@ -1120,7 +1122,7 @@ function _createFolder(event, dismissCallback, helpText) {
 
     var extra = {};
     var path = parent.data.path || '/';
-    var options = {name: val, kind: 'folder'};
+    var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
 
     if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
@@ -1510,11 +1512,20 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    if(item.data.storageUsage) {
-        return _fangornTitleColumnHelper(tb, item, col, [m('span', item.data.name), m('span.text-muted.p-l-xs', $osf.humanFileSize(item.data.storageUsage, true))], '/', 'fg-file-links');
+    var itemLabel = [];
+
+    if(item.data.nodeRegion){
+        itemLabel.push(item.data.name + ' (' + item.data.nodeRegion + ')');
+    } else {
+        itemLabel.push(m('span', item.data.name));
     }
 
-     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');}
+    if(item.data.storageUsage) {
+        itemLabel.push(m('span.text-muted.p-l-xs', $osf.humanFileSize(item.data.storageUsage, true)));
+    }
+
+    return _fangornTitleColumnHelper(tb, item, col, itemLabel, '/', 'fg-file-links');
+}
 
 function _fangornVersionColumn(item, col) {
     var tb = this;

@@ -123,6 +123,10 @@ def build_addon_root(node_settings, name, permissions=None,
         if hasattr(node_settings, 'storage_usage'):
             ret.update({'storageUsage': node_settings.storage_usage})
 
+    if hasattr(node_settings, 'region'):
+        ret.update({'nodeRegion': node_settings.region.name})
+        ret.update({'waterbutlerURL': node_settings.region.waterbutler_url})
+
     return ret
 
 

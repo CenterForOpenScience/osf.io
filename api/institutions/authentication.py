@@ -2,6 +2,7 @@ import json
 
 import jwe
 import jwt
+import waffle
 
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
@@ -14,7 +15,7 @@ from framework.auth import get_or_create_user
 
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
-from website.settings import OSF_CONTACT_EMAIL
+from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -108,7 +109,9 @@ class InstitutionAuthentication(BaseAuthentication):
                 mail=WELCOME_OSF4I,
                 mimetype='html',
                 user=user,
-                osf_contact_email=OSF_CONTACT_EMAIL
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
+                storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
             )
 
         if not user.is_affiliated_with_institution(institution):

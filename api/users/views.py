@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.db.models import F
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -27,10 +28,12 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserSettingsSerializer,
+                                   UserSettingsUpdateSerializer,
                                    UserQuickFilesSerializer,
                                    UserAccountExportSerializer,
                                    UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer,)
+                                   ReadEmailUserDetailSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.core import get_user
@@ -51,7 +54,6 @@ from osf.models import (Contributor,
                         OSFUser)
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
-
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -77,7 +79,11 @@ class UserMixin(object):
             if user._id == key:
                 if check_permissions:
                     self.check_object_permissions(self.request, user)
-                return user
+                return get_object_or_error(
+                    OSFUser.objects.filter(id=user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                    request=self.request,
+                    display_name='user'
+                )
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[OSFUser]:
@@ -85,13 +91,19 @@ class UserMixin(object):
 
         current_user = self.request.user
 
-        if key == 'me':
-            if isinstance(current_user, AnonymousUser):
+        if isinstance(current_user, AnonymousUser):
+            if key == 'me':
                 raise NotAuthenticated
-            else:
-                return self.request.user
+
+        elif key == 'me' or key == current_user._id:
+            return get_object_or_error(
+                OSFUser.objects.filter(id=current_user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
+                request=self.request,
+                display_name='user'
+            )
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -579,6 +591,32 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.requested_deactivation = True
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_settings'
+
+    serializer_class = UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_user()
 
 
 class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):

@@ -329,18 +329,26 @@ API_TESTS1 = [
 API_TESTS2 = [
     'api_tests/actions',
     'api_tests/nodes',
-    'api_tests/requests'
+    'api_tests/requests',
+    'api_tests/subscriptions',
+    # 'api_tests/waffle',
+    # 'api_tests/wb',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
+    'api_tests/alerts',
     'api_tests/applications',
+    'api_tests/banners',
     'api_tests/base',
     'api_tests/collections',
     'api_tests/comments',
+    'api_tests/crossref',
     'api_tests/files',
     'api_tests/guids',
     'api_tests/reviews',
+    'api_tests/regions',
     'api_tests/search',
+    'api_tests/scopes',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
