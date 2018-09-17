@@ -60,7 +60,7 @@ class ChronosSerializer(object):
             ],
             'MANUSCRIPT_FILES': [
                 cls.serialize_file(preprint, file_node)
-                for file_node in OsfStorageFile.objects.filter(node=preprint.node)
+                for file_node in OsfStorageFile.objects.filter(abstractnode=preprint.node)
             ],
             'STATUS_CODE': status,
             'ABSTRACT': preprint.node.description,
