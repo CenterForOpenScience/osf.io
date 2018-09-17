@@ -14,9 +14,11 @@ Hello ${user.fullname},<br>
 Thank you for verifying your account on OSF, a free, open source service maintained by the Center for Open Science. Here are a few things you can do with OSF:
 <br>
 
+% if storage_flag_is_active:
 <h4>Select your storage location</h4>
 Files can be stored in a location you specify from the available geographic regions for new projects. <a href="${domain}settings/account/?utm_source=notification&utm_medium=email&utm_campaign=welcome#updateDefaultStorageLocation">Set storage location.</a><br>
 <br>
+% endif
 
 <h4>Store your files</h4>
 Archive your materials, data, manuscripts, or anything else associated with your work during the research process or after it is complete. <a href="http://help.osf.io/m/projectfiles/l/482002-upload-files/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Learn how.</a><br>

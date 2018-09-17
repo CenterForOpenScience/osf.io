@@ -26,7 +26,7 @@ from website import settings
 from addons.osfstorage.models import Region
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
@@ -157,7 +157,8 @@ def my_projects(auth):
     my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
-            'storage_regions': region_list
+            'storage_regions': region_list,
+            'storage_flag_is_active': storage_i18n_flag_active(),
             }
 
 

@@ -18,7 +18,9 @@
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
                     % endif
 
-                    <li><a href="#nodeStorageLocation">Storage Location</a></li>
+                    % if storage_flag_is_active:
+                        <li><a href="#nodeStorageLocation">Storage Location</a></li>
+                    % endif
 
                     % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
@@ -126,21 +128,23 @@
 
             % endif
 
-        <div class="panel panel-default">
-            <span id="nodeStorageLocation" class="anchor"></span>
-            <div class="panel-heading clearfix">
-                <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
-            </div>
-            <div class="panel-body">
-                <p>
-                    <b>Storage location:</b> ${node['storage_location']}
-                </p>
-                <div class="help-block">
-                    <p class="text-muted">Storage location cannot be changed after project is created.</p>
+        % if storage_flag_is_active:
+            <div class="panel panel-default">
+                <span id="nodeStorageLocation" class="anchor"></span>
+                <div class="panel-heading clearfix">
+                    <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
                 </div>
+                <div class="panel-body">
+                    <p>
+                        <b>Storage location:</b> ${node['storage_location']}
+                    </p>
+                    <div class="help-block">
+                        <p class="text-muted">Storage location cannot be changed after project is created.</p>
+                    </div>
 
+                </div>
             </div>
-        </div>
+        % endif
 
         % endif  ## End Configure Project
 
