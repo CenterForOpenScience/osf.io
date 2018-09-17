@@ -800,7 +800,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise ImproperlyConfigured(msg % self.view_name)
 
         if url is None:
-            raise SkipField
+            return {'data': None}
 
         related_url = url['related']
         related_path = urlparse(related_url).path
