@@ -56,29 +56,6 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         self.view = setup_user_view(self.view, self.request, user=self.user)
         self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
 
-    def test_cannot_delete_if_preprints_present(self):
-        preprint = PreprintFactory()
-        self.preprint_provider.preprints.add(preprint)
-        self.preprint_provider.save()
-
-        redirect = self.view.delete(self.request)
-        nt.assert_equal(redirect.url, '/preprint_providers/{}/cannot_delete/'.format(self.preprint_provider.id))
-        nt.assert_equal(redirect.status_code, 302)
-
-    def test_delete_provider_with_no_preprints(self):
-        redirect = self.view.delete(self.request)
-        nt.assert_equal(redirect.url, '/preprint_providers/')
-        nt.assert_equal(redirect.status_code, 302)
-
-    def test_get_with_no_preprints(self):
-        res = self.view.get(self.request)
-        nt.assert_equal(res.status_code, 200)
-
-    def test_cannot_get_if_preprints_present(self):
-        preprint = PreprintFactory()
-        self.preprint_provider.preprints.add(preprint)
-        self.preprint_provider.save()
-
     @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
     def test_update_share_token_and_source(self, share_resp):
         token = 'tokennethbranagh'
@@ -102,6 +79,7 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
         assert self.preprint_provider.access_token == token
         assert self.preprint_provider.share_source == label
+
 
 class TestPreprintProviderChangeForm(AdminTestCase):
     def setUp(self):
@@ -364,7 +342,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     @pytest.fixture()
     def provider_with_preprint(self, preprint, provider):
-        provider.preprint_services.add(preprint)
+        provider.preprints.add(preprint)
         provider.save()
         return provider
 
