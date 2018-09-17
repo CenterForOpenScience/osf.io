@@ -318,6 +318,18 @@
                       <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
                     % endif
 
+                    % if collection['volume']:
+                      <li>Volume:&nbsp;&nbsp;<b>${collection['volume']}</b></li>
+                    % endif
+
+                    % if collection['issue']:
+                      <li>Issue:&nbsp;&nbsp;<b>${collection['issue']}</b></li>
+                    % endif
+
+                    % if collection['program_area']:
+                      <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
+                    % endif
+
                     % if collection['subjects']:
                       <li>
                         <dl class="dl-horizontal dl-subjects">
