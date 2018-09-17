@@ -28,10 +28,12 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserIdentitiesSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserSettingsSerializer,
+                                   UserSettingsUpdateSerializer,
                                    UserQuickFilesSerializer,
                                    UserAccountExportSerializer,
                                    UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer,)
+                                   ReadEmailUserDetailSerializer)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.core import get_user
@@ -52,7 +54,6 @@ from osf.models import (Contributor,
                         OSFUser)
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
-
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -590,6 +591,32 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.requested_deactivation = True
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_settings'
+
+    serializer_class = UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return UserSettingsUpdateSerializer
+        return UserSettingsSerializer
+
+    # overrides RetrieveUpdateAPIView
+    def get_object(self):
+        return self.get_user()
 
 
 class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
