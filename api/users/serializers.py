@@ -476,7 +476,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
         except ValidationError as e:
-            raise exceptions.ValidationError(e.message)
+            raise exceptions.ValidationError(e.args[0])
 
         return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
 

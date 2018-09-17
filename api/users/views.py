@@ -768,11 +768,12 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         if decoded_id:
             try:
                 email = user.emails.get(id=decoded_id[0])
+            except Email.DoesNotExist:
+                email = None
+            else:
                 primary = email.address == user.username
                 address = email.address
                 confirmed = True
-            except Email.DoesNotExist:
-                email = None
 
         # check to see if it's an unconfirmed email with a token
         elif user.unconfirmed_emails:
@@ -797,7 +798,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
             try:
                 user.remove_email(email)
             except PermissionsError as e:
-                raise ValidationError(e.message)
+                raise ValidationError(e.args[0])
         else:
             user.remove_unconfirmed_email(email)
             user.save()
