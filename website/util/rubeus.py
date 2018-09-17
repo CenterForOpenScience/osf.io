@@ -8,8 +8,6 @@ from django.utils import timezone
 
 from framework import sentry
 from framework.auth.decorators import Auth
-from flask import request
-from waffle import flag_is_active
 
 from django.apps import apps
 from django.db.models import Exists, OuterRef
@@ -17,6 +15,7 @@ from django.db.models import Exists, OuterRef
 from website import settings
 from website.util import paths
 from website.settings import DISK_SAVING_MODE
+from website.ember_osf_web.decorators import storage_usage_flag_active
 from osf.utils import sanitize
 
 
@@ -119,7 +118,7 @@ def build_addon_root(node_settings, name, permissions=None,
     }
     ret.update(kwargs)
 
-    if flag_is_active(request, 'storage_usage_feature'):
+    if storage_usage_flag_active():
         if hasattr(node_settings, 'storage_usage'):
             ret.update({'storageUsage': node_settings.storage_usage})
 
