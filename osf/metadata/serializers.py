@@ -1,6 +1,8 @@
-from website.settings import DOMAIN, DOI_FORMAT, DATACITE_PREFIX
-from datacite import schema40
 import jsonschema
+from datacite import schema40
+
+from osf.metadata import utils
+from website.settings import DOMAIN
 
 serializer_registry = {}
 
@@ -44,34 +46,9 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
     def serialize_json(cls, record):
         file = record.file
         target = file.target
-        creators = []
-        for contrib in target.visible_contributors:
-            creator = {
-                'creatorName': contrib.fullname,
-                'givenName': contrib.given_name,
-                'familyName': contrib.family_name,
-                'nameIdentifiers': [{
-                    'nameIdentifier': contrib._id,
-                    'nameIdentifierScheme': 'OSF',
-                    'schemeURI': DOMAIN
-                }]
-            }
-
-            if contrib.external_identity:
-                for key, value in contrib.external_identity.items():
-                    creator['nameIdentifiers'].append({
-                        'nameIdentifier': value.keys()[0],  # This is only good for ORCID and likely to break unless more validation is put in.
-                        'nameIdentifierScheme': key
-                    })
-
-            creators.append(creator)
-
         doc = {
-            'identifier': {
-                'identifier': DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid=target._id),
-                'identifierType': 'DOI'
-            },
-            'creators': creators,
+            'identifier': utils.datacite_format_identifier(target),
+            'creators': utils.datacite_format_contributors(target.visible_contributors),
             'titles': [
                 {
                     'title': file.name
@@ -93,8 +70,6 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                     'dateType': 'Updated'
                 }
             ],
-
-
         }
 
         if target.description:
@@ -105,22 +80,16 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 }
             ]
 
-        #subjects = target.subjects.values_list('text', flat=True)
-        #if subjects:
-        #    doc['subjects'] = datacite_format_subjects_json(subjects)
+        subjects = target.subjects.values_list('text', flat=True)
+        if subjects:
+           doc['subjects'] = utils.datacite_format_subjects(subjects)
 
-        resource_type = record.metadata.get('resource_type')
-        resource_type_general = record.metadata.get('resource_type_general')
-        if resource_type:
-            doc['resourceType'] = {
-                'resourceType': resource_type,
-                'resourceTypeGeneral': resource_type_general
-            }
-        else:
-            doc['resourceType'] = {
-                'resourceType': '(unas)',
-                'resourceTypeGeneral': 'Other'
-            }
+        resource_type = record.metadata.get('resource_type', '(unas)')
+        resource_type_general = record.metadata.get('resource_type_general', utils.RESOURCE_TYPE_MAP.get(resource_type))
+        doc['resourceType'] = {
+            'resourceType': resource_type,
+            'resourceTypeGeneral': resource_type_general
+        }
 
         related_publication_doi = record.metadata.get('related_publication_doi')
         if related_publication_doi:
@@ -152,6 +121,9 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 doc['fundingReferences'].append({
                     'awardNumber': award_number
                 })
+
+        if getattr(target, 'node_license', None):
+            doc['rightsList'] = [utils.datacite_format_rights(target.node_license)]
 
         return doc
 
