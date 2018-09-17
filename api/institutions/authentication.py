@@ -2,6 +2,7 @@ import json
 
 import jwe
 import jwt
+import waffle
 
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
@@ -109,7 +110,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 mimetype='html',
                 user=user,
                 domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL
+                osf_support_email=OSF_SUPPORT_EMAIL,
+                storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
             )
 
         if not user.is_affiliated_with_institution(institution):

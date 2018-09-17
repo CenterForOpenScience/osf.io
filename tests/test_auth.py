@@ -27,6 +27,7 @@ from osf.models import OSFUser, Session
 from osf.utils import permissions
 from website import mails
 from website import settings
+from website.ember_osf_web.decorators import storage_i18n_flag_active
 from website.project.decorators import (
     must_have_permission,
     must_be_contributor,
@@ -100,7 +101,8 @@ class TestAuthUtils(OsfTestCase):
             'mail': mails.WELCOME,
             'domain': settings.DOMAIN,
             'to_addr': user.username,
-            'osf_support_email': settings.OSF_SUPPORT_EMAIL
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+            'storage_flag_is_active': storage_i18n_flag_active(),
         })
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())

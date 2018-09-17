@@ -9,6 +9,7 @@ from osf.models.contributor import get_contributor_permissions
 from osf.utils.permissions import reduce_permissions
 
 from osf.utils import workflows
+from website.ember_osf_web.decorators import storage_i18n_flag_active
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -94,6 +95,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
             'available_regions': available_regions,
+            'storage_flag_is_active': storage_i18n_flag_active(),
             'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
         })
