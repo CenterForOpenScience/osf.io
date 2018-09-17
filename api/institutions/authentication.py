@@ -52,7 +52,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 jwe.decrypt(request.body, settings.JWE_SECRET),
                 settings.JWT_SECRET,
                 options={'verify_exp': False},
-                algorithm='HS256'
+                algorithm='HS256',
             )
         except (jwt.InvalidTokenError, TypeError):
             raise AuthenticationFailed

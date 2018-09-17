@@ -117,9 +117,13 @@ class Gone(JSONAPIException):
 
 
 def UserGone(user):
-    return Gone(detail='The requested user is no longer available.',
-            meta={'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
-                    'middle_names': user.middle_names, 'profile_image': user.profile_image_url()})
+    return Gone(
+        detail='The requested user is no longer available.',
+        meta={
+            'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
+            'middle_names': user.middle_names, 'profile_image': user.profile_image_url(),
+        },
+    )
 
 class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
@@ -129,7 +133,7 @@ class Conflict(JSONAPIException):
 class JSONAPIParameterException(JSONAPIException):
     def __init__(self, detail=None, parameter=None):
         source = {
-            'parameter': parameter
+            'parameter': parameter,
         }
         super(JSONAPIParameterException, self).__init__(detail=detail, source=source)
 
@@ -137,7 +141,7 @@ class JSONAPIParameterException(JSONAPIException):
 class JSONAPIAttributeException(JSONAPIException):
     def __init__(self, detail=None, attribute=None):
         source = {
-            'pointer': '/data/attributes/{}'.format(attribute)
+            'pointer': '/data/attributes/{}'.format(attribute),
         }
         super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
 
@@ -157,7 +161,7 @@ class InvalidFilterOperator(JSONAPIParameterException):
             valid_operators = ', '.join(valid_operators)
             detail = "Value '{0}' is not a supported filter operator; use one of {1}.".format(
                 value,
-                valid_operators
+                valid_operators,
             )
         super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
 
@@ -171,7 +175,7 @@ class InvalidFilterValue(JSONAPIParameterException):
             detail = "Value '{0}' is not valid".format(value)
             if field_type:
                 detail += ' for a filter on type {0}'.format(
-                    field_type
+                    field_type,
                 )
             detail += '.'
         super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')

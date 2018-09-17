@@ -35,7 +35,7 @@ class RegionMixin(object):
             reg = Region.objects.get(_id=region_id)
         except Region.DoesNotExist:
             raise NotFound(
-                detail='No region matching that region_id could be found.'
+                detail='No region matching that region_id could be found.',
             )
         self.check_object_permissions(self.request, reg)
         return reg
