@@ -868,6 +868,7 @@ def get_affiliated_institutions(obj):
         ret.append({
             'name': institution.name,
             'logo_path': institution.logo_path,
+            'logo_path_rounded_corners': institution.logo_path_rounded_corners,
             'id': institution._id,
         })
     return ret
