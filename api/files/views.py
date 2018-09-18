@@ -8,7 +8,7 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
-    QuickFilesNode
+    QuickFilesNode,
 )
 
 from api.base.exceptions import Gone
@@ -141,7 +141,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, node_from_version)
+        PermissionWithGetter(ContributorOrPublic, node_from_version),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]

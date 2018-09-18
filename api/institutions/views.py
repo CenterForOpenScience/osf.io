@@ -41,7 +41,7 @@ class InstitutionMixin(object):
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
             self.request,
-            display_name='institution'
+            display_name='institution',
         )
         return inst
 
@@ -230,7 +230,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        UserIsAffiliated
+        UserIsAffiliated,
     )
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
@@ -246,7 +246,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
         registrations = inst.nodes.filter(is_deleted=False, type='osf.registration').can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': registrations,
-            'self': inst
+            'self': inst,
         }
         self.check_object_permissions(self.request, ret)
         return ret
@@ -314,7 +314,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        UserIsAffiliated
+        UserIsAffiliated,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -330,7 +330,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         nodes = inst.nodes.filter(is_deleted=False, type='osf.node').can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': nodes,
-            'self': inst
+            'self': inst,
         }
         self.check_object_permissions(self.request, ret)
         return ret

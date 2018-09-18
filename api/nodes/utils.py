@@ -41,8 +41,10 @@ def get_file_object(target, path, provider, request):
     base_url = None
     if hasattr(target, 'osfstorage_region'):
         base_url = target.osfstorage_region.waterbutler_url
-    url = waterbutler_api_url_for(target._id, provider, path, _internal=True,
-                                  base_url=base_url, meta=True, view_only=view_only)
+    url = waterbutler_api_url_for(
+        target._id, provider, path, _internal=True,
+        base_url=base_url, meta=True, view_only=view_only,
+    )
 
     waterbutler_request = requests.get(
         url,
@@ -84,4 +86,5 @@ class NodeOptimizationMixin(object):
             has_wiki_addon=Exists(wiki_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
             annotated_tags=ArrayAgg('tags__name'),
-            has_admin_scope=Value(admin_scope, output_field=BooleanField()))
+            has_admin_scope=Value(admin_scope, output_field=BooleanField()),
+        )

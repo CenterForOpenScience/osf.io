@@ -13,16 +13,16 @@ def waffle_feature_is_active(request, instance_type, instance_name):
     waffle_map = {
         'flag': {
             'waffle_func': waffle.flag_is_active,
-            'waffle_args': (request, instance_name)
+            'waffle_args': (request, instance_name),
         },
         'switch': {
             'waffle_func': waffle.switch_is_active,
-            'waffle_args': (instance_name,)
+            'waffle_args': (instance_name,),
         },
         'sample': {
             'waffle_func': waffle.sample_is_active,
-            'waffle_args': (instance_name,)
-        }
+            'waffle_args': (instance_name,),
+        },
     }[instance_type]
     return waffle_map['waffle_func'](*waffle_map['waffle_args'])
 
