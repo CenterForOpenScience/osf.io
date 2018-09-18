@@ -292,7 +292,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-modified',)
+    ordering = ('-last_logged',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
