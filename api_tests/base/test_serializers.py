@@ -173,7 +173,7 @@ class TestNullLinks(ApiTestCase):
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
-        assert_not_in('null_link_field', rep['relationships'])
+        assert_equals(rep['relationships']['null_link_field']['data'], None)
         assert_in('valued_link_field', rep['relationships'])
 
 
@@ -216,7 +216,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
@@ -249,7 +249,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
@@ -309,7 +309,7 @@ class TestApiBaseSerializers(ApiTestCase):
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
-            else:
+            elif relation != {'data': None}:
                 link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
@@ -339,7 +339,7 @@ class TestApiBaseSerializers(ApiTestCase):
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
-            else:
+            elif relation != {'data': None}:
                 link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
@@ -428,6 +428,15 @@ class TestRelationshipField:
         assert_in('extra', meta)
         assert_equal(meta['extra'], 'foo')
 
+    def test_serializing_empty_to_one(self):
+        req = make_drf_request_with_version(version='2.0')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+        # This node is not registered_from another node hence it is an empty-to-one.
+        assert_equal(data['relationships']['registered_from']['data'], None)
+
     def test_self_and_related_fields(self):
         req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
@@ -483,7 +492,7 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
-        assert_not_in('registered_from', data['relationships'])
+        assert_equal(data['relationships']['registered_from']['data'], None)
 
         registration = factories.RegistrationFactory(project=node)
         data = self.BasicNodeSerializer(

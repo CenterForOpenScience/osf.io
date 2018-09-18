@@ -21,4 +21,4 @@
 2. Copy your new application's Key and Secret from Bitbucket into the new `local.py` file.
 3. Ensure `"bitbucket"` exists in the addons list in `"addons.json"`
 4. Restart your app server.
-5. Select Bitbucket as a project provider. 
+5. Select Bitbucket as a project provider.

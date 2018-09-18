@@ -127,7 +127,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -164,7 +164,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -191,7 +191,7 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
     view_category = 'wikis'
     view_name = 'wiki-versions'
@@ -215,7 +215,7 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
     )
 
     serializer_class = WikiVersionSerializer
@@ -240,7 +240,7 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
