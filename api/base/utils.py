@@ -13,6 +13,7 @@ from rest_framework.reverse import reverse
 
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
+from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
@@ -30,7 +31,7 @@ FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OF
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
-hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz')
+hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
 
 def decompose_field(field):
     from api.base.serializers import (
