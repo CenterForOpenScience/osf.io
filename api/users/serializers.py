@@ -458,8 +458,8 @@ class UserEmailsSerializer(JSONAPISerializer):
             kwargs={
                 'user_id': user._id,
                 'email_id': obj.id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     class Meta:
