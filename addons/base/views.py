@@ -13,7 +13,9 @@ import furl
 import jwe
 import jwt
 from django.db import transaction
+from django.db.models import Sum
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -33,14 +35,14 @@ from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
-from osf.models import (BaseFileNode, TrashedFileNode,
+from osf.models import (BaseFileNode, TrashedFileNode, TrashedFile, TrashedFolder,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_usage_flag_active
 from website.project.utils import serialize_node
 from website.util import rubeus
 
@@ -530,6 +532,45 @@ def addon_delete_file_node(self, target, user, event_type, payload):
 
             if file_node and not TrashedFileNode.load(file_node._id):
                 file_node.delete(user=user)
+
+
+def get_storage_usage_of_children(folder):
+    folder_children = folder.children.all()
+    total_storage = 0
+    for item in folder_children:
+        if item.kind == 'file':
+            total_storage += item.versions.all().aggregate(sum=Sum('size'))['sum']
+        elif item.kind == 'folder':
+            total_storage += get_storage_usage_of_children(item)
+    return total_storage
+
+
+@file_signals.file_updated.connect
+def storage_usage_cache_control(self, target, user, event_type, payload):
+    if storage_usage_flag_active():
+        provider = payload.get('provider')
+
+        if provider == 'osfstorage':
+            path = payload['metadata']['path']
+            osfstorage = target.get_addon('osfstorage')
+            storage_usage = cache.get('storage_usage:' + osfstorage._id)
+
+            if not storage_usage:
+                storage_usage = osfstorage.storage_usage
+
+            if event_type == 'file_removed':
+                if path.endswith('/'):
+                    folder = TrashedFolder.objects.get(_id=path.rstrip('/'))
+                    storage_usage -= get_storage_usage_of_children(folder)
+                else:
+                    trashed_node = TrashedFile.objects.get(_path='/' + path)
+                    storage_usage -= trashed_node.versions.all().aggregate(sum=Sum('size'))['sum']
+
+            if event_type in ('file_added', 'file_updated'):
+                file_node = OsfStorageFile.objects.get(_id=path)
+                storage_usage += file_node.versions.first().size
+
+            cache.set('storage_usage:' + osfstorage._id, storage_usage, osfstorage.STORAGE_USAGE_CACHE_TIMEOUT)
 
 
 @must_be_valid_project

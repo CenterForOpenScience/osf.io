@@ -14,6 +14,8 @@ import mock
 import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
@@ -28,11 +30,12 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.models.files import BaseFileNode, TrashedFile, FileVersion
+from website.ember_osf_web.decorators import storage_usage_flag_active
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -168,13 +171,20 @@ class TestAddonLogs(OsfTestCase):
         self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.file = OsfStorageFileNode.create(
+        self.file = OsfStorageFile.create(
             target=self.node,
             path='/testfile',
             _id='testfile',
             name='testfile',
             materialized_path='/testfile'
         )
+        self.file.save()
+        first_version = FileVersionFactory(
+            size=1024,
+            content_type='application/json',
+            modified=timezone.now(),
+        )
+        self.file.versions.add(first_version)
         self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
@@ -206,7 +216,7 @@ class TestAddonLogs(OsfTestCase):
     def build_payload(self, metadata, **kwargs):
         options = dict(
             auth={'id': self.user._id},
-            action='create',
+            action=kwargs.get('action', 'create'),
             provider=self.node_addon.config.short_name,
             metadata=metadata,
             time=time.time() + 1000,
@@ -239,9 +249,8 @@ class TestAddonLogs(OsfTestCase):
     @pytest.mark.enable_quickfiles_creation
     def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
-        materialized_path = 'pizza'
         url = quickfiles.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': 'abc123', 'materialized': materialized_path, 'kind': 'file'}, provider='osfstorage')
+        payload = self.build_payload(metadata={'path': self.file.path, 'materialized': self.file.materialized_path, 'kind': 'file'}, provider='osfstorage')
         resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         assert resp.status_code == 200
 
@@ -366,18 +375,26 @@ class TestAddonLogs(OsfTestCase):
 
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()
-        path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': self.file.path})
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
-        self.node.reload()
-        assert_equal(self.node.logs.count(), nlogs + 1)
-        assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
+    def test_add_file_updates_cache(self):  # This will fail if storage usage is disabled via Waffle
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': self.file.path})
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 1024
+
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})  # add new version
+
+        assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 2048
 
     def test_add_folder_osfstorage_log(self):
         self.configure_osf_addon()
-        path = 'pizza'
+        path = 'pizza/'
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.node.logs.count()
@@ -385,6 +402,29 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
+    def test_remove_file_updates_cache(self):  # This will fail if storage usage is disabled via Waffle
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        trashed_file = TrashedFile(
+            path='/trash_path',
+            provider='osfstorage',
+            target_object_id=self.node.id,
+            target_content_type=ContentType.objects.get_for_model(self.node)
+        )
+        trashed_file.save()
+        first_version = FileVersionFactory(
+            size=1024,
+            content_type='application/json',
+            modified=timezone.now(),
+        )
+        trashed_file.versions.add(first_version)
+        trashed_file.save()
+        payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': trashed_file.path}, action='delete')
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 0
+
 
 
 class TestCheckAuth(OsfTestCase):
@@ -971,7 +1011,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node_and_storage_usage_cache_control(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -991,7 +1031,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node_and_storage_usage_cache_control(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
