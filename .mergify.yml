@@ -8,7 +8,6 @@ rules:
                 contexts:
                 - continuous-integration/travis-ci
         enabling_label: enable-mergify
-        disabling_label: null
         disabling_files:
         - .mergify.yml
         - .travis.yml
