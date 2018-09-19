@@ -380,7 +380,8 @@ class TestAddonLogs(OsfTestCase):
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
 
-    def test_add_file_updates_cache(self):  # This will fail if storage usage is disabled via Waffle
+    @mock.patch('addons.base.views.storage_usage_flag_active', return_value=True)
+    def test_add_file_updates_cache(self, mock_flag):
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': self.file.path})
@@ -403,7 +404,8 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    def test_remove_file_updates_cache(self):  # This will fail if storage usage is disabled via Waffle
+    @mock.patch('addons.base.views.storage_usage_flag_active', return_value=True)
+    def test_remove_file_updates_cache(self, mock_flag):
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         trashed_file = TrashedFile(
@@ -1011,7 +1013,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node_and_storage_usage_cache_control(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -1031,7 +1033,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node_and_storage_usage_cache_control(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
