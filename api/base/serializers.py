@@ -6,6 +6,7 @@ import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
+from distutils.version import StrictVersion
 
 from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
@@ -807,7 +808,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise ImproperlyConfigured(msg % self.view_name)
 
         if url is None:
-            return {'data': None}
+            # Prior to 2.9, empty relationships were omitted from the response.
+            # This conflicts with the JSON-API spec and was fixed in 2.9.
+            if StrictVersion(request.version) < StrictVersion('2.9'):
+                raise SkipField
+            else:
+                return {'data': None}
 
         related_url = url['related']
         related_path = urlparse(related_url).path
