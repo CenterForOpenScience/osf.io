@@ -14,8 +14,10 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
     PreprintFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    RegionFactory
 )
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
@@ -138,6 +140,11 @@ class TestNodeList:
 
         res = app.get('{}?sort=title'.format(url))
         assert res.status_code == 200
+
+    def test_node_list_embed_region(self, app, url, public_project):
+        res = app.get('{}?embed=region'.format(url))
+        assert res.status_code == 200
+        assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
 
 
 @pytest.mark.django_db
@@ -936,6 +943,14 @@ class TestNodeCreate:
         return 'data'
 
     @pytest.fixture()
+    def region(self):
+        return RegionFactory(name='Frankfort', _id='eu-central-1')
+
+    @pytest.fixture()
+    def url_with_region_query_param(self, region, url):
+        return url + '?region={}'.format(region._id)
+
+    @pytest.fixture()
     def public_project(self, title, description, category, institution_one):
         return {
             'data': {
@@ -1215,6 +1230,91 @@ class TestNodeCreate:
             new_component.contributors
         ) == len(parent_project.contributors)
 
+    def test_create_project_with_region_relationship(
+            self, app, user_one, region, institution_one, private_project, url):
+        private_project['data']['relationships'] = {
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
+
+        institution_two = InstitutionFactory()
+        user_one.affiliated_institutions.add(institution_two)
+
+        private_project['data']['relationships'] = {
+            'affiliated_institutions': {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    },
+                    {
+                        'type': 'institutions',
+                        'id': institution_two._id
+                    }
+                ]
+            },
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
+
+        node_id = res.json['data']['id']
+        node = AbstractNode.load(node_id)
+        assert institution_one in node.affiliated_institutions.all()
+        assert institution_two in node.affiliated_institutions.all()
+
+    def test_create_project_with_region_query_param(
+            self, app, user_one, region, private_project, url_with_region_query_param):
+        res = app.post_json_api(
+            url_with_region_query_param, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        pid = res.json['data']['id']
+        project = AbstractNode.load(pid)
+
+        node_settings = project.get_addon('osfstorage')
+        assert node_settings.region_id == region.id
+
+    def test_create_project_with_no_region_specified(self, app, user_one, private_project, url):
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        project = AbstractNode.load(res.json['data']['id'])
+
+        node_settings = project.get_addon('osfstorage')
+        # NodeSettings just left at default region on creation
+        assert node_settings.region_id == 1
+
+    def test_create_project_with_bad_region_query_param(
+            self, app, user_one, region, private_project, url):
+        bad_region_id = 'bad-region-1'
+        res = app.post_json_api(
+            url + '?region={}'.format(bad_region_id), private_project,
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Region {} is invalid.'.format(bad_region_id)
+
     def test_create_project_errors(
             self, app, user_one, title, description, category, url):
 
@@ -1268,8 +1368,8 @@ class TestNodeCreate:
             url, project, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
 
     #   test_create_project_invalid_title
         project = {
@@ -1454,7 +1554,7 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0

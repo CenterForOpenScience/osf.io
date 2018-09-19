@@ -43,7 +43,7 @@
     <h1 class="m-t-xl m-b-lg text-center">
         <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-black.png" alt="preregistration_challenge_logo">
     </h1>
-    <p><strong> Articles must be published by an <a target='_blank' href='http://cos.io/our-services/prereg-more-information/'>approved</a> journal by December 31, 2018, to be eligible for a prize. </strong></p>
+    <p><strong> Articles must be published by an <a target='_blank' href='http://cos.io/our-services/prereg-more-information/'>approved</a> journal by December 31, 2018, to be eligible for a prize. Please use this this helpful workflow to preregister, even if you are not seeking a prize. </strong></p>
     <p> Improve your research with preregistration. The process of creating a <a href='http://www.cos.io/prereg'> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
 
     <div class="col-md-12 visible-xs">

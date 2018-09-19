@@ -9,12 +9,14 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
 from api.base.settings import osf_settings
-from api.base.serializers import (JSONAPISerializer,
-                                  TargetField,
-                                  RelationshipField,
-                                  IDField, TypeField, LinksField,
-                                  AnonymizedRegexField,
-                                  VersionedDateTimeField)
+from api.base.serializers import (
+    JSONAPISerializer,
+    TargetField,
+    RelationshipField,
+    IDField, TypeField, LinksField,
+    AnonymizedRegexField,
+    VersionedDateTimeField,
+)
 
 
 class CommentReport(object):
@@ -31,7 +33,7 @@ class CommentSerializer(JSONAPISerializer):
         'date_created',
         'date_modified',
         'page',
-        'target'
+        'target',
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -85,10 +87,12 @@ class CommentSerializer(JSONAPISerializer):
         return Comment.objects.filter(target___id=obj._id).exists()
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('comments:comment-detail', kwargs={
-            'comment_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'comments:comment-detail', kwargs={
+                'comment_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
@@ -119,7 +123,7 @@ class CommentSerializer(JSONAPISerializer):
         if not getattr(obj.referent, 'target_type', None):
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
-                detail='Invalid comment target type.'
+                detail='Invalid comment target type.',
             )
         return obj.referent.target_type
 
@@ -174,7 +178,7 @@ class CommentCreateSerializer(CommentSerializer):
         except ValueError:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/data/id'},
-                detail='Invalid comment target \'{}\'.'.format(target_id)
+                detail='Invalid comment target \'{}\'.'.format(target_id),
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
@@ -208,9 +212,13 @@ class NodeCommentDetailSerializer(NodeCommentSerializer):
 class CommentReportSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    category = ser.ChoiceField(choices=[('spam', 'Spam or advertising'),
-                                        ('hate', 'Hate speech'),
-                                        ('violence', 'Violence or harmful behavior')], required=True)
+    category = ser.ChoiceField(
+        choices=[
+            ('spam', 'Spam or advertising'),
+            ('hate', 'Hate speech'),
+            ('violence', 'Violence or harmful behavior'),
+        ], required=True,
+    )
     message = ser.CharField(source='text', required=False, allow_blank=True)
     links = LinksField({'self': 'get_absolute_url'})
 
@@ -223,8 +231,8 @@ class CommentReportSerializer(JSONAPISerializer):
             kwargs={
                 'user_id': obj._id,
                 'comment_id': self.context['request'].parser_context['kwargs']['comment_id'],
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     def create(self, validated_data):

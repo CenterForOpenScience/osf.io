@@ -105,7 +105,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'localhost:9200'
+ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
@@ -363,7 +363,7 @@ DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
 DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
-# Minting DOIs only works on Datacite's production server, so 
+# Minting DOIs only works on Datacite's production server, so
 # disable minting on staging and development environments by default
 DATACITE_MINT_DOIS = not DEV_MODE
 

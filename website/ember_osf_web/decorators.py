@@ -28,3 +28,8 @@ def ember_flag_is_active(flag_name):
                 return func(*args, **kwargs)
         return wrapped
     return decorator
+
+
+def storage_i18n_flag_active():
+    request.user = _get_current_user() or MockUser()
+    return waffle.flag_is_active(request, 'storage_i18n')

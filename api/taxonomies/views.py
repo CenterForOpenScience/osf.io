@@ -17,7 +17,7 @@ class TaxonomyList(DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFi
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -58,7 +58,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
