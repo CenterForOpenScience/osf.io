@@ -12,7 +12,7 @@ logger = logging.getLogger(__file__)
 
 
 def add_datacite_schema(*args):
-    with open('osf/utils/metadata/schemas/datacite.json') as f:
+    with open('osf/metadata/schemas/datacite.json') as f:
         jsonschema = json.load(f)
     _, created = FileMetadataSchema.objects.get_or_create(
         _id='datacite',
