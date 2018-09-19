@@ -26,7 +26,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url, web_url_for
+from website.util import api_v2_url, web_url_for, api_url_for
 
 __all__ = (
     'File',
@@ -280,10 +280,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             return None
 
     def generate_waterbutler_url(self, **kwargs):
+        base_url = None
+        if hasattr(self.target, 'osfstorage_region'):
+            base_url = self.target.osfstorage_region.waterbutler_url
         return waterbutler_api_url_for(
             self.target._id,
             self.provider,
             self.path,
+            base_url=base_url,
             **kwargs
         )
 
@@ -731,6 +735,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
+    region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     includable_objects = IncludeManager()
 
@@ -786,6 +791,18 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if save:
             self.save()
         return True
+
+    def serialize_waterbutler_settings(self, node_id, root_id):
+        return dict(self.region.waterbutler_settings, **{
+            'nid': node_id,
+            'rootId': root_id,
+            'baseUrl': api_url_for(
+                'osfstorage_get_metadata',
+                guid=node_id,
+                _absolute=True,
+                _internal=True
+            ),
+        })
 
     class Meta:
         ordering = ('-created',)

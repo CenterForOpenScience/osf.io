@@ -8,7 +8,7 @@ from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from api.base.utils import get_object_or_error
 from api.base.parsers import HMACSignedParser
 from api.wb.serializers import (
-    WaterbutlerMetadataSerializer
+    WaterbutlerMetadataSerializer,
 )
 
 class FileMetadataView(APIView):
@@ -28,7 +28,7 @@ class FileMetadataView(APIView):
             AbstractNode,
             target_id,
             self.request,
-            display_name='target'
+            display_name='target',
         )
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
@@ -39,7 +39,7 @@ class FileMetadataView(APIView):
         Extra context provided to the serializer class.
         """
         return {
-            'view': self
+            'view': self,
         }
 
     def post(self, request, *args, **kwargs):

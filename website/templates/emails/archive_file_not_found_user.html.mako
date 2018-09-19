@@ -10,7 +10,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    Your registration for the project ${src.title} at ${src.absolute_url} failed because one of more of the following files have been altered since you attached them to the draft registration. To fix this problem, please go to <a href="${results['draft'].absolute_url}">your draft registration</a> and select the files you want to be included in your registration. 
+    Your registration for the project ${src.title} at ${src.absolute_url} failed because one of more of the following files have been altered since you attached them to the draft registration. To fix this problem, please go to <a href="${results['draft'].absolute_url}">your draft registration</a> and select the files you want to be included in your registration.
     <br />
     <ul>
       % for missing in results['missing_files']:

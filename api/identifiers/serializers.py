@@ -38,10 +38,12 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         return '{}/identifiers/{}'.format(obj.absolute_api_v2_url, obj._id)
 
     def self_url(self, obj):
-        return absolute_reverse('identifiers:identifier-detail', kwargs={
-            'identifier_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'identifiers:identifier-detail', kwargs={
+                'identifier_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
 
 class NodeIdentifierSerializer(RegistrationIdentifierSerializer):
