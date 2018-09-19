@@ -1,0 +1,46 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "/user_entered_datacite",
+    "title": "User Entered Fields for the Datacite Schema",
+    "description": "User Entered Fields for the Datacite Schema",
+    "type": "object",
+    "properties": {
+      "file_description": {
+            "description": "The description of the file",
+            "type": "string"
+        },
+        "file_description_type": {
+            "description": "The type of the file description",
+            "type": "string",
+            "enum": [
+                "Abstract",
+                "Methods",
+                "SeriesInformation",
+                "TableOfContents",
+                "TechnicalInfo",
+                "Other"
+            ]
+        },
+        "related_publication_doi": {
+            "description": "The DOI of a related resource.",
+            "type": "string"
+        },
+        "external_doi_for_file": {
+            "description": "The DOI for the file, provided by an external source",
+            "type": "string"
+        },
+        "funding_agency": {
+            "description": "Name of the funding provider.",
+            "type": "string"
+        },
+        "grant_number": {
+            "description": "The code assigned by the funder to a sponsored award (grant).",
+            "type": "string"
+        },
+        "publication_year": {
+            "description": "Year when the data is made publicly available.",
+            "type": "string"
+        },
+        "additionalProperties": false
+    }
+}
