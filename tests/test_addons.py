@@ -34,7 +34,7 @@ from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFile, FileVersion
+from osf.models.files import BaseFileNode, TrashedFile, TrashedFileNode, FileVersion
 from website.ember_osf_web.decorators import storage_usage_flag_active
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node

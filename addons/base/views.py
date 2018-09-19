@@ -557,6 +557,9 @@ def storage_usage_cache_control(self, target, user, event_type, payload):
 
             if not storage_usage:
                 storage_usage = osfstorage.storage_usage
+            elif event_type in ('file_added', 'file_updated'):
+                file_node = OsfStorageFile.objects.get(_id=path)
+                storage_usage += file_node.versions.first().size
 
             if event_type == 'file_removed':
                 if path.endswith('/'):
@@ -565,10 +568,6 @@ def storage_usage_cache_control(self, target, user, event_type, payload):
                 else:
                     trashed_node = TrashedFile.objects.get(_path='/' + path)
                     storage_usage -= trashed_node.versions.all().aggregate(sum=Sum('size'))['sum']
-
-            if event_type in ('file_added', 'file_updated'):
-                file_node = OsfStorageFile.objects.get(_id=path)
-                storage_usage += file_node.versions.first().size
 
             cache.set('storage_usage:' + osfstorage._id, storage_usage, osfstorage.STORAGE_USAGE_CACHE_TIMEOUT)
 
