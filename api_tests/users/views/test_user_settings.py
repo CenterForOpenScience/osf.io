@@ -241,23 +241,31 @@ class TestUserChangePassword:
 
         payload['data']['attributes']['existing_password'] = 'password2'
         payload['data']['attributes']['new_password'] = 'password3'
-        res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 204
-        user_one.auth = (user_one.username, 'password3')
-
-        payload['data']['attributes']['existing_password'] = 'password3'
-        payload['data']['attributes']['new_password'] = 'password3'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
+        # Expected time is rounded to the second preventing probabilistic failures.
+        assert res.json['errors'][0]['detail'] == 'Request was throttled. Expected available in 59.0 seconds.'
 
     def test_exceed_throttle_failed_attempts(self, app, user_one, url, payload):
         payload['data']['attributes']['existing_password'] = 'wrong password'
+        payload['data']['attributes']['new_password'] = 'password2'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
+        # Expected time is rounded to the second preventing probabilistic failures.
+        assert res.json['errors'][0]['detail'] == 'Request was throttled. Expected available in 30.0 seconds.'
+
+    def test_multiple_errors(self, app, user_one, url, payload):
+        payload['data']['attributes']['existing_password'] = 'wrong password'
+        payload['data']['attributes']['new_password'] = '!'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+        assert res.json['errors'][1]['detail'] == 'Password should be at least eight characters'

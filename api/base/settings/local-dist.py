@@ -39,4 +39,5 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-user': '2/hour',
     'test-anon': '1/hour',
     'send-email': '2/minute',
+    'change-password': '1/minute',
 }

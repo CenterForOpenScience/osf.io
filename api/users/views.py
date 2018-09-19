@@ -1,3 +1,5 @@
+import pytz
+
 from django.apps import apps
 from django.db.models import F
 
@@ -17,7 +19,7 @@ from api.base.utils import (
     get_user_auth,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle
+from api.base.throttling import SendEmailThrottle, ChangePasswordThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -45,6 +47,7 @@ from api.users.serializers import (
     UserChangePasswordSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
+from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
@@ -55,7 +58,7 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
     ExternalAccount,
@@ -619,10 +622,10 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     view_category = 'users'
-    view_name = 'user-password'
+    view_name = 'user_password'
 
     serializer_class = UserChangePasswordSerializer
-    throttle_classes = (SendEmailThrottle, )
+    throttle_classes = (ChangePasswordThrottle, )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -630,6 +633,11 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user = self.get_user()
         existing_password = request.data['existing_password']
         new_password = request.data['new_password']
+
+        if not user.check_password(existing_password):
+            user.old_password_invalid_attempts += 1
+            user.change_password_last_attempt = timezone.now()
+            user.save()
 
         # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
         if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
@@ -639,13 +647,19 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
                 user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
         ):
-            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
+            wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
+            raise Throttled(wait=wait_time)
 
         try:
             # double new password for confirmation because validation is done on the front-end.
             user.change_password(existing_password, new_password, new_password)
         except ChangePasswordError as error:
-            raise ValidationError(error.messages)
+            return JsonResponse(
+                {'errors': [{'detail': message} for message in error.messages]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
 
         if user.verification_key_v2:
             user.verification_key_v2['expires'] = timezone.now()
