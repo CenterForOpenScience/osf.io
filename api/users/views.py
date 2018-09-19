@@ -644,12 +644,13 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         try:
             # double new password for confirmation because validation is done on the front-end.
             user.change_password(existing_password, new_password, new_password)
-            if user.verification_key_v2:
-                user.verification_key_v2['expires'] = timezone.now()
-            user.save()
-            remove_sessions_for_user(user)
         except ChangePasswordError as error:
             raise ValidationError(error.messages)
+
+        if user.verification_key_v2:
+            user.verification_key_v2['expires'] = timezone.now()
+        user.save()
+        remove_sessions_for_user(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
