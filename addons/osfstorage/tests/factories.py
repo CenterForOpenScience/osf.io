@@ -20,22 +20,6 @@ generic_location = {
     'object': '1615307',
 }
 
-generic_waterbutler_settings = {
-    'storage': {
-        'provider': 'glowcloud',
-        'container': 'osf_storage',
-        'use_public': True,
-    }
-}
-
-generic_waterbutler_credentials = {
-    'storage': {
-        'region': 'PartsUnknown',
-        'username': 'mankind',
-        'token': 'heresmrsocko'
-    }
-}
-
 
 class FileVersionFactory(DjangoModelFactory):
     class Meta:
@@ -51,14 +35,3 @@ class FileVersionFactory(DjangoModelFactory):
         if not create:
             return
         self.reload()
-
-
-class RegionFactory(DjangoModelFactory):
-    class Meta:
-        model = Region
-
-    name = Sequence(lambda n: 'Region {0}'.format(n))
-    _id = Sequence(lambda n: 'us_east_{0}'.format(n))
-    waterbutler_credentials = generic_waterbutler_credentials
-    waterbutler_settings = generic_waterbutler_settings
-    waterbutler_url = 'http://123.456.test.woo'

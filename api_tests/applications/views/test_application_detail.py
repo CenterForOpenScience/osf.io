@@ -262,4 +262,4 @@ class TestApplicationDetail:
             auth=user.auth,
             expect_errors=True
         )
-        assert res.status_code == 400
+        assert res.status_code == 200

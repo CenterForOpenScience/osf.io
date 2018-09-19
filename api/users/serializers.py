@@ -1,19 +1,23 @@
 from django.utils import timezone
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
+from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
-    WaterbutlerLink, ShowIfCurrentUser
+    WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from api.users.schemas.utils import validate_user_json
+from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -24,11 +28,11 @@ class QuickFilesRelationshipField(RelationshipField):
         upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
-            'meta': {}
+            'meta': {},
         }
         relationship_links['links']['download'] = {
             'href': '{}?zip='.format(upload_url),
-            'meta': {}
+            'meta': {},
         }
         return relationship_links
 
@@ -39,7 +43,7 @@ class UserSerializer(JSONAPISerializer):
         'given_name',
         'middle_names',
         'family_name',
-        'id'
+        'id',
     ])
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
@@ -66,7 +70,7 @@ class UserSerializer(JSONAPISerializer):
         {
             'html': 'absolute_url',
             'profile_image': 'profile_image_url',
-        }
+        },
     ))
 
     nodes = HideIfDisabled(RelationshipField(
@@ -97,6 +101,12 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
+    default_region = ShowIfCurrentUser(RelationshipField(
+        related_view='regions:region-detail',
+        related_view_kwargs={'region_id': 'get_default_region_id'},
+        read_only=True,
+    ))
+
     class Meta:
         type_ = 'users'
 
@@ -112,14 +122,25 @@ class UserSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('users:user-detail', kwargs={
-            'user_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-detail', kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
         return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
+
+    def get_default_region_id(self, obj):
+        try:
+            # use the annotated value if possible
+            region_id = obj.default_region
+        except AttributeError:
+            # use computed property if region annotation does not exist
+            region_id = obj.osfstorage_region._id
+        return region_id
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)
@@ -147,7 +168,7 @@ class UserSerializer(JSONAPISerializer):
                     else:
                         if len(val) > 1:
                             raise InvalidModelValueError(
-                                detail='{} only accept a list of one single value'. format(key)
+                                detail='{} only accept a list of one single value'. format(key),
                             )
                         instance.social[key] = val[0]
             elif 'accepted_terms_of_service' == attr:
@@ -173,7 +194,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'accounts': 'account_links'
+        'accounts': 'account_links',
     })
 
     class Meta:
@@ -185,8 +206,8 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
             kwargs={
                 'provider': obj.config.short_name,
                 'user_id': self.context['request'].parser_context['kwargs']['user_id'],
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     def account_links(self, obj):
@@ -194,13 +215,15 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         if hasattr(obj, 'external_accounts'):
             return {
                 account._id: {
-                    'account': absolute_reverse('users:user-external_account-detail', kwargs={
-                        'user_id': obj.owner._id,
-                        'provider': obj.config.short_name,
-                        'account_id': account._id,
-                        'version': self.context['request'].parser_context['kwargs']['version']
-                    }),
-                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+                    'account': absolute_reverse(
+                        'users:user-external_account-detail', kwargs={
+                            'user_id': obj.owner._id,
+                            'provider': obj.config.short_name,
+                            'account_id': account._id,
+                            'version': self.context['request'].parser_context['kwargs']['version'],
+                        },
+                    ),
+                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)],
                 }
                 for account in obj.external_accounts.all()
             }
@@ -240,20 +263,26 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
 class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     data = ser.ListField(child=RelatedInstitution())
-    links = LinksField({'self': 'get_self_url',
-                        'html': 'get_related_url'})
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
 
     def get_self_url(self, obj):
-        return absolute_reverse('users:user-institutions-relationship', kwargs={
-            'user_id': obj['self']._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-institutions-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_related_url(self, obj):
-        return absolute_reverse('users:user-institutions', kwargs={
-            'user_id': obj['self']._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-institutions', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
@@ -278,8 +307,8 @@ class UserIdentitiesSerializer(JSONAPISerializer):
             kwargs={
                 'user_id': self.context['request'].parser_context['kwargs']['user_id'],
                 'version': self.context['request'].parser_context['kwargs']['version'],
-                'identity_id': obj['_id']
-            }
+                'identity_id': obj['_id'],
+            },
         )
 
     class Meta:
@@ -297,3 +326,102 @@ class UserAccountDeactivateSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'user-account-deactivate-form'
+
+
+class UserSettingsSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    two_factor_enabled = ser.SerializerMethodField()
+    subscribe_osf_general_email = ser.SerializerMethodField()
+    subscribe_osf_help_email = ser.SerializerMethodField()
+
+    def get_two_factor_enabled(self, obj):
+        try:
+            two_factor = TwoFactorUserSettings.objects.get(owner_id=obj.id)
+            return not two_factor.deleted
+        except TwoFactorUserSettings.DoesNotExist:
+            return False
+
+    def get_subscribe_osf_general_email(self, obj):
+        return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
+
+    def get_subscribe_osf_help_email(self, obj):
+        return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user_settings',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    class Meta:
+        type_ = 'user_settings'
+
+
+class UserSettingsUpdateSerializer(UserSettingsSerializer):
+    id = IDField(source='_id', required=True)
+    two_factor_enabled = ser.BooleanField(write_only=True, required=False)
+    two_factor_verification = ser.IntegerField(write_only=True, required=False)
+    subscribe_osf_general_email = ser.BooleanField(read_only=False, required=False)
+    subscribe_osf_help_email = ser.BooleanField(read_only=False, required=False)
+
+    # Keys represent field names values represent the human readable names stored in DB.
+    MAP_MAIL = {
+        'subscribe_osf_help_email': OSF_HELP_LIST,
+        'subscribe_osf_general_email': MAILCHIMP_GENERAL_LIST,
+    }
+
+    def update_email_preferences(self, instance, attr, value):
+        if self.MAP_MAIL[attr] == OSF_HELP_LIST:
+            update_osf_help_mails_subscription(user=instance, subscribe=value)
+        else:
+            update_mailchimp_subscription(instance, self.MAP_MAIL[attr], value)
+        instance.save()
+
+    def update_two_factor(self, instance, value, two_factor_addon):
+        if value:
+            if not two_factor_addon:
+                two_factor_addon = instance.get_or_add_addon('twofactor')
+                two_factor_addon.save()
+        else:
+            auth = get_user_auth(self.context['request'])
+            instance.delete_addon('twofactor', auth=auth)
+
+        return two_factor_addon
+
+    def verify_two_factor(self, instance, value, two_factor_addon):
+        if not two_factor_addon:
+            raise exceptions.ValidationError(detail='Two-factor authentication is not enabled.')
+        if two_factor_addon.verify_code(value):
+            two_factor_addon.is_confirmed = True
+        else:
+            raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
+        two_factor_addon.save()
+
+    def to_representation(self, instance):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+        """
+        context = self.context
+        return UserSettingsSerializer(instance=instance, context=context).data
+
+    def update(self, instance, validated_data):
+
+        for attr, value in validated_data.items():
+            if 'two_factor_enabled' == attr:
+                two_factor_addon = instance.get_addon('twofactor')
+                self.update_two_factor(instance, value, two_factor_addon)
+            elif 'two_factor_verification' == attr:
+                two_factor_addon = instance.get_addon('twofactor')
+                self.verify_two_factor(instance, value, two_factor_addon)
+            elif attr in self.MAP_MAIL.keys():
+                self.update_email_preferences(instance, attr, value)
+
+        return instance

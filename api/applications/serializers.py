@@ -13,15 +13,19 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
 
     type = TypeField()
 
-    client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
-                              read_only=True)
+    client_id = ser.CharField(
+        help_text='The client ID for this application (automatically generated)',
+        read_only=True,
+    )
 
-    client_secret = ser.CharField(help_text='The client secret for this application (automatically generated)',
-                                  read_only=True)  # TODO: May change this later
+    client_secret = ser.CharField(
+        help_text='The client secret for this application (automatically generated)',
+        read_only=True,
+    )  # TODO: May change this later
 
     links = LinksField({
         'html': 'absolute_url',
-        'reset': 'reset_url'
+        'reset': 'reset_url',
     })
 
     def absolute_url(self, obj):
@@ -31,10 +35,12 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def reset_url(self, obj):
-        return absolute_reverse('applications:application-reset', kwargs={
-            'client_id': obj.client_id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'applications:application-reset', kwargs={
+                'client_id': obj.client_id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     class Meta:
         type_ = 'applications'
@@ -47,28 +53,40 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
 
     type = TypeField()
 
-    name = ser.CharField(help_text='A short, descriptive name for this application',
-                         required=True)
+    name = ser.CharField(
+        help_text='A short, descriptive name for this application',
+        required=True,
+    )
 
-    description = ser.CharField(help_text='An optional description displayed to all users of this application',
-                                required=False,
-                                allow_blank=True)
-    home_url = ser.CharField(help_text="The full URL to this application's homepage.",
-                             required=True,
-                             validators=[URLValidator()],
-                             label='Home URL')
+    description = ser.CharField(
+        help_text='An optional description displayed to all users of this application',
+        required=False,
+        allow_blank=True,
+    )
+    home_url = ser.CharField(
+        help_text="The full URL to this application's homepage.",
+        required=True,
+        validators=[URLValidator()],
+        label='Home URL',
+    )
 
-    callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
-                                 required=True,
-                                 validators=[URLValidator()],
-                                 label='Callback URL')
+    callback_url = ser.CharField(
+        help_text='The callback URL for this application (refer to OAuth documentation)',
+        required=True,
+        validators=[URLValidator()],
+        label='Callback URL',
+    )
 
-    owner = ser.CharField(help_text='The id of the user who owns this application',
-                          read_only=True,  # Don't let user register an application in someone else's name
-                          source='owner._id')
+    owner = ser.CharField(
+        help_text='The id of the user who owns this application',
+        read_only=True,  # Don't let user register an application in someone else's name
+        source='owner._id',
+    )
 
-    date_created = VersionedDateTimeField(source='created', help_text='The date this application was generated (automatically filled in)',
-                                     read_only=True)
+    date_created = VersionedDateTimeField(
+        source='created', help_text='The date this application was generated (automatically filled in)',
+        read_only=True,
+    )
 
     def create(self, validated_data):
         instance = ApiOAuth2Application(**validated_data)
@@ -98,7 +116,9 @@ class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
         return obj.absolute_url
 
     def reset_url(self, obj):
-        return absolute_reverse('applications:application-reset', kwargs={
-            'client_id': obj['client_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'applications:application-reset', kwargs={
+                'client_id': obj['client_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )

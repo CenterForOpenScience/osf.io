@@ -15,7 +15,7 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -39,7 +39,7 @@ class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]

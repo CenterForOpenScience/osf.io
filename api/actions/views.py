@@ -157,10 +157,12 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
-                    'provider_id': target.provider._id,
-                    'version': self.request.parser_context['kwargs']['version']
-                })
+                absolute_reverse(
+                    'providers:preprint-providers:preprint-provider-detail', kwargs={
+                        'provider_id': target.provider._id,
+                        'version': self.request.parser_context['kwargs']['version'],
+                    },
+                ),
             ))
 
         serializer.save(user=self.request.user)
@@ -178,7 +180,7 @@ class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeReque
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        NodeRequestPermission
+        NodeRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.NULL]
@@ -201,7 +203,7 @@ class PreprintRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, Prepr
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintRequestPermission
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.NULL]
