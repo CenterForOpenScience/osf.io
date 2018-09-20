@@ -243,8 +243,8 @@ class TestUserChangePassword:
         payload['data']['attributes']['new_password'] = 'password3'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
-        # Expected time is rounded to the second preventing probabilistic failures.
-        assert res.json['errors'][0]['detail'] == 'Request was throttled. Expected available in 59.0 seconds.'
+        # Expected time is omitted to prevent probabilistic failures.
+        assert 'Request was throttled. Expected available in ' in res.json['errors'][0]['detail']
 
     def test_exceed_throttle_failed_attempts(self, app, user_one, url, payload):
         payload['data']['attributes']['existing_password'] = 'wrong password'
@@ -259,8 +259,8 @@ class TestUserChangePassword:
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
-        # Expected time is rounded to the second preventing probabilistic failures.
-        assert res.json['errors'][0]['detail'] == 'Request was throttled. Expected available in 30.0 seconds.'
+        # Expected time is omitted to prevent probabilistic failures.
+        assert 'Request was throttled. Expected available in ' in res.json['errors'][0]['detail']
 
     def test_multiple_errors(self, app, user_one, url, payload):
         payload['data']['attributes']['existing_password'] = 'wrong password'
