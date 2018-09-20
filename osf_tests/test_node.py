@@ -37,6 +37,8 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+
+from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
@@ -2905,7 +2907,7 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.get_wiki_pages_latest().exists() is False
+        assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
@@ -2924,12 +2926,12 @@ class TestForkNode:
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        fork_wiki_current = WikiVersion.objects.get_for_node(fork, current_wiki.wiki_page.page_name)
         assert fork_wiki_current.wiki_page.node == fork
         assert fork_wiki_current._id != current_wiki._id
         assert fork_wiki_current.identifier == 2
 
-        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        fork_wiki_version = WikiVersion.objects.get_for_node(fork, wiki.wiki_page.page_name, version=1)
         assert fork_wiki_version.wiki_page.node == fork
         assert fork_wiki_version._id != wiki._id
         assert fork_wiki_version.identifier == 1
@@ -3916,20 +3918,17 @@ class TestTemplateNode:
                 )
 
     def test_template_wiki_pages_not_copied(self, project, auth):
-        project.update_node_wiki(
-            'template', 'lol',
-            auth=auth
-        )
+        WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
         new = project.use_as_template(
             auth=auth
         )
-        assert project.get_wiki_page('template').page_name == 'template'
-        latest_version = project.get_wiki_version('template')
+        assert WikiPage.objects.get_for_node(project, 'template').page_name == 'template'
+        latest_version = WikiVersion.objects.get_for_node(project, 'template')
         assert latest_version.identifier == 1
         assert latest_version.is_current is True
 
-        assert new.get_wiki_page('template') is None
-        assert new.get_wiki_version('template') is None
+        assert WikiPage.objects.get_for_node(new, 'template') is None
+        assert WikiVersion.objects.get_for_node(new, 'template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)

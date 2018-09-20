@@ -1134,5 +1134,5 @@ class TestFileViews(StorageTestCase):
         redirect = self.app.get(download_url, headers=headers)
 
         assert mock_get_client.called
-        assert settings.WATERBUTLER_URL in redirect.location
+        assert self.node.osfstorage_region.waterbutler_url in redirect.location
         assert redirect.status_code == 302

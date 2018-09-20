@@ -55,7 +55,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
@@ -107,7 +107,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]

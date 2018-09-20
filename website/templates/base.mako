@@ -199,7 +199,7 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'Logged in': 'Logged out');
             ga('set', 'dimension2', '${self.resource()}');
             ga('set', 'dimension3', '${self.public()}');
             ga('set', 'anonymizeIp', true);
@@ -217,7 +217,6 @@
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 osfURL: ${ osf_url if osf_url.endswith('/') else osf_url + '/' | sjson, n },
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
-                mfrURL: ${ mfr_url if mfr_url.endswith('/') else mfr_url + '/' | sjson, n },
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
@@ -275,12 +274,12 @@
 </%def>
 
 <%def name="resource()"><%
-    return None
+    return 'n/a'
 %> ### What resource is displayed on page ###
 </%def>
 
 <%def name="public()"><%
-    return None
+    return 'n/a'
 %> ### What the public/private status of the resource displayed on page ###
 </%def>
 

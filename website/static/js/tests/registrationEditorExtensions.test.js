@@ -77,6 +77,6 @@ describe('RegistrationEditor.osfUploader', () => {
     //         RegistrationEditor.filePicker(element, valueAccessor, allBindings, vm, bindingContext);
     //         assert.isTrue(true);
     //     });
-    // });    
+    // });
 
 });
