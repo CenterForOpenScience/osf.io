@@ -132,7 +132,7 @@
   $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries ember_osf_web
   ```
 
-- To view the logs for a given container: 
+- To view the logs for a given container:
 
   ```bash
   $ docker-compose logs -f --tail 100 web
@@ -173,8 +173,8 @@
 ### Catching Print Statements
 
 If you want to debug your changes by using print statements, you'll have to have to set your container's environment variable PYTHONUNBUFFERED to 0. You can do this two ways:
-  
-  1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0 
+
+  1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0
   2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
    ```
     import functools
@@ -249,33 +249,33 @@ List containers and status:
   - `$ docker-compose ps`
 
 ### Backing up your database
-In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your 
-local OSF instance. For example, this is helpful if you have test data that you would like to use after 
+In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your
+local OSF instance. For example, this is helpful if you have test data that you would like to use after
 resetting docker. To back up your database, follow the following sequence of commands:
 
-1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the 
-  version you install must match the one used by the docker container. 
+1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the
+  version you install must match the one used by the docker container.
   ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 9.6)
-2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61). 
+2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61).
   Eg, `pg_ctl -D /usr/local/var/postgres start -o "-p 5433"`
 3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
-4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker 
-  (defaults to port 5432): 
+4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker
+  (defaults to port 5432):
   `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf`
-  
+
 (shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
 
 
 #### Restoring your database
-To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres 
-(as shown above). For best results, start from a clean postgres container with no other data. (see below for 
-instructions on dropping postgres data volumes) 
+To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres
+(as shown above). For best results, start from a clean postgres container with no other data. (see below for
+instructions on dropping postgres data volumes)
 
 When ready, run the restore command from a local terminal:
 ```bash
 $ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
 ```
- 
+
 (shorthand) `pg_restore -U postgres -c -d osf -Fd -j 4 -h localhost ~/Desktop/osf_backup`
 
 ## Cleanup & Docker Reset

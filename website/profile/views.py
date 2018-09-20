@@ -30,7 +30,7 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website import language
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
@@ -291,7 +291,8 @@ def user_account(auth, **kwargs):
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
         'addons_css': [],
         'requested_deactivation': user.requested_deactivation,
-        'external_identity': user.external_identity
+        'external_identity': user.external_identity,
+        'storage_flag_is_active': storage_i18n_flag_active(),
     }
 
 
@@ -783,7 +784,6 @@ def request_export(auth):
     user.email_last_sent = timezone.now()
     user.save()
     return {'message': 'Sent account export request'}
-
 
 @must_be_logged_in
 def request_deactivation(auth):

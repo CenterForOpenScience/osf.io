@@ -39,7 +39,7 @@ class NodesFilterMixin(ListFilterMixin):
                     child_ids = (
                         NodeRelation.objects.filter(
                             is_node_link=False,
-                            child___contributors=self.get_user()
+                            child___contributors=self.get_user(),
                         )
                         .exclude(parent__type='osf.collection')
                         .exclude(child__is_deleted=True)
