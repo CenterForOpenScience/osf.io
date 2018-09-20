@@ -281,10 +281,11 @@ def get_auth(auth, **kwargs):
         mark_file_version_as_seen(auth.user, path, version)
     if path and version:
         if not node.is_contributor(auth.user):
+            download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
             file_id = path.strip('/')
             if action == 'render':
                 update_analytics(node, file_id, version, 'view')
-            elif action == 'download':
+            elif action == 'download' and not download_is_from_mfr:
                 update_analytics(node, file_id, version, 'download')
 
     try:
