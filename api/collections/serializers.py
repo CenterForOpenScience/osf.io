@@ -58,15 +58,15 @@ class CollectionSerializer(JSONAPISerializer):
     )
     volume_choices = ser.ListField(
         child=ser.CharField(max_length=31),
-        default=list()
+        default=list(),
     )
     issue_choices = ser.ListField(
         child=ser.CharField(max_length=31),
-        default=list()
+        default=list(),
     )
     program_area_choices = ser.ListField(
         child=ser.CharField(max_length=31),
-        default=list()
+        default=list(),
     )
 
     links = LinksField({})
