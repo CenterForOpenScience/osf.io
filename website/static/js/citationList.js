@@ -120,7 +120,7 @@ var ViewModel = oop.defclass({
             ctx.apiV2Prefix  +  self.nodeType() + '/' + ctx.node.id + '/',
             {isCors: true}
         ).done(function(data) {
-            self.customCitation(data.data.attributes.custom_citation);
+            self.customCitation($osf.htmlDecode(data.data.attributes.custom_citation));
             if(!self.customCitation()) {
                 var citationRequest = $.ajax(ctx.node.urls.api + 'citation/');
                 var styleRequests = [
