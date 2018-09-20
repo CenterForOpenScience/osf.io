@@ -1,5 +1,4 @@
 {
-  "__comment": "Schema copied from https://github.com/inveniosoftware/datacite/blob/v1.0.1/datacite/schemas/datacite-v4.0.json and should not be changed.",
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "datacite-v4.0.json",
   "title": "DataCite v4.0",
