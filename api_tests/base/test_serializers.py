@@ -173,8 +173,7 @@ class TestNullLinks(ApiTestCase):
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
-        assert_equals(rep['relationships']['null_link_field']['data'], None)
-        assert_in('valued_link_field', rep['relationships'])
+        assert_not_in('null_link_field', rep['relationships'])
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -502,7 +501,7 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
-        assert_equal(data['relationships']['registered_from']['data'], None)
+        assert_not_in('registered_from', data['relationships'])
 
         registration = factories.RegistrationFactory(project=node)
         data = self.BasicNodeSerializer(
