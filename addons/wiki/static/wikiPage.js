@@ -105,12 +105,6 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                             self.rendered(self.renderMarkdown(rawContent));
                             $markdownElement.css('display', 'inherit');
                         }
-                        if (window.contextVars.node.viewOnlyLink) {
-                            $($markdownElement).children('p').children('img').each(function(idx, elm){
-                                elm.setAttribute('src', elm.src + '&view_only=' + window.contextVars.node.viewOnlyLink);
-                            });
-                        }
-
                         self.displaySource(rawContent);
                     }
                 });
