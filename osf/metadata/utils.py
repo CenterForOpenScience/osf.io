@@ -19,7 +19,7 @@ RESOURCE_TYPE_MAP = {
     'Research Tool': 'Text',
     'Thesis': 'Text',
     'Other': 'Text',
-    '(unas)': 'Other'
+    '(:unas)': 'Other'
 }
 
 
@@ -63,7 +63,7 @@ def datacite_format_contributors(contributors):
 def datacite_format_subjects(subjects):
     return [
         {
-            'subject': subject,
+            'subject': subject.bepress_subject.text if subject.bepress_subject else subject.text,
             'subjectScheme': SUBJECT_SCHEME
         }
         for subject in subjects
