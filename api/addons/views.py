@@ -51,7 +51,7 @@ class AddonSettingsMixin(object):
             authorizer = None
             if owner_type == 'user':
                 authorizer = addon_settings.owner
-            elif hasattr(addon_settings, 'user_settings'):
+            elif getattr(addon_settings, 'user_settings', None):
                 authorizer = addon_settings.user_settings.owner
             if authorizer and authorizer != self.request.user:
                 raise PermissionDenied('Must be addon authorizer to list folders')
