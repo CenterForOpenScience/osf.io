@@ -83,4 +83,7 @@ class RegistrationSchema(AbstractSchema):
 
 class FileMetadataSchema(AbstractSchema):
 
-    pass
+    @property
+    def absolute_api_v2_url(self):
+        path = '/schemas/files/{}/'.format(self._id)
+        return api_v2_url(path)
