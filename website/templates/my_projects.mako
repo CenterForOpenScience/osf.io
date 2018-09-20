@@ -24,4 +24,10 @@
 <%def name="javascript_bottom()">
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
+<script>
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        storageRegions: ${ storage_regions | sjson, n },
+        storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
+    });
+</script>
 </%def>

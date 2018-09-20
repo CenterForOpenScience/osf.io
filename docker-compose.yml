@@ -359,7 +359,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/python2.7
 
   assets:
@@ -369,7 +369,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -382,7 +382,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -434,7 +434,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -459,7 +459,7 @@ services:
       - .docker-compose.env
     stdin_open: true
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -481,7 +481,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -503,7 +503,7 @@ services:
       - .docker-compose.env
       - .docker-compose.sharejs.env
     volumes:
-      - ./:/code
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules

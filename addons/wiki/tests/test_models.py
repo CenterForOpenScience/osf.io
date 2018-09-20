@@ -25,7 +25,7 @@ class TestWikiPageModel:
         node = NodeFactory()
         page = WikiPage(page_name='foo', node=node)
         page.save()
-        version = page.create_version(user=user, content='hello')
+        version = page.update(user=user, content='hello')
         assert version.is_current is True
 
     def test_is_current_with_multiple_versions(self):
@@ -33,8 +33,8 @@ class TestWikiPageModel:
         node = NodeFactory()
         page = WikiPage(page_name='foo', node=node)
         page.save()
-        ver1 = page.create_version(user=user, content='draft1')
-        ver2 = page.create_version(user=user, content='draft2')
+        ver1 = page.update(user=user, content='draft1')
+        ver2 = page.update(user=user, content='draft2')
         assert ver1.is_current is False
         assert ver2.is_current is True
 
@@ -43,7 +43,7 @@ class TestWikiPageModel:
         node = NodeFactory()
         page = WikiPage(page_name='foo', node=node)
         page.save()
-        ver1 = page.create_version(user=user, content='draft1')
+        ver1 = page.update(user=user, content='draft1')
         page.deleted = datetime.datetime(2017, 1, 1, 1, 00, tzinfo=pytz.utc)
         page.save()
         assert ver1.is_current is False

@@ -90,7 +90,7 @@ describe('osfHelpers', () => {
          });
      });
 
-    
+
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
@@ -621,7 +621,7 @@ describe('osfHelpers', () => {
                 internalRelativeUrlWithHash: '/mst3k/files/#hashhash',
                 internalRelativeUrlWithSearchAndHash: '/mst3k/files/?q=random#hashhash'
             };
-    
+
             describe('Does not affect external URLs with Http as protocol', () => {
                 it('URLs that does not contain search or hash', () => {
                     assert.equal(
@@ -629,21 +629,21 @@ describe('osfHelpers', () => {
                         testData.externalAbsoluteUrlHttp
                     );
                 });
-    
+
                 it('URLs that contain search, not hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithSearch, window),
                         testData.externalAbsoluteUrlHttpWithSearch
                     );
                 });
-    
+
                 it('URLs that contain hash, not search', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithHash, window),
                         testData.externalAbsoluteUrlHttpWithHash
                     );
                 });
-    
+
                 it('URLs that contain both search and hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithSearchAndHash, window),
@@ -651,7 +651,7 @@ describe('osfHelpers', () => {
                     );
                 });
             });
-    
+
             describe('Does not affect external URLs with other protocol', () => {
                 it('URLs that does not contain search or hash', () => {
                     assert.equal(
@@ -659,21 +659,21 @@ describe('osfHelpers', () => {
                         testData.externalAbsoluteUrlProtocol
                     );
                 });
-    
+
                 it('URLs that contain search, not hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithSearch, window),
                         testData.externalAbsoluteUrlProtocolWithSearch
                     );
                 });
-    
+
                 it('URLs that contain hash, not search', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithHash, window),
                         testData.externalAbsoluteUrlProtocolWithHash
                     );
                 });
-    
+
                 it('URLs that contain both search and hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithSearchAndHash, window),
@@ -681,7 +681,7 @@ describe('osfHelpers', () => {
                     );
                 });
             });
-    
+
             describe('Does not affect relative URLs', () => {
                 it('URLs that does not contain search or hash', () => {
                     assert.equal(
@@ -689,21 +689,21 @@ describe('osfHelpers', () => {
                         testData.internalRelativeUrl
                     );
                 });
-    
+
                 it('URLs that contain search, not hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalRelativeUrlWithSearch, window),
                         testData.internalRelativeUrlWithSearch
                     );
                 });
-    
+
                 it('URLs that contain hash, not search', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalRelativeUrlWithHash, window),
                         testData.internalRelativeUrlWithHash
                     );
                 });
-    
+
                 it('URLs that contain both search and hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalRelativeUrlWithSearchAndHash, window),
@@ -711,7 +711,7 @@ describe('osfHelpers', () => {
                     );
                 });
             });
-    
+
             describe('works for internal absolute URLs with Http as protocol', () => {
                 it('URLs that does not contain search or hash', () => {
                     assert.equal(
@@ -719,21 +719,21 @@ describe('osfHelpers', () => {
                         testData.internalRelativeUrl
                     );
                 });
-    
+
                 it('URLs that contain search, not hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithSearch, window),
                         testData.internalRelativeUrlWithSearch
                     );
                 });
-    
+
                 it('URLs that contain hash, not search', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithHash, window),
                         testData.internalRelativeUrlWithHash
                     );
                 });
-    
+
                 it('URLs that contain both search and hash', () => {
                     assert.equal(
                         $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithSearchAndHash, window),
@@ -741,7 +741,7 @@ describe('osfHelpers', () => {
                     );
                 });
             });
-    
+
             describe('works for internal absolute URLs with different protocol', () => {
                 var customWindow = {
                     location:{
@@ -749,7 +749,7 @@ describe('osfHelpers', () => {
                         protocol: 'https:'
                     }
                 };
-    
+
                 (function(window){
                     it('URLs that does not contain search or hash', () => {
                         assert.equal(
@@ -757,21 +757,21 @@ describe('osfHelpers', () => {
                             testData.internalRelativeUrl
                         );
                     });
-    
+
                     it('URLs that contain search, not hash', () => {
                         assert.equal(
                             $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithSearch, window),
                             testData.internalRelativeUrlWithSearch
                         );
                     });
-    
+
                     it('URLs that contain hash, not search', () => {
                         assert.equal(
                             $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithHash, window),
                             testData.internalRelativeUrlWithHash
                         );
                     });
-    
+
                     it('URLs that contain both search and hash', () => {
                         assert.equal(
                             $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithSearchAndHash, window),

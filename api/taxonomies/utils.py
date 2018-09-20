@@ -9,6 +9,6 @@ def optimize_subject_query(subject_queryset):
         is_other=Case(
             When(text__startswith='Other', then=True),
             default=False,
-            output_field=BooleanField()
-        )
+            output_field=BooleanField(),
+        ),
     ).order_by('is_other', 'text')

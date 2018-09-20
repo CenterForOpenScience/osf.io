@@ -643,7 +643,7 @@ class TestUserUpdate:
             auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     #   test_partial_patch_fields_not_nested
         res = app.patch_json_api(
@@ -657,7 +657,7 @@ class TestUserUpdate:
             },
             auth=user_one.auth,
             expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     #   test_patch_user_logged_out
         res = app.patch_json_api(url_user_one, {

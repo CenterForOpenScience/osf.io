@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
@@ -40,7 +41,7 @@ class InstitutionMixin(object):
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
             self.request,
-            display_name='institution'
+            display_name='institution',
         )
         return inst
 
@@ -118,6 +119,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
             .select_related('node_license', 'preprint_file')
             .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
         )
 
     # overrides RetrieveAPIView
@@ -228,7 +230,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        UserIsAffiliated
+        UserIsAffiliated,
     )
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
@@ -244,7 +246,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
         registrations = inst.nodes.filter(is_deleted=False, type='osf.registration').can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': registrations,
-            'self': inst
+            'self': inst,
         }
         self.check_object_permissions(self.request, ret)
         return ret
@@ -312,7 +314,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        UserIsAffiliated
+        UserIsAffiliated,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -328,7 +330,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         nodes = inst.nodes.filter(is_deleted=False, type='osf.node').can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': nodes,
-            'self': inst
+            'self': inst,
         }
         self.check_object_permissions(self.request, ret)
         return ret

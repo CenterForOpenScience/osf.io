@@ -1,7 +1,13 @@
 import markupsafe
 from os.path import basename
+from website.settings import MFR_SERVER_URL
 
 from website import settings
+
+def get_mfr_url(target, provider_name):
+    if hasattr(target, 'osfstorage_region') and provider_name == 'osfstorage':
+        return target.osfstorage_region.mfr_url
+    return MFR_SERVER_URL
 
 def serialize_addon_config(config, user):
     lookup = config.template_lookup

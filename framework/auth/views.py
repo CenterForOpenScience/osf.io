@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
+from addons.osfstorage.models import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
@@ -27,6 +28,7 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
+from website.ember_osf_web.decorators import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
@@ -547,7 +549,8 @@ def external_login_confirm_email_get(auth, uid, token):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            storage_flag_is_active=storage_i18n_flag_active(),
         )
         service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
@@ -628,7 +631,9 @@ def confirm_email_get(token, auth=None, **kwargs):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            domain=settings.DOMAIN,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            storage_flag_is_active=storage_i18n_flag_active(),
         )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
@@ -1082,6 +1087,9 @@ def validate_next_url(next_url):
     if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
         # CAS or MFR
         return True
+    for url in Region.objects.values_list('mfr_url', flat=True):
+        if next_url.startswith(url):
+            return True
     for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
         if next_url.startswith(url):
