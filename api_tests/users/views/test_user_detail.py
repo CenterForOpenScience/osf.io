@@ -27,7 +27,7 @@ class TestUserDetail:
     @pytest.fixture()
     def user_one(self):
         user_one = AuthUserFactory()
-        user_one.social['twitter'] = 'rheisendennis'
+        user_one.social['twitter'] = ['rheisendennis']
         user_one.save()
         return user_one
 
@@ -44,11 +44,11 @@ class TestUserDetail:
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_correct_pk_user
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = '/{}users/{}/?version=latest'.format(API_BASE, user_one._id)
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] == user_one.fullname
-        assert user_one.social['twitter'] in user_json['attributes']['social']['twitter']
+        assert user_one.social['twitter'] == user_json['attributes']['social']['twitter']
 
     #   test_get_incorrect_pk_user_logged_in
         url = '/{}users/{}/'.format(API_BASE, user_two._id)
@@ -133,6 +133,25 @@ class TestUserDetail:
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
+    def test_social_values_old_version(self, app, user_one):
+        socialname = 'ohhey'
+        user_one.social = {'twitter': [socialname], 'github': []}
+        user_one.save()
+        url = '/{}users/{}/?version=2.9'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == socialname
+        assert user_social_json['github'] == ''
+        assert 'linkedIn' not in user_social_json.keys()
+
+        url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == [socialname]
+        assert user_social_json['github'] == []
+        assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -426,13 +445,13 @@ class TestUserUpdate:
                     'suffix': 'Sr.',
                     'social': {
                         'github': ['http://github.com/even_newer_github/'],
-                        'scholar': ['http://scholar.google.com/citations?user=newScholar'],
+                        'scholar': 'http://scholar.google.com/citations?user=newScholar',
                         'profileWebsites': ['http://www.newpersonalwebsite.com'],
                         'twitter': ['http://twitter.com/newtwitter'],
                         'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
-                        'impactStory': ['https://impactstory.org/newImpactStory'],
-                        'orcid': ['http://orcid.org/newOrcid'],
-                        'researcherId': ['http://researcherid.com/rid/newResearcherId'],
+                        'impactStory': 'https://impactstory.org/newImpactStory',
+                        'orcid': 'http://orcid.org/newOrcid',
+                        'researcherId': 'http://researcherid.com/rid/newResearcherId',
                     }},
             }}
 
@@ -717,6 +736,7 @@ class TestUserUpdate:
 
     #   test_update_user_social_with_invalid_value
         """update the social key which is not profileWebsites with more than one value should throw an error"""
+        original_github = user_one.social['github']
         res = app.patch_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -730,8 +750,25 @@ class TestUserUpdate:
                 },
             }
         }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
         assert res.status_code == 400
-        assert 'github only accept a list of one single value' == res.json['errors'][0]['detail']
+        assert user_one.social['github'] == original_github
+
+        # Test list with non-string value
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': {
+                        'github': [{'should': 'not_work'}]
+                    }
+                }
+            }
+        }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert user_one.social['github'] == original_github
 
     def test_patch_user_without_required_field(
             self, app, user_one, data_new_user_one, url_user_one):
@@ -775,14 +812,66 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
+
+    def test_patch_all_social_fields(self, app, user_one, url_user_one):
+        social_payload = {
+            'github': ['the_coolest_coder'],
+            'scholar': 'neat',
+            'profileWebsites': ['http://yeah.com', 'http://cool.com'],
+            'baiduScholar': 'ok',
+            'twitter': ['tweetmaster'],
+            'linkedIn': ['networkingmaster'],
+            'academiaProfileID': 'okokokok',
+            'ssrn': 'aaaa',
+            'impactStory': 'why not',
+            'orcid': 'ork-id',
+            'researchGate': 'Why are there so many of these',
+            'researcherId': 'ok-lastone'
+        }
+
+        fake_fields = {
+            'nope': ['notreal'],
+            'totallyNot': {
+                'a': ['thing']
+            }
+        }
+
+        # Payload with fields not in the schema should fail
+        new_fields = social_payload.copy()
+        new_fields.update(fake_fields)
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': new_fields
+                }
+            }
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
+
+        # Payload only containing fields in schema are OK
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': social_payload
+                }
+            }
+        }, auth=user_one.auth)
+        user_one.reload()
+        for key, value in res.json['data']['attributes']['social'].iteritems():
+            assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(
             self, app, user_one, url_user_one):
@@ -805,16 +894,16 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
         social = res.json['data']['attributes']['social']
-        assert user_one.social['github'] in social['github'][0]
+        assert user_one.social['github'][0] in social['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == user_one.social['github']
@@ -838,13 +927,13 @@ class TestUserUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
-        assert 'even_newer_github' in res.json['data']['attributes']['social']['github'][0]
+        assert 'even_newer_github' in res.json['data']['attributes']['social']['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
 
     def test_put_user_logged_in(self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
@@ -863,9 +952,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
         user_one.reload()
         assert user_one.fullname == data_new_user_one['data']['attributes']['full_name']
         assert user_one.given_name == data_new_user_one['data']['attributes']['given_name']
@@ -876,9 +965,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
 
     def test_update_user_sanitizes_html_properly(
             self, app, user_one, url_user_one):
