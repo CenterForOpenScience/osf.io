@@ -29,8 +29,8 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             kwargs=self.context['request'].parser_context['kwargs'],
             query_kwargs={
                 'path': obj['path'],
-                'id': obj['id']
-            }
+                'id': obj['id'],
+            },
         )
 
     def get_root_folder(self, obj):

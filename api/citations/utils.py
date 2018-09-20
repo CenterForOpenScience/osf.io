@@ -69,7 +69,7 @@ def process_name(node, user):
         'family_name': parsed['family'],
         'suffix': parsed['suffix'],
         'given_name': parsed['given'],
-        'middle_names': parsed['middle']
+        'middle_names': parsed['middle'],
     }
 
 

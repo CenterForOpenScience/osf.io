@@ -31,12 +31,12 @@ class InstitutionSerializer(JSONAPISerializer):
 
     registrations = RelationshipField(
         related_view='institutions:institution-registrations',
-        related_view_kwargs={'institution_id': '<_id>'}
+        related_view_kwargs={'institution_id': '<_id>'},
     )
 
     users = RelationshipField(
         related_view='institutions:institution-users',
-        related_view_kwargs={'institution_id': '<_id>'}
+        related_view_kwargs={'institution_id': '<_id>'},
     )
 
     def get_api_url(self, obj):
@@ -56,8 +56,10 @@ class NodeRelated(JSONAPIRelationshipSerializer):
 
 class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=NodeRelated())
-    links = LinksField({'self': 'get_self_url',
-                        'html': 'get_related_url'})
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
 
     def get_self_url(self, obj):
         return obj['self'].nodes_relationship_url
@@ -89,7 +91,7 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
 
         return {
             'data': list(inst.nodes.filter(is_deleted=False, type='osf.node')),
-            'self': inst
+            'self': inst,
         }
 
 class RegistrationRelated(JSONAPIRelationshipSerializer):
@@ -99,8 +101,10 @@ class RegistrationRelated(JSONAPIRelationshipSerializer):
 
 class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=RegistrationRelated())
-    links = LinksField({'self': 'get_self_url',
-                        'html': 'get_related_url'})
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
 
     def get_self_url(self, obj):
         return obj['self'].registrations_relationship_url
@@ -132,5 +136,5 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
 
         return {
             'data': list(inst.nodes.filter(is_deleted=False, type='osf.registration')),
-            'self': inst
+            'self': inst,
         }
