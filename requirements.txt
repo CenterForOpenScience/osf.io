@@ -7,7 +7,7 @@
 
 invoke==0.15.0
 Werkzeug==0.10.4  # pyup: ignore # newer versions break local development
-Flask==0.10.1
+Flask==0.12.4
 gevent==1.2.2
 Mako==1.0.7
 Markdown==2.6.9
