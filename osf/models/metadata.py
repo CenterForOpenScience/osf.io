@@ -6,6 +6,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import FileMetadataSchema
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.metadata.serializers import serializer_registry
+from website.util import api_v2_url
 
 
 class FileMetadataRecord(ObjectIDMixin, BaseModel):
@@ -19,11 +20,16 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
         unique_together = ('file', 'schema')
 
     @property
+    def absolute_api_v2_url(self):
+        path = '/files/{}/metadata_records/{}/'.format(self.file._id, self._id)
+        return api_v2_url(path)
+
+    @property
     def serializer(self):
         return serializer_registry[self.schema._id]
 
-    def serialize(self):
-        return self.serializer.serialize(self)
+    def serialize(self, format='json'):
+        return self.serializer.serialize(self, format)
 
     def validate(self, proposed_metadata):
         return self.serializer.validate(self, proposed_metadata)
