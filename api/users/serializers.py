@@ -1,3 +1,4 @@
+import jsonschema
 from django.utils import timezone
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -7,17 +8,17 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, ListDictField, TypeField, RelationshipField, JSONAPIListField,
+    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 from osf.models.provider import AbstractProviderGroupObjectPermission
-from api.users.schemas.utils import validate_user_json
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
+from api.users.schemas.utils import validate_user_json, from_json
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -35,6 +36,27 @@ class QuickFilesRelationshipField(RelationshipField):
             'meta': {},
         }
         return relationship_links
+
+
+class SocialField(ser.DictField):
+    def __init__(self, min_version, **kwargs):
+        super(SocialField, self).__init__(**kwargs)
+        self.min_version = min_version
+        self.help_text = 'This field will change data formats after version {}'.format(self.min_version)
+
+    def to_representation(self, value):
+        old_social_string_fields = ['twitter', 'github', 'linkedIn']
+        request = self.context.get('request')
+        show_old_format = request and is_deprecated(request.version, self.min_version) and request.method == 'GET'
+        if show_old_format:
+            social = value.copy()
+            for key in old_social_string_fields:
+                if social.get(key):
+                    social[key] = value[key][0]
+                elif social.get(key) == []:
+                    social[key] = ''
+            value = social
+        return super(SocialField, self).to_representation(value)
 
 
 class UserSerializer(JSONAPISerializer):
@@ -60,7 +82,7 @@ class UserSerializer(JSONAPISerializer):
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
-    social = ListDictField(required=False)
+    social = SocialField(required=False, min_version='2.10')
     employment = JSONAPIListField(required=False, source='jobs')
     education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
@@ -157,20 +179,21 @@ class UserSerializer(JSONAPISerializer):
         validate_user_json(value, 'education-schema.json')
         return value
 
+    def validate_social(self, value):
+        schema = from_json('social-schema.json')
+        try:
+            jsonschema.validate(value, schema)
+        except jsonschema.ValidationError as e:
+            raise InvalidModelValueError(e)
+
+        return value
+
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
-                    # currently only profileWebsites are a list, the rest of the social key only has one value
-                    if key == 'profileWebsites':
-                        instance.social[key] = val
-                    else:
-                        if len(val) > 1:
-                            raise InvalidModelValueError(
-                                detail='{} only accept a list of one single value'. format(key),
-                            )
-                        instance.social[key] = val[0]
+                    instance.social[key] = val
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
