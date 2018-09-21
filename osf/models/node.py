@@ -2121,6 +2121,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # set attributes which may be overridden by `changes`
         new.is_public = False
         new.description = ''
+        new.custom_citation = ''
 
         # apply `changes`
         for attr, val in attributes.iteritems():
