@@ -71,8 +71,8 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = FileMetadataSchemaSerializer
-    view_category = 'file-metadata-schemas'
-    view_name = 'file-metadata-schema-list'
+    view_category = 'schemas'
+    view_name = 'file-metadata-schemas'
 
     ordering = ('-id',)
 
@@ -92,7 +92,7 @@ class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = FileMetadataSchemaSerializer
-    view_category = 'file-metadata-schemas'
+    view_category = 'schemas'
     view_name = 'file-metadata-schema-detail'
 
     # overrides RetrieveAPIView

@@ -1,3 +1,4 @@
+import json
 import jsonschema
 from datacite import schema40
 
@@ -26,8 +27,9 @@ class MetadataRecordSerializer(object):
     def serialize(cls, metadata_record, format='json'):
         if format == 'json':
             return cls.serialize_json(metadata_record)
-        elif format == 'xml':
+        if format == 'xml':
             return cls.serialize_xml(metadata_record)
+        raise ValueError('Format "{}" is not supported.'.format(format))
 
     @classmethod
     def validate(cls, record):
@@ -42,6 +44,8 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
     @property
     def osf_schema(self):
         return 'user_entered_datacite.json'
+
+    osf_schema = 'user_entered_datacite.json'
 
     @classmethod
     def serialize_json(cls, record):
@@ -134,7 +138,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         if latest_version_identifier:
             doc['version'] = latest_version_identifier[0]
 
-        return doc
+        return json.dumps(doc)
 
     @classmethod
     def serialize_xml(cls, record):

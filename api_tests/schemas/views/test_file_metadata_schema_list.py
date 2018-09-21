@@ -20,10 +20,6 @@ class TestFileMetadataSchemaList:
         assert res.status_code == 200
         assert (len(res.json['data']) == FileMetadataSchema.objects.filter(active=True).count())
 
-        # test_cannot_update_schemas
-        res = app.put_json_api(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 405
-
         # test_cannot_create_schemas
         res = app.post_json_api(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 405

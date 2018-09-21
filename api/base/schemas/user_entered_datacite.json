@@ -1,0 +1,56 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "/user_entered_datacite",
+    "title": "User Entered Fields for the Datacite Schema",
+    "description": "User Entered Fields for the Datacite Schema",
+    "type": "object",
+    "properties": {
+        "resource_type": {
+            "type": "string",
+            "enum": [
+                "Audio/Video",
+                "Dataset",
+                "Image",
+                "Model",
+                "Software",
+                "Book",
+                "Funding Submission",
+                "Journal Article",
+                "Lesson",
+                "Poster",
+                "Preprint",
+                "Presentation",
+                "Research Tool",
+                "Thesis",
+                "Other"
+            ]
+        },
+        "file_description": {
+            "description": "The description of the file",
+            "type": "string"
+        },
+        "related_publication_doi": {
+            "description": "The DOI of a related resource.",
+            "type": "string",
+            "pattern": "10\\..+/.+"
+        },
+        "funders": {
+            "description": "Funders responsible for funding the resource.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "funding_agency": {
+                        "description": "The name of the funding provider",
+                        "type": "string"
+                    },
+                    "grant_number": {
+                        "description": "The code assigned by the funder to a sponsored award (grant).",
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "additionalProperties": false
+}
