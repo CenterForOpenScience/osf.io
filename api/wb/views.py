@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from api.base.parsers import HMACSignedParser
 from api.wb.serializers import (
-    WaterbutlerMetadataSerializer
+    WaterbutlerMetadataSerializer,
 )
 
 class FileMetadataView(APIView):
@@ -36,7 +36,7 @@ class FileMetadataView(APIView):
         Extra context provided to the serializer class.
         """
         return {
-            'view': self
+            'view': self,
         }
 
     def post(self, request, *args, **kwargs):

@@ -5,13 +5,17 @@ from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.parsers import (JSONAPIRelationshipParser,
-                              JSONAPIRelationshipParserForRegularJSON)
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
 from api.base.serializers import AddonAccountSerializer
-from api.base.utils import (default_node_list_queryset,
-                            default_node_list_permission_queryset,
-                            get_object_or_error,
-                            get_user_auth)
+from api.base.utils import (
+    default_node_list_queryset,
+    default_node_list_permission_queryset,
+    get_object_or_error,
+    get_user_auth,
+)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
@@ -20,20 +24,24 @@ from api.nodes.serializers import NodeSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
-                                   ReadOnlyOrCurrentUserRelationship,
-                                   ClaimUserPermission)
-from api.users.serializers import (UserAddonSettingsSerializer,
-                                   UserDetailSerializer,
-                                   UserIdentitiesSerializer,
-                                   UserInstitutionsRelationshipSerializer,
-                                   UserSerializer,
-                                   UserSettingsSerializer,
-                                   UserSettingsUpdateSerializer,
-                                   UserQuickFilesSerializer,
-                                   UserAccountExportSerializer,
-                                   UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer)
+from api.users.permissions import (
+    CurrentUser, ReadOnlyOrCurrentUser,
+    ReadOnlyOrCurrentUserRelationship,
+    ClaimUserPermission,
+)
+from api.users.serializers import (
+    UserAddonSettingsSerializer,
+    UserDetailSerializer,
+    UserIdentitiesSerializer,
+    UserInstitutionsRelationshipSerializer,
+    UserSerializer,
+    UserSettingsSerializer,
+    UserSettingsUpdateSerializer,
+    UserQuickFilesSerializer,
+    UserAccountExportSerializer,
+    UserAccountDeactivateSerializer,
+    ReadEmailUserDetailSerializer,
+)
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.core import get_user
@@ -43,15 +51,17 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
-from osf.models import (Contributor,
-                        ExternalAccount,
-                        Guid,
-                        QuickFilesNode,
-                        AbstractNode,
-                        Preprint,
-                        Node,
-                        Registration,
-                        OSFUser)
+from osf.models import (
+    Contributor,
+    ExternalAccount,
+    Guid,
+    QuickFilesNode,
+    AbstractNode,
+    Preprint,
+    Node,
+    Registration,
+    OSFUser,
+)
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
@@ -82,7 +92,7 @@ class UserMixin(object):
                 return get_object_or_error(
                     OSFUser.objects.filter(id=user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
                     request=self.request,
-                    display_name='user'
+                    display_name='user',
                 )
 
         if self.kwargs.get('is_embedded') is True:
@@ -99,7 +109,7 @@ class UserMixin(object):
             return get_object_or_error(
                 OSFUser.objects.filter(id=current_user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
                 request=self.request,
-                display_name='user'
+                display_name='user',
             )
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
@@ -426,7 +436,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUserRelationship
+        ReadOnlyOrCurrentUserRelationship,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -442,7 +452,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user = self.get_user(check_permissions=False)
         obj = {
             'data': user.affiliated_institutions.all(),
-            'self': user
+            'self': user,
         }
         self.check_object_permissions(self.request, obj)
         return obj

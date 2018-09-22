@@ -25,7 +25,7 @@ from api.base.requests import EmbeddedRequest
 from api.base.serializers import (
     MaintenanceStateSerializer,
     LinkedNodesRelationshipSerializer,
-    LinkedRegistrationsRelationshipSerializer
+    LinkedRegistrationsRelationshipSerializer,
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
@@ -261,11 +261,13 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.node')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.node')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -365,11 +367,13 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -422,7 +426,7 @@ def root(request, format=None, **kwargs):
             'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
             'schemas': utils.absolute_reverse('schemas:registration-schema-list', kwargs=kwargs),
             'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
-        }
+        },
     }
 
     if utils.has_admin_scope(request):
@@ -435,7 +439,7 @@ def root(request, format=None, **kwargs):
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
-        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None,
     })
 
 
@@ -443,7 +447,7 @@ def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
         {'errors': [{'detail': 'Not found.'}]},
         status=404,
-        content_type='application/vnd.api+json; application/json'
+        content_type='application/vnd.api+json; application/json',
     )
 
 
@@ -500,10 +504,12 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
                 .node_relations.select_related('child')\
                 .filter(is_node_link=True, child__is_deleted=False)\
                 .exclude(child__type='osf.collection')
-        return sorted([
-            node_link for node_link in query
-            if node_link.child.can_view(auth) and not node_link.child.is_retracted
-        ], key=lambda node_link: node_link.child.modified, reverse=True)
+        return sorted(
+            [
+                node_link for node_link in query
+                if node_link.child.can_view(auth) and not node_link.child.is_retracted
+            ], key=lambda node_link: node_link.child.modified, reverse=True,
+        )
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -564,7 +570,7 @@ class WaterButlerMixin(object):
             base_class = BaseFileNode.resolve_class(
                 attrs['provider'],
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-                else BaseFileNode.FILE
+                else BaseFileNode.FILE,
             )
 
             # mirrors BaseFileNode get_or_create
@@ -593,7 +599,7 @@ class WaterButlerMixin(object):
         file_node = BaseFileNode.resolve_class(
             attrs['provider'],
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-            else BaseFileNode.FILE
+            else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
         file_node.update(None, attrs, user=self.request.user)

@@ -6,7 +6,7 @@ from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
-    ShowIfVersion, NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint
+    ShowIfVersion, NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
@@ -17,7 +17,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
-    NodeTagField
+    NodeTagField,
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
@@ -95,8 +95,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
-    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
-                                                                   'for the current user on this preprint.')
+    current_user_permissions = ser.SerializerMethodField(
+        help_text='List of strings representing the permissions '
+        'for the current user on this preprint.',
+    )
     public = ser.BooleanField(source='is_public', required=False, read_only=True)
     contributors = RelationshipField(
         related_view='preprints:preprint-contributors',
@@ -107,51 +109,51 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     citation = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-citation',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     identifiers = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:identifier-list',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     node = NoneIfWithdrawal(NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
-        read_only=False
+        read_only=False,
     ))
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
-        read_only=False
+        read_only=False,
     )
 
     provider = PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
-        read_only=False
+        read_only=False,
     )
 
     files = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-storage-providers',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        read_only=False
+        read_only=False,
     ))
 
     review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     )
 
     requests = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-request-list',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     links = LinksField(
@@ -159,8 +161,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
-            'preprint_doi': 'get_preprint_doi_url'
-        }
+            'preprint_doi': 'get_preprint_doi_url',
+        },
     )
 
     class Meta:
@@ -206,10 +208,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
-                absolute_reverse('preprints:preprint-review-action-list', kwargs={
-                    'version': self.context['request'].parser_context['kwargs']['version'],
-                    'preprint_id': preprint._id
-                })
+                absolute_reverse(
+                    'preprints:preprint-review-action-list', kwargs={
+                        'version': self.context['request'].parser_context['kwargs']['version'],
+                        'preprint_id': preprint._id,
+                    },
+                ),
             ))
 
         save_preprint = False
@@ -325,12 +329,12 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
     """
     preprint = RelationshipField(
         related_view='preprints:preprint-detail',
-        related_view_kwargs={'preprint_id': '<preprint._id>'}
+        related_view_kwargs={'preprint_id': '<preprint._id>'},
     )
 
     node = HideIfPreprint(RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'}
+        related_view_kwargs={'node_id': '<node._id>'},
     ))
 
     class Meta:
@@ -342,8 +346,8 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
             kwargs={
                 'user_id': obj.user._id,
                 'preprint_id': self.context['request'].parser_context['kwargs']['preprint_id'],
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
 
@@ -380,7 +384,7 @@ class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
         related_view='preprints:preprint-files',
         related_view_kwargs={'preprint_id': '<node._id>'},
         kind='folder',
-        never_embed=True
+        never_embed=True,
     )
 
     links = LinksField({

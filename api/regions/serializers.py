@@ -8,7 +8,7 @@ class RegionSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
 
     links = LinksField({
-        'self': 'get_absolute_url'
+        'self': 'get_absolute_url',
     })
 
     class Meta:

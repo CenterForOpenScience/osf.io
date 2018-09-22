@@ -30,7 +30,7 @@ class RequestMixin(object):
             object_class,
             self.kwargs[lookup_arg],
             self.request,
-            display_name=display_name
+            display_name=display_name,
         )
 
         # May raise a permission denied
@@ -69,7 +69,7 @@ class PreprintRequestMixin(RequestMixin):
 class RequestDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]  # Actual scope checks are done on subview.as_view
@@ -90,7 +90,7 @@ class NodeRequestDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeRequestMi
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        NodeRequestPermission
+        NodeRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
@@ -108,7 +108,7 @@ class PreprintRequestDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintR
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintRequestPermission
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]

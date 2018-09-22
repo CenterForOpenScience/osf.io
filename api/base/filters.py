@@ -5,10 +5,12 @@ import re
 
 import pytz
 from api.base import utils
-from api.base.exceptions import (InvalidFilterComparisonType,
-                                 InvalidFilterError, InvalidFilterFieldError,
-                                 InvalidFilterMatchType, InvalidFilterOperator,
-                                 InvalidFilterValue)
+from api.base.exceptions import (
+    InvalidFilterComparisonType,
+    InvalidFilterError, InvalidFilterFieldError,
+    InvalidFilterMatchType, InvalidFilterOperator,
+    InvalidFilterValue,
+)
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
@@ -139,13 +141,13 @@ class FilterMixin(object):
             if not isinstance(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(
                     parameter='filter',
-                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name)
+                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name),
                 )
         if op in self.MATCH_OPERATORS:
             if not isinstance(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(
                     parameter='filter',
-                    detail="Field '{0}' does not support match operators in a filter.".format(field_name)
+                    detail="Field '{0}' does not support match operators in a filter.".format(field_name),
                 )
 
     def _parse_date_param(self, field, source_field_name, op, value):
@@ -160,7 +162,7 @@ class FilterMixin(object):
             return {
                 'op': op,
                 'value': self.convert_value(value, field),
-                'source_field_name': source_field_name
+                'source_field_name': source_field_name,
             }
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
@@ -169,12 +171,12 @@ class FilterMixin(object):
                 {
                     'op': 'gte',
                     'value': start,
-                    'source_field_name': source_field_name
+                    'source_field_name': source_field_name,
                 }, {
                     'op': 'lt',
                     'value': stop,
-                    'source_field_name': source_field_name
-                }
+                    'source_field_name': source_field_name,
+                },
             ]
 
     def bulk_get_values(self, value, field):
@@ -221,23 +223,23 @@ class FilterMixin(object):
                     # Special case date(time)s to allow for ambiguous date matches
                     if isinstance(field, self.DATE_FIELDS):
                         query.get(key).update({
-                            field_name: self._parse_date_param(field, source_field_name, op, value)
+                            field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
                     elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
                                 'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     elif not isinstance(value, int) and source_field_name == 'root':
                         query.get(key).update({
                             field_name: {
                                 'op': op,
                                 'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     elif self.should_parse_special_query_params(field_name):
                         query = self.parse_special_query_params(field_name, key, value, query)
@@ -246,8 +248,8 @@ class FilterMixin(object):
                             field_name: {
                                 'op': op,
                                 'value': self.convert_value(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     self.postprocess_query_param(key, field_name, query[key][field_name])
 
@@ -296,7 +298,7 @@ class FilterMixin(object):
             else:
                 raise InvalidFilterValue(
                     value=value,
-                    field_type='bool'
+                    field_type='bool',
                 )
         elif isinstance(field, self.DATE_FIELDS):
             try:
@@ -307,7 +309,7 @@ class FilterMixin(object):
             except ValueError:
                 raise InvalidFilterValue(
                     value=value,
-                    field_type='date'
+                    field_type='date',
                 )
         elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
             if value == 'null':
@@ -340,7 +342,7 @@ class ListFilterMixin(FilterMixin):
         'lt': operator.lt,
         'lte': operator.le,
         'gt': operator.gt,
-        'gte': operator.ge
+        'gte': operator.ge,
     }
 
     def __init__(self, *args, **kwargs):
@@ -376,10 +378,12 @@ class ListFilterMixin(FilterMixin):
                             queryset = self.get_filtered_queryset(field_name, operation, queryset)
                     else:
                         sub_query_parts.append(
-                            functools.reduce(operator.and_, [
-                                self.build_query_from_field(field_name, operation)
-                                for operation in operations
-                            ])
+                            functools.reduce(
+                                operator.and_, [
+                                    self.build_query_from_field(field_name, operation)
+                                    for operation in operations
+                                ],
+                            ),
                         )
                 if not isinstance(queryset, list):
                     sub_query = functools.reduce(operator.or_, sub_query_parts)

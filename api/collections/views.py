@@ -37,7 +37,7 @@ from osf.models import (
     CollectionSubmission,
     Collection,
     Node,
-    Registration
+    Registration,
 )
 
 
@@ -54,7 +54,7 @@ class CollectionMixin(object):
             Collection,
             self.kwargs[self.obj_lookup_url_kwarg],
             self.request,
-            display_name='collection'
+            display_name='collection',
         )
         # May raise a permission denied
         if check_object_permissions:
@@ -337,7 +337,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
             CollectionSubmission,
             self.kwargs['cgm_id'],
             self.request,
-            'submission'
+            'submission',
         )
         # May raise a permission denied
         self.check_object_permissions(self.request, cgm)
@@ -660,7 +660,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             CollectionSubmission,
             self.kwargs[node_link_lookup_url_kwarg],
             self.request,
-            'node link'
+            'node link',
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']
@@ -755,14 +755,16 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Node.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Node.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -852,13 +854,15 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Registration.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Registration.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj

@@ -4,13 +4,17 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from website.files import exceptions as file_exceptions
-from api.base.serializers import IDField
+from api.base.serializers import IDField, ShowIfVersion
 
 
 class DestinationSerializer(ser.Serializer):
     parent = ser.CharField(write_only=True)
     target = ser.CharField(write_only=True)
     name = ser.CharField(write_only=True, allow_blank=True, allow_null=True)
+    node = ShowIfVersion(
+        ser.CharField(write_only=True),
+        min_version='2.0', max_version='2.7',
+    )
 
 
 class WaterbutlerMetadataSerializer(ser.Serializer):

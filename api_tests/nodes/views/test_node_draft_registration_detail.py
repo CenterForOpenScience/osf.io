@@ -49,7 +49,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert data['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
@@ -113,7 +113,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert data['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
@@ -215,7 +215,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             payload, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert data['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
     def test_draft_must_be_branched_from_node(
@@ -345,13 +345,20 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def test_cannot_update_registration_schema(
             self, app, user, schema, payload,
             schema_prereg, url_draft_registrations):
-        payload['data']['attributes']['registration_supplement'] = schema_prereg._id
+        payload['data']['relationships'] = {
+            'registration_schema': {
+                'data': {
+                    'id': schema_prereg._id,
+                    'type': 'registration_schema'
+                }
+            }
+        }
         res = app.put_json_api(
             url_draft_registrations,
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_supplement'] == schema._id
+        assert schema._id in res.json['data']['relationships']['registration_schema']['links']['related']['href']
 
     def test_required_metaschema_questions_not_required_on_update(
             self, app, user, project_public,
@@ -594,7 +601,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             payload, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert data['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
     def test_cannot_update_draft(

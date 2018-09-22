@@ -31,7 +31,7 @@ from api.preprints.serializers import (
     PreprintContributorDetailSerializer,
     PreprintContributorsSerializer,
     PreprintStorageProviderSerializer,
-    PreprintContributorsCreateSerializer
+    PreprintContributorsCreateSerializer,
 )
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
@@ -47,10 +47,10 @@ from api.preprints.permissions import (
     ModeratorIfNeverPublicWithdrawn,
     AdminOrPublic,
     ContributorDetailPermissions,
-    PreprintFilesPermissions
+    PreprintFilesPermissions,
 )
 from api.nodes.permissions import (
-    ContributorOrPublic
+    ContributorOrPublic,
 )
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
@@ -418,10 +418,12 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
-                    'provider_id': target.provider._id,
-                    'version': self.request.parser_context['kwargs']['version']
-                })
+                absolute_reverse(
+                    'providers:preprint-providers:preprint-provider-detail', kwargs={
+                        'provider_id': target.provider._id,
+                        'version': self.request.parser_context['kwargs']['version'],
+                    },
+                ),
             ))
 
         serializer.save(user=self.request.user)
@@ -456,7 +458,7 @@ class PreprintStorageProvidersList(NodeStorageProvidersList, PreprintMixin):
     def get_queryset(self):
         # Preprints Providers restricted so only osfstorage is allowed
         return [
-            self.get_provider_item('osfstorage')
+            self.get_provider_item('osfstorage'),
         ]
 
 
@@ -487,7 +489,7 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintRequestPermission
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]

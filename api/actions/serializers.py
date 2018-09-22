@@ -111,7 +111,7 @@ class BaseActionSerializer(JSONAPISerializer):
     links = LinksField(
         {
             'self': 'get_action_url',
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
