@@ -485,6 +485,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         self.primary_file = preprint_file
 
         self.primary_file.move_under(self.root_folder)
+        self.primary_file.get_guid(create=True)
         self.primary_file.save()
 
         # only log if updating the preprint file, not adding for the first time
