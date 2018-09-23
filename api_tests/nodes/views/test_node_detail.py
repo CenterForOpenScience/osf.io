@@ -725,7 +725,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'type': 'nodes',
                 'id': project_public._id,
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'category': 'project',
                 }
             }
@@ -734,7 +734,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             url_public, project,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
     #   test_update_public_project_logged_in_but_unauthorized
         res = app.put_json_api(url_public, {

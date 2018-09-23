@@ -1303,7 +1303,7 @@ class TestPreprintUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 

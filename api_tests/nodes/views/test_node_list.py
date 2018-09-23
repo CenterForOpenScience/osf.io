@@ -1709,7 +1709,7 @@ class TestNodeCreate:
             'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'description': description,
                     'category': category,
                     'public': False,
@@ -1720,7 +1720,7 @@ class TestNodeCreate:
             url, project, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
 
 @pytest.mark.django_db

@@ -555,11 +555,11 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
-        too_long = 'a' * 201
+        too_long = 'a' * 513
         node = NodeFactory.build(title=too_long)
         with pytest.raises(ValidationError) as excinfo:
             node.save()
-        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 512 characters.']}
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -3317,7 +3317,7 @@ class TestNodeUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
