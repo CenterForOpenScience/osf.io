@@ -2887,7 +2887,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         if custom_citation == '':
             log_action = NodeLog.CUSTOM_CITATION_REMOVED
-        elif custom_citation != '' and self.custom_citation != '':
+        elif custom_citation == '' and self.custom_citation == '':
+            return
+        elif self.custom_citation != '':
             log_action = NodeLog.CUSTOM_CITATION_EDITED
         else:
             log_action = NodeLog.CUSTOM_CITATION_ADDED
