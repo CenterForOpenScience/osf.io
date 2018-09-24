@@ -100,21 +100,3 @@ class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
 class SendEmailThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'send-email'
-
-
-class ChangePasswordThrottle(BaseThrottle, UserRateThrottle):
-
-    scope = 'change-password'
-
-    def allow_request(self, request, view):
-        """
-        Prevents user's from continually changing their password and recieving a flood of emails throttling invalid
-         passwords is done elsewhere.
-        """
-        user = view.get_user()
-        existing_password = request.data.get('existing_password')
-
-        if existing_password and not user.check_password(existing_password):
-            return True
-
-        return super(ChangePasswordThrottle, self).allow_request(request, view)

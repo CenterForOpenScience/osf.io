@@ -19,7 +19,7 @@ from api.base.utils import (
     get_user_auth,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle, ChangePasswordThrottle
+from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -625,7 +625,6 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     view_name = 'user_password'
 
     serializer_class = UserChangePasswordSerializer
-    throttle_classes = (ChangePasswordThrottle, )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
