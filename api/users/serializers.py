@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
@@ -15,10 +15,11 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.users.schemas.utils import validate_user_json, from_json
+from framework.auth.views import send_confirm_email
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -120,6 +121,11 @@ class UserSerializer(JSONAPISerializer):
 
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    emails = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user-emails',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
@@ -447,4 +453,62 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
 
+        return instance
+
+
+class UserEmail(object):
+    def __init__(self, email_id, address, confirmed, primary):
+        self.id = email_id
+        self.address = address
+        self.confirmed = confirmed
+        self.primary = primary
+
+
+class UserEmailsSerializer(JSONAPISerializer):
+    id = IDField(read_only=True)
+    type = TypeField()
+    email_address = ser.CharField(source='address')
+    confirmed = ser.BooleanField(read_only=True)
+    primary = ser.BooleanField(required=False)
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        user = self.context['request'].user
+        return absolute_reverse(
+            'users:user-email-detail',
+            kwargs={
+                'user_id': user._id,
+                'email_id': obj.id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    class Meta:
+        type_ = 'user_emails'
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        address = validated_data['address']
+        if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
+            raise Conflict('This user already has registered with the email address {}'.format(address))
+        try:
+            token = user.add_unconfirmed_email(address)
+            user.save()
+            if CONFIRM_REGISTRATIONS_BY_EMAIL:
+                send_confirm_email(user, email=address)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.args[0])
+
+        return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
+
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        primary = validated_data.get('primary', None)
+        if primary and instance.confirmed:
+            user.username = instance.address
+            user.save()
+        elif primary and not instance.confirmed:
+            raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
         return instance
