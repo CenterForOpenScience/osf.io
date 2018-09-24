@@ -18,6 +18,8 @@ from api.base.exceptions import Conflict, InvalidFilterOperator, InvalidFilterVa
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
+    JSONAPIOnetoOneRelationshipParser,
+    JSONAPIOnetoOneRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
@@ -31,6 +33,7 @@ from api.preprints.serializers import (
     PreprintContributorDetailSerializer,
     PreprintContributorsSerializer,
     PreprintStorageProviderSerializer,
+    PreprintNodeRelationshipSerializer,
     PreprintContributorsCreateSerializer,
 )
 from api.files.serializers import OsfStorageFileSerializer
@@ -151,6 +154,33 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         res = super(PreprintDetail, self).get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
+
+
+class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    view_category = 'preprints'
+    view_name = 'preprint-node-relationship'
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+
+    serializer_class = PreprintNodeRelationshipSerializer
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+        obj = {
+            'data': {'id': preprint.node._id, 'type': 'linked_preprint_nodes'} if preprint.node and preprint.node.can_view(auth) else None,
+            'self': preprint,
+        }
+        return obj
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):

@@ -42,6 +42,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     SUBJECTS_UPDATED = 'subjects_updated'
 
     SUPPLEMENTAL_NODE_ADDED = 'supplement_node_added'
+    SUPPLEMENTAL_NODE_REMOVED = 'supplement_node_removed'
 
     PUBLISHED = 'published'
 

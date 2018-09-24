@@ -1,14 +1,18 @@
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
+from rest_framework.fields import empty
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
     ShowIfVersion, NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
+    LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
@@ -389,4 +393,40 @@ class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
 
     links = LinksField({
         'upload': WaterbutlerLink(),
+    })
+
+
+class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
+    data = ser.DictField()
+
+    def run_validation(self, data=empty):
+        """
+        Overwrites run_validation.
+        JSONAPIOnetoOneRelationshipParser parses data into {id: None, type: None} if data is null,
+        which is what this endpoint expects.
+        """
+
+        if data == {}:
+            raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
+
+        if data.get('type', None) is not None and data.get('id', None) is not None:
+            raise DRFValidationError({'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'}, 400)
+        return data
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data': None,
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        auth = get_user_auth(self.context['request'])
+        preprint = instance['self']
+        preprint.unset_supplemental_node(auth=auth)
+        preprint.save()
+        return self.make_instance_obj(preprint)
+
+    links = LinksField({
+        'self': 'get_self_url',
     })

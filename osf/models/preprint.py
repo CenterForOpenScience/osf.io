@@ -317,6 +317,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return re.sub(r'https?:', '', url).strip('/')
 
     @property
+    def linked_nodes_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/node/'
+
+    @property
     def admin_contributor_ids(self):
         # Overrides ContributorMixin
         return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
@@ -725,6 +729,26 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params={
                 'preprint': self._id,
                 'node': self.node._id,
+            },
+            auth=auth,
+            save=False,
+        )
+
+        if save:
+            self.save()
+
+    def unset_supplemental_node(self, auth, save=False):
+        if not self.has_permission(auth.user, 'write'):
+            raise PermissionsError('You must have write permissions to set a supplemental node.')
+
+        current_node_id = self.node._id if self.node else None
+        self.node = None
+
+        self.add_log(
+            action=PreprintLog.SUPPLEMENTAL_NODE_REMOVED,
+            params={
+                'preprint': self._id,
+                'node': current_node_id
             },
             auth=auth,
             save=False,
