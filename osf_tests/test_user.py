@@ -735,12 +735,21 @@ class TestChangePassword:
             'Old password is invalid',
         )
 
-    def test_change_password_invalid_new_password_length(self):
+    def test_change_password_invalid_too_short(self):
         self.test_change_password_invalid(
             'password',
             '12345',
             '12345',
             'Password should be at least eight characters',
+        )
+
+    def test_change_password_invalid_too_long(self):
+        too_long = 'X' * 256
+        self.test_change_password_invalid(
+            'password',
+            too_long,
+            too_long,
+            'Password should be at most 255 characters.',
         )
 
     def test_change_password_invalid_confirm_password(self):

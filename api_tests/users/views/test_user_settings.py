@@ -186,69 +186,18 @@ class TestUserChangePassword:
         user_one.reload()
         assert user_one.check_password('password2')
 
-    def test_post_validation_old_password_invalid(self, app, user_one, url, payload):
-        payload['data']['attributes']['existing_password'] = 'bad password'
-        payload['data']['attributes']['new_password'] = 'password2'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
-
-    def test_post_validation_not_all_the_same(self, app, user_one, url, payload):
-        payload['data']['attributes']['existing_password'] = 'password1'
-        payload['data']['attributes']['new_password'] = 'password1'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password cannot be the same'
-
-    def test_post_validation_not_email(self, app, user_one, url, payload):
-        payload['data']['attributes']['existing_password'] = 'password1'
-        payload['data']['attributes']['new_password'] = user_one.email
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password cannot be the same as your email address'
-
-    def test_post_validation_not_blank(self, app, user_one, url, payload):
-        payload['data']['attributes']['existing_password'] = 'password1'
-        payload['data']['attributes']['new_password'] = ''
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
-
-    def test_post_validation_not_too_short(self, app, user_one, url, payload):
-        payload['data']['attributes']['existing_password'] = 'password1'
-        payload['data']['attributes']['new_password'] = '123'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password should be at least eight characters'
-
-    def test_post_validation_not_too_long(self, app, user_one, url, payload):
-        long_password = 'X' * 257
-        payload['data']['attributes']['existing_password'] = 'password1'
-        payload['data']['attributes']['new_password'] = long_password
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password should not be longer than 256 characters'
-
     def test_post_invalid_type(self, app, user_one, url, payload):
         payload['data']['type'] = 'Invalid Type'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-    def test_exceed_throttle(self, app, user_one, url, payload):
-        res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 204
-        user_one.auth = (user_one.username, 'password2')
-
-        payload['data']['attributes']['existing_password'] = 'password2'
-        payload['data']['attributes']['new_password'] = 'password3'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 429
-        # Expected time is omitted to prevent probabilistic failures.
-        assert 'Request was throttled. Expected available in ' in res.json['errors'][0]['detail']
-
     def test_exceed_throttle_failed_attempts(self, app, user_one, url, payload):
         payload['data']['attributes']['existing_password'] = 'wrong password'
         payload['data']['attributes']['new_password'] = 'password2'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Old password is invalid'
