@@ -633,18 +633,13 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         existing_password = request.data['existing_password']
         new_password = request.data['new_password']
 
-        if not user.check_password(existing_password):
-            user.old_password_invalid_attempts += 1
-            user.change_password_last_attempt = timezone.now()
-            user.save()
-
         # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
         if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
             user.reset_old_password_invalid_attempts()
 
         # There have been more than 3 failed attempts and throttle hasn't expired.
         if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
-                user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
+            user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
         ):
             time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
             wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
@@ -654,14 +649,15 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             # double new password for confirmation because validation is done on the front-end.
             user.change_password(existing_password, new_password, new_password)
         except ChangePasswordError as error:
+            # This exception must be returned rather then raised to avoid rolling back the transaction and losing the
+            # incrementation of failed password attempts
+            user.save()
             return JsonResponse(
                 {'errors': [{'detail': message} for message in error.messages]},
                 status=400,
                 content_type='application/vnd.api+json; application/json',
             )
 
-        if user.verification_key_v2:
-            user.verification_key_v2['expires'] = timezone.now()
         user.save()
         remove_sessions_for_user(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
