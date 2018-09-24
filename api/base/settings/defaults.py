@@ -159,6 +159,7 @@ REST_FRAMEWORK = {
         '2.7',
         '2.8',
         '2.9',
+        '2.10',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -286,3 +287,6 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# salt used for generating hashids
+HASHIDS_SALT = 'pinkhimalayan'

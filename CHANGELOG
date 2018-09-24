@@ -1,12 +1,32 @@
-*********
-Changelog
-*********
+# Changelog
+
+We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
+
+18.0.0 (2018-09-20)
+===================
+
+- Switch to CalVer.
+- APIv2: Allow social fields on users to be updated.
+- APIv2: Fix bug that caused 500 responses to be returned
+  for addon folder endpoints.
+- Add waffle switch to disable engagement emails.
+- Fix for removing self from projects and nested components.
+
+0.157.0 (2018-09-18)
+====================
+
+- APIv2: Select draft registration metaschema using relationship.
+- APIv2: Don't require attributes on POST requests.
+- APIv2: Add settings management (mailing lists, 2fa).
+- APIv2: Return null for empty to-one relationships instead of omitting them.
+- Fix for Google Analytics custom dimensions to make consistent with other apps.
 
 0.156.0 (2018-09-17)
 ====================
 
 - Storage internationalization. Projects can be configured to store OSFStorage data
   in a given storage region.
+- Remove wiki-related code from Node model.
 
 0.155.0 (2018-09-12)
 ====================
