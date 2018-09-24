@@ -37,7 +37,7 @@ def migrate_preprint_service_permissions(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0134_preprint_node_divorce'),
+        ('osf', '0135_preprint_node_divorce'),
     ]
 
     operations = [
