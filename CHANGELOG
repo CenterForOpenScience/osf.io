@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.1.0 (2018-09-25)
+===================
+
+- Add custom citations to projects
+
 18.0.0 (2018-09-20)
 ===================
 
