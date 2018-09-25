@@ -39,6 +39,7 @@ class Registration(AbstractNode):
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
+    # TODO: Consider making this a FK, as there can be one per Registration
     registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
