@@ -174,6 +174,18 @@ class ChronosClient(object):
         if ChronosSubmission.objects.filter(journal=journal, preprint=preprint).exists():
             raise ValueError('{!r} already has an existing submission to {!r}.'.format(preprint, journal))
 
+        # 1 = draft, 2 = submitted, 3 = accepted, 4 = published
+        # Disallow submission if the current preprint has submissions that are submitted, accepted or publishes
+        # regardless of journals
+        if ChronosSubmission.objects.filter(status__in=[1], preprint=preprint).exists():
+            raise ValueError('Cannot submit because a drafted submission exists')
+
+        if ChronosSubmission.objects.filter(status=[2], preprint=preprint).exists():
+            raise ValueError('Cannot submit because a pending submission exists')
+
+        if ChronosSubmission.objects.filter(status__in=[3, 4], preprint=preprint).exists():
+            raise ValueError('Cannot submit because your submission was accepted or published')
+
         body = ChronosSerializer.serialize_manuscript(journal.journal_id, preprint)
         body['USER'] = ChronosSerializer.serialize_user(submitter)
 

@@ -12,10 +12,11 @@ from api.base.parsers import (
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
-from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin
+from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin, SubmissionAcceptedOrPublishedOrPreprintContributor
 from api.chronos.serializers import ChronosJournalSerializer, ChronosSubmissionSerializer, ChronosSubmissionCreateSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ChronosJournal, ChronosSubmission, PreprintService
+from osf.utils.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 
 class ChronosJournalList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -86,9 +87,17 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
             return ChronosSubmissionSerializer
 
     def get_default_queryset(self):
-        return ChronosSubmission.objects.filter(
-            preprint__guids___id=self.kwargs['preprint_id'],
-        )
+        user = self.request.user
+        queryset = ChronosSubmission.objects.filter(preprint__guids___id=self.kwargs['preprint_id'])
+        # If the user is a contributor, return all submissions of this preprint
+        if user.has_perm(DEFAULT_CONTRIBUTOR_PERMISSIONS, PreprintService.load(self.kwargs['preprint_id'])):
+            return queryset
+        # Otherwise, only return accepted (status = 3) and published (status = 4) submissions
+        else:
+            return queryset.filter(
+                preprint__guids___id=self.kwargs['preprint_id'],
+                status__in=[3, 4]
+            )
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -106,7 +115,7 @@ class ChronosSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        SubmissionOnPreprintPublishedOrAdmin,
+        SubmissionAcceptedOrPublishedOrPreprintContributor,
     )
     required_read_scopes = [CoreScopes.CHRONOS_SUBMISSION_READ]
     required_write_scopes = [CoreScopes.CHRONOS_SUBMISSION_WRITE]
