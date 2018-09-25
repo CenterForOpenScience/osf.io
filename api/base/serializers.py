@@ -835,7 +835,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return {'data': None}
 
         related_url = url['related']
-        related_path = urlparse(related_url).path
+        related_path = urlparse(related_url).path if related_url else None
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)

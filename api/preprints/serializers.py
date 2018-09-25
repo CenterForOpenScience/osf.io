@@ -125,6 +125,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False,
+        many=False,
+        self_view='preprints:preprint-node-relationship',
+        self_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     license = PreprintLicenseRelationshipField(

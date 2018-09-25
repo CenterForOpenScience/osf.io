@@ -30,6 +30,8 @@ class ContributorOrPublic(permissions.BasePermission):
             obj = obj.owner
         if isinstance(obj, (NodeStorageProvider)):
             obj = obj.node
+        if isinstance(obj, dict):
+            obj = obj.get('self', None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:

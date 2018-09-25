@@ -43,6 +43,9 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
 
+        if isinstance(obj, dict):
+            obj = obj.get('self', None)
+
         if request.method in permissions.SAFE_METHODS:
             return super(PreprintPublishedOrWrite, self).has_object_permission(request, view, obj)
         else:
