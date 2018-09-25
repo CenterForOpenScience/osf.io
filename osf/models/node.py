@@ -318,7 +318,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
-    custom_citation = models.TextField(blank=True, default='', null=True)
+    custom_citation = models.TextField(blank=True, null=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -2885,7 +2885,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can update a custom citation')
 
-        if custom_citation == self.custom_citation:
+        if (custom_citation == self.custom_citation) or not (custom_citation or self.custom_citation):
             return
         elif custom_citation == '':
             log_action = NodeLog.CUSTOM_CITATION_REMOVED
