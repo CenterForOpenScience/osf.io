@@ -2885,10 +2885,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can update a custom citation')
 
-        if custom_citation == '':
-            log_action = NodeLog.CUSTOM_CITATION_REMOVED
-        elif custom_citation == '' and self.custom_citation == '':
+        if custom_citation == self.custom_citation:
             return
+        elif custom_citation == '':
+            log_action = NodeLog.CUSTOM_CITATION_REMOVED
         elif self.custom_citation != '':
             log_action = NodeLog.CUSTOM_CITATION_EDITED
         else:
