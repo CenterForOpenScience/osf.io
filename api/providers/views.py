@@ -478,4 +478,4 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         try:
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(str(e))

@@ -111,7 +111,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.save()
         node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
-        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=str(err)))
 
     return {'redirectUrl': node.web_url_for('view_project')}
 

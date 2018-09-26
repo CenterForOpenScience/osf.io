@@ -344,7 +344,7 @@ def edit_wiki_settings(node, auth, **kwargs):
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy",
-            message_long=e.message
+            message_long=str(e)
         ))
 
     return {

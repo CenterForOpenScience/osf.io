@@ -701,9 +701,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 except PermissionsError as e:
                     raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
                 except NodeStateError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
 
             try:
                 node.update(validated_data, auth=auth)
@@ -714,7 +714,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             except NodeUpdateError as e:
                 raise exceptions.ValidationError(detail=e.reason)
             except NodeStateError as e:
-                raise InvalidModelValueError(detail=e.message)
+                raise InvalidModelValueError(detail=str(e))
 
         return node
 
@@ -1112,9 +1112,9 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                 node.move_contributor(instance.user, auth, index, save=True)
             node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
         instance.refresh_from_db()
         return instance
 
