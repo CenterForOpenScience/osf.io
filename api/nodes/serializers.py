@@ -186,7 +186,6 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'styled-citations'
 
-
 def get_license_details(node, validated_data):
     license = node.license if isinstance(node, Preprint) else node.node_license
 
@@ -259,6 +258,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
+    custom_citation = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
@@ -683,6 +683,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
 
         if validated_data:
+            if 'custom_citation' in validated_data:
+                node.update_custom_citation(validated_data.pop('custom_citation'), auth)
             if 'tag_names' in validated_data:
                 new_tags = set(validated_data.pop('tag_names', []))
                 node.update_tags(new_tags, auth=auth)

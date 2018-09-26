@@ -58,6 +58,7 @@ def private_project(
         disabled_contrib,
         permissions=['read'],
         auth=Auth(admin_contributor))
+    private_project.custom_citation = 'Test Citation Text'
     private_project.save()
     return private_project
 
@@ -70,6 +71,20 @@ def disable_user(disabled_contrib, private_project):
     disabled_contrib.is_registered = False
     disabled_contrib.save()
 
+
+@pytest.fixture()
+def custom_citation_payload(private_project):
+    return {
+        'data': {
+            'id': private_project._id,
+            'type': 'nodes',
+            'attributes': {
+                'title': private_project.title,
+                'category': private_project.category,
+                'custom_citation': 'My Custom Citation'
+            }
+        }
+    }
 
 @pytest.mark.django_db
 class NodeCitationsMixin:
@@ -133,7 +148,6 @@ class TestNodeCitations(NodeCitationsMixin):
     def private_url(self, private_project):
         return '/{}nodes/{}/citation/'.format(API_BASE, private_project._id)
 
-
 class TestNodeCitationsStyle(NodeCitationsMixin):
     @pytest.fixture()
     def public_url(self, public_project):
@@ -143,3 +157,19 @@ class TestNodeCitationsStyle(NodeCitationsMixin):
     def private_url(self, private_project):
         return '/{}nodes/{}/citation/apa/'.format(
             API_BASE, private_project._id)
+
+
+@pytest.mark.django_db
+class TestCustomCitations:
+
+    @pytest.fixture()
+    def private_url(self, private_project):
+        return '/{}nodes/{}/'.format(API_BASE, private_project._id)
+
+    def test_custom_citation(self, app, admin_contributor, private_project, private_url, custom_citation_payload):
+
+        #   test_admin_can_view_private_project_citations
+        res = app.put_json_api(private_url, custom_citation_payload, auth=admin_contributor.auth)
+        assert res.status_code == 200
+        private_project.reload()
+        assert private_project.custom_citation == 'My Custom Citation'
