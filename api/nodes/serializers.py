@@ -699,7 +699,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 try:
                     node.set_subjects(subjects, auth)
                 except PermissionsError as e:
-                    raise exceptions.PermissionDenied(detail=e.message)
+                    raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:
                     raise exceptions.ValidationError(detail=e.message)
                 except NodeStateError as e:
