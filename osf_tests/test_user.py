@@ -241,7 +241,7 @@ class TestOSFUser:
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
-        assert e.value.message == 'Invalid Email'
+        assert str(e.value) == 'Invalid Email'
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url_for_external_service(self, random_string):
@@ -724,7 +724,7 @@ class TestChangePassword:
         with pytest.raises(ChangePasswordError) as excinfo:
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in excinfo.value.message
+        assert error_message in str(excinfo)
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -961,7 +961,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -969,7 +969,7 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
@@ -1460,7 +1460,7 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == 'Can\'t remove primary email'
+        assert str(e.value) == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
         email = 'test@mail.com'
