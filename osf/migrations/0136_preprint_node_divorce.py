@@ -343,7 +343,7 @@ def divorce_preprints_from_nodes_sql(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0134_update_preprint_model_for_divorce'),
+        ('osf', '0135_update_preprint_model_for_divorce'),
     ]
 
     operations = [

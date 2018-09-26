@@ -14,7 +14,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0133_merge_20180921_0025'),
+        ('osf', '0134_abstractnode_custom_citation'),
     ]
 
     operations = [
