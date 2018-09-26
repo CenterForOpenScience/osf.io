@@ -117,6 +117,8 @@ class ConferenceMessage(object):
         else:
             # sender format: email@domain.tld
             name = self.sender
+        if '@' in name:
+            return None
         return unicode(HumanName(name))
 
     @cached_property
