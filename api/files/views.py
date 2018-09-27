@@ -14,7 +14,7 @@ from osf.models import (
     QuickFilesNode,
 )
 
-from api.base.exceptions import Gone
+from api.base.exceptions import Gone, InvalidFilterValue
 from api.base.permissions import PermissionWithGetter
 from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
 from api.base import utils
@@ -236,9 +236,12 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
         )
 
     def get(self, request, **kwargs):
-        file_type = self.request.query_params.get('format', 'json')
+        file_type = self.request.query_params.get('export', 'json')
         record = self.get_object()
-        response = FileResponse(ContentFile(record.serialize(format=file_type)))
+        try:
+            response = FileResponse(ContentFile(record.serialize(format=file_type)))
+        except ValueError as e:
+            raise InvalidFilterValue(detail=str(e))
         file_name = 'file_metadata_{}.{}'.format(record.schema._id, file_type)
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
         response['Content-Type'] = 'application/{}'.format(file_type)
