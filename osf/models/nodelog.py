@@ -63,6 +63,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     FILE_TAG_ADDED = 'file_tag_added'
     FILE_TAG_REMOVED = 'file_tag_removed'
 
+    FILE_METADATA_UPDATED = 'file_metadata_updated'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     CHANGED_LICENSE = 'license_changed'

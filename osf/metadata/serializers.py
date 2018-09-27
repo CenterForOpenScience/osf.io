@@ -32,43 +32,28 @@ class MetadataRecordSerializer(object):
         raise ValueError('Format "{}" is not supported.'.format(format))
 
     @classmethod
-    def validate(cls, record, json_data):
-        return jsonschema.validate(json_data, record.schema.schema)
-
-    @classmethod
-    def update(cls, record, json_data):
-        if cls.validate(json_data):
-            record.metadata.update(json_data)
+    def validate(cls, record):
+        # note: this is not used at the moment, because it is overridden by the datacite subclass.
+        # Future subclasses should not need to override validate.
+        return jsonschema.validate(cls.serialize(record), record.schema.schema)
 
 
 @register(schema_id='datacite')
 class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
-    """
-    User provided fields:
-
-    file_description
-    file_description_type
-    resource_type
-    related_publication_doi
-    external_doi_for_file
-    funding_agency
-    grant_number
-    publication_year
-
-    """
 
     osf_schema = 'user_entered_datacite.json'
 
     @classmethod
     def serialize_json(cls, record):
-        file = record.file
-        target = file.target
+        osfstorage_file = record.file
+        target = osfstorage_file.target
+        # TODO - node license won't be there without this, why?
+        target.reload()
         doc = {
             'creators': utils.datacite_format_contributors(target.visible_contributors),
             'titles': [
                 {
-                    # TODO: user can rename in UI, does this change the filename?
-                    'title': file.name
+                    'title': osfstorage_file.name
                 },
                 {
                     'title': target.title,
@@ -78,11 +63,11 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             'publisher': 'Open Science Framework',
             'dates': [
                 {
-                    'date': str(file.created),
+                    'date': str(osfstorage_file.created),
                     'dateType': 'Created'
                 },
                 {
-                    'date': str(file.modified),
+                    'date': str(osfstorage_file.modified),
                     'dateType': 'Updated'
                 }
             ],
@@ -96,9 +81,16 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                     'descriptionType': 'Abstract'
                 }
             ]
-        subjects = target.subjects.values_list('text', flat=True)
-        if subjects:
-            doc['subjects'] = utils.datacite_format_subjects(subjects)
+
+        subject_list = []
+        subjects_from_target = target.subjects.all().select_related('bepress_subject')
+        if subjects_from_target.exists():
+            subject_list = utils.datacite_format_subjects(subjects_from_target)
+        tags_on_file = osfstorage_file.tags.values_list('name', flat=True)
+        for tag_name in tags_on_file:
+            subject_list.append({'subject': tag_name})
+        if subject_list:
+            doc['subjects'] = subject_list
 
         resource_type = record.metadata.get('resource_type', '(:unas)')
         doc['resourceType'] = {
@@ -106,10 +98,8 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             'resourceTypeGeneral': utils.RESOURCE_TYPE_MAP.get(resource_type)
         }
 
-        # TODO: keep publicationYear manually overridable by the user?
-        doc['publicationYear'] = record.metadata.get('publication_year', str(file.created.year))
+        doc['publicationYear'] = str(osfstorage_file.created.year)
 
-        # TODO - save this as the identifier?
         related_publication_doi = record.metadata.get('related_publication_doi')
         if related_publication_doi:
             doc['relatedIdentifiers'] = [
@@ -119,11 +109,10 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 }
             ]
 
-        file_guid = file.get_guid()
-        if file_guid:
+        if osfstorage_file.guids.exists():
             doc['alternateIdentifiers'] = [
                 {
-                    'alternateIdentifier': DOMAIN + file_guid,
+                    'alternateIdentifier': DOMAIN + osfstorage_file.guids.first()._id,
                     'alternateIdentifierType': 'URL'
                 }
             ]
@@ -141,7 +130,9 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         if getattr(target, 'node_license', None):
             doc['rightsList'] = [utils.datacite_format_rights(target.node_license)]
 
-        doc['version'] = file.versions.all().order_by('-created').first().identifier
+        latest_version_identifier = osfstorage_file.versions.all().order_by('-created').values_list('identifier', flat=True)
+        if latest_version_identifier:
+            doc['version'] = latest_version_identifier[0]
 
         return json.dumps(doc)
 
@@ -151,21 +142,12 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         return schema40.tostring(data)
 
     @classmethod
-    def validate(cls, record, json_data):
-        # The OSF cannot currently issue DOIs for a file, which is required for validation.
-        # Manually add a placeholder if one is not provided by the user.
-        if not json_data.get('external_doi_for_file', None):
-            placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
-            json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
-        return super(DataciteMetadataRecordSerializer, cls).validate(record, json_data)
+    def validate(cls, record):
+        # This method needs to be overridden because the OSF cannot currently
+        # issue DOIs for a file, which is required for datacite schema validation.
+        # Manually add a placeholder for validation until we handle this better.
+        json_data = cls.serialize(record)
+        placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
+        json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
 
-    @classmethod
-    def update(cls, record, json_data):
-        """ Update the json given from the user, using the user-facing datacite schema
-
-        :param FileMetadataRecord record: file metadata record to be updated
-        :param dict json_data: data entered by the user, in dict format
-        """
-        # TODO: add validation for user provided fields
-        record.metadata = json_data
-        record.save()
+        return jsonschema.validate(json_data, record.schema.schema)
