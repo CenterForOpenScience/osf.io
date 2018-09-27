@@ -38,18 +38,12 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
     def serializer(self):
         return serializer_registry[self.schema._id]
 
-    def validate_user_entered_metadata(self):
-        # TODO - consolodate this code which is from api.users.schemas.utils.from_json
-        here = os.path.split(os.path.abspath(__file__))[0]
-        with open(os.path.join(here, '../metadata/schemas/user_entered_datacite.json')) as f:
-            user_entered_schema = json.load(f)
-        # If validation fails, this will throw a validation error
-        return jsonschema.validate(self.metadata, user_entered_schema)
-
     def serialize(self):
         return self.serializer.serialize(self)
 
     def validate(self):
+        # causes model level validation to run
+        self.clean_fields()
         return self.serializer.validate(self)
 
     def update(self, proposed_metadata, user=None):
@@ -57,8 +51,6 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
         if auth and self.file.target.has_permission(user, osf_permissions.WRITE):
             self.metadata = proposed_metadata
             self.validate()
-            # TODO: manually call clean fields in update, or add this to save?
-            self.clean_fields()
             self.save()
 
             # If we've made it this far, log!
