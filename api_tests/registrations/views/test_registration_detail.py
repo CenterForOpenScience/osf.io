@@ -1,3 +1,4 @@
+import mock
 import pytest
 from urlparse import urlparse
 
@@ -7,6 +8,7 @@ from osf.utils import permissions
 from osf.models import Registration, NodeLog
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -44,7 +46,14 @@ class TestRegistrationDetail:
             is_public=True)
 
     @pytest.fixture()
-    def private_registration(self, user, private_project):
+    def private_wiki(self, user, private_project):
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=private_project, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+        return wiki_page
+
+    @pytest.fixture()
+    def private_registration(self, user, private_project, private_wiki):
         return RegistrationFactory(project=private_project, creator=user)
 
     @pytest.fixture()
@@ -58,7 +67,7 @@ class TestRegistrationDetail:
 
     def test_registration_detail(
             self, app, user, public_project, private_project,
-            public_registration, private_registration,
+            public_registration, private_registration, private_wiki,
             public_url, private_url):
 
         non_contributor = AuthUserFactory()
@@ -135,14 +144,16 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     #   test_registration_shows_specific_related_counts
-        url = '/{}registrations/{}/?related_counts=children'.format(
+        url = '/{}registrations/{}/?related_counts=children,wikis'.format(
             API_BASE, private_registration._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta'] == {}
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     #   test_hide_if_registration
         # Registrations are a HideIfRegistration field

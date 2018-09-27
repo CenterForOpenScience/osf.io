@@ -132,6 +132,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
