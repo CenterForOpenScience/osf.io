@@ -5,42 +5,52 @@
     "description": "User Entered Fields for the Datacite Schema",
     "type": "object",
     "properties": {
-      "file_description": {
-            "description": "The description of the file",
-            "type": "string"
-        },
-        "file_description_type": {
-            "description": "The type of the file description",
+        "resource_type": {
             "type": "string",
             "enum": [
-                "Abstract",
-                "Methods",
-                "SeriesInformation",
-                "TableOfContents",
-                "TechnicalInfo",
+                "Audio/Video",
+                "Dataset",
+                "Image",
+                "Model",
+                "Software",
+                "Book",
+                "Funding Submission",
+                "Journal Article",
+                "Lesson",
+                "Poster",
+                "Preprint",
+                "Presentation",
+                "Research Tool",
+                "Thesis",
                 "Other"
             ]
         },
+        "file_description": {
+            "description": "The description of the file",
+            "type": "string"
+        },
         "related_publication_doi": {
             "description": "The DOI of a related resource.",
-            "type": "string"
+            "type": "string",
+            "pattern": "10\\..+/.+"
         },
-        "external_doi_for_file": {
-            "description": "The DOI for the file, provided by an external source",
-            "type": "string"
-        },
-        "funding_agency": {
-            "description": "Name of the funding provider.",
-            "type": "string"
-        },
-        "grant_number": {
-            "description": "The code assigned by the funder to a sponsored award (grant).",
-            "type": "string"
-        },
-        "publication_year": {
-            "description": "Year when the data is made publicly available.",
-            "type": "string"
-        },
-        "additionalProperties": false
-    }
+        "funders": {
+            "description": "Funders responsible for funding the resource.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "funding_agency": {
+                        "description": "The name of the funding provider",
+                        "type": "string"
+                    },
+                    "grant_number": {
+                        "description": "The code assigned by the funder to a sponsored award (grant).",
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "additionalProperties": false
 }
