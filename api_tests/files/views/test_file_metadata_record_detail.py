@@ -8,13 +8,13 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestFileMetadataRecordDetail:
-
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def private_record(self, user):
@@ -64,10 +64,6 @@ class TestFileMetadataRecordDetail:
 
 @pytest.mark.django_db
 class TestFileMetadataRecordUpdate:
-
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_write(self):

@@ -183,6 +183,8 @@ class FileMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'metadata-records'
 
+    ordering = ('-created',)
+
     def get_queryset(self):
         return self.get_file().records.all()
 
@@ -231,7 +233,7 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
 
     def get_object(self):
         return utils.get_object_or_error(
-            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]),
+            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]).select_related('schema', 'file'),
             request=self.request,
         )
 
