@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
-import json
-
 import jsonschema
 from django.db import models
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from addons.osfstorage.models import OsfStorageFile
+from api.base.schemas.utils import from_json
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import FileMetadataSchema
 from osf.utils import permissions as osf_permissions
@@ -17,12 +15,7 @@ from website.util import api_v2_url
 
 
 def validate_user_entered_metadata(value):
-    # TODO - consolodate this code which is from api.users.schemas.utils.from_json
-    here = os.path.split(os.path.abspath(__file__))[0]
-    with open(os.path.join(here, '../metadata/schemas/user_entered_datacite.json')) as f:
-        user_entered_schema = json.load(f)
-    # If validation fails, this will throw a validation error
-    return jsonschema.validate(value, user_entered_schema)
+    return jsonschema.validate(value, from_json('user_entered_datacite.json'))
 
 
 class FileMetadataRecord(ObjectIDMixin, BaseModel):
