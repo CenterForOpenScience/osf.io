@@ -105,7 +105,9 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             doc['relatedIdentifiers'] = [
                 {
                     'relatedIdentifier': related_publication_doi,
-                    'relatedIdentifierType': 'DOI'
+                    'relatedIdentifierType': 'DOI',
+                    # TODO: Need confirmation from Product of what to use for relationType
+                    'relationType': 'IsSupplementTo'
                 }
             ]
 
@@ -146,8 +148,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         # This method needs to be overridden because the OSF cannot currently
         # issue DOIs for a file, which is required for datacite schema validation.
         # Manually add a placeholder for validation until we handle this better.
-        json_data = cls.serialize(record)
+        json_data = json.loads(cls.serialize_json(record))
         placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
         json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
-
         return jsonschema.validate(json_data, record.schema.schema)

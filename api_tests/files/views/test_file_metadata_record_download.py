@@ -15,22 +15,16 @@ class TestFileMetadataRecordDownload:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def private_file(self, user):
+    def private_record(self, user):
         private_node = ProjectFactory(creator=user)
-        return utils.create_test_file(private_node, user, filename='private_file')
+        private_file = utils.create_test_file(private_node, user, filename='private_file')
+        return private_file.records.get(schema___id='datacite')
 
     @pytest.fixture()
-    def private_record(self, user, private_file):
-        return private_file.records.first()
-
-    @pytest.fixture()
-    def public_file(self, user):
+    def public_record(self, user):
         public_node = ProjectFactory(creator=user, is_public=True)
-        return utils.create_test_file(public_node, user, filename='public_file')
-
-    @pytest.fixture()
-    def public_record(self, user, public_file):
-        return public_file.records.first()
+        public_file = utils.create_test_file(public_node, user, filename='public_file')
+        return public_file.records.get(schema___id='datacite')
 
     def get_url(self, record):
         return '/{}files/{}/metadata_records/{}/download/'.format(API_BASE, record.file._id, record._id)

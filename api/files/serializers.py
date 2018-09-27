@@ -458,9 +458,9 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
 
     def update(self, record, validated_data):
         if validated_data:
-            auth = get_user_auth(self.context['request'])
+            user = self.context['request'].user
             proposed_metadata = validated_data.pop('metadata')
-            record.update(proposed_metadata, auth)
+            record.update(proposed_metadata, user)
         return record
 
     def get_download_link(self, obj):

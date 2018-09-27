@@ -177,7 +177,7 @@ class FileMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = FileMetadataRecordSerializer
     view_category = 'files'
