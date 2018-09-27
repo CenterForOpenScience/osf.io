@@ -142,7 +142,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
 
     @classmethod
     def serialize_xml(cls, record):
-        data = cls.serialize_json(record)
+        data = json.loads(cls.serialize_json(record))
         return schema40.tostring(data)
 
     @classmethod
