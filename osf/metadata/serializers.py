@@ -110,7 +110,6 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 {
                     'relatedIdentifier': related_publication_doi,
                     'relatedIdentifierType': 'DOI',
-                    # TODO: Need confirmation from Product of what to use for relationType
                     'relationType': 'IsSupplementTo'
                 }
             ]
