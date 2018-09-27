@@ -330,7 +330,7 @@ class TestMessage(ContextTestCase):
         names = [
             (' Fred', 'Fred'),
             (u'Me‰¨ü', u'Me‰¨ü'),
-            (u'fred@queen.com', None),  # Don't use email as display name
+            (u'fred@queen.com', u'fred@queen.com'),
             (u'Fred <fred@queen.com>', u'Fred'),
             (u'"Fred" <fred@queen.com>', u'Fred'),
         ]
