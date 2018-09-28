@@ -71,6 +71,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     ])
     available_metrics = frozenset([
         'downloads',
+        'views',
     ])
 
     id = IDField(source='_id', read_only=True)

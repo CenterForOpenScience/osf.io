@@ -39,7 +39,7 @@ from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
 from api.base.metrics import MetricMixin
-from osf.metrics import PreprintDownload
+from osf.metrics import PreprintDownload, PreprintView
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -85,6 +85,7 @@ class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, Pre
     view_name = 'preprint-list'
     metric_map = {
         'downloads': PreprintDownload,
+        'views': PreprintView,
     }
 
     def get_serializer_class(self):
@@ -146,6 +147,7 @@ class PreprintDetail(MetricMixin, JSONAPIBaseView, generics.RetrieveUpdateDestro
     view_name = 'preprint-detail'
     metric_map = {
         'downloads': PreprintDownload,
+        'views': PreprintView,
     }
 
     def add_metric_to_object(self, obj, metric_class, metric_name, after):

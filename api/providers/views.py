@@ -26,7 +26,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
-from osf.metrics import PreprintDownload
+from osf.metrics import PreprintDownload, PreprintView
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -73,6 +73,7 @@ class PreprintProviderList(MetricMixin, GenericProviderList):
     view_name = 'preprint-providers-list'
     metric_map = {
         'downloads': PreprintDownload,
+        'views': PreprintView,
     }
 
     # overrides MetricMixin

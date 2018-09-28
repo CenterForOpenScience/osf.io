@@ -24,7 +24,10 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from osf_tests.metrics_factories import PreprintDownloadFactory
+from osf_tests.metrics_factories import (
+    PreprintDownloadFactory,
+    PreprintViewFactory,
+)
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
 
@@ -1127,7 +1130,7 @@ class TestPreprintIsValidList(PreprintIsValidListMixin):
 @pytest.mark.django_db
 class TestPreprintListWithMetrics:
 
-    def test_preprint_list_with_metrics(self, app):
+    def test_preprint_list_with_metrics_downloads(self, app):
         url = '/{}preprints/?metrics[downloads]=total'.format(API_BASE)
         preprint1 = PreprintFactory()
         preprint2 = PreprintFactory()
@@ -1147,6 +1150,27 @@ class TestPreprintListWithMetrics:
 
         preprint_1_data = res.json['data'][1]
         preprint_1_data['meta']['metrics']['downloads'] == 1
+
+    def test_preprint_list_with_metrics_views(self, app):
+        url = '/{}preprints/?metrics[views]=total'.format(API_BASE)
+        preprint1 = PreprintFactory()
+        preprint2 = PreprintFactory()
+
+        # Set up fake metric data
+        # preprint1 was viewed 1 times
+        PreprintViewFactory(preprint=preprint1)
+        # provider2 was viewed 2 times
+        PreprintViewFactory(preprint=preprint2)
+        PreprintViewFactory(preprint=preprint2)
+
+        res = app.get(url)
+        assert res.status_code == 200
+
+        preprint_2_data = res.json['data'][0]
+        preprint_2_data['meta']['metrics']['views'] == 2
+
+        preprint_1_data = res.json['data'][1]
+        preprint_1_data['meta']['metrics']['views'] == 1
 
     def test_preprint_list_filter_by_time_period(self, app):
         assert 0, 'todo'

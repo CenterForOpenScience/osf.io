@@ -124,6 +124,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     ])
     available_metrics = frozenset([
         'downloads',
+        'views',
     ])
 
     share_source = ser.CharField(read_only=True)

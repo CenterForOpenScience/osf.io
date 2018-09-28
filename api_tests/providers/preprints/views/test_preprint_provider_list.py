@@ -7,7 +7,10 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
 )
-from osf_tests.metrics_factories import PreprintDownloadFactory
+from osf_tests.metrics_factories import (
+    PreprintDownloadFactory,
+    PreprintViewFactory,
+)
 
 @pytest.fixture(params=['/{}preprint_providers/?version=2.2&', '/{}providers/preprints/?version=2.2&'])
 def url(request):
@@ -72,7 +75,7 @@ class TestPreprintProviderList:
 @pytest.mark.django_db
 class TestPreprintProviderListWithMetrics:
 
-    def test_preprint_provider_list_with_metrics(
+    def test_preprint_provider_list_with_metrics_downloads(
             self, app, url, user, provider_one, provider_two):
 
         preprint_one = PreprintFactory(provider=provider_one)
@@ -93,3 +96,25 @@ class TestPreprintProviderListWithMetrics:
 
         provider_1_data = res.json['data'][1]
         provider_1_data['meta']['metrics']['downloads'] == 1
+
+    def test_preprint_provider_list_with_metrics_views(
+            self, app, url, user, provider_one, provider_two):
+
+        preprint_one = PreprintFactory(provider=provider_one)
+        preprint_two = PreprintFactory(provider=provider_two)
+
+        # Set up fake metric data
+        # provider_one's preprint was viewed 1 times
+        PreprintViewFactory(preprint=preprint_one)
+        # provider_two's preprint was viewed 2 times
+        PreprintViewFactory(preprint=preprint_two)
+        PreprintViewFactory(preprint=preprint_two)
+
+        res = app.get(url + 'metrics[views]=total')
+        assert res.status_code == 200
+
+        provider_2_data = res.json['data'][0]
+        provider_2_data['meta']['metrics']['views'] == 2
+
+        provider_1_data = res.json['data'][1]
+        provider_1_data['meta']['metrics']['views'] == 1

@@ -21,7 +21,7 @@ setup_django()
 import random
 from django.utils import timezone
 
-from osf.metrics import PreprintDownload
+from osf.metrics import PreprintDownload, PreprintView
 from osf.models import PreprintProvider, PreprintService
 from tests.base import fake
 
@@ -49,12 +49,29 @@ def populate_preprint_downloads(n):
         )
     print('Saved {} metrics'.format(n))
 
+def populate_preprint_views(n):
+    preprints = PreprintService.objects.filter(created__gt=timezone.now() - dt.timedelta(days=30), is_published=True)
+    max_idx = preprints.count()
+    for _ in range(n):
+        random_idx = random.randint(0, max_idx)
+        preprint = PreprintService.objects.select_related('provider').all()[random_idx]
+        print('Creating random download for {} ({})'.format(preprint._id, preprint.provider._id))
+        PreprintView.record(
+            timestamp=fake.date_this_year(before_today=True, after_today=False),
+            provider_id=preprint.provider._id,
+            user_id=fake.lexify('?????'),
+            preprint_id=preprint._id,
+            version=random.choice(['1', '2', '3']),
+            path='/' + fake.lexify('????????????????')
+        )
+    print('Saved {} metrics'.format(n))
+
 
 def populate(n):
     provider_ids = list(PreprintProvider.objects.values_list('_id', flat=True))
     for _ in range(n):
         provider_id = random.choice(provider_ids)
-        print('Creating random download for {}'.format(provider_id))
+        print('Creating random view for {}'.format(provider_id))
         PreprintDownload.record(
             timestamp=fake.date_this_year(before_today=True, after_today=False),
             provider_id=provider_id,
@@ -98,7 +115,10 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) > 0:
         if args[0] == 'populate':
-            populate_preprint_downloads(int(args[1]))
+            if args[1] == 'downloads':
+                populate_preprint_downloads(int(args[2]))
+            if args[1] == 'views':
+                populate_preprint_views(int(args[2]))
         elif args[0] == 'preprints':
             top_preprints_by_downloads()
         else:

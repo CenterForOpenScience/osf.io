@@ -18,7 +18,10 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from website.settings import DOI_FORMAT
-from osf_tests.metrics_factories import PreprintDownloadFactory
+from osf_tests.metrics_factories import (
+    PreprintDownloadFactory,
+    PreprintViewFactory,
+)
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -1486,7 +1489,7 @@ class TestReviewsPreprintDetailPermissions:
 @pytest.mark.django_db
 class TestPreprintDetailWithMetrics:
 
-    def test_preprint_list_with_metrics(self, app):
+    def test_preprint_detail_with_metrics(self, app):
         preprint = PreprintFactory()
         url = '/{}preprints/{}/?metrics[downloads]=total'.format(API_BASE, preprint._id)
         PreprintDownloadFactory(preprint=preprint)
@@ -1496,3 +1499,12 @@ class TestPreprintDetailWithMetrics:
         data = res.json
         assert 'metrics' in data['meta']
         assert 'downloads' in data['meta']['metrics']
+
+        url = '/{}preprints/{}/?metrics[views]=total'.format(API_BASE, preprint._id)
+        PreprintViewFactory(preprint=preprint)
+
+        res = app.get(url)
+        assert res.status_code == 200
+        data = res.json
+        assert 'metrics' in data['meta']
+        assert 'views' in data['meta']['metrics']
