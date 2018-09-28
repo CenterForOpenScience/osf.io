@@ -41,17 +41,12 @@ class MetadataRecordSerializer(object):
 @register(schema_id='datacite')
 class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
 
-    @property
-    def osf_schema(self):
-        return 'user_entered_datacite.json'
-
     osf_schema = 'user_entered_datacite.json'
 
     @classmethod
     def serialize_json(cls, record):
         osfstorage_file = record.file
         target = osfstorage_file.target
-        # TODO - node license won't be there without this, why?
         target.reload()
         doc = {
             'creators': utils.datacite_format_contributors(target.visible_contributors),

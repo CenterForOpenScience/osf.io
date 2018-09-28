@@ -6,6 +6,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from addons.osfstorage.models import OsfStorageFile
 from api.base.schemas.utils import from_json
+from osf.models import NodeLog
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import FileMetadataSchema
 from osf.utils import permissions as osf_permissions
@@ -27,6 +28,9 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
 
     class Meta:
         unique_together = ('file', 'schema')
+
+    def __unicode__(self):
+        return '(file={}, schema={}, _id={})'.format(self.file.name, self.schema, self._id)
 
     @property
     def absolute_api_v2_url(self):
@@ -52,14 +56,13 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
             self.validate()
             self.save()
 
-            # If we've made it this far, log!
             target = self.file.target
             target.add_log(
-                action='file_metadata_updated',
-                # TODO: do these params need to be changed?
+                action=NodeLog.FILE_METADATA_UPDATED,
                 params={
                     'project': target.parent_id,
                     'node': target._id,
+                    'file': self.file._id
                 },
                 auth=auth,
             )

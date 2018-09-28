@@ -44,16 +44,12 @@ class TestFileMetadataRecordSerializer:
         contributor.save()
         node.add_contributor(contributor, save=False)
 
-        # add version, subjects, tags, license, and guid
-        # version = FileVersionFactory()
-        # osf_file.versions.add(version)
+        # add subjects, tags, license, and guid
         tags = ['fish', 'scale']
         [osf_file.add_tag(tag, auth=Auth(node.creator), save=False) for tag in tags]
-
         bepress_subject = SubjectFactory(text='BePress Text')
         new_subject = SubjectFactory(bepress_subject=bepress_subject)
         node.subjects.add(new_subject)
-
         no_license = NodeLicense.objects.get(name='CC0 1.0 Universal')
         license_detail = {
             'id': no_license.license_id,
@@ -61,7 +57,6 @@ class TestFileMetadataRecordSerializer:
             'copyrightHolders': ['Woop', 'Yeah']
         }
         set_license(node, license_detail, Auth(node.creator))
-
         osf_file.save()
         node.save()
 
@@ -108,25 +103,16 @@ class TestFileMetadataRecordSerializer:
         # test most recent version
         assert serialized_record['version'] == osf_file.versions.first().identifier
 
-    # TODO - not sure how this test should go cause validate calls serialize directly
-    # def test_validate_record(self, node, osf_file):
-    #     # valid data with no identifier
-    #     record = osf_file.records.first()
-    #     json_data = record.serialize()
-    #     assert record.validate() is None
-
-    #     # make sure another validation error raises
-    #     del json_data['titles']
-    #     record.metadata = json_data
-    #     with pytest.raises(jsonschema.ValidationError) as exc:
-    #         record.validate()
-    #     assert 'titles' in exc.value.message
+    def test_validate(self, node, osf_file):
+        # check a record validates
+        record = osf_file.records.get(schema___id='datacite')
+        assert record.validate() is None
 
 
 @pytest.mark.django_db
 class TestFileMetadataRecord:
 
-    @pytest.fixture
+    @pytest.fixture()
     def initial_metadata(self):
         return {
             'file_description': 'Hello this is a description',
@@ -134,8 +120,11 @@ class TestFileMetadataRecord:
             'related_publication_doi': '10.123/fkosf/hello'
         }
 
-    def test_update_record(self, node, osf_file, initial_metadata):
-        record = osf_file.records.first()
+    @pytest.fixture()
+    def record(self, osf_file):
+        return osf_file.records.first()
+
+    def test_update_record(self, node, record, initial_metadata):
         record.metadata = initial_metadata
         record.save()
 
@@ -153,10 +142,7 @@ class TestFileMetadataRecord:
         # Make sure old fields are cleared
         assert initial_metadata.keys() not in record.metadata.keys()
 
-    def test_update_fails_with_incorrect_metadata(self, node, osf_file):
-        record = osf_file.records.first()
-
-        # TODO - make this an API test?
+    def test_update_fails_with_incorrect_metadata(self, node, record):
         # metadata not in schema fails
         wrong_metadata = {
             'favorite_schema': 'crossref'
@@ -177,9 +163,7 @@ class TestFileMetadataRecord:
         assert record.metadata == {}
         assert node.logs.latest().action != NodeLog.FILE_METADATA_UPDATED
 
-    def test_update_permissions(self, node, osf_file, initial_metadata):
-        record = osf_file.records.first()
-
+    def test_update_permissions(self, node, record, initial_metadata):
         # Can't update with non-contributor auth
         rando = AuthUserFactory()
         with pytest.raises(PermissionsError):
@@ -196,8 +180,7 @@ class TestFileMetadataRecord:
         with pytest.raises(PermissionsError):
             record.update(initial_metadata, user=None)
 
-    def test_forked_file_has_metadata_copied(self, node, osf_file, initial_metadata):
-        record = osf_file.records.first()
+    def test_forked_file_has_metadata_copied(self, node, record, initial_metadata):
         record.metadata = initial_metadata
         record.save()
         fork = node.fork_node(auth=Auth(node.creator))

@@ -1,11 +1,10 @@
-import jsonschema
-
 from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
 import furl
 import pytz
+import jsonschema
 
 from framework.auth.core import Auth
 from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode

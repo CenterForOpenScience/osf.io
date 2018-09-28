@@ -18,7 +18,7 @@ from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.users.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
 

@@ -31,7 +31,6 @@ def copy_files(src, target_node, parent=None, name=None):
 
         # copy over file metadata records
         if cloned.provider == 'osfstorage':
-            # TODO - not an exact copy, but copy em over!
             for record in cloned.records.all():
                 record.metadata = src.records.get(schema__name=record.schema.name).metadata
                 record.save()

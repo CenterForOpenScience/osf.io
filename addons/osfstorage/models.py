@@ -3,12 +3,11 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
+from django.dispatch import receiver
 from django.db import models, connection
+from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
 from osf.utils.fields import EncryptedJSONField
