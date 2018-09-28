@@ -303,6 +303,9 @@
             <div style="margin-top: 5px;">
                 Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
                 <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
+                % if 'admin' in user['permissions']:
+                  <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
+                % endif
             % if any([collection['type'], collection['status']]):
               &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
             % endif
