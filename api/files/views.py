@@ -1,3 +1,6 @@
+from django.http import FileResponse
+from django.core.files.base import ContentFile
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
@@ -11,7 +14,7 @@ from osf.models import (
     QuickFilesNode,
 )
 
-from api.base.exceptions import Gone
+from api.base.exceptions import Gone, InvalidFilterValue
 from api.base.permissions import PermissionWithGetter
 from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
 from api.base import utils
@@ -24,6 +27,7 @@ from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
 from api.files.serializers import FileVersionSerializer
+from api.files.serializers import FileMetadataRecordSerializer
 
 
 class FileMixin(object):
@@ -162,3 +166,85 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['file'] = self.file
         return context
+
+
+class FileMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PermissionWithGetter(ContributorOrPublic, 'target'),
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = FileMetadataRecordSerializer
+    view_category = 'files'
+    view_name = 'metadata-records'
+
+    ordering = ('-created',)
+
+    def get_queryset(self):
+        return self.get_file().records.all()
+
+
+class FileMetadataRecordDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
+
+    record_lookup_url_kwarg = 'record_id'
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PermissionWithGetter(ContributorOrPublic, 'target'),
+        PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileMetadataRecordSerializer
+    view_category = 'files'
+    view_name = 'metadata-record-detail'
+
+    def get_object(self):
+        return utils.get_object_or_error(
+            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]),
+            request=self.request,
+        )
+
+
+class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
+
+    record_lookup_url_kwarg = 'record_id'
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PermissionWithGetter(ContributorOrPublic, 'target'),
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'files'
+    view_name = 'metadata-record-download'
+
+    def get_serializer_class(self):
+        return None
+
+    def get_object(self):
+        return utils.get_object_or_error(
+            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]).select_related('schema', 'file'),
+            request=self.request,
+        )
+
+    def get(self, request, **kwargs):
+        file_type = self.request.query_params.get('export', 'json')
+        record = self.get_object()
+        try:
+            response = FileResponse(ContentFile(record.serialize(format=file_type)))
+        except ValueError as e:
+            raise InvalidFilterValue(detail=str(e))
+        file_name = 'file_metadata_{}.{}'.format(record.schema._id, file_type)
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+        response['Content-Type'] = 'application/{}'.format(file_type)
+        return response

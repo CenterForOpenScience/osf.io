@@ -11,12 +11,12 @@ from api.base.serializers import (
     WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for
+from api.base.schemas.utils import validate_user_json
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 from osf.models.provider import AbstractProviderGroupObjectPermission
-from api.users.schemas.utils import validate_user_json
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 
 

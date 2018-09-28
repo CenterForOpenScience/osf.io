@@ -1,3 +1,4 @@
+import json
 import pytest
 import jsonschema
 from django.contrib.contenttypes.models import ContentType
@@ -71,7 +72,7 @@ class TestFileMetadataRecordSerializer:
         )
 
         record = osf_file.records.get(schema___id='datacite')
-        serialized_record = record.serialize()
+        serialized_record = json.loads(record.serialize())
 
         # test titles
         titles = [title['title'] for title in serialized_record['titles']]

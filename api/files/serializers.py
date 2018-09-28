@@ -1,3 +1,5 @@
+import jsonschema
+
 from datetime import datetime
 from collections import OrderedDict
 
@@ -28,9 +30,10 @@ from api.base.serializers import (
     TargetField,
     ShowIfVersion,
 )
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
+from api.base.schemas.utils import from_json
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -194,6 +197,10 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': 'get_file_guid'},
+    )
+    metadata_records = RelationshipField(
+        related_view='files:metadata-records',
+        related_view_kwargs={'file_id': '<_id>'},
     )
 
     links = LinksField({
@@ -419,6 +426,57 @@ class FileVersionSerializer(JSONAPISerializer):
             self.context['file'], version=obj.identifier,
             view_only=self.context['request'].query_params.get('view_only'),
         )
+
+class FileMetadataRecordSerializer(JSONAPISerializer):
+
+    id = IDField(read_only=True, source='_id')
+    type = TypeField()
+
+    metadata = ser.DictField()
+
+    file = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<file._id>'},
+    )
+
+    schema = RelationshipField(
+        related_view='schemas:file-metadata-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+    )
+
+    links = LinksField({
+        'download': 'get_download_link',
+    })
+
+    def validate_metadata(self, value):
+        schema = from_json(self.instance.serializer.osf_schema)
+        try:
+            jsonschema.validate(value, schema)
+        except jsonschema.ValidationError as e:
+            raise InvalidModelValueError(e)
+        return value
+
+    def update(self, record, validated_data):
+        if validated_data:
+            user = self.context['request'].user
+            proposed_metadata = validated_data.pop('metadata')
+            record.update(proposed_metadata, user)
+        return record
+
+    def get_download_link(self, obj):
+        return absolute_reverse(
+            'files:metadata-record-download', kwargs={
+                'file_id': obj.file._id,
+                'record_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'metadata_records'
 
 
 def get_file_download_link(obj, version=None, view_only=None):

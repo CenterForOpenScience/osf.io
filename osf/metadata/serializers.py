@@ -1,3 +1,4 @@
+import json
 import jsonschema
 from datacite import schema40
 
@@ -26,8 +27,9 @@ class MetadataRecordSerializer(object):
     def serialize(cls, metadata_record, format='json'):
         if format == 'json':
             return cls.serialize_json(metadata_record)
-        elif format == 'xml':
+        if format == 'xml':
             return cls.serialize_xml(metadata_record)
+        raise ValueError('Format "{}" is not supported.'.format(format))
 
     @classmethod
     def validate(cls, record):
@@ -39,9 +41,7 @@ class MetadataRecordSerializer(object):
 @register(schema_id='datacite')
 class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
 
-    @property
-    def osf_schema(self):
-        return 'user_entered_datacite.json'
+    osf_schema = 'user_entered_datacite.json'
 
     @classmethod
     def serialize_json(cls, record):
@@ -105,7 +105,8 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             doc['relatedIdentifiers'] = [
                 {
                     'relatedIdentifier': related_publication_doi,
-                    'relatedIdentifierType': 'DOI'
+                    'relatedIdentifierType': 'DOI',
+                    'relationType': 'IsSupplementTo'
                 }
             ]
 
@@ -134,11 +135,11 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         if latest_version_identifier:
             doc['version'] = latest_version_identifier[0]
 
-        return doc
+        return json.dumps(doc)
 
     @classmethod
     def serialize_xml(cls, record):
-        data = cls.serialize_json(record)
+        data = json.loads(cls.serialize_json(record))
         return schema40.tostring(data)
 
     @classmethod
@@ -146,8 +147,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         # This method needs to be overridden because the OSF cannot currently
         # issue DOIs for a file, which is required for datacite schema validation.
         # Manually add a placeholder for validation until we handle this better.
-        json_data = cls.serialize(record)
+        json_data = json.loads(cls.serialize_json(record))
         placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
         json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
-
         return jsonschema.validate(json_data, record.schema.schema)
