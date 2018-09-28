@@ -5,7 +5,7 @@ from django.db import transaction
 
 from osf.models import ChronosJournal
 from osf.models import ChronosSubmission
-from osf.utils.workflows import ChronosSubmissionStatus
+from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
 from addons.osfstorage.models import OsfStorageFile
 from website.settings import (
     DOMAIN, CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
@@ -171,20 +171,8 @@ class ChronosClient(object):
         return ChronosJournal.objects.all()
 
     def submit_manuscript(self, journal, preprint, submitter):
-        if ChronosSubmission.objects.filter(journal=journal, preprint=preprint).exists():
-            raise ValueError('{!r} already has an existing submission to {!r}.'.format(preprint, journal))
-
-        # 1 = draft, 2 = submitted, 3 = accepted, 4 = published
-        # Disallow submission if the current preprint has submissions that are submitted, accepted or publishes
-        # regardless of journals
-        if ChronosSubmission.objects.filter(status__in=[1], preprint=preprint).exists():
-            raise ValueError('Cannot submit because a drafted submission exists')
-
-        if ChronosSubmission.objects.filter(status=[2], preprint=preprint).exists():
-            raise ValueError('Cannot submit because a pending submission exists')
-
-        if ChronosSubmission.objects.filter(status__in=[3, 4], preprint=preprint).exists():
-            raise ValueError('Cannot submit because your submission was accepted or published')
+        if preprint.machine_state != ReviewStates.ACCEPTED.value:
+            raise ValueError('Cannot submit to Chronos if the preprint is not accepted by moderators')
 
         body = ChronosSerializer.serialize_manuscript(journal.journal_id, preprint)
         body['USER'] = ChronosSerializer.serialize_user(submitter)

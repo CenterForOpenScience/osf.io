@@ -37,6 +37,7 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
     id = ser.CharField(source='publication_id', read_only=True)
     submission_url = ser.CharField(read_only=True)
     status = ser.SerializerMethodField()
+    date_modified = ser.DateTimeField(source='modified', read_only=True)
 
     journal = RelationshipField(
         read_only=True,

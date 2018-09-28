@@ -65,6 +65,7 @@ REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+
 # Question titles to be reomved for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
 
@@ -1940,3 +1941,5 @@ CHRONOS_USERNAME = os_env.get('CHRONOS_USERNAME', '')
 CHRONOS_PASSWORD = os_env.get('CHRONOS_PASSWORD', '')
 CHRONOS_API_KEY = os_env.get('CHRONOS_API_KEY', '')
 CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'http://sandbox.api.chronos-oa.com')
+# Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
+CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(days=1)
