@@ -20,10 +20,12 @@ Usage: ::
 """
 import os
 import logging
+import waffle
 
 from mako.lookup import TemplateLookup, Template
 
 from framework.email import tasks
+from osf.features import DISABLE_ENGAGEMENT_EMAILS
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,10 @@ _tpl_lookup = TemplateLookup(
 
 HTML_EXT = '.html.mako'
 
+DISABLED_MAILS = [
+    'welcome',
+    'welcome_osf4i'
+]
 
 class Mail(object):
     """An email object.
@@ -45,12 +51,15 @@ class Mail(object):
     :param iterable categories: Categories to add to the email using SendGrid's
         SMTPAPI. Used for email analytics.
         See https://sendgrid.com/docs/User_Guide/Statistics/categories.html
+    :param: bool engagement: Whether this is an engagement email that can be disabled with
+        the disable_engagement_emails waffle flag
     """
 
-    def __init__(self, tpl_prefix, subject, categories=None):
+    def __init__(self, tpl_prefix, subject, categories=None, engagement=False):
         self.tpl_prefix = tpl_prefix
         self._subject = subject
         self.categories = categories
+        self.engagement = engagement
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -87,6 +96,8 @@ def send_mail(
     .. note:
          Uses celery if available
     """
+    if waffle.switch_is_active(DISABLE_ENGAGEMENT_EMAILS) and mail.engagement:
+        return False
 
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
@@ -367,12 +378,14 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
-    subject='Welcome to the Open Science Framework'
+    subject='Welcome to the Open Science Framework',
+    engagement=True
 )
 
 WELCOME_OSF4I = Mail(
     'welcome_osf4i',
-    subject='Welcome to the Open Science Framework'
+    subject='Welcome to the Open Science Framework',
+    engagement=True
 )
 
 PREREG_CHALLENGE_REJECTED = Mail(
@@ -420,4 +433,9 @@ ACCESS_REQUEST_DENIED = Mail(
 CROSSREF_ERROR = Mail(
     'crossref_doi_error',
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
+)
+
+PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
+    'preprint_withdrawal_request_granted',
+    subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
 )

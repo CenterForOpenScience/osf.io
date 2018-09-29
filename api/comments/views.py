@@ -7,7 +7,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CommentDetailPermissions,
-    CommentReportsPermissions
+    CommentReportsPermissions,
 )
 from api.comments.serializers import (
     CommentSerializer,
@@ -15,7 +15,7 @@ from api.comments.serializers import (
     RegistrationCommentDetailSerializer,
     CommentReportSerializer,
     CommentReportDetailSerializer,
-    CommentReport
+    CommentReport,
 )
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes

@@ -17,8 +17,6 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
 from django.db.models.signals import post_save
-from django.db.models.expressions import F
-from django.db.models.aggregates import Max
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -31,10 +29,10 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, UserStateError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
-from osf.models.collection import CollectedGuidMetadata
+from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
@@ -48,7 +46,6 @@ from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
-from addons.wiki import utils as wiki_utils
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
@@ -149,7 +146,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
             sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
             qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
-            qs |= self.extra(where=['''
+            qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
                         SELECT "osf_contributor"."node_id"
@@ -163,7 +160,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            '''], params=(user, ))
+            """], params=(user, ))
 
         return qs
 
@@ -263,7 +260,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
-    LICENSE_QUERY = re.sub('\s+', ' ', '''WITH RECURSIVE ascendants AS (
+    LICENSE_QUERY = re.sub('\s+', ' ', """WITH RECURSIVE ascendants AS (
             SELECT
                 N.node_license_id,
                 R.parent_id
@@ -281,7 +278,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             WHERE R.is_node_link IS FALSE
             AND D.node_license_id IS NULL
     ) SELECT {fields} FROM "{nodelicenserecord}"
-    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
+    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
@@ -321,6 +318,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    custom_citation = models.TextField(blank=True, null=True)
+
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = models.CharField(default='public', max_length=10)
@@ -354,6 +353,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def tag_names(self):
+        """
+        Optimization property. If node has been annotated with "annotated_tags"
+        in a queryset, use that value.  Otherwise, fetch the tags.
+        """
+        if hasattr(self, 'annotated_tags'):
+            return [] if self.annotated_tags == [None] else self.annotated_tags
+        else:
+            return self.tags.values_list('name', flat=True)
 
     @property
     def nodes(self):
@@ -410,8 +420,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
-    wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
-    wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
@@ -459,7 +467,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def collecting_metadata_qs(self):
-        return CollectedGuidMetadata.objects.filter(
+        return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
@@ -701,7 +709,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
-            'publisher': 'Open Science Framework',
+            'publisher': 'OSF',
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
@@ -714,6 +722,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
+
+    @property
+    def should_request_identifiers(self):
+        return not self.all_tags.filter(name='qatest').exists()
 
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
@@ -1022,10 +1034,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.registrations.all()
 
     @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        osfs_settings = self._settings_model('osfstorage')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        return Region.objects.get(id=region_subquery)
+
+    @property
     def parent_id(self):
-        if self.parent_node:
-            return self.parent_node._id
-        return None
+        if hasattr(self, 'annotated_parent_id'):
+            # If node has been annotated with "annotated_parent_id"
+            # in a queryset, use that value.  Otherwise, fetch the parent_node guid.
+            return self.annotated_parent_id
+        else:
+            if self.parent_node:
+                return self.parent_node._id
+            return None
 
     @property
     def license(self):
@@ -1191,6 +1215,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
+        if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
+            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
+                                       'to ' + language.SUPPORT_LINK)
+
         if not self.is_contributor(contrib_to_add):
 
             contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
@@ -1353,9 +1381,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                  permissions=permissions, send_email=send_email, save=True)
         else:
             contributor = get_user(email=email)
-            if contributor:
-                if self.contributor_set.filter(user=contributor).exists():
-                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            if contributor and self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+
+            if contributor and contributor.is_registered:
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                     send_email=send_email, permissions=permissions, save=True)
             else:
@@ -1743,6 +1772,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered = original.clone()
         registered.recast('osf.registration')
 
+        registered.custom_citation = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_from = original
@@ -1938,6 +1968,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
         forked.forked_from = original
@@ -2090,6 +2121,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # set attributes which may be overridden by `changes`
         new.is_public = False
         new.description = ''
+        new.custom_citation = ''
 
         # apply `changes`
         for attr, val in attributes.iteritems():
@@ -2380,6 +2412,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
             self.save_node_preprints()
 
+    def set_access_requests_enabled(self, access_requests_enabled, auth, save=False):
+        user = auth.user
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can modify access requests enabled')
+        self.access_requests_enabled = access_requests_enabled
+        if self.access_requests_enabled:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        else:
+            self.add_log(
+                NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
+                {
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'user': user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         if 'old_subjects' in kwargs.keys():
@@ -2449,17 +2509,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             saved_fields)
         content = []
         for field in spam_fields:
-            if field == 'wiki_pages_latest':
-                newest_wiki_page = None
-                for wiki_page in self.get_wiki_pages_latest():
-                    if not newest_wiki_page:
-                        newest_wiki_page = wiki_page
-                    elif wiki_page.created > newest_wiki_page.created:
-                        newest_wiki_page = wiki_page
-                if newest_wiki_page:
-                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
-            else:
-                content.append((getattr(self, field, None) or '').encode('utf-8'))
+            content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
         return ' '.join(content)
@@ -2752,189 +2802,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return True
 
-    def admin_public_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin') and
-            self.is_public
-        )
-
-    def admin_of_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin')
-        )
-
-    def include_wiki_settings(self, user):
-        """Check if node meets requirements to make publicly editable."""
-        return self.get_descendants_recursive()
-
-    def get_wiki_pages_latest(self):
-        WikiVersion = apps.get_model('addons_wiki.WikiVersion')
-        wiki_page_ids = self.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
-        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids)
-
-    def get_wiki_page(self, name=None, id=None):
-        WikiPage = apps.get_model('addons_wiki.WikiPage')
-        if name:
-            try:
-                name = (name or '').strip()
-                return self.wikis.get(page_name__iexact=name, deleted__isnull=True)
-            except WikiPage.DoesNotExist:
-                return None
-        return WikiPage.load(id)
-
-    def get_wiki_version(self, name=None, version=None, id=None):
-        WikiVersion = apps.get_model('addons_wiki.WikiVersion')
-        if name:
-            wiki_page = self.get_wiki_page(name)
-            if not wiki_page:
-                return None
-
-            if version == 'previous':
-                version = wiki_page.current_version_number - 1
-            elif version == 'current' or version is None:
-                version = wiki_page.current_version_number
-            elif not ((isinstance(version, int) or version.isdigit())):
-                return None
-
-            try:
-                return wiki_page.get_version(version=version)
-            except WikiVersion.DoesNotExist:
-                return None
-        return WikiVersion.load(id)
-
-    def create_or_update_node_wiki(self, name, content, auth):
-        """Create a WikiPage and a WikiVersion if none exist, otherwise, just create a WikiVersion
-
-        :param page: A string, the page's name, e.g. ``"home"``.
-        :param content: A string, the posted content.
-        :param auth: All the auth information including user, API key.
-        """
-        WikiPage = apps.get_model('addons_wiki.WikiPage')
-        wiki_page = self.get_wiki_page(name)
-        if not wiki_page:
-            wiki_page = WikiPage(
-                page_name=name,
-                user=auth.user,
-                node=self
-            )
-            wiki_page.save()
-        new_version = wiki_page.create_version(user=auth.user, content=content)
-        return wiki_page, new_version
-
-    def update_node_wiki(self, name, content, auth):
-        """Update the node's wiki page with new content.
-
-        :param page: A string, the page's name, e.g. ``"home"``.
-        :param content: A string, the posted content.
-        :param auth: All the auth information including user, API key.
-        """
-        wiki_page, new_version = self.create_or_update_node_wiki(name, content, auth)
-
-        self.add_log(
-            action=NodeLog.WIKI_UPDATED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'page': wiki_page.page_name,
-                'page_id': wiki_page._primary_key,
-                'version': new_version.identifier,
-            },
-            auth=auth,
-            log_date=new_version.created,
-            save=False,
-        )
-        self.save()
-
-        return wiki_page, new_version
-
-    # TODO: Move to wiki add-on
-    def rename_node_wiki(self, name, new_name, auth):
-        """Rename the node's wiki page with new name.
-
-        :param name: A string, the page's name, e.g. ``"My Page"``.
-        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
-        :param auth: All the auth information including user, API key.
-
-        """
-        # TODO: Fix circular imports
-        from addons.wiki.exceptions import (
-            PageCannotRenameError,
-            PageConflictError,
-            PageNotFoundError,
-        )
-        name = (name or '').strip()
-        new_name = (new_name or '').strip()
-        page = self.get_wiki_page(name)
-        existing_wiki_page = self.get_wiki_page(new_name)
-        key = wiki_utils.to_mongo_key(name)
-        new_key = wiki_utils.to_mongo_key(new_name)
-
-        if key == 'home':
-            raise PageCannotRenameError('Cannot rename wiki home page')
-        if not page:
-            raise PageNotFoundError('Wiki page not found')
-        if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
-            raise PageConflictError(
-                'Page already exists with name {0}'.format(
-                    new_name,
-                )
-            )
-
-        # rename the page first in case we hit a validation exception.
-        old_name = page.page_name
-        page.rename(new_name)
-
-        # TODO: merge historical records like update (prevents log breaks)
-        # transfer the old page versions/current keys to the new name.
-        if key != new_key:
-            if key in self.wiki_private_uuids:
-                self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
-                del self.wiki_private_uuids[key]
-
-        self.add_log(
-            action=NodeLog.WIKI_RENAMED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'page': page.page_name,
-                'page_id': page._primary_key,
-                'old_page': old_name,
-                'version': page.current_version_number,
-            },
-            auth=auth,
-            save=True,
-        )
-
-        return page
-
-    def delete_node_wiki(self, name_or_page, auth):
-        WikiPage = apps.get_model('addons_wiki.WikiPage')
-        page = name_or_page
-        if not isinstance(name_or_page, WikiPage):
-            page = self.get_wiki_page(name_or_page)
-        if page.page_name.lower() == 'home':
-            raise ValidationError('The home wiki page cannot be deleted.')
-        page.deleted = timezone.now()
-        page.save()
-
-        Comment = apps.get_model('osf.Comment')
-        Comment.objects.filter(root_target=page.guids.first()).update(root_target=None)
-
-        self.add_log(
-            action=NodeLog.WIKI_DELETED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'page': page.page_name,
-                'page_id': page._primary_key,
-            },
-            auth=auth,
-            save=False,
-        )
-        self.save()
-
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)
         if ret and log:
@@ -3013,6 +2880,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
         else:
             return None
+
+    def update_custom_citation(self, custom_citation, auth):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can update a custom citation')
+
+        if (custom_citation == self.custom_citation) or not (custom_citation or self.custom_citation):
+            return
+        elif custom_citation == '':
+            log_action = NodeLog.CUSTOM_CITATION_REMOVED
+        elif self.custom_citation:
+            log_action = NodeLog.CUSTOM_CITATION_EDITED
+        else:
+            log_action = NodeLog.CUSTOM_CITATION_ADDED
+
+        self.custom_citation = custom_citation
+        self.add_log(
+            log_action,
+            params={
+                'node': self._primary_key,
+            },
+            auth=auth,
+            log_date=timezone.now(),
+        )
+        self.save()
+
 
 class Node(AbstractNode):
     """

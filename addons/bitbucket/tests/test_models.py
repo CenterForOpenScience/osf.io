@@ -49,7 +49,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         pass
 
     def test_serialize_settings(self):
-        # Bitbucket's serialized_settings are a little different from 
+        # Bitbucket's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
@@ -229,7 +229,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
@@ -241,7 +241,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(

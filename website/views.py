@@ -10,7 +10,6 @@ import urllib
 import waffle
 
 from django.apps import apps
-from django.db.models import Count
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
@@ -21,19 +20,20 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import get_current_user_id, _get_current_user
+from framework.auth.core import _get_current_user
 from website import settings
-from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser
+from addons.osfstorage.models import Region
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 
@@ -130,73 +130,35 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 def index():
-    try:  # Check if we're on an institution landing page
-        #TODO : make this way more robust
-        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
-        inst_dict = serialize_institution(institution)
-        inst_dict.update({
-            'home': False,
-            'institution': True,
-            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
-        })
-
-        return inst_dict
-    except Institution.DoesNotExist:
-        pass
-
-    return home()
-
-@ember_flag_is_active('ember_home_page')
-def home():
-    user_id = get_current_user_id()
-    if user_id:  # Logged in: return either landing page or user home page
-        all_institutions = (
-            Institution.objects.filter(
-                is_deleted=False,
-                nodes__is_public=True,
-                nodes__is_deleted=False,
-                nodes__type='osf.node'
-            )
-            .annotate(Count('nodes'))
-            .filter(nodes__count__gte=INSTITUTION_DISPLAY_NODE_THRESHOLD)
-            .order_by('name').only('_id', 'name', 'logo_name')
-        )
-        dashboard_institutions = [
-            {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
-            for inst in all_institutions
-        ]
-
-        return {
-            'home': True,
-            'dashboard_institutions': dashboard_institutions,
-        }
-    else:  # Logged out: return landing page
-        return {
-            'home': True,
-        }
-
+    # Check if we're on an institution landing page
+    institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
+    if institution.exists():
+        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
+    else:
+        return use_ember_app()
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
     return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
 
 @must_be_logged_in
-@ember_flag_is_active('ember_dashboard_page')
 def dashboard(auth):
-    return redirect('/')
+    return use_ember_app()
 
-@ember_flag_is_active('ember_support_page')
-def support():
-    return {}
 
 @must_be_logged_in
 @ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
+
+    region_list = get_storage_region_list(user)
+
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
+            'storage_regions': region_list,
+            'storage_flag_is_active': storage_i18n_flag_active(),
             }
 
 
@@ -329,6 +291,15 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
 
+        if isinstance(referent, Registration) and not suffix:
+            if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+                # Route only the base detail view to ember
+                if PROXY_EMBER_APPS:
+                    resp = requests.get(EXTERNAL_EMBER_APPS['registries']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                    return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+                return send_from_directory(registries_dir, 'index.html')
+
         if isinstance(referent, Node) and not referent.is_registration and suffix:
             page = suffix.strip('/').split('/')[0]
             flag_name = 'ember_project_{}_page'.format(page)
@@ -391,3 +362,19 @@ def legacy_share_v1_search(**kwargs):
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )
     )
+
+
+def get_storage_region_list(user, node=False):
+    if not user:  # Preserves legacy frontend test behavior
+        return []
+
+    if node:
+        default_region = node.osfstorage_region
+    else:
+        default_region = user.get_addon('osfstorage').default_region
+
+    available_regions = list(Region.objects.order_by('name').values('_id', 'name'))
+    default_region = {'name': default_region.name, '_id': default_region._id}
+    available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
+
+    return available_regions

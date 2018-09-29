@@ -5,14 +5,14 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
-    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
+    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
     get_license_details,
-    NodeTagField
+    NodeTagField,
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
@@ -92,51 +92,56 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<node._id>'},
     )
-    reviews_state = NoneIfWithdrawal(ser.CharField(source='machine_state', read_only=True, max_length=15))
+    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     citation = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:preprint-citation',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     identifiers = NoneIfWithdrawal(RelationshipField(
         related_view='preprints:identifier-list',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     node = NoneIfWithdrawal(NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
-        read_only=False
+        read_only=False,
     ))
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
-        read_only=False
+        read_only=False,
     )
 
-    provider = NoneIfWithdrawal(PreprintProviderRelationshipField(
+    provider = PreprintProviderRelationshipField(
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
-        read_only=False
-    ))
+        read_only=False,
+    )
 
     files = NoneIfWithdrawal(RelationshipField(
-        related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<_id>'}
+        related_view='nodes:node-storage-providers',
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<primary_file._id>'},
-        read_only=False
+        read_only=False,
     ))
 
-    review_actions = NoneIfWithdrawal(RelationshipField(
+    review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
-        related_view_kwargs={'preprint_id': '<_id>'}
+        related_view_kwargs={'preprint_id': '<_id>'},
+    )
+
+    requests = NoneIfWithdrawal(RelationshipField(
+        related_view='preprints:preprint-request-list',
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     links = LinksField(
@@ -144,8 +149,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
-            'preprint_doi': 'get_preprint_doi_url'
-        }
+            'preprint_doi': 'get_preprint_doi_url',
+        },
     )
 
     class Meta:
@@ -158,7 +163,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return self.get_preprint_url(obj)
 
     def get_article_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+        return 'https://doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def get_preprint_doi_url(self, obj):
         doi = None
@@ -169,7 +174,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         elif obj.is_published:
             client = obj.get_doi_client()
             doi = client.build_doi(preprint=obj) if client else None
-        return 'https://dx.doi.org/{}'.format(doi) if doi else None
+        return 'https://doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -183,10 +188,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
-                absolute_reverse('preprints:preprint-review-action-list', kwargs={
-                    'version': self.context['request'].parser_context['kwargs']['version'],
-                    'preprint_id': preprint._id
-                })
+                absolute_reverse(
+                    'preprints:preprint-review-action-list', kwargs={
+                        'version': self.context['request'].parser_context['kwargs']['version'],
+                        'preprint_id': preprint._id,
+                    },
+                ),
             ))
 
         save_node = False

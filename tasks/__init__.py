@@ -217,17 +217,9 @@ def mailserver(ctx, port=1025):
 
 
 @task
-def jshint(ctx):
-    """Run JSHint syntax check"""
-    js_folder = os.path.join(HERE, 'website', 'static', 'js')
-    jshint_bin = os.path.join(HERE, 'node_modules', '.bin', 'jshint')
-    cmd = '{} {}'.format(jshint_bin, js_folder)
-    ctx.run(cmd, echo=True)
-
-
-@task(aliases=['flake8'])
-def flake(ctx):
-    ctx.run('flake8 .', echo=True)
+def syntax(ctx):
+    """Use pre-commit to run formatters and linters."""
+    ctx.run('pre-commit run --all-files --show-diff-on-failure', echo=True)
 
 
 @task(aliases=['req'])
@@ -328,7 +320,7 @@ API_TESTS1 = [
     'api_tests/institutions',
     'api_tests/licenses',
     'api_tests/logs',
-    'api_tests/metaschemas',
+    'api_tests/schemas',
     'api_tests/providers',
     'api_tests/preprints',
     'api_tests/registrations',
@@ -338,18 +330,26 @@ API_TESTS2 = [
     'api_tests/actions',
     'api_tests/chronos',
     'api_tests/nodes',
-    'api_tests/requests'
+    'api_tests/requests',
+    'api_tests/subscriptions',
+    # 'api_tests/waffle',
+    # 'api_tests/wb',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
+    'api_tests/alerts',
     'api_tests/applications',
+    'api_tests/banners',
     'api_tests/base',
     'api_tests/collections',
     'api_tests/comments',
+    'api_tests/crossref',
     'api_tests/files',
     'api_tests/guids',
     'api_tests/reviews',
+    'api_tests/regions',
     'api_tests/search',
+    'api_tests/scopes',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
@@ -414,13 +414,12 @@ def test_addons(ctx, numprocesses=None, coverage=False):
 
 
 @task
-def test(ctx, all=False, syntax=False):
+def test(ctx, all=False, lint=False):
     """
     Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
-    if syntax:
-        flake(ctx)
-        jshint(ctx)
+    if lint:
+        syntax(ctx)
 
     test_website(ctx)  # /tests
     test_api1(ctx)
@@ -448,28 +447,23 @@ def travis_setup(ctx):
 @task
 def test_travis_addons(ctx, numprocesses=None, coverage=False):
     """
-    Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
+    Run half of the tests to help travis go faster.
     """
     travis_setup(ctx)
-    flake(ctx)
+    syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
 
 @task
 def test_travis_website(ctx, numprocesses=None, coverage=False):
     """
-    Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
-    wasting test time.
+    Run other half of the tests to help travis go faster.
     """
-    # flake(ctx)
-    # jshint(ctx)
     travis_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
-    # flake(ctx)
-    # jshint(ctx)
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
     travis_setup(ctx)
@@ -478,16 +472,12 @@ def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
 
 @task
 def test_travis_api2(ctx, numprocesses=None, coverage=False):
-    # flake(ctx)
-    # jshint(ctx)
     travis_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
-    # flake(ctx)
-    # jshint(ctx)
     travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
 

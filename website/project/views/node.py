@@ -14,7 +14,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
@@ -38,17 +38,19 @@ from website.project.model import has_anonymous_link, NodeUpdateError, validate_
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
-from website.views import serialize_node_summary
+from website.views import serialize_node_summary, get_storage_region_list
 from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
+from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 
@@ -270,12 +272,23 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['include_wiki_settings'] = WikiPage.objects.include_wiki_settings(node)
     ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
         'level': node.comment_level,
     }
+
+    addon_settings = {}
+    for addon in ['forward']:
+        addon_config = apps.get_app_config('addons_{}'.format(addon))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        addon_settings[addon] = config
+
+    ret['addon_settings'] = addon_settings
 
     ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
@@ -398,28 +411,8 @@ def configure_comments(node, **kwargs):
 @must_not_be_registration
 def configure_requests(node, **kwargs):
     access_requests_enabled = request.get_json().get('accessRequestsEnabled')
-    node.access_requests_enabled = access_requests_enabled
-    if node.access_requests_enabled:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_ENABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    else:
-        node.add_log(
-            NodeLog.NODE_ACCESS_REQUESTS_DISABLED,
-            {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-            },
-            auth=kwargs.get('auth', None)
-        )
-    node.save()
+    auth = kwargs.get('auth', None)
+    node.set_access_requests_enabled(access_requests_enabled, auth, save=True)
     return {'access_requests_enabled': access_requests_enabled}, 200
 
 
@@ -665,7 +658,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_version('home', None)
+    wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
@@ -794,6 +787,9 @@ def _view_project(node, auth, primary=False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
+            'storage_location': node.osfstorage_region.name,
+            'waterbutler_url': node.osfstorage_region.waterbutler_url,
+            'mfr_url': node.osfstorage_region.mfr_url
         },
         'parent_node': {
             'exists': parent is not None,
@@ -835,6 +831,14 @@ def _view_project(node, auth, primary=False,
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ]
     }
+
+    # Default should be at top of list for UI and for the project overview page the default region
+    # for a component is that of the it's parent node.
+    region_list = get_storage_region_list(user, node=node)
+
+    data.update({'storage_regions': region_list})
+    data.update({'storage_flag_is_active': storage_i18n_flag_active()})
+
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
     else:
@@ -864,6 +868,7 @@ def get_affiliated_institutions(obj):
         ret.append({
             'name': institution.name,
             'logo_path': institution.logo_path,
+            'logo_path_rounded_corners': institution.logo_path_rounded_corners,
             'id': institution._id,
         })
     return ret
@@ -872,13 +877,14 @@ def serialize_collections(cgms, auth):
     return [{
         'title': cgm.collection.title,
         'name': cgm.collection.provider.name,
-        'url': '/{}/'.format(cgm.collection._id),
+        'url': '/collections/{}/'.format(cgm.collection.provider._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection))]
+    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
 def serialize_children(child_list, nested, indent=0):
     """
@@ -984,66 +990,56 @@ def serialize_child_tree(child_list, user, nested):
     """
     serialized_children = []
     for child in child_list:
-        contributors = [{
-            'id': contributor.user._id,
-            'is_admin': contributor.admin,
-            'is_confirmed': contributor.user.is_confirmed,
-            'visible': contributor.visible
-        } for contributor in child.contributor_set.all()]
+        if child.has_read_perm or child.has_permission_on_children(user, READ):
+            contributors = [{
+                'id': contributor.user._id,
+                'is_admin': contributor.admin,
+                'is_confirmed': contributor.user.is_confirmed,
+                'visible': contributor.visible
+            } for contributor in child.contributor_set.all()]
 
-        serialized_children.append({
-            'node': {
-                'id': child._id,
-                'url': child.url,
-                'title': child.title,
-                'is_public': child.is_public,
-                'contributors': contributors,
-                'is_admin': child.has_admin_perm,
-                'is_preprint': child.is_preprint,
-            },
-            'user_id': user._id,
-            'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
-            'nodeType': 'project' if not child.parentnode_id else 'component',
-            'category': child.category,
-            'permissions': {
-                'view': True,
-                'is_admin': child.has_admin_perm
-            }
-        })
+            serialized_children.append({
+                'node': {
+                    'id': child._id,
+                    'url': child.url,
+                    'title': child.title,
+                    'is_public': child.is_public,
+                    'contributors': contributors,
+                    'is_admin': child.has_admin_perm,
+                    'is_preprint': child.is_preprint,
+                },
+                'user_id': user._id,
+                'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
+                'nodeType': 'project' if not child.parentnode_id else 'component',
+                'category': child.category,
+                'permissions': {
+                    'view': True,
+                    'is_admin': child.has_admin_perm
+                }
+            })
 
     return sorted(serialized_children, key=lambda k: len(k['children']), reverse=True)
 
 def node_child_tree(user, node):
-    """
-    Returns the serialized representation (for treebeard) of a given node and its children.
-    The given user must have ADMIN access on the given node, and therefore the given user has
-    implicit read permisson on all of node's children (i.e. read permissions aren't checked here)
-
+    """ Returns the serialized representation (for treebeard) of a given node and its children.
     :param user: OSFUser object
     :param node: parent project Node object
     :return: treebeard-formatted data
     """
     serialized_nodes = []
-    is_contrib = node.is_contributor(user)
 
     assert node, '{} is not a valid Node.'.format(node._id)
 
-    if not is_contrib:
-        return []
-
-    is_admin = node.has_permission(user, ADMIN)
-
-    if is_admin:
-        is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
-        parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
-        children = (Node.objects.get_children(node)
-                    .filter(is_deleted=False)
-                    .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                    .annotate(has_admin_perm=Exists(is_admin_sqs))
-                    .include('contributor__user__guids')
-                    )
-    else:
-        children = []
+    is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
+    can_read_sqs = Contributor.objects.filter(node=OuterRef('pk'), read=True, user=user)
+    parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
+    children = (Node.objects.get_children(node)
+                .filter(is_deleted=False)
+                .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
+                .annotate(has_admin_perm=Exists(is_admin_sqs))
+                .annotate(has_read_perm=Exists(can_read_sqs))
+                .include('contributor__user__guids')
+                )
 
     nested = defaultdict(list)
     for child in children:
@@ -1056,26 +1052,29 @@ def node_child_tree(user, node):
         'visible': contributor.visible
     } for contributor in node.contributor_set.all().include('user__guids')]
 
-    serialized_nodes.append({
-        'node': {
-            'id': node._id,
-            'url': node.url,
-            'title': node.title,
-            'is_public': node.is_public,
-            'contributors': contributors,
-            'is_admin': is_admin,
-            'is_preprint': node.is_preprint,
-        },
-        'user_id': user._id,
-        'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
-        'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
-        'nodeType': node.project_or_component,
-        'category': node.category,
-        'permissions': {
-            'view': True,
-            'is_admin': is_admin
-        }
-    })
+    can_read = node.has_permission(user, READ)
+    is_admin = node.has_permission(user, ADMIN)
+
+    if can_read or node.has_permission_on_children(user, READ):
+        serialized_nodes.append({
+            'node': {
+                'id': node._id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public,
+                'contributors': contributors,
+                'is_admin': is_admin
+            },
+            'user_id': user._id,
+            'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+                'is_admin': is_admin
+            }
+        })
 
     return serialized_nodes
 

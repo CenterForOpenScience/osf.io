@@ -388,6 +388,8 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
+    item.data.waterbutlerURL = parent.data.waterbutlerURL;
+
     if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
@@ -1120,7 +1122,7 @@ function _createFolder(event, dismissCallback, helpText) {
 
     var extra = {};
     var path = parent.data.path || '/';
-    var options = {name: val, kind: 'folder'};
+    var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
 
     if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
@@ -1510,6 +1512,9 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if(item.data.nodeRegion){
+        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
 }
 
@@ -1701,7 +1706,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw'];
 function expandStateLoad(item) {
     var tb = this,
         icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),

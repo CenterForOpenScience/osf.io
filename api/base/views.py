@@ -1,8 +1,10 @@
 from collections import defaultdict
+from distutils.version import StrictVersion
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
+from django.db.models import F
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
@@ -23,7 +25,7 @@ from api.base.requests import EmbeddedRequest
 from api.base.serializers import (
     MaintenanceStateSerializer,
     LinkedNodesRelationshipSerializer,
-    LinkedRegistrationsRelationshipSerializer
+    LinkedRegistrationsRelationshipSerializer,
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
@@ -259,11 +261,13 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.node')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.node')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -363,11 +367,13 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -418,9 +424,9 @@ def root(request, format=None, **kwargs):
             'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
             'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
             'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
-            'metaschemas': utils.absolute_reverse('metaschemas:registration-metaschema-list', kwargs=kwargs),
+            'schemas': utils.absolute_reverse('schemas:registration-schema-list', kwargs=kwargs),
             'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
-        }
+        },
     }
 
     if utils.has_admin_scope(request):
@@ -433,7 +439,7 @@ def root(request, format=None, **kwargs):
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
-        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None,
     })
 
 
@@ -441,7 +447,7 @@ def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
         {'errors': [{'detail': 'Not found.'}]},
         status=404,
-        content_type='application/vnd.api+json; application/json'
+        content_type='application/vnd.api+json; application/json',
     )
 
 
@@ -498,10 +504,12 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
                 .node_relations.select_related('child')\
                 .filter(is_node_link=True, child__is_deleted=False)\
                 .exclude(child__type='osf.collection')
-        return sorted([
-            node_link for node_link in query
-            if node_link.child.can_view(auth) and not node_link.child.is_retracted
-        ], key=lambda node_link: node_link.child.modified, reverse=True)
+        return sorted(
+            [
+                node_link for node_link in query
+                if node_link.child.can_view(auth) and not node_link.child.is_retracted
+            ], key=lambda node_link: node_link.child.modified, reverse=True,
+        )
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -529,7 +537,15 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return (
+            self.get_node().linked_nodes
+            .filter(is_deleted=False)
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
+            .exclude(region=None)
+            .exclude(type='osf.collection', region=None)
+            .can_view(user=auth.user, private_link=auth.private_link)
+            .order_by('-modified')
+        )
 
 
 class WaterButlerMixin(object):
@@ -554,7 +570,7 @@ class WaterButlerMixin(object):
             base_class = BaseFileNode.resolve_class(
                 attrs['provider'],
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-                else BaseFileNode.FILE
+                else BaseFileNode.FILE,
             )
 
             # mirrors BaseFileNode get_or_create
@@ -583,7 +599,7 @@ class WaterButlerMixin(object):
         file_node = BaseFileNode.resolve_class(
             attrs['provider'],
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-            else BaseFileNode.FILE
+            else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
         file_node.update(None, attrs, user=self.request.user)
@@ -618,7 +634,7 @@ class DeprecatedView(JSONAPIBaseView):
 
     def determine_version(self, request, *args, **kwargs):
         version, scheme = super(DeprecatedView, self).determine_version(request, *args, **kwargs)
-        if version > self.max_version:
+        if StrictVersion(version) > StrictVersion(self.max_version):
             self.is_deprecated = True
             raise NotFound(detail='This route has been deprecated. It was last available in version {}'.format(self.max_version))
         return version, scheme

@@ -145,14 +145,14 @@ var FileViewPage = {
         }
 
         $.extend(self.file.urls, {
-            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
-            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
-            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render'})
+            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, direct: true, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
-            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {branch : $osf.urlParams().branch});
+            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, branch: $osf.urlParams().branch});
             $.ajax({
                 dataType: 'json',
                 async: true,
@@ -174,7 +174,7 @@ var FileViewPage = {
                     {branch: $osf.urlParams().branch}
                 );
             }
-            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch, waterbutlerURL: self.node.urls.waterbutler});
         }
 
         $(document).on('fileviewpage:delete', function() {
@@ -219,13 +219,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $osf.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -233,7 +229,8 @@ var FileViewPage = {
                                     checkout: self.context.currentUser.id
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
@@ -249,13 +246,9 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:checkin', function() {
-            $.ajax({
-                method: 'put',
-                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                beforeSend: $osf.setXHRAuthorization,
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({
+            var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+            $osf.ajaxJSON('PUT', url, {
+                data: {
                     data: {
                         id: self.file.path.replace('/', ''),
                         type: 'files',
@@ -263,7 +256,8 @@ var FileViewPage = {
                             checkout: null
                         }
                     }
-                })
+                },
+                isCors: true
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
@@ -284,13 +278,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -298,7 +288,8 @@ var FileViewPage = {
                                     checkout: null
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {

@@ -1,0 +1,19 @@
+repos:
+- repo: https://github.com/asottile/add-trailing-comma
+  rev: v0.7.0
+  hooks:
+  - id: add-trailing-comma
+    # TODO: Remove this line. For now, we only format the api/ directory
+    files: ^api/
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v1.4.0
+  hooks:
+  - id: double-quote-string-fixer
+  - id: trailing-whitespace
+    exclude: website/static/vendor/*
+  - id: flake8
+    additional_dependencies: ["flake8-mutable==1.2.0"]
+- repo: https://github.com/pre-commit/mirrors-jshint
+  rev: v2.9.6
+  hooks:
+  - id: jshint

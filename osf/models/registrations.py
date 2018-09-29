@@ -15,7 +15,7 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, MetaSchema, RegistrationApproval,
+    OSFUser, RegistrationSchema,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
@@ -37,14 +37,9 @@ class Registration(AbstractNode):
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
-    registered_schema = models.ManyToManyField(MetaSchema)
+    registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
-    # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
-
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
@@ -389,15 +384,6 @@ class Registration(AbstractNode):
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
-    def delete_node_wiki(self, name_or_page, auth):
-        raise NodeStateError('Registered wiki pages cannot be deleted.')
-
-    def rename_node_wiki(self, name, new_name, auth):
-        raise NodeStateError('Registered wiki pages cannot be renamed.')
-
-    def update_node_wiki(self, name, content, auth):
-        raise NodeStateError('Registered wiki pages cannot be edited.')
-
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -457,13 +443,13 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
+    registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
-    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # Dictionary field mapping extra fields defined in the RegistrationSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     # TODO: Use "FIELD_ALIASES"?

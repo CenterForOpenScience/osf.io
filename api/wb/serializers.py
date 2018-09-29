@@ -13,7 +13,7 @@ class DestinationSerializer(ser.Serializer):
     name = ser.CharField(write_only=True, allow_blank=True, allow_null=True)
     node = ShowIfVersion(
         ser.CharField(write_only=True),
-        min_version='2.0', max_version='2.7'
+        min_version='2.0', max_version='2.7',
     )
 
 

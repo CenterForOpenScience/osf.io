@@ -3,7 +3,7 @@
 # Requirements to be installed on server deployments
 
 # newrelic APM agent
-newrelic==4.0.0.99 
+newrelic==4.0.0.99
 # uwsgi
 uwsgi==2.0.16
 # Scripts

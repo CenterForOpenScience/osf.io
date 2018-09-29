@@ -27,7 +27,7 @@ class TestUserDetail:
     @pytest.fixture()
     def user_one(self):
         user_one = AuthUserFactory()
-        user_one.social['twitter'] = 'rheisendennis'
+        user_one.social['twitter'] = ['rheisendennis']
         user_one.save()
         return user_one
 
@@ -44,11 +44,11 @@ class TestUserDetail:
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_correct_pk_user
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = '/{}users/{}/?version=latest'.format(API_BASE, user_one._id)
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] == user_one.fullname
-        assert user_one.social['twitter'] in user_json['attributes']['social']['twitter']
+        assert user_one.social['twitter'] == user_json['attributes']['social']['twitter']
 
     #   test_get_incorrect_pk_user_logged_in
         url = '/{}users/{}/'.format(API_BASE, user_two._id)
@@ -133,6 +133,25 @@ class TestUserDetail:
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
+    def test_social_values_old_version(self, app, user_one):
+        socialname = 'ohhey'
+        user_one.social = {'twitter': [socialname], 'github': []}
+        user_one.save()
+        url = '/{}users/{}/?version=2.9'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == socialname
+        assert user_social_json['github'] == ''
+        assert 'linkedIn' not in user_social_json.keys()
+
+        url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_social_json = res.json['data']['attributes']['social']
+
+        assert user_social_json['twitter'] == [socialname]
+        assert user_social_json['github'] == []
+        assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -426,13 +445,13 @@ class TestUserUpdate:
                     'suffix': 'Sr.',
                     'social': {
                         'github': ['http://github.com/even_newer_github/'],
-                        'scholar': ['http://scholar.google.com/citations?user=newScholar'],
+                        'scholar': 'http://scholar.google.com/citations?user=newScholar',
                         'profileWebsites': ['http://www.newpersonalwebsite.com'],
                         'twitter': ['http://twitter.com/newtwitter'],
                         'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
-                        'impactStory': ['https://impactstory.org/newImpactStory'],
-                        'orcid': ['http://orcid.org/newOrcid'],
-                        'researcherId': ['http://researcherid.com/rid/newResearcherId'],
+                        'impactStory': 'https://impactstory.org/newImpactStory',
+                        'orcid': 'http://orcid.org/newOrcid',
+                        'researcherId': 'http://researcherid.com/rid/newResearcherId',
                     }},
             }}
 
@@ -643,7 +662,7 @@ class TestUserUpdate:
             auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     #   test_partial_patch_fields_not_nested
         res = app.patch_json_api(
@@ -657,7 +676,7 @@ class TestUserUpdate:
             },
             auth=user_one.auth,
             expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     #   test_patch_user_logged_out
         res = app.patch_json_api(url_user_one, {
@@ -717,6 +736,7 @@ class TestUserUpdate:
 
     #   test_update_user_social_with_invalid_value
         """update the social key which is not profileWebsites with more than one value should throw an error"""
+        original_github = user_one.social['github']
         res = app.patch_json_api(url_user_one, {
             'data': {
                 'id': user_one._id,
@@ -730,8 +750,25 @@ class TestUserUpdate:
                 },
             }
         }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
         assert res.status_code == 400
-        assert 'github only accept a list of one single value' == res.json['errors'][0]['detail']
+        assert user_one.social['github'] == original_github
+
+        # Test list with non-string value
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': {
+                        'github': [{'should': 'not_work'}]
+                    }
+                }
+            }
+        }, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert user_one.social['github'] == original_github
 
     def test_patch_user_without_required_field(
             self, app, user_one, data_new_user_one, url_user_one):
@@ -775,14 +812,66 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
+
+    def test_patch_all_social_fields(self, app, user_one, url_user_one):
+        social_payload = {
+            'github': ['the_coolest_coder'],
+            'scholar': 'neat',
+            'profileWebsites': ['http://yeah.com', 'http://cool.com'],
+            'baiduScholar': 'ok',
+            'twitter': ['tweetmaster'],
+            'linkedIn': ['networkingmaster'],
+            'academiaProfileID': 'okokokok',
+            'ssrn': 'aaaa',
+            'impactStory': 'why not',
+            'orcid': 'ork-id',
+            'researchGate': 'Why are there so many of these',
+            'researcherId': 'ok-lastone'
+        }
+
+        fake_fields = {
+            'nope': ['notreal'],
+            'totallyNot': {
+                'a': ['thing']
+            }
+        }
+
+        # Payload with fields not in the schema should fail
+        new_fields = social_payload.copy()
+        new_fields.update(fake_fields)
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': new_fields
+                }
+            }
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
+
+        # Payload only containing fields in schema are OK
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': social_payload
+                }
+            }
+        }, auth=user_one.auth)
+        user_one.reload()
+        for key, value in res.json['data']['attributes']['social'].iteritems():
+            assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(
             self, app, user_one, url_user_one):
@@ -805,16 +894,16 @@ class TestUserUpdate:
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
         social = res.json['data']['attributes']['social']
-        assert user_one.social['github'] in social['github'][0]
+        assert user_one.social['github'][0] in social['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.social['profileWebsites'] == social['profileWebsites']
-        assert user_one.social['twitter'] in social['twitter'][0]
-        assert user_one.social['linkedIn'] in social['linkedIn'][0]
-        assert user_one.social['impactStory'] in social['impactStory'][0]
-        assert user_one.social['orcid'] in social['orcid'][0]
-        assert user_one.social['researcherId'] in social['researcherId'][0]
+        assert user_one.social['twitter'] in social['twitter']
+        assert user_one.social['linkedIn'] in social['linkedIn']
+        assert user_one.social['impactStory'] in social['impactStory']
+        assert user_one.social['orcid'] in social['orcid']
+        assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == user_one.social['github']
@@ -838,16 +927,15 @@ class TestUserUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
         assert res.json['data']['attributes']['suffix'] == 'The Millionth'
-        assert 'even_newer_github' in res.json['data']['attributes']['social']['github'][0]
+        assert 'even_newer_github' in res.json['data']['attributes']['social']['github']
         assert res.json['data']['attributes']['given_name'] == user_one.given_name
         assert res.json['data']['attributes']['middle_names'] == user_one.middle_names
         assert res.json['data']['attributes']['family_name'] == user_one.family_name
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
-        assert user_one.social['github'] == 'even_newer_github'
+        assert user_one.social['github'] == ['even_newer_github']
 
-    def test_put_user_logged_in(
-            self, app, user_one, data_new_user_one, url_user_one):
+    def test_put_user_logged_in(self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
         res = app.put_json_api(
             url_user_one,
@@ -864,9 +952,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
         user_one.reload()
         assert user_one.fullname == data_new_user_one['data']['attributes']['full_name']
         assert user_one.given_name == data_new_user_one['data']['attributes']['given_name']
@@ -877,9 +965,9 @@ class TestUserUpdate:
         assert 'http://www.newpersonalwebsite.com' in social['profileWebsites'][0]
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
-        assert 'newImpactStory' in social['impactStory'][0]
-        assert 'newOrcid' in social['orcid'][0]
-        assert 'newResearcherId' in social['researcherId'][0]
+        assert 'newImpactStory' in social['impactStory']
+        assert 'newOrcid' in social['orcid']
+        assert 'newResearcherId' in social['researcherId']
 
     def test_update_user_sanitizes_html_properly(
             self, app, user_one, url_user_one):
@@ -995,3 +1083,228 @@ class TestDeactivatedUser:
         assert urlparse.urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+class UserProfileMixin(object):
+
+    @pytest.fixture()
+    def request_payload(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def bad_request_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['bad_key'] = 'bad_value'
+        return request_payload
+
+    @pytest.fixture()
+    def end_dates_no_start_dates_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        del request_payload['data']['attributes'][request_key][0]['startMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def start_dates_no_end_dates_payload(self, request_payload, request_key):
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        del request_payload['data']['attributes'][request_key][0]['endMonth']
+        return request_payload
+
+    @pytest.fixture()
+    def end_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        return request_payload
+
+    @pytest.fixture()
+    def start_month_dependency_payload(self, request_payload, request_key):
+        del request_payload['data']['attributes'][request_key][0]['startYear']
+        return request_payload
+
+    @pytest.fixture()
+    def request_key(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_one_url(self, user_one):
+        return '/v2/users/{}/'.format(user_one._id)
+
+    def test_user_put_profile_200(self, app, user_one, user_one_url, request_payload, request_key, user_attr):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+
+    def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
+        res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "Additional properties are not allowed (u'bad_key' was unexpected)"
+
+    def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+    def test_user_put_profile_403(self, app, user_two, user_one_url, request_payload):
+        res = app.put_json_api(user_one_url, request_payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+    def test_user_put_profile_validate_dict(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure profile's fields have correct structure
+        request_payload['data']['attributes'][request_key] = {}
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
+
+    def test_user_put_profile_validation_list(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure structure is lists of dicts consisting of proper fields
+        request_payload['data']['attributes'][request_key] = [{}]
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'institution' is a required property"
+
+    def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure institution is not empty string
+        request_payload['data']['attributes'][request_key][0]['institution'] = ''
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value u'' is too short"
+
+    def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
+        # Tests to make sure ongoing is bool
+        del request_payload['data']['attributes'][request_key][0]['ongoing']
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'ongoing' is a dependency of u'startYear'"
+
+    def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid datatypes for dates
+
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        print res.json['errors'][0]
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
+
+    def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):
+        # Not valid values for dates
+        request_payload['data']['attributes'][request_key][0]['startYear'] = -2
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
+
+    def test_user_put_profile_date_validate_ongoing_position(self, app, user_one, user_one_url, request_payload, request_key):
+        # endDates for ongoing position
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        del request_payload['data']['attributes'][request_key][0]['endYear']
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
+
+    def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
+        # End date is greater then start date
+        request_payload['data']['attributes'][request_key][0]['startYear'] = 2000
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
+
+    def test_user_put_profile_date_validate_end_month_dependency(self, app, user_one, user_one_url, end_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, end_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'endYear' is a dependency of u'endMonth'"
+
+    def test_user_put_profile_date_validate_start_month_dependency(self, app, user_one, user_one_url, start_month_dependency_payload):
+        # No endMonth with endYear
+        res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
+
+    def test_user_put_profile_date_validate_start_date_no_end_date_not_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
+        # End date is greater then start date
+        res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
+
+    def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
+        # End dates, but no start dates
+        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "u'startYear' is a dependency of u'endYear'"
+
+
+@pytest.mark.django_db
+class TestUserSchools(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'education': [{'degree': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                   }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'education'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'schools'
+
+
+@pytest.mark.django_db
+class TestUserJobs(UserProfileMixin):
+
+    @pytest.fixture()
+    def request_payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': user_one.fullname,
+                    'employment': [{'title': '',
+                                   'startYear': 1991,
+                                   'startMonth': 9,
+                                   'endYear': 1992,
+                                   'endMonth': 9,
+                                   'ongoing': False,
+                                   'department': '',
+                                   'institution': 'Fake U'
+                                    }]
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def request_key(self):
+        return 'employment'
+
+    @pytest.fixture()
+    def user_attr(self):
+        return 'jobs'

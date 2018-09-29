@@ -4,9 +4,10 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
+import logging
+from os import environ
 
 from . import defaults
-from os import environ
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -75,9 +76,6 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-# Comment out to use celery in development
-USE_CELERY = False
-
 class CeleryConfig(defaults.CeleryConfig):
     """
     Celery configuration
@@ -138,3 +136,6 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
 CHRONOS_USE_FAKE_FILE = True
 CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
+
+# Show sent emails in console
+logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)

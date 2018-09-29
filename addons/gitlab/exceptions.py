@@ -4,5 +4,8 @@ class ApiError(Exception):
 class NotFoundError(ApiError):
     pass
 
+class AuthError(ApiError):
+    pass
+
 class GitLabError(Exception):
     pass

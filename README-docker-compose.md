@@ -68,7 +68,7 @@
 
 ## Application Configuration
 
-* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
+* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` you will need to recreate the container(s)._
 
   - `$ docker-compose up --force-recreate --no-deps preprints`
 
@@ -91,27 +91,6 @@
     ```
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
-
-## Docker Sync
-
-Ubuntu: Skip install of docker-sync. instead...
-        `cp docker-compose.linux.yml docker-compose.override.yml`
-        Ignore future steps that start, stop, or wait for docker-sync
-
-1. Install Docker Sync
-  - Mac: `$ gem install docker-sync`
-  - [Instructions](http://docker-sync.io)
-
-1. Running Docker Sync
-
-    _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
-
-    **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
-
-  - `$ docker-sync start`
-
-1. OPTIONAL: If you have problems trying installing macfsevents
-  - `$ sudo pip install macfsevents`
 
 ## Application Runtime
 
@@ -141,7 +120,7 @@ Ubuntu: Skip install of docker-sync. instead...
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, Preprints, and Registries (Detached)
-  - `$ docker-compose up -d worker web api admin preprints registries`
+  - `$ docker-compose up -d worker web api admin preprints registries ember_osf_web`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -150,12 +129,10 @@ Ubuntu: Skip install of docker-sync. instead...
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  $ docker-sync start
-  # Wait until you see "Nothing to do: replicas have not changed since last sync."
   $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries ember_osf_web
   ```
 
-- To view the logs for a given container: 
+- To view the logs for a given container:
 
   ```bash
   $ docker-compose logs -f --tail 100 web
@@ -193,59 +170,11 @@ Ubuntu: Skip install of docker-sync. instead...
 
 ## Application Debugging
 
-### Debugging Services
-
-The OSF is supported by several services which function independently from the main site and need some configuration to be modified using docker-sync. If you don't need to make changes to Waterbutler, MFR etc. you can ignore this.
-
-  Uncomment the appropriate code in docker-compose.override.yml and docker-sync.yml for your desired container and be sure to specify the relative path to your service code directories.
-  This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
-  For example if you wanted to the modify Waterbutler you would uncomment the following.
-  
-  - In `docker-compose.override.yml`:
-
-    ```yml
-    services:
-      wb:
-        volumes_from:
-          - container:wb-sync
-
-    ...
-    ```
-
-  - In `docker-sync.yml`:
-
-    ```yml
-    syncs:
-      wb-sync:
-        src: '../waterbutler'
-        dest: '/code'
-        sync_strategy: 'native_osx'
-        sync_excludes_type: 'Name'
-        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-
-    ...
-    ```
-  
-  Modifying these files will show up as changes in git. To avoid committing these files, run:
-  
-  ```bash
-  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-  
-  To be able to commit changes to these files again, run:
-  
-  ```bash
-  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-
-  The first time that sync settings are changed, you will need to run docker-compose up --force-recreate <container name>. To see the effect of code changes as you work (without needing to restart the container), you will need to separately turn on debug mode for the service by setting `DEBUG=1` and `SERVER_CONFIG_DEBUG=1` in `docker-compose.wb.env` or `docker-compose.mfr.env` this will enable live reload for those services, so your changes will take effect automatically in a few seconds.
-
 ### Catching Print Statements
 
 If you want to debug your changes by using print statements, you'll have to have to set your container's environment variable PYTHONUNBUFFERED to 0. You can do this two ways:
-  
-  1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0 
+
+  1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0
   2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
    ```
     import functools
@@ -320,33 +249,33 @@ List containers and status:
   - `$ docker-compose ps`
 
 ### Backing up your database
-In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your 
-local OSF instance. For example, this is helpful if you have test data that you would like to use after 
+In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your
+local OSF instance. For example, this is helpful if you have test data that you would like to use after
 resetting docker. To back up your database, follow the following sequence of commands:
 
-1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the 
-  version you install must match the one used by the docker container. 
+1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the
+  version you install must match the one used by the docker container.
   ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 9.6)
-2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61). 
+2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61).
   Eg, `pg_ctl -D /usr/local/var/postgres start -o "-p 5433"`
 3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
-4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker 
-  (defaults to port 5432): 
+4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker
+  (defaults to port 5432):
   `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf`
-  
+
 (shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
 
 
 #### Restoring your database
-To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres 
-(as shown above). For best results, start from a clean postgres container with no other data. (see below for 
-instructions on dropping postgres data volumes) 
+To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres
+(as shown above). For best results, start from a clean postgres container with no other data. (see below for
+instructions on dropping postgres data volumes)
 
 When ready, run the restore command from a local terminal:
 ```bash
 $ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
 ```
- 
+
 (shorthand) `pg_restore -U postgres -c -d osf -Fd -j 4 -h localhost ~/Desktop/osf_backup`
 
 ## Cleanup & Docker Reset

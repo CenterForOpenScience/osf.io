@@ -2,23 +2,22 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist
 
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, DeprecatedView
 from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
-from api.base.versioning import DeprecatedEndpointMixin
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class TaxonomyList(DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -59,7 +58,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]

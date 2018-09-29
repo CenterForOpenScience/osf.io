@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+    <script>
+        window.templateVars = {
+            'importUrl': '{% url 'registration_providers:import' %}',
+        }
+    </script>
+{% endblock %}
+{% block title %}
+    <title>Create Registration Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Create A Registration Provider</h2>
+            </div>
+
+        </div>
+    {% include 'registration_providers/update_registration_provider_form.html' %}
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'registration-provider-page' %}
+{% endblock %}

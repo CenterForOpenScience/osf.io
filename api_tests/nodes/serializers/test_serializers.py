@@ -51,13 +51,13 @@ class TestNodeSerializer:
 
         # Relationships
         relationships = data['relationships']
+        assert 'region' in relationships
         assert 'children' in relationships
         assert 'contributors' in relationships
         assert 'files' in relationships
         assert 'parent' in relationships
         assert 'affiliated_institutions' in relationships
         assert 'registrations' in relationships
-        # Not a fork, so forked_from is removed entirely
         assert 'forked_from' not in relationships
         parent_link = relationships['parent']['links']['related']['href']
         assert urlparse(
@@ -106,7 +106,8 @@ class TestNodeRegistrationSerializer:
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'registration_schema'
+            'registration_schema',
+            'region'
         ]
 
         # Attributes
@@ -119,9 +120,12 @@ class TestNodeRegistrationSerializer:
 
         # Relationships
         relationships = data['relationships']
+
+        # Relationships with data
         relationship_urls = {
-            k: v['links']['related']['href'] for k,
-            v in relationships.items()}
+            k: v['links']['related']['href'] for k, v
+            in relationships.items()}
+
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(

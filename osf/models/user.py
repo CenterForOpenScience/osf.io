@@ -325,7 +325,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
-    #     'twitter': <twitter id>,
+    #     'twitter': <list of twitter usernames>,
+    #     'github': <list of github usernames>,
+    #     'linkedIn': <list of linkedin profiles>,
+    #     'orcid': <orcid for user>,
+    #     'researcherID': <researcherID>,
+    #     'impactStory': <impactStory identifier>,
+    #     'scholar': <google scholar identifier>,
+    #     'ssrn': <SSRN username>,
+    #     'researchGate': <researchGate username>,
+    #     'baiduScholar': <bauduScholar username>,
+    #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
     # date the user last sent a request
@@ -509,6 +519,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 'family': family_name,
                 'given': csl_given_name,
             }
+
+    @property
+    def osfstorage_region(self):
+        from addons.osfstorage.models import Region
+        osfs_settings = self._settings_model('osfstorage')
+        default_region_subquery = osfs_settings.objects.filter(owner=self.id).values('default_region_id')
+        return Region.objects.get(id=default_region_subquery)
 
     @property
     def contributor_to(self):
@@ -705,6 +722,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
+        from addons.osfstorage.models import OsfStorageFolder
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
@@ -716,6 +734,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
         primary_quickfiles = QuickFilesNode.objects.get(creator=self)
+        primary_quickfiles_root = OsfStorageFolder.objects.get_root(target=primary_quickfiles)
         merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
@@ -745,7 +764,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 merging_user_file.name = new_name
                 merging_user_file.save()
 
-            merging_user_file.target = primary_quickfiles
+            merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
 
         # finalize the merge
@@ -1283,6 +1302,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
         self.reset_old_password_invalid_attempts()
+        if self.verification_key_v2:
+            self.verification_key_v2['expires'] = timezone.now()
+        # new verification key (v1) for CAS
+        self.verification_key = generate_verification_key(verification_type=None)
 
     def reset_old_password_invalid_attempts(self):
         self.old_password_invalid_attempts = 0
@@ -1524,16 +1547,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         from osf.models import PreprintService, AbstractNode
 
-        user_nodes = self.nodes.all()
+        user_nodes = self.nodes.exclude(is_deleted=True)
         #  Validates the user isn't trying to delete things they deliberately made public.
         if user_nodes.filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if PreprintService.objects.filter(node___contributors=self, ever_public=True).exists():
+        if PreprintService.objects.filter(node___contributors=self, ever_public=True, node__is_deleted=False).exists():
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.
-        personal_nodes = AbstractNode.objects.annotate(contrib_count=Count('_contributors')).filter(contrib_count__lte=1).filter(contributor__user=self)
+        personal_nodes = (
+            AbstractNode.objects.annotate(contrib_count=Count('_contributors'))
+            .filter(contrib_count__lte=1)
+            .filter(contributor__user=self)
+            .exclude(is_deleted=True)
+        )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):

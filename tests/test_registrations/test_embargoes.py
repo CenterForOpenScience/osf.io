@@ -14,7 +14,7 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory, 
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory,
     EmbargoTerminationApprovalFactory
 )
 from tests import utils
@@ -425,7 +425,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         user = registration.contributors.first()
 
-        registration.terminate_embargo(Auth(user))  
+        registration.terminate_embargo(Auth(user))
 
         rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
         with assert_raises(HTTPError) as e:
@@ -818,7 +818,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'summary': unicode(fake.sentence())
         })
         self.invalid_embargo_date_payload = json.dumps({
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+            u'embargoEndDate': u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),

@@ -257,24 +257,24 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {
-                "test": True,
-                "commits": [{
-                    "id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                    "distinct": True,
-                    "message": "foo",
-                    "timestamp": timestamp,
-                    "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                    "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                    "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
-                    "added": ["PRJWN3TV"],
-                    "removed": [],
-                    "modified": [],
+                'test': True,
+                'commits': [{
+                    'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                    'distinct': True,
+                    'message': 'foo',
+                    'timestamp': timestamp,
+                    'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                    'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                    'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
+                    'added': ['PRJWN3TV'],
+                    'removed': [],
+                    'modified': [],
                 }]
             },
-            content_type="application/json",
+            content_type='application/json',
         ).maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, "github_file_added")
+        assert_equal(self.project.logs.latest().action, 'github_file_added')
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -285,23 +285,23 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
-        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         timestamp = str(timezone.now())
         self.app.post_json(
             url,
-            {"test": True,
-                 "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "distinct": True,
-                              "message": " foo",
-                              "timestamp": timestamp,
-                              "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                              "committer": {"name": "Testor", "email": "test@osf.io",
-                                            "username": "tester"},
-                              "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
-            content_type="application/json").maybe_follow()
+            {'test': True,
+                 'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                              'distinct': True,
+                              'message': ' foo',
+                              'timestamp': timestamp,
+                              'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                              'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                              'committer': {'name': 'Testor', 'email': 'test@osf.io',
+                                            'username': 'tester'},
+                              'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
+            content_type='application/json').maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, "github_file_updated")
+        assert_equal(self.project.logs.latest().action, 'github_file_updated')
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -312,78 +312,78 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
-        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         timestamp = str(timezone.now())
         self.app.post_json(
             url,
-            {"test": True,
-             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct": True,
-                          "message": "foo",
-                          "timestamp": timestamp,
-                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
-                          "added": [], "removed": ["PRJWN3TV"], "modified":[]}]},
-            content_type="application/json").maybe_follow()
+            {'test': True,
+             'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'distinct': True,
+                          'message': 'foo',
+                          'timestamp': timestamp,
+                          'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                          'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
+                          'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
+            content_type='application/json').maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, "github_file_removed")
+        assert_equal(self.project.logs.latest().action, 'github_file_removed')
         urls = self.project.logs.latest().params['urls']
         assert_equal(urls, {})
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
-        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         self.app.post_json(
             url,
-            {"test": True,
-             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct": True,
-                          "message": "Added via the Open Science Framework",
-                          "timestamp": "2014-01-08T14:15:51-08:00",
-                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
-                          "added": ["PRJWN3TV"], "removed":[], "modified":[]}]},
-            content_type="application/json").maybe_follow()
+            {'test': True,
+             'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'distinct': True,
+                          'message': 'Added via the Open Science Framework',
+                          'timestamp': '2014-01-08T14:15:51-08:00',
+                          'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                          'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
+                          'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
+            content_type='application/json').maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, "github_file_added")
+        assert_not_equal(self.project.logs.latest().action, 'github_file_added')
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
-        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         self.app.post_json(
             url,
-            {"test": True,
-             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct": True,
-                          "message": "Updated via the Open Science Framework",
-                          "timestamp": "2014-01-08T14:15:51-08:00",
-                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
-                          "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
-            content_type="application/json").maybe_follow()
+            {'test': True,
+             'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'distinct': True,
+                          'message': 'Updated via the Open Science Framework',
+                          'timestamp': '2014-01-08T14:15:51-08:00',
+                          'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                          'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
+                          'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
+            content_type='application/json').maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, "github_file_updated")
+        assert_not_equal(self.project.logs.latest().action, 'github_file_updated')
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
-        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         self.app.post_json(
             url,
-            {"test": True,
-             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct": True,
-                          "message": "Deleted via the Open Science Framework",
-                          "timestamp": "2014-01-08T14:15:51-08:00",
-                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
-                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
-                          "added": [], "removed":["PRJWN3TV"], "modified":[]}]},
-            content_type="application/json").maybe_follow()
+            {'test': True,
+             'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'distinct': True,
+                          'message': 'Deleted via the Open Science Framework',
+                          'timestamp': '2014-01-08T14:15:51-08:00',
+                          'url': 'https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+                          'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
+                          'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
+                          'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
+            content_type='application/json').maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, "github_file_removed")
+        assert_not_equal(self.project.logs.latest().action, 'github_file_removed')
 
 
 class TestRegistrationsWithGithub(OsfTestCase):

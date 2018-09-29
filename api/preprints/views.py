@@ -34,7 +34,7 @@ from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
-from api.preprints.permissions import PreprintPublishedOrAdmin
+from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNeverPublicWithdrawn
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
@@ -51,7 +51,7 @@ class PreprintMixin(NodeMixin):
         except PreprintService.DoesNotExist:
             raise NotFound
 
-        if preprint.node.is_deleted or (preprint.is_retracted and not preprint.ever_public):
+        if preprint.node.is_deleted:
             raise NotFound
 
         # May raise a permission denied
@@ -107,6 +107,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
         ContributorOrPublic,
         PreprintPublishedOrAdmin,
     )
@@ -320,10 +321,12 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
-                    'provider_id': target.provider._id,
-                    'version': self.request.parser_context['kwargs']['version']
-                })
+                absolute_reverse(
+                    'providers:preprint-providers:preprint-provider-detail', kwargs={
+                        'provider_id': target.provider._id,
+                        'version': self.request.parser_context['kwargs']['version'],
+                    },
+                ),
             ))
 
         serializer.save(user=self.request.user)
@@ -340,7 +343,7 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintRequestPermission
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]

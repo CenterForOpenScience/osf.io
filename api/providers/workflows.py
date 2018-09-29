@@ -24,5 +24,5 @@ PUBLIC_STATES = {
     Workflows.POST_MODERATION.value: (
         DefaultStates.PENDING.value,
         DefaultStates.ACCEPTED.value,
-    )
+    ),
 }

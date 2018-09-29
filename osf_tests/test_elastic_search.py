@@ -22,8 +22,8 @@ from osf.models import (
     NodeLicense,
     Tag,
     QuickFilesNode,
-    CollectedGuidMetadata,
 )
+from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -421,7 +421,7 @@ class TestNodeSearch(OsfTestCase):
         assert_in('license', node)
         assert_equal(node['license']['id'], self.node.node_license.license_id)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
     def test_node_license_propogates_to_children(self):
         docs = query(self.query)['results']
@@ -432,7 +432,7 @@ class TestNodeSearch(OsfTestCase):
         assert_in('license', child)
         assert_equal(child['license'].get('id'), self.node.node_license.license_id)
 
-    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
         other_license = NodeLicense.objects.get(name='MIT License')
@@ -479,7 +479,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
+                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -510,7 +510,7 @@ class TestRegistrationRetractions(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.registration.create_or_update_node_wiki(name=key, content=value, auth=self.consolidate_auth)
+                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -683,9 +683,7 @@ class TestPublicNodes(OsfTestCase):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
-                self.project.update_node_wiki(
-                    key, value, self.consolidate_auth,
-                )
+                WikiPage.objects.create_for_node(self.project, key, value, self.consolidate_auth)
             docs = query(value)['results']
             assert_equal(len(docs), 1)
 
@@ -693,11 +691,10 @@ class TestPublicNodes(OsfTestCase):
         # Add wiki text to page, then delete, then verify that project is not
         # found when searching for wiki text.
         wiki_content = 'Hammer to fall'
-        self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth,
-        )
+        wp = WikiPage.objects.create_for_node(self.project, 'home', wiki_content, self.consolidate_auth)
+
         with run_celery_tasks():
-            self.project.update_node_wiki('home', '', self.consolidate_auth)
+            wp.update(self.user, '')
 
         docs = query(wiki_content)['results']
         assert_equal(len(docs), 0)
@@ -1018,7 +1015,7 @@ class TestSearchExceptions(OsfTestCase):
         # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = factories.UserFactory(fullname='Doug Bogie')
         self.project = factories.ProjectFactory(
-            title="Tom Sawyer",
+            title='Tom Sawyer',
             creator=self.user,
             is_public=True,
         )

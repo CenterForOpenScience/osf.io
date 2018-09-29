@@ -32,23 +32,22 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from addons.base.utils import format_last_known_metadata
+from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
-                        NodeLog, DraftRegistration, MetaSchema,
-                        Guid, FileVersionUserMetadata)
+                        NodeLog, DraftRegistration, RegistrationSchema,
+                        Guid, FileVersionUserMetadata, FileVersion)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.settings import MFR_SERVER_URL
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u'''
+ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -58,8 +57,8 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>''',
-                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+</p>""",
+                  'FILE_GONE_ACTOR_UNKNOWN': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -69,16 +68,16 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>''',
-                  'DONT_KNOW': u'''
+</p>""",
+                  'DONT_KNOW': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>''',
-                  'BLAME_PROVIDER': u'''
+</p>""",
+                  'BLAME_PROVIDER': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -89,13 +88,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>''',
-                  'FILE_SUSPENDED': u'''
+</p>""",
+                  'FILE_SUSPENDED': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.'''}
+This content has been removed."""}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -198,7 +197,7 @@ def check_access(node, auth, action, cas_resp):
     # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
         allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.objects.filter(
             branched_from__in=allowed_nodes,
@@ -209,7 +208,7 @@ def check_access(node, auth, action, cas_resp):
                     prereg_draft_registration.count() > 0 and \
                     auth.user.has_perm('osf.administer_prereg'):
             return True
-    except MetaSchema.DoesNotExist:
+    except RegistrationSchema.DoesNotExist:
         pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -275,8 +274,41 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        credentials = provider_settings.serialize_waterbutler_credentials()
-        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+        path = data.get('path')
+        version = data.get('version')
+        credentials = None
+        waterbutler_settings = None
+        fileversion = None
+        if provider_name == 'osfstorage':
+            if path and version:
+                # check to see if this is a file or a folder
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    try:
+                        fileversion = FileVersion.objects.filter(
+                            basefilenode___id=path.strip('/'),
+                            identifier=version
+                        ).select_related('region').get()
+                    except FileVersion.DoesNotExist:
+                        raise HTTPError(httplib.BAD_REQUEST)
+            # path and no version, use most recent version
+            elif path:
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode=filenode
+                    ).select_related('region').order_by('-created').first()
+            if fileversion:
+                region = fileversion.region
+                credentials = region.waterbutler_credentials
+                waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                    node_id=provider_settings.owner._id,
+                    root_id=provider_settings.root_node._id,
+                )
+        # If they haven't been set by version region, use the NodeSettings region
+        if not (credentials and waterbutler_settings):
+            credentials = provider_settings.serialize_waterbutler_credentials()
+            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
@@ -597,7 +629,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'urls': {
                 'render': None,
                 'sharejs': None,
-                'mfr': settings.MFR_SERVER_URL,
+                'mfr': get_mfr_url(target, file_node.provider),
                 'profile_image': get_profile_image_url(auth.user, 25),
                 'files': target.web_url_for('collect_file_trees'),
             },
@@ -700,7 +732,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -797,7 +829,8 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+    mfr_url = get_mfr_url(node, file_node.provider)
+    render_url = furl.furl(mfr_url).set(
         path=['render'],
         args={'url': download_url.url}
     )
@@ -805,7 +838,7 @@ def addon_view_file(auth, node, file_node, version):
     ret.update({
         'urls': {
             'render': render_url.url,
-            'mfr': settings.MFR_SERVER_URL,
+            'mfr': mfr_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),

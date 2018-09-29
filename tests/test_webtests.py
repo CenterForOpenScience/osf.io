@@ -31,6 +31,7 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
+from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
@@ -90,11 +91,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
 
-    def test_can_see_homepage(self):
-        # Goes to homepage
-        res = self.app.get('/').maybe_follow()  # Redirects
-        assert_equal(res.status_code, 200)
-
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
@@ -106,8 +102,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
@@ -116,8 +111,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -126,15 +120,6 @@ class TestAUser(OsfTestCase):
         project.save()
         res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
-
-    def test_logged_in_index_route_renders_home_template(self):
-        res = self.app.get('/', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('My Projects', res)  # Will change once home page populated
-
-    def test_logged_out_index_route_renders_landing_page(self):
-        res = self.app.get('/')
-        assert_in('Simplified Scholarly Collaboration', res)
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
@@ -148,13 +133,6 @@ class TestAUser(OsfTestCase):
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
-
-    def test_sees_correct_title_home_page(self):
-        # User goes to homepage
-        res = self.app.get('/', auto_follow=True)
-        title = res.html.title.string
-        # page title is correct
-        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
@@ -245,8 +223,8 @@ class TestAUser(OsfTestCase):
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
-        project.update_node_wiki('WöRlÐé', 'new content', Auth(self.user))
-        wv = project.get_wiki_version(non_ascii)
+        WikiPage.objects.create_for_node(project, 'WöRlÐé', 'new content', Auth(self.user))
+        wv = WikiVersion.objects.get_for_node(project, non_ascii)
         assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
@@ -374,7 +352,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in('Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -393,9 +371,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -405,12 +383,12 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=['read'],
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -586,7 +564,7 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in_html(name2, res2)
 
-    @unittest.skip("as long as E-mails cannot be changed")
+    @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake_email()
@@ -734,7 +712,7 @@ class TestExplorePublicActivity(OsfTestCase):
         super(TestExplorePublicActivity, self).setUp()
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
-        self.private_project = ProjectFactory(title="Test private project")
+        self.private_project = ProjectFactory(title='Test private project')
         self.popular_project = ProjectFactory(is_public=True)
         self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 

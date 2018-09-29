@@ -310,6 +310,13 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
+    def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'access_requests_enabled' not in res.json['data']['attributes']
+        res = app.get(url_public + '?version=2.8', auth=user.auth)
+        assert 'access_requests_enabled' in res.json['data']['attributes']
+
     def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
         url = url_public
         res = app.get(url)
@@ -1016,7 +1023,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': title_new,
             }
         }, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     def test_partial_update_private_project_logged_in_contributor(
             self, app, user, title_new, description, category, project_private, url_private):

@@ -33,17 +33,17 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
-    RegistrationProviderSerializer
+    RegistrationStorageProviderSerializer,
 )
 
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
     NodeMixin, NodeRegistrationsList, NodeLogList,
-    NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
+    NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
-    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList
+    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList,
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -65,7 +65,7 @@ class RegistrationMixin(NodeMixin):
             AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
             self.request,
-            display_name='node'
+            display_name='node',
 
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
@@ -259,7 +259,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -321,13 +321,13 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
     view_name = 'registration-logs'
 
 
-class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_providers_list).
     """
-    serializer_class = RegistrationProviderSerializer
+    serializer_class = RegistrationStorageProviderSerializer
 
     view_category = 'registrations'
-    view_name = 'registration-providers'
+    view_name = 'registration-storage-providers'
 
 
 class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
@@ -549,11 +549,13 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            linked_node for linked_node in
-            node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
-            if linked_node.can_view(auth)
-        ], 'self': node}
+        obj = {
+            'data': [
+                linked_node for linked_node in
+                node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
+                if linked_node.can_view(auth)
+            ], 'self': node,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -590,7 +592,7 @@ class RegistrationLinkedRegistrationsRelationship(JSONAPIBaseView, generics.Retr
                 node.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection')
                 if linked_registration.can_view(auth)
             ],
-            'self': node
+            'self': node,
         }
         self.check_object_permissions(self.request, obj)
         return obj

@@ -13,7 +13,7 @@ from flask import request
 from framework.auth import Auth
 from framework.sessions import get_session
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_signed
+from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
@@ -171,7 +171,7 @@ def osfstorage_get_children(file_node, **kwargs):
     user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
-        cursor.execute('''
+        cursor.execute("""
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
                     json_build_object(
@@ -255,7 +255,7 @@ def osfstorage_get_children(file_node, **kwargs):
             ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [
+        """, [
             user_content_type_id,
             file_node.target._id,
             user_pk,
@@ -422,3 +422,22 @@ def osfstorage_remove_tag(file_node, **kwargs):
         return {'status': 'failure'}, httplib.BAD_REQUEST
     else:
         return {'status': 'success'}, httplib.OK
+
+
+@must_be_logged_in
+def update_region(auth, **kwargs):
+    user = auth.user
+    user_settings = user.get_addon('osfstorage')
+
+    data = request.get_json()
+    try:
+        region_id = data['region_id']
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    try:
+        user_settings.set_region(region_id)
+    except ValueError:
+        raise HTTPError(404, data=dict(message_short='Region not found',
+                                    message_long='A storage region with this id does not exist'))
+    return {'message': 'User region updated.'}

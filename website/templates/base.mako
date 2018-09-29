@@ -43,7 +43,7 @@
         <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
         <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
     %endif
-    <meta name="citation_publisher" content="Open Science Framework" />
+    <meta name="citation_publisher" content="OSF" />
     %for institution in self.institutions_meta()[:10]:
         <meta name="citation_author_institution" content="${institution}" />
     %endfor
@@ -56,7 +56,7 @@
     <meta name="dc.license" content="${self.license_meta()}" />
     <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
     <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
-    <meta name="dc.publisher" content="Open Science Framework" />
+    <meta name="dc.publisher" content="OSF" />
     <meta name="dc.language" content="en" />
     <meta name="dc.identifier" content="${self.url_meta()}" />
     <meta name="citation_description" content="${self.description_meta()}" />
@@ -65,7 +65,7 @@
 
     <!-- Facebook display -->
     <meta property="og:ttl" content="3" />
-    <meta property="og:site_name" content="Open Science Framework" />
+    <meta property="og:site_name" content="OSF" />
     <meta property="og:url" content="${self.url_meta()}" />
     <meta property="og:title" content="${self.title_meta()}" />
     <meta property="og:description" content="${self.description_meta()}" />
@@ -73,7 +73,7 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Open Science Framework" />
+    <meta property="og:image:alt" content="OSF" />
 
     %for author in self.authors_meta()[:10]:
         <meta name="dc.creator" content="${author}" />
@@ -199,7 +199,7 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'Logged in': 'Logged out');
             ga('set', 'dimension2', '${self.resource()}');
             ga('set', 'dimension3', '${self.public()}');
             ga('set', 'anonymizeIp', true);
@@ -215,6 +215,7 @@
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
+                osfURL: ${ osf_url if osf_url.endswith('/') else osf_url + '/' | sjson, n },
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
@@ -231,11 +232,10 @@
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: ${ anon | sjson, n },
                 },
-                popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
+                csrfCookieName: ${ csrf_cookie_name | sjson, n },
             });
         </script>
 
@@ -274,12 +274,12 @@
 </%def>
 
 <%def name="resource()"><%
-    return None
+    return 'n/a'
 %> ### What resource is displayed on page ###
 </%def>
 
 <%def name="public()"><%
-    return None
+    return 'n/a'
 %> ### What the public/private status of the resource displayed on page ###
 </%def>
 

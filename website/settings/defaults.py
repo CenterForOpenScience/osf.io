@@ -28,7 +28,6 @@ STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
-# Logging level to use when DEBUG is False
 LOG_LEVEL = logging.INFO
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
@@ -106,7 +105,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'localhost:9200'
+ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
@@ -348,7 +347,7 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 ####################
 #   Identifiers   #
 ###################
-DOI_URL_PREFIX = 'https://dx.doi.org/'
+DOI_URL_PREFIX = 'https://doi.org/'
 
 # General Format for DOIs
 DOI_FORMAT = '{prefix}/osf.io/{guid}'
@@ -364,7 +363,7 @@ DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
 DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
-# Minting DOIs only works on Datacite's production server, so 
+# Minting DOIs only works on Datacite's production server, so
 # disable minting on staging and development environments by default
 DATACITE_MINT_DOIS = not DEV_MODE
 
@@ -485,7 +484,7 @@ class CeleryConfig:
     broker_use_ssl = False
 
     # Default RabbitMQ backend
-    result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+    result_backend = 'django-db'  # django-celery-results
 
     beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
 

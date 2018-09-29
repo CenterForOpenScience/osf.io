@@ -6,15 +6,11 @@
 require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
+var Cookie = require('js-cookie');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
-
-// XHR configuration to get apiserver connection to work
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
-};
 
 
 var AddProject = {
@@ -38,6 +34,9 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
+        self.newProjectStorageLocation = m.prop(window.contextVars.storageRegions[0]); // first storage region is default
+        self.storageRegions = m.prop(window.contextVars.storageRegions);
+        self.storageFlagIsActive = m.prop(window.contextVars.storageFlagIsActive);
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
@@ -91,9 +90,9 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2'}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             } else {
-                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2'}});
+                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2', 'region': self.newProjectStorageLocation()._id}});
             }
             data = {
                     'data' : {
@@ -124,7 +123,7 @@ var AddProject = {
                 self.viewState('error');
                 self.isAdding(false);
             };
-            var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
+            var request = m.request({method : 'POST', url : url, data : data, config : mHelpers.apiV2Config()});
             if (self.institutions.length > 0) {
                 request.then(function (result) {
                     var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/', {query: {'version': '2.2'}});
@@ -140,7 +139,7 @@ var AddProject = {
                         )
                     };
                     if (data.data.length > 0){
-                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
+                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: mHelpers.apiV2Config()}).then(
                             function(){},
                             function(){
                                 self.viewState('instError');
@@ -228,6 +227,16 @@ var AddProject = {
                                 }
                             ))),
                         ]): '',
+                        ctrl.storageFlagIsActive() ? m('.form-group.m-v-sm', [
+                            m('row',
+                                m('f-w-lg.text-bigger', 'Storage location'),
+                                m.component(SelectStorageLocation, {
+                                    value: ctrl.newProjectStorageLocation,
+                                    locations: ctrl.storageRegions
+                                })
+                            )
+                            ]
+                        ) : '',
                         ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
                             m('label.f-w-md',
 
@@ -465,6 +474,36 @@ var Select2Template = {
                     ctrl.userProjects().map(function(node){
                         if(node.id === id) {
                             ctrl.value(node.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+            }
+        };
+    }
+};
+
+var SelectStorageLocation = {
+    view: function(ctrl, options) {
+        return m('select.p-t-sm', {config: SelectStorageLocation.config(options)},
+            [
+            options.locations().map(function(region) {
+                var args = {value: region._id};
+                return m('option', args, region.name);
+            })
+        ]);
+    },
+    config: function(ctrl) {
+        return function (element, isInitialized) {
+            var $el = $(element);
+            if (!isInitialized) {
+                $el.select2({allowClear: true, width: '100%'}).on('change', function () {
+                    var id = $el.select2('val');
+                    m.startComputation();
+                    //Set the value to the selected option
+                    ctrl.locations().map(function (location) {
+                        if (location._id === id) {
+                            ctrl.value(location);
                         }
                     });
                     m.endComputation();

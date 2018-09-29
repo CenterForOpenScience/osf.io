@@ -83,22 +83,22 @@ class BaseVersioning(drf_versioning.BaseVersioning):
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not fall within URL path version {}'.format(
                     header_version,
-                    url_path_version
-                )
+                    url_path_version,
+                ),
             )
         if query_parameter_version and query_major_version != url_path_major_version:
             raise exceptions.Conflict(
                 detail='Version {} specified in query parameter does not fall within URL path version {}'.format(
                     query_parameter_version,
-                    url_path_version
-                )
+                    url_path_version,
+                ),
             )
         if header_version and query_parameter_version and (header_version != query_parameter_version):
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not match version {} specified in query parameter'.format(
                     header_version,
-                    query_parameter_version
-                )
+                    query_parameter_version,
+                ),
             )
 
     def determine_version(self, request, *args, **kwargs):
@@ -126,7 +126,7 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         query_kwargs = {'version': query_parameter_version} if query_parameter_version else None
 
         return utils.absolute_reverse(
-            viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs
+            viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs,
         )
 
 class PrivateVersioning(BaseVersioning):
@@ -146,22 +146,7 @@ class PrivateVersioning(BaseVersioning):
             if kwargs.get('version', False):
                 kwargs.pop('version')
                 return utils.absolute_reverse(
-                    viewname, query_kwargs=None, args=args, kwargs=kwargs
+                    viewname, query_kwargs=None, args=args, kwargs=kwargs,
                 )
             kwargs['version'] = get_latest_sub_version('2')
             return super(PrivateVersioning, self).reverse(viewname, args=args, kwargs=kwargs, request=request, format=format, **extra)
-
-class DeprecatedEndpointMixin(object):
-    @property
-    def min_version(self):
-        return '2.0'
-
-    @property
-    def max_version(self):
-        raise NotImplementedError('Deprecated endpoints must define `max_version`')
-
-    def determine_version(self, request, *args, **kwargs):
-        version, scheme = super(DeprecatedEndpointMixin, self).determine_version(request, *args, **kwargs)
-        if utils.is_deprecated(version, self.min_version, self.max_version):
-            raise drf_exceptions.NotFound()
-        return version, scheme

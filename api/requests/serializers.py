@@ -20,7 +20,7 @@ class RequestSerializer(JSONAPISerializer):
         'machine_state',
         'created',
         'id',
-        'target'
+        'target',
     ])
     id = ser.CharField(source='_id', read_only=True)
     request_type = ser.ChoiceField(read_only=True, required=False, choices=RequestTypes.choices())
@@ -39,7 +39,7 @@ class RequestSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'target': 'get_target_url'
+        'target': 'get_target_url',
     })
 
     @property
@@ -97,7 +97,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 creator=auth.user,
                 comment=comment,
                 machine_state=DefaultStates.INITIAL.value,
-                request_type=request_type
+                request_type=request_type,
             )
             node_request.save()
         except IntegrityError:
@@ -114,6 +114,12 @@ class PreprintRequestSerializer(RequestSerializer):
         related_view='preprints:preprint-detail',
         related_view_kwargs={'preprint_id': '<target._id>'},
         filter_key='target__guids___id',
+    )
+
+    actions = RelationshipField(
+        read_only=True,
+        related_view='requests:request-action-list',
+        related_view_kwargs={'request_id': '<_id>'},
     )
 
     def get_target_url(self, obj):
@@ -146,7 +152,7 @@ class PreprintRequestCreateSerializer(PreprintRequestSerializer):
             creator=auth.user,
             comment=comment,
             machine_state=DefaultStates.INITIAL.value,
-            request_type=request_type
+            request_type=request_type,
         )
         preprint_request.save()
         preprint_request.run_submit(auth.user)
