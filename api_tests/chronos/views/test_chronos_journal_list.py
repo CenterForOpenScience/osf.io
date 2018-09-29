@@ -50,7 +50,7 @@ class TestChronosJournalListFilter:
     def journal_one_filter_title_url(self, journal_one):
         return '/_/chronos/journals/?filter[title]={}'.format(journal_one.title)
 
-    def test_journal_list_filter(self, app, journal_one, journal_two, journal_one_filter_name_url):
+    def test_journal_list_filter(self, app, journal_one, journal_two, journal_one_filter_name_url, journal_one_filter_title_url):
         res = app.get(journal_one_filter_name_url)
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['name'] == journal_one.name

@@ -41,17 +41,17 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
     journal = RelationshipField(
         read_only=True,
         related_view='chronos:chronos-journal-detail',
-        related_view_kwargs={'journal_id': '<journal.journal_id>'}
+        related_view_kwargs={'journal_id': '<journal.journal_id>'},
     )
     preprint = RelationshipField(
         read_only=True,
         related_view='preprints:preprint-detail',
-        related_view_kwargs={'preprint_id': '<preprint._id>'}
+        related_view_kwargs={'preprint_id': '<preprint._id>'},
     )
     submitter = RelationshipField(
         read_only=True,
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<submitter._id>'}
+        related_view_kwargs={'user_id': '<submitter._id>'},
     )
 
     def get_absolute_url(self, obj):
@@ -68,7 +68,7 @@ class ChronosSubmissionCreateSerializer(ChronosSubmissionSerializer):
     journal = ChronosJournalRelationshipField(
         read_only=False,
         related_view='chronos:chronos-journal-detail',
-        related_view_kwargs={'journal_id': '<journal.journal_id>'}
+        related_view_kwargs={'journal_id': '<journal.journal_id>'},
     )
 
     def create(self, validated_data):

@@ -1,7 +1,6 @@
 import mock
 import pytest
 
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import AuthUserFactory, ChronosJournalFactory, ChronosSubmissionFactory, PreprintFactory
 
 
@@ -36,7 +35,7 @@ class TestChronosSubmissionList:
     def preprint(self, submitter, preprint_contributor, moderator):
         pp = PreprintFactory(creator=submitter)
         pp.node.add_contributor(preprint_contributor, save=True)
-        GroupHelper(pp.provider).get_group('moderator').user_set.add(moderator)
+        pp.provider.get_group('moderator').user_set.add(moderator)
         return pp
 
     @pytest.fixture()

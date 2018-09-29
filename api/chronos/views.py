@@ -87,7 +87,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def get_default_queryset(self):
         return ChronosSubmission.objects.filter(
-            preprint__guids___id=self.kwargs['preprint_id']
+            preprint__guids___id=self.kwargs['preprint_id'],
         )
 
     def get_queryset(self):
