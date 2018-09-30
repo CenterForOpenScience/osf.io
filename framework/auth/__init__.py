@@ -100,7 +100,7 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
     return user
 
 
-def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
+def get_or_create_user(fullname, address, reset_password=True, is_spam=False, must_be_active=False):
     """
     Get or create user by fullname and email address.
 
@@ -108,11 +108,17 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     :param str address: user email address
     :param boolean reset_password: ask user to reset their password
     :param bool is_spam: user flagged as potential spam
+    :param bool must_be_active: user must be active
     :return: tuple of (user, created)
     """
+
     from osf.models import OSFUser
     user = get_user(email=address)
-    if user:
+
+    if user and (not must_be_active or must_be_active and user.is_active):
+        # Existing user object has been found. Return if either the two conditions holds:
+        # 1) `must_be_active` is `False` (default), or
+        # 2) `must_be_active` is `True` and the user is active.
         return user, False
     else:
         password = str(uuid.uuid4())
