@@ -87,7 +87,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
-    original_publication_date = VersionedDateTimeField(required=False)
+    original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -274,7 +274,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             save_preprint = True
 
         if 'original_publication_date' in validated_data:
-            preprint.original_publication_date = validated_data['original_publication_date']
+            preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
         if published is not None:

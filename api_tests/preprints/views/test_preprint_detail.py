@@ -271,6 +271,28 @@ class TestPreprintUpdate:
         )
         assert res.status_code == 403
 
+    def test_update_original_publication_date_to_none(self, app, preprint, url):
+        # Original pub date accidentally set, need to remove
+        write_contrib = AuthUserFactory()
+        preprint.add_contributor(write_contrib, 'write', save=True)
+        preprint.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
+        preprint.save()
+        update_payload = build_preprint_update_payload(
+            preprint._id, attributes={
+                'original_publication_date': None,
+            }
+        )
+
+        res = app.patch_json_api(
+            url,
+            update_payload,
+            auth=write_contrib.auth,
+        )
+
+        assert res.status_code == 200
+        preprint.reload()
+        assert preprint.original_publication_date is None
+
     def test_update_preprint_permission_write_contrib(self, app, preprint, url):
         write_contrib = AuthUserFactory()
         preprint.add_contributor(write_contrib, 'write', save=True)
