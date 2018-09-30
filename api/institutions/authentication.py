@@ -86,7 +86,13 @@ class InstitutionAuthentication(BaseAuthentication):
         # `get_or_create_user()` guesses names from fullname
         # replace the guessed ones if the names are provided from the authentication
         user, created = get_or_create_user(fullname, username, reset_password=False)
+
         if created:
+            # User with the matching institution email has not been not found.  The above method
+            # ``get_or_create_user()`` creates a new confirmed (but yet to be active) user with a
+            # random password using  ``password = str(uuid.uuid4())``.
+
+            # Update user profile
             if given_name:
                 user.given_name = given_name
             if family_name:
@@ -100,11 +106,11 @@ class InstitutionAuthentication(BaseAuthentication):
             # Relying on front-end validation until `accepted_tos` is added to the JWT payload
             user.accepted_terms_of_service = timezone.now()
 
-            # save and register user
+            # Save and register user, after which the confirmed user become active.
             user.save()
             user.register(username)
 
-            # send confirmation email
+            # Send confirmation email
             send_mail(
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
@@ -114,6 +120,14 @@ class InstitutionAuthentication(BaseAuthentication):
                 osf_support_email=OSF_SUPPORT_EMAIL,
                 storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
+        elif not user.is_active:
+            # An existing user object has been found with the matching institution email.  If the
+            # user turns out to be an inactive one (e.g. unclaimed, unconfirmed, etc.), however,
+            # simply send a sentry message and return the user.  DON'T affiliate the institution.
+            # CAS will handle the rest and inform the institution user.
+            sentry.log_message('The authenticated institution user is inactive: '
+                               'user={}, inst={}'.format(username, provider['id']))
+            return user, None
 
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
