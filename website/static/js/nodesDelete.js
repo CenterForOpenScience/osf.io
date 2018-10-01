@@ -20,7 +20,7 @@ var BULK_DELETE_LIMIT = 100;
  * @type {QuickDeleteViewModel}
  */
 
-var QuickDeleteViewModel = function (nodeType, nodeApiUrl) {
+var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
 
     self.confirmationString = $osf.getConfirmationString();
@@ -32,8 +32,14 @@ var QuickDeleteViewModel = function (nodeType, nodeApiUrl) {
     self.canDelete = ko.observable(false);
     self.nodeType = nodeType;
     self.nodeApiUrl = nodeApiUrl;
+    self.isSupplementalProject = isSupplementalProject;
+    self.preprintMessage = 'This ' + self.nodeType +
+     ' also contains supplemental materials for a <strong>preprint</strong>.';
+
     self.message = ko.computed(function () {
-        return 'It will no longer be available to other contributors on the project.';
+        return (self.isSupplementalProject ? self.preprintMessage : '') +
+            ' It will no longer be available to other contributors on the project.';
+
     });
     self.atMaxLength = ko.observable(false);
     self.nodesDeleted = ko.observable(true);
@@ -88,9 +94,9 @@ QuickDeleteViewModel.prototype.confirmChanges = function () {
  * @type {NodesDeleteViewModel}
  */
 
-var NodesDeleteViewModel = function (nodeType, nodeApiUrl) {
+var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
-    QuickDeleteViewModel.call(self, nodeType, nodeApiUrl);
+    QuickDeleteViewModel.call(self, nodeType, isSupplementalProject, nodeApiUrl);
 
     self.confirmationString = '';
     self.tbCache = null;
@@ -98,9 +104,23 @@ var NodesDeleteViewModel = function (nodeType, nodeApiUrl) {
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
     self.nodesChanged = ko.observableArray([]);
-    self.nodesState = ko.observableArray();
     self.termForChildren = ko.pureComputed(function() {
         return self.nodeType === 'project' ? 'components' : 'subcomponents';
+    });
+    self.nodesState = ko.observableArray();
+    self.hasSupplementalProjects = ko.observable(false);
+    self.preprintMessage = ko.computed(function() {
+        if (self.isSupplementalProject && self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also contains supplemental materials for a <strong>preprint</strong>, and one or more of its ' +
+               self.termForChildren() + ' contains supplemental materials for a <strong>preprint</strong>.';
+        }
+         if (self.isSupplementalProject && !self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also contains supplemental materials for a <strong>preprint</strong>.';
+        }
+         if (!self.isSupplementalProject && self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also has one or more ' + self.termForChildren() +
+                ' that contain supplemental materials for a <strong>preprint</strong>.';
+        }
     });
 
     self.nodesState.subscribe(function (newValue) {
@@ -139,7 +159,7 @@ var NodesDeleteViewModel = function (nodeType, nodeApiUrl) {
         var confirm_message = ' The following ' + self.nodeType + ' and ' + self.termForChildren() + ' will be deleted.';
 
         return {
-            select: message + ' This action is irreversible.',
+            select: message + ((self.isSupplementalProject || self.hasSupplementalProjects()) ? self.preprintMessage() : ' This action is irreversible.'),
             confirm: confirm_message
         }[self.page()];
     });
@@ -267,7 +287,11 @@ function getNodesOriginal(nodeTree) {
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
             changed: false,
+            isSupplementalProject: nodeMeta.node.is_supplemental_project,
         };
+        !self.hasSupplementalProjects() &&
+          (nodeMeta.node.is_supplemental_project && nodeMeta.node.id !== nodeTree.node.id) &&
+            self.hasSupplementalProjects(true);
     });
     self.nodesOriginal[nodeTree.node.id].isRoot = true;
 }
@@ -326,20 +350,20 @@ function batchNodesDelete(nodes) {
         });
 }
 
-function NodesDelete(childExists, nodeType, nodeApiUrl) {
+function NodesDelete(childExists, nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
 
     self.selector = '#nodesDelete';
     self.$element = $(self.selector);
 
     if (childExists) {
-        self.viewModel = new NodesDeleteViewModel(nodeType, nodeApiUrl);
+        self.viewModel = new NodesDeleteViewModel(nodeType, isSupplementalProject, nodeApiUrl);
         self.viewModel.fetchNodeTree().done(function (response) {
             self.viewModel.tbCache = response;
             new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
         });
     } else {
-        self.viewModel = new QuickDeleteViewModel(nodeType, nodeApiUrl);
+        self.viewModel = new QuickDeleteViewModel(nodeType, isSupplementalProject, nodeApiUrl);
     }
 
     return self.viewModel;
@@ -349,8 +373,8 @@ var NodesDeleteManager = function () {
     var self = this;
 
     self.modal = ko.observable();
-    self.delete = function (childExists, nodeType, nodeApiUrl) {
-        return self.modal(new NodesDelete(childExists, nodeType, nodeApiUrl));
+    self.delete = function (childExists, nodeType, isSupplementalProject, nodeApiUrl) {
+        return self.modal(new NodesDelete(childExists, nodeType, isSupplementalProject, nodeApiUrl));
     };
 };
 

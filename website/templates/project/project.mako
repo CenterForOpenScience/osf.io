@@ -344,7 +344,7 @@
 <div class="row">
    <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
        <div style="margin-top: 5px; margin-bottom: 5px;">
-           Has supplemental material for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
+           Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
            on ${preprint['provider']['name']}
          &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
        </div>

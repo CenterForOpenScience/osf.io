@@ -111,7 +111,7 @@ function NodesDeleteTreebeard(divID, data, nodesState, nodesOriginal) {
                     custom: function () {
                         return m('span', [
                                   m('span', item.data.node.title),
-                                  m('')
+                                  item.data.node.is_supplemental_project ? m('sup', '*') : m('')
                             ]);
                     }
                 }

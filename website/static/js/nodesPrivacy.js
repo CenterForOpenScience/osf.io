@@ -27,8 +27,11 @@ var MESSAGES = {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
         nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
-        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
-    }
+        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.',
+    },
+    preprintPrivateWarning: 'This project/component contains supplemental materials for a preprint.'  +
+        '<p><strong>Making this project private will prevent others from accessing it.</strong></p>'
+
 };
 
 function _flattenNodeTree(nodeTree) {
@@ -54,7 +57,8 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
-            changed: false
+            changed: false,
+            isSupplementalProject: nodeMeta.node.is_supplemental_project,
         };
     });
     nodesOriginal[nodeTree.node.id].isRoot = true;
@@ -104,6 +108,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
+    self.isSupplementalProject = node.is_supplemental_project;
     self.dataType = node.is_registration ? 'registrations' : 'nodes';
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
@@ -151,6 +156,10 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.message = ko.computed(function() {
         if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
             return MESSAGES.makeEmbargoPublicWarning;
+        }
+
+        if (self.page() === self.WARNING &&  self.isSupplementalProject) {
+              return MESSAGES.preprintPrivateWarning + MESSAGES.makeProjectPrivateWarning;
         }
 
         return {

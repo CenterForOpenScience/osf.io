@@ -99,6 +99,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
+            'is_supplemental_project': node.has_linked_published_preprints,
             'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),

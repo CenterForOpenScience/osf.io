@@ -748,11 +748,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     if isinstance(target, Preprint):
-        # Cannot currently view preprint files in file view
-        raise HTTPError(httplib.NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
+        # Redirecting preprint file guids to the preprint detail page
+        return redirect('/{}/'.format(target._id))
 
     return addon_view_file(auth, target, file_node, version)
 

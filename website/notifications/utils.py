@@ -77,6 +77,10 @@ def remove_contributor_from_subscriptions(node, user):
 def remove_subscription(node):
     remove_subscription_task(node._id)
 
+@signals.node_deleted.connect
+def remove_supplemental_node(node):
+    remove_supplemental_node_from_preprints(node._id)
+
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
@@ -92,6 +96,18 @@ def remove_subscription_task(node_id):
             if node._id in parent.child_node_subscriptions[user_id]:
                 parent.child_node_subscriptions[user_id].remove(node._id)
         parent.save()
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_supplemental_node_from_preprints(node_id):
+    AbstractNode = apps.get_model('osf.AbstractNode')
+
+    node = AbstractNode.load(node_id)
+    for preprint in node.preprints.all():
+        if preprint.node is not None:
+            preprint.node = None
+            preprint.save()
 
 
 def separate_users(node, user_ids):

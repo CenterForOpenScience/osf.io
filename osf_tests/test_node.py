@@ -3744,6 +3744,16 @@ class TestRemoveNode:
         # target node shouldn't be deleted
         assert target.is_deleted is False
 
+    def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
+        preprint.node = project
+        preprint.save()
+
+        project.remove_node(auth=auth)
+        preprint.reload()
+
+        assert project.is_deleted
+        assert preprint.node is None
+
 
 class TestTemplateNode:
 

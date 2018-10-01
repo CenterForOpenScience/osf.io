@@ -174,6 +174,10 @@
 
     % endif  ## End registration undismissable labels
 
+    % if node['is_supplemental_project'] and user['is_contributor'] and not node['is_public']:
+        <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
+    % endif
+
     % if node['anonymous'] and user['is_contributor']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
