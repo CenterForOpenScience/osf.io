@@ -654,8 +654,8 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             # double new password for confirmation because validation is done on the front-end.
             user.change_password(existing_password, new_password, new_password)
         except ChangePasswordError as error:
-            # This exception must be returned rather then raised to avoid rolling back the transaction and losing the
-            # incrementation of failed password attempts
+            # A response object must be returned instead of raising an exception to avoid rolling back the transaction
+            # and losing the incrementation of failed password attempts
             user.save()
             return JsonResponse(
                 {'errors': [{'detail': message} for message in error.messages]},

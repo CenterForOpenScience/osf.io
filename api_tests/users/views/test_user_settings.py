@@ -5,6 +5,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
+    UserFactory,
 )
 from osf.models import Email
 
@@ -146,7 +147,7 @@ class TestUserChangePassword:
 
     @pytest.fixture()
     def user_one(self):
-        user = AuthUserFactory()
+        user = UserFactory()
         user.set_password('password1')
         user.auth = (user.username, 'password1')
         user.save()
@@ -161,7 +162,7 @@ class TestUserChangePassword:
         return {
             'data': {
                 'type': 'user_password',
-                'id': '{}'.format(user_one._id),
+                'id': user_one._id,
                 'attributes': {
                     'existing_password': 'password1',
                     'new_password': 'password2',
