@@ -6,6 +6,8 @@ from website.app import setup_django
 
 setup_django()
 from osf.models import OSFUser
+from scripts import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,7 @@ def add_missing_unclaimed_record(user, node, dry_run):
                 referrer = OSFUser.objects.get(id=log.user_id)
                 verification_key = generate_verification_key(verification_type='confirm')
                 record = {
-                    'name': user.given_name,
+                    'name': user.fullname,
                     'referrer_id': referrer._id,
                     'token': verification_key['token'],
                     'expires': verification_key['expires'],
@@ -33,7 +35,7 @@ def add_missing_unclaimed_record(user, node, dry_run):
 
 
 def main(dry_run=True):
-    users = OSFUser.objects.filter(date_disabled=None,
+    users = OSFUser.objects.filter(date_disabled__isnull=True,
                                    is_registered=False,
                                    unclaimed_records={},
                                    nodes__is_deleted=False,
@@ -46,4 +48,7 @@ def main(dry_run=True):
 
 
 if __name__ == '__main__':
-    main(dry_run='--dry' in sys.argv)
+    dry_run = '--dry' in sys.argv
+    if not dry_run:
+        utils.add_file_logger(logger, __file__)
+    main(dry_run=dry_run)
