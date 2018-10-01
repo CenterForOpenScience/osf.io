@@ -1,3 +1,5 @@
+import os
+
 import jsonschema
 from django.utils import timezone
 from rest_framework import serializers as ser
@@ -20,6 +22,8 @@ from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
+
+here = os.path.split(os.path.abspath(__file__))[0]
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -186,7 +190,8 @@ class UserSerializer(JSONAPISerializer):
         return value
 
     def validate_social(self, value):
-        schema = from_json('social-schema.json')
+        path = os.path.join(here, 'schemas')
+        schema = from_json('social-schema.json', path=path)
         try:
             jsonschema.validate(value, schema)
         except jsonschema.ValidationError as e:

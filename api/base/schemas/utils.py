@@ -7,8 +7,10 @@ from api.base.exceptions import InvalidModelValueError
 
 here = os.path.split(os.path.abspath(__file__))[0]
 
-def from_json(fname):
-    with open(os.path.join(here, fname)) as f:
+def from_json(fname, path=None):
+    if not path:
+        path = here
+    with open(os.path.join(path, fname)) as f:
         return json.load(f)
 
 
