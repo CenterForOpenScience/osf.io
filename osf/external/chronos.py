@@ -171,6 +171,9 @@ class ChronosClient(object):
         return ChronosJournal.objects.all()
 
     def submit_manuscript(self, journal, preprint, submitter):
+        if ChronosSubmission.objects.filter(journal=journal, preprint=preprint).exists():
+            raise ValueError('{!r} already has an existing submission to {!r}.'.format(preprint, journal))
+        
         if preprint.machine_state != ReviewStates.ACCEPTED.value:
             raise ValueError('Cannot submit to Chronos if the preprint is not accepted by moderators')
 
