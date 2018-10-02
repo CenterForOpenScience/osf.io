@@ -78,7 +78,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
-        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
+        kwargs.update({'message': kwargs.get('message')})
         return super(PreprintView, self).get_context_data(**kwargs)
 
 

@@ -1542,8 +1542,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
-        if len(forked.title) > 200:
-            forked.title = forked.title[:200]
+        if len(forked.title) > 512:
+            forked.title = forked.title[:512]
 
         forked.add_contributor(
             contributor=user,
@@ -1669,8 +1669,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
 
-        if len(new.title) > 200:
-            new.title = new.title[:200]
+        if len(new.title) > 512:
+            new.title = new.title[:512]
 
         # Slight hack - created is a read-only field.
         new.created = timezone.now()

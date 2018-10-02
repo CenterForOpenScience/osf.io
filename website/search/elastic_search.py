@@ -692,7 +692,8 @@ def update_file(file_, index=None, delete=False):
     file_guid = file_.get_guid(create=False)
     if file_guid:
         guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
-    # File URL's not provided for preprint files, because the File Detail Page is blocked
+    # File URL's not provided for preprint files, because the File Detail Page will
+    # just reroute to preprints detail
     file_doc = {
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,

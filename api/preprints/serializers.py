@@ -95,7 +95,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
     license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ShowIfVersion(NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public')), min_version=2.0, max_version=2.7)
+    node_is_public = ShowIfVersion(NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public')), min_version=2.0, max_version=2.10)
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
@@ -288,9 +288,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if save_preprint:
             preprint.save()
 
-        # Send preprint confirmation email signal to new authors on preprint! -- only when published
-        # TODO: Some more thought might be required on this; preprints made from existing
-        # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.contributors:
                 if author != auth.user:

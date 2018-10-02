@@ -86,7 +86,7 @@ class ReviewsMachine(BaseMachine):
             pass  # Do not alter published state
         elif should_publish and not self.machineable.is_published:
             if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
-                raise ValueError('Preprint node is not a valid preprint; cannot publish.')
+                raise ValueError('Preprint is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.machineable.subjects.exists():
