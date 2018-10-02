@@ -1076,7 +1076,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
+        Rule('/', 'get', website_views.index, notemplate),
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
