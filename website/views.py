@@ -312,7 +312,7 @@ def resolve_guid(guid, suffix=None):
             request.user = _get_current_user() or MockUser()
 
             if waffle.flag_is_active(request, flag_name):
-                use_ember_app()
+                return use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
