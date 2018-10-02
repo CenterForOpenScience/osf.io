@@ -162,7 +162,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
