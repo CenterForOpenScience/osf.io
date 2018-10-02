@@ -29,22 +29,31 @@ def add_missing_unclaimed_record(user, node, dry_run):
 
                 if not dry_run:
                     user.save()
-                logger.info(u'User {} has been given an unclaimed record with name {} for node {}'.format(user._id, user.fullname, node._id))
+                logger.info(
+                    u'User {} has been given an unclaimed record with name {} for node {}{}'.format(
+                        user._id,
+                        user.fullname,
+                        node._id,
+                        ' (PUBLIC)' if node.is_public else ''
+                    )
+                )
             else:
-                logger.info('User {} has could not be given a record, because their referer was anonymous'.format(user._id))
+                logger.info('User {} could not be given a record, because their referrer was anonymous'.format(user._id))
 
 
 def main(dry_run=True):
+    count = 0
     users = OSFUser.objects.filter(date_disabled__isnull=True,
                                    is_registered=False,
-                                   unclaimed_records={},
                                    nodes__is_deleted=False,
                                    nodes__type='osf.node').include(None).distinct()
-    logger.info('{} users without unclaimed records'.format(users.count()))
+    logger.info('Checking {} unregistered users'.format(users.count()))
     for user in users:
-        for node in user.nodes.filter(type='osf.node'):
+        for node in user.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True):
             if user.unclaimed_records.get(node._id) is None:
+                count += 1
                 add_missing_unclaimed_record(user, node, dry_run)
+    logger.info('Added {} unclaimed records'.format(count))
 
 
 if __name__ == '__main__':
