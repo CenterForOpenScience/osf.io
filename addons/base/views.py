@@ -35,7 +35,7 @@ from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
-from osf.models import (BaseFileNode, TrashedFileNode, TrashedFile, TrashedFolder,
+from osf.models import (BaseFileNode, TrashedFileNode, TrashedFile,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
@@ -563,13 +563,12 @@ def storage_usage_cache_control(self, target, user, event_type, payload):
 
             if event_type == 'file_removed':
                 if path.endswith('/'):
-                    folder = TrashedFolder.objects.get(_id=path.rstrip('/'))
-                    storage_usage -= get_storage_usage_of_children(folder)
+                    cache.delete('storage_usage:{}'.format(osfstorage._id))
                 else:
                     trashed_node = TrashedFile.objects.get(_path='/' + path)
                     storage_usage -= trashed_node.versions.all().aggregate(sum=Sum('size'))['sum']
 
-            cache.set('storage_usage:' + osfstorage._id, storage_usage, osfstorage.STORAGE_USAGE_CACHE_TIMEOUT)
+            cache.set('storage_usage:{}'.format(osfstorage._id), storage_usage, osfstorage.STORAGE_USAGE_CACHE_TIMEOUT)
 
 
 @must_be_valid_project
