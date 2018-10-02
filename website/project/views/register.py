@@ -49,7 +49,9 @@ def node_register_page(auth, node, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False)
+            trust=False,
+            id='redirected_to_registrations',
+        )
         return redirect(node.web_url_for('node_registrations', view='draft'))
 
 @must_be_valid_project
@@ -149,7 +151,8 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False
+            trust=False,
+            id='redirected_to_registrations',
         )
         return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
 

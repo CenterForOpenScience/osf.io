@@ -49,7 +49,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         pass
 
     def test_serialize_settings(self):
-        # Bitbucket's serialized_settings are a little different from 
+        # Bitbucket's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}

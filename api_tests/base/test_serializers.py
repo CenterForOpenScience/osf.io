@@ -173,8 +173,7 @@ class TestNullLinks(ApiTestCase):
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
-        assert_equals(rep['relationships']['null_link_field']['data'], None)
-        assert_in('valued_link_field', rep['relationships'])
+        assert_not_in('null_link_field', rep['relationships'])
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -429,13 +428,23 @@ class TestRelationshipField:
         assert_equal(meta['extra'], 'foo')
 
     def test_serializing_empty_to_one(self):
-        req = make_drf_request_with_version(version='2.0')
+        req = make_drf_request_with_version(version='2.2')
         node = factories.NodeFactory()
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
         # This node is not registered_from another node hence it is an empty-to-one.
-        assert_equal(data['relationships']['registered_from']['data'], None)
+        assert 'registered_from' not in data['relationships']
+
+        # In 2.9, API returns null for empty relationships
+        # https://openscience.atlassian.net/browse/PLAT-840
+        req = make_drf_request_with_version(version='2.9')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+
+        assert data['relationships']['registered_from']['data'] is None
 
     def test_self_and_related_fields(self):
         req = make_drf_request_with_version(version='2.0')
@@ -492,7 +501,7 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
-        assert_equal(data['relationships']['registered_from']['data'], None)
+        assert_not_in('registered_from', data['relationships'])
 
         registration = factories.RegistrationFactory(project=node)
         data = self.BasicNodeSerializer(

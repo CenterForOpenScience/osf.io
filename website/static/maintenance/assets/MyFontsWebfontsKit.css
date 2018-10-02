@@ -1,21 +1,21 @@
 /**
  * @license
  * MyFonts Webfont Build ID 2960724, 2015-01-27T10:16:51-0500
- * 
+ *
  * The fonts listed in this notice are subject to the End User License
- * Agreement(s) entered into by the website owner. All other parties are 
+ * Agreement(s) entered into by the website owner. All other parties are
  * explicitly restricted from using the Licensed Webfonts(s).
- * 
+ *
  * You may obtain a valid license at the URLs below.
- * 
+ *
  * Webfont: Novecentosanswide-Normal by Synthview
  * URL: http://www.myfonts.com/fonts/synthview/novecento/wide-normal/
  * Copyright: Copyright &#x00A9; 2013 by Jan Tonellato. All rights reserved.
  * Licensed pageviews: 10,000
- * 
- * 
+ *
+ *
  * License: http://www.myfonts.com/viewlicense?type=web&buildid=2960724
- * 
+ *
  * © 2015 MyFonts Inc
 */
 
@@ -23,6 +23,5 @@
 /* @import must be at top of file, otherwise CSS will not work */
 @import url("//hello.myfonts.net/count/2d2d54");
 
-  
+
 @font-face {font-family: 'Novecentosanswide-Normal';src: url('webfonts/2D2D54_0_0.eot');src: url('webfonts/2D2D54_0_0.eot?#iefix') format('embedded-opentype'),url('webfonts/2D2D54_0_0.woff2') format('woff2'),url('webfonts/2D2D54_0_0.woff') format('woff'),url('webfonts/2D2D54_0_0.ttf') format('truetype');}
- 

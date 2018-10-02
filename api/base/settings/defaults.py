@@ -31,7 +31,7 @@ DATABASES = {
         'TEST': {
             'SERIALIZE': False,
         },
-    }
+    },
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
@@ -66,7 +66,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
 ]
 
 
@@ -126,7 +126,7 @@ RAVEN_CONFIG = {
 }
 
 BULK_SETTINGS = {
-    'DEFAULT_BULK_LIMIT': 100
+    'DEFAULT_BULK_LIMIT': 100,
 }
 
 MAX_PAGE_SIZE = 100
@@ -142,7 +142,7 @@ REST_FRAMEWORK = {
         'api.base.parsers.JSONAPIParser',
         'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser'
+        'rest_framework.parsers.MultiPartParser',
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
@@ -159,6 +159,7 @@ REST_FRAMEWORK = {
         '2.7',
         '2.8',
         '2.9',
+        '2.10',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -167,7 +168,7 @@ REST_FRAMEWORK = {
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
-        'api.base.authentication.drf.OSFCASAuthentication'
+        'api.base.authentication.drf.OSFCASAuthentication',
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
@@ -182,15 +183,16 @@ REST_FRAMEWORK = {
         'test-user': '2/hour',
         'test-anon': '1/hour',
         'send-email': '2/minute',
-    }
+    },
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    urlparse(osf_settings.DOMAIN).netloc,
+    osf_settings.DOMAIN,
+)
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
@@ -221,8 +223,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True
-    }]
+        'APP_DIRS': True,
+    },
+]
 
 
 ROOT_URLCONF = 'api.base.urls'
@@ -285,14 +288,17 @@ ANONYMOUS_USER_NAME = None
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
 
+# salt used for generating hashids
+HASHIDS_SALT = 'pinkhimalayan'
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'osf_cache_table',
     },
     'waffle_cache': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
-    }
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
 
 }
 

@@ -7,12 +7,12 @@
     <dt>Text</dt> <dd>{{object.text}}</dd>
     <dt>Provider</dt> <dd>{{object.provider.name}}</dd>
     <dt>Highlighted</dt> <dd>{{object.highlighted}}</dd>
-    <dt>Hierarchy</dt> 
+    <dt>Hierarchy</dt>
     <dd>
       {% for s in object.object_hierarchy %}
         {{s.text}}
         {% if not forloop.last %}
-         - 
+         -
         {% endif %}
       {% endfor %}
     </dd>

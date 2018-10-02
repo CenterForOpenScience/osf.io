@@ -10,7 +10,8 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 # Please keep URLs alphabetized for auto-generated documentation
 
 urlpatterns = [
-    url(r'^_/',
+    url(
+        r'^_/',
         include(
             [
                 url(r'^', include('waffle.urls')),
@@ -18,9 +19,10 @@ urlpatterns = [
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
                 url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
             ],
-        )
         ),
-    url('^(?P<version>(v2))/',
+    ),
+    url(
+        '^(?P<version>(v2))/',
         include(
             [
                 url(r'^$', views.root, name='root'),
@@ -59,15 +61,15 @@ urlpatterns = [
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
                 url(r'^alerts/', include('api.alerts.urls', namespace='alerts')),
             ],
-        )
         ),
-    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
+    ),
+    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
 ]
 
 # Add django-silk URLs if it's in INSTALLED_APPS
 if 'silk' in settings.INSTALLED_APPS:
     urlpatterns += [
-        url(r'^silk/', include('silk.urls', namespace='silk'))
+        url(r'^silk/', include('silk.urls', namespace='silk')),
     ]
 
 if settings.DEBUG:

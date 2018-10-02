@@ -666,7 +666,7 @@ class SearchCollections(BaseSearchView):
             'status',
             'subjects',
             'provider',
-            'title'
+            'title',
         ]
 
     def create(self, request, *args, **kwargs):

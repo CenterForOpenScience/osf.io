@@ -1,3 +1,5 @@
+import pytz
+
 from django.apps import apps
 from django.db.models import F
 
@@ -5,13 +7,18 @@ from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.parsers import (JSONAPIRelationshipParser,
-                              JSONAPIRelationshipParserForRegularJSON)
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
 from api.base.serializers import AddonAccountSerializer
-from api.base.utils import (default_node_list_queryset,
-                            default_node_list_permission_queryset,
-                            get_object_or_error,
-                            get_user_auth)
+from api.base.utils import (
+    default_node_list_queryset,
+    default_node_list_permission_queryset,
+    get_object_or_error,
+    get_user_auth,
+    hashids,
+)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
@@ -20,38 +27,54 @@ from api.nodes.serializers import NodeSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
-                                   ReadOnlyOrCurrentUserRelationship,
-                                   ClaimUserPermission)
-from api.users.serializers import (UserAddonSettingsSerializer,
-                                   UserDetailSerializer,
-                                   UserIdentitiesSerializer,
-                                   UserInstitutionsRelationshipSerializer,
-                                   UserSerializer,
-                                   UserSettingsSerializer,
-                                   UserSettingsUpdateSerializer,
-                                   UserQuickFilesSerializer,
-                                   UserAccountExportSerializer,
-                                   UserAccountDeactivateSerializer,
-                                   ReadEmailUserDetailSerializer)
+
+from api.users.permissions import (
+    CurrentUser, ReadOnlyOrCurrentUser,
+    ReadOnlyOrCurrentUserRelationship,
+    ClaimUserPermission,
+)
+from api.users.serializers import (
+    UserAddonSettingsSerializer,
+    UserDetailSerializer,
+    UserIdentitiesSerializer,
+    UserInstitutionsRelationshipSerializer,
+    UserSerializer,
+    UserEmail,
+    UserEmailsSerializer,
+    UserSettingsSerializer,
+    UserSettingsUpdateSerializer,
+    UserQuickFilesSerializer,
+    UserAccountExportSerializer,
+    UserAccountDeactivateSerializer,
+    ReadEmailUserDetailSerializer,
+    UserChangePasswordSerializer,
+)
 from django.contrib.auth.models import AnonymousUser
+from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
+from framework.auth.exceptions import ChangePasswordError
+from framework.utils import throttle_period_expired
+from framework.sessions.utils import remove_sessions_for_user
+from framework.exceptions import PermissionsError
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
-from osf.models import (Contributor,
-                        ExternalAccount,
-                        Guid,
-                        QuickFilesNode,
-                        AbstractNode,
-                        PreprintService,
-                        Node,
-                        Registration,
-                        OSFUser)
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
+from osf.models import (
+    Contributor,
+    ExternalAccount,
+    Guid,
+    QuickFilesNode,
+    AbstractNode,
+    PreprintService,
+    Node,
+    Registration,
+    OSFUser,
+    Email,
+)
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
@@ -82,7 +105,7 @@ class UserMixin(object):
                 return get_object_or_error(
                     OSFUser.objects.filter(id=user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
                     request=self.request,
-                    display_name='user'
+                    display_name='user',
                 )
 
         if self.kwargs.get('is_embedded') is True:
@@ -99,7 +122,7 @@ class UserMixin(object):
             return get_object_or_error(
                 OSFUser.objects.filter(id=current_user.id).annotate(default_region=F('addons_osfstorage_user_settings__default_region___id')).exclude(default_region=None),
                 request=self.request,
-                display_name='user'
+                display_name='user',
             )
 
         obj = get_object_or_error(OSFUser, key, self.request, 'user')
@@ -282,7 +305,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-modified',)
+    ordering = ('-last_logged',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -426,7 +449,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUserRelationship
+        ReadOnlyOrCurrentUserRelationship,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -442,7 +465,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user = self.get_user(check_permissions=False)
         obj = {
             'data': user.affiliated_institutions.all(),
-            'self': user
+            'self': user,
         }
         self.check_object_permissions(self.request, obj)
         return obj
@@ -593,6 +616,58 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_password'
+
+    serializer_class = UserChangePasswordSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        existing_password = request.data['existing_password']
+        new_password = request.data['new_password']
+
+        # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+        if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+            user.reset_old_password_invalid_attempts()
+
+        # There have been more than 3 failed attempts and throttle hasn't expired.
+        if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
+            user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
+        ):
+            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
+            wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
+            raise Throttled(wait=wait_time)
+
+        try:
+            # double new password for confirmation because validation is done on the front-end.
+            user.change_password(existing_password, new_password, new_password)
+        except ChangePasswordError as error:
+            # A response object must be returned instead of raising an exception to avoid rolling back the transaction
+            # and losing the incrementation of failed password attempts
+            user.save()
+            return JsonResponse(
+                {'errors': [{'detail': message} for message in error.messages]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        user.save()
+        remove_sessions_for_user(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -691,5 +766,98 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
-
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-emails'
+
+    serializer_class = UserEmailsSerializer
+
+    # overrides ListAPIViewa
+    def get_queryset(self):
+        user = self.get_user()
+        serialized_emails = []
+        for email in user.emails.all():
+            primary = email.address == user.username
+            hashed_id = hashids.encode(email.id)
+            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, primary=primary)
+            serialized_emails.append(serialized_email)
+        email_verifications = user.email_verifications or []
+        for token in email_verifications:
+            detail = user.email_verifications[token]
+            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], primary=False)
+            serialized_emails.append(serialized_unconfirmed_email)
+
+        return serialized_emails
+
+
+class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-email-detail'
+
+    serializer_class = UserEmailsSerializer
+
+    # Overrides RetrieveUpdateDestroyAPIView
+    def get_object(self):
+        email_id = self.kwargs['email_id']
+        user = self.get_user()
+
+        # check to see if it's a confirmed email with hashed id
+        decoded_id = hashids.decode(email_id)
+        if decoded_id:
+            try:
+                email = user.emails.get(id=decoded_id[0])
+            except Email.DoesNotExist:
+                email = None
+            else:
+                primary = email.address == user.username
+                address = email.address
+                confirmed = True
+
+        # check to see if it's an unconfirmed email with a token
+        elif user.unconfirmed_emails:
+            try:
+                email = user.email_verifications[email_id]
+                address = email['email']
+                confirmed = email['confirmed']
+                primary = False
+            except KeyError:
+                email = None
+
+        if not email:
+            raise NotFound
+
+        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, primary=primary)
+
+    # Overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.get_user()
+        email = instance.address
+        if instance.confirmed:
+            try:
+                user.remove_email(email)
+            except PermissionsError as e:
+                raise ValidationError(e.args[0])
+        else:
+            user.remove_unconfirmed_email(email)
+            user.save()

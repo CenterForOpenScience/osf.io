@@ -433,7 +433,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     @property
     def is_preprint_primary(self):
         if hasattr(self.target, 'preprint_file') and self.target.preprint_file:
-            for child in self.children.all().prefetch_related('target'):
+            for child in self.children.all():
                 if getattr(child.target, 'preprint_file', None):
                     if child.is_preprint_primary:
                         return True

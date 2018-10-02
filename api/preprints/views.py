@@ -321,10 +321,12 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
-                absolute_reverse('providers:preprint-providers:preprint-provider-detail', kwargs={
-                    'provider_id': target.provider._id,
-                    'version': self.request.parser_context['kwargs']['version']
-                })
+                absolute_reverse(
+                    'providers:preprint-providers:preprint-provider-detail', kwargs={
+                        'provider_id': target.provider._id,
+                        'version': self.request.parser_context['kwargs']['version'],
+                    },
+                ),
             ))
 
         serializer.save(user=self.request.user)
@@ -341,7 +343,7 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintRequestPermission
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
