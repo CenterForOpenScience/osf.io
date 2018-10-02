@@ -158,11 +158,12 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_submitted')
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
@@ -216,7 +217,8 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_archiving')
     return {
         'status': 'initiated',
         'urls': {

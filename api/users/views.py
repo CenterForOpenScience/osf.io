@@ -1,3 +1,5 @@
+import pytz
+
 from django.apps import apps
 from django.db.models import F
 
@@ -25,6 +27,7 @@ from api.nodes.serializers import NodeSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -44,17 +47,22 @@ from api.users.serializers import (
     UserAccountExportSerializer,
     UserAccountDeactivateSerializer,
     ReadEmailUserDetailSerializer,
+    UserChangePasswordSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
+from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
+from framework.auth.exceptions import ChangePasswordError
+from framework.utils import throttle_period_expired
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
     ExternalAccount,
@@ -608,6 +616,58 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_password'
+
+    serializer_class = UserChangePasswordSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        existing_password = request.data['existing_password']
+        new_password = request.data['new_password']
+
+        # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+        if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+            user.reset_old_password_invalid_attempts()
+
+        # There have been more than 3 failed attempts and throttle hasn't expired.
+        if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
+            user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
+        ):
+            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
+            wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
+            raise Throttled(wait=wait_time)
+
+        try:
+            # double new password for confirmation because validation is done on the front-end.
+            user.change_password(existing_password, new_password, new_password)
+        except ChangePasswordError as error:
+            # A response object must be returned instead of raising an exception to avoid rolling back the transaction
+            # and losing the incrementation of failed password attempts
+            user.save()
+            return JsonResponse(
+                {'errors': [{'detail': message} for message in error.messages]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        user.save()
+        remove_sessions_for_user(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -706,7 +766,6 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
