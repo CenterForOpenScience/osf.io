@@ -5,6 +5,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
+    UserFactory,
 )
 from osf.models import Email
 
@@ -139,6 +140,87 @@ class TestUserRequestDeactivate:
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 429
+
+
+@pytest.mark.django_db
+class TestUserChangePassword:
+
+    @pytest.fixture()
+    def user_one(self):
+        user = UserFactory()
+        user.set_password('password1')
+        user.auth = (user.username, 'password1')
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def url(self, user_one):
+        return '/{}users/{}/settings/password/'.format(API_BASE, user_one._id)
+
+    @pytest.fixture()
+    def payload(self, user_one):
+        return {
+            'data': {
+                'type': 'user_password',
+                'id': user_one._id,
+                'attributes': {
+                    'existing_password': 'password1',
+                    'new_password': 'password2',
+                }
+            }
+        }
+
+    def test_get(self, app, user_one, url):
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 405
+
+    def test_post(self, app, user_one, user_two, url, payload):
+        # Logged out
+        res = app.post_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # Logged in, requesting export for another user
+        res = app.post_json_api(url, payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in
+        res = app.post_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 204
+        user_one.reload()
+        assert user_one.check_password('password2')
+
+    def test_post_invalid_type(self, app, user_one, url, payload):
+        payload['data']['type'] = 'Invalid Type'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+
+    def test_exceed_throttle_failed_attempts(self, app, user_one, url, payload):
+        payload['data']['attributes']['existing_password'] = 'wrong password'
+        payload['data']['attributes']['new_password'] = 'password2'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 429
+        # Expected time is omitted to prevent probabilistic failures.
+        assert 'Request was throttled. Expected available in ' in res.json['errors'][0]['detail']
+
+    def test_multiple_errors(self, app, user_one, url, payload):
+        payload['data']['attributes']['existing_password'] = 'wrong password'
+        payload['data']['attributes']['new_password'] = '!'
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Old password is invalid'
+        assert res.json['errors'][1]['detail'] == 'Password should be at least eight characters'
 
 
 @pytest.mark.django_db

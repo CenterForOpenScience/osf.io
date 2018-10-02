@@ -357,6 +357,15 @@ class UserAccountDeactivateSerializer(BaseAPISerializer):
         type_ = 'user-account-deactivate-form'
 
 
+class UserChangePasswordSerializer(BaseAPISerializer):
+    type = TypeField()
+    existing_password = ser.CharField(write_only=True, required=True)
+    new_password = ser.CharField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'user_password'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
