@@ -34,6 +34,7 @@ from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
+from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, RegistrationSchema,
@@ -650,7 +651,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 
 
 @must_be_contributor_or_public
-@ember_flag_is_active('ember_file_detail_page')
+@ember_flag_is_active(features.EMBER_FILE_DETAIL)
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit

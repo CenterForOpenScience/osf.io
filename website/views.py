@@ -22,8 +22,8 @@ from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from framework.auth.core import _get_current_user
 from website import settings
-from website.institutions.views import serialize_institution
 
+from osf import features
 from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
 from addons.osfstorage.models import Region
 
@@ -135,12 +135,7 @@ def index():
     # Check if we're on an institution landing page
     institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
     if institution.exists():
-        institution = institution.get()
-        inst_dict = serialize_institution(institution)
-        inst_dict.update({
-            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
-        })
-        return inst_dict
+        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
     else:
         return use_ember_app()
 
@@ -154,7 +149,7 @@ def dashboard(auth):
 
 
 @must_be_logged_in
-@ember_flag_is_active('ember_my_projects_page')
+@ember_flag_is_active(features.EMBER_MY_PROJECTS)
 def my_projects(auth):
     user = auth.user
 
