@@ -9,7 +9,7 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0129_merge_20180910_1926'),
+        ('osf', '0134_abstractnode_custom_citation'),
     ]
 
     operations = [
