@@ -283,6 +283,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='List of strings representing the permissions '
         'for the current user on this node.',
     )
+    current_user_is_contributor = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor on this node.',
+    )
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -493,6 +496,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.contrib_read or False
         else:
             return obj.can_comment(auth)
+
+    def get_current_user_is_contributor(self, obj):
+        user = self.context['request'].user
+        user = None if user.is_anonymous else user
+        return obj.is_contributor(user)
 
     class Meta:
         type_ = 'nodes'
@@ -915,12 +923,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
-
-    def get_current_user_is_contributor(self, obj):
-        user = self.context['request'].user
-        user = None if user.is_anonymous else user
-        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
