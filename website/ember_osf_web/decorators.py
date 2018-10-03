@@ -4,6 +4,7 @@ import waffle
 from flask import request
 
 from framework.auth.core import _get_current_user
+from osf.features import STORAGE_USAGE
 from website.ember_osf_web.views import use_ember_app
 
 
@@ -37,4 +38,4 @@ def storage_i18n_flag_active():
 
 def storage_usage_flag_active():
     request.user = _get_current_user() or MockUser()
-    return waffle.flag_is_active(request, 'storage_usage')
+    return waffle.flag_is_active(request, STORAGE_USAGE)
