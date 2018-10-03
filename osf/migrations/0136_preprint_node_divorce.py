@@ -117,6 +117,7 @@ def divorce_preprints_from_nodes_sql(state, schema):
                 spam_data = N.spam_data,
                 date_last_reported = N.date_last_reported,
                 reports = N.reports
+
             FROM osf_abstractnode as N
             WHERE P.node_id = N.id
             AND P.node_id IS NOT NULL;
@@ -235,9 +236,8 @@ def divorce_preprints_from_nodes_sql(state, schema):
             -- Update preprint region to be the same as the node's region
             UPDATE osf_preprint
             SET region_id = NS.region_id
-            FROM osf_preprint AS P, osf_abstractnode as N, addons_osfstorage_nodesettings as NS
-            WHERE P.node_id = N.id
-            AND NS.owner_id = N.id;
+            FROM addons_osfstorage_nodesettings NS
+            WHERE osf_preprint.node_id = NS.owner_id
 
             -- Create a root folder for each preprint
             INSERT INTO osf_basefilenode
