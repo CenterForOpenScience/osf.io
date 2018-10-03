@@ -11,6 +11,7 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+from osf import features
 from osf.models import AbstractNode, Node, Conference, Tag, OSFUser
 from website import settings
 from website.conferences import utils, signals
@@ -278,7 +279,7 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
-@ember_flag_is_active('ember_meeting_detail_page')
+@ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
 
@@ -317,7 +318,7 @@ def conference_submissions(**kwargs):
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
 
-@ember_flag_is_active('ember_meetings_page')
+@ember_flag_is_active(features.EMBER_MEETINGS)
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():
