@@ -64,11 +64,13 @@ class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
 
-    def get_preprint(self, check_object_permissions=True):
+    def get_preprint(self, check_object_permissions=True, ignore_404=False):
         qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except Preprint.DoesNotExist:
+            if ignore_404:
+                return
             raise NotFound
 
         if preprint.deleted is not None:
@@ -327,7 +329,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
             return PreprintContributorsSerializer
 
     def get_resource(self):
-        return self.get_preprint()
+        return self.get_preprint(ignore_404=True)
 
     # Overrides NodeContributorsList
     def build_query_from_field(self, field_name, operation):
@@ -365,7 +367,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
     required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
 
     def get_resource(self):
-        return self.get_preprint()
+        return self.get_preprint(ignore_404=True)
 
     # overrides RetrieveAPIView
     def get_object(self):

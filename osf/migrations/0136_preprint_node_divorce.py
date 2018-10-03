@@ -237,7 +237,7 @@ def divorce_preprints_from_nodes_sql(state, schema):
             UPDATE osf_preprint
             SET region_id = NS.region_id
             FROM addons_osfstorage_nodesettings NS
-            WHERE osf_preprint.node_id = NS.owner_id
+            WHERE osf_preprint.node_id = NS.owner_id;
 
             -- Create a root folder for each preprint
             INSERT INTO osf_basefilenode

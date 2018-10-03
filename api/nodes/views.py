@@ -139,7 +139,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
+    def get_node(self, check_object_permissions=True, ignore_404=False):
         node = None
 
         if self.kwargs.get('is_embedded') is True:
@@ -148,6 +148,8 @@ class NodeMixin(object):
 
         node_id = self.kwargs[self.node_lookup_url_kwarg]
         if node is None:
+            if ignore_404:
+                return Node.load(node_id)
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
                 request=self.request,
@@ -397,7 +399,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     ordering = ('_order',)  # default ordering
 
     def get_resource(self):
-        return self.get_node()
+        return self.get_node(ignore_404=True)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -445,7 +447,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_resource()
+        node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if not node.contributor_set.filter(user=instance).exists():
@@ -498,11 +500,11 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_name = 'node-contributor-detail'
 
     def get_resource(self):
-        return self.get_node()
+        return self.get_node(ignore_404=True)
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_resource()
+        node = self.get_node()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
@@ -512,7 +514,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
-        context['resource'] = self.get_node()
+        context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context
 
