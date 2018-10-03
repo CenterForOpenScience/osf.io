@@ -15,6 +15,7 @@ from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
+from osf import features
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
@@ -255,7 +256,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
-@ember_flag_is_active('ember_create_draft_registration_page')
+@ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -293,7 +294,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
-@ember_flag_is_active('ember_edit_draft_registration_page')
+@ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor

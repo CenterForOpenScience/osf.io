@@ -21,6 +21,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
+from osf import features
 from osf.models import Identifier, RegistrationSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
@@ -120,7 +121,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
-@ember_flag_is_active('ember_registration_form_detail_page')
+@ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:

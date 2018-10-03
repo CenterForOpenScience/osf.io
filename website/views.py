@@ -24,6 +24,7 @@ from framework.auth.core import _get_current_user
 from website import settings
 
 from addons.osfstorage.models import Region
+from osf import features
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
@@ -147,7 +148,7 @@ def dashboard(auth):
 
 
 @must_be_logged_in
-@ember_flag_is_active('ember_my_projects_page')
+@ember_flag_is_active(features.EMBER_MY_PROJECTS)
 def my_projects(auth):
     user = auth.user
 
